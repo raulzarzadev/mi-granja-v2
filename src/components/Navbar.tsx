@@ -22,7 +22,6 @@ const Navbar: React.FC = () => {
       console.error('Error al cerrar sesión:', error)
     }
   }
-  console.log({ user })
   if (!user) return null
 
   return (
