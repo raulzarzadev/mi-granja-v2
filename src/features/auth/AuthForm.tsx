@@ -266,7 +266,7 @@ const AuthForm: React.FC = () => {
           {isLogin && !emailLinkSent && (
             <div className="space-y-3">
               <p className="text-sm font-medium text-gray-700 text-center">
-                Elige tu método de inicio de sesión
+                Elige un método de inicio de sesión
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -289,7 +289,7 @@ const AuthForm: React.FC = () => {
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  Enlace por email
+                  Enlace por email (recomendado)
                 </button>
               </div>
             </div>

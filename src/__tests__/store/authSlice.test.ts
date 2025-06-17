@@ -57,7 +57,13 @@ describe('Auth Store', () => {
     store.dispatch(setUser(user))
 
     const state = store.getState().auth
-    expect(state.user).toEqual(user)
+    // The user object should be serialized, with dates converted to timestamps
+    expect(state.user).toEqual({
+      id: '123',
+      email: 'test@test.com',
+      farmName: 'Test Farm',
+      createdAt: user.createdAt.getTime() // Date should be converted to timestamp
+    })
     expect(state.isLoading).toBe(false)
     expect(state.error).toBe(null)
   })
@@ -113,7 +119,13 @@ describe('Auth Store', () => {
     store.dispatch(setUser(user))
 
     const state = store.getState().auth
-    expect(state.user).toEqual(user)
+    // The user object should be serialized, with dates converted to timestamps
+    expect(state.user).toEqual({
+      id: '123',
+      email: 'test@test.com',
+      farmName: 'Test Farm',
+      createdAt: user.createdAt.getTime() // Date should be converted to timestamp
+    })
     expect(state.isLoading).toBe(false)
     expect(state.error).toBe(null)
   })

@@ -13,7 +13,9 @@ const customJestConfig = {
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
     '!src/lib/firebase.ts', // Exclude Firebase config
-    '!src/store/**' // Exclude Redux store config
+    '!src/store/index.ts', // Exclude Redux store config
+    '!src/store/authSlice.ts', // Exclude Redux slices
+    '!src/store/animalsSlice.ts' // Exclude Redux slices
   ],
   modulePathIgnorePatterns: [
     '<rootDir>/.next/',

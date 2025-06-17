@@ -148,7 +148,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Configuración para envío de enlaces de autenticación
   const actionCodeSettings = {
-    url: window.location.origin + '/auth/complete',
+    url:
+      (typeof window !== 'undefined'
+        ? window.location.origin
+        : 'http://localhost:3000') + '/auth/complete',
     handleCodeInApp: true
   }
 

@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { User } from '@/types'
+import { serializeObj } from './libs/serializeObj'
 
 interface AuthState {
   user: User | null
@@ -21,7 +22,7 @@ const authSlice = createSlice({
       state.isLoading = action.payload
     },
     setUser: (state, action: PayloadAction<User | null>) => {
-      state.user = action.payload
+      state.user = action.payload ? serializeObj(action.payload) : null
       state.error = null
       state.isLoading = false
     },
