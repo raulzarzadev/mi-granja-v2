@@ -16,6 +16,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
 import { setUser, setLoading, setError, logout } from '@/store/authSlice'
 import { User } from '@/types'
+import { assignUserRoles } from '@/lib/userUtils'
 
 interface AuthContextType {
   login: (email: string, password: string) => Promise<void>
@@ -63,23 +64,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 email: firebaseUser.email!,
                 name: userData.name,
                 farmName: userData.farmName,
+                roles: userData.roles || [], // Si ya tiene roles asignados, los respetamos
                 createdAt: userData.createdAt?.toDate() || new Date()
               }
-              dispatch(setUser(user))
+              // Asignar roles si no los tiene
+              const userWithRole = assignUserRoles(user)
+              dispatch(setUser(userWithRole))
             } else {
               // Si no existe el documento del usuario en Firestore, crearlo
               const user: User = {
                 id: firebaseUser.uid,
                 email: firebaseUser.email!,
+                roles: [], // Se asignarán automáticamente
                 createdAt: new Date()
               }
 
+              // Asignar rol automáticamente
+              const userWithRole = assignUserRoles(user)
+
               await setDoc(doc(db, 'users', firebaseUser.uid), {
                 email: firebaseUser.email,
+                roles: userWithRole.roles,
                 createdAt: new Date()
               })
 
-              dispatch(setUser(user))
+              dispatch(setUser(userWithRole))
             }
           } catch (error) {
             console.error('Error fetching user data:', error)
@@ -120,10 +129,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         password
       )
 
+      // Crear el objeto usuario para asignar roles
+      const user: User = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email!,
+        farmName: farmName || '',
+        roles: [], // Se asignarán automáticamente
+        createdAt: new Date()
+      }
+
+      // Asignar roles automáticamente
+      const userWithRoles = assignUserRoles(user)
+
       // Crear documento del usuario en Firestore
       await setDoc(doc(db, 'users', firebaseUser.uid), {
         email: firebaseUser.email,
         farmName: farmName || '',
+        roles: userWithRoles.roles,
         createdAt: new Date()
       })
     } catch (error: unknown) {
@@ -190,8 +212,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         result.user.metadata.creationTime ===
         result.user.metadata.lastSignInTime
       ) {
+        // Crear el objeto usuario para asignar roles
+        const user: User = {
+          id: result.user.uid,
+          email: result.user.email!,
+          roles: [], // Se asignarán automáticamente
+          createdAt: new Date()
+        }
+
+        // Asignar roles automáticamente
+        const userWithRoles = assignUserRoles(user)
+
         await setDoc(doc(db, 'users', result.user.uid), {
           email: result.user.email,
+          roles: userWithRoles.roles,
           createdAt: new Date()
         })
       }

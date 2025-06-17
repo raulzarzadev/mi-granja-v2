@@ -3,6 +3,7 @@ export interface User {
   email: string
   name?: string
   farmName?: string
+  roles: ('admin' | 'farmer' | 'vet')[]
   createdAt: Date
 }
 

@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   --background: #ffffff;
@@ -23,4 +23,71 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Configuración global para placeholders más visibles */
+::placeholder {
+  color: rgb(
+    75 85 99
+  ) !important; /* gray-600 - más oscuro para mejor visibilidad */
+  opacity: 1 !important; /* Firefox */
+}
+
+::-webkit-input-placeholder {
+  /* Edge/WebKit */
+  color: rgb(75 85 99) !important;
+  opacity: 1 !important;
+}
+
+::-moz-placeholder {
+  /* Firefox 19+ */
+  color: rgb(75 85 99) !important;
+  opacity: 1 !important;
+}
+
+:-ms-input-placeholder {
+  /* IE 10+ */
+  color: rgb(75 85 99) !important;
+  opacity: 1 !important;
+}
+
+:-moz-placeholder {
+  /* Firefox 18- */
+  color: rgb(75 85 99) !important;
+  opacity: 1 !important;
+}
+
+/* Configuración global para opciones placeholder de selects más visibles */
+select {
+  color: rgb(17 24 39); /* gray-900 para texto normal */
+}
+
+/* Cuando el select no tiene valor seleccionado (muestra placeholder) */
+select:invalid,
+select[value=''],
+select:not([value]) {
+  color: rgb(75 85 99) !important; /* gray-600 para placeholder */
+}
+
+/* Opciones placeholder específicas */
+select option[value=''] {
+  color: rgb(75 85 99); /* gray-600 */
+}
+
+/* Opciones normales */
+select option:not([value='']) {
+  color: rgb(17 24 39); /* gray-900 */
+}
+
+/* Configuración global para texto de inputs más visible */
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='number'],
+input[type='tel'],
+input[type='url'],
+input[type='date'],
+textarea,
+select {
+  color: rgb(17 24 39) !important; /* gray-900 - texto oscuro */
 }

@@ -149,7 +149,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
                 name="animalId"
                 value={formData.animalId}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 placeholder:text-gray-600 placeholder:opacity-100 ${
                   errors.animalId ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Ej: A001, OV123"

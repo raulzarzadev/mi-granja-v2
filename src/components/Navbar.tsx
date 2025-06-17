@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import Link from 'next/link'
 import { useSelector } from 'react-redux'
 import { useAuth } from '@/features/auth/AuthContext'
 import { RootState } from '@/store'
@@ -21,7 +22,7 @@ const Navbar: React.FC = () => {
       console.error('Error al cerrar sesión:', error)
     }
   }
-
+  console.log({ user })
   if (!user) return null
 
   return (
@@ -29,10 +30,20 @@ const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo y nombre de la app */}
-          <div className="flex items-center">
+          <div className="flex items-center space-x-6">
             <div className="flex-shrink-0">
               <span className="text-xl font-bold">🐄 Mi Granja</span>
             </div>
+
+            {/* Enlace al showcase (solo para admins) */}
+            {user.roles?.includes('admin') && (
+              <Link
+                href="/ui-showcase"
+                className="text-green-100 hover:text-white text-sm font-medium transition-colors"
+              >
+                🎨 UI Showcase
+              </Link>
+            )}
           </div>
 
           {/* Información del usuario */}

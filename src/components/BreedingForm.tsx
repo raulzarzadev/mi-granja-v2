@@ -14,6 +14,7 @@ interface BreedingFormProps {
 
 /**
  * Formulario para registrar montas/reproducciones
+ * Solo el formulario sin modal wrapper
  */
 const BreedingForm: React.FC<BreedingFormProps> = ({
   animals,
@@ -98,150 +99,142 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Registrar Monta
-          </h2>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Hembra */}
-            <div>
-              <label
-                htmlFor="femaleId"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Hembra *
-              </label>
-              <select
-                id="femaleId"
-                name="femaleId"
-                value={formData.femaleId}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">Seleccionar hembra</option>
-                {females.map((animal) => (
-                  <option key={animal.id} value={animal.id}>
-                    {animal.animalId} - {animal.type} ({animal.stage})
-                  </option>
-                ))}
-              </select>
-              {females.length === 0 && (
-                <p className="text-sm text-gray-500 mt-1">
-                  No hay hembras reproductoras disponibles
-                </p>
-              )}
-            </div>
-
-            {/* Macho */}
-            <div>
-              <label
-                htmlFor="maleId"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Macho *
-              </label>
-              <select
-                id="maleId"
-                name="maleId"
-                value={formData.maleId}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">Seleccionar macho</option>
-                {males.map((animal) => (
-                  <option key={animal.id} value={animal.id}>
-                    {animal.animalId} - {animal.type}
-                  </option>
-                ))}
-              </select>
-              {males.length === 0 && (
-                <p className="text-sm text-gray-500 mt-1">
-                  No hay machos reproductores disponibles
-                </p>
-              )}
-            </div>
-
-            {/* Fecha de monta */}
-            <div>
-              <label
-                htmlFor="breedingDate"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Fecha de Monta *
-              </label>
-              <input
-                type="date"
-                id="breedingDate"
-                name="breedingDate"
-                value={formData.breedingDate}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-
-            {/* Embarazo confirmado */}
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="pregnancyConfirmed"
-                name="pregnancyConfirmed"
-                checked={formData.pregnancyConfirmed}
-                onChange={handleChange}
-                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="pregnancyConfirmed"
-                className="ml-2 block text-sm text-gray-700"
-              >
-                Embarazo confirmado
-              </label>
-            </div>
-
-            {/* Notas */}
-            <div>
-              <label
-                htmlFor="notes"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Notas
-              </label>
-              <textarea
-                id="notes"
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                rows={3}
-                placeholder="Observaciones sobre la monta..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-
-            {/* Botones */}
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={onCancel}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading || !formData.femaleId || !formData.maleId}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
-              >
-                {isLoading ? 'Registrando...' : 'Registrar Monta'}
-              </button>
-            </div>
-          </form>
+    <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Hembra */}
+        <div>
+          <label
+            htmlFor="femaleId"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Hembra *
+          </label>
+          <select
+            id="femaleId"
+            name="femaleId"
+            value={formData.femaleId}
+            onChange={handleChange}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            <option value="">Seleccionar hembra</option>
+            {females.map((animal) => (
+              <option key={animal.id} value={animal.id}>
+                {animal.animalId} - {animal.type} ({animal.stage})
+              </option>
+            ))}
+          </select>
+          {females.length === 0 && (
+            <p className="text-sm text-gray-500 mt-1">
+              No hay hembras reproductoras disponibles
+            </p>
+          )}
         </div>
-      </div>
+
+        {/* Macho */}
+        <div>
+          <label
+            htmlFor="maleId"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Macho *
+          </label>
+          <select
+            id="maleId"
+            name="maleId"
+            value={formData.maleId}
+            onChange={handleChange}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            <option value="">Seleccionar macho</option>
+            {males.map((animal) => (
+              <option key={animal.id} value={animal.id}>
+                {animal.animalId} - {animal.type}
+              </option>
+            ))}
+          </select>
+          {males.length === 0 && (
+            <p className="text-sm text-gray-500 mt-1">
+              No hay machos reproductores disponibles
+            </p>
+          )}
+        </div>
+
+        {/* Fecha de monta */}
+        <div>
+          <label
+            htmlFor="breedingDate"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Fecha de Monta *
+          </label>
+          <input
+            type="date"
+            id="breedingDate"
+            name="breedingDate"
+            value={formData.breedingDate}
+            onChange={handleChange}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+        </div>
+
+        {/* Embarazo confirmado */}
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="pregnancyConfirmed"
+            name="pregnancyConfirmed"
+            checked={formData.pregnancyConfirmed}
+            onChange={handleChange}
+            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+          />
+          <label
+            htmlFor="pregnancyConfirmed"
+            className="ml-2 block text-sm text-gray-700"
+          >
+            Embarazo confirmado
+          </label>
+        </div>
+
+        {/* Notas */}
+        <div>
+          <label
+            htmlFor="notes"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Notas
+          </label>
+          <textarea
+            id="notes"
+            name="notes"
+            value={formData.notes}
+            onChange={handleChange}
+            rows={3}
+            placeholder="Observaciones sobre la monta..."
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+        </div>
+
+        {/* Botones */}
+        <div className="flex gap-3 pt-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={isLoading || !formData.femaleId || !formData.maleId}
+            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
+          >
+            {isLoading ? 'Registrando...' : 'Registrar Monta'}
+          </button>
+        </div>
+      </form>
     </div>
   )
 }
