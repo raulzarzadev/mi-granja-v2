@@ -1,0 +1,93 @@
+import React from 'react'
+import { render, screen } from '@testing-library/react'
+import { Provider } from 'react-redux'
+import { configureStore } from '@reduxjs/toolkit'
+import HomePage from '@/app/page'
+import authSlice from '@/store/authSlice'
+
+// Mock del hook useAnimals
+jest.mock('@/hooks/useAnimals', () => ({
+  useAnimals: () => ({
+    animals: [],
+    isLoading: false,
+    error: null,
+    addAnimal: jest.fn(),
+    updateAnimal: jest.fn(),
+    deleteAnimal: jest.fn()
+  })
+}))
+
+// Mock simplificado del Dashboard
+jest.mock('@/components/Dashboard', () => {
+  return function MockDashboard() {
+    return <div data-testid="dashboard">Dashboard de Mi Granja</div>
+  }
+})
+
+// Mock Firebase
+jest.mock('@/lib/firebase', () => ({
+  auth: global.mockAuth,
+  db: global.mockFirestore
+}))
+
+const createMockStore = (initialState = {}) => {
+  return configureStore({
+    reducer: {
+      auth: authSlice
+    },
+    preloadedState: {
+      auth: {
+        user: null,
+        isLoading: false,
+        error: null,
+        ...initialState
+      }
+    }
+  })
+}
+
+const TestWrapper = ({
+  children,
+  store = createMockStore()
+}: {
+  children: React.ReactNode
+  store?: ReturnType<typeof createMockStore>
+}) => <Provider store={store}>{children}</Provider>
+
+describe('HomePage Integration', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('renders homepage content', () => {
+    render(
+      <TestWrapper>
+        <HomePage />
+      </TestWrapper>
+    )
+
+    // Check for the authentication form when user is not authenticated
+    expect(screen.getByText('Mi Granja')).toBeInTheDocument()
+    expect(screen.getByText('Inicia sesión en tu cuenta')).toBeInTheDocument()
+  })
+
+  it('shows different content based on auth state', () => {
+    const authenticatedStore = createMockStore({
+      user: {
+        uid: '123',
+        email: 'test@test.com',
+        farmName: 'Test Farm'
+      }
+    })
+
+    render(
+      <TestWrapper store={authenticatedStore}>
+        <HomePage />
+      </TestWrapper>
+    )
+
+    // Should show the dashboard for authenticated users
+    expect(screen.getByTestId('dashboard')).toBeInTheDocument()
+    expect(screen.getByText('Dashboard de Mi Granja')).toBeInTheDocument()
+  })
+})
