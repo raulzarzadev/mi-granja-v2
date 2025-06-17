@@ -53,6 +53,38 @@ service cloud.firestore {
       allow create: if request.auth != null &&
         request.auth.uid == request.resource.data.farmerId;
     }
+
+    // Reglas para registros de reproducción: solo el propietario puede acceder
+    match /breedingRecords/{recordId} {
+      allow read, write: if request.auth != null &&
+        request.auth.uid == resource.data.farmerId;
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.farmerId;
+    }
+
+    // Reglas para registros de peso: solo el propietario puede acceder
+    match /weightRecords/{recordId} {
+      allow read, write: if request.auth != null &&
+        request.auth.uid == resource.data.farmerId;
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.farmerId;
+    }
+
+    // Reglas para recordatorios: solo el propietario puede acceder
+    match /reminders/{reminderId} {
+      allow read, write: if request.auth != null &&
+        request.auth.uid == resource.data.farmerId;
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.farmerId;
+    }
+
+    // Reglas para producción de leche: solo el propietario puede acceder
+    match /milkProduction/{productionId} {
+      allow read, write: if request.auth != null &&
+        request.auth.uid == resource.data.farmerId;
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.farmerId;
+    }
   }
 }
 ```

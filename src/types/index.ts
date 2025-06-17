@@ -69,3 +69,17 @@ export interface MilkProduction {
   totalAmount: number
   notes?: string
 }
+
+export interface Reminder {
+  id: string
+  farmerId: string
+  animalId?: string
+  title: string
+  description: string
+  dueDate: Date
+  completed: boolean
+  priority: 'low' | 'medium' | 'high'
+  type: 'medical' | 'breeding' | 'feeding' | 'weight' | 'other'
+  createdAt: Date
+  updatedAt: Date
+}
