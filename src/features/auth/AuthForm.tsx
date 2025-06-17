@@ -10,7 +10,7 @@ import { useAuth } from '@/features/auth/AuthContext'
 const AuthForm: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true)
   const [authMethod, setAuthMethod] = useState<'password' | 'emailLink'>(
-    'password'
+    'emailLink'
   )
   const [emailLinkSent, setEmailLinkSent] = useState(false)
   const [formData, setFormData] = useState({
@@ -271,17 +271,6 @@ const AuthForm: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setAuthMethod('password')}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    authMethod === 'password'
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Con contraseña
-                </button>
-                <button
-                  type="button"
                   onClick={() => setAuthMethod('emailLink')}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     authMethod === 'emailLink'
@@ -290,6 +279,17 @@ const AuthForm: React.FC = () => {
                   }`}
                 >
                   Enlace por email (recomendado)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAuthMethod('password')}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    authMethod === 'password'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Con contraseña
                 </button>
               </div>
             </div>
