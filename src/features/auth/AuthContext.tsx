@@ -7,6 +7,9 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
   User as FirebaseUser
 } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
@@ -16,12 +19,15 @@ import { User } from '@/types'
 
 interface AuthContextType {
   login: (email: string, password: string) => Promise<void>
+  loginWithEmailLink: (email: string) => Promise<void>
+  completeEmailLinkSignIn: (email: string, url: string) => Promise<void>
   register: (
     email: string,
     password: string,
     farmName?: string
   ) => Promise<void>
   logout: () => Promise<void>
+  isEmailLinkSignIn: (url: string) => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -140,10 +146,75 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }
 
+  // Configuración para envío de enlaces de autenticación
+  const actionCodeSettings = {
+    url: window.location.origin + '/auth/complete',
+    handleCodeInApp: true
+  }
+
+  // Enviar enlace de autenticación por email
+  const loginWithEmailLink = async (email: string) => {
+    try {
+      dispatch(setLoading(true))
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings)
+
+      // Guardar el email en localStorage para completar el sign-in
+      window.localStorage.setItem('emailForSignIn', email)
+
+      // No dispatch setLoading(false) aquí porque el proceso no ha terminado
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Error al enviar enlace de autenticación'
+      dispatch(setError(errorMessage))
+      dispatch(setLoading(false))
+      throw error
+    }
+  }
+
+  // Completar autenticación con enlace de email
+  const completeEmailLinkSignIn = async (email: string, url: string) => {
+    try {
+      dispatch(setLoading(true))
+      const result = await signInWithEmailLink(auth, email, url)
+
+      // Limpiar el email del localStorage
+      window.localStorage.removeItem('emailForSignIn')
+
+      // Si es un nuevo usuario, crear documento en Firestore
+      if (
+        result.user.metadata.creationTime ===
+        result.user.metadata.lastSignInTime
+      ) {
+        await setDoc(doc(db, 'users', result.user.uid), {
+          email: result.user.email,
+          createdAt: new Date()
+        })
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Error al completar autenticación'
+      dispatch(setError(errorMessage))
+      dispatch(setLoading(false))
+      throw error
+    }
+  }
+
+  // Verificar si la URL es un enlace de autenticación
+  const isEmailLinkSignIn = (url: string) => {
+    return isSignInWithEmailLink(auth, url)
+  }
+
   const value: AuthContextType = {
     login,
     register,
-    logout: handleLogout
+    logout: handleLogout,
+    loginWithEmailLink,
+    completeEmailLinkSignIn,
+    isEmailLinkSignIn
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

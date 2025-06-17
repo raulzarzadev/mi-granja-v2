@@ -120,6 +120,27 @@ src/
 - [ ] Reportes y exportación
 - [ ] Notificaciones y recordatorios
 
+## 🔐 Autenticación
+
+La aplicación soporta **dos métodos de autenticación**:
+
+### 1. **Autenticación por Email/Contraseña**
+
+- Método tradicional con email y contraseña
+- Registro de nuevos usuarios con validación
+- Inicio de sesión directo
+
+### 2. **Autenticación por Enlace de Email (Sin Contraseña)**
+
+- Método sin contraseña más seguro
+- El usuario solo necesita su email
+- Recibe un enlace mágico por correo
+- Un clic para iniciar sesión
+
+### Configuración de Firebase
+
+Para configurar ambos métodos de autenticación, consulta la guía detallada en `FIREBASE_SETUP.md`
+
 ---
 
 **¡Hecho con ❤️ para los granjeros que alimentan al mundo!** 🌾
