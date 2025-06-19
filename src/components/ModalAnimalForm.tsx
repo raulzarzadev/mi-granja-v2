@@ -40,9 +40,9 @@ const ModalAnimalForm: React.FC<ModalAnimalFormProps> = ({
     <>
       <button
         onClick={openModal}
-        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
       >
-        {mode === 'create' ? 'Registrar Animal' : 'Editar Animal'}
+        {mode === 'create' ? '➕ Registrar Animal' : '✏️ Editar Animal'}
       </button>
 
       <Modal
