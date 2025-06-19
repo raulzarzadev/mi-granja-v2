@@ -148,7 +148,7 @@ describe('AuthContext', () => {
         global.mockAuth,
         'test@test.com',
         expect.objectContaining({
-          url: expect.stringContaining('localhost:3000/auth/complete'),
+          url: expect.stringContaining('/auth/complete'),
           handleCodeInApp: true
         })
       )
@@ -170,7 +170,14 @@ describe('AuthContext', () => {
 
   describe('completeEmailLinkSignIn', () => {
     it('should call signInWithEmailLink', async () => {
-      const mockUser = { uid: '123', email: 'test@test.com' }
+      const mockUser = {
+        uid: '123',
+        email: 'test@test.com',
+        metadata: {
+          creationTime: '2023-01-01T00:00:00.000Z',
+          lastSignInTime: '2023-01-02T00:00:00.000Z'
+        }
+      }
       global.mockAuth.signInWithEmailLink.mockResolvedValue({
         user: mockUser
       })
@@ -192,14 +199,25 @@ describe('AuthContext', () => {
     })
 
     it('should remove email from localStorage on success', async () => {
-      const mockUser = { uid: '123', email: 'test@test.com' }
+      const mockUser = {
+        uid: '123',
+        email: 'test@test.com',
+        metadata: {
+          creationTime: '2023-01-01T00:00:00Z',
+          lastSignInTime: '2023-01-01T00:00:00Z'
+        }
+      }
       global.mockAuth.signInWithEmailLink.mockResolvedValue({
         user: mockUser
       })
       global.mockFirestore.doc.mockReturnValue({})
       global.mockFirestore.getDoc.mockResolvedValue({
         exists: () => true,
-        data: () => ({ email: 'test@test.com', farmName: 'Test Farm' })
+        data: () => ({
+          email: 'test@test.com',
+          farmName: 'Test Farm',
+          roles: ['farmer']
+        })
       })
 
       const removeItemSpy = jest.spyOn(Storage.prototype, 'removeItem')

@@ -48,14 +48,26 @@ const TestWrapper = ({
 
 // Override global location for these tests
 beforeEach(() => {
-  global.location.href =
-    'http://localhost:3000/auth/complete?apiKey=test&oobCode=test'
+  // Clear any existing location mock
+  delete (global as any).location
+  
+  Object.defineProperty(global, 'location', {
+    value: {
+      href: 'http://localhost:3000/auth/complete?apiKey=test&oobCode=test',
+      origin: 'http://localhost:3000',
+      pathname: '/auth/complete',
+      search: '?apiKey=test&oobCode=test',
+      hash: ''
+    },
+    writable: true,
+    configurable: true
+  })
 })
 
 describe('CompletePage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    global.localStorage.getItem.mockReturnValue('test@test.com')
+    jest.spyOn(Storage.prototype, 'getItem').mockReturnValue('test@test.com')
     global.mockAuth.isSignInWithEmailLink.mockReturnValue(true)
   })
 

@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
 import HomePage from '@/app/page'
+import { AuthProvider } from '@/features/auth/AuthContext'
 import authSlice from '@/store/authSlice'
 
 // Mock del hook useAnimals
@@ -52,7 +53,11 @@ const TestWrapper = ({
 }: {
   children: React.ReactNode
   store?: ReturnType<typeof createMockStore>
-}) => <Provider store={store}>{children}</Provider>
+}) => (
+  <Provider store={store}>
+    <AuthProvider>{children}</AuthProvider>
+  </Provider>
+)
 
 describe('HomePage Integration', () => {
   beforeEach(() => {

@@ -5,11 +5,13 @@ import { configureStore } from '@reduxjs/toolkit'
 import { AuthProvider } from '@/features/auth/AuthContext'
 import authSlice from '@/store/authSlice'
 import { User } from '@/types'
+import '@testing-library/jest-dom'
 
 export const createMockUser = (overrides?: Partial<User>): User => ({
   id: 'test-user-123',
   email: 'test@test.com',
   farmName: 'Test Farm',
+  roles: ['farmer'],
   createdAt: new Date('2023-01-01'),
   ...overrides
 })
@@ -102,33 +104,6 @@ export const mockFirestoreError = (error = new Error('Firestore error')) => {
   global.mockFirestore.setDoc.mockRejectedValue(error)
 }
 
-// Common test assertions
-export const expectAuthLoading = (
-  store: ReturnType<typeof createMockStore>
-) => {
-  expect(store.getState().auth.isLoading).toBe(true)
-}
-
-export const expectAuthSuccess = (
-  store: ReturnType<typeof createMockStore>,
-  user: User
-) => {
-  const state = store.getState().auth
-  expect(state.user).toEqual(user)
-  expect(state.isLoading).toBe(false)
-  expect(state.error).toBe(null)
-}
-
-export const expectAuthError = (
-  store: ReturnType<typeof createMockStore>,
-  error: string
-) => {
-  const state = store.getState().auth
-  expect(state.error).toBe(error)
-  expect(state.isLoading).toBe(false)
-  expect(state.user).toBe(null)
-}
-
 // Wait for async operations
 export const waitForAuthOperation = () =>
   new Promise((resolve) => setTimeout(resolve, 0))
@@ -143,10 +118,24 @@ const testUtils = {
   mockFirebaseAuthError,
   mockFirestoreSuccess,
   mockFirestoreError,
-  expectAuthLoading,
-  expectAuthSuccess,
-  expectAuthError,
   waitForAuthOperation
 }
 
 export default testUtils
+
+// Simple test to prevent "no test" error
+describe('Test Utils', () => {
+  it('should create mock user with correct defaults', () => {
+    const user = createMockUser()
+    if (user.id !== 'test-user-123') throw new Error('Wrong id')
+    if (user.email !== 'test@test.com') throw new Error('Wrong email')
+    if (user.farmName !== 'Test Farm') throw new Error('Wrong farmName')
+  })
+
+  it('should create mock store', () => {
+    const store = createMockStore()
+    if (!store) throw new Error('Store not created')
+    if (store.getState().auth.user !== null) throw new Error('User should be null')
+    if (store.getState().auth.isLoading !== false) throw new Error('Loading should be false')
+  })
+})

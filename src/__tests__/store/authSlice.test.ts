@@ -51,6 +51,7 @@ describe('Auth Store', () => {
       id: '123',
       email: 'test@test.com',
       farmName: 'Test Farm',
+      roles: ['farmer'],
       createdAt: new Date()
     }
 
@@ -62,6 +63,7 @@ describe('Auth Store', () => {
       id: '123',
       email: 'test@test.com',
       farmName: 'Test Farm',
+      roles: ['farmer'],
       createdAt: user.createdAt.getTime() // Date should be converted to timestamp
     })
     expect(state.isLoading).toBe(false)
@@ -91,6 +93,7 @@ describe('Auth Store', () => {
       id: '123',
       email: 'test@test.com',
       farmName: 'Test Farm',
+      roles: ['farmer'],
       createdAt: new Date()
     }
     store.dispatch(setUser(user))
@@ -114,6 +117,7 @@ describe('Auth Store', () => {
       id: '123',
       email: 'test@test.com',
       farmName: 'Test Farm',
+      roles: ['farmer'],
       createdAt: new Date()
     }
     store.dispatch(setUser(user))
@@ -124,6 +128,7 @@ describe('Auth Store', () => {
       id: '123',
       email: 'test@test.com',
       farmName: 'Test Farm',
+      roles: ['farmer'],
       createdAt: user.createdAt.getTime() // Date should be converted to timestamp
     })
     expect(state.isLoading).toBe(false)

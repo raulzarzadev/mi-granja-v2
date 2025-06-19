@@ -119,15 +119,17 @@ const localStorageMock = {
 }
 global.localStorage = localStorageMock
 
-// Mock window.location more carefully
-if (typeof global !== 'undefined') {
-  delete global.location
+// Mock window.location more carefully for jsdom
+if (typeof global !== 'undefined' && !global.location) {
   global.location = {
     href: 'http://localhost:3000',
     origin: 'http://localhost:3000',
     pathname: '/',
     search: '',
-    hash: ''
+    hash: '',
+    assign: jest.fn(),
+    replace: jest.fn(),
+    reload: jest.fn()
   }
 }
 
