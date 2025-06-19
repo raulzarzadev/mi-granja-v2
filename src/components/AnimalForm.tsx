@@ -127,268 +127,258 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">
-            {initialData ? 'Editar Animal' : 'Registrar Nuevo Animal'}
-          </h2>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* ID del Animal */}
+      <div>
+        <label
+          htmlFor="animalId"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          ID del Animal *
+        </label>
+        <input
+          type="text"
+          id="animalId"
+          name="animalId"
+          value={formData.animalId}
+          onChange={handleInputChange}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 placeholder:text-gray-600 placeholder:opacity-100 ${
+            errors.animalId ? 'border-red-500' : 'border-gray-300'
+          }`}
+          placeholder="Ej: A001, OV123"
+          disabled={isLoading}
+        />
+        {errors.animalId && (
+          <p className="text-red-500 text-xs mt-1">{errors.animalId}</p>
+        )}
+      </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* ID del Animal */}
-            <div>
-              <label
-                htmlFor="animalId"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                ID del Animal *
-              </label>
-              <input
-                type="text"
-                id="animalId"
-                name="animalId"
-                value={formData.animalId}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 placeholder:text-gray-600 placeholder:opacity-100 ${
-                  errors.animalId ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Ej: A001, OV123"
-                disabled={isLoading}
-              />
-              {errors.animalId && (
-                <p className="text-red-500 text-xs mt-1">{errors.animalId}</p>
-              )}
-            </div>
+      {/* Tipo de Animal */}
+      <div>
+        <label
+          htmlFor="type"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          Tipo de Animal *
+        </label>
+        <select
+          id="type"
+          name="type"
+          value={formData.type}
+          onChange={handleInputChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          disabled={isLoading}
+        >
+          {animalTypes.map((type) => (
+            <option key={type.value} value={type.value}>
+              {type.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
-            {/* Tipo de Animal */}
-            <div>
-              <label
-                htmlFor="type"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Tipo de Animal *
-              </label>
-              <select
-                id="type"
-                name="type"
-                value={formData.type}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                disabled={isLoading}
-              >
-                {animalTypes.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+      {/* Etapa */}
+      <div>
+        <label
+          htmlFor="stage"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          Etapa *
+        </label>
+        <select
+          id="stage"
+          name="stage"
+          value={formData.stage}
+          onChange={handleInputChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          disabled={isLoading}
+        >
+          {animalStages.map((stage) => (
+            <option key={stage.value} value={stage.value}>
+              {stage.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
-            {/* Etapa */}
-            <div>
-              <label
-                htmlFor="stage"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Etapa *
-              </label>
-              <select
-                id="stage"
-                name="stage"
-                value={formData.stage}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                disabled={isLoading}
-              >
-                {animalStages.map((stage) => (
-                  <option key={stage.value} value={stage.value}>
-                    {stage.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+      {/* Género */}
+      <div>
+        <label
+          htmlFor="gender"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          Género *
+        </label>
+        <select
+          id="gender"
+          name="gender"
+          value={formData.gender}
+          onChange={handleInputChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          disabled={isLoading}
+        >
+          <option value="hembra">Hembra</option>
+          <option value="macho">Macho</option>
+        </select>
+      </div>
 
-            {/* Género */}
-            <div>
-              <label
-                htmlFor="gender"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Género *
-              </label>
-              <select
-                id="gender"
-                name="gender"
-                value={formData.gender}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                disabled={isLoading}
-              >
-                <option value="hembra">Hembra</option>
-                <option value="macho">Macho</option>
-              </select>
-            </div>
+      {/* Peso y Edad en una fila */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label
+            htmlFor="weight"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Peso (kg)
+          </label>
+          <input
+            type="number"
+            id="weight"
+            name="weight"
+            value={formData.weight}
+            onChange={handleInputChange}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+              errors.weight ? 'border-red-500' : 'border-gray-300'
+            }`}
+            placeholder="0"
+            min="0"
+            step="0.1"
+            disabled={isLoading}
+          />
+          {errors.weight && (
+            <p className="text-red-500 text-xs mt-1">{errors.weight}</p>
+          )}
+        </div>
 
-            {/* Peso y Edad en una fila */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="weight"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Peso (kg)
-                </label>
-                <input
-                  type="number"
-                  id="weight"
-                  name="weight"
-                  value={formData.weight}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.weight ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="0"
-                  min="0"
-                  step="0.1"
-                  disabled={isLoading}
-                />
-                {errors.weight && (
-                  <p className="text-red-500 text-xs mt-1">{errors.weight}</p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="age"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Edad (meses)
-                </label>
-                <input
-                  type="number"
-                  id="age"
-                  name="age"
-                  value={formData.age}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.age ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="0"
-                  min="0"
-                  disabled={isLoading}
-                />
-                {errors.age && (
-                  <p className="text-red-500 text-xs mt-1">{errors.age}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Fecha de Nacimiento */}
-            <div>
-              <label
-                htmlFor="birthDate"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Fecha de Nacimiento
-              </label>
-              <input
-                type="date"
-                id="birthDate"
-                name="birthDate"
-                value={formData.birthDate}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                disabled={isLoading}
-              />
-            </div>
-
-            {/* Padres en una fila */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="motherId"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  ID Madre
-                </label>
-                <input
-                  type="text"
-                  id="motherId"
-                  name="motherId"
-                  value={formData.motherId}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="Opcional"
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="fatherId"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  ID Padre
-                </label>
-                <input
-                  type="text"
-                  id="fatherId"
-                  name="fatherId"
-                  value={formData.fatherId}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="Opcional"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            {/* Notas */}
-            <div>
-              <label
-                htmlFor="notes"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Notas
-              </label>
-              <textarea
-                id="notes"
-                name="notes"
-                value={formData.notes}
-                onChange={handleInputChange}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="Observaciones adicionales..."
-                disabled={isLoading}
-              />
-            </div>
-
-            {/* Botones */}
-            <div className="flex space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onCancel}
-                className="flex-1 px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
-                disabled={isLoading}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
-                disabled={isLoading}
-              >
-                {isLoading
-                  ? 'Guardando...'
-                  : initialData
-                  ? 'Actualizar'
-                  : 'Registrar'}
-              </button>
-            </div>
-          </form>
+        <div>
+          <label
+            htmlFor="age"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Edad (meses)
+          </label>
+          <input
+            type="number"
+            id="age"
+            name="age"
+            value={formData.age}
+            onChange={handleInputChange}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+              errors.age ? 'border-red-500' : 'border-gray-300'
+            }`}
+            placeholder="0"
+            min="0"
+            disabled={isLoading}
+          />
+          {errors.age && (
+            <p className="text-red-500 text-xs mt-1">{errors.age}</p>
+          )}
         </div>
       </div>
-    </div>
+
+      {/* Fecha de Nacimiento */}
+      <div>
+        <label
+          htmlFor="birthDate"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          Fecha de Nacimiento
+        </label>
+        <input
+          type="date"
+          id="birthDate"
+          name="birthDate"
+          value={formData.birthDate}
+          onChange={handleInputChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          disabled={isLoading}
+        />
+      </div>
+
+      {/* Padres en una fila */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label
+            htmlFor="motherId"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            ID Madre
+          </label>
+          <input
+            type="text"
+            id="motherId"
+            name="motherId"
+            value={formData.motherId}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            placeholder="Opcional"
+            disabled={isLoading}
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="fatherId"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            ID Padre
+          </label>
+          <input
+            type="text"
+            id="fatherId"
+            name="fatherId"
+            value={formData.fatherId}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            placeholder="Opcional"
+            disabled={isLoading}
+          />
+        </div>
+      </div>
+
+      {/* Notas */}
+      <div>
+        <label
+          htmlFor="notes"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          Notas
+        </label>
+        <textarea
+          id="notes"
+          name="notes"
+          value={formData.notes}
+          onChange={handleInputChange}
+          rows={3}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          placeholder="Observaciones adicionales..."
+          disabled={isLoading}
+        />
+      </div>
+
+      {/* Botones */}
+      <div className="flex space-x-3 pt-4">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+          disabled={isLoading}
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+          disabled={isLoading}
+        >
+          {isLoading
+            ? 'Guardando...'
+            : initialData
+            ? 'Actualizar'
+            : 'Registrar'}
+        </button>
+      </div>
+    </form>
   )
 }
 

@@ -115,7 +115,7 @@ describe('AuthForm', () => {
     const submitButton = screen.getByRole('button', {
       name: 'Enviar enlace por email'
     })
-    
+
     // Intentar enviar sin email debe mostrar validación
     await user.click(submitButton)
 

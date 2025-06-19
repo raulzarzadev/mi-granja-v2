@@ -7,7 +7,8 @@ import {
   ExampleFormModal,
   ExampleFullModal,
   ExampleModalBreedingForm,
-  ExampleModalAnimalForm
+  ExampleModalAnimalForm,
+  ExampleModalReminderForm
 } from '@/components/examples/ModalExamples'
 
 /**
@@ -151,6 +152,86 @@ export default function UIShowcasePage() {
                 </div>
 
                 <ExampleModalAnimalForm />
+              </div>
+            </div>
+          </section>
+
+          {/* Sección: Recordatorios */}
+          <section>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
+              <span className="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
+                Recordatorios
+              </span>
+              Modales de Gestión de Tareas
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Modal de Recordatorio */}
+              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-3">⏰📝</span>
+                  <div>
+                    <h3 className="font-medium text-gray-900">
+                      Modal de Recordatorios
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Crea y gestiona recordatorios para la granja
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-md mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">
+                    Características:
+                  </h4>
+                  <ul className="text-xs text-gray-600 space-y-1">
+                    <li>• Recordatorios por animal o generales</li>
+                    <li>• Tipos: médico, reproducción, alimentación, etc.</li>
+                    <li>• Niveles de prioridad</li>
+                    <li>• Estado completado/pendiente</li>
+                    <li>• Fechas programadas</li>
+                  </ul>
+                </div>
+
+                <ExampleModalReminderForm />
+              </div>
+            </div>
+
+            {/* Añadir un grid para 3 columnas */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
+              {/* Placeholder para futuros modales */}
+              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 opacity-50">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-3">📊</span>
+                  <div>
+                    <h3 className="font-medium text-gray-900">
+                      Modal de Reportes
+                    </h3>
+                    <p className="text-sm text-gray-600">Próximamente...</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 opacity-50">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-3">⚖️</span>
+                  <div>
+                    <h3 className="font-medium text-gray-900">Modal de Peso</h3>
+                    <p className="text-sm text-gray-600">Próximamente...</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 opacity-50">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-3">🥛</span>
+                  <div>
+                    <h3 className="font-medium text-gray-900">
+                      Modal de Producción
+                    </h3>
+                    <p className="text-sm text-gray-600">Próximamente...</p>
+                  </div>
+                </div>
               </div>
             </div>
           </section>

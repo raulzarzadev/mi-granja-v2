@@ -12,7 +12,8 @@ import { Modal } from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
 import ModalBreedingForm from '@/components/ModalBreedingForm'
 import ModalAnimalForm from '@/components/ModalAnimalForm'
-import { Animal, BreedingRecord } from '@/types'
+import ModalReminderForm from '@/components/ModalReminderForm'
+import { Animal, BreedingRecord, Reminder } from '@/types'
 
 // Ejemplo 1: Modal simple con hook
 export const ExampleSimpleModal = () => {
@@ -296,6 +297,52 @@ export const ExampleModalAnimalForm = () => {
         }}
       />
     </div>
+  )
+}
+
+// Ejemplo 7: Modal de Recordatorio (Reminder)
+export const ExampleModalReminderForm = () => {
+  // Datos de prueba para animales
+  const mockAnimals: Animal[] = [
+    {
+      id: '1',
+      farmerId: 'farmer-1',
+      animalId: 'COW-001',
+      type: 'vaca_leche',
+      stage: 'lechera',
+      gender: 'hembra',
+      birthDate: new Date('2021-01-15'),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      id: '2',
+      farmerId: 'farmer-1',
+      animalId: 'BULL-001',
+      type: 'vaca_leche',
+      stage: 'reproductor',
+      gender: 'macho',
+      birthDate: new Date('2020-03-10'),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  ]
+
+  const handleReminderSubmit = async (
+    data: Omit<Reminder, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
+  ) => {
+    console.log('Reminder data:', data)
+    // Simular guardado
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    alert('Recordatorio creado exitosamente!')
+  }
+
+  return (
+    <ModalReminderForm
+      animals={mockAnimals}
+      onSubmit={handleReminderSubmit}
+      isLoading={false}
+    />
   )
 }
 

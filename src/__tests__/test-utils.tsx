@@ -135,7 +135,9 @@ describe('Test Utils', () => {
   it('should create mock store', () => {
     const store = createMockStore()
     if (!store) throw new Error('Store not created')
-    if (store.getState().auth.user !== null) throw new Error('User should be null')
-    if (store.getState().auth.isLoading !== false) throw new Error('Loading should be false')
+    if (store.getState().auth.user !== null)
+      throw new Error('User should be null')
+    if (store.getState().auth.isLoading !== false)
+      throw new Error('Loading should be false')
   })
 })

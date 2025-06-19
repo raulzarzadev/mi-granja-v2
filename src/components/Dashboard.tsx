@@ -6,13 +6,13 @@ import { RootState } from '@/store'
 import { useAnimals } from '@/hooks/useAnimals'
 import Navbar from '@/components/Navbar'
 import AnimalCard from '@/components/AnimalCard'
-import AnimalForm from '@/components/AnimalForm'
 import AnimalDetailView from '@/components/AnimalDetailView'
 import BreedingSection from '@/components/BreedingSection'
 import ReminderCard from '@/components/ReminderCard'
-import ReminderForm from '@/components/ReminderForm'
 import { useReminders } from '@/hooks/useReminders'
 import { Animal } from '@/types'
+import ModalAnimalForm from './ModalAnimalForm'
+import ModalReminderForm from './ModalReminderForm'
 
 /**
  * Dashboard principal de la aplicación
@@ -41,7 +41,6 @@ const Dashboard: React.FC = () => {
     getUpcomingReminders
   } = useReminders()
 
-  const [showAnimalForm, setShowAnimalForm] = useState(false)
   const [showReminderForm, setShowReminderForm] = useState(false)
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null)
   const [activeView, setActiveView] = useState<
@@ -61,7 +60,6 @@ const Dashboard: React.FC = () => {
   ) => {
     try {
       await createAnimal(animalData)
-      setShowAnimalForm(false)
     } catch (error) {
       console.error('Error creating animal:', error)
     }
@@ -216,12 +214,16 @@ const Dashboard: React.FC = () => {
                   <h2 className="text-xl font-semibold text-gray-900">
                     Mis Animales
                   </h2>
-                  <button
-                    onClick={() => setShowAnimalForm(true)}
-                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors font-medium"
-                  >
-                    + Agregar Animal
-                  </button>
+                  <ModalAnimalForm
+                    isLoading={isSubmitting}
+                    onSubmit={handleCreateAnimal}
+                    triggerButton={
+                      <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors font-medium">
+                        + Agregar Animal
+                      </button>
+                    }
+                    mode="create"
+                  />
                 </div>
 
                 {/* Filtros */}
@@ -328,14 +330,6 @@ const Dashboard: React.FC = () => {
                         ? 'Comienza agregando tu primer animal a la granja'
                         : 'Intenta ajustar los filtros de búsqueda'}
                     </p>
-                    {animals.length === 0 && (
-                      <button
-                        onClick={() => setShowAnimalForm(true)}
-                        className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors font-medium"
-                      >
-                        Agregar Primer Animal
-                      </button>
-                    )}
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -363,12 +357,16 @@ const Dashboard: React.FC = () => {
                 Recordatorios
               </h2>
 
-              <button
-                onClick={() => setShowReminderForm(true)}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors font-medium"
-              >
-                + Nuevo Recordatorio
-              </button>
+              <ModalReminderForm
+                animals={animals}
+                onSubmit={createReminder}
+                isLoading={isSubmitting}
+                triggerButton={
+                  <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors font-medium">
+                    + Nuevo Recordatorio
+                  </button>
+                }
+              />
             </div>
 
             {/* Estadísticas de recordatorios */}
@@ -480,32 +478,6 @@ const Dashboard: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Modal de formulario de animales */}
-      {showAnimalForm && (
-        <AnimalForm
-          onSubmit={handleCreateAnimal}
-          onCancel={() => setShowAnimalForm(false)}
-          isLoading={isSubmitting}
-        />
-      )}
-
-      {/* Modal de formulario de recordatorios */}
-      {showReminderForm && (
-        <ReminderForm
-          animals={animals}
-          onSubmit={async (data) => {
-            try {
-              await createReminder(data)
-              setShowReminderForm(false)
-            } catch (error) {
-              console.error('Error creating reminder:', error)
-            }
-          }}
-          onCancel={() => setShowReminderForm(false)}
-          isLoading={remindersSubmitting}
-        />
-      )}
 
       {/* Modal de vista detallada */}
       {selectedAnimal && (
