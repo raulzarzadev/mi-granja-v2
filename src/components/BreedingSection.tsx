@@ -4,9 +4,9 @@ import React, { useState } from 'react'
 import { useAnimals } from '@/hooks/useAnimals'
 import { useBreeding } from '@/hooks/useBreeding'
 import { BreedingRecord } from '@/types'
-import BreedingForm from '@/components/BreedingForm'
 import BreedingCard from '@/components/BreedingCard'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import ModalBreedingForm from './ModalBreedingForm'
 
 /**
  * Sección de reproducción del dashboard
@@ -23,7 +23,6 @@ const BreedingSection: React.FC = () => {
     getStats
   } = useBreeding()
 
-  const [showBreedingForm, setShowBreedingForm] = useState(false)
   const [filter, setFilter] = useState<'all' | 'pregnant' | 'upcoming'>('all')
 
   const stats = getStats()
@@ -46,7 +45,6 @@ const BreedingSection: React.FC = () => {
   ) => {
     try {
       await createBreedingRecord(data)
-      setShowBreedingForm(false)
     } catch (error) {
       console.error('Error creating breeding record:', error)
     }
@@ -62,12 +60,18 @@ const BreedingSection: React.FC = () => {
       <div>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Reproducción</h2>
-          <button
-            onClick={() => setShowBreedingForm(true)}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors font-medium"
-          >
-            + Registrar Monta
-          </button>
+          <ModalBreedingForm
+            animals={animals}
+            onSubmit={async (data) => {
+              await handleCreateBreeding(data)
+            }}
+            isLoading={isSubmitting}
+            triggerButton={
+              <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors font-medium">
+                + Registrar Monta
+              </button>
+            }
+          />
         </div>
 
         {/* Estadísticas rápidas */}
@@ -190,14 +194,6 @@ const BreedingSection: React.FC = () => {
                 ? 'Comienza registrando tu primera monta'
                 : 'Cambia el filtro para ver otros registros'}
             </p>
-            {filter === 'all' && (
-              <button
-                onClick={() => setShowBreedingForm(true)}
-                className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors font-medium"
-              >
-                Registrar Primera Monta
-              </button>
-            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -221,14 +217,6 @@ const BreedingSection: React.FC = () => {
       </div>
 
       {/* Modal de formulario */}
-      {showBreedingForm && (
-        <BreedingForm
-          animals={animals}
-          onSubmit={handleCreateBreeding}
-          onCancel={() => setShowBreedingForm(false)}
-          isLoading={isSubmitting}
-        />
-      )}
     </div>
   )
 }
