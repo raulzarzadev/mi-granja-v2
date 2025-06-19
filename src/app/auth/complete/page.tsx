@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/store/auth/AuthContext'
+import { useAuth } from '@/features/auth/AuthContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 /**

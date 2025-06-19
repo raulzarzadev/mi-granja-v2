@@ -13,7 +13,7 @@ import {
   Timestamp
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { RootState } from '@/store'
+import { RootState } from '@/features/store'
 import { WeightRecord } from '@/types'
 
 export const useWeight = () => {

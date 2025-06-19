@@ -14,7 +14,7 @@ import {
   orderBy
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { RootState } from '@/store'
+import { RootState } from '@/features/store'
 import { setAnimals, setLoading, setError } from '@/store/animalsSlice'
 import { Animal } from '@/types'
 

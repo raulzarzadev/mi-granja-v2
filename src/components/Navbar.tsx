@@ -3,8 +3,8 @@
 import React from 'react'
 import Link from 'next/link'
 import { useSelector } from 'react-redux'
-import { useAuth } from '@/store/auth/AuthContext'
-import { RootState } from '@/store'
+import { useAuth } from '@/features/auth/AuthContext'
+import { RootState } from '@/features/store'
 
 /**
  * Componente de navegación principal

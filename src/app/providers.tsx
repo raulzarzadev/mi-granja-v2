@@ -2,8 +2,8 @@
 
 import React from 'react'
 import { Provider } from 'react-redux'
-import { store } from '@/store'
-import { AuthProvider } from '@/store/auth/AuthContext'
+import { store } from '@/features/store'
+import { AuthProvider } from '@/features/auth/AuthContext'
 
 interface ProvidersProps {
   children: React.ReactNode

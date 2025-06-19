@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
-import { RootState } from '@/store'
+import { RootState } from '@/features/store'
 import { useAnimals } from '@/hooks/useAnimals'
 import Navbar from '@/components/Navbar'
 import AnimalCard from '@/components/AnimalCard'
