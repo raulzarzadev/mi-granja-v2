@@ -3,8 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
 import CompletePage from '@/app/auth/complete/page'
-import { AuthProvider } from '@/features/auth/AuthContext'
-import authSlice from '@/store/authSlice'
+import { authReducer } from '@/features/auth/authSlice'
 
 // Mock Firebase
 jest.mock('@/lib/firebase', () => ({
@@ -21,7 +20,7 @@ jest.mock('next/navigation', () => ({
 const createMockStore = (initialState = {}) => {
   return configureStore({
     reducer: {
-      auth: authSlice
+      auth: authReducer
     },
     preloadedState: {
       auth: {
@@ -40,16 +39,12 @@ const TestWrapper = ({
 }: {
   children: React.ReactNode
   store?: ReturnType<typeof createMockStore>
-}) => (
-  <Provider store={store}>
-    <AuthProvider>{children}</AuthProvider>
-  </Provider>
-)
+}) => <Provider store={store}>{children}</Provider>
 
 // Override global location for these tests
 beforeEach(() => {
   // Clear any existing location mock
-  delete (global as any).location
+  delete (global as unknown as { location?: unknown }).location
 
   Object.defineProperty(global, 'location', {
     value: {

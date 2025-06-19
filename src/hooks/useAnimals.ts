@@ -15,7 +15,11 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { RootState } from '@/features/store'
-import { setAnimals, setLoading, setError } from '@/store/animalsSlice'
+import {
+  setAnimals,
+  setLoading,
+  setError
+} from '@/features/animals/animalsSlice'
 import { Animal } from '@/types'
 
 /**

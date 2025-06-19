@@ -2,8 +2,7 @@ import React from 'react'
 import { render } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
-import { AuthProvider } from '@/features/auth/AuthContext'
-import authSlice from '@/store/authSlice'
+import { authReducer } from '@/features/auth/authSlice'
 import { User } from '@/types'
 import '@testing-library/jest-dom'
 
@@ -19,7 +18,7 @@ export const createMockUser = (overrides?: Partial<User>): User => ({
 export const createMockStore = (initialAuthState = {}) => {
   return configureStore({
     reducer: {
-      auth: authSlice
+      auth: authReducer
     },
     preloadedState: {
       auth: {
@@ -37,9 +36,7 @@ export const renderWithProviders = (
   { store = createMockStore(), ...renderOptions } = {}
 ) => {
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <Provider store={store}>
-      <AuthProvider>{children}</AuthProvider>
-    </Provider>
+    <Provider store={store}>{children}</Provider>
   )
 
   return {
@@ -135,9 +132,11 @@ describe('Test Utils', () => {
   it('should create mock store', () => {
     const store = createMockStore()
     if (!store) throw new Error('Store not created')
-    if (store.getState().auth.user !== null)
-      throw new Error('User should be null')
-    if (store.getState().auth.isLoading !== false)
+    const state = store.getState() as {
+      auth: { user: User | null; isLoading: boolean }
+    }
+    if (state.auth.user !== null) throw new Error('User should be null')
+    if (state.auth.isLoading !== false)
       throw new Error('Loading should be false')
   })
 })

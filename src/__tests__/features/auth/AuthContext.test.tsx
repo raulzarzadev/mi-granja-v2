@@ -2,8 +2,8 @@ import React from 'react'
 import { render, renderHook, waitFor } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
-import { AuthProvider, useAuth } from '@/features/auth/AuthContext'
-import authSlice from '@/store/authSlice'
+import { useAuth } from '@/hooks/useAuth'
+import { authReducer } from '@/features/auth/authSlice'
 
 // Mock Firebase
 jest.mock('@/lib/firebase', () => ({

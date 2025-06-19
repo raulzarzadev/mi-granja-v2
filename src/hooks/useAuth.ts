@@ -1,109 +1,40 @@
 'use client'
 
-import React, { createContext, useContext, useEffect } from 'react'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  onAuthStateChanged,
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
-  signInWithEmailLink,
-  User as FirebaseUser
+  signInWithEmailLink
 } from 'firebase/auth'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { setDoc, doc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
-import { setUser, setLoading, setError, logout } from '@/store/authSlice'
+import {
+  setLoading,
+  setError,
+  logout,
+  clearError
+} from '@/features/auth/authSlice'
 import { User } from '@/types'
 import { assignUserRoles } from '@/lib/userUtils'
+import { RootState } from '@/features/store'
 
-interface AuthContextType {
-  login: (email: string, password: string) => Promise<void>
-  loginWithEmailLink: (email: string) => Promise<void>
-  completeEmailLinkSignIn: (email: string, url: string) => Promise<void>
-  register: (
-    email: string,
-    password: string,
-    farmName?: string
-  ) => Promise<void>
-  logout: () => Promise<void>
-  isEmailLinkSignIn: (url: string) => boolean
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
+/**
+ * Hook personalizado para el manejo de autenticación
+ * Gestiona autenticación con Firebase y estado global con Redux
+ */
 export const useAuth = () => {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
-}
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children
-}) => {
   const dispatch = useDispatch()
+  const { user, isLoading, error } = useSelector(
+    (state: RootState) => state.auth
+  )
 
-  useEffect(() => {
-    dispatch(setLoading(true))
+  // Listener de autenticación - Ya no es necesario aquí porque está en AuthInitializer
+  // El AuthInitializer se encarga del listener de onAuthStateChanged
 
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      async (firebaseUser: FirebaseUser | null) => {
-        if (firebaseUser) {
-          try {
-            // Obtener datos adicionales del usuario desde Firestore
-            const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
-
-            if (userDoc.exists()) {
-              const userData = userDoc.data()
-              const user: User = {
-                id: firebaseUser.uid,
-                email: firebaseUser.email!,
-                name: userData.name,
-                farmName: userData.farmName,
-                roles: userData.roles || [], // Si ya tiene roles asignados, los respetamos
-                createdAt: userData.createdAt?.toDate() || new Date()
-              }
-              // Asignar roles si no los tiene
-              const userWithRole = assignUserRoles(user)
-              dispatch(setUser(userWithRole))
-            } else {
-              // Si no existe el documento del usuario en Firestore, crearlo
-              const user: User = {
-                id: firebaseUser.uid,
-                email: firebaseUser.email!,
-                roles: [], // Se asignarán automáticamente
-                createdAt: new Date()
-              }
-
-              // Asignar rol automáticamente
-              const userWithRole = assignUserRoles(user)
-
-              await setDoc(doc(db, 'users', firebaseUser.uid), {
-                email: firebaseUser.email,
-                roles: userWithRole.roles,
-                createdAt: new Date()
-              })
-
-              dispatch(setUser(userWithRole))
-            }
-          } catch (error) {
-            console.error('Error fetching user data:', error)
-            dispatch(setError('Error al cargar los datos del usuario'))
-          }
-        } else {
-          dispatch(setUser(null))
-        }
-        dispatch(setLoading(false))
-      }
-    )
-
-    return () => unsubscribe()
-  }, [dispatch])
-
+  // Iniciar sesión con email y contraseña
   const login = async (email: string, password: string) => {
     try {
       dispatch(setLoading(true))
@@ -116,6 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }
 
+  // Registrar nuevo usuario
   const register = async (
     email: string,
     password: string,
@@ -156,6 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }
 
+  // Cerrar sesión
   const handleLogout = async () => {
     try {
       await signOut(auth)
@@ -245,14 +178,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return isSignInWithEmailLink(auth, url)
   }
 
-  const value: AuthContextType = {
+  // Limpiar error
+  const clearAuthError = () => {
+    dispatch(clearError())
+  }
+
+  return {
+    user,
+    isLoading,
+    error,
     login,
     register,
     logout: handleLogout,
     loginWithEmailLink,
     completeEmailLinkSignIn,
-    isEmailLinkSignIn
+    isEmailLinkSignIn,
+    clearError: clearAuthError
   }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

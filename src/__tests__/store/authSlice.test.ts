@@ -1,10 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit'
-import authSlice, {
+import {
+  authReducer,
   setUser,
   setLoading,
   setError,
   logout
-} from '@/store/authSlice'
+} from '@/features/auth/authSlice'
 import { User } from '@/types'
 
 interface RootState {
@@ -21,7 +22,7 @@ describe('Auth Store', () => {
   beforeEach(() => {
     store = configureStore({
       reducer: {
-        auth: authSlice
+        auth: authReducer
       },
       middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

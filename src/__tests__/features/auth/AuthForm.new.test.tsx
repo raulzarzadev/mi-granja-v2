@@ -3,9 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
-import AuthForm from '@/features/auth/AuthForm'
-import { AuthProvider } from '@/features/auth/AuthContext'
-import authSlice from '@/store/authSlice'
+import AuthForm from '@/features/auth/components/AuthForm'
+import { authReducer } from '@/features/auth/authSlice'
 
 // Mock Firebase
 jest.mock('@/lib/firebase', () => ({
@@ -16,7 +15,7 @@ jest.mock('@/lib/firebase', () => ({
 const createMockStore = (initialState = {}) => {
   return configureStore({
     reducer: {
-      auth: authSlice
+      auth: authReducer
     },
     preloadedState: {
       auth: {
@@ -35,11 +34,7 @@ const TestWrapper = ({
 }: {
   children: React.ReactNode
   store?: ReturnType<typeof createMockStore>
-}) => (
-  <Provider store={store}>
-    <AuthProvider>{children}</AuthProvider>
-  </Provider>
-)
+}) => <Provider store={store}>{children}</Provider>
 
 describe('AuthForm', () => {
   beforeEach(() => {
