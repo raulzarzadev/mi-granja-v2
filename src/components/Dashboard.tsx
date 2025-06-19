@@ -6,13 +6,12 @@ import { RootState } from '@/store'
 import { useAnimals } from '@/hooks/useAnimals'
 import Navbar from '@/components/Navbar'
 import AnimalCard from '@/components/AnimalCard'
-import AnimalDetailView from '@/components/AnimalDetailView'
 import BreedingSection from '@/components/BreedingSection'
 import ReminderCard from '@/components/ReminderCard'
 import { useReminders } from '@/hooks/useReminders'
-import { Animal } from '@/types'
 import ModalAnimalForm from './ModalAnimalForm'
 import ModalReminderForm from './ModalReminderForm'
+import ModalAnimalDetails from './ModalAnimalDetails'
 
 /**
  * Dashboard principal de la aplicación
@@ -37,7 +36,6 @@ const Dashboard: React.FC = () => {
     getUpcomingReminders
   } = useReminders()
 
-  const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null)
   const [activeView, setActiveView] = useState<
     'animals' | 'breeding' | 'reminders'
   >('animals')
@@ -310,13 +308,11 @@ const Dashboard: React.FC = () => {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredAnimals.map((animal) => (
-                      <AnimalCard
-                        key={animal.id}
+                      <ModalAnimalDetails
                         animal={animal}
-                        onClick={() => {
-                          setSelectedAnimal(animal)
-                        }}
-                      />
+                        key={animal.id}
+                        triggerComponent={<AnimalCard animal={animal} />}
+                      ></ModalAnimalDetails>
                     ))}
                   </div>
                 )}
@@ -439,19 +435,6 @@ const Dashboard: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Modal de vista detallada */}
-      {selectedAnimal && (
-        <AnimalDetailView
-          animal={selectedAnimal}
-          onClose={() => setSelectedAnimal(null)}
-          onEdit={(animal) => {
-            // TODO: Implementar edición
-            console.log('Editar animal:', animal.id)
-          }}
-          allAnimals={animals}
-        />
-      )}
     </div>
   )
 }

@@ -5,8 +5,6 @@ import { Animal, BreedingRecord, WeightRecord, MilkProduction } from '@/types'
 
 interface AnimalDetailViewProps {
   animal: Animal
-  onClose: () => void
-  onEdit?: (animal: Animal) => void
   breedingRecords?: BreedingRecord[]
   weightRecords?: WeightRecord[]
   milkRecords?: MilkProduction[]
@@ -18,8 +16,6 @@ interface AnimalDetailViewProps {
  */
 const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
   animal,
-  onClose,
-  onEdit,
   breedingRecords = [],
   weightRecords = [],
   milkRecords = [],
@@ -116,10 +112,10 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
   ]
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div>
+      <div className="bg-white max-w-4xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-green-600 text-white p-6">
+        <div className="bg-green-600 text-white p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <span className="text-4xl">{getAnimalIcon(animal.type)}</span>
@@ -139,22 +135,6 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                   </span>
                 </div>
               </div>
-            </div>
-            <div className="flex gap-2">
-              {onEdit && (
-                <button
-                  onClick={() => onEdit(animal)}
-                  className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-md transition-colors"
-                >
-                  Editar
-                </button>
-              )}
-              <button
-                onClick={onClose}
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white w-10 h-10 rounded-md flex items-center justify-center transition-colors"
-              >
-                ✕
-              </button>
             </div>
           </div>
         </div>
