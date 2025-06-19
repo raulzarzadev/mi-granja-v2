@@ -20,7 +20,7 @@ const ModalReminderForm: React.FC<ModalReminderFormProps> = ({
   initialData
 }) => {
   const { animals } = useAnimals()
-  const { createReminder, isSubmitting } = useReminders()
+  const { createReminder } = useReminders()
   const { isOpen, openModal, closeModal } = useModal()
 
   const handleSubmit = async (
