@@ -107,6 +107,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       return
     }
 
+    // Solo agregar los campos que tienen valores válidos
     const animalData: Omit<
       Animal,
       'id' | 'farmerId' | 'createdAt' | 'updatedAt'
@@ -115,13 +116,28 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       type: formData.type,
       stage: formData.stage,
       gender: formData.gender,
-      weight: formData.weight ? Number(formData.weight) : undefined,
-      age: formData.age ? Number(formData.age) : undefined,
-      birthDate: formData.birthDate ? new Date(formData.birthDate) : undefined,
-      motherId: formData.motherId.trim() || undefined,
-      fatherId: formData.fatherId.trim() || undefined,
-      notes: formData.notes.trim() || undefined
+      ...(formData.weight && { weight: Number(formData.weight) }),
+      ...(formData.age && { age: Number(formData.age) }),
+      ...(formData.birthDate && { birthDate: new Date(formData.birthDate) }),
+      ...(formData.motherId.trim() && { motherId: formData.motherId.trim() }),
+      ...(formData.fatherId.trim() && { fatherId: formData.fatherId.trim() }),
+      ...(formData.notes.trim() && { notes: formData.notes.trim() })
     }
+    // const animalData: Omit<
+    //   Animal,
+    //   'id' | 'farmerId' | 'createdAt' | 'updatedAt'
+    // > = {
+    //   animalId: formData.animalId.trim(),
+    //   type: formData.type,
+    //   stage: formData.stage,
+    //   gender: formData.gender,
+    //   weight: formData.weight ? Number(formData.weight) : undefined,
+    //   age: formData.age ? Number(formData.age) : undefined,
+    //   birthDate: formData.birthDate ? new Date(formData.birthDate) : undefined,
+    //   motherId: formData.motherId.trim() || undefined,
+    //   fatherId: formData.fatherId.trim() || undefined,
+    //   notes: formData.notes.trim() || undefined
+    // }
 
     onSubmit(animalData)
   }
