@@ -81,7 +81,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-black/70  flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 "
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
@@ -90,14 +90,14 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         className={`
           bg-white rounded-lg w-full ${sizeClasses[size]} max-h-[90vh] 
-          overflow-hidden shadow-xl animate-in zoom-in-95 duration-200
+          overflow-hidden shadow-xl animate-in zoom-in-95 duration-200 
           ${className}
         `}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between p-3 py-2 border-b border-gray-200">
             {title && (
               <h2
                 id="modal-title"
