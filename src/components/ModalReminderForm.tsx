@@ -1,18 +1,14 @@
 'use client'
 
 import React from 'react'
-import { Animal, Reminder } from '@/types'
+import { Reminder } from '@/types'
 import { Modal } from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
 import ReminderForm from '@/components/ReminderForm'
+import { useAnimals } from '@/hooks/useAnimals'
+import { useReminders } from '@/hooks/useReminders'
 
 interface ModalReminderFormProps {
-  animals: Animal[]
-  onSubmit: (
-    data: Omit<Reminder, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
-  ) => Promise<void>
-  isLoading?: boolean
-  triggerButton?: React.ReactNode
   initialData?: Partial<Reminder>
 }
 
@@ -21,37 +17,27 @@ interface ModalReminderFormProps {
  * Incluye botón trigger y manejo del modal
  */
 const ModalReminderForm: React.FC<ModalReminderFormProps> = ({
-  animals,
-  onSubmit,
-  isLoading = false,
-  triggerButton,
   initialData
 }) => {
+  const { animals } = useAnimals()
+  const { createReminder, isSubmitting } = useReminders()
   const { isOpen, openModal, closeModal } = useModal()
 
   const handleSubmit = async (
     data: Omit<Reminder, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
   ) => {
-    await onSubmit(data)
+    await createReminder(data)
     closeModal()
   }
 
-  const defaultTriggerButton = (
-    <button
-      onClick={openModal}
-      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-    >
-      Nuevo Recordatorio
-    </button>
-  )
-
   return (
     <>
-      {triggerButton ? (
-        <div onClick={openModal}>{triggerButton}</div>
-      ) : (
-        defaultTriggerButton
-      )}
+      <button
+        onClick={openModal}
+        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+      >
+        Nuevo Recordatorio
+      </button>
 
       <Modal
         isOpen={isOpen}
@@ -64,7 +50,7 @@ const ModalReminderForm: React.FC<ModalReminderFormProps> = ({
             animals={animals}
             onSubmit={handleSubmit}
             onCancel={closeModal}
-            isLoading={isLoading}
+            isLoading={isSubmitting}
             initialData={initialData}
           />
         </div>

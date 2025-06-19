@@ -22,18 +22,14 @@ const Dashboard: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth)
   const {
     animals,
-    isLoading,
-    createAnimal,
+    isLoading: isLoadingAnimals,
     getStats,
-    filterAnimals,
-    isSubmitting
+    filterAnimals
   } = useAnimals()
 
   const {
     reminders,
     isLoading: remindersLoading,
-    isSubmitting: remindersSubmitting,
-    createReminder,
     markAsCompleted,
     deleteReminder,
     getOverdueReminders,
@@ -41,7 +37,6 @@ const Dashboard: React.FC = () => {
     getUpcomingReminders
   } = useReminders()
 
-  const [showReminderForm, setShowReminderForm] = useState(false)
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null)
   const [activeView, setActiveView] = useState<
     'animals' | 'breeding' | 'reminders'
@@ -54,16 +49,6 @@ const Dashboard: React.FC = () => {
 
   const stats = getStats()
   const filteredAnimals = filterAnimals(filters)
-
-  const handleCreateAnimal = async (
-    animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
-  ) => {
-    try {
-      await createAnimal(animalData)
-    } catch (error) {
-      console.error('Error creating animal:', error)
-    }
-  }
 
   const formatStatLabel = (key: string) => {
     switch (key) {
@@ -214,16 +199,7 @@ const Dashboard: React.FC = () => {
                   <h2 className="text-xl font-semibold text-gray-900">
                     Mis Animales
                   </h2>
-                  <ModalAnimalForm
-                    isLoading={isSubmitting}
-                    onSubmit={handleCreateAnimal}
-                    triggerButton={
-                      <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors font-medium">
-                        + Agregar Animal
-                      </button>
-                    }
-                    mode="create"
-                  />
+                  <ModalAnimalForm mode="create" />
                 </div>
 
                 {/* Filtros */}
@@ -310,7 +286,7 @@ const Dashboard: React.FC = () => {
             {/* Lista de animales */}
             <div className="bg-white rounded-lg shadow">
               <div className="p-6">
-                {isLoading ? (
+                {isLoadingAnimals ? (
                   <div className="flex justify-center items-center py-12">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
                     <span className="ml-3 text-gray-600">
@@ -357,16 +333,7 @@ const Dashboard: React.FC = () => {
                 Recordatorios
               </h2>
 
-              <ModalReminderForm
-                animals={animals}
-                onSubmit={createReminder}
-                isLoading={isSubmitting}
-                triggerButton={
-                  <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors font-medium">
-                    + Nuevo Recordatorio
-                  </button>
-                }
-              />
+              <ModalReminderForm />
             </div>
 
             {/* Estadísticas de recordatorios */}
@@ -450,12 +417,6 @@ const Dashboard: React.FC = () => {
                   <p className="text-gray-600 mb-6">
                     Crea recordatorios para no olvidar tareas importantes
                   </p>
-                  <button
-                    onClick={() => setShowReminderForm(true)}
-                    className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors font-medium"
-                  >
-                    Crear Primer Recordatorio
-                  </button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

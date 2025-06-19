@@ -5,15 +5,12 @@ import { Animal } from '@/types'
 import { Modal } from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
 import AnimalForm from '@/components/AnimalForm'
+import { useAnimals } from '@/hooks/useAnimals'
 
 interface ModalAnimalFormProps {
-  onSubmit: (
-    data: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
-  ) => Promise<void>
-  isLoading?: boolean
-  triggerButton?: React.ReactNode
   initialData?: Animal
   mode?: 'create' | 'edit'
+  openLabel?: React.ReactNode
 }
 
 /**
@@ -21,37 +18,32 @@ interface ModalAnimalFormProps {
  * Incluye botón trigger y manejo del modal
  */
 const ModalAnimalForm: React.FC<ModalAnimalFormProps> = ({
-  onSubmit,
-  isLoading = false,
-  triggerButton,
   initialData,
   mode = 'create'
 }) => {
+  const { createAnimal } = useAnimals()
+  const [isLoading, setIsLoading] = React.useState(false)
   const { isOpen, openModal, closeModal } = useModal()
 
-  const handleSubmit = async (
-    data: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
+  const handleCreateAnimal = async (
+    animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
   ) => {
-    await onSubmit(data)
-    closeModal()
+    setIsLoading(true)
+    try {
+      await createAnimal(animalData)
+    } catch (error) {
+      console.error('Error creating animal:', error)
+    }
   }
-
-  const defaultTriggerButton = (
-    <button
-      onClick={openModal}
-      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-    >
-      {mode === 'create' ? 'Registrar Animal' : 'Editar Animal'}
-    </button>
-  )
 
   return (
     <>
-      {triggerButton ? (
-        <div onClick={openModal}>{triggerButton}</div>
-      ) : (
-        defaultTriggerButton
-      )}
+      <button
+        onClick={openModal}
+        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+      >
+        {mode === 'create' ? 'Registrar Animal' : 'Editar Animal'}
+      </button>
 
       <Modal
         isOpen={isOpen}
@@ -61,7 +53,7 @@ const ModalAnimalForm: React.FC<ModalAnimalFormProps> = ({
       >
         <div className="p-6">
           <AnimalForm
-            onSubmit={handleSubmit}
+            onSubmit={handleCreateAnimal}
             onCancel={closeModal}
             isLoading={isLoading}
             initialData={initialData}
