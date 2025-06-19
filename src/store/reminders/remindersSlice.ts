@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { Reminder } from '@/types'
-import { serializeObj } from './libs/serializeObj'
+import { serializeObj } from '../libs/serializeObj'
 
 interface RemindersState {
   reminders: Reminder[]
@@ -83,4 +83,4 @@ export const {
   clearError
 } = remindersSlice.actions
 
-export default remindersSlice.reducer
+export const remindersReducer = remindersSlice.reducer

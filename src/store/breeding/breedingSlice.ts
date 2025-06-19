@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { BreedingRecord } from '@/types'
-import { serializeObj } from './libs/serializeObj'
+import { serializeObj } from '../libs/serializeObj'
 
 interface BreedingState {
   breedingRecords: BreedingRecord[]
@@ -106,4 +106,4 @@ export const {
   clearError
 } = breedingSlice.actions
 
-export default breedingSlice.reducer
+export const breedingReducer = breedingSlice.reducer

@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { useSelector } from 'react-redux'
-import { useAuth } from '@/features/auth/AuthContext'
+import { useAuth } from '@/store/auth/AuthContext'
 import { RootState } from '@/store'
 
 /**

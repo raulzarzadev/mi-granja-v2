@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useAuth } from '@/features/auth/AuthContext'
+import { useAuth } from '@/store/auth/AuthContext'
 
 /**
  * Componente de login y registro

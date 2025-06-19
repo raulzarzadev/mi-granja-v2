@@ -3,7 +3,7 @@
 import React from 'react'
 import { Provider } from 'react-redux'
 import { store } from '@/store'
-import { AuthProvider } from '@/features/auth/AuthContext'
+import { AuthProvider } from '@/store/auth/AuthContext'
 
 interface ProvidersProps {
   children: React.ReactNode

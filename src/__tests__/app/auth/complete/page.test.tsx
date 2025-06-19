@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
 import CompletePage from '@/app/auth/complete/page'
-import { AuthProvider } from '@/features/auth/AuthContext'
+import { AuthProvider } from '@/store/auth/AuthContext'
 import authSlice from '@/store/authSlice'
 
 // Mock Firebase

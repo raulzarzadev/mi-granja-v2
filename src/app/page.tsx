@@ -3,7 +3,7 @@
 import React from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/store'
-import AuthForm from '@/features/auth/AuthForm'
+import AuthForm from '@/store/auth/AuthForm'
 import Dashboard from '@/components/Dashboard'
 
 export default function Home() {

@@ -1,16 +1,14 @@
 import { configureStore } from '@reduxjs/toolkit'
-import authReducer from './authSlice'
-import animalsReducer from './animalsSlice'
-import breedingReducer from './breedingSlice'
-import weightReducer from './weightSlice'
-import remindersReducer from './remindersSlice'
+import { animalsReducer } from './animals/animalsSlice'
+import { authReducer } from './auth/authSlice'
+import { breedingReducer } from './breeding/breedingSlice'
+import { remindersReducer } from './reminders/remindersSlice'
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     animals: animalsReducer,
     breeding: breedingReducer,
-    weight: weightReducer,
     reminders: remindersReducer
   },
   middleware: (getDefaultMiddleware) =>
