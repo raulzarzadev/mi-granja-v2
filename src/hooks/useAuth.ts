@@ -15,7 +15,9 @@ import {
   setLoading,
   setError,
   logout,
-  clearError
+  clearError,
+  setEmailLinkSent,
+  clearEmailLinkState
 } from '@/features/auth/authSlice'
 import { User } from '@/types'
 import { assignUserRoles } from '@/lib/userUtils'
@@ -27,7 +29,7 @@ import { RootState } from '@/features/store'
  */
 export const useAuth = () => {
   const dispatch = useDispatch()
-  const { user, isLoading, error } = useSelector(
+  const { user, isLoading, error, emailLinkSent, emailForLink } = useSelector(
     (state: RootState) => state.auth
   )
 
@@ -39,10 +41,12 @@ export const useAuth = () => {
     try {
       dispatch(setLoading(true))
       await signInWithEmailAndPassword(auth, email, password)
+      // El AuthInitializer se encargará de setUser y setLoading(false) cuando detecte el cambio de auth
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Error al iniciar sesión'
       dispatch(setError(errorMessage))
+      dispatch(setLoading(false))
       throw error
     }
   }
@@ -80,10 +84,13 @@ export const useAuth = () => {
         roles: userWithRoles.roles,
         createdAt: new Date()
       })
+
+      // El AuthInitializer se encargará de setUser y setLoading(false) cuando detecte el cambio de auth
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Error al registrar usuario'
       dispatch(setError(errorMessage))
+      dispatch(setLoading(false))
       throw error
     }
   }
@@ -114,13 +121,33 @@ export const useAuth = () => {
   const loginWithEmailLink = async (email: string) => {
     try {
       dispatch(setLoading(true))
+      dispatch(clearError())
+
+      console.log('Sending email link to:', email)
       await sendSignInLinkToEmail(auth, email, actionCodeSettings)
 
       // Guardar el email en localStorage para completar el sign-in
-      window.localStorage.setItem('emailForSignIn', email)
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('emailForSignIn', email)
+        console.log('Email saved to localStorage:', email)
 
-      // No dispatch setLoading(false) aquí porque el proceso no ha terminado
+        // Verificar inmediatamente que se guardó
+        const savedEmail = window.localStorage.getItem('emailForSignIn')
+        console.log(
+          'Verification - Email retrieved from localStorage:',
+          savedEmail
+        )
+
+        if (savedEmail !== email) {
+          console.error('Failed to save email to localStorage!')
+        }
+      }
+
+      // Despachar que el enlace se envió exitosamente
+      dispatch(setEmailLinkSent({ sent: true, email }))
+      console.log('Email link sent successfully')
     } catch (error: unknown) {
+      console.error('Error sending email link:', error)
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -135,16 +162,24 @@ export const useAuth = () => {
   const completeEmailLinkSignIn = async (email: string, url: string) => {
     try {
       dispatch(setLoading(true))
+      dispatch(clearError()) // Limpiar errores anteriores
+
+      console.log('Completing email link sign in for:', email)
       const result = await signInWithEmailLink(auth, email, url)
+      console.log('Sign in successful:', result.user.uid)
 
       // Limpiar el email del localStorage
-      window.localStorage.removeItem('emailForSignIn')
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('emailForSignIn')
+      }
 
       // Si es un nuevo usuario, crear documento en Firestore
       if (
         result.user.metadata.creationTime ===
         result.user.metadata.lastSignInTime
       ) {
+        console.log('New user detected, creating Firestore document')
+
         // Crear el objeto usuario para asignar roles
         const user: User = {
           id: result.user.uid,
@@ -161,8 +196,16 @@ export const useAuth = () => {
           roles: userWithRoles.roles,
           createdAt: new Date()
         })
+
+        console.log('User document created successfully')
       }
+
+      // El AuthInitializer se encargará de setUser cuando detecte el cambio de auth
+      // Pero podemos despachar setLoading(false) ya que la operación completó
+      dispatch(setLoading(false))
+      console.log('Email link sign in completed successfully')
     } catch (error: unknown) {
+      console.error('Error completing email link sign in:', error)
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -183,16 +226,24 @@ export const useAuth = () => {
     dispatch(clearError())
   }
 
+  // Limpiar estado de email link
+  const clearEmailLink = () => {
+    dispatch(clearEmailLinkState())
+  }
+
   return {
     user,
     isLoading,
     error,
+    emailLinkSent,
+    emailForLink,
     login,
     register,
     logout: handleLogout,
     loginWithEmailLink,
     completeEmailLinkSignIn,
     isEmailLinkSignIn,
-    clearError: clearAuthError
+    clearError: clearAuthError,
+    clearEmailLink
   }
 }
