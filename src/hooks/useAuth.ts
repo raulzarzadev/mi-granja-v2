@@ -124,6 +124,11 @@ export const useAuth = () => {
       dispatch(clearError())
 
       console.log('Sending email link to:', email)
+
+      // Marcar como enviado ANTES de intentar enviar
+      // Esto asegura que se muestre la UI de "revisa tu email" incluso si hay errores
+      dispatch(setEmailLinkSent({ sent: true, email }))
+
       await sendSignInLinkToEmail(auth, email, actionCodeSettings)
 
       // Guardar el email en localStorage para completar el sign-in
@@ -143,8 +148,7 @@ export const useAuth = () => {
         }
       }
 
-      // Despachar que el enlace se envió exitosamente
-      dispatch(setEmailLinkSent({ sent: true, email }))
+      dispatch(setLoading(false))
       console.log('Email link sent successfully')
     } catch (error: unknown) {
       console.error('Error sending email link:', error)
@@ -152,9 +156,14 @@ export const useAuth = () => {
         error instanceof Error
           ? error.message
           : 'Error al enviar enlace de autenticación'
+
+      // Mantener emailLinkSent como true incluso si hay error
+      // Solo marcar el error y quitar loading
       dispatch(setError(errorMessage))
       dispatch(setLoading(false))
-      throw error
+
+      // NO hacer throw del error para que el componente no entre en catch
+      // throw error
     }
   }
 

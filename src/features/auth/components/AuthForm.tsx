@@ -19,7 +19,6 @@ const AuthForm: React.FC = () => {
     farmName: ''
   })
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
-
   const {
     login,
     register,
@@ -288,6 +287,20 @@ const AuthForm: React.FC = () => {
                     No cierres esta ventana
                   </p>
                 </div>
+
+                {/* Mostrar advertencia si hay error pero aún se muestra el email enviado */}
+                {error && (
+                  <div className="bg-orange-100 border border-orange-300 rounded-lg p-3 mt-3">
+                    <p className="text-sm font-semibold text-orange-800 mb-1">
+                      ⚠️ Nota importante:
+                    </p>
+                    <p className="text-xs text-orange-700">
+                      Hubo un problema técnico, pero es posible que el email se
+                      haya enviado. Revisa tu bandeja de entrada y spam. Si no
+                      recibes nada en unos minutos, puedes reenviar el enlace.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}

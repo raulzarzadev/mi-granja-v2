@@ -37,7 +37,10 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null
     },
-    setEmailLinkSent: (state, action: PayloadAction<{ sent: boolean; email?: string }>) => {
+    setEmailLinkSent: (
+      state,
+      action: PayloadAction<{ sent: boolean; email?: string }>
+    ) => {
       state.emailLinkSent = action.payload.sent
       state.emailForLink = action.payload.email || null
       if (action.payload.sent) {
@@ -59,8 +62,15 @@ const authSlice = createSlice({
   }
 })
 
-export const { setLoading, setUser, setError, clearError, setEmailLinkSent, clearEmailLinkState, logout } =
-  authSlice.actions
+export const {
+  setLoading,
+  setUser,
+  setError,
+  clearError,
+  setEmailLinkSent,
+  clearEmailLinkState,
+  logout
+} = authSlice.actions
 
 export const selectUser = (state: { auth: AuthState }) => state.auth.user
 export const authReducer = authSlice.reducer
