@@ -6,6 +6,7 @@ import { store } from '@/features/store'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { setUser } from '@/features/auth/authSlice'
+import { serializeObj } from '@/features/libs/serializeObj'
 
 interface ProvidersProps {
   children: React.ReactNode
@@ -16,15 +17,14 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        dispatch(
-          setUser({
-            id: firebaseUser.uid,
-            email: firebaseUser.email || '',
-            farmName: '',
-            roles: [],
-            createdAt: new Date()
-          })
-        )
+        const serializedUser = serializeObj({
+          id: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          farmName: '',
+          roles: [],
+          createdAt: new Date()
+        })
+        dispatch(setUser(serializedUser))
       } else {
         dispatch(setUser(null))
       }

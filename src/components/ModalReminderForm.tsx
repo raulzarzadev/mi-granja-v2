@@ -50,7 +50,6 @@ const ModalReminderForm: React.FC<ModalReminderFormProps> = ({
             animals={animals}
             onSubmit={handleSubmit}
             onCancel={closeModal}
-            isLoading={isSubmitting}
             initialData={initialData}
           />
         </div>

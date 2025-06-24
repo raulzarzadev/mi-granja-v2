@@ -21,6 +21,7 @@ import {
   setError
 } from '@/features/animals/animalsSlice'
 import { Animal } from '@/types'
+import { serializeObj } from '@/features/libs/serializeObj'
 
 /**
  * Hook personalizado para el manejo de animales
@@ -70,7 +71,8 @@ export const useAnimals = () => {
             updatedAt: data.updatedAt?.toDate() || new Date()
           })
         })
-        dispatch(setAnimals(animalsList))
+        const serializedAnimals = serializeObj(animalsList)
+        dispatch(setAnimals(serializedAnimals))
         dispatch(setLoading(false))
       },
       (error) => {
