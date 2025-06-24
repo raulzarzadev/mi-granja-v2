@@ -43,7 +43,7 @@ export const useBreeding = () => {
         records.push({
           id: doc.id,
           farmerId: data.farmerId,
-          femaleId: data.femaleId,
+          femaleIds: data.femaleIds || [],
           maleId: data.maleId,
           breedingDate: data.breedingDate.toDate(),
           expectedBirthDate: data.expectedBirthDate?.toDate(),
@@ -73,7 +73,7 @@ export const useBreeding = () => {
       const now = Timestamp.now()
       const docData = {
         farmerId: user.id,
-        femaleId: data.femaleId,
+        femaleIds: data.femaleIds,
         maleId: data.maleId,
         breedingDate: Timestamp.fromDate(new Date(data.breedingDate)),
         expectedBirthDate: data.expectedBirthDate
@@ -112,7 +112,7 @@ export const useBreeding = () => {
       }
 
       // Añadir campos básicos si existen
-      if (updates.femaleId) updateData.femaleId = updates.femaleId
+      if (updates.femaleIds) updateData.femaleIds = updates.femaleIds
       if (updates.maleId) updateData.maleId = updates.maleId
       if (updates.pregnancyConfirmed !== undefined)
         updateData.pregnancyConfirmed = updates.pregnancyConfirmed
@@ -186,7 +186,8 @@ export const useBreeding = () => {
   // Obtener registros por animal
   const getRecordsByAnimal = (animalId: string) => {
     return breedingRecords.filter(
-      (record) => record.femaleId === animalId || record.maleId === animalId
+      (record) =>
+        record.femaleIds.includes(animalId) || record.maleId === animalId
     )
   }
 

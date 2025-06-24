@@ -41,7 +41,7 @@ export interface Animal {
 export interface BreedingRecord {
   id: string
   farmerId: string
-  femaleId: string
+  femaleIds: string[] // IDs de las hembras involucradas
   maleId: string
   breedingDate: Date
   expectedBirthDate?: Date

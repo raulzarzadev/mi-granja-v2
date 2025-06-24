@@ -6,7 +6,10 @@ import { Animal, BreedingRecord } from '@/types'
 interface BreedingFormProps {
   animals: Animal[]
   onSubmit: (
-    data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
+    data: Omit<
+      BreedingRecord,
+      'id' | 'farmerId' | 'createdAt' | 'updatedAt'
+    > & { femaleIds: string[] }
   ) => Promise<void>
   onCancel: () => void
   isLoading?: boolean
@@ -23,7 +26,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   isLoading = false
 }) => {
   const [formData, setFormData] = useState({
-    femaleId: '',
+    femaleIds: [] as string[],
     maleId: '',
     breedingDate: new Date().toISOString().split('T')[0],
     expectedBirthDate: '',
@@ -45,12 +48,12 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.femaleId || !formData.maleId) {
+    if (formData.femaleIds.length === 0 || !formData.maleId) {
       return
     }
 
     // Calcular fecha esperada de parto (aproximadamente 5 meses para ovejas, 9 para vacas)
-    const female = animals.find((a) => a.id === formData.femaleId)
+    const female = animals.find((a) => a.id === formData.femaleIds[0])
     let gestationDays = 150 // Por defecto ovejas/cabras
 
     if (female?.type.includes('vaca')) {
@@ -65,7 +68,8 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
     try {
       await onSubmit({
-        femaleId: formData.femaleId,
+        // Enviar arreglo de IDs de hembras en lugar de una sola ID
+        femaleIds: formData.femaleIds,
         maleId: formData.maleId,
         breedingDate: new Date(formData.breedingDate),
         expectedBirthDate: expectedBirth,
@@ -98,35 +102,48 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     }
   }
 
+  // Permitir selección de múltiples hembras
+  const handleSelectFemale = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selected = Array.from(e.target.selectedOptions, (o) => o.value)
+    setFormData((prev) => ({
+      ...prev,
+      femaleIds: selected
+    }))
+  }
+
   return (
     <div className="space-y-4">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Hembra */}
         <div>
           <label
-            htmlFor="femaleId"
+            htmlFor="femaleIds"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            Hembra *
+            Hembra(s) *
           </label>
           <select
-            id="femaleId"
-            name="femaleId"
-            value={formData.femaleId}
-            onChange={handleChange}
+            id="femaleIds"
+            name="femaleIds"
+            multiple
+            value={formData.femaleIds}
+            onChange={handleSelectFemale}
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
           >
-            <option value="">Seleccionar hembra</option>
-            {females.map((animal) => (
-              <option key={animal.id} value={animal.id}>
-                {animal.animalId} - {animal.type} ({animal.stage})
-              </option>
-            ))}
+            {females.length === 0 ? (
+              <option value="">No hay hembras reproductoras</option>
+            ) : (
+              females.map((animal) => (
+                <option key={animal.id} value={animal.id}>
+                  {animal.animalId} - {animal.type} ({animal.stage})
+                </option>
+              ))
+            )}
           </select>
-          {females.length === 0 && (
+          {formData.femaleIds.length === 0 && (
             <p className="text-sm text-gray-500 mt-1">
-              No hay hembras reproductoras disponibles
+              Debes seleccionar al menos una hembra reproductora
             </p>
           )}
         </div>
@@ -228,7 +245,9 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
           </button>
           <button
             type="submit"
-            disabled={isLoading || !formData.femaleId || !formData.maleId}
+            disabled={
+              isLoading || formData.femaleIds.length === 0 || !formData.maleId
+            }
             className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
             {isLoading ? 'Registrando...' : 'Registrar Monta'}

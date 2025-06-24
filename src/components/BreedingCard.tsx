@@ -19,7 +19,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   onEdit,
   onAddBirth
 }) => {
-  const female = animals.find((a) => a.id === record.femaleId)
+  // Manejar múltiples hembras
+  const femaleAnimals = animals.filter((a) => record.femaleIds.includes(a.id))
   const male = animals.find((a) => a.id === record.maleId)
 
   const formatDate = (date: Date) => {
@@ -94,14 +95,26 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       </div>
 
       {/* Información de animales */}
-      <div className="space-y-2 mb-3">
-        <div className="flex items-center gap-2">
+      <div className="mb-3">
+        {/* Hembras involucradas */}
+        <div className="mb-1 flex items-center gap-2">
           <span className="text-pink-500">♀</span>
-          <span className="font-medium">
-            {female?.animalId || 'Animal no encontrado'}
-          </span>
-          <span className="text-sm text-gray-500">({female?.type})</span>
+          <span className="font-medium">Hembra(s):</span>
         </div>
+        {femaleAnimals.length > 0 ? (
+          <ul className="list-disc list-inside ml-6 mb-2">
+            {femaleAnimals.map((f) => (
+              <li key={f.id} className="text-sm">
+                {f.animalId} <span className="text-gray-500">({f.type})</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-gray-500 mb-2">
+            No hay hembras involucradas
+          </p>
+        )}
+        {/* Macho */}
         <div className="flex items-center gap-2">
           <span className="text-blue-500">♂</span>
           <span className="font-medium">
