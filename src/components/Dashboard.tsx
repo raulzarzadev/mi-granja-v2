@@ -36,8 +36,6 @@ const Dashboard: React.FC = () => {
     getUpcomingReminders
   } = useReminders()
 
-  console.log({ remindersLoading })
-
   const [activeView, setActiveView] = useState<
     'animals' | 'breeding' | 'reminders'
   >('animals')
