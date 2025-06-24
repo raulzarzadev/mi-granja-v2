@@ -38,9 +38,7 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
 export const Providers: React.FC<ProvidersProps> = ({ children }) => {
   return (
     <Provider store={store}>
-      <AuthInitializer>
-        {children}
-      </AuthInitializer>
+      <AuthInitializer>{children}</AuthInitializer>
     </Provider>
   )
 }
