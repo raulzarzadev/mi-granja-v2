@@ -174,7 +174,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
               {getSelectedFemales().map((animal) => (
                 <div
                   key={animal?.id}
-                  className="flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm"
+                  className="flex items-center bg-green-100 text-green-900 px-3 py-1 rounded-full text-sm font-medium"
                 >
                   <span>
                     {animal?.animalId} - {animal?.type}
@@ -182,7 +182,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                   <button
                     type="button"
                     onClick={() => handleRemoveFemale(animal?.id || '')}
-                    className="ml-2 text-green-600 hover:text-green-800 focus:outline-none"
+                    className="ml-2 text-green-700 hover:text-green-900 focus:outline-none font-bold text-lg leading-none"
                   >
                     ×
                   </button>
@@ -209,7 +209,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             {showFemaleDropdown && (
               <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto mt-1">
                 {getFilteredFemales().length === 0 ? (
-                  <div className="px-3 py-2 text-gray-500 text-sm">
+                  <div className="px-3 py-2 text-gray-600 text-sm font-medium">
                     {females.length === 0
                       ? 'No hay hembras reproductoras'
                       : 'No se encontraron hembras'}
@@ -220,12 +220,12 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                       key={animal.id}
                       type="button"
                       onClick={() => handleSelectFemale(animal.id)}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b border-gray-100 last:border-b-0"
                     >
-                      <div className="font-medium">
+                      <div className="font-semibold text-gray-900">
                         {animal.animalId} - {animal.type}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-600 font-medium">
                         ({animal.stage})
                       </div>
                     </button>
@@ -236,7 +236,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
           </div>
 
           {formData.femaleIds.length === 0 && (
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-600 mt-1 font-medium">
               Debes seleccionar al menos una hembra reproductora
             </p>
           )}
@@ -266,7 +266,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             ))}
           </select>
           {males.length === 0 && (
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-600 mt-1 font-medium">
               No hay machos reproductores disponibles
             </p>
           )}
