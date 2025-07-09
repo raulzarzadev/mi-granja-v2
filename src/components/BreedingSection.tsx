@@ -7,6 +7,7 @@ import { BreedingRecord } from '@/types'
 import BreedingCard from '@/components/BreedingCard'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ModalBreedingForm from './ModalBreedingForm'
+import ModalEditBreeding from './ModalEditBreeding'
 
 /**
  * Sección de reproducción del dashboard
@@ -17,13 +18,16 @@ const BreedingSection: React.FC = () => {
     breedingRecords,
     isLoading,
     isSubmitting,
-    createBreedingRecord,
+    updateBreedingRecord,
     getActivePregnancies,
     getUpcomingBirths,
     getStats
   } = useBreeding()
 
   const [filter, setFilter] = useState<'all' | 'pregnant' | 'upcoming'>('all')
+  const [editingRecord, setEditingRecord] = useState<BreedingRecord | null>(
+    null
+  )
 
   const stats = getStats()
   const activePregnancies = getActivePregnancies()
@@ -40,13 +44,17 @@ const BreedingSection: React.FC = () => {
     }
   }
 
-  const handleCreateBreeding = async (
-    data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
+  const handleUpdateBreeding = async (
+    id: string,
+    data: Omit<
+      BreedingRecord,
+      'id' | 'farmerId' | 'createdAt' | 'updatedAt'
+    > & { femaleIds: string[] }
   ) => {
     try {
-      await createBreedingRecord(data)
+      await updateBreedingRecord(id, data)
     } catch (error) {
-      console.error('Error creating breeding record:', error)
+      console.error('Error updating breeding record:', error)
     }
   }
 
@@ -60,18 +68,7 @@ const BreedingSection: React.FC = () => {
       <div>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Reproducción</h2>
-          <ModalBreedingForm
-            animals={animals}
-            onSubmit={async (data) => {
-              await handleCreateBreeding(data)
-            }}
-            isLoading={isSubmitting}
-            triggerButton={
-              <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors font-medium">
-                + Registrar Monta
-              </button>
-            }
-          />
+          <ModalBreedingForm />
         </div>
 
         {/* Estadísticas rápidas */}
@@ -203,8 +200,7 @@ const BreedingSection: React.FC = () => {
                 record={record}
                 animals={animals}
                 onEdit={(record) => {
-                  // TODO: Implementar edición
-                  console.log('Editar registro:', record.id)
+                  setEditingRecord(record)
                 }}
                 onAddBirth={(record) => {
                   // TODO: Implementar registro de parto
@@ -216,7 +212,14 @@ const BreedingSection: React.FC = () => {
         )}
       </div>
 
-      {/* Modal de formulario */}
+      {/* Modal de edición */}
+      <ModalEditBreeding
+        animals={animals}
+        record={editingRecord}
+        onSubmit={handleUpdateBreeding}
+        onClose={() => setEditingRecord(null)}
+        isLoading={isSubmitting}
+      />
     </div>
   )
 }

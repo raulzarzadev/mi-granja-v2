@@ -13,6 +13,7 @@ interface BreedingFormProps {
   ) => Promise<void>
   onCancel: () => void
   isLoading?: boolean
+  initialData?: BreedingRecord
 }
 
 /**
@@ -23,15 +24,20 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   animals,
   onSubmit,
   onCancel,
-  isLoading = false
+  isLoading = false,
+  initialData
 }) => {
   const [formData, setFormData] = useState({
-    femaleIds: [] as string[],
-    maleId: '',
-    breedingDate: new Date().toISOString().split('T')[0],
-    expectedBirthDate: '',
-    pregnancyConfirmed: false,
-    notes: ''
+    femaleIds: initialData?.femaleIds || ([] as string[]),
+    maleId: initialData?.maleId || '',
+    breedingDate: initialData?.breedingDate
+      ? new Date(initialData.breedingDate).toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0],
+    expectedBirthDate: initialData?.expectedBirthDate
+      ? new Date(initialData.expectedBirthDate).toISOString().split('T')[0]
+      : '',
+    pregnancyConfirmed: initialData?.pregnancyConfirmed || false,
+    notes: initialData?.notes || ''
   })
 
   const [femaleSearch, setFemaleSearch] = useState('')
@@ -344,7 +350,13 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             }
             className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
-            {isLoading ? 'Registrando...' : 'Registrar Monta'}
+            {isLoading
+              ? initialData
+                ? 'Actualizando...'
+                : 'Registrando...'
+              : initialData
+              ? 'Actualizar Monta'
+              : 'Registrar Monta'}
           </button>
         </div>
       </form>
