@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Animal, BreedingRecord, FemaleBreedingInfo } from '@/types'
 import {
   calculateExpectedBirthDate,
+  getNextBirthInfo,
   getBreedingAdvice
 } from '@/lib/animalBreedingConfig'
 
@@ -171,6 +172,39 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     return formData.femaleIds
       .map((id) => animals.find((animal) => animal.id === id))
       .filter(Boolean)
+  }
+
+  // Obtener información del próximo parto esperado
+  const getFormNextBirthInfo = () => {
+    if (formData.femaleIds.length === 0) return null
+
+    const selectedFemales = getSelectedFemales()
+    const hasConfirmedPregnancies = formData.femaleBreedingInfo.some(
+      (info) => info.pregnancyConfirmed
+    )
+
+    if (!hasConfirmedPregnancies) return null
+
+    // Simular estructura de BreedingRecord para la función
+    const mockRecord = {
+      breedingDate: new Date(formData.breedingDate),
+      femaleBreedingInfo: formData.femaleBreedingInfo
+    }
+
+    // Obtener el tipo de animal más común (o el primero)
+    const animalType = selectedFemales[0]?.type
+    if (!animalType) return null
+
+    const birthInfo = getNextBirthInfo(mockRecord, animalType, animals)
+
+    return {
+      date: birthInfo.expectedDate,
+      daysUntil: birthInfo.daysUntil,
+      animalType,
+      femaleAnimalId: birthInfo.femaleAnimalId,
+      hasMultiplePregnancies: birthInfo.hasMultiplePregnancies,
+      totalConfirmedPregnancies: birthInfo.totalConfirmedPregnancies
+    }
   }
 
   // Manejar cambios en la información de breeding de cada hembra
@@ -434,6 +468,50 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             </div>
           </div>
         )}
+
+        {/* Información del parto más próximo */}
+        {(() => {
+          const nextBirthInfo = getFormNextBirthInfo()
+          return nextBirthInfo ? (
+            <div className="bg-green-50 border border-green-200 rounded-md p-4">
+              <h4 className="text-sm font-medium text-green-900 mb-2">
+                🗓️ Parto Más Próximo
+              </h4>
+              <div className="space-y-2">
+                <div className="text-sm text-green-800">
+                  <div className="font-medium">
+                    Fecha esperada:{' '}
+                    {nextBirthInfo.date.toLocaleDateString('es-ES', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </div>
+                  <div className="text-green-600 mt-1">
+                    {nextBirthInfo.daysUntil > 0
+                      ? `Faltan ${nextBirthInfo.daysUntil} días`
+                      : nextBirthInfo.daysUntil === 0
+                      ? 'Es hoy!'
+                      : `Venció hace ${Math.abs(nextBirthInfo.daysUntil)} días`}
+                  </div>
+                  <div className="text-xs text-green-600 mt-1">
+                    {nextBirthInfo.femaleAnimalId &&
+                    nextBirthInfo.femaleAnimalId !== 'Estimado'
+                      ? `Hembra: ${nextBirthInfo.femaleAnimalId} (${nextBirthInfo.animalType})`
+                      : `Basado en embarazos confirmados de ${nextBirthInfo.animalType}`}
+                  </div>
+                  {nextBirthInfo.hasMultiplePregnancies && (
+                    <div className="text-xs text-blue-600 mt-1">
+                      {nextBirthInfo.totalConfirmedPregnancies} embarazos
+                      confirmados
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null
+        })()}
 
         {/* Estado de embarazo por hembra */}
         {formData.femaleIds.length > 0 && (

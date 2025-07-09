@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { BreedingRecord, Animal } from '@/types'
+import { getNextBirthInfo } from '@/lib/animalBreedingConfig'
 
 interface BreedingCardProps {
   record: BreedingRecord
@@ -32,20 +33,36 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   }
 
   const getDaysUntilBirth = () => {
-    if (!record.expectedBirthDate || record.actualBirthDate) return null
+    if (record.actualBirthDate) return null
 
-    const today = new Date()
-    const expected = new Date(record.expectedBirthDate)
-    const diffTime = expected.getTime() - today.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    // Usar la nueva función para obtener la información del parto más próximo
+    const femaleAnimals = animals.filter((a) => record.femaleIds.includes(a.id))
+    if (femaleAnimals.length === 0) return null
 
-    return diffDays
+    const animalType = femaleAnimals[0].type
+    const birthInfo = getNextBirthInfo(record, animalType, animals)
+
+    return {
+      days: birthInfo.daysUntil,
+      date: birthInfo.expectedDate,
+      femaleAnimalId: birthInfo.femaleAnimalId,
+      hasMultiplePregnancies: birthInfo.hasMultiplePregnancies,
+      totalConfirmedPregnancies: birthInfo.totalConfirmedPregnancies
+    }
   }
 
-  const daysUntilBirth = getDaysUntilBirth()
-  const isOverdue = daysUntilBirth !== null && daysUntilBirth < 0
+  const birthInfo = getDaysUntilBirth()
+  const daysUntilBirth = birthInfo?.days
+  const nextBirthDate = birthInfo?.date
+  const isOverdue =
+    daysUntilBirth !== null &&
+    daysUntilBirth !== undefined &&
+    daysUntilBirth < 0
   const isNearBirth =
-    daysUntilBirth !== null && daysUntilBirth <= 7 && daysUntilBirth >= 0
+    daysUntilBirth !== null &&
+    daysUntilBirth !== undefined &&
+    daysUntilBirth <= 7 &&
+    daysUntilBirth >= 0
 
   const getStatusColor = () => {
     if (record.actualBirthDate) return 'bg-green-100 text-green-800'
@@ -57,9 +74,26 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
 
   const getStatusText = () => {
     if (record.actualBirthDate) return 'Parida'
-    if (isOverdue) return `Atrasada ${Math.abs(daysUntilBirth!)} días`
-    if (isNearBirth) return `${daysUntilBirth} días para parto`
-    if (record.pregnancyConfirmed) return 'Embarazada'
+    if (isOverdue) {
+      const info = birthInfo?.femaleAnimalId
+        ? ` (${birthInfo.femaleAnimalId})`
+        : ''
+      return `Atrasada ${Math.abs(daysUntilBirth!)} días${info}`
+    }
+    if (isNearBirth) {
+      const info = birthInfo?.femaleAnimalId
+        ? ` (${birthInfo.femaleAnimalId})`
+        : ''
+      return `${daysUntilBirth} días para parto${info}`
+    }
+    if (record.pregnancyConfirmed) {
+      const confirmedCount = birthInfo?.totalConfirmedPregnancies || 0
+      return confirmedCount > 0
+        ? `${confirmedCount} embarazo${
+            confirmedCount > 1 ? 's' : ''
+          } confirmado${confirmedCount > 1 ? 's' : ''}`
+        : 'Embarazada'
+    }
     return 'Monta registrada'
   }
 
@@ -131,10 +165,43 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
           <span className="font-medium">{formatDate(record.breedingDate)}</span>
         </div>
 
+        {nextBirthDate && !record.actualBirthDate && (
+          <div className="flex justify-between">
+            <span className="text-gray-600">
+              Próximo parto esperado
+              {birthInfo?.femaleAnimalId &&
+              birthInfo.femaleAnimalId !== 'Estimado'
+                ? ` (${birthInfo.femaleAnimalId})`
+                : ''}
+              :
+            </span>
+            <span
+              className={`font-medium ${
+                isOverdue
+                  ? 'text-red-600'
+                  : isNearBirth
+                  ? 'text-yellow-600'
+                  : 'text-blue-600'
+              }`}
+            >
+              {formatDate(nextBirthDate)}
+            </span>
+          </div>
+        )}
+
+        {birthInfo?.hasMultiplePregnancies && (
+          <div className="flex justify-between">
+            <span className="text-gray-600">Embarazos confirmados:</span>
+            <span className="font-medium text-green-600">
+              {birthInfo.totalConfirmedPregnancies} de {record.femaleIds.length}
+            </span>
+          </div>
+        )}
+
         {record.expectedBirthDate && (
           <div className="flex justify-between">
-            <span className="text-gray-600">Parto esperado:</span>
-            <span className="font-medium">
+            <span className="text-gray-600">Parto esperado (legacy):</span>
+            <span className="font-medium text-gray-500">
               {formatDate(record.expectedBirthDate)}
             </span>
           </div>
@@ -149,6 +216,68 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
           </div>
         )}
       </div>
+
+      {/* Detalles de embarazo por hembra */}
+      {record.femaleBreedingInfo && record.femaleBreedingInfo.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <h5 className="text-sm font-medium text-gray-700 mb-2">
+            Estado por Hembra:
+          </h5>
+          <div className="space-y-2">
+            {record.femaleBreedingInfo.map((info) => {
+              const femaleAnimal = animals.find((a) => a.id === info.femaleId)
+              return (
+                <div
+                  key={info.femaleId}
+                  className="text-xs bg-gray-50 p-2 rounded"
+                >
+                  <div className="font-medium text-gray-800">
+                    {femaleAnimal?.animalId || 'Animal no encontrado'}
+                  </div>
+                  <div className="mt-1 space-y-1">
+                    <div className="flex justify-between">
+                      <span>Embarazada:</span>
+                      <span
+                        className={
+                          info.pregnancyConfirmed
+                            ? 'text-green-600 font-medium'
+                            : 'text-gray-500'
+                        }
+                      >
+                        {info.pregnancyConfirmed ? 'Sí' : 'No confirmado'}
+                      </span>
+                    </div>
+                    {info.pregnancyConfirmed && info.pregnancyConfirmedDate && (
+                      <div className="flex justify-between">
+                        <span>Confirmado:</span>
+                        <span className="text-blue-600">
+                          {formatDate(info.pregnancyConfirmedDate)}
+                        </span>
+                      </div>
+                    )}
+                    {info.expectedBirthDate && (
+                      <div className="flex justify-between">
+                        <span>Parto esperado:</span>
+                        <span className="text-purple-600">
+                          {formatDate(info.expectedBirthDate)}
+                        </span>
+                      </div>
+                    )}
+                    {info.actualBirthDate && (
+                      <div className="flex justify-between">
+                        <span>Parto real:</span>
+                        <span className="text-green-600 font-medium">
+                          {formatDate(info.actualBirthDate)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Crías */}
       {record.offspring && record.offspring.length > 0 && (

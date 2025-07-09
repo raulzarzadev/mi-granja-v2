@@ -5,8 +5,8 @@ import { BreedingRecord } from '@/types'
 import { Modal } from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
 import BreedingForm from '@/components/BreedingForm'
-import { useBreeding } from '@/hooks/useBreeding'
 import { useAnimals } from '@/hooks/useAnimals'
+import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 
 /**
  * Modal que contiene el formulario de breeding
@@ -14,7 +14,7 @@ import { useAnimals } from '@/hooks/useAnimals'
  */
 const ModalBreedingForm = ({}) => {
   const { animals } = useAnimals()
-  const { createBreedingRecord, isSubmitting } = useBreeding()
+  const { createBreedingRecord, isSubmitting } = useBreedingCRUD()
   const { isOpen, openModal, closeModal } = useModal()
 
   const handleSubmit = async (

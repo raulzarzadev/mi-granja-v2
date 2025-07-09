@@ -247,13 +247,7 @@ export const ExampleModalBreedingForm = () => {
     // Aquí iría la lógica para guardar
   }
 
-  return (
-    <ModalBreedingForm
-      animals={mockAnimals}
-      onSubmit={handleBreedingSubmit}
-      isLoading={false}
-    />
-  )
+  return <ModalBreedingForm />
 }
 
 // Ejemplo 6: Modal de Animal Form
@@ -268,11 +262,7 @@ export const ExampleModalAnimalForm = () => {
   return (
     <div className="space-y-4">
       {/* Modal para crear animal */}
-      <ModalAnimalForm
-        onSubmit={handleAnimalSubmit}
-        mode="create"
-        isLoading={false}
-      />
+      <ModalAnimalForm />
 
       {/* Modal para editar animal con botón personalizado */}
       <ModalAnimalForm
