@@ -34,6 +34,9 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     notes: ''
   })
 
+  const [femaleSearch, setFemaleSearch] = useState('')
+  const [showFemaleDropdown, setShowFemaleDropdown] = useState(false)
+
   // Filtrar animales por género y capacidad reproductiva
   const females = animals.filter(
     (animal) =>
@@ -102,13 +105,55 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     }
   }
 
-  // Permitir selección de múltiples hembras
-  const handleSelectFemale = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selected = Array.from(e.target.selectedOptions, (o) => o.value)
+  // Permitir selección de múltiples hembras con autocompletado
+  const handleFemaleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFemaleSearch(e.target.value)
+    setShowFemaleDropdown(true)
+  }
+
+  const handleSelectFemale = (animalId: string) => {
+    if (!formData.femaleIds.includes(animalId)) {
+      setFormData((prev) => ({
+        ...prev,
+        femaleIds: [...prev.femaleIds, animalId]
+      }))
+    }
+    setFemaleSearch('')
+    setShowFemaleDropdown(false)
+  }
+
+  const handleRemoveFemale = (animalId: string) => {
     setFormData((prev) => ({
       ...prev,
-      femaleIds: selected
+      femaleIds: prev.femaleIds.filter((id) => id !== animalId)
     }))
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      const filteredFemales = getFilteredFemales()
+      if (filteredFemales.length === 1) {
+        handleSelectFemale(filteredFemales[0].id)
+      }
+    }
+  }
+
+  const getFilteredFemales = () => {
+    if (!femaleSearch) return females
+    return females
+      .filter(
+        (animal) =>
+          animal.animalId.toLowerCase().includes(femaleSearch.toLowerCase()) ||
+          animal.type.toLowerCase().includes(femaleSearch.toLowerCase())
+      )
+      .filter((animal) => !formData.femaleIds.includes(animal.id))
+  }
+
+  const getSelectedFemales = () => {
+    return formData.femaleIds
+      .map((id) => animals.find((animal) => animal.id === id))
+      .filter(Boolean)
   }
 
   return (
@@ -117,30 +162,79 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         {/* Hembra */}
         <div>
           <label
-            htmlFor="femaleIds"
+            htmlFor="femaleSearch"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
             Hembra(s) *
           </label>
-          <select
-            id="femaleIds"
-            name="femaleIds"
-            multiple
-            value={formData.femaleIds}
-            onChange={handleSelectFemale}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-          >
-            {females.length === 0 ? (
-              <option value="">No hay hembras reproductoras</option>
-            ) : (
-              females.map((animal) => (
-                <option key={animal.id} value={animal.id}>
-                  {animal.animalId} - {animal.type} ({animal.stage})
-                </option>
-              ))
+
+          {/* Badges de hembras seleccionadas */}
+          {formData.femaleIds.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {getSelectedFemales().map((animal) => (
+                <div
+                  key={animal?.id}
+                  className="flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm"
+                >
+                  <span>
+                    {animal?.animalId} - {animal?.type}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFemale(animal?.id || '')}
+                    className="ml-2 text-green-600 hover:text-green-800 focus:outline-none"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Input de búsqueda */}
+          <div className="relative">
+            <input
+              type="text"
+              id="femaleSearch"
+              value={femaleSearch}
+              onChange={handleFemaleSearch}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setShowFemaleDropdown(true)}
+              onBlur={() => setTimeout(() => setShowFemaleDropdown(false), 200)}
+              placeholder="Buscar hembra por número o tipo..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+
+            {/* Dropdown de sugerencias */}
+            {showFemaleDropdown && (
+              <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto mt-1">
+                {getFilteredFemales().length === 0 ? (
+                  <div className="px-3 py-2 text-gray-500 text-sm">
+                    {females.length === 0
+                      ? 'No hay hembras reproductoras'
+                      : 'No se encontraron hembras'}
+                  </div>
+                ) : (
+                  getFilteredFemales().map((animal) => (
+                    <button
+                      key={animal.id}
+                      type="button"
+                      onClick={() => handleSelectFemale(animal.id)}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                    >
+                      <div className="font-medium">
+                        {animal.animalId} - {animal.type}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        ({animal.stage})
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
             )}
-          </select>
+          </div>
+
           {formData.femaleIds.length === 0 && (
             <p className="text-sm text-gray-500 mt-1">
               Debes seleccionar al menos una hembra reproductora
