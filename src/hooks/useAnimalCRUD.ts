@@ -16,8 +16,9 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { RootState } from '@/features/store'
-import { setError } from '@/features/animals/animalsSlice'
 import { Animal } from '@/types'
+import { setError } from '@/features/auth/authSlice'
+import { updateAnimal } from '@/features/animals/animalsSlice'
 
 /**
  * Hook personalizado para el manejo de animales
@@ -78,6 +79,9 @@ export const useAnimalCRUD = () => {
         ...updateData,
         updatedAt: new Date()
       }
+
+      // Usar la nueva acción para actualizaciones parciales
+      dispatch(updateAnimal({ id: animalId, data: updateData }))
 
       await updateDoc(animalRef, updatedData)
 

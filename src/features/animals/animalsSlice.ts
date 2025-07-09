@@ -30,12 +30,20 @@ const animalsSlice = createSlice({
     addAnimal: (state, action: PayloadAction<Animal>) => {
       state.animals.push(serializeObj(action.payload))
     },
-    updateAnimal: (state, action: PayloadAction<Animal>) => {
+
+    updateAnimal: (
+      state,
+      action: PayloadAction<{ id: string; data: Partial<Animal> }>
+    ) => {
       const index = state.animals.findIndex(
         (animal) => animal.id === action.payload.id
       )
       if (index !== -1) {
-        state.animals[index] = serializeObj(action.payload)
+        state.animals[index] = serializeObj({
+          ...state.animals[index],
+          ...action.payload.data,
+          updatedAt: new Date()
+        })
       }
     },
     removeAnimal: (state, action: PayloadAction<string>) => {
