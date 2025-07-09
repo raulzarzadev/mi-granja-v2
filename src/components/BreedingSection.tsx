@@ -9,6 +9,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import ModalBreedingForm from './ModalBreedingForm'
 import ModalEditBreeding from './ModalEditBreeding'
 import ModalBirthForm from './ModalBirthForm'
+import ModalConfirmPregnancy from './ModalConfirmPregnancy'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 
@@ -32,6 +33,8 @@ const BreedingSection: React.FC = () => {
     null
   )
   const [birthRecord, setBirthRecord] = useState<BreedingRecord | null>(null)
+  const [confirmPregnancyRecord, setConfirmPregnancyRecord] =
+    useState<BreedingRecord | null>(null)
 
   const stats = getStats()
   const activePregnancies = getActivePregnancies()
@@ -132,6 +135,16 @@ const BreedingSection: React.FC = () => {
       setBirthRecord(null)
     } catch (error) {
       console.error('Error registrando parto:', error, birthData)
+    }
+  }
+
+  // Manejar confirmación de embarazos
+  const handleConfirmPregnancy = async (updatedRecord: BreedingRecord) => {
+    try {
+      await updateBreedingRecord(updatedRecord.id, updatedRecord)
+      setConfirmPregnancyRecord(null)
+    } catch (error) {
+      console.error('Error confirmando embarazos:', error)
     }
   }
 
@@ -282,6 +295,9 @@ const BreedingSection: React.FC = () => {
                 onAddBirth={(record) => {
                   setBirthRecord(record)
                 }}
+                onConfirmPregnancy={(record) => {
+                  setConfirmPregnancyRecord(record)
+                }}
                 onDelete={async (record) => {
                   await deleteBreedingRecord(record.id)
                 }}
@@ -307,6 +323,16 @@ const BreedingSection: React.FC = () => {
         breedingRecord={birthRecord!}
         animals={animals}
         onSubmit={handleBirthSubmit}
+        isLoading={isLoading}
+      />
+
+      {/* Modal de confirmación de embarazos */}
+      <ModalConfirmPregnancy
+        isOpen={!!confirmPregnancyRecord}
+        onClose={() => setConfirmPregnancyRecord(null)}
+        breedingRecord={confirmPregnancyRecord!}
+        animals={animals}
+        onSubmit={handleConfirmPregnancy}
         isLoading={isLoading}
       />
     </div>

@@ -10,6 +10,7 @@ interface BreedingCardProps {
   onEdit?: (record: BreedingRecord) => void
   onAddBirth?: (record: BreedingRecord) => void
   onDelete?: (record: BreedingRecord) => void
+  onConfirmPregnancy?: (record: BreedingRecord) => void
 }
 
 /**
@@ -20,7 +21,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   animals,
   onEdit,
   onAddBirth,
-  onDelete
+  onDelete,
+  onConfirmPregnancy
 }) => {
   // Manejar múltiples hembras
   const male = animals.find((a) => a.id === record.maleId)
@@ -150,6 +152,15 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
               Editar
             </button>
           )}
+          {onConfirmPregnancy &&
+            femaleAnimalInfo.some((female) => female.status === 'monta') && (
+              <button
+                onClick={() => onConfirmPregnancy(record)}
+                className="text-purple-600 hover:text-purple-800 text-sm font-medium"
+              >
+                Confirmar Embarazo
+              </button>
+            )}
           {onAddBirth &&
             femaleAnimalInfo.some(
               (female) => female.status === 'embarazada'
