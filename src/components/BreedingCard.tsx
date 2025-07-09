@@ -98,12 +98,23 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   const femaleAnimalInfo =
     record?.femaleBreedingInfo.map((info) => {
       const animalInfo = animals.find((a) => a.id === info.femaleId)
+
+      // Determinar el estado real de la hembra
+      let status: 'parida' | 'embarazada' | 'monta' = 'monta'
+      if (info.actualBirthDate) {
+        status = 'parida'
+      } else if (info.pregnancyConfirmed) {
+        status = 'embarazada'
+      }
+
       return {
         femaleId: info.femaleId,
         animalId: animalInfo?.animalId || 'Desconocido',
         type: animalInfo?.type,
         pregnancyConfirmed: info.pregnancyConfirmed,
-        expectedBirthDate: info.expectedBirthDate
+        expectedBirthDate: info.expectedBirthDate,
+        actualBirthDate: info.actualBirthDate,
+        status
       }
     }) || []
   return (
@@ -125,8 +136,9 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
             </button>
           )}
           {onAddBirth &&
-            !record.actualBirthDate &&
-            record.pregnancyConfirmed && (
+            femaleAnimalInfo.some(
+              (female) => female.status === 'embarazada'
+            ) && (
               <button
                 onClick={() => onAddBirth(record)}
                 className="text-green-600 hover:text-green-800 text-sm font-medium"
@@ -157,7 +169,9 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
             >
               <div className="flex items-center gap-2">
                 <span className="text-lg">
-                  {femaleAnimal.pregnancyConfirmed ? '✅' : '⏳'}
+                  {femaleAnimal.status === 'parida' && '👶'}
+                  {femaleAnimal.status === 'embarazada' && '🤰'}
+                  {femaleAnimal.status === 'monta' && '♀️'}
                 </span>
                 <span className="font-medium text-gray-800">
                   {femaleAnimal.animalId}
@@ -165,13 +179,39 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                 <span className="text-xs px-2 py-1 bg-gray-200 rounded-full text-gray-600">
                   {femaleAnimal.type}
                 </span>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    femaleAnimal.status === 'parida'
+                      ? 'bg-green-100 text-green-700'
+                      : femaleAnimal.status === 'embarazada'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {femaleAnimal.status === 'parida' && 'Parida'}
+                  {femaleAnimal.status === 'embarazada' && 'Embarazada'}
+                  {femaleAnimal.status === 'monta' && 'En monta'}
+                </span>
               </div>
-              {femaleAnimal.pregnancyConfirmed &&
-                femaleAnimal.expectedBirthDate && (
-                  <span className="text-sm font-medium text-purple-600">
-                    {formatDate(femaleAnimal.expectedBirthDate)}
+              <div className="text-right">
+                {femaleAnimal.status === 'parida' &&
+                  femaleAnimal.actualBirthDate && (
+                    <span className="text-sm font-medium text-green-600">
+                      Parió: {formatDate(femaleAnimal.actualBirthDate)}
+                    </span>
+                  )}
+                {femaleAnimal.status === 'embarazada' &&
+                  femaleAnimal.expectedBirthDate && (
+                    <span className="text-sm font-medium text-purple-600">
+                      Esperado: {formatDate(femaleAnimal.expectedBirthDate)}
+                    </span>
+                  )}
+                {femaleAnimal.status === 'monta' && (
+                  <span className="text-xs text-gray-500">
+                    Esperando confirmación
                   </span>
                 )}
+              </div>
             </div>
           ))}
         </div>
@@ -248,11 +288,39 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       {/* Crías */}
       {record.offspring && record.offspring.length > 0 && (
         <div className="mt-3 pt-3 border-t border-gray-100">
-          <span className="text-sm text-gray-600">Crías: </span>
-          <span className="text-sm font-medium">
-            {record.offspring.length} animal
-            {record.offspring.length !== 1 ? 'es' : ''}
-          </span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-600">Crías registradas:</span>
+            <span className="text-sm font-medium text-green-600">
+              {record.offspring.length} animal
+              {record.offspring.length !== 1 ? 'es' : ''}
+            </span>
+          </div>
+
+          {/* Mostrar resumen por hembra que ya parió */}
+          {record.femaleBreedingInfo
+            .filter(
+              (info) =>
+                info.actualBirthDate &&
+                info.offspring &&
+                info.offspring.length > 0
+            )
+            .map((info) => {
+              const femaleAnimal = animals.find((a) => a.id === info.femaleId)
+              return (
+                <div key={info.femaleId} className="text-xs text-gray-600 mb-1">
+                  <span className="font-medium">
+                    {femaleAnimal?.animalId || 'Desconocido'}
+                  </span>
+                  parió {info.offspring?.length || 0} cría
+                  {(info.offspring?.length || 0) !== 1 ? 's' : ''}
+                  {info.actualBirthDate && (
+                    <span className="ml-2 text-gray-500">
+                      el {formatDate(info.actualBirthDate)}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
         </div>
       )}
 

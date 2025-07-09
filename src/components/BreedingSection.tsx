@@ -3,12 +3,14 @@
 import React, { useState } from 'react'
 import { useAnimals } from '@/hooks/useAnimals'
 import { useBreeding } from '@/hooks/useBreeding'
-import { BreedingRecord } from '@/types'
+import { BreedingRecord, BirthRecord } from '@/types'
 import BreedingCard from '@/components/BreedingCard'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ModalBreedingForm from './ModalBreedingForm'
 import ModalEditBreeding from './ModalEditBreeding'
+import ModalBirthForm from './ModalBirthForm'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 
 /**
  * Sección de reproducción del dashboard
@@ -20,6 +22,7 @@ const BreedingSection: React.FC = () => {
     getUpcomingBirths,
     getStats
   } = useBreedingCRUD()
+  const { create: createAnimal } = useAnimalCRUD()
   const { animals } = useAnimals()
   const { breedingRecords, isLoading } = useBreeding()
 
@@ -27,6 +30,7 @@ const BreedingSection: React.FC = () => {
   const [editingRecord, setEditingRecord] = useState<BreedingRecord | null>(
     null
   )
+  const [birthRecord, setBirthRecord] = useState<BreedingRecord | null>(null)
 
   const stats = getStats()
   const activePregnancies = getActivePregnancies()
@@ -52,8 +56,84 @@ const BreedingSection: React.FC = () => {
   ) => {
     try {
       await updateBreedingRecord(id, data)
+      setEditingRecord(null)
     } catch (error) {
       console.error('Error updating breeding record:', error)
+    }
+  }
+
+  const handleBirthSubmit = async (birthData: BirthRecord) => {
+    if (!birthRecord) return
+
+    try {
+      // Obtener información de la madre y el padre
+      const mother = animals.find((a) => a.id === birthData.femaleId)
+      const father = animals.find((a) => a.id === birthRecord.maleId)
+
+      if (!mother || !father) {
+        console.error('No se encontró información de los padres')
+        return
+      }
+
+      // Crear los nuevos animales (crías) en la base de datos
+      const offspringIds = await Promise.all(
+        birthData.offspring.map(async (offspring) => {
+          const newAnimal = {
+            animalId: offspring.animalId,
+            type: mother.type, // Las crías heredan el tipo de la madre
+            stage: 'cria' as const,
+            weight: offspring.weight,
+            birthDate: new Date(
+              `${birthData.birthDate}T${birthData.birthTime}`
+            ),
+            gender: offspring.gender,
+            motherId: birthData.femaleId,
+            fatherId: birthRecord.maleId,
+            notes: `Color: ${offspring.color || 'No especificado'}. Estado: ${
+              offspring.status
+            }${
+              offspring.healthIssues
+                ? `. Problemas de salud: ${offspring.healthIssues}`
+                : ''
+            }`
+          }
+
+          const animalId = await createAnimal(newAnimal)
+          return animalId
+        })
+      )
+
+      // Actualizar el registro de monta con la información del parto
+      const updatedFemaleBreedingInfo = birthRecord.femaleBreedingInfo.map(
+        (info) => {
+          if (info.femaleId === birthData.femaleId) {
+            return {
+              ...info,
+              actualBirthDate: new Date(
+                `${birthData.birthDate}T${birthData.birthTime}`
+              ),
+              offspring: offspringIds.filter(Boolean) as string[]
+            }
+          }
+          return info
+        }
+      )
+
+      await updateBreedingRecord(birthRecord.id, {
+        ...birthRecord,
+        femaleBreedingInfo: updatedFemaleBreedingInfo,
+        actualBirthDate: new Date(
+          `${birthData.birthDate}T${birthData.birthTime}`
+        ), // Legacy field
+        offspring: [
+          ...(birthRecord.offspring || []),
+          ...(offspringIds.filter(Boolean) as string[])
+        ]
+      })
+
+      setBirthRecord(null)
+    } catch (error) {
+      console.error('Error registrando parto:', error, birthData)
     }
   }
 
@@ -202,8 +282,7 @@ const BreedingSection: React.FC = () => {
                   setEditingRecord(record)
                 }}
                 onAddBirth={(record) => {
-                  // TODO: Implementar registro de parto
-                  console.log('Registrar parto:', record.id)
+                  setBirthRecord(record)
                 }}
               />
             ))}
@@ -217,6 +296,16 @@ const BreedingSection: React.FC = () => {
         record={editingRecord}
         onSubmit={handleUpdateBreeding}
         onClose={() => setEditingRecord(null)}
+        isLoading={isLoading}
+      />
+
+      {/* Modal de registro de parto */}
+      <ModalBirthForm
+        isOpen={!!birthRecord}
+        onClose={() => setBirthRecord(null)}
+        breedingRecord={birthRecord!}
+        animals={animals}
+        onSubmit={handleBirthSubmit}
         isLoading={isLoading}
       />
     </div>

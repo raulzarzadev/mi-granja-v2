@@ -56,7 +56,7 @@ export const useAnimalCRUD = () => {
 
       return docRef.id
     } catch (error) {
-      console.error('Error creating animal:', error)
+      console.error('Error creating animal:', error, { animalData })
       const errorMessage =
         error instanceof Error ? error.message : 'Error al crear el animal'
       dispatch(setError(errorMessage))

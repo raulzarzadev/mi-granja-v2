@@ -95,3 +95,22 @@ export interface Reminder {
   createdAt: Date
   updatedAt: Date
 }
+
+export interface OffspringInfo {
+  id: string // ID temporal para el formulario
+  animalId: string // ID único asignado por el granjero
+  weight?: number | null
+  color?: string
+  status: 'vivo' | 'muerto' | 'enfermo'
+  healthIssues?: string // Descripción de problemas de salud si status es 'enfermo'
+  gender: 'macho' | 'hembra'
+}
+
+export interface BirthRecord {
+  femaleId: string
+  birthDate: string // Formato YYYY-MM-DD para inputs
+  birthTime: string // Formato HH:MM
+  totalOffspring: number
+  offspring: OffspringInfo[]
+  notes?: string
+}
