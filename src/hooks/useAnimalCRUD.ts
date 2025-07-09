@@ -18,7 +18,8 @@ import { db } from '@/lib/firebase'
 import { RootState } from '@/features/store'
 import { Animal } from '@/types'
 import { setError } from '@/features/auth/authSlice'
-import { updateAnimal } from '@/features/animals/animalsSlice'
+import { addAnimal, updateAnimal } from '@/features/animals/animalsSlice'
+import { serializeObj } from '@/features/libs/serializeObj'
 
 /**
  * Hook personalizado para el manejo de animales
@@ -50,7 +51,7 @@ export const useAnimalCRUD = () => {
 
       const docRef = await addDoc(collection(db, 'animals'), newAnimal)
 
-      // No necesitamos dispatch aquí porque el listener en tiempo real se encargará
+      dispatch(addAnimal(serializeObj({ id: docRef.id, ...newAnimal })))
       console.log('Animal creado con ID:', docRef.id)
 
       return docRef.id

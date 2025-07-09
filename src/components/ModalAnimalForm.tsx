@@ -21,16 +21,15 @@ const ModalAnimalForm: React.FC<ModalAnimalFormProps> = ({
   initialData,
   mode = 'create'
 }) => {
-  const { create: createAnimal } = useAnimalCRUD()
-  const [isLoading, setIsLoading] = React.useState(false)
+  const { create: createAnimal, isLoading } = useAnimalCRUD()
   const { isOpen, openModal, closeModal } = useModal()
 
   const handleCreateAnimal = async (
     animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
   ) => {
-    setIsLoading(true)
     try {
       await createAnimal(animalData)
+      closeModal() // Cerrar modal después de crear
     } catch (error) {
       console.error('Error creating animal:', error)
     }
