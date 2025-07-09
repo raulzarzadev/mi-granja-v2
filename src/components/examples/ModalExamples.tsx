@@ -215,50 +215,11 @@ export const ExampleFullModal = () => {
 
 // Ejemplo 5: Modal de Breeding Form
 export const ExampleModalBreedingForm = () => {
-  const mockAnimals: Animal[] = [
-    {
-      id: '1',
-      farmerId: 'farmer1',
-      animalId: 'COW-001',
-      type: 'vaca_leche',
-      stage: 'lechera',
-      gender: 'hembra',
-      birthDate: new Date('2021-01-15'),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: '2',
-      farmerId: 'farmer1',
-      animalId: 'BULL-001',
-      type: 'vaca_leche',
-      stage: 'reproductor',
-      gender: 'macho',
-      birthDate: new Date('2020-03-10'),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  ]
-
-  const handleBreedingSubmit = async (
-    data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
-  ) => {
-    console.log('Breeding data:', data)
-    // Aquí iría la lógica para guardar
-  }
-
   return <ModalBreedingForm />
 }
 
 // Ejemplo 6: Modal de Animal Form
 export const ExampleModalAnimalForm = () => {
-  const handleAnimalSubmit = async (
-    data: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
-  ) => {
-    console.log('Animal data:', data)
-    // Aquí iría la lógica para guardar
-  }
-
   return (
     <div className="space-y-4">
       {/* Modal para crear animal */}
@@ -266,14 +227,7 @@ export const ExampleModalAnimalForm = () => {
 
       {/* Modal para editar animal con botón personalizado */}
       <ModalAnimalForm
-        onSubmit={handleAnimalSubmit}
         mode="edit"
-        isLoading={false}
-        triggerButton={
-          <button className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700">
-            ✏️ Editar Animal Personalizado
-          </button>
-        }
         initialData={{
           id: '1',
           farmerId: 'farmer1',
@@ -292,48 +246,7 @@ export const ExampleModalAnimalForm = () => {
 
 // Ejemplo 7: Modal de Recordatorio (Reminder)
 export const ExampleModalReminderForm = () => {
-  // Datos de prueba para animales
-  const mockAnimals: Animal[] = [
-    {
-      id: '1',
-      farmerId: 'farmer-1',
-      animalId: 'COW-001',
-      type: 'vaca_leche',
-      stage: 'lechera',
-      gender: 'hembra',
-      birthDate: new Date('2021-01-15'),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: '2',
-      farmerId: 'farmer-1',
-      animalId: 'BULL-001',
-      type: 'vaca_leche',
-      stage: 'reproductor',
-      gender: 'macho',
-      birthDate: new Date('2020-03-10'),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  ]
-
-  const handleReminderSubmit = async (
-    data: Omit<Reminder, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
-  ) => {
-    console.log('Reminder data:', data)
-    // Simular guardado
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    alert('Recordatorio creado exitosamente!')
-  }
-
-  return (
-    <ModalReminderForm
-      animals={mockAnimals}
-      onSubmit={handleReminderSubmit}
-      isLoading={false}
-    />
-  )
+  return <ModalReminderForm />
 }
 
 /**

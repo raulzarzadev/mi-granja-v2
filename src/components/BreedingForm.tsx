@@ -4,8 +4,7 @@ import React, { useState } from 'react'
 import { Animal, BreedingRecord, FemaleBreedingInfo } from '@/types'
 import {
   calculateExpectedBirthDate,
-  getNextBirthInfo,
-  getBreedingAdvice
+  getNextBirthInfo
 } from '@/lib/animalBreedingConfig'
 
 interface BreedingFormProps {
@@ -52,12 +51,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   const [showFemaleDropdown, setShowFemaleDropdown] = useState(false)
 
   // Filtrar animales por género y capacidad reproductiva
-  const females = animals.filter(
-    (animal) =>
-      animal.gender === 'hembra' &&
-      (animal.stage === 'reproductor' || animal.stage === 'lechera')
-  )
-
   const males = animals.filter(
     (animal) => animal.gender === 'macho' && animal.stage === 'reproductor'
   )
@@ -116,10 +109,34 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         [name]: checkbox.checked
       }))
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value
-      }))
+      setFormData((prev) => {
+        const newFormData = {
+          ...prev,
+          [name]: value
+        }
+
+        // Si se cambia el macho, limpiar hembras que no sean del mismo tipo
+        if (name === 'maleId' && value) {
+          const newMale = animals.find((animal) => animal.id === value)
+          if (newMale) {
+            // Filtrar hembras seleccionadas para mantener solo las del mismo tipo
+            const compatibleFemaleIds = prev.femaleIds.filter((femaleId) => {
+              const female = animals.find((animal) => animal.id === femaleId)
+              return female && female.type === newMale.type
+            })
+
+            // Actualizar también la info de breeding para mantener solo hembras compatibles
+            const compatibleBreedingInfo = prev.femaleBreedingInfo.filter(
+              (info) => compatibleFemaleIds.includes(info.femaleId)
+            )
+
+            newFormData.femaleIds = compatibleFemaleIds
+            newFormData.femaleBreedingInfo = compatibleBreedingInfo
+          }
+        }
+
+        return newFormData
+      })
     }
   }
 
@@ -158,8 +175,14 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   }
 
   const getFilteredFemales = () => {
-    if (!femaleSearch) return females
-    return females
+    if (!selectedMale) {
+      return [] // No mostrar hembras hasta que se seleccione un macho
+    }
+
+    const availableFemales = filteredFemales
+
+    if (!femaleSearch) return availableFemales
+    return availableFemales
       .filter(
         (animal) =>
           animal.animalId.toLowerCase().includes(femaleSearch.toLowerCase()) ||
@@ -301,9 +324,73 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     })
   }
 
+  // Obtener el macho seleccionado para filtrar hembras
+  const selectedMale = animals.find((animal) => animal.id === formData.maleId)
+
+  // Filtrar hembras según el tipo del macho seleccionado
+  const getFilteredFemalesByMaleType = () => {
+    if (!selectedMale) return []
+
+    return animals.filter(
+      (animal) =>
+        animal.gender === 'hembra' &&
+        animal.type === selectedMale.type && // Mismo tipo que el macho
+        (animal.stage === 'reproductor' || animal.stage === 'lechera')
+    )
+  }
+
+  const filteredFemales = getFilteredFemalesByMaleType()
+
   return (
     <div className="space-y-4">
+      {/* Badge de tipo de animal */}
+      {selectedMale && (
+        <div className="flex justify-end">
+          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+            <span className="mr-1">
+              {selectedMale.type === 'oveja' && '🐑'}
+              {selectedMale.type === 'cabra' && '🐐'}
+              {(selectedMale.type === 'vaca_leche' ||
+                selectedMale.type === 'vaca_engorda') &&
+                '🐄'}
+              {selectedMale.type === 'cerdo' && '🐷'}
+            </span>
+            {selectedMale.type.charAt(0).toUpperCase() +
+              selectedMale.type.slice(1).replace('_', ' ')}
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Macho */}
+        <div>
+          <label
+            htmlFor="maleId"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Macho *
+          </label>
+          <select
+            id="maleId"
+            name="maleId"
+            value={formData.maleId}
+            onChange={handleChange}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            <option value="">Seleccionar macho</option>
+            {males.map((animal) => (
+              <option key={animal.id} value={animal.id}>
+                {animal.animalId} - {animal.type}
+              </option>
+            ))}
+          </select>
+          {males.length === 0 && (
+            <p className="text-sm text-gray-600 mt-1 font-medium">
+              No hay machos reproductores disponibles
+            </p>
+          )}
+        </div>
         {/* Hembra */}
         <div>
           <label
@@ -346,17 +433,22 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
               onKeyDown={handleKeyDown}
               onFocus={() => setShowFemaleDropdown(true)}
               onBlur={() => setTimeout(() => setShowFemaleDropdown(false), 200)}
-              placeholder="Buscar hembra por número o tipo..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder={
+                selectedMale
+                  ? `Buscar hembra ${selectedMale.type} por número...`
+                  : 'Primero selecciona un macho'
+              }
+              disabled={!selectedMale}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
 
             {/* Dropdown de sugerencias */}
-            {showFemaleDropdown && (
+            {showFemaleDropdown && selectedMale && (
               <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto mt-1">
                 {getFilteredFemales().length === 0 ? (
                   <div className="px-3 py-2 text-gray-600 text-sm font-medium">
-                    {females.length === 0
-                      ? 'No hay hembras reproductoras'
+                    {filteredFemales.length === 0
+                      ? `No hay hembras ${selectedMale.type} disponibles`
                       : 'No se encontraron hembras'}
                   </div>
                 ) : (
@@ -380,41 +472,15 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             )}
           </div>
 
-          {formData.femaleIds.length === 0 && (
+          {!selectedMale ? (
             <p className="text-sm text-gray-600 mt-1 font-medium">
-              Debes seleccionar al menos una hembra reproductora
+              Primero selecciona un macho para ver las hembras compatibles
             </p>
-          )}
-        </div>
-
-        {/* Macho */}
-        <div>
-          <label
-            htmlFor="maleId"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Macho *
-          </label>
-          <select
-            id="maleId"
-            name="maleId"
-            value={formData.maleId}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-          >
-            <option value="">Seleccionar macho</option>
-            {males.map((animal) => (
-              <option key={animal.id} value={animal.id}>
-                {animal.animalId} - {animal.type}
-              </option>
-            ))}
-          </select>
-          {males.length === 0 && (
+          ) : formData.femaleIds.length === 0 ? (
             <p className="text-sm text-gray-600 mt-1 font-medium">
-              No hay machos reproductores disponibles
+              Debes seleccionar al menos una hembra {selectedMale.type}
             </p>
-          )}
+          ) : null}
         </div>
 
         {/* Fecha de monta */}
@@ -435,39 +501,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
-
-        {/* Consejos reproductivos */}
-        {formData.femaleIds.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-            <h4 className="text-sm font-medium text-blue-900 mb-2">
-              💡 Consejos Reproductivos
-            </h4>
-            <div className="space-y-2">
-              {getSelectedFemales().map((animal) => {
-                if (!animal) return null
-                const advice = getBreedingAdvice(
-                  new Date(formData.breedingDate),
-                  animal.type,
-                  animal.age
-                )
-                return (
-                  <div key={animal.id} className="text-sm">
-                    <div className="font-medium text-blue-800 mb-1">
-                      {animal.animalId} ({animal.type}):
-                    </div>
-                    <ul className="list-disc list-inside ml-2 space-y-1">
-                      {advice.map((tip, index) => (
-                        <li key={index} className="text-blue-700">
-                          {tip}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
 
         {/* Información del parto más próximo */}
         {(() => {
@@ -613,11 +646,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                             className="block text-xs font-medium text-gray-600 mb-1"
                           >
                             Parto esperado
-                            {pregnancyConfirmedDateStr && (
-                              <span className="text-xs text-blue-600 ml-1">
-                                (calculado desde confirmación)
-                              </span>
-                            )}
                           </label>
                           <input
                             type="date"
@@ -674,7 +702,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
           <button
             type="submit"
             disabled={
-              isLoading || formData.femaleIds.length === 0 || !formData.maleId
+              isLoading || !formData.maleId || formData.femaleIds.length === 0
             }
             className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
@@ -682,6 +710,10 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
               ? initialData
                 ? 'Actualizando...'
                 : 'Registrando...'
+              : !formData.maleId
+              ? 'Selecciona un macho'
+              : formData.femaleIds.length === 0
+              ? 'Selecciona hembras'
               : initialData
               ? 'Actualizar Monta'
               : 'Registrar Monta'}
