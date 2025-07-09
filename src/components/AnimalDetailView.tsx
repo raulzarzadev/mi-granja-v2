@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { Animal, BreedingRecord, WeightRecord, MilkProduction } from '@/types'
+import ModalEditAnimal from './ModalEditAnimal'
 
 interface AnimalDetailViewProps {
   animal: Animal
@@ -134,6 +135,9 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                     {animal.stage}
                   </span>
                 </div>
+              </div>
+              <div>
+                <ModalEditAnimal animal={animal} />
               </div>
             </div>
           </div>

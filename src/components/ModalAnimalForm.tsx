@@ -5,7 +5,7 @@ import { Animal } from '@/types'
 import { Modal } from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
 import AnimalForm from '@/components/AnimalForm'
-import { useAnimals } from '@/hooks/useAnimals'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 
 interface ModalAnimalFormProps {
   initialData?: Animal
@@ -21,7 +21,7 @@ const ModalAnimalForm: React.FC<ModalAnimalFormProps> = ({
   initialData,
   mode = 'create'
 }) => {
-  const { createAnimal } = useAnimals()
+  const { create: createAnimal } = useAnimalCRUD()
   const [isLoading, setIsLoading] = React.useState(false)
   const { isOpen, openModal, closeModal } = useModal()
 
