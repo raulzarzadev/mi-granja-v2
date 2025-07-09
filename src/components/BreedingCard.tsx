@@ -9,6 +9,7 @@ interface BreedingCardProps {
   animals: Animal[]
   onEdit?: (record: BreedingRecord) => void
   onAddBirth?: (record: BreedingRecord) => void
+  onDelete?: (record: BreedingRecord) => void
 }
 
 /**
@@ -18,7 +19,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   record,
   animals,
   onEdit,
-  onAddBirth
+  onAddBirth,
+  onDelete
 }) => {
   // Manejar múltiples hembras
   const male = animals.find((a) => a.id === record.maleId)
@@ -28,6 +30,16 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       month: '2-digit',
       year: 'numeric'
     }).format(new Date(date))
+  }
+
+  const handleDelete = () => {
+    if (
+      window.confirm(
+        '¿Estás seguro de que quieres eliminar este registro de monta? Esta acción no se puede deshacer.'
+      )
+    ) {
+      onDelete?.(record)
+    }
   }
 
   const getDaysUntilBirth = () => {
@@ -146,6 +158,14 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                 Registrar Parto
               </button>
             )}
+          {onDelete && (
+            <button
+              onClick={handleDelete}
+              className="text-red-600 hover:text-red-800 text-sm font-medium"
+            >
+              Eliminar
+            </button>
+          )}
         </div>
       </div>
 
