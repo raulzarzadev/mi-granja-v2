@@ -10,6 +10,7 @@ import { serializeObj } from '@/features/libs/serializeObj'
 
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { setAnimals } from '@/features/animals/animalsSlice'
+import { useBreeding } from '@/hooks/useBreeding'
 
 interface ProvidersProps {
   children: React.ReactNode
@@ -45,6 +46,10 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
         console.error('Error fetching user animals:', error)
       })
   }, [dispatch, getUserAnimals])
+
+  // Initialize breeding records
+  // This will trigger the useBreeding hook to fetch breeding records
+  useBreeding()
 
   return <>{children}</>
 }

@@ -37,6 +37,8 @@ const ModalEditBreeding: React.FC<ModalEditBreedingProps> = ({
   ) => {
     if (!record) return
 
+    console.log({ data })
+
     try {
       await onSubmit(record.id, data)
       onClose()
@@ -45,8 +47,6 @@ const ModalEditBreeding: React.FC<ModalEditBreedingProps> = ({
       throw error
     }
   }
-
-  console.log({ record })
 
   if (!record) return null
 

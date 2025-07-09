@@ -38,12 +38,23 @@ export interface Animal {
   updatedAt: Date
 }
 
+export interface FemaleBreedingInfo {
+  femaleId: string
+  pregnancyConfirmed: boolean
+  pregnancyConfirmedDate?: Date
+  expectedBirthDate?: Date
+  actualBirthDate?: Date
+  offspring?: string[] // IDs de las crías de esta hembra específica
+}
+
 export interface BreedingRecord {
   id: string
   farmerId: string
   femaleIds: string[] // IDs de las hembras involucradas
   maleId: string
   breedingDate: Date
+  femaleBreedingInfo: FemaleBreedingInfo[] // Información específica de cada hembra
+  // Campos legacy (mantenemos por compatibilidad)
   expectedBirthDate?: Date
   actualBirthDate?: Date
   pregnancyConfirmed: boolean

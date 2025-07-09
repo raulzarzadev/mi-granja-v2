@@ -8,21 +8,20 @@ import BreedingCard from '@/components/BreedingCard'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ModalBreedingForm from './ModalBreedingForm'
 import ModalEditBreeding from './ModalEditBreeding'
+import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 
 /**
  * Sección de reproducción del dashboard
  */
 const BreedingSection: React.FC = () => {
-  const { animals } = useAnimals()
   const {
-    breedingRecords,
-    isLoading,
-    isSubmitting,
     updateBreedingRecord,
     getActivePregnancies,
     getUpcomingBirths,
     getStats
-  } = useBreeding()
+  } = useBreedingCRUD()
+  const { animals } = useAnimals()
+  const { breedingRecords, isLoading } = useBreeding()
 
   const [filter, setFilter] = useState<'all' | 'pregnant' | 'upcoming'>('all')
   const [editingRecord, setEditingRecord] = useState<BreedingRecord | null>(
@@ -218,7 +217,7 @@ const BreedingSection: React.FC = () => {
         record={editingRecord}
         onSubmit={handleUpdateBreeding}
         onClose={() => setEditingRecord(null)}
-        isLoading={isSubmitting}
+        isLoading={isLoading}
       />
     </div>
   )

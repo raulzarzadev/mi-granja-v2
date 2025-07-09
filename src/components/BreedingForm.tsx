@@ -1,7 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Animal, BreedingRecord } from '@/types'
+import React, { useState, useEffect } from 'react'
+import { Animal, BreedingRecord, FemaleBreedingInfo } from '@/types'
+import {
+  calculateExpectedBirthDate,
+  getBreedingAdvice
+} from '@/lib/animalBreedingConfig'
 
 interface BreedingFormProps {
   animals: Animal[]
@@ -37,8 +41,11 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
       ? new Date(initialData.expectedBirthDate).toISOString().split('T')[0]
       : '',
     pregnancyConfirmed: initialData?.pregnancyConfirmed || false,
-    notes: initialData?.notes || ''
+    notes: initialData?.notes || '',
+    femaleBreedingInfo: initialData?.femaleBreedingInfo || []
   })
+
+  console.log({ initialData })
 
   const [femaleSearch, setFemaleSearch] = useState('')
   const [showFemaleDropdown, setShowFemaleDropdown] = useState(false)
@@ -61,21 +68,24 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
       return
     }
 
-    // Calcular fecha esperada de parto (aproximadamente 5 meses para ovejas, 9 para vacas)
-    const female = animals.find((a) => a.id === formData.femaleIds[0])
-    let gestationDays = 150 // Por defecto ovejas/cabras
-
-    if (female?.type.includes('vaca')) {
-      gestationDays = 280 // Vacas
-    } else if (female?.type === 'cerdo') {
-      gestationDays = 115 // Cerdos
-    }
-
+    // Calcular fecha esperada de parto usando configuración específica por animal
     const breedingDate = new Date(formData.breedingDate)
-    const expectedBirth = new Date(breedingDate)
-    expectedBirth.setDate(expectedBirth.getDate() + gestationDays)
+
+    // Calcular expected birth date basado en el primer animal (si hay múltiples del mismo tipo)
+    const expectedBirth =
+      formData.femaleIds.length > 0
+        ? (() => {
+            const firstFemale = animals.find(
+              (a) => a.id === formData.femaleIds[0]
+            )
+            return firstFemale
+              ? calculateExpectedBirthDate(breedingDate, firstFemale.type)
+              : new Date(breedingDate.getTime() + 150 * 24 * 60 * 60 * 1000) // Fallback 150 días
+          })()
+        : new Date(breedingDate.getTime() + 150 * 24 * 60 * 60 * 1000)
 
     try {
+      console.log({ formData })
       await onSubmit({
         // Enviar arreglo de IDs de hembras en lugar de una sola ID
         femaleIds: formData.femaleIds,
@@ -83,6 +93,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         breedingDate: new Date(formData.breedingDate),
         expectedBirthDate: expectedBirth,
         pregnancyConfirmed: formData.pregnancyConfirmed,
+        femaleBreedingInfo: formData.femaleBreedingInfo,
         notes: formData.notes
       })
     } catch (error) {
@@ -160,6 +171,100 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     return formData.femaleIds
       .map((id) => animals.find((animal) => animal.id === id))
       .filter(Boolean)
+  }
+
+  // Manejar cambios en la información de breeding de cada hembra
+  const handleFemaleBreedingChange = (
+    femaleId: string,
+    field: string,
+    value: string | boolean
+  ) => {
+    setFormData((prev) => {
+      const updatedInfo = [...prev.femaleBreedingInfo]
+      const existingIndex = updatedInfo.findIndex(
+        (info) => info.femaleId === femaleId
+      )
+
+      if (existingIndex >= 0) {
+        // Actualizar info existente
+        const currentInfo = updatedInfo[existingIndex]
+
+        if (field === 'pregnancyConfirmed' && value === true) {
+          // Cuando se confirma embarazo, calcular fecha esperada automáticamente
+          const animal = animals.find((a) => a.id === femaleId)
+          const confirmDate =
+            currentInfo.pregnancyConfirmedDate || new Date(prev.breedingDate)
+          const expectedBirth = animal
+            ? calculateExpectedBirthDate(confirmDate, animal.type)
+            : undefined
+
+          updatedInfo[existingIndex] = {
+            ...currentInfo,
+            pregnancyConfirmed: true,
+            expectedBirthDate: expectedBirth
+          }
+        } else if (field === 'pregnancyConfirmedDate') {
+          const confirmDate = value ? new Date(value as string) : undefined
+          // Recalcular fecha esperada basada en la fecha de confirmación
+          const animal = animals.find((a) => a.id === femaleId)
+          const expectedBirth =
+            confirmDate && animal && currentInfo.pregnancyConfirmed
+              ? calculateExpectedBirthDate(confirmDate, animal.type)
+              : currentInfo.expectedBirthDate
+
+          updatedInfo[existingIndex] = {
+            ...currentInfo,
+            pregnancyConfirmedDate: confirmDate,
+            expectedBirthDate: expectedBirth
+          }
+        } else if (field === 'expectedBirthDate') {
+          updatedInfo[existingIndex] = {
+            ...currentInfo,
+            expectedBirthDate: value ? new Date(value as string) : undefined
+          }
+        } else {
+          updatedInfo[existingIndex] = {
+            ...currentInfo,
+            [field]: value
+          }
+        }
+      } else {
+        // Crear nueva info para esta hembra
+        const newInfo: FemaleBreedingInfo = {
+          femaleId,
+          pregnancyConfirmed:
+            field === 'pregnancyConfirmed' ? (value as boolean) : false,
+          offspring: []
+        }
+
+        if (field === 'pregnancyConfirmed' && value === true) {
+          // Auto-calcular fecha esperada al confirmar embarazo
+          const animal = animals.find((a) => a.id === femaleId)
+          const breedingDate = new Date(prev.breedingDate)
+          newInfo.expectedBirthDate = animal
+            ? calculateExpectedBirthDate(breedingDate, animal.type)
+            : undefined
+        }
+
+        if (field === 'pregnancyConfirmedDate' && value) {
+          newInfo.pregnancyConfirmedDate = new Date(value as string)
+          // Si se establece fecha de confirmación, calcular parto esperado desde esa fecha
+          const animal = animals.find((a) => a.id === femaleId)
+          newInfo.expectedBirthDate = animal
+            ? calculateExpectedBirthDate(new Date(value as string), animal.type)
+            : undefined
+        }
+        if (field === 'expectedBirthDate' && value) {
+          newInfo.expectedBirthDate = new Date(value as string)
+        }
+        updatedInfo.push(newInfo)
+      }
+
+      return {
+        ...prev,
+        femaleBreedingInfo: updatedInfo
+      }
+    })
   }
 
   return (
@@ -297,23 +402,168 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
           />
         </div>
 
-        {/* Embarazo confirmado */}
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="pregnancyConfirmed"
-            name="pregnancyConfirmed"
-            checked={formData.pregnancyConfirmed}
-            onChange={handleChange}
-            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-          />
-          <label
-            htmlFor="pregnancyConfirmed"
-            className="ml-2 block text-sm text-gray-700"
-          >
-            Embarazo confirmado
-          </label>
-        </div>
+        {/* Consejos reproductivos */}
+        {formData.femaleIds.length > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+            <h4 className="text-sm font-medium text-blue-900 mb-2">
+              💡 Consejos Reproductivos
+            </h4>
+            <div className="space-y-2">
+              {getSelectedFemales().map((animal) => {
+                if (!animal) return null
+                const advice = getBreedingAdvice(
+                  new Date(formData.breedingDate),
+                  animal.type,
+                  animal.age
+                )
+                return (
+                  <div key={animal.id} className="text-sm">
+                    <div className="font-medium text-blue-800 mb-1">
+                      {animal.animalId} ({animal.type}):
+                    </div>
+                    <ul className="list-disc list-inside ml-2 space-y-1">
+                      {advice.map((tip, index) => (
+                        <li key={index} className="text-blue-700">
+                          {tip}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Estado de embarazo por hembra */}
+        {formData.femaleIds.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Estado de Embarazo por Hembra
+            </label>
+            <div className="space-y-3 bg-gray-50 p-4 rounded-md">
+              {getSelectedFemales().map((animal) => {
+                const femaleInfo = formData.femaleBreedingInfo.find(
+                  (info) => info.femaleId === animal?.id
+                ) || {
+                  femaleId: animal?.id || '',
+                  pregnancyConfirmed: false,
+                  pregnancyConfirmedDate: '',
+                  expectedBirthDate: ''
+                }
+
+                // Convertir fechas a strings para los inputs
+                const pregnancyConfirmedDateStr =
+                  femaleInfo.pregnancyConfirmedDate
+                    ? typeof femaleInfo.pregnancyConfirmedDate === 'string'
+                      ? femaleInfo.pregnancyConfirmedDate
+                      : new Date(femaleInfo.pregnancyConfirmedDate)
+                          .toISOString()
+                          .split('T')[0]
+                    : ''
+
+                const expectedBirthDateStr = femaleInfo.expectedBirthDate
+                  ? typeof femaleInfo.expectedBirthDate === 'string'
+                    ? femaleInfo.expectedBirthDate
+                    : new Date(femaleInfo.expectedBirthDate)
+                        .toISOString()
+                        .split('T')[0]
+                  : ''
+
+                return (
+                  <div key={animal?.id} className="bg-white p-3 rounded border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-gray-900">
+                        {animal?.animalId} - {animal?.type}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {/* Embarazo confirmado */}
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id={`pregnancy-${animal?.id}`}
+                          checked={femaleInfo.pregnancyConfirmed}
+                          onChange={(e) =>
+                            handleFemaleBreedingChange(
+                              animal?.id || '',
+                              'pregnancyConfirmed',
+                              e.target.checked
+                            )
+                          }
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                        />
+                        <label
+                          htmlFor={`pregnancy-${animal?.id}`}
+                          className="ml-2 block text-sm text-gray-700"
+                        >
+                          Embarazo confirmado
+                        </label>
+                      </div>
+
+                      {/* Fecha de confirmación */}
+                      {femaleInfo.pregnancyConfirmed && (
+                        <div>
+                          <label
+                            htmlFor={`confirmed-date-${animal?.id}`}
+                            className="block text-xs font-medium text-gray-600 mb-1"
+                          >
+                            Fecha confirmación
+                          </label>
+                          <input
+                            type="date"
+                            id={`confirmed-date-${animal?.id}`}
+                            value={pregnancyConfirmedDateStr}
+                            onChange={(e) =>
+                              handleFemaleBreedingChange(
+                                animal?.id || '',
+                                'pregnancyConfirmedDate',
+                                e.target.value
+                              )
+                            }
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
+                          />
+                        </div>
+                      )}
+
+                      {/* Parto esperado específico */}
+                      {femaleInfo.pregnancyConfirmed && (
+                        <div>
+                          <label
+                            htmlFor={`expected-birth-${animal?.id}`}
+                            className="block text-xs font-medium text-gray-600 mb-1"
+                          >
+                            Parto esperado
+                            {pregnancyConfirmedDateStr && (
+                              <span className="text-xs text-blue-600 ml-1">
+                                (calculado desde confirmación)
+                              </span>
+                            )}
+                          </label>
+                          <input
+                            type="date"
+                            id={`expected-birth-${animal?.id}`}
+                            value={expectedBirthDateStr}
+                            onChange={(e) =>
+                              handleFemaleBreedingChange(
+                                animal?.id || '',
+                                'expectedBirthDate',
+                                e.target.value
+                              )
+                            }
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
+                            placeholder="Se calcula automáticamente"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Notas */}
         <div>
