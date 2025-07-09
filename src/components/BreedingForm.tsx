@@ -590,80 +590,104 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                       <span className="font-medium text-gray-900">
                         {animal?.animalId} - {animal?.type}
                       </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {/* Embarazo confirmado */}
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          id={`pregnancy-${animal?.id}`}
-                          checked={femaleInfo.pregnancyConfirmed}
-                          onChange={(e) =>
+                      {!femaleInfo.pregnancyConfirmed && (
+                        <button
+                          type="button"
+                          onClick={() =>
                             handleFemaleBreedingChange(
                               animal?.id || '',
                               'pregnancyConfirmed',
-                              e.target.checked
+                              true
                             )
                           }
-                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                        />
-                        <label
-                          htmlFor={`pregnancy-${animal?.id}`}
-                          className="ml-2 block text-sm text-gray-700"
+                          className="px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors"
                         >
-                          Embarazo confirmado
-                        </label>
-                      </div>
-
-                      {/* Fecha de confirmación */}
-                      {femaleInfo.pregnancyConfirmed && (
-                        <div>
-                          <label
-                            htmlFor={`confirmed-date-${animal?.id}`}
-                            className="block text-xs font-medium text-gray-600 mb-1"
-                          >
-                            Fecha confirmación
-                          </label>
-                          <input
-                            type="date"
-                            id={`confirmed-date-${animal?.id}`}
-                            value={pregnancyConfirmedDateStr}
-                            onChange={(e) =>
-                              handleFemaleBreedingChange(
-                                animal?.id || '',
-                                'pregnancyConfirmedDate',
-                                e.target.value
-                              )
-                            }
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
-                          />
-                        </div>
+                          Confirmar Embarazo
+                        </button>
                       )}
-
-                      {/* Parto esperado específico */}
                       {femaleInfo.pregnancyConfirmed && (
-                        <div>
-                          <label
-                            htmlFor={`expected-birth-${animal?.id}`}
-                            className="block text-xs font-medium text-gray-600 mb-1"
-                          >
-                            Parto esperado
-                          </label>
-                          <input
-                            type="date"
-                            id={`expected-birth-${animal?.id}`}
-                            value={expectedBirthDateStr}
-                            onChange={(e) =>
-                              handleFemaleBreedingChange(
-                                animal?.id || '',
-                                'expectedBirthDate',
-                                e.target.value
-                              )
-                            }
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
-                            placeholder="Se calcula automáticamente"
-                          />
+                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
+                          ✓ Embarazo Confirmado
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3">
+                      {/* Estado del embarazo */}
+                      {!femaleInfo.pregnancyConfirmed ? (
+                        <div className="text-sm text-gray-600">
+                          Embarazo pendiente de confirmación
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {/* Controles para embarazo confirmado */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-green-700 font-medium">
+                              Embarazo confirmado
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleFemaleBreedingChange(
+                                  animal?.id || '',
+                                  'pregnancyConfirmed',
+                                  false
+                                )
+                              }
+                              className="text-xs text-red-600 hover:text-red-800 underline"
+                            >
+                              Desconfirmar
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {/* Fecha de confirmación */}
+                            <div>
+                              <label
+                                htmlFor={`confirmed-date-${animal?.id}`}
+                                className="block text-xs font-medium text-gray-600 mb-1"
+                              >
+                                Fecha confirmación
+                              </label>
+                              <input
+                                type="date"
+                                id={`confirmed-date-${animal?.id}`}
+                                value={pregnancyConfirmedDateStr}
+                                onChange={(e) =>
+                                  handleFemaleBreedingChange(
+                                    animal?.id || '',
+                                    'pregnancyConfirmedDate',
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
+                              />
+                            </div>
+
+                            {/* Parto esperado específico */}
+                            <div>
+                              <label
+                                htmlFor={`expected-birth-${animal?.id}`}
+                                className="block text-xs font-medium text-gray-600 mb-1"
+                              >
+                                Parto esperado
+                              </label>
+                              <input
+                                type="date"
+                                id={`expected-birth-${animal?.id}`}
+                                value={expectedBirthDateStr}
+                                onChange={(e) =>
+                                  handleFemaleBreedingChange(
+                                    animal?.id || '',
+                                    'expectedBirthDate',
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
+                                placeholder="Se calcula automáticamente"
+                              />
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
