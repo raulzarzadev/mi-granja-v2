@@ -10,10 +10,7 @@ interface ModalEditBreedingProps {
   record: BreedingRecord | null
   onSubmit: (
     id: string,
-    data: Omit<
-      BreedingRecord,
-      'id' | 'farmerId' | 'createdAt' | 'updatedAt'
-    > & { femaleIds: string[] }
+    data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
   ) => Promise<void>
   onClose: () => void
   isLoading?: boolean
@@ -30,10 +27,7 @@ const ModalEditBreeding: React.FC<ModalEditBreedingProps> = ({
   isLoading = false
 }) => {
   const handleSubmit = async (
-    data: Omit<
-      BreedingRecord,
-      'id' | 'farmerId' | 'createdAt' | 'updatedAt'
-    > & { femaleIds: string[] }
+    data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
   ) => {
     if (!record) return
 

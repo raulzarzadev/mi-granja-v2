@@ -25,6 +25,7 @@ const BreedingSection: React.FC = () => {
   const { create: createAnimal } = useAnimalCRUD()
   const { animals } = useAnimals()
   const { breedingRecords, isLoading } = useBreeding()
+  const { deleteBreedingRecord } = useBreedingCRUD()
 
   const [filter, setFilter] = useState<'all' | 'pregnant' | 'upcoming'>('all')
   const [editingRecord, setEditingRecord] = useState<BreedingRecord | null>(
@@ -49,10 +50,7 @@ const BreedingSection: React.FC = () => {
 
   const handleUpdateBreeding = async (
     id: string,
-    data: Omit<
-      BreedingRecord,
-      'id' | 'farmerId' | 'createdAt' | 'updatedAt'
-    > & { femaleIds: string[] }
+    data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
   ) => {
     try {
       await updateBreedingRecord(id, data)
@@ -82,7 +80,7 @@ const BreedingSection: React.FC = () => {
             animalId: offspring.animalId,
             type: mother.type, // Las crías heredan el tipo de la madre
             stage: 'cria' as const,
-            weight: offspring.weight,
+            weight: offspring.weight || undefined, // Convert null to undefined
             birthDate: new Date(
               `${birthData.birthDate}T${birthData.birthTime}`
             ),
@@ -283,6 +281,9 @@ const BreedingSection: React.FC = () => {
                 }}
                 onAddBirth={(record) => {
                   setBirthRecord(record)
+                }}
+                onDelete={async (record) => {
+                  await deleteBreedingRecord(record.id)
                 }}
               />
             ))}

@@ -10,10 +10,7 @@ import {
 interface BreedingFormProps {
   animals: Animal[]
   onSubmit: (
-    data: Omit<
-      BreedingRecord,
-      'id' | 'farmerId' | 'createdAt' | 'updatedAt'
-    > & { femaleIds: string[] }
+    data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
   ) => Promise<void>
   onCancel: () => void
   isLoading?: boolean
@@ -32,7 +29,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   initialData
 }) => {
   const [formData, setFormData] = useState({
-    femaleIds: initialData?.femaleIds || ([] as string[]),
     maleId: initialData?.maleId || '',
     breedingDate: initialData?.breedingDate
       ? new Date(initialData.breedingDate).toISOString().split('T')[0]
@@ -44,6 +40,9 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     notes: initialData?.notes || '',
     femaleBreedingInfo: initialData?.femaleBreedingInfo || []
   })
+
+  // Derivar femaleIds de femaleBreedingInfo
+  const femaleIds = formData.femaleBreedingInfo.map((info) => info.femaleId)
 
   console.log({ initialData })
 
@@ -58,7 +57,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (formData.femaleIds.length === 0 || !formData.maleId) {
+    if (femaleIds.length === 0 || !formData.maleId) {
       return
     }
 
@@ -67,11 +66,9 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
     // Calcular expected birth date basado en el primer animal (si hay múltiples del mismo tipo)
     const expectedBirth =
-      formData.femaleIds.length > 0
+      femaleIds.length > 0
         ? (() => {
-            const firstFemale = animals.find(
-              (a) => a.id === formData.femaleIds[0]
-            )
+            const firstFemale = animals.find((a) => a.id === femaleIds[0])
             return firstFemale
               ? calculateExpectedBirthDate(breedingDate, firstFemale.type)
               : new Date(breedingDate.getTime() + 150 * 24 * 60 * 60 * 1000) // Fallback 150 días
@@ -81,8 +78,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     try {
       console.log({ formData })
       await onSubmit({
-        // Enviar arreglo de IDs de hembras en lugar de una sola ID
-        femaleIds: formData.femaleIds,
         maleId: formData.maleId,
         breedingDate: new Date(formData.breedingDate),
         expectedBirthDate: expectedBirth,
@@ -120,7 +115,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
           const newMale = animals.find((animal) => animal.id === value)
           if (newMale) {
             // Filtrar hembras seleccionadas para mantener solo las del mismo tipo
-            const compatibleFemaleIds = prev.femaleIds.filter((femaleId) => {
+            const compatibleFemaleIds = femaleIds.filter((femaleId) => {
               const female = animals.find((animal) => animal.id === femaleId)
               return female && female.type === newMale.type
             })
@@ -130,7 +125,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
               (info) => compatibleFemaleIds.includes(info.femaleId)
             )
 
-            newFormData.femaleIds = compatibleFemaleIds
             newFormData.femaleBreedingInfo = compatibleBreedingInfo
           }
         }
@@ -147,10 +141,17 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   }
 
   const handleSelectFemale = (animalId: string) => {
-    if (!formData.femaleIds.includes(animalId)) {
+    if (!femaleIds.includes(animalId)) {
+      // Agregar nueva hembra a femaleBreedingInfo
+      const newFemaleInfo: FemaleBreedingInfo = {
+        femaleId: animalId,
+        pregnancyConfirmed: false,
+        offspring: []
+      }
+
       setFormData((prev) => ({
         ...prev,
-        femaleIds: [...prev.femaleIds, animalId]
+        femaleBreedingInfo: [...prev.femaleBreedingInfo, newFemaleInfo]
       }))
     }
     setFemaleSearch('')
@@ -160,7 +161,9 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   const handleRemoveFemale = (animalId: string) => {
     setFormData((prev) => ({
       ...prev,
-      femaleIds: prev.femaleIds.filter((id) => id !== animalId)
+      femaleBreedingInfo: prev.femaleBreedingInfo.filter(
+        (info) => info.femaleId !== animalId
+      )
     }))
   }
 
@@ -188,18 +191,18 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
           animal.animalId.toLowerCase().includes(femaleSearch.toLowerCase()) ||
           animal.type.toLowerCase().includes(femaleSearch.toLowerCase())
       )
-      .filter((animal) => !formData.femaleIds.includes(animal.id))
+      .filter((animal) => !femaleIds.includes(animal.id))
   }
 
   const getSelectedFemales = () => {
-    return formData.femaleIds
+    return femaleIds
       .map((id) => animals.find((animal) => animal.id === id))
-      .filter(Boolean)
+      .filter(Boolean) as Animal[]
   }
 
   // Obtener información del próximo parto esperado
   const getFormNextBirthInfo = () => {
-    if (formData.femaleIds.length === 0) return null
+    if (femaleIds.length === 0) return null
 
     const selectedFemales = getSelectedFemales()
     const hasConfirmedPregnancies = formData.femaleBreedingInfo.some(
@@ -401,7 +404,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
           </label>
 
           {/* Badges de hembras seleccionadas */}
-          {formData.femaleIds.length > 0 && (
+          {femaleIds.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-2">
               {getSelectedFemales().map((animal) => (
                 <div
@@ -476,7 +479,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             <p className="text-sm text-gray-600 mt-1 font-medium">
               Primero selecciona un macho para ver las hembras compatibles
             </p>
-          ) : formData.femaleIds.length === 0 ? (
+          ) : femaleIds.length === 0 ? (
             <p className="text-sm text-gray-600 mt-1 font-medium">
               Debes seleccionar al menos una hembra {selectedMale.type}
             </p>
@@ -547,7 +550,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         })()}
 
         {/* Estado de embarazo por hembra */}
-        {formData.femaleIds.length > 0 && (
+        {femaleIds.length > 0 && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
               Estado de Embarazo por Hembra
@@ -701,9 +704,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
           </button>
           <button
             type="submit"
-            disabled={
-              isLoading || !formData.maleId || formData.femaleIds.length === 0
-            }
+            disabled={isLoading || !formData.maleId || femaleIds.length === 0}
             className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
             {isLoading
@@ -712,7 +713,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                 : 'Registrando...'
               : !formData.maleId
               ? 'Selecciona un macho'
-              : formData.femaleIds.length === 0
+              : femaleIds.length === 0
               ? 'Selecciona hembras'
               : initialData
               ? 'Actualizar Monta'

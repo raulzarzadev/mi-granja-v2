@@ -32,7 +32,6 @@ export const useBreedingCRUD = () => {
       const now = Timestamp.now()
       const docData = {
         farmerId: user.id,
-        femaleIds: data.femaleIds,
         maleId: data.maleId,
         breedingDate: Timestamp.fromDate(new Date(data.breedingDate)),
         expectedBirthDate: data.expectedBirthDate
@@ -84,7 +83,6 @@ export const useBreedingCRUD = () => {
       }
 
       // Añadir campos básicos si existen
-      if (updates.femaleIds) updateData.femaleIds = updates.femaleIds
       if (updates.maleId) updateData.maleId = updates.maleId
       if (updates.pregnancyConfirmed !== undefined)
         updateData.pregnancyConfirmed = updates.pregnancyConfirmed
@@ -184,6 +182,11 @@ export const useBreedingCRUD = () => {
     setIsSubmitting(true)
     try {
       await deleteDoc(doc(db, 'breedingRecords', id))
+      dispatch(
+        setBreedingRecordsSlice(
+          serializeObj(breedingRecords.filter((record) => record.id !== id))
+        )
+      )
     } catch (error) {
       console.error('Error deleting breeding record:', error)
       throw error
@@ -196,14 +199,17 @@ export const useBreedingCRUD = () => {
   const getRecordsByAnimal = (animalId: string) => {
     return breedingRecords.filter(
       (record) =>
-        record.femaleIds.includes(animalId) || record.maleId === animalId
+        record.femaleBreedingInfo?.some((info) => info.femaleId === animalId) ||
+        record.maleId === animalId
     )
   }
 
   // Obtener embarazos activos
   const getActivePregnancies = () => {
-    return breedingRecords.filter(
-      (record) => record.pregnancyConfirmed && !record.actualBirthDate
+    return breedingRecords.filter((record) =>
+      record.femaleBreedingInfo?.some(
+        (info) => info.pregnancyConfirmed && !info.actualBirthDate
+      )
     )
   }
 
@@ -213,15 +219,24 @@ export const useBreedingCRUD = () => {
     const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
     return breedingRecords.filter((record) => {
-      if (!record.expectedBirthDate || record.actualBirthDate) return false
-      const expected = new Date(record.expectedBirthDate)
-      return expected >= now && expected <= nextWeek
+      return record.femaleBreedingInfo?.some((info) => {
+        if (!info.expectedBirthDate || info.actualBirthDate) return false
+        const expected = new Date(info.expectedBirthDate)
+        return expected >= now && expected <= nextWeek
+      })
     })
   }
 
   // Obtener estadísticas
   const getStats = () => {
-    const activePregnancies = getActivePregnancies().length
+    const activePregnancies = breedingRecords.reduce(
+      (total, record) =>
+        total +
+        (record.femaleBreedingInfo?.filter(
+          (info) => info.pregnancyConfirmed && !info.actualBirthDate
+        ).length || 0),
+      0
+    )
     const upcomingBirths = getUpcomingBirths().length
     const totalOffspring = breedingRecords.reduce(
       (total, record) => total + (record.offspring?.length || 0),

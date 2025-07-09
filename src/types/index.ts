@@ -50,7 +50,10 @@ export interface FemaleBreedingInfo {
 export interface BreedingRecord {
   id: string
   farmerId: string
-  femaleIds: string[] // IDs de las hembras involucradas
+  /**
+   * @deprecated use femaleBreedingInfo instead
+   */
+  femaleIds?: string[] // IDs de las hembras involucradas - Optional for gradual migration
   maleId: string
   breedingDate: Date
   femaleBreedingInfo: FemaleBreedingInfo[] // Información específica de cada hembra

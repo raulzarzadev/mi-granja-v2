@@ -41,7 +41,7 @@ export const useBreeding = () => {
         records.push({
           id: doc.id,
           farmerId: data.farmerId,
-          femaleIds: data.femaleIds || [],
+          femaleIds: data.femaleIds || [], // Keep for backward compatibility but optional
           maleId: data.maleId,
           breedingDate: data.breedingDate.toDate(),
           expectedBirthDate: data.expectedBirthDate?.toDate(),

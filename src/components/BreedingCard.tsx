@@ -24,6 +24,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
 }) => {
   // Manejar múltiples hembras
   const male = animals.find((a) => a.id === record.maleId)
+  const femaleIds = record.femaleBreedingInfo.map((info) => info.femaleId)
+
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('es-ES', {
       day: '2-digit',
@@ -46,7 +48,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
     if (record.actualBirthDate) return null
 
     // Usar la nueva función para obtener la información del parto más próximo
-    const femaleAnimals = animals.filter((a) => record.femaleIds.includes(a.id))
+    const femaleAnimals = animals.filter((a) => femaleIds.includes(a.id))
+
     if (femaleAnimals.length === 0) return null
 
     const animalType = femaleAnimals[0].type
@@ -290,7 +293,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
           <div className="flex justify-between">
             <span className="text-gray-600">Embarazos confirmados:</span>
             <span className="font-medium text-green-600">
-              {birthInfo.totalConfirmedPregnancies} de {record.femaleIds.length}
+              {birthInfo.totalConfirmedPregnancies} de{' '}
+              {record.femaleBreedingInfo?.length || 0}
             </span>
           </div>
         )}
