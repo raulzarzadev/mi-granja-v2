@@ -3,6 +3,7 @@
 import React from 'react'
 import { BreedingRecord, Animal } from '@/types'
 import { getNextBirthInfo } from '@/lib/animalBreedingConfig'
+import { Icon } from './Icon/icon'
 
 interface BreedingCardProps {
   record: BreedingRecord
@@ -144,14 +145,6 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
           {getStatusText()}
         </span>
         <div className="flex gap-2">
-          {onEdit && (
-            <button
-              onClick={() => onEdit(record)}
-              className="text-blue-600 hover:text-blue-800 text-sm"
-            >
-              Editar
-            </button>
-          )}
           {onConfirmPregnancy &&
             femaleAnimalInfo.some((female) => female.status === 'monta') && (
               <button
@@ -172,14 +165,6 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                 Registrar Parto
               </button>
             )}
-          {onDelete && (
-            <button
-              onClick={handleDelete}
-              className="text-red-600 hover:text-red-800 text-sm font-medium"
-            >
-              Eliminar
-            </button>
-          )}
         </div>
       </div>
 
@@ -364,6 +349,25 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         <div className="mt-3 pt-3 border-t border-gray-100">
           <p className="text-sm text-gray-600">{record.notes}</p>
         </div>
+      )}
+
+      <Icon icon="add" />
+
+      {onDelete && (
+        <button
+          onClick={handleDelete}
+          className="text-red-600 hover:text-red-800 text-sm font-medium"
+        >
+          Eliminar
+        </button>
+      )}
+      {onEdit && (
+        <button
+          onClick={() => onEdit(record)}
+          className="text-blue-600 hover:text-blue-800 text-sm"
+        >
+          Editar
+        </button>
       )}
     </div>
   )
