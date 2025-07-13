@@ -9,8 +9,14 @@ import {
   FaUser,
   FaBell,
   FaQuestionCircle,
-  FaSignOutAlt
+  FaSignOutAlt,
+  FaMale,
+  FaFemale,
+  FaCalendarCheck,
+  FaCalendarDay,
+  FaCalendarAlt
 } from 'react-icons/fa'
+import { IoBedSharp } from 'react-icons/io5'
 import { LuBaby } from 'react-icons/lu'
 import { MdOutlinePregnantWoman } from 'react-icons/md'
 
@@ -21,6 +27,9 @@ export interface IconProps {
 }
 
 export const icons = {
+  male: FaMale,
+  female: FaFemale,
+  bed: IoBedSharp,
   add: FaPlus,
   edit: FaEdit,
   delete: FaTrash,
@@ -33,7 +42,10 @@ export const icons = {
   help: FaQuestionCircle,
   logout: FaSignOutAlt,
   baby: LuBaby,
-  pregnant: MdOutlinePregnantWoman
+  pregnant: MdOutlinePregnantWoman,
+  calendarCheck: FaCalendarCheck,
+  calendarDay: FaCalendarDay,
+  calendar: FaCalendarAlt
 } as const
 export type IconName = keyof typeof icons
 // https://react-icons.github.io/react-icons/

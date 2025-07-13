@@ -4,6 +4,7 @@ import React from 'react'
 import { BreedingRecord, Animal } from '@/types'
 import { getNextBirthInfo } from '@/lib/animalBreedingConfig'
 import Button from './buttons/Button'
+import { Icon } from './Icon/icon'
 
 interface BreedingCardProps {
   record: BreedingRecord
@@ -147,10 +148,33 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       </div>
 
       {/* Información de animales */}
+
       <div className="mb-3">
+        {/* Macho */}
+        <div className="mb-1 flex items-center gap-2">
+          <span className="text-blue-500">
+            <Icon icon="male" />
+          </span>
+          <span className="font-medium">Macho:</span>
+        </div>
+        <div className="ml-6">
+          <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-gray-800">
+                {male?.animalId || 'Animal no encontrado'}
+              </span>
+              <span className="text-xs px-2 py-1 bg-gray-200 rounded-full text-gray-600">
+                {male?.type}
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Hembras involucradas */}
         <div className="mb-1 flex items-center gap-2">
-          <span className="text-pink-500">♀</span>
+          <span className="text-pink-500">
+            <Icon icon="female" />
+          </span>
           <span className="font-medium">Hembra(s):</span>
         </div>
         {femaleAnimalInfo.length === 0 && (
@@ -166,28 +190,17 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
             >
               <div className="flex items-center gap-2">
                 <span className="text-lg">
-                  {femaleAnimal.status === 'parida' && '👶'}
-                  {femaleAnimal.status === 'embarazada' && '🤰'}
-                  {femaleAnimal.status === 'monta' && '♀️'}
+                  {femaleAnimal.status === 'parida' && <Icon icon="baby" />}
+                  {femaleAnimal.status === 'embarazada' && (
+                    <Icon icon="pregnant" />
+                  )}
+                  {femaleAnimal.status === 'monta' && <Icon icon="bed" />}
                 </span>
                 <span className="font-medium text-gray-800">
                   {femaleAnimal.animalId}
                 </span>
                 <span className="text-xs px-2 py-1 bg-gray-200 rounded-full text-gray-600">
                   {femaleAnimal.type}
-                </span>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    femaleAnimal.status === 'parida'
-                      ? 'bg-green-100 text-green-700'
-                      : femaleAnimal.status === 'embarazada'
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  {femaleAnimal.status === 'parida' && 'Parida'}
-                  {femaleAnimal.status === 'embarazada' && 'Embarazada'}
-                  {femaleAnimal.status === 'monta' && 'En monta'}
                 </span>
               </div>
               <div className="text-right">
@@ -211,24 +224,6 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Macho */}
-        <div className="mb-1 flex items-center gap-2">
-          <span className="text-blue-500">♂</span>
-          <span className="font-medium">Macho:</span>
-        </div>
-        <div className="ml-6">
-          <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-gray-800">
-                {male?.animalId || 'Animal no encontrado'}
-              </span>
-              <span className="text-xs px-2 py-1 bg-gray-200 rounded-full text-gray-600">
-                {male?.type}
-              </span>
-            </div>
-          </div>
         </div>
       </div>
 

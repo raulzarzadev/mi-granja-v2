@@ -14,6 +14,10 @@ import { BreedingRecord } from '@/types'
 import { setBreedingRecords as setBreedingRecordsSlice } from '@/features/breeding/breedingSlice'
 import { useBreeding } from './useBreeding'
 import { serializeObj } from '@/features/libs/serializeObj'
+import {
+  getBreedingUpcomingBirths,
+  getUpcomingBirths
+} from './libs/breeding-helpers'
 
 export const useBreedingCRUD = () => {
   const dispatch = useDispatch()
@@ -215,15 +219,22 @@ export const useBreedingCRUD = () => {
 
   // Obtener partos próximos (dentro de 7 días)
   const getUpcomingBirths = () => {
+    //TODO: Calculate next birth, upcoming births within the next week and all upcoming births
     const now = new Date()
     const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
     return breedingRecords.filter((record) => {
-      return record.femaleBreedingInfo?.some((info) => {
-        if (!info.expectedBirthDate || info.actualBirthDate) return false
-        const expected = new Date(info.expectedBirthDate)
+      const upcoming = getBreedingUpcomingBirths(record)
+      console.log({ upcoming })
+      return upcoming.some((info) => {
+        const expected = new Date(info.expectedBirthDate!)
         return expected >= now && expected <= nextWeek
       })
+      // return record.femaleBreedingInfo?.some((info) => {
+      //   if (!info.expectedBirthDate || info.actualBirthDate) return false
+      //   const expected = new Date(info.expectedBirthDate)
+      //   return expected >= now && expected <= nextWeek
+      // })
     })
   }
 
@@ -250,6 +261,7 @@ export const useBreedingCRUD = () => {
       totalOffspring
     }
   }
+  console.log({ breedingRecords })
 
   return {
     breedingRecords,

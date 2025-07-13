@@ -7,6 +7,7 @@ import { useModal } from '@/hooks/useModal'
 import BreedingForm from '@/components/BreedingForm'
 import { useAnimals } from '@/hooks/useAnimals'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
+import Button from './buttons/Button'
 
 /**
  * Modal que contiene el formulario de breeding
@@ -26,12 +27,9 @@ const ModalBreedingForm = ({}) => {
 
   return (
     <>
-      <button
-        onClick={openModal}
-        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-      >
+      <Button onClick={openModal} icon="add">
         Registrar Monta
-      </button>
+      </Button>
 
       <Modal
         isOpen={isOpen}
