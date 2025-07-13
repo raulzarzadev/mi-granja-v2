@@ -4,6 +4,7 @@ import React from 'react'
 import { BreedingRecord, Animal } from '@/types'
 import { getNextBirthInfo } from '@/lib/animalBreedingConfig'
 import { Icon } from './Icon/icon'
+import Button from './buttons/Button'
 
 interface BreedingCardProps {
   record: BreedingRecord
@@ -354,20 +355,19 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       <Icon icon="add" />
 
       {onDelete && (
-        <button
+        <Button
           onClick={handleDelete}
-          className="text-red-600 hover:text-red-800 text-sm font-medium"
+          color="error"
+          variant="outline"
+          icon="delete"
         >
           Eliminar
-        </button>
+        </Button>
       )}
       {onEdit && (
-        <button
-          onClick={() => onEdit(record)}
-          className="text-blue-600 hover:text-blue-800 text-sm"
-        >
+        <Button onClick={() => onEdit(record)} icon="edit" color="primary">
           Editar
-        </button>
+        </Button>
       )}
     </div>
   )
