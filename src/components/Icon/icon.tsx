@@ -11,7 +11,8 @@ import {
   FaQuestionCircle,
   FaSignOutAlt
 } from 'react-icons/fa'
-import { IconType } from 'react-icons'
+import { LuBaby } from 'react-icons/lu'
+import { MdOutlinePregnantWoman } from 'react-icons/md'
 
 export interface IconProps {
   icon: IconName
@@ -19,7 +20,7 @@ export interface IconProps {
   size?: number
 }
 
-export const icons: Record<string, IconType> = {
+export const icons = {
   add: FaPlus,
   edit: FaEdit,
   delete: FaTrash,
@@ -30,8 +31,10 @@ export const icons: Record<string, IconType> = {
   profile: FaUser,
   notifications: FaBell,
   help: FaQuestionCircle,
-  logout: FaSignOutAlt
-}
+  logout: FaSignOutAlt,
+  baby: LuBaby,
+  pregnant: MdOutlinePregnantWoman
+} as const
 export type IconName = keyof typeof icons
 // https://react-icons.github.io/react-icons/
 
@@ -44,6 +47,11 @@ export const Icon = ({ icon, className = '', size }: IconProps) => {
   }
 
   const sizeClass = size ? `w-${size} h-${size}` : 'w-6 h-6'
+
+  // If the icon is a string (like '🤰'), render it directly
+  if (typeof IconComponent === 'string') {
+    return <span className={`${sizeClass} ${className}`}>{IconComponent}</span>
+  }
 
   return (
     <IconComponent

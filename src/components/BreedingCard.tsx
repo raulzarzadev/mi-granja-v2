@@ -3,7 +3,6 @@
 import React from 'react'
 import { BreedingRecord, Animal } from '@/types'
 import { getNextBirthInfo } from '@/lib/animalBreedingConfig'
-import { Icon } from './Icon/icon'
 import Button from './buttons/Button'
 
 interface BreedingCardProps {
@@ -145,28 +144,6 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         >
           {getStatusText()}
         </span>
-        <div className="flex gap-2">
-          {onConfirmPregnancy &&
-            femaleAnimalInfo.some((female) => female.status === 'monta') && (
-              <button
-                onClick={() => onConfirmPregnancy(record)}
-                className="text-purple-600 hover:text-purple-800 text-sm font-medium"
-              >
-                Confirmar Embarazo
-              </button>
-            )}
-          {onAddBirth &&
-            femaleAnimalInfo.some(
-              (female) => female.status === 'embarazada'
-            ) && (
-              <button
-                onClick={() => onAddBirth(record)}
-                className="text-green-600 hover:text-green-800 text-sm font-medium"
-              >
-                Registrar Parto
-              </button>
-            )}
-        </div>
       </div>
 
       {/* Información de animales */}
@@ -352,23 +329,44 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         </div>
       )}
 
-      <Icon icon="add" />
+      <div className="grid gap-2">
+        {onConfirmPregnancy &&
+          femaleAnimalInfo.some((female) => female.status === 'monta') && (
+            <Button
+              onClick={() => onConfirmPregnancy(record)}
+              color="warning"
+              icon="pregnant"
+            >
+              Confirmar Embarazo
+            </Button>
+          )}
+        {onAddBirth &&
+          femaleAnimalInfo.some((female) => female.status === 'embarazada') && (
+            <Button
+              color="success"
+              onClick={() => onAddBirth(record)}
+              icon="baby"
+            >
+              Registrar Parto
+            </Button>
+          )}
+        {onEdit && (
+          <Button onClick={() => onEdit(record)} icon="edit" color="primary">
+            Editar
+          </Button>
+        )}
 
-      {onDelete && (
-        <Button
-          onClick={handleDelete}
-          color="error"
-          variant="outline"
-          icon="delete"
-        >
-          Eliminar
-        </Button>
-      )}
-      {onEdit && (
-        <Button onClick={() => onEdit(record)} icon="edit" color="primary">
-          Editar
-        </Button>
-      )}
+        {onDelete && (
+          <Button
+            onClick={handleDelete}
+            color="error"
+            variant="ghost"
+            icon="delete"
+          >
+            Eliminar
+          </Button>
+        )}
+      </div>
     </div>
   )
 }
