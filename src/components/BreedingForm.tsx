@@ -7,7 +7,6 @@ import {
   getNextBirthInfo
 } from '@/lib/animalBreedingConfig'
 import { BreedingRecord, FemaleBreedingInfo } from '@/types/breedings'
-import { formatDate } from '@/lib/dates'
 import { InputDate } from './inputs/input-date'
 
 interface BreedingFormProps {
