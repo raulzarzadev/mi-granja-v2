@@ -12,6 +12,8 @@ import { useReminders } from '@/hooks/useReminders'
 import ModalAnimalForm from './ModalAnimalForm'
 import ModalReminderForm from './ModalReminderForm'
 import ModalAnimalDetails from './ModalAnimalDetails'
+import Button from './buttons/Button'
+import { migrateBreedings } from '@/lib/migrateBreedings'
 
 /**
  * Dashboard principal de la aplicación
@@ -83,6 +85,10 @@ const Dashboard: React.FC = () => {
     return null
   }
 
+  const handleMigrateBreeding = () => {
+    migrateBreedings()
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -91,6 +97,7 @@ const Dashboard: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <Button onClick={handleMigrateBreeding}>Migrar montas</Button>
           <p className="text-gray-600 mt-2">
             Bienvenido a {user.farmName || 'tu granja'}, {user.email}
           </p>

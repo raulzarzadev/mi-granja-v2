@@ -10,14 +10,11 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { RootState } from '@/features/store'
-import { BreedingRecord } from '@/types'
 import { setBreedingRecords as setBreedingRecordsSlice } from '@/features/breeding/breedingSlice'
 import { useBreeding } from './useBreeding'
 import { serializeObj } from '@/features/libs/serializeObj'
-import {
-  getBreedingUpcomingBirths,
-  getUpcomingBirths
-} from './libs/breeding-helpers'
+import { getBreedingUpcomingBirths } from './libs/breeding-helpers'
+import { BreedingRecord } from '@/types/breedings'
 
 export const useBreedingCRUD = () => {
   const dispatch = useDispatch()
@@ -37,14 +34,8 @@ export const useBreedingCRUD = () => {
       const docData = {
         farmerId: user.id,
         maleId: data.maleId,
-        breedingDate: Timestamp.fromDate(new Date(data.breedingDate)),
-        expectedBirthDate: data.expectedBirthDate
-          ? Timestamp.fromDate(new Date(data.expectedBirthDate))
-          : null,
-        actualBirthDate: data.actualBirthDate
-          ? Timestamp.fromDate(new Date(data.actualBirthDate))
-          : null,
-        pregnancyConfirmed: data.pregnancyConfirmed,
+        breedingDate: data.breedingDate,
+
         femaleBreedingInfo:
           data.femaleBreedingInfo?.map((info) => ({
             ...info,
@@ -58,7 +49,7 @@ export const useBreedingCRUD = () => {
               ? Timestamp.fromDate(new Date(info.actualBirthDate))
               : null
           })) || [],
-        offspring: data.offspring || [],
+
         notes: data.notes || '',
         createdAt: now,
         updatedAt: now
@@ -88,9 +79,7 @@ export const useBreedingCRUD = () => {
 
       // Añadir campos básicos si existen
       if (updates.maleId) updateData.maleId = updates.maleId
-      if (updates.pregnancyConfirmed !== undefined)
-        updateData.pregnancyConfirmed = updates.pregnancyConfirmed
-      if (updates.offspring) updateData.offspring = updates.offspring
+
       if (updates.notes !== undefined) updateData.notes = updates.notes
 
       // Manejar femaleBreedingInfo con conversión de fechas
@@ -115,16 +104,6 @@ export const useBreedingCRUD = () => {
       if (updates.breedingDate) {
         updateData.breedingDate = Timestamp.fromDate(
           new Date(updates.breedingDate)
-        )
-      }
-      if (updates.expectedBirthDate) {
-        updateData.expectedBirthDate = Timestamp.fromDate(
-          new Date(updates.expectedBirthDate)
-        )
-      }
-      if (updates.actualBirthDate) {
-        updateData.actualBirthDate = Timestamp.fromDate(
-          new Date(updates.actualBirthDate)
         )
       }
 

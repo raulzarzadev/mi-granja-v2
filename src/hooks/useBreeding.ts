@@ -10,9 +10,9 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { RootState } from '@/features/store'
-import { BreedingRecord } from '@/types'
 import { setBreedingRecords as setBreedingRecordsSlice } from '@/features/breeding/breedingSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
+import { BreedingRecord } from '@/types/breedings'
 
 export const useBreeding = () => {
   const dispatch = useDispatch()
@@ -41,12 +41,8 @@ export const useBreeding = () => {
         records.push({
           id: doc.id,
           farmerId: data.farmerId,
-          femaleIds: data.femaleIds || [], // Keep for backward compatibility but optional
           maleId: data.maleId,
           breedingDate: data.breedingDate.toDate(),
-          expectedBirthDate: data.expectedBirthDate?.toDate(),
-          actualBirthDate: data.actualBirthDate?.toDate(),
-          pregnancyConfirmed: data.pregnancyConfirmed || false,
           femaleBreedingInfo:
             data.femaleBreedingInfo?.map(
               (info: {
@@ -63,7 +59,6 @@ export const useBreeding = () => {
                 actualBirthDate: info.actualBirthDate?.toDate()
               })
             ) || [],
-          offspring: data.offspring || [],
           notes: data.notes || '',
           createdAt: data.createdAt.toDate(),
           updatedAt: data.updatedAt.toDate()
