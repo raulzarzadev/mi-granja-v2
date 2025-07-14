@@ -7,6 +7,8 @@ import {
   getNextBirthInfo
 } from '@/lib/animalBreedingConfig'
 import { BreedingRecord, FemaleBreedingInfo } from '@/types/breedings'
+import { formatDate } from '@/lib/dates'
+import { InputDate } from './inputs/input-date'
 
 interface BreedingFormProps {
   animals: Animal[]
@@ -31,7 +33,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 }) => {
   const [formData, setFormData] = useState<Partial<BreedingRecord>>({
     maleId: initialData?.maleId || '',
-    breedingDate: initialData?.breedingDate || false,
+    breedingDate: initialData?.breedingDate || new Date(),
     femaleBreedingInfo: initialData?.femaleBreedingInfo || [],
     ...initialData
   })
@@ -39,8 +41,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   // Derivar femaleIds de femaleBreedingInfo
   const femaleIds =
     formData?.femaleBreedingInfo?.map((info) => info.femaleId) || []
-
-  console.log({ initialData })
 
   const [femaleSearch, setFemaleSearch] = useState('')
   const [showFemaleDropdown, setShowFemaleDropdown] = useState(false)
@@ -54,7 +54,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     e.preventDefault()
 
     try {
-      console.log({ formData })
       await onSubmit({
         maleId: formData?.maleId || '',
         breedingDate: new Date(formData?.breedingDate || new Date()),
@@ -343,6 +342,26 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Macho */}
         <div>
+          {/* Fecha de monta */}
+          <div>
+            <InputDate
+              value={formData.breedingDate || new Date()}
+              onChange={(date) =>
+                setFormData({ ...formData, breedingDate: date })
+              }
+              label="Fecha de Monta"
+              required
+            />
+          </div>
+          {!selectedMale ? (
+            <p className="text-sm text-gray-600 mt-1 font-medium">
+              Primero selecciona un macho para ver las hembras compatibles
+            </p>
+          ) : femaleIds.length === 0 ? (
+            <p className="text-sm text-gray-600 mt-1 font-medium">
+              Debes seleccionar al menos una hembra {selectedMale.type}
+            </p>
+          ) : null}
           <label
             htmlFor="maleId"
             className="block text-sm font-medium text-gray-700 mb-1"
@@ -450,35 +469,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
               </div>
             )}
           </div>
-
-          {!selectedMale ? (
-            <p className="text-sm text-gray-600 mt-1 font-medium">
-              Primero selecciona un macho para ver las hembras compatibles
-            </p>
-          ) : femaleIds.length === 0 ? (
-            <p className="text-sm text-gray-600 mt-1 font-medium">
-              Debes seleccionar al menos una hembra {selectedMale.type}
-            </p>
-          ) : null}
-        </div>
-
-        {/* Fecha de monta */}
-        <div>
-          <label
-            htmlFor="breedingDate"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Fecha de Monta *
-          </label>
-          <input
-            type="date"
-            id="breedingDate"
-            name="breedingDate"
-            value={formData.breedingDate}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
         </div>
 
         {/* Información del parto más próximo */}

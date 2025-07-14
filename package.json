@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",
+    "date-fns": "^4.1.0",
     "firebase": "^11.9.1",
     "next": "15.3.3",
     "react": "^19.0.0",

@@ -51,38 +51,7 @@ const breedingSlice = createSlice({
         ? serializeObj(action.payload)
         : null
     },
-    confirmPregnancy: (
-      state,
-      action: PayloadAction<{ id: string; confirmed: boolean }>
-    ) => {
-      const index = state.breedingRecords.findIndex(
-        (record) => record.id === action.payload.id
-      )
-      if (index !== -1) {
-        state.breedingRecords[index].pregnancyConfirmed =
-          action.payload.confirmed
-      }
-    },
-    recordBirth: (
-      state,
-      action: PayloadAction<{
-        id: string
-        actualBirthDate: Date
-        offspring?: string[]
-      }>
-    ) => {
-      const index = state.breedingRecords.findIndex(
-        (record) => record.id === action.payload.id
-      )
-      if (index !== -1) {
-        const record = state.breedingRecords[index]
-        record.actualBirthDate = serializeObj(action.payload.actualBirthDate)
-        if (action.payload.offspring) {
-          record.offspring = action.payload.offspring
-        }
-        record.pregnancyConfirmed = true
-      }
-    },
+
     setError: (state, action: PayloadAction<string>) => {
       state.error = action.payload
       state.isLoading = false
@@ -100,8 +69,6 @@ export const {
   updateBreedingRecord,
   removeBreedingRecord,
   setSelectedRecord,
-  confirmPregnancy,
-  recordBirth,
   setError,
   clearError
 } = breedingSlice.actions

@@ -67,44 +67,40 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
     daysUntilBirth !== null &&
     daysUntilBirth !== undefined &&
     daysUntilBirth < 0
+
   const isNearBirth =
     daysUntilBirth !== null &&
     daysUntilBirth !== undefined &&
     daysUntilBirth <= 7 &&
     daysUntilBirth >= 0
 
-  const getStatusColor = () => {
-    if (record.actualBirthDate) return 'bg-green-100 text-green-800'
-    if (isOverdue) return 'bg-red-100 text-red-800'
-    if (isNearBirth) return 'bg-yellow-100 text-yellow-800'
-    if (record.pregnancyConfirmed) return 'bg-blue-100 text-blue-800'
-    return 'bg-gray-100 text-gray-800'
+  const getFemaleStatuses = () => {
+    //TODO: los estados son , Monta en proceso, no. de partos, no. de embarazos confirmados,
+    // algo asi Monta en proceso. Partos:2 Embarazos:3 Pendientes: 1
+    const births = record.femaleBreedingInfo.filter(
+      (info) => info.actualBirthDate
+    ).length
+    const pregnancies = record.femaleBreedingInfo.filter(
+      (info) => info.pregnancyConfirmed && !info.actualBirthDate
+    ).length
+    const pending = record.femaleBreedingInfo.filter(
+      (info) => !info.pregnancyConfirmed && !info.actualBirthDate
+    ).length
+
+    return {
+      births,
+      pregnancies,
+      pending
+    }
   }
 
-  const getStatusText = () => {
-    if (record.actualBirthDate) return 'Parida'
-    if (isOverdue) {
-      const info = birthInfo?.femaleAnimalId
-        ? ` (${birthInfo.femaleAnimalId})`
-        : ''
-      return `Atrasada ${Math.abs(daysUntilBirth!)} días${info}`
-    }
-    if (isNearBirth) {
-      const info = birthInfo?.femaleAnimalId
-        ? ` (${birthInfo.femaleAnimalId})`
-        : ''
-      return `${daysUntilBirth} días para parto${info}`
-    }
-    if (record.pregnancyConfirmed) {
-      const confirmedCount = birthInfo?.totalConfirmedPregnancies || 0
-      return confirmedCount > 0
-        ? `${confirmedCount} embarazo${
-            confirmedCount > 1 ? 's' : ''
-          } confirmado${confirmedCount > 1 ? 's' : ''}`
-        : 'Embarazada'
-    }
-    return 'Monta registrada'
+  const getStatusColor = (statuses: ReturnType<typeof getFemaleStatuses>) => {
+    if (statuses.pending > 0) return 'bg-yellow-100 text-yellow-800' // Montas pendientes
+    if (statuses.pregnancies > 0) return 'bg-blue-100 text-blue-800' // Embarazos
+    if (statuses.births > 0) return 'bg-green-100 text-green-800' // Partos
   }
+
+  const femaleStatuses = getFemaleStatuses()
 
   const femaleAnimalInfo =
     record?.femaleBreedingInfo.map((info) => {
@@ -132,14 +128,38 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   const offspring = record.femaleBreedingInfo
     .map((info) => info.offspring || [])
     .flat()
+
+  console.log({ femaleAnimalInfo })
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
       {/* Header con estado */}
       <div className="flex items-center justify-between mb-3">
         <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor()}`}
+          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+            femaleStatuses
+          )}`}
         >
-          {getStatusText()}
+          {femaleStatuses.births > 0 && (
+            <span className="text-green-600">
+              <Icon icon="baby" className="inline mr-1" />
+              {femaleStatuses.births} parto
+              {femaleStatuses.births !== 1 ? 's' : ''}
+            </span>
+          )}
+          {femaleStatuses.pregnancies > 0 && (
+            <span className="text-blue-600 ml-2">
+              <Icon icon="pregnant" className="inline mr-1" />
+              {femaleStatuses.pregnancies} embarazo
+              {femaleStatuses.pregnancies !== 1 ? 's' : ''}
+            </span>
+          )}
+          {femaleStatuses.pending > 0 && (
+            <span className="text-yellow-600 ml-2">
+              <Icon icon="bed" className="inline mr-1" />
+              {femaleStatuses.pending} monta pendiente
+              {femaleStatuses.pending !== 1 ? 's' : ''}
+            </span>
+          )}
         </span>
       </div>
 

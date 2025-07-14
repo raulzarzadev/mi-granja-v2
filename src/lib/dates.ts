@@ -1,7 +1,6 @@
-export const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat('es-ES', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  }).format(new Date(date))
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+
+export const formatDate = (date: Date, stringFormat = 'dd/MM/yyyy') => {
+  return format(new Date(date), stringFormat, { locale: es })
 }

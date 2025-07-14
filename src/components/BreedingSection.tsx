@@ -123,14 +123,7 @@ const BreedingSection: React.FC = () => {
 
       await updateBreedingRecord(birthRecord.id, {
         ...birthRecord,
-        femaleBreedingInfo: updatedFemaleBreedingInfo,
-        actualBirthDate: new Date(
-          `${birthData.birthDate}T${birthData.birthTime}`
-        ), // Legacy field
-        offspring: [
-          ...(birthRecord.offspring || []),
-          ...(offspringIds.filter(Boolean) as string[])
-        ]
+        femaleBreedingInfo: updatedFemaleBreedingInfo
       })
 
       setBirthRecord(null)
@@ -318,6 +311,7 @@ const BreedingSection: React.FC = () => {
       />
 
       {/* Modal de registro de parto */}
+
       <ModalBirthForm
         isOpen={!!birthRecord}
         onClose={() => setBirthRecord(null)}

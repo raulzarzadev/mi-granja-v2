@@ -132,42 +132,6 @@ export const useBreedingCRUD = () => {
     }
   }
 
-  // Registrar parto
-  const recordBirth = async (
-    breedingRecordId: string,
-    birthDate: Date,
-    offspringIds: string[] = [],
-    notes?: string
-  ) => {
-    await updateBreedingRecord(
-      breedingRecordId,
-      serializeObj({
-        actualBirthDate: birthDate,
-        offspring: offspringIds,
-        pregnancyConfirmed: true,
-        notes: notes
-      })
-    )
-  }
-
-  // Confirmar embarazo
-  const confirmPregnancy = async (
-    breedingRecordId: string,
-    femaleId: string,
-    confirmed: boolean
-  ) => {
-    await updateBreedingRecord(breedingRecordId, {
-      femaleBreedingInfo: breedingRecords
-        .find((record) => record.id === breedingRecordId)
-        ?.femaleBreedingInfo.map((info) => {
-          if (info.femaleId === femaleId) {
-            return { ...info, pregnancyConfirmed: confirmed }
-          }
-          return info
-        })
-    })
-  }
-
   // Eliminar registro
   const deleteBreedingRecord = async (id: string) => {
     setIsSubmitting(true)
@@ -257,8 +221,6 @@ export const useBreedingCRUD = () => {
     isSubmitting,
     createBreedingRecord,
     updateBreedingRecord,
-    recordBirth,
-    confirmPregnancy,
     deleteBreedingRecord,
     getRecordsByAnimal,
     getActivePregnancies,
