@@ -27,7 +27,7 @@ export interface Animal {
   animalId: string // ID único del animal (asignado por el granjero)
   type: AnimalType
   stage: AnimalStage
-  weight?: number
+  weight?: number | string
   age?: number
   birthDate?: Date
   gender: 'macho' | 'hembra'
@@ -73,7 +73,7 @@ export interface Reminder {
 export interface OffspringInfo {
   id: string // ID temporal para el formulario
   animalId: string // ID único asignado por el granjero
-  weight?: number | null
+  weight?: number | null | string
   color?: string
   status: 'vivo' | 'muerto' | 'enfermo'
   healthIssues?: string // Descripción de problemas de salud si status es 'enfermo'

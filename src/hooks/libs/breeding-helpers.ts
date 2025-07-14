@@ -1,4 +1,4 @@
-import { BreedingRecord } from '@/types'
+import { BreedingRecord } from '@/types/breedings'
 
 export const getNextBirth = (breedingRecord: BreedingRecord) => {
   const upcomingBirths = getBreedingUpcomingBirths(breedingRecord)

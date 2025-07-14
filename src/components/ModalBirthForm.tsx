@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState } from 'react'
-import { BreedingRecord, Animal, BirthRecord, OffspringInfo } from '@/types'
+import { Animal, BirthRecord, OffspringInfo } from '@/types'
 import { Modal } from './Modal'
+import { BreedingRecord } from '@/types/breedings'
 
 interface ModalBirthFormProps {
   isOpen: boolean
@@ -34,25 +35,25 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
       })
       .filter(Boolean) || []
 
+  const defaultOffspring = (): OffspringInfo => ({
+    id: Math.random().toString(36).substring(2, 15),
+    animalId: Math.random().toString(36).substring(2, 5),
+    weight: '',
+    color: '',
+    status: 'vivo',
+    healthIssues: '',
+    gender: 'hembra'
+  })
+
   const [formData, setFormData] = useState<BirthRecord>({
     femaleId: '',
     birthDate: new Date().toISOString().split('T')[0],
     birthTime: new Date().toTimeString().slice(0, 5),
     totalOffspring: 1,
-    offspring: [
-      {
-        id: '1',
-        animalId: '',
-        weight: null,
-        color: '',
-        status: 'vivo',
-        healthIssues: '',
-        gender: 'hembra'
-      }
-    ],
+    offspring: [defaultOffspring()],
     notes: ''
   })
-
+  console.log({ formData })
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -71,7 +72,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
       await onSubmit(formData)
       onClose()
     } catch (error) {
-      console.error('Error registrando parto:', error)
+      console.error('Error registrando parto:', error, formData)
     }
   }
 
@@ -88,15 +89,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
     if (count > currentOffspring.length) {
       // Agregar nuevas crías
       for (let i = currentOffspring.length; i < count; i++) {
-        currentOffspring.push({
-          id: (i + 1).toString(),
-          animalId: '',
-          weight: undefined,
-          color: '',
-          status: 'vivo',
-          healthIssues: '',
-          gender: 'hembra'
-        })
+        currentOffspring.push(defaultOffspring())
       }
     } else if (count < currentOffspring.length) {
       // Remover crías extras
@@ -336,9 +329,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                             handleOffspringChange(
                               index,
                               'weight',
-                              e.target.value
-                                ? parseFloat(e.target.value)
-                                : undefined
+                              e.target.value ? parseFloat(e.target.value) : ''
                             )
                           }
                           placeholder="Ej: 2.5"

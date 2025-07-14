@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useAnimals } from '@/hooks/useAnimals'
 import { useBreeding } from '@/hooks/useBreeding'
-import { BreedingRecord, BirthRecord } from '@/types'
+import { BirthRecord } from '@/types'
 import BreedingCard from '@/components/BreedingCard'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ModalBreedingForm from './ModalBreedingForm'
@@ -12,6 +12,7 @@ import ModalBirthForm from './ModalBirthForm'
 import ModalConfirmPregnancy from './ModalConfirmPregnancy'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { BreedingRecord } from '@/types/breedings'
 
 /**
  * Sección de reproducción del dashboard
@@ -83,7 +84,7 @@ const BreedingSection: React.FC = () => {
             animalId: offspring.animalId,
             type: mother.type, // Las crías heredan el tipo de la madre
             stage: 'cria' as const,
-            weight: offspring.weight || undefined, // Convert null to undefined
+            weight: offspring.weight || '',
             birthDate: new Date(
               `${birthData.birthDate}T${birthData.birthTime}`
             ),

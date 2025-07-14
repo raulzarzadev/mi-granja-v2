@@ -43,7 +43,7 @@ const WeightForm: React.FC<WeightFormProps> = ({
         notes: formData.notes
       })
     } catch (error) {
-      console.error('Error registrando peso:', error)
+      console.error('Error registrando peso:', error, formData)
     }
   }
 

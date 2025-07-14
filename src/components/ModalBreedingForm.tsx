@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { BreedingRecord } from '@/types'
+import { BreedingRecord } from '@/types/breedings'
 import { Modal } from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
 import BreedingForm from '@/components/BreedingForm'

@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { BreedingRecord } from '@/types'
+import { BreedingRecord } from '@/types/breedings'
 import { serializeObj } from '../libs/serializeObj'
 
 interface BreedingState {

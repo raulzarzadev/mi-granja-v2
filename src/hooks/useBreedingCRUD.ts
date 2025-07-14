@@ -153,10 +153,18 @@ export const useBreedingCRUD = () => {
   // Confirmar embarazo
   const confirmPregnancy = async (
     breedingRecordId: string,
+    femaleId: string,
     confirmed: boolean
   ) => {
     await updateBreedingRecord(breedingRecordId, {
-      pregnancyConfirmed: confirmed
+      femaleBreedingInfo: breedingRecords
+        .find((record) => record.id === breedingRecordId)
+        ?.femaleBreedingInfo.map((info) => {
+          if (info.femaleId === femaleId) {
+            return { ...info, pregnancyConfirmed: confirmed }
+          }
+          return info
+        })
     })
   }
 
@@ -209,11 +217,6 @@ export const useBreedingCRUD = () => {
         const expected = new Date(info.expectedBirthDate!)
         return expected >= now && expected <= nextWeek
       })
-      // return record.femaleBreedingInfo?.some((info) => {
-      //   if (!info.expectedBirthDate || info.actualBirthDate) return false
-      //   const expected = new Date(info.expectedBirthDate)
-      //   return expected >= now && expected <= nextWeek
-      // })
     })
   }
 
@@ -228,8 +231,14 @@ export const useBreedingCRUD = () => {
       0
     )
     const upcomingBirths = getUpcomingBirths().length
+
     const totalOffspring = breedingRecords.reduce(
-      (total, record) => total + (record.offspring?.length || 0),
+      (total, record) =>
+        total +
+        (record.femaleBreedingInfo?.reduce(
+          (femaleTotal, info) => femaleTotal + (info.offspring?.length || 0),
+          0
+        ) || 0),
       0
     )
 
