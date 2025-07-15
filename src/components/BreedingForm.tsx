@@ -246,7 +246,8 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             updatedInfo[existingIndex] = {
               ...currentInfo,
               pregnancyConfirmedDate: null,
-              expectedBirthDate: null
+              expectedBirthDate: null,
+              actualBirthDate: null
             }
           }
           // Cuando se confirma embarazo, calcular fecha esperada automáticamente
@@ -568,19 +569,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                                 className="text-xs text-red-600 hover:text-red-800 underline"
                               >
                                 Desconfirmar
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleFemaleBreedingChange(
-                                    animal?.id || '',
-                                    'pregnancyConfirmed',
-                                    false
-                                  )
-                                }
-                                className="text-xs text-red-600 hover:text-red-800 underline"
-                              >
-                                Parto
                               </button>
                             </div>
                           </div>
