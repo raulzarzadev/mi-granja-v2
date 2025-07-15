@@ -595,6 +595,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                             {/* Parto esperado específico */}
                             {femaleInfo.expectedBirthDate && (
                               <InputDate
+                                disabled
                                 label="Fecha de parto esperado"
                                 value={femaleInfo.expectedBirthDate}
                               />
