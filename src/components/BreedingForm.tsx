@@ -551,30 +551,38 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
                     <div className="grid grid-cols-1 gap-3">
                       {/* Estado del embarazo */}
-                      {!femaleInfo.pregnancyConfirmedDate ? (
-                        <div className="text-sm text-gray-600">
-                          Embarazo pendiente de confirmación
-                        </div>
-                      ) : (
+                      {!!femaleInfo.pregnancyConfirmedDate && (
                         <div className="space-y-3">
                           {/* Controles para embarazo confirmado */}
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-green-700 font-medium">
-                              Embarazo confirmado
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleFemaleBreedingChange(
-                                  animal?.id || '',
-                                  'pregnancyConfirmed',
-                                  false
-                                )
-                              }
-                              className="text-xs text-red-600 hover:text-red-800 underline"
-                            >
-                              Desconfirmar
-                            </button>
+                          <div className="flex items-center justify-end">
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleFemaleBreedingChange(
+                                    animal?.id || '',
+                                    'pregnancyConfirmed',
+                                    false
+                                  )
+                                }
+                                className="text-xs text-red-600 hover:text-red-800 underline"
+                              >
+                                Desconfirmar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleFemaleBreedingChange(
+                                    animal?.id || '',
+                                    'pregnancyConfirmed',
+                                    false
+                                  )
+                                }
+                                className="text-xs text-red-600 hover:text-red-800 underline"
+                              >
+                                Parto
+                              </button>
+                            </div>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
