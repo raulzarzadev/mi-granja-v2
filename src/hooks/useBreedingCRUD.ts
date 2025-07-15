@@ -163,7 +163,7 @@ export const useBreedingCRUD = () => {
   const getActivePregnancies = () => {
     return breedingRecords.filter((record) =>
       record.femaleBreedingInfo?.some(
-        (info) => info.pregnancyConfirmed && !info.actualBirthDate
+        (info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate
       )
     )
   }
@@ -190,7 +190,7 @@ export const useBreedingCRUD = () => {
       (total, record) =>
         total +
         (record.femaleBreedingInfo?.filter(
-          (info) => info.pregnancyConfirmed && !info.actualBirthDate
+          (info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate
         ).length || 0),
       0
     )

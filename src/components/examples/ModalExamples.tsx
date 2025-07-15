@@ -13,7 +13,6 @@ import { useModal } from '@/hooks/useModal'
 import ModalBreedingForm from '@/components/ModalBreedingForm'
 import ModalAnimalForm from '@/components/ModalAnimalForm'
 import ModalReminderForm from '@/components/ModalReminderForm'
-import { Animal, BreedingRecord, Reminder } from '@/types'
 
 // Ejemplo 1: Modal simple con hook
 export const ExampleSimpleModal = () => {

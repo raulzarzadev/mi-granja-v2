@@ -1,9 +1,8 @@
 export interface FemaleBreedingInfo {
   femaleId: string
-  pregnancyConfirmed: boolean
-  pregnancyConfirmedDate?: Date
-  expectedBirthDate?: Date
-  actualBirthDate?: Date
+  pregnancyConfirmedDate?: Date | null
+  expectedBirthDate?: Date | null
+  actualBirthDate?: Date | null
   offspring?: string[] // IDs de las crías de esta hembra específica
 }
 

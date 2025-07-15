@@ -1,4 +1,5 @@
 import { AnimalType } from '@/types'
+import { BreedingRecord } from '@/types/breedings'
 
 export interface AnimalBreedingConfig {
   type: AnimalType
@@ -80,7 +81,11 @@ export const getAnimalBreedingConfig = (
 export const calculateExpectedBirthDate = (
   breedingDate: Date,
   animalType: AnimalType
-): Date => {
+): Date | null => {
+  if (!breedingDate || isNaN(breedingDate.getTime())) {
+    console.log('Fecha de monta inválida')
+    return null
+  }
   const config = getAnimalBreedingConfig(animalType)
   const expectedDate = new Date(breedingDate)
   expectedDate.setDate(expectedDate.getDate() + config.gestationDays)
@@ -198,15 +203,7 @@ export const getBreedingAdvice = (
 }
 
 export const getNextBirthInfo = (
-  breedingRecord: {
-    breedingDate: Date
-    femaleBreedingInfo?: Array<{
-      femaleId: string
-      pregnancyConfirmed: boolean
-      pregnancyConfirmedDate?: Date
-      expectedBirthDate?: Date
-    }>
-  },
+  breedingRecord: Partial<BreedingRecord>,
   animalType: AnimalType,
   animals?: Array<{ id: string; animalId: string }>
 ) => {
@@ -216,22 +213,20 @@ export const getNextBirthInfo = (
   // Si hay información específica de hembras con embarazos confirmados
   if (breedingRecord.femaleBreedingInfo) {
     const confirmedPregnancies = breedingRecord.femaleBreedingInfo.filter(
-      (info) => info.pregnancyConfirmed
+      (info) => !!info.pregnancyConfirmedDate && info.actualBirthDate
     )
 
     if (confirmedPregnancies.length > 0) {
       // Buscar la fecha de parto más próxima
+      let expectedDate: Date | null
       const birthInfos = confirmedPregnancies.map((info) => {
         // Usar fecha específica si existe, sino calcular desde confirmación o monta
-        let expectedDate: Date
-        if (info.expectedBirthDate) {
-          expectedDate = new Date(info.expectedBirthDate)
+        const baseDate = info.pregnancyConfirmedDate
+        if (baseDate) {
+          expectedDate = calculateExpectedBirthDate(baseDate, animalType)
+        } else if (breedingRecord.breedingDate) {
         } else {
-          const baseDate = info.pregnancyConfirmedDate
-            ? new Date(info.pregnancyConfirmedDate)
-            : new Date(breedingRecord.breedingDate)
-          expectedDate = new Date(baseDate)
-          expectedDate.setDate(expectedDate.getDate() + config.gestationDays)
+          expectedDate = null
         }
 
         const female = animals?.find((a) => a.id === info.femaleId)
@@ -240,22 +235,35 @@ export const getNextBirthInfo = (
           femaleId: info.femaleId,
           femaleAnimalId: female?.animalId || 'Desconocida',
           expectedDate,
-          daysUntil: Math.ceil(
-            (expectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-          ),
+          daysUntil: expectedDate
+            ? Math.ceil(
+                (expectedDate?.getTime() - today.getTime()) /
+                  (1000 * 60 * 60 * 24)
+              )
+            : null,
           pregnancyConfirmedDate: info.pregnancyConfirmedDate
         }
       })
 
       // Retornar la información del parto más próximo (futuro o más reciente si ya pasó)
-      const futureBirths = birthInfos.filter((info) => info.daysUntil >= 0)
+      const futureBirths = birthInfos.filter(
+        (info) => info.daysUntil && info?.daysUntil >= 0
+      )
       const nextBirth =
         futureBirths.length > 0
           ? futureBirths.reduce((closest, current) =>
-              current.daysUntil < closest.daysUntil ? current : closest
+              current?.daysUntil !== null &&
+              closest.daysUntil !== null &&
+              current.daysUntil < closest.daysUntil
+                ? current
+                : closest
             )
           : birthInfos.reduce((closest, current) =>
-              current.daysUntil > closest.daysUntil ? current : closest
+              current.daysUntil !== null &&
+              closest.daysUntil !== null &&
+              current.daysUntil > closest.daysUntil
+                ? current
+                : closest
             )
 
       return {
@@ -268,11 +276,15 @@ export const getNextBirthInfo = (
   }
 
   // Fallback: calcular desde la fecha de monta original
-  const expectedDate = new Date(breedingRecord.breedingDate)
-  expectedDate.setDate(expectedDate.getDate() + config.gestationDays)
-  const daysUntil = Math.ceil(
-    (expectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-  )
+  const expectedDate = breedingRecord.breedingDate
+    ? calculateExpectedBirthDate(breedingRecord.breedingDate, animalType)
+    : null
+  expectedDate?.setDate(expectedDate.getDate() + config.gestationDays)
+  const daysUntil = expectedDate
+    ? Math.ceil(
+        (expectedDate?.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      )
+    : null
 
   return {
     femaleId: 'unknown',

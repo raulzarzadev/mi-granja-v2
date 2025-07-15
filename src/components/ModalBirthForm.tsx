@@ -28,7 +28,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   // Obtener solo hembras embarazadas que aún no han parido
   const pregnantFemales =
     breedingRecord?.femaleBreedingInfo
-      ?.filter((info) => info.pregnancyConfirmed && !info.actualBirthDate)
+      ?.filter((info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate)
       .map((info) => {
         const animal = animals.find((a) => a.id === info.femaleId)
         return animal ? { ...animal, breedingInfo: info } : null

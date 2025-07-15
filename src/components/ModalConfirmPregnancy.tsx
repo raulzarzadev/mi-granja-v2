@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useState } from 'react'
-import { BreedingRecord, Animal } from '@/types'
+import { Animal } from '@/types'
 import { Modal } from './Modal'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
+import { BreedingRecord } from '@/types/breedings'
 
 interface ModalConfirmPregnancyProps {
   isOpen: boolean
@@ -28,7 +29,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
   // Obtener hembras que aún no tienen embarazo confirmado
   const unconfirmedFemales =
     breedingRecord?.femaleBreedingInfo
-      ?.filter((info) => !info.pregnancyConfirmed)
+      ?.filter((info) => !info.pregnancyConfirmedDate)
       .map((info) => {
         const animal = animals.find((a) => a.id === info.femaleId)
         return animal ? { ...animal, breedingInfo: info } : null
@@ -80,10 +81,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
 
     const updatedRecord: BreedingRecord = {
       ...breedingRecord,
-      femaleBreedingInfo: updatedFemaleBreedingInfo,
-      pregnancyConfirmed: updatedFemaleBreedingInfo.some(
-        (info) => info.pregnancyConfirmed
-      )
+      femaleBreedingInfo: updatedFemaleBreedingInfo
     }
 
     try {

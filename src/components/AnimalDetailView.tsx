@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Animal, BreedingRecord, WeightRecord, MilkProduction } from '@/types'
+import { Animal, WeightRecord, MilkProduction } from '@/types'
 import ModalEditAnimal from './ModalEditAnimal'
+import { BreedingRecord } from '@/types/breedings'
 
 interface AnimalDetailViewProps {
   animal: Animal
@@ -281,30 +282,33 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                     <div key={record.id} className="bg-gray-50 rounded-lg p-4">
                       <div className="flex justify-between items-start mb-2">
                         <span className="text-sm font-medium text-gray-900">
-                          Monta del {formatDate(record.breedingDate)}
+                          Monta del{' '}
+                          {record.breedingDate
+                            ? formatDate(record.breedingDate)
+                            : ''}
                         </span>
-                        <span
+                        {/* <span
                           className={`px-2 py-1 rounded-full text-xs ${
-                            record.actualBirthDate
+                            record?.actualBirthDate
                               ? 'bg-green-100 text-green-800'
-                              : record.pregnancyConfirmed
+                              : record?.pregnancyConfirmed
                               ? 'bg-blue-100 text-blue-800'
                               : 'bg-gray-100 text-gray-800'
                           }`}
                         >
-                          {record.actualBirthDate
+                          {record?.actualBirthDate
                             ? 'Parida'
                             : record.pregnancyConfirmed
                             ? 'Embarazada'
                             : 'Registrada'}
-                        </span>
+                        </span> */}
                       </div>
-                      {record.expectedBirthDate && (
+                      {/* {record.expectedBirthDate && (
                         <p className="text-sm text-gray-600">
                           Parto esperado: {formatDate(record.expectedBirthDate)}
                         </p>
-                      )}
-                      {record.actualBirthDate && (
+                      )} */}
+                      {/* {record.actualBirthDate && (
                         <p className="text-sm text-gray-600">
                           Parto: {formatDate(record.actualBirthDate)}
                         </p>
@@ -313,7 +317,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                         <p className="text-sm text-gray-600">
                           Crías: {record.offspring.length}
                         </p>
-                      )}
+                      )} */}
                     </div>
                   ))}
                 </div>

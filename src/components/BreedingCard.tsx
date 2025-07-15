@@ -81,10 +81,10 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       (info) => info.actualBirthDate
     ).length
     const pregnancies = record.femaleBreedingInfo.filter(
-      (info) => info.pregnancyConfirmed && !info.actualBirthDate
+      (info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate
     ).length
     const pending = record.femaleBreedingInfo.filter(
-      (info) => !info.pregnancyConfirmed && !info.actualBirthDate
+      (info) => !info.pregnancyConfirmedDate && !info.actualBirthDate
     ).length
 
     return {
@@ -110,7 +110,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       let status: 'parida' | 'embarazada' | 'monta' = 'monta'
       if (info.actualBirthDate) {
         status = 'parida'
-      } else if (info.pregnancyConfirmed) {
+      } else if (info.pregnancyConfirmedDate) {
         status = 'embarazada'
       }
 
@@ -118,7 +118,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         femaleId: info.femaleId,
         animalId: animalInfo?.animalId || 'Desconocido',
         type: animalInfo?.type,
-        pregnancyConfirmed: info.pregnancyConfirmed,
+        pregnancyConfirmed: info.pregnancyConfirmedDate,
         expectedBirthDate: info.expectedBirthDate,
         actualBirthDate: info.actualBirthDate,
         status
