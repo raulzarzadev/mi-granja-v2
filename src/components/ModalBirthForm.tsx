@@ -53,7 +53,6 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
     offspring: [defaultOffspring()],
     notes: ''
   })
-  console.log({ formData })
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 

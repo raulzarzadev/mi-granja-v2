@@ -2,7 +2,10 @@
 
 import React from 'react'
 import { Animal } from '@/types'
-import { getNextBirthInfo } from '@/lib/animalBreedingConfig'
+import {
+  calculateExpectedBirthDate,
+  getNextBirthInfo
+} from '@/lib/animalBreedingConfig'
 import Button from './buttons/Button'
 import { Icon } from './Icon/icon'
 import { BreedingRecord } from '@/types/breedings'
@@ -112,24 +115,33 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         status = 'parida'
       } else if (info.pregnancyConfirmedDate) {
         status = 'embarazada'
+      } else {
+        status = 'monta'
       }
 
       return {
         femaleId: info.femaleId,
         animalId: animalInfo?.animalId || 'Desconocido',
         type: animalInfo?.type,
-        pregnancyConfirmed: info.pregnancyConfirmedDate,
-        expectedBirthDate: info.expectedBirthDate,
-        actualBirthDate: info.actualBirthDate,
+        pregnancyConfirmedDate: info.pregnancyConfirmedDate || null,
+        expectedBirthDate:
+          info.expectedBirthDate || info.pregnancyConfirmedDate
+            ? calculateExpectedBirthDate(
+                info.pregnancyConfirmedDate,
+                animalInfo?.type
+              )
+            : null,
+        actualBirthDate: info.actualBirthDate || null,
         status
       }
     }) || []
+
+  console.log({ femaleAnimalInfo })
 
   const offspring = record.femaleBreedingInfo
     .map((info) => info.offspring || [])
     .flat()
 
-  console.log({ femaleAnimalInfo })
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
       {/* Header con estado */}

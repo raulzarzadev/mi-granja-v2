@@ -176,7 +176,6 @@ export const useBreedingCRUD = () => {
 
     return breedingRecords.filter((record) => {
       const upcoming = getBreedingUpcomingBirths(record)
-      console.log({ upcoming })
       return upcoming.some((info) => {
         const expected = new Date(info.expectedBirthDate!)
         return expected >= now && expected <= nextWeek
@@ -213,7 +212,6 @@ export const useBreedingCRUD = () => {
       totalOffspring
     }
   }
-  console.log({ breedingRecords })
 
   return {
     breedingRecords,

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Animal } from '@/types'
 import {
   calculateExpectedBirthDate,
@@ -31,6 +31,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   isLoading = false,
   initialData
 }) => {
+  console.log({ initialData })
   const [formData, setFormData] = useState<Partial<BreedingRecord>>({
     maleId: initialData?.maleId || '',
     breedingDate: initialData?.breedingDate || new Date(),
@@ -44,6 +45,16 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
   const [femaleSearch, setFemaleSearch] = useState('')
   const [showFemaleDropdown, setShowFemaleDropdown] = useState(false)
+  const [animalType, setAnimalType] = useState<Animal['type'] | null>(null)
+  useEffect(() => {
+    // Actualizar tipo de animal cuando se seleccione un macho
+    const selectedMale = animals.find((animal) => animal.id === formData.maleId)
+    if (selectedMale) {
+      setAnimalType(selectedMale.type)
+    } else {
+      setAnimalType(null)
+    }
+  }, [animals, formData.maleId])
 
   // Filtrar animales por género y capacidad reproductiva
   const males = animals.filter(
@@ -178,7 +189,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   const getFormNextBirthInfo = () => {
     if (femaleIds.length === 0) return null
 
-    const selectedFemales = getSelectedFemales()
     const hasConfirmedPregnancies = formData.femaleBreedingInfo?.some(
       (info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate
     )
@@ -192,7 +202,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     }
 
     // Obtener el tipo de animal más común (o el primero)
-    const animalType = selectedFemales[0]?.type
+
     if (!animalType) return null
 
     const birthInfo = getNextBirthInfo(mockRecord, animalType, animals)
@@ -208,35 +218,46 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   }
 
   // Manejar cambios en la información de breeding de cada hembra
+
+  //#region handleChange
   const handleFemaleBreedingChange = (
     femaleId: string,
     field: string,
-    value: string | boolean
+    value: string | boolean | Date
   ) => {
-    setFormData((prev) => {
-      const updatedInfo = [...(prev.femaleBreedingInfo || [])]
+    const updates = () => {
+      const updatedInfo = [...(formData.femaleBreedingInfo || [])]
       const existingIndex = updatedInfo.findIndex(
         (info) => info.femaleId === femaleId
       )
-
-      if (existingIndex >= 0) {
+      debugger
+      // animalType debe estar definido para calcular fechas
+      if (existingIndex >= 0 && animalType) {
         // Actualizar info existente
         const currentInfo = updatedInfo[existingIndex]
 
-        if (field === 'pregnancyConfirmed' && value === true) {
-          // Cuando se confirma embarazo, calcular fecha esperada automáticamente
-
-          updatedInfo[existingIndex] = {
-            ...currentInfo
+        if (field === 'pregnancyConfirmed') {
+          if (value) {
+            updatedInfo[existingIndex] = {
+              ...currentInfo,
+              pregnancyConfirmedDate: new Date()
+            }
+          } else {
+            updatedInfo[existingIndex] = {
+              ...currentInfo,
+              pregnancyConfirmedDate: null,
+              expectedBirthDate: null
+            }
           }
+          // Cuando se confirma embarazo, calcular fecha esperada automáticamente
         } else if (field === 'pregnancyConfirmedDate') {
           updatedInfo[existingIndex] = {
-            ...currentInfo
-          }
-        } else if (field === 'expectedBirthDate') {
-          updatedInfo[existingIndex] = {
             ...currentInfo,
-            expectedBirthDate: value ? new Date(value as string) : undefined
+            pregnancyConfirmedDate: value as Date,
+            expectedBirthDate: calculateExpectedBirthDate(
+              value as Date,
+              animalType
+            )
           }
         } else {
           updatedInfo[existingIndex] = {
@@ -250,25 +271,20 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
           femaleId
         }
 
-        if (field === 'pregnancyConfirmedDate' && value) {
-          newInfo.pregnancyConfirmedDate = new Date(value as string)
-          // Si se establece fecha de confirmación, calcular parto esperado desde esa fecha
-          const animal = animals.find((a) => a.id === femaleId)
-          newInfo.expectedBirthDate = animal
-            ? calculateExpectedBirthDate(new Date(value as string), animal.type)
-            : null
-        }
-        if (field === 'expectedBirthDate' && value) {
-          newInfo.expectedBirthDate = new Date(value as string)
-        }
+        console.log({ updatedInfo })
         updatedInfo.push(newInfo)
       }
 
       return {
-        ...prev,
+        ...formData,
         femaleBreedingInfo: updatedInfo
       }
-    })
+    }
+    const updatedData = {
+      ...formData,
+      ...updates()
+    }
+    setFormData(updatedData)
   }
 
   // Obtener el macho seleccionado para filtrar hembras
@@ -500,29 +516,11 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                   (info) => info.femaleId === animal?.id
                 ) || {
                   femaleId: animal?.id || '',
-                  pregnancyConfirmed: false,
                   pregnancyConfirmedDate: '',
                   expectedBirthDate: ''
                 }
 
-                // Convertir fechas a strings para los inputs
-                const pregnancyConfirmedDateStr =
-                  femaleInfo.pregnancyConfirmedDate
-                    ? typeof femaleInfo.pregnancyConfirmedDate === 'string'
-                      ? femaleInfo.pregnancyConfirmedDate
-                      : new Date(femaleInfo.pregnancyConfirmedDate)
-                          .toISOString()
-                          .split('T')[0]
-                    : ''
-
-                const expectedBirthDateStr = femaleInfo.expectedBirthDate
-                  ? typeof femaleInfo.expectedBirthDate === 'string'
-                    ? femaleInfo.expectedBirthDate
-                    : new Date(femaleInfo.expectedBirthDate)
-                        .toISOString()
-                        .split('T')[0]
-                  : ''
-
+                //#region Confirm
                 return (
                   <div key={animal?.id} className="bg-white p-3 rounded border">
                     <div className="flex items-center justify-between mb-2">
@@ -581,30 +579,27 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {/* Fecha de confirmación */}
-                            <div>
-                              <label
-                                htmlFor={`confirmed-date-${animal?.id}`}
-                                className="block text-xs font-medium text-gray-600 mb-1"
-                              >
-                                Fecha confirmación
-                              </label>
-                              <input
-                                type="date"
-                                id={`confirmed-date-${animal?.id}`}
-                                value={pregnancyConfirmedDateStr}
-                                onChange={(e) =>
-                                  handleFemaleBreedingChange(
-                                    animal?.id || '',
-                                    'pregnancyConfirmedDate',
-                                    e.target.value
-                                  )
-                                }
-                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
-                              />
-                            </div>
 
+                            <InputDate
+                              label="Fecha de confirmación"
+                              value={femaleInfo.pregnancyConfirmedDate}
+                              onChange={(date) =>
+                                handleFemaleBreedingChange(
+                                  animal?.id || '',
+                                  'pregnancyConfirmedDate',
+                                  date as Date
+                                )
+                              }
+                              required
+                            />
                             {/* Parto esperado específico */}
-                            <div>
+                            {femaleInfo.expectedBirthDate && (
+                              <InputDate
+                                label="Fecha de parto esperado"
+                                value={femaleInfo.expectedBirthDate}
+                              />
+                            )}
+                            {/* <div>
                               <label
                                 htmlFor={`expected-birth-${animal?.id}`}
                                 className="block text-xs font-medium text-gray-600 mb-1"
@@ -625,7 +620,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                                 className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
                                 placeholder="Se calcula automáticamente"
                               />
-                            </div>
+                            </div> */}
                           </div>
                         </div>
                       )}
