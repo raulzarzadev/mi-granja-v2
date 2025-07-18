@@ -31,7 +31,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
     breedingRecord?.femaleBreedingInfo
       ?.filter((info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate)
       .map((info) => {
-        const animal = animals.find((a) => a.id === info.animalNumber)
+        const animal = animals.find((a) => a.id === info.femaleId)
         return animal ? { ...animal, breedingInfo: info } : null
       })
       .filter(Boolean) || []
@@ -47,7 +47,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   })
 
   const [formData, setFormData] = useState<BirthRecord>({
-    animalNumber: '',
+    animalId: '',
     birthDate: new Date().toISOString().split('T')[0],
     birthTime: new Date().toTimeString().slice(0, 5),
     totalOffspring: 1,
@@ -57,7 +57,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.animalNumber || formData.offspring.length === 0) {
+    if (!formData.animalId || formData.offspring.length === 0) {
       return
     }
 
@@ -150,7 +150,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                 <label
                   key={female?.id}
                   className={`flex items-center p-3 border rounded-md cursor-pointer transition-colors ${
-                    formData.animalNumber === female?.id
+                    formData.animalId === female?.id
                       ? 'border-green-500 bg-green-50'
                       : 'border-gray-300 hover:bg-gray-50'
                   }`}
@@ -159,7 +159,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                     type="radio"
                     name="animalNumber"
                     value={female?.id}
-                    checked={formData.animalNumber === female?.id}
+                    checked={formData.animalId === female?.id}
                     onChange={(e) => handleFemaleChange(e.target.value)}
                     className="mr-3"
                   />
@@ -185,7 +185,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
           )}
         </div>
 
-        {formData.animalNumber && (
+        {formData.animalId && (
           <>
             {/* Fecha y hora del parto */}
             <div className="grid grid-cols-2 gap-4">
@@ -441,7 +441,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
             type="submit"
             disabled={
               isLoading ||
-              !formData.animalNumber ||
+              !formData.animalId ||
               formData.offspring.some((o) => !o.animalNumber.trim())
             }
             className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"

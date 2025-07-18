@@ -154,9 +154,8 @@ export const useBreedingCRUD = () => {
   const getRecordsByAnimal = (animalId: string) => {
     return breedingRecords.filter(
       (record) =>
-        record.femaleBreedingInfo?.some(
-          (info) => info.animalNumber === animalId
-        ) || record.maleId === animalId
+        record.femaleBreedingInfo?.some((info) => info.femaleId === animalId) ||
+        record.maleId === animalId
     )
   }
 

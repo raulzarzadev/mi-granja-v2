@@ -50,7 +50,7 @@ export interface OffspringInfo {
 }
 
 export interface BirthRecord {
-  animalNumber: string // NOTA: Este campo almacena el ID de Firestore del animal madre, no el animalNumber del usuario
+  animalId: string // NOTA: Este campo almacena el ID de Firestore del animal madre, no el animalNumber del usuario
   birthDate: string // Formato YYYY-MM-DD para inputs
   birthTime: string // Formato HH:MM
   totalOffspring: number

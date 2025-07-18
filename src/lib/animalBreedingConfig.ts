@@ -236,11 +236,11 @@ export const getNextBirthInfo = (
           expectedDate = null
         }
 
-        const female = animals?.find((a) => a.id === info.animalNumber)
+        const female = animals?.find((a) => a.id === info.femaleId)
 
         return {
-          animalNumber: info.animalNumber,
-          femaleanimalNumber: female?.animalNumber || 'Desconocida',
+          animalId: info.femaleId,
+          femaleAnimalNumber: female?.animalNumber || 'Desconocida',
           expectedDate,
           daysUntil: expectedDate
             ? Math.ceil(

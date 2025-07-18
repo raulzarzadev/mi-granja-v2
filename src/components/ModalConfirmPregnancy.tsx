@@ -31,7 +31,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
     breedingRecord?.femaleBreedingInfo
       ?.filter((info) => !info.pregnancyConfirmedDate)
       .map((info) => {
-        const animal = animals.find((a) => a.id === info.animalNumber)
+        const animal = animals.find((a) => a.id === info.femaleId)
         return animal ? { ...animal, breedingInfo: info } : null
       })
       .filter(Boolean) || []
@@ -62,8 +62,8 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
     // Actualizar femaleBreedingInfo con las confirmaciones
     const updatedFemaleBreedingInfo = breedingRecord.femaleBreedingInfo.map(
       (info) => {
-        if (selectedFemales.includes(info.animalNumber)) {
-          const animal = animals.find((a) => a.id === info.animalNumber)
+        if (selectedFemales.includes(info.femaleId)) {
+          const animal = animals.find((a) => a.id === info.femaleId)
           const expectedBirthDate = animal
             ? calculateExpectedBirthDate(confirmDate, animal.type)
             : undefined

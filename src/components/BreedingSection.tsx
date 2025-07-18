@@ -69,7 +69,7 @@ const BreedingSection: React.FC = () => {
 
     try {
       // Obtener información de la madre y el padre
-      const mother = animals.find((a) => a.id === birthData.animalNumber)
+      const mother = animals.find((a) => a.id === birthData.animalId)
       const father = animals.find((a) => a.id === birthRecord.maleId)
 
       if (!mother || !father) {
@@ -89,7 +89,7 @@ const BreedingSection: React.FC = () => {
               `${birthData.birthDate}T${birthData.birthTime}`
             ),
             gender: offspring.gender,
-            motherId: birthData.animalNumber,
+            motherId: birthData.animalId,
             fatherId: birthRecord.maleId,
             notes: `Color: ${offspring.color || 'No especificado'}. Estado: ${
               offspring.status
@@ -108,7 +108,7 @@ const BreedingSection: React.FC = () => {
       // Actualizar el registro de monta con la información del parto
       const updatedFemaleBreedingInfo = birthRecord.femaleBreedingInfo.map(
         (info) => {
-          if (info.animalNumber === birthData.animalNumber) {
+          if (info.femaleId === birthData.animalId) {
             return {
               ...info,
               actualBirthDate: new Date(

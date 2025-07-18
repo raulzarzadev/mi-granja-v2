@@ -59,8 +59,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
 
     return {
       daysUntil,
-      femaleanimalNumber:
-        record.femaleBreedingInfo[0]?.animalNumber || 'Estimado'
+      femaleAnimalNumber: record.femaleBreedingInfo[0]?.femaleId
     }
   }
 
@@ -288,9 +287,9 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         <div className="flex justify-between">
           <span className="text-gray-600">
             Próximo parto esperado
-            {birthInfo?.femaleanimalNumber &&
-            birthInfo.femaleanimalNumber !== 'Estimado'
-              ? ` (${birthInfo.femaleanimalNumber})`
+            {birthInfo?.femaleAnimalNumber &&
+            birthInfo.femaleAnimalNumber !== 'Estimado'
+              ? ` (${birthInfo.femaleAnimalNumber})`
               : ''}
             :
           </span>
@@ -317,14 +316,9 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                 info.offspring.length > 0
             )
             .map((info) => {
-              const femaleAnimal = animals.find(
-                (a) => a.id === info.animalNumber
-              )
+              const femaleAnimal = animals.find((a) => a.id === info.femaleId)
               return (
-                <div
-                  key={info.animalNumber}
-                  className="text-xs text-gray-600 mb-1"
-                >
+                <div key={info.femaleId} className="text-xs text-gray-600 mb-1">
                   <span className=" font-bold">
                     {femaleAnimal?.animalNumber || 'Desconocido'}
                   </span>{' '}
