@@ -9,7 +9,7 @@ export interface User {
 
 export interface WeightRecord {
   id: string
-  animalId: string
+  animalNumber: string
   weight: number
   date: Date
   notes?: string
@@ -17,7 +17,7 @@ export interface WeightRecord {
 
 export interface MilkProduction {
   id: string
-  animalId: string
+  animalNumber: string
   date: Date
   morningAmount: number
   eveningAmount: number
@@ -28,7 +28,7 @@ export interface MilkProduction {
 export interface Reminder {
   id: string
   farmerId: string
-  animalId?: string
+  animalNumber?: string
   title: string
   description: string
   dueDate: Date
@@ -41,7 +41,7 @@ export interface Reminder {
 
 export interface OffspringInfo {
   id: string // ID temporal para el formulario
-  animalId: string // ID único asignado por el granjero
+  animalNumber: string // ID único asignado por el granjero
   weight?: number | null | string
   color?: string
   status: 'vivo' | 'muerto' | 'enfermo'
@@ -50,7 +50,7 @@ export interface OffspringInfo {
 }
 
 export interface BirthRecord {
-  animalNumber: string
+  animalNumber: string // NOTA: Este campo almacena el ID de Firestore del animal madre, no el animalNumber del usuario
   birthDate: string // Formato YYYY-MM-DD para inputs
   birthTime: string // Formato HH:MM
   totalOffspring: number

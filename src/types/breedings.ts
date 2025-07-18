@@ -1,5 +1,5 @@
 export interface FemaleBreedingInfo {
-  animalNumber: string
+  animalNumber: string // NOTA: Este campo almacena el ID de Firestore del animal hembra, no el animalNumber del usuario
   pregnancyConfirmedDate?: Date | null
   expectedBirthDate?: Date | null
   actualBirthDate?: Date | null

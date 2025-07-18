@@ -31,7 +31,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
     breedingRecord?.femaleBreedingInfo
       ?.filter((info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate)
       .map((info) => {
-        const animal = animals.find((a) => a.animalNumber === info.animalNumber)
+        const animal = animals.find((a) => a.id === info.animalNumber)
         return animal ? { ...animal, breedingInfo: info } : null
       })
       .filter(Boolean) || []

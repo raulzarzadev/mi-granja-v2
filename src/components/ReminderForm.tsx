@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 
 interface Reminder {
   id: string
-  animalId?: string
+  animalNumber?: string
   title: string
   description: string
   dueDate: Date
@@ -15,7 +15,7 @@ interface Reminder {
 }
 
 interface ReminderFormProps {
-  animals?: Array<{ id: string; animalId: string; type: string }>
+  animals?: Array<{ id: string; animalNumber: string; type: string }>
   onSubmit: (data: Omit<Reminder, 'id' | 'createdAt'>) => Promise<void>
   onCancel: () => void
   isLoading?: boolean
@@ -33,7 +33,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
   initialData
 }) => {
   const [formData, setFormData] = useState({
-    animalId: initialData?.animalId || '',
+    animalNumber: initialData?.animalNumber || '',
     title: initialData?.title || '',
     description: initialData?.description || '',
     dueDate: initialData?.dueDate
@@ -52,8 +52,17 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
     }
 
     try {
+      // Si hay un animal seleccionado, obtener su animalNumber
+      let finalAnimalNumber: string | undefined = undefined
+      if (formData.animalNumber && animals) {
+        const selectedAnimal = animals.find(
+          (animal) => animal.id === formData.animalNumber
+        )
+        finalAnimalNumber = selectedAnimal?.animalNumber
+      }
+
       await onSubmit({
-        animalId: formData.animalId || undefined,
+        animalNumber: finalAnimalNumber,
         title: formData.title,
         description: formData.description,
         dueDate: new Date(formData.dueDate),
@@ -112,22 +121,22 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
       {/* Animal (opcional) */}
       <div>
         <label
-          htmlFor="animalId"
+          htmlFor="animalNumber"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
           Animal (opcional)
         </label>
         <select
-          id="animalId"
-          name="animalId"
-          value={formData.animalId}
+          id="animalNumber"
+          name="animalNumber"
+          value={formData.animalNumber}
           onChange={handleChange}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
         >
           <option value="">General (todos los animales)</option>
           {animals.map((animal) => (
             <option key={animal.id} value={animal.id}>
-              {animal.animalId} - {animal.type}
+              {animal.animalNumber} - {animal.type}
             </option>
           ))}
         </select>

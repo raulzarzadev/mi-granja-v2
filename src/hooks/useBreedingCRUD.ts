@@ -150,7 +150,7 @@ export const useBreedingCRUD = () => {
     }
   }
 
-  // Obtener registros por animal
+  // Obtener registros por animal (usando ID de Firestore)
   const getRecordsByAnimal = (animalId: string) => {
     return breedingRecords.filter(
       (record) =>

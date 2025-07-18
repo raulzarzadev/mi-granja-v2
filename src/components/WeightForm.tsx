@@ -4,8 +4,8 @@ import React, { useState } from 'react'
 import { WeightRecord } from '@/types'
 
 interface WeightFormProps {
-  animalId?: string
-  animals?: Array<{ id: string; animalId: string; type: string }>
+  animalNumber?: string
+  animals?: Array<{ id: string; animalNumber: string; type: string }>
   onSubmit: (data: Omit<WeightRecord, 'id'>) => Promise<void>
   onCancel: () => void
   isLoading?: boolean
@@ -15,14 +15,14 @@ interface WeightFormProps {
  * Formulario para registrar peso de animales
  */
 const WeightForm: React.FC<WeightFormProps> = ({
-  animalId,
+  animalNumber,
   animals = [],
   onSubmit,
   onCancel,
   isLoading = false
 }) => {
   const [formData, setFormData] = useState({
-    animalId: animalId || '',
+    animalNumber: animalNumber || '',
     weight: '',
     date: new Date().toISOString().split('T')[0],
     notes: ''
@@ -31,13 +31,22 @@ const WeightForm: React.FC<WeightFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.animalId || !formData.weight) {
+    if (!formData.animalNumber || !formData.weight) {
+      return
+    }
+
+    // Encontrar el animal seleccionado para obtener su animalNumber
+    const selectedAnimal = animals?.find(
+      (animal) => animal.id === formData.animalNumber
+    )
+    if (!selectedAnimal) {
+      console.error('Animal no encontrado')
       return
     }
 
     try {
       await onSubmit({
-        animalId: formData.animalId,
+        animalNumber: selectedAnimal.animalNumber, // Usar el animalNumber del usuario, no el ID de Firestore
         weight: parseFloat(formData.weight),
         date: new Date(formData.date),
         notes: formData.notes
@@ -69,18 +78,18 @@ const WeightForm: React.FC<WeightFormProps> = ({
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Animal (solo mostrar si no está preseleccionado) */}
-            {!animalId && (
+            {!animalNumber && (
               <div>
                 <label
-                  htmlFor="animalId"
+                  htmlFor="animalNumber"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Animal *
                 </label>
                 <select
-                  id="animalId"
-                  name="animalId"
-                  value={formData.animalId}
+                  id="animalNumber"
+                  name="animalNumber"
+                  value={formData.animalNumber}
                   onChange={handleChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -88,7 +97,7 @@ const WeightForm: React.FC<WeightFormProps> = ({
                   <option value="">Seleccionar animal</option>
                   {animals.map((animal) => (
                     <option key={animal.id} value={animal.id}>
-                      {animal.animalId} - {animal.type}
+                      {animal.animalNumber} - {animal.type}
                     </option>
                   ))}
                 </select>
@@ -166,7 +175,9 @@ const WeightForm: React.FC<WeightFormProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={isLoading || !formData.animalId || !formData.weight}
+                disabled={
+                  isLoading || !formData.animalNumber || !formData.weight
+                }
                 className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
               >
                 {isLoading ? 'Registrando...' : 'Registrar Peso'}

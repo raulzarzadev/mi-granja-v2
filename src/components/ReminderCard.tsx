@@ -5,7 +5,7 @@ import { Reminder } from '@/types'
 
 interface ReminderCardProps {
   reminder: Reminder
-  animals?: Array<{ id: string; animalId: string; type: string }>
+  animals?: Array<{ id: string; animalNumber: string; type: string }>
   onEdit?: (reminder: Reminder) => void
   onComplete?: (reminder: Reminder) => void
   onDelete?: (reminder: Reminder) => void
@@ -92,8 +92,8 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
     return 'bg-white border-gray-200'
   }
 
-  const animal = reminder.animalId
-    ? animals.find((a) => a.id === reminder.animalId)
+  const animal = reminder.animalNumber
+    ? animals.find((a) => a.animalNumber === reminder.animalNumber)
     : null
 
   return (
@@ -116,7 +116,7 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
             </h3>
             {animal && (
               <p className="text-sm text-gray-500">
-                {animal.animalId} - {animal.type}
+                {animal.animalNumber} - {animal.type}
               </p>
             )}
           </div>

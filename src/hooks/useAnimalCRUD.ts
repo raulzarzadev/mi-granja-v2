@@ -12,7 +12,8 @@ import {
   orderBy,
   doc,
   getDoc,
-  getDocs
+  getDocs,
+  deleteField
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { RootState } from '@/features/store'
@@ -67,7 +68,7 @@ export const useAnimalCRUD = () => {
   }
 
   // Actualizar animal existente
-  const update = async (animalNumber: string, updateData: Partial<Animal>) => {
+  const update = async (animalId: string, updateData: Partial<Animal>) => {
     if (!user?.id) {
       dispatch(setError('Usuario no autenticado'))
       return
@@ -75,32 +76,27 @@ export const useAnimalCRUD = () => {
 
     setIsLoading(true)
     try {
-      const animalRef = doc(db, 'animals', animalNumber)
+      const animalRef = doc(db, 'animals', animalId)
       const updatedData = {
         ...updateData,
         updatedAt: new Date()
       }
 
-      // Usar la nueva acción para actualizaciones parciales
-      dispatch(updateAnimal({ id: animalNumber, data: updateData }))
-
       await updateDoc(animalRef, updatedData)
 
-      // No necesitamos dispatch aquí porque el listener en tiempo real se encargará
-      console.log('Animal actualizado:', animalNumber)
+      dispatch(updateAnimal({ id: animalId, data: updateData }))
+
+      console.log('Animal actualizado:', animalId)
     } catch (error) {
-      console.error('Error updating animal:', error)
-      const errorMessage =
-        error instanceof Error ? error.message : 'Error al actualizar el animal'
-      dispatch(setError(errorMessage))
-      throw error
+      console.error('Error actualizando animal:', error)
+      dispatch(setError('Error actualizando animal'))
     } finally {
       setIsLoading(false)
     }
   }
 
   // Eliminar animal
-  const remove = async (animalNumber: string) => {
+  const remove = async (animalId: string) => {
     if (!user?.id) {
       dispatch(setError('Usuario no autenticado'))
       return
@@ -108,10 +104,10 @@ export const useAnimalCRUD = () => {
 
     setIsLoading(true)
     try {
-      await deleteDoc(doc(db, 'animals', animalNumber))
+      await deleteDoc(doc(db, 'animals', animalId))
 
       // No necesitamos dispatch aquí porque el listener en tiempo real se encargará
-      console.log('Animal eliminado:', animalNumber)
+      console.log('Animal eliminado:', animalId)
     } catch (error) {
       console.error('Error deleting animal:', error)
       const errorMessage =
@@ -124,14 +120,14 @@ export const useAnimalCRUD = () => {
   }
 
   // Buscar animales por ID
-  const get = (animalNumber: string) => {
+  const get = (animalId: string) => {
     return new Promise<Animal | null>((resolve, reject) => {
       if (!user?.id) {
         dispatch(setError('Usuario no autenticado'))
         return resolve(null)
       }
 
-      const animalRef = doc(db, 'animals', animalNumber)
+      const animalRef = doc(db, 'animals', animalId)
       getDoc(animalRef)
         .then((docSnapshot) => {
           if (docSnapshot.exists()) {
@@ -190,6 +186,8 @@ export const useAnimalCRUD = () => {
       }
     })
   }
+
+  // Migrar animales al nuevo esquema de animalNumber
 
   return {
     isLoading,

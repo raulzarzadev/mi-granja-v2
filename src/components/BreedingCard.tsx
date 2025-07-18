@@ -131,7 +131,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       }
 
       return {
-        animalNumber: info.animalNumber,
+        femaleId: info.animalNumber, // ID de Firestore
+        animalId: animalInfo?.animalNumber || 'Desconocido', // Número del animal para mostrar al usuario
         type: animalInfo?.type,
         pregnancyConfirmedDate: info.pregnancyConfirmedDate || null,
         expectedBirthDate: expectedBirthDate(),
@@ -224,12 +225,12 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         <div className="ml-6 mb-2 space-y-2">
           {femalesBreedingInfo.map((femaleAnimal) => (
             <div
-              key={femaleAnimal.animalNumber}
+              key={femaleAnimal.femaleId}
               className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
             >
               <div className="flex items-center gap-2">
                 <span className="font-medium text-gray-800">
-                  {femaleAnimal.animalNumber}
+                  {femaleAnimal.animalId}
                 </span>
                 <span className="text-xs px-2 py-1 bg-gray-200 rounded-full text-gray-600">
                   {femaleAnimal.type}
