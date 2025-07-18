@@ -96,7 +96,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
 
   const femalesBreedingInfo =
     record?.femaleBreedingInfo.map((info) => {
-      const animalInfo = animals.find((a) => a.id === info.animalNumber)
+      const animalInfo = animals.find((a) => info.femaleId === a.id)
 
       // Determinar el estado real de la hembra
       let status: 'parida' | 'embarazada' | 'monta' = 'monta'
@@ -131,8 +131,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       }
 
       return {
-        femaleId: info.animalNumber, // ID de Firestore
-        animalId: animalInfo?.animalNumber || 'Desconocido', // Número del animal para mostrar al usuario
+        animalId: animalInfo?.id, // Número del animal para mostrar al usuario
+        animalNumber: animalInfo?.animalNumber,
         type: animalInfo?.type,
         pregnancyConfirmedDate: info.pregnancyConfirmedDate || null,
         expectedBirthDate: expectedBirthDate(),
@@ -145,14 +145,14 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
     .map((info) => info.offspring || [])
     .flat()
 
-  const nextBirthAnimal = femalesBreedingInfo.sort((a, b) => {
-    if (a.expectedBirthDate && b.expectedBirthDate) {
-      return a.expectedBirthDate.getTime() - b.expectedBirthDate.getTime()
-    }
-    return 0
-  })[0]
+  // const nextBirthAnimal = femalesBreedingInfo.sort((a, b) => {
+  //   if (a.expectedBirthDate && b.expectedBirthDate) {
+  //     return a.expectedBirthDate.getTime() - b.expectedBirthDate.getTime()
+  //   }
+  //   return 0
+  // })[0]
 
-  console.log({ nextBirthAnimal })
+  console.log({ femalesBreedingInfo })
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
@@ -225,12 +225,12 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         <div className="ml-6 mb-2 space-y-2">
           {femalesBreedingInfo.map((femaleAnimal) => (
             <div
-              key={femaleAnimal.femaleId}
+              key={femaleAnimal.animalNumber}
               className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
             >
               <div className="flex items-center gap-2">
                 <span className="font-medium text-gray-800">
-                  {femaleAnimal.animalId}
+                  {femaleAnimal.animalNumber}
                 </span>
                 <span className="text-xs px-2 py-1 bg-gray-200 rounded-full text-gray-600">
                   {femaleAnimal.type}

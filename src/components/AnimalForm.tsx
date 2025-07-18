@@ -1,6 +1,7 @@
 'use client'
 
 import { Animal, AnimalStage, AnimalType } from '@/types/animals'
+import { toDate } from 'date-fns'
 import React, { useState } from 'react'
 
 interface AnimalFormProps {
@@ -22,6 +23,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
   initialData,
   isLoading = false
 }) => {
+  console.log({ initialData })
   const [formData, setFormData] = useState({
     animalNumber: initialData?.animalNumber || '',
     type: initialData?.type || ('oveja' as AnimalType),
@@ -30,7 +32,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
     weight: initialData?.weight || '',
     age: initialData?.age || '',
     birthDate: initialData?.birthDate
-      ? initialData.birthDate.toISOString().split('T')[0]
+      ? toDate(initialData?.birthDate)?.toISOString().split('T')[0]
       : '',
     motherId: initialData?.motherId || '',
     fatherId: initialData?.fatherId || '',
