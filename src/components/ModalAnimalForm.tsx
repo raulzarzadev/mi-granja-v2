@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Animal } from '@/types'
+import { Animal } from '@/types/animals'
 import { Modal } from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
 import AnimalForm from '@/components/AnimalForm'

@@ -230,7 +230,7 @@ export const ExampleModalAnimalForm = () => {
         initialData={{
           id: '1',
           farmerId: 'farmer1',
-          animalId: 'COW-001',
+          animalNumber: 'COW-001',
           type: 'vaca_leche',
           stage: 'lechera',
           gender: 'hembra',

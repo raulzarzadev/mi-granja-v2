@@ -43,7 +43,7 @@ export const useReminders = () => {
         remindersData.push({
           id: doc.id,
           farmerId: data.farmerId,
-          animalId: data.animalId,
+          animalNumber: data.animalNumber,
           title: data.title,
           description: data.description || '',
           dueDate: data.dueDate.toDate(),
@@ -72,7 +72,7 @@ export const useReminders = () => {
       const now = Timestamp.now()
       const docData = {
         farmerId: user.id,
-        animalId: data.animalId || null,
+        animalNumber: data.animalNumber || null,
         title: data.title,
         description: data.description || '',
         dueDate: Timestamp.fromDate(new Date(data.dueDate)),
@@ -112,7 +112,8 @@ export const useReminders = () => {
         updateData.completed = updates.completed
       if (updates.priority !== undefined) updateData.priority = updates.priority
       if (updates.type !== undefined) updateData.type = updates.type
-      if (updates.animalId !== undefined) updateData.animalId = updates.animalId
+      if (updates.animalNumber !== undefined)
+        updateData.animalNumber = updates.animalNumber
 
       if (updates.dueDate) {
         updateData.dueDate = Timestamp.fromDate(new Date(updates.dueDate))
@@ -146,8 +147,10 @@ export const useReminders = () => {
   }
 
   // Obtener recordatorios por animal
-  const getRemindersByAnimal = (animalId: string) => {
-    return reminders.filter((reminder) => reminder.animalId === animalId)
+  const getRemindersByAnimal = (animalNumber: string) => {
+    return reminders.filter(
+      (reminder) => reminder.animalNumber === animalNumber
+    )
   }
 
   // Obtener recordatorios pendientes

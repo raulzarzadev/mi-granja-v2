@@ -42,7 +42,7 @@ export const useWeight = () => {
         const data = doc.data()
         records.push({
           id: doc.id,
-          animalId: data.animalId,
+          animalNumber: data.animalNumber,
           weight: data.weight,
           date: data.date.toDate(),
           notes: data.notes || ''
@@ -63,7 +63,7 @@ export const useWeight = () => {
     try {
       const docData = {
         farmerId: user.id,
-        animalId: data.animalId,
+        animalNumber: data.animalNumber,
         weight: data.weight,
         date: Timestamp.fromDate(new Date(data.date)),
         notes: data.notes || ''
@@ -118,19 +118,25 @@ export const useWeight = () => {
   }
 
   // Obtener registros por animal
-  const getRecordsByAnimal = (animalId: string) => {
-    return weightRecords.filter((record) => record.animalId === animalId)
+  const getRecordsByAnimal = (animalNumber: string) => {
+    return weightRecords.filter(
+      (record) => record.animalNumber === animalNumber
+    )
   }
 
   // Obtener último peso de un animal
-  const getLatestWeight = (animalId: string) => {
-    const animalRecords = getRecordsByAnimal(animalId)
+  const getLatestWeight = (animalNumber: string) => {
+    const animalRecords = getRecordsByAnimal(animalNumber)
     return animalRecords.length > 0 ? animalRecords[0] : null
   }
 
   // Obtener ganancia de peso entre dos fechas
-  const getWeightGain = (animalId: string, fromDate: Date, toDate: Date) => {
-    const animalRecords = getRecordsByAnimal(animalId)
+  const getWeightGain = (
+    animalNumber: string,
+    fromDate: Date,
+    toDate: Date
+  ) => {
+    const animalRecords = getRecordsByAnimal(animalNumber)
     const recordsInRange = animalRecords.filter((record) => {
       const recordDate = new Date(record.date)
       return recordDate >= fromDate && recordDate <= toDate
@@ -159,11 +165,11 @@ export const useWeight = () => {
   }
 
   // Obtener promedio de peso en un período
-  const getAverageWeight = (animalId: string, days: number = 30) => {
+  const getAverageWeight = (animalNumber: string, days: number = 30) => {
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() - days)
 
-    const recentRecords = getRecordsByAnimal(animalId).filter(
+    const recentRecords = getRecordsByAnimal(animalNumber).filter(
       (record) => new Date(record.date) >= cutoffDate
     )
 

@@ -1,5 +1,5 @@
 export interface FemaleBreedingInfo {
-  femaleId: string
+  animalNumber: string
   pregnancyConfirmedDate?: Date | null
   expectedBirthDate?: Date | null
   actualBirthDate?: Date | null

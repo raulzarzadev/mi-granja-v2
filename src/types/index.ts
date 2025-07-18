@@ -7,37 +7,6 @@ export interface User {
   createdAt: Date
 }
 
-export type AnimalType =
-  | 'oveja'
-  | 'vaca_leche'
-  | 'vaca_engorda'
-  | 'cabra'
-  | 'cerdo'
-
-export type AnimalStage =
-  | 'cria'
-  | 'engorda'
-  | 'lechera'
-  | 'reproductor'
-  | 'descarte'
-
-export interface Animal {
-  id: string
-  farmerId: string
-  animalId: string // ID único del animal (asignado por el granjero)
-  type: AnimalType
-  stage: AnimalStage
-  weight?: number | string
-  age?: number
-  birthDate?: Date
-  gender: 'macho' | 'hembra'
-  motherId?: string
-  fatherId?: string
-  notes?: string
-  createdAt: Date
-  updatedAt: Date
-}
-
 export interface WeightRecord {
   id: string
   animalId: string
@@ -81,7 +50,7 @@ export interface OffspringInfo {
 }
 
 export interface BirthRecord {
-  femaleId: string
+  animalNumber: string
   birthDate: string // Formato YYYY-MM-DD para inputs
   birthTime: string // Formato HH:MM
   totalOffspring: number

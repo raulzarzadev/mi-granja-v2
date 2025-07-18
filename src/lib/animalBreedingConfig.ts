@@ -1,4 +1,4 @@
-import { AnimalType } from '@/types'
+import { AnimalType } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 
 export interface AnimalBreedingConfig {
@@ -96,7 +96,7 @@ export const calculateNextExpectedBirthDate = (
   breedingRecord: {
     breedingDate: Date
     femaleBreedingInfo?: Array<{
-      femaleId: string
+      animalNumber: string
       pregnancyConfirmed: boolean
       pregnancyConfirmedDate?: Date
       expectedBirthDate?: Date
@@ -202,10 +202,17 @@ export const getBreedingAdvice = (
   return advice
 }
 
+/**
+ * @deprecated use getNextBreedingBirth
+ * @param breedingRecord
+ * @param animalType
+ * @param animals
+ * @returns
+ */
 export const getNextBirthInfo = (
   breedingRecord: Partial<BreedingRecord>,
   animalType: AnimalType,
-  animals?: Array<{ id: string; animalId: string }>
+  animals?: Array<{ id: string; animalNumber: string }>
 ) => {
   const config = getAnimalBreedingConfig(animalType)
   const today = new Date()
@@ -229,11 +236,11 @@ export const getNextBirthInfo = (
           expectedDate = null
         }
 
-        const female = animals?.find((a) => a.id === info.femaleId)
+        const female = animals?.find((a) => a.id === info.animalNumber)
 
         return {
-          femaleId: info.femaleId,
-          femaleAnimalId: female?.animalId || 'Desconocida',
+          animalNumber: info.animalNumber,
+          femaleanimalNumber: female?.animalNumber || 'Desconocida',
           expectedDate,
           daysUntil: expectedDate
             ? Math.ceil(
@@ -287,8 +294,8 @@ export const getNextBirthInfo = (
     : null
 
   return {
-    femaleId: 'unknown',
-    femaleAnimalId: 'Estimado',
+    animalNumber: 'unknown',
+    femaleanimalNumber: 'Estimado',
     expectedDate,
     daysUntil,
     animalType,

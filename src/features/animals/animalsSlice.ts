@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { Animal } from '@/types'
 import { serializeObj } from '../libs/serializeObj'
+import { Animal } from '@/types/animals'
 
 interface AnimalsState {
   animals: Animal[]

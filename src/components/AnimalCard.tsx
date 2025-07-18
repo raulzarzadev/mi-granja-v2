@@ -1,7 +1,7 @@
 'use client'
 
+import { Animal } from '@/types/animals'
 import React from 'react'
-import { Animal } from '@/types'
 
 interface AnimalCardProps {
   animal: Animal
@@ -82,7 +82,9 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
         <div className="flex items-center space-x-3">
           <span className="text-2xl">{getAnimalEmoji(animal.type)}</span>
           <div>
-            <h3 className="font-semibold text-gray-900">#{animal.animalId}</h3>
+            <h3 className="font-semibold text-gray-900">
+              #{animal.animalNumber}
+            </h3>
             <p className="text-sm text-gray-600">{formatType(animal.type)}</p>
           </div>
         </div>

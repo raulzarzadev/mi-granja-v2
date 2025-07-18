@@ -1,10 +1,10 @@
 'use client'
 
 import React from 'react'
-import { Animal } from '@/types'
 import { Modal } from './Modal'
 import BreedingForm from './BreedingForm'
 import { BreedingRecord } from '@/types/breedings'
+import { Animal } from '@/types/animals'
 
 interface ModalEditBreedingProps {
   animals: Animal[]

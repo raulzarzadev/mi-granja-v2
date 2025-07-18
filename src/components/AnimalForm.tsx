@@ -1,7 +1,7 @@
 'use client'
 
+import { Animal, AnimalStage, AnimalType } from '@/types/animals'
 import React, { useState } from 'react'
-import { Animal, AnimalType, AnimalStage } from '@/types'
 
 interface AnimalFormProps {
   onSubmit: (
@@ -23,7 +23,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
   isLoading = false
 }) => {
   const [formData, setFormData] = useState({
-    animalId: initialData?.animalId || '',
+    animalNumber: initialData?.animalNumber || '',
     type: initialData?.type || ('oveja' as AnimalType),
     stage: initialData?.stage || ('cria' as AnimalStage),
     gender: initialData?.gender || ('hembra' as 'macho' | 'hembra'),
@@ -78,8 +78,8 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.animalId.trim()) {
-      newErrors.animalId = 'El ID del animal es requerido'
+    if (!formData.animalNumber.trim()) {
+      newErrors.animalNumber = 'El ID del animal es requerido'
     }
 
     if (
@@ -112,7 +112,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       Animal,
       'id' | 'farmerId' | 'createdAt' | 'updatedAt'
     > = {
-      animalId: formData.animalId.trim(),
+      animalNumber: formData.animalNumber.trim(),
       type: formData.type,
       stage: formData.stage,
       gender: formData.gender,
@@ -127,7 +127,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
     //   Animal,
     //   'id' | 'farmerId' | 'createdAt' | 'updatedAt'
     // > = {
-    //   animalId: formData.animalId.trim(),
+    //   animalNumber: formData.animalNumber.trim(),
     //   type: formData.type,
     //   stage: formData.stage,
     //   gender: formData.gender,
@@ -147,25 +147,25 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       {/* ID del Animal */}
       <div>
         <label
-          htmlFor="animalId"
+          htmlFor="animalNumber"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
           ID del Animal *
         </label>
         <input
           type="text"
-          id="animalId"
-          name="animalId"
-          value={formData.animalId}
+          id="animalNumber"
+          name="animalNumber"
+          value={formData.animalNumber}
           onChange={handleInputChange}
           className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 placeholder:text-gray-600 placeholder:opacity-100 ${
-            errors.animalId ? 'border-red-500' : 'border-gray-300'
+            errors.animalNumber ? 'border-red-500' : 'border-gray-300'
           }`}
           placeholder="Ej: A001, OV123"
           disabled={isLoading}
         />
-        {errors.animalId && (
-          <p className="text-red-500 text-xs mt-1">{errors.animalId}</p>
+        {errors.animalNumber && (
+          <p className="text-red-500 text-xs mt-1">{errors.animalNumber}</p>
         )}
       </div>
 

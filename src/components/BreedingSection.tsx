@@ -69,7 +69,7 @@ const BreedingSection: React.FC = () => {
 
     try {
       // Obtener información de la madre y el padre
-      const mother = animals.find((a) => a.id === birthData.femaleId)
+      const mother = animals.find((a) => a.id === birthData.animalNumber)
       const father = animals.find((a) => a.id === birthRecord.maleId)
 
       if (!mother || !father) {
@@ -81,7 +81,7 @@ const BreedingSection: React.FC = () => {
       const offspringIds = await Promise.all(
         birthData.offspring.map(async (offspring) => {
           const newAnimal = {
-            animalId: offspring.animalId,
+            animalNumber: offspring.animalNumber,
             type: mother.type, // Las crías heredan el tipo de la madre
             stage: 'cria' as const,
             weight: offspring.weight || '',
@@ -89,7 +89,7 @@ const BreedingSection: React.FC = () => {
               `${birthData.birthDate}T${birthData.birthTime}`
             ),
             gender: offspring.gender,
-            motherId: birthData.femaleId,
+            motherId: birthData.animalNumber,
             fatherId: birthRecord.maleId,
             notes: `Color: ${offspring.color || 'No especificado'}. Estado: ${
               offspring.status
@@ -100,15 +100,15 @@ const BreedingSection: React.FC = () => {
             }`
           }
 
-          const animalId = await createAnimal(newAnimal)
-          return animalId
+          const animalNumber = await createAnimal(newAnimal)
+          return animalNumber
         })
       )
 
       // Actualizar el registro de monta con la información del parto
       const updatedFemaleBreedingInfo = birthRecord.femaleBreedingInfo.map(
         (info) => {
-          if (info.femaleId === birthData.femaleId) {
+          if (info.animalNumber === birthData.animalNumber) {
             return {
               ...info,
               actualBirthDate: new Date(

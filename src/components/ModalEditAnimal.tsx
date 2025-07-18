@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Animal } from '@/types'
+import { Animal } from '@/types/animals'
 import { Modal } from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
 import AnimalForm from './AnimalForm'
@@ -20,10 +20,10 @@ const ModalEditAnimal: React.FC<ModalEditAnimalProps> = ({ animal }) => {
   const { isOpen, openModal, closeModal } = useModal()
   const { update: updateAnimal } = useAnimalCRUD()
   const handleEditAnimal = (
-    animalId: string,
+    animalNumber: string,
     animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
   ) => {
-    updateAnimal(animalId, animalData)
+    updateAnimal(animalNumber, animalData)
     closeModal()
   }
   return (

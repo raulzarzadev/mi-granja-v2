@@ -47,7 +47,7 @@ service cloud.firestore {
     }
 
     // Reglas para animales: solo el propietario puede acceder
-    match /animals/{animalId} {
+    match /animals/{animalNumber} {
       allow read, write: if request.auth != null &&
         request.auth.uid == resource.data.farmerId;
       allow create: if request.auth != null &&

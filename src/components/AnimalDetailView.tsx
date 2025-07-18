@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Animal, WeightRecord, MilkProduction } from '@/types'
 import ModalEditAnimal from './ModalEditAnimal'
 import { BreedingRecord } from '@/types/breedings'
+import { Animal } from '@/types/animals'
+import { MilkProduction, WeightRecord } from '@/types'
 
 interface AnimalDetailViewProps {
   animal: Animal
@@ -122,7 +123,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
             <div className="flex items-center gap-4">
               <span className="text-4xl">{getAnimalIcon(animal.type)}</span>
               <div>
-                <h1 className="text-2xl font-bold">{animal.animalId}</h1>
+                <h1 className="text-2xl font-bold">{animal.animalNumber}</h1>
                 <div className="flex items-center gap-3 mt-1">
                   <span className="text-green-100">
                     {animal.type.replace('_', ' ')}{' '}
@@ -212,7 +213,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                         Madre
                       </label>
                       <p className="text-gray-900">
-                        {getMother()?.animalId || 'No registrado'}
+                        {getMother()?.animalNumber || 'No registrado'}
                       </p>
                     </div>
                     <div>
@@ -220,7 +221,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                         Padre
                       </label>
                       <p className="text-gray-900">
-                        {getFather()?.animalId || 'No registrado'}
+                        {getFather()?.animalNumber || 'No registrado'}
                       </p>
                     </div>
                     <div>

@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Animal } from '@/types'
 import { Modal } from './Modal'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { BreedingRecord } from '@/types/breedings'
+import { Animal } from '@/types/animals'
 
 interface ModalConfirmPregnancyProps {
   isOpen: boolean
@@ -31,7 +31,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
     breedingRecord?.femaleBreedingInfo
       ?.filter((info) => !info.pregnancyConfirmedDate)
       .map((info) => {
-        const animal = animals.find((a) => a.id === info.femaleId)
+        const animal = animals.find((a) => a.id === info.animalNumber)
         return animal ? { ...animal, breedingInfo: info } : null
       })
       .filter(Boolean) || []
@@ -41,11 +41,11 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
     new Date().toISOString().split('T')[0]
   )
 
-  const handleFemaleToggle = (femaleId: string) => {
+  const handleFemaleToggle = (animalNumber: string) => {
     setSelectedFemales((prev) =>
-      prev.includes(femaleId)
-        ? prev.filter((id) => id !== femaleId)
-        : [...prev, femaleId]
+      prev.includes(animalNumber)
+        ? prev.filter((id) => id !== animalNumber)
+        : [...prev, animalNumber]
     )
   }
 
@@ -62,8 +62,8 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
     // Actualizar femaleBreedingInfo con las confirmaciones
     const updatedFemaleBreedingInfo = breedingRecord.femaleBreedingInfo.map(
       (info) => {
-        if (selectedFemales.includes(info.femaleId)) {
-          const animal = animals.find((a) => a.id === info.femaleId)
+        if (selectedFemales.includes(info.animalNumber)) {
+          const animal = animals.find((a) => a.id === info.animalNumber)
           const expectedBirthDate = animal
             ? calculateExpectedBirthDate(confirmDate, animal.type)
             : undefined
@@ -174,7 +174,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
                           />
                           <div>
                             <div className="font-medium text-gray-900">
-                              {animal?.animalId}
+                              {animal?.animalNumber}
                             </div>
                             <div className="text-sm text-gray-600">
                               {animal?.type} - {animal?.stage}

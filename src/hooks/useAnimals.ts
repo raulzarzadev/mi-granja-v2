@@ -46,7 +46,7 @@ export const useAnimals = () => {
       if (filters.search) {
         const searchLower = filters.search.toLowerCase()
         return (
-          animal.animalId.toLowerCase().includes(searchLower) ||
+          animal.animalNumber.toLowerCase().includes(searchLower) ||
           animal.notes?.toLowerCase().includes(searchLower) ||
           false
         )

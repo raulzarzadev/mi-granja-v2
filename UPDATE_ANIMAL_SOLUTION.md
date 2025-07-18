@@ -2,11 +2,11 @@
 
 ## Problema Identificado
 
-El action `updateAnimal` en el slice esperaba recibir un objeto `Animal` completo como payload, pero se estaba intentando pasar `animalId` y `updateData` por separado:
+El action `updateAnimal` en el slice esperaba recibir un objeto `Animal` completo como payload, pero se estaba intentando pasar `animalNumber` y `updateData` por separado:
 
 ```typescript
 // ❌ INCORRECTO - El slice esperaba un Animal completo
-dispatch(updateAnimal(animalId, updateData))
+dispatch(updateAnimal(animalNumber, updateData))
 
 // ✅ El slice esperaba esto:
 updateAnimal: (state, action: PayloadAction<Animal>) => {
@@ -58,11 +58,11 @@ export const {
 import { setError, updateAnimalPartial } from '@/features/animals/animalsSlice'
 
 // Usar la nueva acción en la función update
-const update = async (animalId: string, updateData: Partial<Animal>) => {
+const update = async (animalNumber: string, updateData: Partial<Animal>) => {
   // ...código existente...
 
   // ✅ CORRECTO - Usar la nueva acción para actualizaciones parciales
-  dispatch(updateAnimalPartial({ id: animalId, data: updateData }))
+  dispatch(updateAnimalPartial({ id: animalNumber, data: updateData }))
 
   await updateDoc(animalRef, updatedData)
   // ...resto del código...
@@ -107,7 +107,7 @@ dispatch(updateAnimalPartial({
 dispatch(updateAnimal({
   id: "animal-123",
   farmerId: "farmer-1",
-  animalId: "COW-001",
+  animalNumber: "COW-001",
   // ... todos los campos requeridos
 }))
 ```

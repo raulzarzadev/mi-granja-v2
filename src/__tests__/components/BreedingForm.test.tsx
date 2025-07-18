@@ -2,14 +2,14 @@ import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import BreedingForm from '@/components/BreedingForm'
-import { Animal } from '@/types'
+import { Animal } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 
 const mockAnimals: Animal[] = [
   {
     id: 'male-1',
     farmerId: 'farmer-1',
-    animalId: 'M001',
+    animalNumber: 'M001',
     type: 'oveja',
     stage: 'reproductor',
     gender: 'macho',
@@ -19,7 +19,7 @@ const mockAnimals: Animal[] = [
   {
     id: 'female-1',
     farmerId: 'farmer-1',
-    animalId: 'H001',
+    animalNumber: 'H001',
     type: 'oveja',
     stage: 'reproductor',
     gender: 'hembra',
@@ -118,7 +118,7 @@ describe('BreedingForm Tests', () => {
       breedingDate: new Date('2025-01-01'),
       femaleBreedingInfo: [
         {
-          femaleId: 'female-1',
+          animalNumber: 'female-1',
           pregnancyConfirmedDate: new Date('2025-01-15'),
           expectedBirthDate: new Date('2025-06-15'),
           offspring: []
