@@ -53,8 +53,6 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
     }
   }
 
-  console.log({ animal })
-
   return (
     <div
       className={`bg-white rounded-lg shadow-md p-4 border border-gray-200 hover:shadow-lg transition-shadow ${
