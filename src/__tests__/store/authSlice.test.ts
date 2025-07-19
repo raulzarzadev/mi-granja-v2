@@ -43,13 +43,27 @@ describe('Auth Store', () => {
 
   it('should have initial state', () => {
     const state = store.getState().auth
-    expect(state).toEqual({
-      user: null,
-      isLoading: false,
-      error: null,
-      emailLinkSent: false,
-      emailForLink: null
-    })
+
+    // Verificar estado inicial usando comparaciones básicas
+    if (state.user !== null) {
+      throw new Error('Initial user should be null')
+    }
+
+    if (state.isLoading !== false) {
+      throw new Error('Initial isLoading should be false')
+    }
+
+    if (state.error !== null) {
+      throw new Error('Initial error should be null')
+    }
+
+    if (state.emailLinkSent !== false) {
+      throw new Error('Initial emailLinkSent should be false')
+    }
+
+    if (state.emailForLink !== null) {
+      throw new Error('Initial emailForLink should be null')
+    }
   })
 
   it('should handle setUser action', () => {

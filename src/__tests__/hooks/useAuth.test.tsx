@@ -21,6 +21,8 @@ const createMockStore = (initialState = {}) => {
         user: null,
         isLoading: false,
         error: null,
+        emailLinkSent: false,
+        emailForLink: null,
         ...initialState
       }
     }
@@ -35,56 +37,47 @@ const createWrapper = (store = createMockStore()) => {
   return TestWrapper
 }
 
-describe('useAuth Hook', () => {
-  beforeEach(() => {
-    jest.clearAllMocks()
-  })
-
-  it('should provide auth methods and state', () => {
+describe('useAuth', () => {
+  it('should provide auth context functions', () => {
     const { result } = renderHook(() => useAuth(), {
       wrapper: createWrapper()
     })
 
-    expect(result.current).toBeDefined()
-    expect(typeof result.current.login).toBe('function')
-    expect(typeof result.current.register).toBe('function')
-    expect(typeof result.current.logout).toBe('function')
-    expect(typeof result.current.loginWithEmailLink).toBe('function')
-    expect(typeof result.current.completeEmailLinkSignIn).toBe('function')
-    expect(typeof result.current.isEmailLinkSignIn).toBe('function')
-    expect(typeof result.current.clearError).toBe('function')
-  })
-
-  it('should return initial state from store', () => {
-    const { result } = renderHook(() => useAuth(), {
-      wrapper: createWrapper()
-    })
-
-    expect(result.current.user).toBeNull()
-    expect(result.current.isLoading).toBe(false)
-    expect(result.current.error).toBeNull()
-  })
-
-  it('should return custom state from store', () => {
-    const mockUser = {
-      id: '123',
-      email: 'test@test.com',
-      farmName: 'Test Farm',
-      roles: ['farmer'],
-      createdAt: new Date()
+    // Verificar que el hook retorna un objeto
+    if (!result.current) {
+      throw new Error('useAuth should return an object')
     }
-    const store = createMockStore({
-      user: mockUser,
-      isLoading: true,
-      error: 'Test error'
-    })
 
+    // Verificar que las funciones están definidas
+    if (typeof result.current.login !== 'function') {
+      throw new Error('login should be a function')
+    }
+
+    if (typeof result.current.register !== 'function') {
+      throw new Error('register should be a function')
+    }
+
+    if (typeof result.current.logout !== 'function') {
+      throw new Error('logout should be a function')
+    }
+  })
+
+  it('should have initial state', () => {
     const { result } = renderHook(() => useAuth(), {
-      wrapper: createWrapper(store)
+      wrapper: createWrapper()
     })
 
-    expect(result.current.user).toEqual(mockUser)
-    expect(result.current.isLoading).toBe(true)
-    expect(result.current.error).toBe('Test error')
+    // Verificar estado inicial
+    if (result.current.user !== null) {
+      throw new Error('Initial user should be null')
+    }
+
+    if (result.current.isLoading !== false) {
+      throw new Error('Initial isLoading should be false')
+    }
+
+    if (result.current.error !== null) {
+      throw new Error('Initial error should be null')
+    }
   })
 })

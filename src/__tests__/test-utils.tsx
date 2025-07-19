@@ -25,6 +25,8 @@ export const createMockStore = (initialAuthState = {}) => {
         user: null,
         isLoading: false,
         error: null,
+        emailLinkSent: false,
+        emailForLink: null,
         ...initialAuthState
       }
     }
