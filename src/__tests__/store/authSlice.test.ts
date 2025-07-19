@@ -1,4 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit'
+import '@testing-library/jest-dom'
 import {
   authReducer,
   setUser,
@@ -13,6 +14,8 @@ interface RootState {
     user: User | null
     isLoading: boolean
     error: string | null
+    emailLinkSent: boolean
+    emailForLink: string | null
   }
 }
 
@@ -43,7 +46,9 @@ describe('Auth Store', () => {
     expect(state).toEqual({
       user: null,
       isLoading: false,
-      error: null
+      error: null,
+      emailLinkSent: false,
+      emailForLink: null
     })
   })
 

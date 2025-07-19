@@ -47,7 +47,6 @@ export const useBreeding = () => {
             data.femaleBreedingInfo?.map(
               (info: {
                 animalNumber: string
-                pregnancyConfirmed: boolean
                 pregnancyConfirmedDate?: Timestamp
                 expectedBirthDate?: Timestamp
                 actualBirthDate?: Timestamp

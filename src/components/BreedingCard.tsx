@@ -151,8 +151,6 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   //   return 0
   // })[0]
 
-  console.log({ femalesBreedingInfo })
-
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
       {/* Header con estado */}

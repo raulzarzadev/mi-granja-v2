@@ -97,7 +97,6 @@ export const calculateNextExpectedBirthDate = (
     breedingDate: Date
     femaleBreedingInfo?: Array<{
       animalNumber: string
-      pregnancyConfirmed: boolean
       pregnancyConfirmedDate?: Date
       expectedBirthDate?: Date
     }>
@@ -109,7 +108,7 @@ export const calculateNextExpectedBirthDate = (
   // Si hay información específica de hembras con embarazos confirmados
   if (breedingRecord.femaleBreedingInfo) {
     const confirmedPregnancies = breedingRecord.femaleBreedingInfo.filter(
-      (info) => info.pregnancyConfirmed
+      (info) => !!info.pregnancyConfirmedDate
     )
 
     if (confirmedPregnancies.length > 0) {

@@ -70,7 +70,6 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
 
           return {
             ...info,
-            pregnancyConfirmed: true,
             pregnancyConfirmedDate: confirmDate,
             expectedBirthDate
           }

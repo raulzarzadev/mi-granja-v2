@@ -288,37 +288,9 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                             ? formatDate(record.breedingDate)
                             : ''}
                         </span>
-                        {/* <span
-                          className={`px-2 py-1 rounded-full text-xs ${
-                            record?.actualBirthDate
-                              ? 'bg-green-100 text-green-800'
-                              : record?.pregnancyConfirmed
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {record?.actualBirthDate
-                            ? 'Parida'
-                            : record.pregnancyConfirmed
-                            ? 'Embarazada'
-                            : 'Registrada'}
-                        </span> */}
+                        {/* TODO: breedig state */}
                       </div>
-                      {/* {record.expectedBirthDate && (
-                        <p className="text-sm text-gray-600">
-                          Parto esperado: {formatDate(record.expectedBirthDate)}
-                        </p>
-                      )} */}
-                      {/* {record.actualBirthDate && (
-                        <p className="text-sm text-gray-600">
-                          Parto: {formatDate(record.actualBirthDate)}
-                        </p>
-                      )}
-                      {record.offspring && record.offspring.length > 0 && (
-                        <p className="text-sm text-gray-600">
-                          Crías: {record.offspring.length}
-                        </p>
-                      )} */}
+                      {/*TODO:Show springof and more details */}
                     </div>
                   ))}
                 </div>

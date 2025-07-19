@@ -3,6 +3,8 @@ import { renderHook } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
 import { useAuth } from '@/hooks/useAuth'
+import { authReducer } from '@/features/auth/authSlice'
+import '@testing-library/jest-dom'
 
 // Mock Firebase
 jest.mock('@/lib/firebase', () => ({
@@ -13,13 +15,15 @@ jest.mock('@/lib/firebase', () => ({
 const createMockStore = (initialState = {}) => {
   return configureStore({
     reducer: {
-      auth: authSlice
+      auth: authReducer
     },
     preloadedState: {
       auth: {
         user: null,
         isLoading: false,
         error: null,
+        emailLinkSent: false,
+        emailForLink: null,
         ...initialState
       }
     }
@@ -28,9 +32,7 @@ const createMockStore = (initialState = {}) => {
 
 const createWrapper = (store = createMockStore()) => {
   return ({ children }: { children: React.ReactNode }) => (
-    <Provider store={store}>
-      <AuthProvider>{children}</AuthProvider>
-    </Provider>
+    <Provider store={store}>{children}</Provider>
   )
 }
 
