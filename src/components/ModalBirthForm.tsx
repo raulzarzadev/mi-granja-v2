@@ -76,10 +76,10 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
     }
   }
 
-  const handleFemaleChange = (animalNumber: string) => {
+  const handleFemaleChange = (animalId: string) => {
     setFormData((prev) => ({
       ...prev,
-      animalNumber
+      animalId
     }))
   }
 
