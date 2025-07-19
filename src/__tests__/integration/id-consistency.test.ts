@@ -7,11 +7,12 @@
 describe('ID Consistency Integration', () => {
   it('should distinguish between firestore IDs and animal numbers', () => {
     // Datos de prueba que simulan la estructura real
-    const firestoreAnimalId = 'firestore-generated-id-123'
-    const userAssignedAnimalNumber = 'C001'
+    const firestoreAnimalId: string = 'firestore-generated-id-123'
+    const userAssignedAnimalNumber: string = 'C001'
 
-    // Verificar que son diferentes
-    if (firestoreAnimalId === userAssignedAnimalNumber) {
+    // Verificar que son diferentes tipos de identificadores
+    const areTheSameValue = firestoreAnimalId === userAssignedAnimalNumber
+    if (areTheSameValue) {
       throw new Error('Firestore IDs and animal numbers should be different')
     }
 

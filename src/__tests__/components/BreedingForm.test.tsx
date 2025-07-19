@@ -118,7 +118,7 @@ describe('BreedingForm Tests', () => {
       breedingDate: new Date('2025-01-01'),
       femaleBreedingInfo: [
         {
-          animalNumber: 'female-1',
+          femaleId: 'female-1',
           pregnancyConfirmedDate: new Date('2025-01-15'),
           expectedBirthDate: new Date('2025-06-15'),
           offspring: []
