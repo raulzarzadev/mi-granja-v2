@@ -5,13 +5,15 @@ import ModalEditAnimal from './ModalEditAnimal'
 import { BreedingRecord } from '@/types/breedings'
 import { Animal } from '@/types/animals'
 import { MilkProduction, WeightRecord } from '@/types'
+import { useAnimals } from '@/hooks/useAnimals'
+import { useBreeding } from '@/hooks/useBreeding'
+import { formatDate } from '@/lib/dates'
 
 interface AnimalDetailViewProps {
   animal: Animal
   breedingRecords?: BreedingRecord[]
   weightRecords?: WeightRecord[]
   milkRecords?: MilkProduction[]
-  allAnimals?: Animal[]
 }
 
 /**
@@ -19,23 +21,14 @@ interface AnimalDetailViewProps {
  */
 const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
   animal,
-  breedingRecords = [],
   weightRecords = [],
-  milkRecords = [],
-  allAnimals = []
+  milkRecords = []
 }) => {
+  const { animals: allAnimals } = useAnimals()
+  const { breedingRecords } = useBreeding()
   const [activeTab, setActiveTab] = useState<
     'info' | 'breeding' | 'weight' | 'milk'
   >('info')
-
-  const formatDate = (date: Date | undefined) => {
-    if (!date) return 'No registrado'
-    return new Intl.DateTimeFormat('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).format(new Date(date))
-  }
 
   const getAge = () => {
     if (!animal.birthDate)
@@ -187,7 +180,9 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                         Fecha de Nacimiento
                       </label>
                       <p className="text-gray-900">
-                        {formatDate(animal.birthDate)}
+                        {animal.birthDate
+                          ? formatDate(animal.birthDate)
+                          : 'No registrado'}
                       </p>
                     </div>
                     <div>
@@ -228,10 +223,39 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                       <label className="text-sm font-medium text-gray-500">
                         Descendencia
                       </label>
-                      <p className="text-gray-900">
-                        {getOffspring().length} animal
-                        {getOffspring().length !== 1 ? 'es' : ''}
-                      </p>
+                      <div className="text-gray-900">
+                        {getOffspring().length === 0 ? (
+                          'Sin descendencia registrada'
+                        ) : (
+                          <div>
+                            <p className="font-medium mb-2">
+                              {getOffspring().length} animal
+                              {getOffspring().length !== 1 ? 'es' : ''}:
+                            </p>
+                            <div className="space-y-1">
+                              {getOffspring().map((offspring) => (
+                                <div
+                                  key={offspring.id}
+                                  className="flex items-center gap-2 text-sm bg-gray-50 rounded px-2 py-1"
+                                >
+                                  <span>{getAnimalIcon(offspring.type)}</span>
+                                  <span className="font-medium">
+                                    {offspring.animalNumber}
+                                  </span>
+                                  <span className="text-gray-500">
+                                    ({offspring.gender === 'macho' ? '♂' : '♀'})
+                                  </span>
+                                  <span className="text-gray-400 text-xs">
+                                    {offspring.birthDate
+                                      ? formatDate(offspring.birthDate)
+                                      : 'Sin fecha'}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -254,7 +278,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                 <div className="grid grid-cols-2 gap-4 text-sm text-gray-500">
                   <div>
                     <span className="font-medium">Registrado:</span>{' '}
-                    {formatDate(animal.createdAt)}
+                    {formatDate(animal.createdAt, 'dd MMM yy')}
                   </div>
                   <div>
                     <span className="font-medium">Actualizado:</span>{' '}
