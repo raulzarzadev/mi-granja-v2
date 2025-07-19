@@ -27,8 +27,6 @@ const Dashboard: React.FC = () => {
     filterAnimals
   } = useAnimals()
 
-  const { isLoading: isMigrating } = useAnimalCRUD()
-  console.log({ animals })
   const {
     reminders,
     isLoading: remindersLoading,

@@ -1,6 +1,13 @@
 'use client'
 
-import { Animal } from '@/types/animals'
+import { animalAge } from '@/lib/dates'
+import {
+  Animal,
+  animal_icon,
+  animal_stage_colors,
+  AnimalStage,
+  AnimalType
+} from '@/types/animals'
 import React from 'react'
 
 interface AnimalCardProps {
@@ -13,37 +20,15 @@ interface AnimalCardProps {
  * Diseñado para ser responsive y fácil de usar en móviles
  */
 const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
-  const getAnimalEmoji = (type: string) => {
-    switch (type) {
-      case 'oveja':
-        return '🐑'
-      case 'vaca_leche':
-      case 'vaca_engorda':
-        return '🐄'
-      case 'cabra':
-        return '🐐'
-      case 'cerdo':
-        return '🐷'
-      default:
-        return '🐾'
-    }
+  const getAnimalEmoji = (type: AnimalType) => {
+    return animal_icon[type as keyof typeof animal_icon] || '🐾'
   }
 
-  const getStageColor = (stage: string) => {
-    switch (stage) {
-      case 'cria':
-        return 'bg-blue-100 text-blue-800'
-      case 'engorda':
-        return 'bg-orange-100 text-orange-800'
-      case 'lechera':
-        return 'bg-purple-100 text-purple-800'
-      case 'reproductor':
-        return 'bg-green-100 text-green-800'
-      case 'descarte':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
+  const getStageColor = (stage: AnimalStage) => {
+    return (
+      animal_stage_colors[stage as keyof typeof animal_stage_colors] ||
+      'bg-gray-100 text-gray-800'
+    )
   }
 
   const formatType = (type: string) => {
@@ -67,6 +52,8 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
         return stage.charAt(0).toUpperCase() + stage.slice(1)
     }
   }
+
+  console.log({ animal })
 
   return (
     <div
@@ -95,8 +82,10 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
               animal.stage
             )}`}
           >
-            {formatStage(animal.stage)}
+            {formatStage(animal.stage)}{' '}
+            {!!animal?.birthDate ? animalAge(animal.birthDate) : ''}
           </span>
+
           <span className="text-xs text-gray-500 capitalize">
             {animal.gender}
           </span>
