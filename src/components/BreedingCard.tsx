@@ -215,9 +215,13 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       (expectedBirthDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     )
 
+    const animalNumber =
+      animals.find((a) => a.id === record.femaleBreedingInfo[0]?.femaleId)
+        ?.animalNumber || 'Estimado'
+
     return {
       daysUntil,
-      femaleAnimalNumber: record.femaleBreedingInfo[0]?.femaleId
+      femaleAnimalNumber: animalNumber
     }
   }
 
@@ -494,13 +498,19 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         </div>
 
         <div className="flex justify-between">
-          <span className="text-gray-600">
-            Próximo parto esperado
-            {birthInfo?.femaleAnimalNumber &&
-            birthInfo.femaleAnimalNumber !== 'Estimado'
-              ? ` (${birthInfo.femaleAnimalNumber})`
-              : ''}
-            :
+          <span className="text-gray-600">Próximo parto esperado:</span>
+          <span className="font-medium">
+            {record.femaleBreedingInfo.some(
+              (info) => info.pregnancyConfirmedDate && !info.actualBirthDate
+            )
+              ? birthInfo
+                ? `${Math.abs(birthInfo.daysUntil)} días ${
+                    birthInfo.daysUntil >= 0 ? 'restantes' : 'de retraso'
+                  }`
+                : 'Calculando...'
+              : record.femaleBreedingInfo.some((info) => info.actualBirthDate)
+              ? 'Todos los partos completados'
+              : 'No hay embarazos confirmados'}
           </span>
         </div>
       </div>
