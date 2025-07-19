@@ -14,7 +14,8 @@ import {
   FaFemale,
   FaCalendarCheck,
   FaCalendarDay,
-  FaCalendarAlt
+  FaCalendarAlt,
+  FaEllipsisV
 } from 'react-icons/fa'
 import { IoBedSharp } from 'react-icons/io5'
 import { LuBaby } from 'react-icons/lu'
@@ -45,7 +46,8 @@ export const icons = {
   pregnant: MdOutlinePregnantWoman,
   calendarCheck: FaCalendarCheck,
   calendarDay: FaCalendarDay,
-  calendar: FaCalendarAlt
+  calendar: FaCalendarAlt,
+  more: FaEllipsisV
 } as const
 export type IconName = keyof typeof icons
 // https://react-icons.github.io/react-icons/

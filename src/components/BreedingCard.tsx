@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import Button from './buttons/Button'
@@ -16,6 +16,9 @@ interface BreedingCardProps {
   onAddBirth?: (record: BreedingRecord) => void
   onDelete?: (record: BreedingRecord) => void
   onConfirmPregnancy?: (record: BreedingRecord) => void
+  onUnconfirmPregnancy?: (record: BreedingRecord, femaleId: string) => void
+  onRemoveFromBreeding?: (record: BreedingRecord, animalId: string) => void
+  onDeleteBirth?: (record: BreedingRecord, femaleId: string) => void
 }
 
 /**
@@ -27,8 +30,163 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   onEdit,
   onAddBirth,
   onDelete,
-  onConfirmPregnancy
+  onConfirmPregnancy,
+  onUnconfirmPregnancy,
+  onRemoveFromBreeding,
+  onDeleteBirth
 }) => {
+  const [openMenus, setOpenMenus] = useState<Set<string>>(new Set())
+
+  // Cerrar menús cuando se hace clic fuera
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenMenus(new Set())
+    }
+
+    // Solo agregar el listener si hay menús abiertos
+    if (openMenus.size > 0) {
+      // Pequeño delay para evitar que se cierre inmediatamente al abrir
+      setTimeout(() => {
+        document.addEventListener('click', handleClickOutside)
+      }, 100)
+    }
+
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [openMenus])
+
+  const toggleMenu = (animalId: string) => {
+    const newOpenMenus = new Set(openMenus)
+    if (newOpenMenus.has(animalId)) {
+      newOpenMenus.delete(animalId)
+    } else {
+      newOpenMenus.add(animalId)
+    }
+    setOpenMenus(newOpenMenus)
+  }
+
+  const closeMenu = (animalId: string) => {
+    const newOpenMenus = new Set(openMenus)
+    newOpenMenus.delete(animalId)
+    setOpenMenus(newOpenMenus)
+  }
+
+  const renderOptionsMenu = (
+    animalId: string,
+    animalType: 'male' | 'female',
+    femaleStatus?: 'parida' | 'embarazada' | 'monta'
+  ) => {
+    const isOpen = openMenus.has(animalId)
+
+    return (
+      <div className="relative menu-container">
+        <button
+          onClick={() => toggleMenu(animalId)}
+          className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+        >
+          <Icon icon="more" className=" text-gray-500" size={4} />
+        </button>
+
+        {isOpen && (
+          <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-md shadow-lg z-10 min-w-48">
+            <div className="py-1">
+              {animalType === 'male' && (
+                <button
+                  onClick={() => {
+                    onRemoveFromBreeding?.(record, animalId)
+                    closeMenu(animalId)
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                >
+                  <Icon icon="delete" className="w-4 h-4" />
+                  Sacar de la monta
+                </button>
+              )}
+
+              {animalType === 'female' && femaleStatus === 'monta' && (
+                <>
+                  <button
+                    onClick={() => {
+                      onConfirmPregnancy?.(record)
+                      closeMenu(animalId)
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"
+                  >
+                    <Icon icon="pregnant" className="w-4 h-4" />
+                    Confirmar embarazo
+                  </button>
+                  <button
+                    onClick={() => {
+                      onRemoveFromBreeding?.(record, animalId)
+                      closeMenu(animalId)
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                  >
+                    <Icon icon="delete" className="w-4 h-4" />
+                    Sacar de la monta
+                  </button>
+                </>
+              )}
+
+              {animalType === 'female' && femaleStatus === 'embarazada' && (
+                <>
+                  <button
+                    onClick={() => {
+                      onAddBirth?.(record)
+                      closeMenu(animalId)
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 flex items-center gap-2"
+                  >
+                    <Icon icon="baby" className="w-4 h-4" />
+                    Registrar parto
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Desconfirmar embarazo - cambiar estado a monta
+                      onUnconfirmPregnancy?.(record, animalId)
+                      closeMenu(animalId)
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-2"
+                  >
+                    <Icon icon="bed" className="w-4 h-4" />
+                    Desconfirmar embarazo
+                  </button>
+                  <button
+                    onClick={() => {
+                      onRemoveFromBreeding?.(record, animalId)
+                      closeMenu(animalId)
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                  >
+                    <Icon icon="delete" className="w-4 h-4" />
+                    Sacar de la monta
+                  </button>
+                </>
+              )}
+
+              {animalType === 'female' && femaleStatus === 'parida' && (
+                <button
+                  onClick={() => {
+                    if (
+                      confirm(
+                        '¿Estás seguro? Se borrarán todos los datos de las crías asociadas.'
+                      )
+                    ) {
+                      onDeleteBirth?.(record, animalId)
+                    }
+                    closeMenu(animalId)
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                >
+                  <Icon icon="delete" className="w-4 h-4" />
+                  Eliminar parto
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
   // Manejar múltiples hembras
   const male = animals.find((a) => a.id === record.maleId)
 
@@ -204,6 +362,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                 {male?.type}
               </span>
             </div>
+            {male && renderOptionsMenu(male.id, 'male')}
           </div>
         </div>
 
@@ -220,54 +379,106 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
           </p>
         )}
         <div className="ml-6 mb-2 space-y-2">
-          {femalesBreedingInfo.map((femaleAnimal) => (
-            <div
-              key={femaleAnimal.animalNumber}
-              className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-800">
-                  {femaleAnimal.animalNumber}
-                </span>
-                <span className="text-xs px-2 py-1 bg-gray-200 rounded-full text-gray-600">
-                  {femaleAnimal.type}
-                </span>
-              </div>
-              <div className="text-right">
-                {femaleAnimal.status === 'parida' &&
-                  femaleAnimal.actualBirthDate && (
-                    <span className="text-sm font-medium text-green-600 ">
-                      <div className="flex items-center gap-1">
-                        <Icon icon="baby" />{' '}
-                        <span className="text-xs">Pario</span>
-                      </div>
-                      {formatDate(femaleAnimal.actualBirthDate)}
+          {femalesBreedingInfo.map((femaleAnimal) => {
+            const femaleInfo = record.femaleBreedingInfo.find(
+              (info) => info.femaleId === femaleAnimal.animalId
+            )
+            return (
+              <div
+                key={femaleAnimal.animalNumber}
+                className="bg-gray-50 rounded-md"
+              >
+                <div className="flex items-center justify-between p-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-800">
+                      {femaleAnimal.animalNumber}
                     </span>
-                  )}
-                {femaleAnimal.status === 'embarazada' &&
-                  femaleAnimal.expectedBirthDate && (
-                    <span className="text-sm font-medium text-purple-600 ">
-                      <div className="flex items-center gap-1">
-                        <Icon icon="pregnant" />{' '}
-                        <span className="text-xs">Confirmado</span>
-                      </div>
-                      {formatDate(femaleAnimal.expectedBirthDate)}
+                    <span className="text-xs px-2 py-1 bg-gray-200 rounded-full text-gray-600">
+                      {femaleAnimal.type}
                     </span>
-                  )}
-                {femaleAnimal.status === 'monta' && (
-                  <span className="text-sm  ">
-                    <div className="flex items-center">
-                      <Icon icon="bed" />{' '}
-                      <span className="text-xs">Pendiente</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      {femaleAnimal.status === 'parida' &&
+                        femaleAnimal.actualBirthDate && (
+                          <span className="text-sm font-medium text-green-600 ">
+                            <div className="flex items-center gap-1">
+                              <Icon icon="baby" />{' '}
+                              <span className="text-xs">Pario</span>
+                            </div>
+                            {formatDate(femaleAnimal.actualBirthDate)}
+                          </span>
+                        )}
+                      {femaleAnimal.status === 'embarazada' &&
+                        femaleAnimal.expectedBirthDate && (
+                          <span className="text-sm font-medium text-purple-600 ">
+                            <div className="flex items-center gap-1">
+                              <Icon icon="pregnant" />{' '}
+                              <span className="text-xs">
+                                Embarazo confirmado
+                              </span>
+                            </div>
+                            {formatDate(femaleAnimal.expectedBirthDate)}
+                          </span>
+                        )}
+                      {femaleAnimal.status === 'monta' && (
+                        <span className="text-sm  ">
+                          <div className="flex items-center">
+                            <Icon icon="bed" />{' '}
+                            <span className="text-xs">Pendiente</span>
+                          </div>
+                          {record.breedingDate
+                            ? formatDate(record.breedingDate)
+                            : 'En monta'}
+                        </span>
+                      )}
                     </div>
-                    {record.breedingDate
-                      ? formatDate(record.breedingDate)
-                      : 'En monta'}
-                  </span>
-                )}
+                    {femaleAnimal.animalId &&
+                      renderOptionsMenu(
+                        femaleAnimal.animalId,
+                        'female',
+                        femaleAnimal.status
+                      )}
+                  </div>
+                </div>
+
+                {/* Información de crías cuando la hembra ha parido */}
+                {femaleAnimal.status === 'parida' &&
+                  femaleInfo?.offspring &&
+                  femaleInfo.offspring.length > 0 && (
+                    <div className="px-2 pb-2 border-t border-gray-200 bg-white rounded-b-md">
+                      <div className="mt-2">
+                        <div className="text-xs text-gray-600 mb-1">
+                          Crías ({femaleInfo.offspring.length}):
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {femaleInfo.offspring.map((offspringId) => {
+                            const offspring = animals.find(
+                              (animal) => animal.id === offspringId
+                            )
+                            return offspring ? (
+                              <span
+                                key={offspringId}
+                                className="inline-flex items-center px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded"
+                              >
+                                {offspring.animalNumber}
+                              </span>
+                            ) : (
+                              <span
+                                key={offspringId}
+                                className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
+                              >
+                                ID: {offspringId}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 
@@ -341,28 +552,6 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       )}
 
       <div className="grid gap-2">
-        {onConfirmPregnancy &&
-          femalesBreedingInfo.some((female) => female.status === 'monta') && (
-            <Button
-              onClick={() => onConfirmPregnancy(record)}
-              color="warning"
-              icon="pregnant"
-            >
-              Confirmar Embarazo
-            </Button>
-          )}
-        {onAddBirth &&
-          femalesBreedingInfo.some(
-            (female) => female.status === 'embarazada'
-          ) && (
-            <Button
-              color="success"
-              onClick={() => onAddBirth(record)}
-              icon="baby"
-            >
-              Registrar Parto
-            </Button>
-          )}
         {onEdit && (
           <Button onClick={() => onEdit(record)} icon="edit" color="primary">
             Editar

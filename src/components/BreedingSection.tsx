@@ -24,7 +24,7 @@ const BreedingSection: React.FC = () => {
     getUpcomingBirths,
     getStats
   } = useBreedingCRUD()
-  const { create: createAnimal } = useAnimalCRUD()
+  const { create: createAnimal, remove: removeAnimal } = useAnimalCRUD()
   const { animals } = useAnimals()
   const { breedingRecords, isLoading } = useBreeding()
   const { deleteBreedingRecord } = useBreedingCRUD()
@@ -38,6 +38,106 @@ const BreedingSection: React.FC = () => {
     useState<BreedingRecord | null>(null)
 
   const stats = getStats()
+
+  // Función para sacar un animal de la monta
+  const handleRemoveFromBreeding = async (
+    record: BreedingRecord,
+    animalId: string
+  ) => {
+    try {
+      if (record.maleId === animalId) {
+        // Si es el macho, eliminar todo el registro de monta
+        await deleteBreedingRecord(record.id)
+      } else {
+        // Si es una hembra, removerla de femaleBreedingInfo
+        const updatedFemaleInfo = record.femaleBreedingInfo.filter(
+          (info) => info.femaleId !== animalId
+        )
+
+        if (updatedFemaleInfo.length === 0) {
+          // Si no quedan hembras, eliminar el registro completo
+          await deleteBreedingRecord(record.id)
+        } else {
+          // Actualizar el registro sin la hembra removida
+          await updateBreedingRecord(record.id, {
+            femaleBreedingInfo: updatedFemaleInfo
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error removing animal from breeding:', error)
+      alert('Error al sacar el animal de la monta')
+    }
+  }
+
+  // Función para eliminar un parto y sus crías
+  const handleDeleteBirth = async (
+    record: BreedingRecord,
+    femaleId: string
+  ) => {
+    console.log({ record, femaleId })
+    try {
+      const updatedFemaleInfo = await Promise.all(
+        record.femaleBreedingInfo.map(async (info) => {
+          if (info.femaleId === femaleId) {
+            const offspring = info.offspring || []
+
+            // Remove associated offspring if birth is cancelled
+            if (offspring && offspring.length > 0) {
+              try {
+                await Promise.all(
+                  offspring.map((offspringId) => removeAnimal(offspringId))
+                )
+                return {
+                  ...info,
+                  actualBirthDate: null,
+                  offspring: []
+                }
+              } catch (error) {
+                console.error('Error removing offspring:', error)
+                // Optional: show error notification to user
+              }
+            }
+          }
+          return info
+        })
+      )
+
+      await updateBreedingRecord(record.id, {
+        femaleBreedingInfo: updatedFemaleInfo
+      })
+    } catch (error) {
+      console.error('Error deleting birth:', error)
+      alert('Error al eliminar el parto')
+    }
+  }
+
+  // Función para desconfirmar embarazo
+  const handleUnconfirmPregnancy = async (
+    record: BreedingRecord,
+    femaleId: string
+  ) => {
+    try {
+      const updatedFemaleInfo = record.femaleBreedingInfo.map((info) => {
+        if (info.femaleId === femaleId) {
+          return {
+            ...info,
+            pregnancyConfirmedDate: null,
+            expectedBirthDate: null
+          }
+        }
+        return info
+      })
+
+      await updateBreedingRecord(record.id, {
+        femaleBreedingInfo: updatedFemaleInfo
+      })
+    } catch (error) {
+      console.error('Error unconfirming pregnancy:', error)
+      alert('Error al desconfirmar el embarazo')
+    }
+  }
+
   const activePregnancies = getActivePregnancies()
   const upcomingBirths = getUpcomingBirths()
 
@@ -292,9 +392,12 @@ const BreedingSection: React.FC = () => {
                 onConfirmPregnancy={(record) => {
                   setConfirmPregnancyRecord(record)
                 }}
+                onUnconfirmPregnancy={handleUnconfirmPregnancy}
                 onDelete={async (record) => {
                   await deleteBreedingRecord(record.id)
                 }}
+                onRemoveFromBreeding={handleRemoveFromBreeding}
+                onDeleteBirth={handleDeleteBirth}
               />
             ))}
           </div>
