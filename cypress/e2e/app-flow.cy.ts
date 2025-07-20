@@ -201,12 +201,15 @@ describe('Complete Application Flow', () => {
       cy.visit('/auth')
 
       // Tab through form elements
+      // @ts-expect-error - tab() is a custom command
       cy.get('body').tab()
       cy.focused().should('have.attr', 'name', 'email')
 
+      // @ts-expect-error - tab() is a custom command
       cy.focused().tab()
       cy.focused().should('have.attr', 'name', 'password')
 
+      // @ts-expect-error - tab() is a custom command
       cy.focused().tab()
       cy.focused().should('contain', 'Iniciar Sesión')
     })
