@@ -1,9 +1,9 @@
 import '@testing-library/jest-dom'
 
 declare global {
-  var mockAuth: any
-  var mockFirestore: any
-  var mockRouter: any
+  var mockAuth: unknown
+  var mockFirestore: unknown
+  var mockRouter: unknown
 }
 
 export {}

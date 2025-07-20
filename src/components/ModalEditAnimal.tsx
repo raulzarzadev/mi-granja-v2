@@ -5,7 +5,6 @@ import { Animal } from '@/types/animals'
 import { Modal } from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
 import AnimalForm from './AnimalForm'
-import { useAnimals } from '@/hooks/useAnimals'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 
 interface ModalEditAnimalProps {

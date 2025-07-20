@@ -12,8 +12,7 @@ import {
   orderBy,
   doc,
   getDoc,
-  getDocs,
-  deleteField
+  getDocs
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { RootState } from '@/features/store'
