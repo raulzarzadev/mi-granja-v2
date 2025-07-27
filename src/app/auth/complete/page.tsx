@@ -16,6 +16,7 @@ export default function CompleteAuthPage() {
   >('loading')
   const [errorMessage, setErrorMessage] = useState('')
   const [emailInput, setEmailInput] = useState('')
+  const [hasAttemptedAuth, setHasAttemptedAuth] = useState(false)
 
   const handleManualEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,6 +24,7 @@ export default function CompleteAuthPage() {
 
     try {
       setStatus('loading')
+      setHasAttemptedAuth(true) // Marcamos que ya intentamos la autenticación
       const url = window.location.href
       await completeEmailLinkSignIn(emailInput, url)
       setStatus('success')
@@ -41,8 +43,12 @@ export default function CompleteAuthPage() {
   }
 
   useEffect(() => {
+    // Evitar bucle infinito
+    if (hasAttemptedAuth) return
+
     const completeSignIn = async () => {
       try {
+        setHasAttemptedAuth(true)
         const url = window.location.href
         console.log('Complete auth page loaded with URL:', url)
 
@@ -111,7 +117,7 @@ export default function CompleteAuthPage() {
     }
 
     completeSignIn()
-  }, [completeEmailLinkSignIn, isEmailLinkSignIn, router])
+  }, [hasAttemptedAuth, completeEmailLinkSignIn, isEmailLinkSignIn, router])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
