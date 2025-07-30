@@ -1,12 +1,10 @@
 'use client'
 
-import { animalAge } from '@/lib/dates'
 import {
   Animal,
   animal_icon,
-  animal_stage_colors,
-  AnimalStage,
-  AnimalType
+  animal_stage_icons,
+  gender_icon
 } from '@/types/animals'
 import React from 'react'
 
@@ -20,39 +18,6 @@ interface AnimalCardProps {
  * Diseñado para ser responsive y fácil de usar en móviles
  */
 const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
-  const getAnimalEmoji = (type: AnimalType) => {
-    return animal_icon[type as keyof typeof animal_icon] || '🐾'
-  }
-
-  const getStageColor = (stage: AnimalStage) => {
-    return (
-      animal_stage_colors[stage as keyof typeof animal_stage_colors] ||
-      'bg-gray-100 text-gray-800'
-    )
-  }
-
-  const formatType = (type: string) => {
-    switch (type) {
-      case 'vaca_leche':
-        return 'Vaca Lechera'
-      case 'vaca_engorda':
-        return 'Vaca de Engorda'
-      default:
-        return type.charAt(0).toUpperCase() + type.slice(1)
-    }
-  }
-
-  const formatStage = (stage: string) => {
-    switch (stage) {
-      case 'cria':
-        return 'Cría'
-      case 'lechera':
-        return 'Lechera'
-      default:
-        return stage.charAt(0).toUpperCase() + stage.slice(1)
-    }
-  }
-
   return (
     <div
       className={`bg-white rounded-lg shadow-md p-4 border border-gray-200 hover:shadow-lg transition-shadow ${
@@ -64,30 +29,17 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
       onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
     >
       <div className="flex items-start justify-between">
+        #{animal.animalNumber}
         <div className="flex items-center space-x-3">
-          <span className="text-2xl">{getAnimalEmoji(animal.type)}</span>
           <div>
-            <h3 className="font-semibold text-gray-900">
-              #{animal.animalNumber}
-            </h3>
-            <p className="text-sm text-gray-600">{formatType(animal.type)}</p>
+            {gender_icon[animal.gender]}
+            {animal_icon[animal.type]}
+            {animal_stage_icons[animal.stage]}
           </div>
         </div>
-
-        <div className="flex flex-col items-end space-y-1">
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${getStageColor(
-              animal.stage
-            )}`}
-          >
-            {formatStage(animal.stage)}{' '}
-            {!!animal?.birthDate ? animalAge(animal.birthDate) : ''}
-          </span>
-
-          <span className="text-xs text-gray-500 capitalize">
-            {animal.gender}
-          </span>
-        </div>
+      </div>
+      <div className="text-xs text-gray-500">
+        {animal.type || 'Sin nombre'} {animal.gender} {animal.stage}
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-4 text-sm">

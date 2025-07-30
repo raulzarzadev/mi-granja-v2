@@ -1,6 +1,14 @@
 'use client'
 
-import { Animal, AnimalStage, AnimalType } from '@/types/animals'
+import {
+  Animal,
+  animal_icon,
+  animals_genders,
+  animals_stages,
+  animals_types,
+  AnimalStage,
+  AnimalType
+} from '@/types/animals'
 import { toDate } from 'date-fns'
 import React, { useState } from 'react'
 
@@ -26,9 +34,9 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
   console.log({ initialData })
   const [formData, setFormData] = useState({
     animalNumber: initialData?.animalNumber || '',
-    type: initialData?.type || ('oveja' as AnimalType),
-    stage: initialData?.stage || ('cria' as AnimalStage),
-    gender: initialData?.gender || ('hembra' as 'macho' | 'hembra'),
+    type: initialData?.type || animals_types[0],
+    stage: initialData?.stage || animals_stages[0],
+    gender: initialData?.gender || animals_genders[0],
     weight: initialData?.weight || '',
     age: initialData?.age || '',
     birthDate: initialData?.birthDate
@@ -41,21 +49,19 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const animalTypes: { value: AnimalType; label: string }[] = [
-    { value: 'oveja', label: 'Oveja' },
-    { value: 'vaca_leche', label: 'Vaca Lechera' },
-    { value: 'vaca_engorda', label: 'Vaca de Engorda' },
-    { value: 'cabra', label: 'Cabra' },
-    { value: 'cerdo', label: 'Cerdo' }
-  ]
+  const animalTypeOptions: { value: AnimalType; label: string }[] =
+    animals_types.map((type) => ({
+      value: type,
+      label: `${animal_icon[type]} ${
+        type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')
+      }`
+    }))
 
-  const animalStages: { value: AnimalStage; label: string }[] = [
-    { value: 'cria', label: 'Cría' },
-    { value: 'engorda', label: 'Engorda' },
-    { value: 'lechera', label: 'Lechera' },
-    { value: 'reproductor', label: 'Reproductor' },
-    { value: 'descarte', label: 'Descarte' }
-  ]
+  const animalStagesOptions: { value: AnimalStage; label: string }[] =
+    animals_stages.map((stage) => ({
+      value: stage,
+      label: stage.charAt(0).toUpperCase() + stage.slice(1).replace('_', ' ')
+    }))
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -125,21 +131,6 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       ...(formData.fatherId.trim() && { fatherId: formData.fatherId.trim() }),
       ...(formData.notes.trim() && { notes: formData.notes.trim() })
     }
-    // const animalData: Omit<
-    //   Animal,
-    //   'id' | 'farmerId' | 'createdAt' | 'updatedAt'
-    // > = {
-    //   animalNumber: formData.animalNumber.trim(),
-    //   type: formData.type,
-    //   stage: formData.stage,
-    //   gender: formData.gender,
-    //   weight: formData.weight ? Number(formData.weight) : undefined,
-    //   age: formData.age ? Number(formData.age) : undefined,
-    //   birthDate: formData.birthDate ? new Date(formData.birthDate) : undefined,
-    //   motherId: formData.motherId.trim() || undefined,
-    //   fatherId: formData.fatherId.trim() || undefined,
-    //   notes: formData.notes.trim() || undefined
-    // }
 
     onSubmit(animalData)
   }
@@ -187,7 +178,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
           disabled={isLoading}
         >
-          {animalTypes.map((type) => (
+          {animalTypeOptions.map((type) => (
             <option key={type.value} value={type.value}>
               {type.label}
             </option>
@@ -211,7 +202,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
           disabled={isLoading}
         >
-          {animalStages.map((stage) => (
+          {animalStagesOptions.map((stage) => (
             <option key={stage.value} value={stage.value}>
               {stage.label}
             </option>

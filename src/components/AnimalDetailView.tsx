@@ -3,7 +3,13 @@
 import React, { useState } from 'react'
 import ModalEditAnimal from './ModalEditAnimal'
 import { BreedingRecord } from '@/types/breedings'
-import { Animal } from '@/types/animals'
+import {
+  Animal,
+  animal_icon,
+  animal_stage_colors,
+  AnimalStage,
+  AnimalType
+} from '@/types/animals'
 import { MilkProduction, WeightRecord } from '@/types'
 import { useAnimals } from '@/hooks/useAnimals'
 import { useBreeding } from '@/hooks/useBreeding'
@@ -25,10 +31,17 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
   milkRecords = []
 }) => {
   const { animals: allAnimals } = useAnimals()
-  const { breedingRecords } = useBreeding()
+  const { breedingRecords: allBreedingRecords } = useBreeding()
   const [activeTab, setActiveTab] = useState<
     'info' | 'breeding' | 'weight' | 'milk'
   >('info')
+
+  const breedingRecords = allBreedingRecords.filter(
+    (record) =>
+      record.femaleBreedingInfo?.find(
+        (female) => female.femaleId === animal.id
+      ) || record.maleId === animal.id
+  )
 
   const getAge = () => {
     if (!animal.birthDate)
@@ -67,37 +80,14 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
     )
   }
 
-  const getAnimalIcon = (type: string) => {
-    switch (type) {
-      case 'oveja':
-        return '🐑'
-      case 'vaca_leche':
-      case 'vaca_engorda':
-        return '🐄'
-      case 'cabra':
-        return '🐐'
-      case 'cerdo':
-        return '🐷'
-      default:
-        return '🐾'
-    }
+  const getAnimalIcon = (type: AnimalType) => {
+    return animal_icon[type] || '🐾'
   }
 
-  const getStageColor = (stage: string) => {
-    switch (stage) {
-      case 'cria':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'engorda':
-        return 'bg-orange-100 text-orange-800'
-      case 'lechera':
-        return 'bg-blue-100 text-blue-800'
-      case 'reproductor':
-        return 'bg-purple-100 text-purple-800'
-      case 'descarte':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
+  const getStageColor = (stage: AnimalStage) => {
+    return animal.stage in animal_stage_colors
+      ? animal_stage_colors[stage]
+      : 'bg-gray-100 text-gray-800'
   }
 
   const tabs = [
