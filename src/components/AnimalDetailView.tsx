@@ -121,7 +121,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+        <div className="p-6  overflow-y-auto max-h-[60vh]">
           {activeTab === 'info' && (
             <div className="space-y-6">
               {/* Información básica */}
