@@ -28,19 +28,7 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
     >
-      <div className="flex items-start justify-between">
-        #{animal.animalNumber}
-        <div className="flex items-center space-x-3">
-          <div>
-            {gender_icon[animal.gender]}
-            {animal_icon[animal.type]}
-            {animal_stage_icons[animal.stage]}
-          </div>
-        </div>
-      </div>
-      <div className="text-xs text-gray-500">
-        {animal.type || 'Sin nombre'} {animal.gender} {animal.stage}
-      </div>
+      <AnimalDetailRow animal={animal} />
 
       <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
         {animal.age && (
@@ -70,3 +58,29 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
 }
 
 export default AnimalCard
+
+export const AnimalDetailRow: React.FC<{
+  animal?: Animal
+}> = ({ animal }) => {
+  if (!animal) {
+    return <div className="text-gray-500">No hay información del animal</div>
+  }
+
+  return (
+    <div className="w-full flex flex-col space-y-1">
+      <div className="flex items-center justify-between ">
+        <span className="font-bold text-xl">#{animal.animalNumber}</span>
+        <div className="text-xs text-gray-500">
+          {animal.type || 'Sin nombre'} {animal.gender} {animal.stage}
+        </div>
+        <div className="flex items-center space-x-3">
+          <div>
+            {animal_icon[animal.type]}
+            {animal_stage_icons[animal.stage]}
+            {gender_icon[animal.gender]}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

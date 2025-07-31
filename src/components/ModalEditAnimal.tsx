@@ -6,6 +6,7 @@ import { Modal } from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
 import AnimalForm from './AnimalForm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import Button from './buttons/Button'
 
 interface ModalEditAnimalProps {
   animal: Animal
@@ -27,9 +28,15 @@ const ModalEditAnimal: React.FC<ModalEditAnimalProps> = ({ animal }) => {
   }
   return (
     <>
-      <div onClick={openModal} className="cursor-pointer">
+      <Button
+        onClick={openModal}
+        className="cursor-pointer"
+        icon="edit"
+        color="primary"
+        size="sm"
+      >
         editar
-      </div>
+      </Button>
 
       <Modal
         isOpen={isOpen}

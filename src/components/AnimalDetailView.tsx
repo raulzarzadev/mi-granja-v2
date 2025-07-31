@@ -1,19 +1,13 @@
 'use client'
 
 import React, { useState } from 'react'
-import ModalEditAnimal from './ModalEditAnimal'
 import { BreedingRecord } from '@/types/breedings'
-import {
-  Animal,
-  animal_icon,
-  animal_stage_colors,
-  AnimalStage,
-  AnimalType
-} from '@/types/animals'
+import { Animal, animal_icon, AnimalType } from '@/types/animals'
 import { MilkProduction, WeightRecord } from '@/types'
 import { useAnimals } from '@/hooks/useAnimals'
 import { useBreeding } from '@/hooks/useBreeding'
 import { formatDate } from '@/lib/dates'
+import { AnimalDetailRow } from './AnimalCard'
 
 interface AnimalDetailViewProps {
   animal: Animal
@@ -84,12 +78,6 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
     return animal_icon[type] || '🐾'
   }
 
-  const getStageColor = (stage: AnimalStage) => {
-    return animal.stage in animal_stage_colors
-      ? animal_stage_colors[stage]
-      : 'bg-gray-100 text-gray-800'
-  }
-
   const tabs = [
     { id: 'info' as const, label: 'Información General', icon: '📋' },
     { id: 'breeding' as const, label: 'Reproducción', icon: '🐣' },
@@ -103,7 +91,8 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
         {/* Header */}
         <div className="bg-green-600 text-white p-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <AnimalDetailRow animal={animal} />
+            {/* <div className="flex items-center gap-4">
               <span className="text-4xl">{getAnimalIcon(animal.type)}</span>
               <div>
                 <h1 className="text-2xl font-bold">{animal.animalNumber}</h1>
@@ -124,7 +113,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
               <div>
                 <ModalEditAnimal animal={animal} />
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
 

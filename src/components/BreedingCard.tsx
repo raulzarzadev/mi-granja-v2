@@ -380,7 +380,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
 
       <div className="grid gap-2">
         {onEdit && (
-          <Button onClick={() => onEdit(record)} icon="edit" color="primary">
+          <Button onClick={() => onEdit(record)} icon="edit" color="primary" >
             Editar
           </Button>
         )}
