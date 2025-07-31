@@ -384,6 +384,23 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
               size: 'sm'
             }}
           />
+          {/* <ButtonConfirm
+            openLabel="Eliminar animal"
+            confirmLabel="Eliminar"
+            confirmText="¿Estás seguro de que quieres eliminar este animal? Esta acción no se puede deshacer."
+            onConfirm={() => {
+              // Lógica para eliminar el animal
+              console.log('Animal eliminado')
+              return deleteAnimal(animal.id)
+            }}
+            confirmProps={{ color: 'error', icon: 'delete', size: 'sm' }}
+            openProps={{
+              color: 'error',
+              variant: 'ghost',
+              icon: 'delete',
+              size: 'sm'
+            }}
+          /> */}
           <ModalEditAnimal animal={animal} />
         </div>
       </div>
