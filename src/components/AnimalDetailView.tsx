@@ -8,6 +8,9 @@ import { useAnimals } from '@/hooks/useAnimals'
 import { useBreeding } from '@/hooks/useBreeding'
 import { formatDate } from '@/lib/dates'
 import { AnimalDetailRow } from './AnimalCard'
+import ModalEditAnimal from './ModalEditAnimal'
+import ButtonConfirm from './buttons/ButtonConfirm'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 
 interface AnimalDetailViewProps {
   animal: Animal
@@ -29,6 +32,8 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
   const [activeTab, setActiveTab] = useState<
     'info' | 'breeding' | 'weight' | 'milk'
   >('info')
+
+  const { remove: deleteAnimal } = useAnimalCRUD()
 
   const breedingRecords = allBreedingRecords.filter(
     (record) =>
@@ -92,28 +97,6 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
         <div className="bg-green-600 text-white p-3">
           <div className="flex items-center justify-between">
             <AnimalDetailRow animal={animal} />
-            {/* <div className="flex items-center gap-4">
-              <span className="text-4xl">{getAnimalIcon(animal.type)}</span>
-              <div>
-                <h1 className="text-2xl font-bold">{animal.animalNumber}</h1>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-green-100">
-                    {animal.type.replace('_', ' ')}{' '}
-                    {animal.gender === 'macho' ? '♂' : '♀'}
-                  </span>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStageColor(
-                      animal.stage
-                    )} bg-opacity-20 text-white`}
-                  >
-                    {animal.stage}
-                  </span>
-                </div>
-              </div>
-              <div>
-                <ModalEditAnimal animal={animal} />
-              </div>
-            </div> */}
           </div>
         </div>
 
@@ -381,6 +364,27 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
               )}
             </div>
           )}
+        </div>
+
+        <div className="my-2 flex items-center justify-around p-3 mb-8">
+          <ButtonConfirm
+            openLabel="Eliminar animal"
+            confirmLabel="Eliminar"
+            confirmText="¿Estás seguro de que quieres eliminar este animal? Esta acción no se puede deshacer."
+            onConfirm={() => {
+              // Lógica para eliminar el animal
+              console.log('Animal eliminado')
+              return deleteAnimal(animal.id)
+            }}
+            confirmProps={{ color: 'error', icon: 'delete', size: 'sm' }}
+            openProps={{
+              color: 'error',
+              variant: 'ghost',
+              icon: 'delete',
+              size: 'sm'
+            }}
+          />
+          <ModalEditAnimal animal={animal} />
         </div>
       </div>
     </div>

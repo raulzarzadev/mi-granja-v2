@@ -31,7 +31,6 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
   initialData,
   isLoading = false
 }) => {
-  console.log({ initialData })
   const [formData, setFormData] = useState({
     animalNumber: initialData?.animalNumber || '',
     type: initialData?.type || animals_types[0],

@@ -5,14 +5,24 @@ export interface UseModalReturn {
   openModal: () => void
   closeModal: () => void
   toggleModal: () => void
+  onClose: () => void // Alias for consistency with other hooks
+  title?: string // Optional title for the modal
 }
 
 /**
- * Hook personalizado para manejar el estado de modales
- * @param initialState - Estado inicial del modal (por defecto false)
- * @returns Objeto con estado y funciones para controlar el modal
+ * Custom hook for managing modal state
+ * @param {Object} options - Configuration options
+ * @param {boolean} [options.initialState=false] - Initial state of the modal (default false)
+ * @param {string} [options.title='Modal'] - Optional title for the modal
+ * @returns {Object} Object with state and functions to control the modal
  */
-export const useModal = (initialState = false): UseModalReturn => {
+export const useModal = ({
+  initialState = false,
+  title = 'Modal'
+}: {
+  initialState?: boolean
+  title?: string
+} = {}): UseModalReturn => {
   const [isOpen, setIsOpen] = useState(initialState)
 
   const openModal = useCallback(() => {
@@ -31,6 +41,8 @@ export const useModal = (initialState = false): UseModalReturn => {
     isOpen,
     openModal,
     closeModal,
-    toggleModal
+    toggleModal,
+    onClose: closeModal, // Alias for consistency with other hooks
+    title // Optional title
   }
 }

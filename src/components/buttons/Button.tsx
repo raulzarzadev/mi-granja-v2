@@ -1,7 +1,8 @@
 import React from 'react'
 import { Icon, IconName } from '../Icon/icon'
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'icon' | 'sm' | 'md' | 'lg'
   variant?: 'outline' | 'ghost' | 'filled'
   color?: 'error' | 'primary' | 'success' | 'info' | 'warning' | 'neutral'

@@ -35,13 +35,13 @@ const ModalEditAnimal: React.FC<ModalEditAnimalProps> = ({ animal }) => {
         color="primary"
         size="sm"
       >
-        editar
+        Editar
       </Button>
 
       <Modal
         isOpen={isOpen}
         onClose={closeModal}
-        title={'Detalles del Animal'}
+        title={'Detalles del animal'}
         size="lg"
       >
         <div className="p-2">

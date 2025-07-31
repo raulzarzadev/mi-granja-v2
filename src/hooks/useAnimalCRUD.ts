@@ -17,7 +17,11 @@ import {
 import { db } from '@/lib/firebase'
 import { RootState } from '@/features/store'
 import { setError } from '@/features/auth/authSlice'
-import { addAnimal, updateAnimal } from '@/features/animals/animalsSlice'
+import {
+  addAnimal,
+  updateAnimal,
+  removeAnimal
+} from '@/features/animals/animalsSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { Animal } from '@/types/animals'
 
@@ -104,8 +108,7 @@ export const useAnimalCRUD = () => {
     setIsLoading(true)
     try {
       await deleteDoc(doc(db, 'animals', animalId))
-
-      // No necesitamos dispatch aquí porque el listener en tiempo real se encargará
+      dispatch(removeAnimal(animalId)) // Actualizar estado global
       console.log('Animal eliminado:', animalId)
     } catch (error) {
       console.error('Error deleting animal:', error)
