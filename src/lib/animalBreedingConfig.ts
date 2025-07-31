@@ -37,8 +37,8 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
       breedingCycleDays: 21,
       description: 'Cabras: gestación ~5 meses, temporada de agosto a enero'
     },
-    vaca_leche: {
-      type: 'vaca_leche',
+    vaca: {
+      type: 'vaca',
       gestationDays: 283, // ~9.3 meses
       breedingSeasonStart: 1, // Todo el año
       breedingSeasonEnd: 12,
@@ -48,17 +48,17 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
       breedingCycleDays: 21,
       description: 'Vacas lecheras: gestación ~9.3 meses, reproducción anual'
     },
-    vaca_engorda: {
-      type: 'vaca_engorda',
-      gestationDays: 283,
-      breedingSeasonStart: 1,
-      breedingSeasonEnd: 12,
-      averageLitterSize: 1,
-      minBreedingAge: 15,
-      maxBreedingAge: 144, // 12 años
-      breedingCycleDays: 21,
-      description: 'Vacas de engorda: gestación ~9.3 meses'
-    },
+    // vaca_engorda: {
+    //   type: 'vaca_engorda',
+    //   gestationDays: 283,
+    //   breedingSeasonStart: 1,
+    //   breedingSeasonEnd: 12,
+    //   averageLitterSize: 1,
+    //   minBreedingAge: 15,
+    //   maxBreedingAge: 144, // 12 años
+    //   breedingCycleDays: 21,
+    //   description: 'Vacas de engorda: gestación ~9.3 meses'
+    // },
     cerdo: {
       type: 'cerdo',
       gestationDays: 114, // ~3.8 meses
@@ -69,6 +69,64 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
       maxBreedingAge: 60, // 5 años
       breedingCycleDays: 21,
       description: 'Cerdos: gestación ~3.8 meses, camadas grandes'
+    },
+    gallina: {
+      type: 'gallina',
+      gestationDays: 21, // incubación de huevos
+      breedingSeasonStart: 1, // Todo el año
+      breedingSeasonEnd: 12,
+      averageLitterSize: 8, // promedio de huevos por ciclo
+      minBreedingAge: 5, // 5 meses
+      maxBreedingAge: 36, // 3 años de producción óptima
+      breedingCycleDays: 1, // postura casi diaria
+      description:
+        'Gallinas: incubación ~21 días, puesta regular durante todo el año'
+    },
+    perro: {
+      type: 'perro',
+      gestationDays: 63,
+      breedingSeasonStart: 1, // Todo el año
+      breedingSeasonEnd: 12,
+      averageLitterSize: 5.5,
+      minBreedingAge: 12, // 12 meses
+      maxBreedingAge: 84, // 7 años
+      breedingCycleDays: 180, // ~6 meses entre ciclos
+      description: 'Perros: gestación ~63 días, dos ciclos estrales por año'
+    },
+    gato: {
+      type: 'gato',
+      gestationDays: 64,
+      breedingSeasonStart: 2, // Febrero
+      breedingSeasonEnd: 9, // Septiembre
+      averageLitterSize: 4,
+      minBreedingAge: 6, // 6 meses
+      maxBreedingAge: 84, // 7 años
+      breedingCycleDays: 14, // ~2 semanas durante temporada
+      description:
+        'Gatos: gestación ~64 días, temporada reproductiva principalmente primavera-verano'
+    },
+    equino: {
+      type: 'equino',
+      gestationDays: 340, // ~11 meses
+      breedingSeasonStart: 3, // Marzo
+      breedingSeasonEnd: 8, // Agosto
+      averageLitterSize: 1,
+      minBreedingAge: 36, // 3 años
+      maxBreedingAge: 180, // 15 años
+      breedingCycleDays: 21,
+      description:
+        'Equinos: gestación ~340 días, reproducción principalmente en primavera-verano'
+    },
+    otro: {
+      type: 'otro',
+      gestationDays: 120, // Valor genérico
+      breedingSeasonStart: 1,
+      breedingSeasonEnd: 12,
+      averageLitterSize: 2,
+      minBreedingAge: 12,
+      maxBreedingAge: 96,
+      breedingCycleDays: 21,
+      description: 'Configuración genérica para otras especies'
     }
   }
 

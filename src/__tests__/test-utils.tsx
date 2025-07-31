@@ -72,22 +72,28 @@ export const createMockFirebaseUser = (overrides = {}) => ({
 
 // Mock Firebase auth responses
 export const mockFirebaseAuthSuccess = (user = createMockFirebaseUser()) => {
-  global.mockAuth.signInWithEmailAndPassword.mockResolvedValue({ user })
-  global.mockAuth.createUserWithEmailAndPassword.mockResolvedValue({ user })
-  global.mockAuth.signInWithEmailLink.mockResolvedValue({ user })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockAuth = (global as any).mockAuth
+  mockAuth.signInWithEmailAndPassword.mockResolvedValue({ user })
+  mockAuth.createUserWithEmailAndPassword.mockResolvedValue({ user })
+  mockAuth.signInWithEmailLink.mockResolvedValue({ user })
 }
 
 export const mockFirebaseAuthError = (
   error = new Error('Authentication failed')
 ) => {
-  global.mockAuth.signInWithEmailAndPassword.mockRejectedValue(error)
-  global.mockAuth.createUserWithEmailAndPassword.mockRejectedValue(error)
-  global.mockAuth.signInWithEmailLink.mockRejectedValue(error)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockAuth = (global as any).mockAuth
+  mockAuth.signInWithEmailAndPassword.mockRejectedValue(error)
+  mockAuth.createUserWithEmailAndPassword.mockRejectedValue(error)
+  mockAuth.signInWithEmailLink.mockRejectedValue(error)
 }
 
 export const mockFirestoreSuccess = () => {
-  global.mockFirestore.doc.mockReturnValue({})
-  global.mockFirestore.getDoc.mockResolvedValue({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockFirestore = (global as any).mockFirestore
+  mockFirestore.doc.mockReturnValue({})
+  mockFirestore.getDoc.mockResolvedValue({
     exists: () => true,
     data: () => ({
       email: 'test@test.com',
@@ -95,12 +101,14 @@ export const mockFirestoreSuccess = () => {
       createdAt: new Date()
     })
   })
-  global.mockFirestore.setDoc.mockResolvedValue(undefined)
+  mockFirestore.setDoc.mockResolvedValue(undefined)
 }
 
 export const mockFirestoreError = (error = new Error('Firestore error')) => {
-  global.mockFirestore.getDoc.mockRejectedValue(error)
-  global.mockFirestore.setDoc.mockRejectedValue(error)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockFirestore = (global as any).mockFirestore
+  mockFirestore.getDoc.mockRejectedValue(error)
+  mockFirestore.setDoc.mockRejectedValue(error)
 }
 
 // Wait for async operations

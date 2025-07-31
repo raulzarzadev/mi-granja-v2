@@ -306,9 +306,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             <span className="mr-1">
               {selectedMale.type === 'oveja' && '🐑'}
               {selectedMale.type === 'cabra' && '🐐'}
-              {(selectedMale.type === 'vaca_leche' ||
-                selectedMale.type === 'vaca_engorda') &&
-                '🐄'}
+              {selectedMale.type === 'vaca' && '🐄'}
               {selectedMale.type === 'cerdo' && '🐷'}
             </span>
             {selectedMale.type.charAt(0).toUpperCase() +

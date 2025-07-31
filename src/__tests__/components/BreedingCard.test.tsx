@@ -13,18 +13,8 @@ const mockAnimals: Animal[] = [
   {
     id: 'male1',
     animalNumber: 'M001',
-    type: 'vaca_engorda',
+    type: 'vaca',
     gender: 'macho',
-    stage: 'reproductor',
-    farmerId: 'farmer1',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: 'female1',
-    animalNumber: 'F001',
-    type: 'vaca_engorda',
-    gender: 'hembra',
     stage: 'reproductor',
     farmerId: 'farmer1',
     createdAt: new Date(),
