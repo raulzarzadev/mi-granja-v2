@@ -5,7 +5,19 @@ import AdminStatsCards from './AdminStatsCards'
 import AdminRecentActivity from './AdminRecentActivity'
 import AdminQuickActions from './AdminQuickActions'
 
-export default function AdminOverview() {
+type AdminSection =
+  | 'overview'
+  | 'users'
+  | 'animals'
+  | 'breedings'
+  | 'reminders'
+  | 'activities'
+
+interface AdminOverviewProps {
+  onSectionChange?: (section: AdminSection) => void
+}
+
+export default function AdminOverview({ onSectionChange }: AdminOverviewProps) {
   return (
     <div className="space-y-6">
       <div>
@@ -25,7 +37,7 @@ export default function AdminOverview() {
         <AdminRecentActivity />
 
         {/* Acciones rápidas */}
-        <AdminQuickActions />
+        <AdminQuickActions onSectionChange={onSectionChange} />
       </div>
     </div>
   )

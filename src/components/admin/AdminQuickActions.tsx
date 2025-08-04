@@ -2,7 +2,21 @@
 
 import React from 'react'
 
-export default function AdminQuickActions() {
+type AdminSection =
+  | 'overview'
+  | 'users'
+  | 'animals'
+  | 'breedings'
+  | 'reminders'
+  | 'activities'
+
+interface AdminQuickActionsProps {
+  onSectionChange?: (section: AdminSection) => void
+}
+
+export default function AdminQuickActions({
+  onSectionChange
+}: AdminQuickActionsProps) {
   const actions = [
     {
       title: 'Ver Todos los Usuarios',
@@ -35,8 +49,9 @@ export default function AdminQuickActions() {
   ]
 
   const handleAction = (action: string) => {
-    // Esta función será conectada con el sistema de navegación
-    console.log(`Acción: ${action}`)
+    if (onSectionChange) {
+      onSectionChange(action as AdminSection)
+    }
   }
 
   return (

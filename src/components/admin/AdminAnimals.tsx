@@ -1,11 +1,11 @@
 'use client'
 
 import React from 'react'
-import { useAdminAnimals } from '@/hooks/admin/useAdminAnimals'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { animal_icon, animal_stage_labels, gender_icon } from '@/types/animals'
+import { useAdminAnimals } from '@/hooks/admin/useAdminAnimals'
 
 export default function AdminAnimals() {
   const { animals, isLoading, error } = useAdminAnimals()

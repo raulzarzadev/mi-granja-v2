@@ -1,13 +1,16 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAdminUsers } from '@/hooks/admin/useAdminUsers'
+import AdminUserActions from './AdminUserActions'
+import { User } from '@/types'
 
 export default function AdminUsers() {
-  const { users, isLoading, error, updateUserRoles } = useAdminUsers()
+  const { users, isLoading, error } = useAdminUsers()
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
   if (isLoading) {
     return (
@@ -23,14 +26,6 @@ export default function AdminUsers() {
         <p className="text-red-700">Error al cargar usuarios: {error}</p>
       </div>
     )
-  }
-
-  const handleRoleChange = async (userId: string, newRoles: string[]) => {
-    try {
-      await updateUserRoles(userId, newRoles)
-    } catch (error) {
-      console.error('Error updating user roles:', error)
-    }
   }
 
   return (
@@ -109,11 +104,11 @@ export default function AdminUsers() {
                   {format(user.createdAt, 'PP', { locale: es })}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button className="text-indigo-600 hover:text-indigo-900 mr-3">
-                    Editar
-                  </button>
-                  <button className="text-red-600 hover:text-red-900">
-                    Suspender
+                  <button
+                    onClick={() => setSelectedUser(user)}
+                    className="text-indigo-600 hover:text-indigo-900 mr-3"
+                  >
+                    Gestionar
                   </button>
                 </td>
               </tr>
@@ -121,6 +116,14 @@ export default function AdminUsers() {
           </tbody>
         </table>
       </div>
+
+      {/* Modal de acciones de usuario */}
+      {selectedUser && (
+        <AdminUserActions
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
+        />
+      )}
     </div>
   )
 }

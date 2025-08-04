@@ -11,7 +11,7 @@ import { User } from '@/types'
 
 interface RootState {
   auth: {
-    user: User | null
+    user?: User | null
     isLoading: boolean
     error: string | null
     emailLinkSent: boolean

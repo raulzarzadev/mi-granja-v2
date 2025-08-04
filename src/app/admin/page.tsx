@@ -4,7 +4,7 @@ import React from 'react'
 import { isUserAdmin } from '@/lib/userUtils'
 import { redirect } from 'next/navigation'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import AdminDashboard from '@/components/admin/AdminDashboard'
+import AdminDashboardWithNavigation from '@/components/admin/AdminDashboardWithNavigation'
 
 import { useAuth } from '@/hooks/useAuth'
 
@@ -27,5 +27,5 @@ export default function AdminPage() {
     redirect('/')
   }
 
-  return <AdminDashboard />
+  return <AdminDashboardWithNavigation />
 }
