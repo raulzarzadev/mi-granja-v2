@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSelector } from 'react-redux'
 import { useAuth } from '@/hooks/useAuth'
 import { RootState } from '@/features/store'
+import { isUserAdmin } from '@/lib/userUtils'
 
 /**
  * Componente de navegación principal
@@ -34,14 +35,22 @@ const Navbar: React.FC = () => {
               <span className="text-xl font-bold">🐄 Mi Granja</span>
             </div>
 
-            {/* Enlace al showcase (solo para admins) */}
-            {user.roles?.includes('admin') && (
-              <Link
-                href="/ui-showcase"
-                className="text-green-100 hover:text-white text-sm font-medium transition-colors"
-              >
-                🎨 UI Showcase
-              </Link>
+            {/* Enlaces para admins */}
+            {isUserAdmin(user) && (
+              <>
+                <Link
+                  href="/admin"
+                  className="text-green-100 hover:text-white text-sm font-medium transition-colors"
+                >
+                  👑 Admin Panel
+                </Link>
+                <Link
+                  href="/ui-showcase"
+                  className="text-green-100 hover:text-white text-sm font-medium transition-colors"
+                >
+                  🎨 UI Showcase
+                </Link>
+              </>
             )}
           </div>
 

@@ -3,7 +3,7 @@ import { User } from '@/types'
 import { serializeObj } from '../libs/serializeObj'
 
 interface AuthState {
-  user: User | null
+  user?: User | null
   isLoading: boolean
   error: string | null
   emailLinkSent: boolean
@@ -11,7 +11,7 @@ interface AuthState {
 }
 
 const initialState: AuthState = {
-  user: null,
+  user: undefined,
   isLoading: false,
   error: null,
   emailLinkSent: false,
