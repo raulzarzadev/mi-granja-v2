@@ -1,10 +1,10 @@
 'use client'
 
 import React from 'react'
-import { useAdminUsers } from '@/hooks/admin/useAdminUsers'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { useAdminUsers } from '@/hooks/admin/useAdminUsers'
 
 export default function AdminUsers() {
   const { users, isLoading, error, updateUserRoles } = useAdminUsers()
