@@ -4,7 +4,7 @@ import { Icon, IconName } from '../Icon/icon'
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'icon' | 'sm' | 'md' | 'lg'
-  variant?: 'outline' | 'ghost' | 'filled'
+  variant?: 'outline' | 'ghost' | 'filled' | 'link'
   color?: 'error' | 'primary' | 'success' | 'info' | 'warning' | 'neutral'
   children?: React.ReactNode
   icon?: IconName
@@ -31,7 +31,8 @@ const Button: React.FC<ButtonProps> = ({
   const variantClasses = {
     filled: 'shadow-sm hover:shadow-md border border-transparent',
     outline: 'border-2 bg-transparent backdrop-blur-sm',
-    ghost: 'bg-transparent border border-transparent'
+    ghost: 'bg-transparent border border-transparent',
+    link: 'text-green-100 hover:text-white text-sm font-medium transition-colors'
   }
 
   const colorClasses = {

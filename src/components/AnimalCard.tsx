@@ -7,6 +7,7 @@ import {
   gender_icon
 } from '@/types/animals'
 import React from 'react'
+import AdminActionIndicator from './AdminActionIndicator'
 
 interface AnimalCardProps {
   animal: Animal
@@ -53,6 +54,9 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
             : animal.notes}
         </div>
       )}
+
+      {/* Indicador de acción de admin */}
+      <AdminActionIndicator data={animal} className="mt-2" />
     </div>
   )
 }

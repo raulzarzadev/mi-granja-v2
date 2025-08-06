@@ -1,11 +1,13 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { useSelector } from 'react-redux'
 import { useAuth } from '@/hooks/useAuth'
 import { RootState } from '@/features/store'
 import { isUserAdmin } from '@/lib/userUtils'
+import UserImpersonationSelector from './UserImpersonationSelector'
+import { ModalUseImpersonationSelector } from './ModalUseImpersonationSelector'
 
 /**
  * Componente de navegación principal
@@ -14,7 +16,8 @@ import { isUserAdmin } from '@/lib/userUtils'
  */
 const Navbar: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth)
-  const { logout } = useAuth()
+  const { logout, impersonatingUser, originalUser } = useAuth()
+  const [showUserSelector, setShowUserSelector] = useState(false)
 
   const handleLogout = async () => {
     try {
@@ -50,15 +53,27 @@ const Navbar: React.FC = () => {
                 >
                   🎨 UI Showcase
                 </Link>
+                <ModalUseImpersonationSelector />
               </>
             )}
           </div>
 
           {/* Información del usuario */}
           <div className="flex items-center space-x-4">
+            {/* Indicador de impersonación */}
+            {impersonatingUser && originalUser && (
+              <div className="bg-yellow-500 text-black px-2 py-1 rounded text-xs font-medium">
+                🎭 Actuando como:{' '}
+                {impersonatingUser.farmName || impersonatingUser.email}
+                <div className="text-xs opacity-75">
+                  Admin: {originalUser.email}
+                </div>
+              </div>
+            )}
+
             <div className="text-sm">
-              <p className="font-medium">{user.farmName || 'Mi Granja'}</p>
-              <p className="text-green-100 text-xs">{user.email}</p>
+              <p className="font-medium">{user?.farmName || 'Mi Granja'}</p>
+              <p className="text-green-100 text-xs">{user?.email}</p>
             </div>
 
             {/* Botón de logout */}
@@ -71,6 +86,13 @@ const Navbar: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Selector de usuario para admins
+        <div className="border-t border-green-500 py-4">
+          <UserImpersonationSelector
+            onClose={() => setShowUserSelector(false)}
+          />
+        </div> */}
       </div>
     </nav>
   )

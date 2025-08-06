@@ -8,6 +8,9 @@ interface AuthState {
   error: string | null
   emailLinkSent: boolean
   emailForLink: string | null
+  originalUser?: User | null // Usuario admin original
+  impersonatingUser?: User | null // Usuario siendo suplantado
+  impersonationToken?: string | null // Token para la suplantación
 }
 
 const initialState: AuthState = {
@@ -15,7 +18,10 @@ const initialState: AuthState = {
   isLoading: false,
   error: null,
   emailLinkSent: false,
-  emailForLink: null
+  emailForLink: null,
+  originalUser: undefined,
+  impersonatingUser: undefined,
+  impersonationToken: undefined
 }
 
 const authSlice = createSlice({
@@ -58,6 +64,32 @@ const authSlice = createSlice({
       state.isLoading = false
       state.emailLinkSent = false
       state.emailForLink = null
+      state.originalUser = null
+      state.impersonatingUser = null
+      state.impersonationToken = null
+    },
+    setImpersonating: (
+      state,
+      action: PayloadAction<{
+        originalUser: User
+        impersonatedUser: User
+        impersonationToken: string
+      }>
+    ) => {
+      const { originalUser, impersonatedUser, impersonationToken } =
+        action.payload
+      state.originalUser = serializeObj(originalUser)
+      state.impersonatingUser = serializeObj(impersonatedUser)
+      state.user = serializeObj(impersonatedUser)
+      state.impersonationToken = impersonationToken
+    },
+    clearImpersonation: (state) => {
+      if (state.originalUser) {
+        state.user = state.originalUser
+      }
+      state.originalUser = null
+      state.impersonatingUser = null
+      state.impersonationToken = null
     }
   }
 })
@@ -69,7 +101,9 @@ export const {
   clearError,
   setEmailLinkSent,
   clearEmailLinkState,
-  logout
+  logout,
+  setImpersonating,
+  clearImpersonation
 } = authSlice.actions
 
 export const selectUser = (state: { auth: AuthState }) => state.auth.user

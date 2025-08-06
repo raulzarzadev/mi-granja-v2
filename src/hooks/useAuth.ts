@@ -17,7 +17,9 @@ import {
   logout,
   clearError,
   setEmailLinkSent,
-  clearEmailLinkState
+  clearEmailLinkState,
+  setImpersonating,
+  clearImpersonation
 } from '@/features/auth/authSlice'
 import { User } from '@/types'
 import { assignUserRoles } from '@/lib/userUtils'
@@ -29,9 +31,16 @@ import { RootState } from '@/features/store'
  */
 export const useAuth = () => {
   const dispatch = useDispatch()
-  const { user, isLoading, error, emailLinkSent, emailForLink } = useSelector(
-    (state: RootState) => state.auth
-  )
+  const {
+    user,
+    isLoading,
+    error,
+    emailLinkSent,
+    emailForLink,
+    impersonatingUser,
+    impersonationToken,
+    originalUser
+  } = useSelector((state: RootState) => state.auth)
 
   // Listener de autenticación - Ya no es necesario aquí porque está en AuthInitializer
   // El AuthInitializer se encarga del listener de onAuthStateChanged
@@ -246,6 +255,8 @@ export const useAuth = () => {
     error,
     emailLinkSent,
     emailForLink,
+    impersonatingUser,
+    originalUser,
     login,
     register,
     logout: handleLogout,
@@ -253,6 +264,35 @@ export const useAuth = () => {
     completeEmailLinkSignIn,
     isEmailLinkSignIn,
     clearError: clearAuthError,
-    clearEmailLink
+    clearEmailLink,
+    // Funciones de impersonación
+    getCurrentToken: () =>
+      impersonationToken || localStorage.getItem('token') || '',
+    getCurrentUser: () => impersonatingUser || user,
+    isImpersonating: !!impersonatingUser,
+    startImpersonation: (
+      originalUser: User,
+      targetUser: User,
+      token: string
+    ) => {
+      // Guardar el usuario admin original en localStorage para tracking
+      localStorage.setItem('originalAdminUser', JSON.stringify(originalUser))
+      localStorage.setItem('impersonationToken', token)
+
+      dispatch(
+        setImpersonating({
+          originalUser,
+          impersonatedUser: targetUser,
+          impersonationToken: token
+        })
+      )
+    },
+    stopImpersonation: () => {
+      // Limpiar datos de impersonación
+      localStorage.removeItem('originalAdminUser')
+      localStorage.removeItem('impersonationToken')
+
+      dispatch(clearImpersonation())
+    }
   }
 }

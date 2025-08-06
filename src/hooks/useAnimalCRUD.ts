@@ -24,6 +24,7 @@ import {
 } from '@/features/animals/animalsSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { Animal } from '@/types/animals'
+import { useAdminActions } from '@/lib/adminActions'
 
 /**
  * Hook personalizado para el manejo de animales
@@ -32,6 +33,7 @@ import { Animal } from '@/types/animals'
 export const useAnimalCRUD = () => {
   const dispatch = useDispatch()
   const { user } = useSelector((state: RootState) => state.auth)
+  const { wrapWithAdminMetadata } = useAdminActions()
 
   const [isLoading, setIsLoading] = useState(false)
 
@@ -46,12 +48,15 @@ export const useAnimalCRUD = () => {
     setIsLoading(true)
     try {
       const now = new Date()
-      const newAnimal = {
+      let newAnimal = {
         ...animalData,
         farmerId: user.id,
         createdAt: now,
         updatedAt: now
       }
+
+      // Añadir metadata de admin si se está haciendo impersonación
+      newAnimal = wrapWithAdminMetadata(newAnimal, 'Creación de animal')
 
       const docRef = await addDoc(collection(db, 'animals'), newAnimal)
 
@@ -80,10 +85,16 @@ export const useAnimalCRUD = () => {
     setIsLoading(true)
     try {
       const animalRef = doc(db, 'animals', animalId)
-      const updatedData = {
+      let updatedData = {
         ...updateData,
         updatedAt: new Date()
       }
+
+      // Añadir metadata de admin si se está haciendo impersonación
+      updatedData = wrapWithAdminMetadata(
+        updatedData,
+        'Actualización de animal'
+      )
 
       await updateDoc(animalRef, updatedData)
 
