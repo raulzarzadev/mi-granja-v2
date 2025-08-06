@@ -24,6 +24,7 @@ import {
 import { User } from '@/types'
 import { assignUserRoles } from '@/lib/userUtils'
 import { RootState } from '@/features/store'
+import { serializeObj } from '@/features/libs/serializeObj'
 
 /**
  * Hook personalizado para el manejo de autenticación
@@ -281,8 +282,8 @@ export const useAuth = () => {
 
       dispatch(
         setImpersonating({
-          originalUser,
-          impersonatedUser: targetUser,
+          originalUser: serializeObj(originalUser),
+          impersonatedUser: serializeObj(targetUser),
           impersonationToken: token
         })
       )
