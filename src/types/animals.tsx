@@ -13,6 +13,14 @@ export interface Animal {
   notes?: string
   createdAt: Date
   updatedAt: Date
+  // Metadata de admin para rastrear acciones administrativas
+  adminAction?: {
+    performedByAdmin: boolean
+    adminEmail?: string
+    adminId?: string
+    originalTimestamp: Date
+    impersonationReason?: string
+  }
 }
 
 export const animals_genders = ['macho', 'hembra'] as const

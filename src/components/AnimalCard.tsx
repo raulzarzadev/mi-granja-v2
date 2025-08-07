@@ -53,7 +53,7 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
         </div>
       )}
       {/* Indicador de acción de admin */}
-      <AdminActionIndicator data={{}} className="mt-2" />
+      <AdminActionIndicator data={animal} className="mt-2" />
     </div>
   )
 }

@@ -4,19 +4,13 @@ import React from 'react'
 import {
   formatAdminActionMessage,
   isAdminAction,
-  getAdminInfo
+  getAdminInfo,
+  AdminActionMetadata
 } from '@/lib/adminActions'
+import { Animal } from '@/types/animals'
 
 interface AdminActionIndicatorProps {
-  data: Record<string, unknown> & {
-    adminAction?: {
-      performedByAdmin: boolean
-      adminEmail?: string
-      adminId?: string
-      originalTimestamp: Date
-      impersonationReason?: string
-    }
-  }
+  data: Animal | { [key: string]: unknown; adminAction?: AdminActionMetadata }
   className?: string
 }
 
@@ -29,13 +23,18 @@ const AdminActionIndicator: React.FC<AdminActionIndicatorProps> = ({
   data,
   className = ''
 }) => {
-  console.log({ data })
-  if (!isAdminAction(data)) {
+  // Cast del objeto para que sea compatible con las funciones de adminActions
+  const dataWithAdmin = data as {
+    [key: string]: unknown
+    adminAction?: AdminActionMetadata
+  }
+
+  if (!isAdminAction(dataWithAdmin)) {
     return null
   }
 
-  const adminInfo = getAdminInfo(data)
-  const message = formatAdminActionMessage(data)
+  const adminInfo = getAdminInfo(dataWithAdmin)
+  const message = formatAdminActionMessage(dataWithAdmin)
 
   if (!adminInfo) {
     return null
