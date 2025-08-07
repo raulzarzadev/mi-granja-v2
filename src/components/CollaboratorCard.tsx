@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { FarmCollaborator, COLLABORATOR_ROLES } from '@/types/farm'
+import { formatDate, toDate } from '@/lib/dates'
 
 interface CollaboratorCardProps {
   collaborator: FarmCollaborator
@@ -58,7 +59,9 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
         <div className="flex justify-between">
           <span>Se unió:</span>
           <span>
-            {collaborator.acceptedAt?.toLocaleDateString() || 'Pendiente'}
+            {collaborator.acceptedAt
+              ? formatDate(toDate(collaborator.acceptedAt))
+              : 'Pendiente'}
           </span>
         </div>
 

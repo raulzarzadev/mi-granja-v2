@@ -4,13 +4,14 @@ import React, { useState } from 'react'
 import { useFarmAreas } from '@/hooks/useFarmAreas'
 import { useFarmCollaborators } from '@/hooks/useFarmCollaborators'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import ModalCreateFarm from './ModalCreateFarm'
-import ModalCreateArea from './ModalCreateArea'
-import ModalInviteCollaborator from './ModalInviteCollaborator'
-import AreaCard from './AreaCard'
-import CollaboratorCard from './CollaboratorCard'
 import { FARM_AREA_TYPES } from '@/types/farm'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import ModalCreateFarm from './ModalCreateFarm'
+import ModalCreateArea from './ModalCreateArea'
+import AreaCard from './AreaCard'
+import ModalInviteCollaborator from './ModalInviteCollaborator'
+import CollaboratorCard from './CollaboratorCard'
+import { formatDate, toDate } from '@/lib/dates'
 
 /**
  * Sección principal de gestión de granja
@@ -305,7 +306,7 @@ const FarmSection: React.FC = () => {
                             Rol: {invitation.role}
                           </p>
                           <p className="text-xs text-gray-500">
-                            Expira: {invitation.expiresAt.toLocaleDateString()}
+                            Expira: {formatDate(toDate(invitation.expiresAt))}
                           </p>
                         </div>
                       ))}

@@ -105,11 +105,11 @@ const UserImpersonationSelector: React.FC<UserImpersonationSelectorProps> = ({
               <p className="text-sm text-gray-600">{targetUser.email}</p>
             </div>
             <div className="text-right">
-              <span
+              {/* <span
                 className={`inline-block w-2 h-2 rounded-full ${
                   targetUser.isActive ? 'bg-green-500' : 'bg-gray-400'
                 }`}
-              ></span>
+              ></span> */}
             </div>
           </div>
         ))}

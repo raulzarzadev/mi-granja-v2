@@ -30,7 +30,6 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
       onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
     >
       <AnimalDetailRow animal={animal} />
-
       <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
         {animal.age && (
           <div>
@@ -46,7 +45,6 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
           </div>
         )}
       </div>
-
       {animal.notes && (
         <div className="mt-3 p-2 bg-gray-50 rounded text-sm text-gray-700">
           {animal.notes.length > 60
@@ -54,9 +52,8 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
             : animal.notes}
         </div>
       )}
-
       {/* Indicador de acción de admin */}
-      <AdminActionIndicator data={animal} className="mt-2" />
+      <AdminActionIndicator data={{}} className="mt-2" />
     </div>
   )
 }

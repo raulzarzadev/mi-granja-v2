@@ -115,7 +115,6 @@ export const useFarmAreas = () => {
     toggleAreaStatus,
     getActiveAreas,
     getAreasByType,
-    getAreaStats,
-    refreshAreas: loadAreas
+    getAreaStats
   }
 }

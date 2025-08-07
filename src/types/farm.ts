@@ -15,7 +15,7 @@ export interface Farm {
       lng: number
     }
   }
-  areas: FarmArea[]
+  areas?: FarmArea[]
   collaborators?: FarmCollaborator[]
   createdAt: AppDate
   updatedAt: AppDate

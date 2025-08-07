@@ -23,7 +23,8 @@ export const useFarmAreas = () => {
       ...areaData,
       id: crypto.randomUUID(),
       createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
+      farmId
     }
 
     try {

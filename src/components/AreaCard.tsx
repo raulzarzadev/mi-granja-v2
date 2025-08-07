@@ -12,7 +12,7 @@ interface AreaCardProps {
  * Tarjeta para mostrar información de un área de la granja
  */
 const AreaCard: React.FC<AreaCardProps> = ({ area }) => {
-  const { toggleAreaStatus } = useFarmAreas(area.farmId)
+  const { toggleAreaStatus } = useFarmAreas()
   const areaType = FARM_AREA_TYPES.find((type) => type.value === area.type)
 
   const handleToggleStatus = async (e: React.MouseEvent) => {

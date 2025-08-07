@@ -199,11 +199,11 @@ export const useFarmCRUD = () => {
     try {
       const farm = farms.find((f) => f.id === farmId)
       if (!farm) throw new Error('Granja no encontrada')
-
-      const areaIndex = farm.areas.findIndex((a) => a.id === areaId)
+      const farmAreas = farm?.areas || []
+      const areaIndex = farmAreas.findIndex((a) => a.id === areaId)
       if (areaIndex === -1) throw new Error('Área no encontrada')
 
-      const updatedAreas = [...farm.areas]
+      const updatedAreas = [...farmAreas]
       updatedAreas[areaIndex] = {
         ...updatedAreas[areaIndex],
         ...updates,
@@ -235,8 +235,9 @@ export const useFarmCRUD = () => {
     try {
       const farm = farms.find((f) => f.id === farmId)
       if (!farm) throw new Error('Granja no encontrada')
+      const farmAreas = farm?.areas || []
 
-      const areaToRemove = farm.areas.find((a) => a.id === areaId)
+      const areaToRemove = farmAreas.find((a) => a.id === areaId)
       if (!areaToRemove) throw new Error('Área no encontrada')
 
       const farmRef = doc(db, 'farms', farmId)
@@ -362,16 +363,15 @@ export const useFarmCRUD = () => {
   const getAreaStats = (farmId?: string) => {
     const targetFarm = farmId ? farms.find((f) => f.id === farmId) : currentFarm
     if (!targetFarm) return { total: 0, active: 0, inactive: 0, byType: {} }
-
-    const areas = targetFarm.areas
+    const farmAreas = targetFarm?.areas || []
     const stats = {
-      total: areas.length,
-      active: areas.filter((a) => a.isActive).length,
-      inactive: areas.filter((a) => !a.isActive).length,
+      total: farmAreas.length,
+      active: farmAreas.filter((a) => a.isActive).length,
+      inactive: farmAreas.filter((a) => !a.isActive).length,
       byType: {} as Record<string, number>
     }
 
-    areas.forEach((area) => {
+    farmAreas.forEach((area) => {
       stats.byType[area.type] = (stats.byType[area.type] || 0) + 1
     })
 

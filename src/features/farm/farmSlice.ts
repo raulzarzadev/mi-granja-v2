@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { Farm } from '@/types/farm'
+import { Farm, FarmArea } from '@/types/farm'
 
 interface FarmState {
   farms: Farm[]
@@ -93,13 +93,13 @@ const farmSlice = createSlice({
     // Acciones para áreas dentro de la granja
     addAreaToFarm: (
       state,
-      action: PayloadAction<{ farmId: string; area: Farm['areas'][0] }>
+      action: PayloadAction<{ farmId: string; area: FarmArea }>
     ) => {
       const { farmId, area } = action.payload
       const farm = state.farms.find((f) => f.id === farmId)
-
+      const farmAreas = farm?.areas || []
       if (farm) {
-        farm.areas.push(area)
+        farmAreas.push(area)
         farm.updatedAt = new Date()
 
         // Si es la granja actual, actualizar también
@@ -114,16 +114,16 @@ const farmSlice = createSlice({
       action: PayloadAction<{
         farmId: string
         areaId: string
-        updates: Partial<Farm['areas'][0]>
+        updates: Partial<FarmArea>
       }>
     ) => {
       const { farmId, areaId, updates } = action.payload
       const farm = state.farms.find((f) => f.id === farmId)
-
+      const farmAreas = farm?.areas || []
       if (farm) {
-        const areaIndex = farm.areas.findIndex((a) => a.id === areaId)
+        const areaIndex = farmAreas.findIndex((a) => a.id === areaId)
         if (areaIndex !== -1) {
-          farm.areas[areaIndex] = { ...farm.areas[areaIndex], ...updates }
+          farmAreas[areaIndex] = { ...farmAreas[areaIndex], ...updates }
           farm.updatedAt = new Date()
 
           // Si es la granja actual, actualizar también
@@ -140,9 +140,9 @@ const farmSlice = createSlice({
     ) => {
       const { farmId, areaId } = action.payload
       const farm = state.farms.find((f) => f.id === farmId)
-
+      const farmAreas = farm?.areas || []
       if (farm) {
-        farm.areas = farm.areas.filter((a) => a.id !== areaId)
+        farm.areas = farmAreas.filter((a) => a.id !== areaId)
         farm.updatedAt = new Date()
 
         // Si es la granja actual, actualizar también

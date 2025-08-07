@@ -18,6 +18,7 @@ import {
   FarmInvitation,
   DEFAULT_PERMISSIONS
 } from '@/types/farm'
+import { toDate } from '@/lib/dates'
 
 export const useFarmCollaborators = (farmId?: string) => {
   const [collaborators, setCollaborators] = useState<FarmCollaborator[]>([])
@@ -143,7 +144,7 @@ export const useFarmCollaborators = (farmId?: string) => {
         permissions: invitation.permissions,
         isActive: true,
         invitedBy: invitation.invitedBy,
-        invitedAt: Timestamp.fromDate(invitation.createdAt),
+        invitedAt: Timestamp.fromDate(toDate(invitation.createdAt)),
         acceptedAt: Timestamp.now(),
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()

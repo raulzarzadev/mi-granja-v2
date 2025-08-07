@@ -29,6 +29,7 @@ const AdminActionIndicator: React.FC<AdminActionIndicatorProps> = ({
   data,
   className = ''
 }) => {
+  console.log({ data })
   if (!isAdminAction(data)) {
     return null
   }

@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Farm } from '@/types/farm'
+import { formatDate, toDate } from '@/lib/dates'
 
 interface FarmCardProps {
   farm: Farm
@@ -35,7 +36,7 @@ const FarmCard: React.FC<FarmCardProps> = ({ farm }) => {
       )}
 
       <div className="text-xs text-gray-500">
-        Creada: {farm.createdAt.toLocaleDateString()}
+        Creada: {formatDate(toDate(farm.createdAt))}
       </div>
     </div>
   )
