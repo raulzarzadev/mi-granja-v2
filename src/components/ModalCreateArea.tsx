@@ -5,16 +5,15 @@ import { Modal } from './Modal'
 import { useModal } from '@/hooks/useModal'
 import { useFarmAreas } from '@/hooks/useFarmAreas'
 import { FARM_AREA_TYPES } from '@/types/farm'
-import { useFarms } from '@/hooks/useFarms'
+import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 
 /**
  * Modal para crear una nueva área de la granja
  */
 const ModalCreateArea: React.FC = () => {
   const { isOpen, openModal, closeModal } = useModal()
-  const { currentFarm } = useFarms()
-
-  const { createArea } = useFarmAreas(currentFarm?.id)
+  const { currentFarm } = useFarmCRUD()
+  const { createArea } = useFarmAreas()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -30,10 +29,14 @@ const ModalCreateArea: React.FC = () => {
     if (!formData.name.trim()) {
       return
     }
+    if (!currentFarm?.id) {
+      console.error('No current farm selected')
+      return
+    }
 
     setIsLoading(true)
     try {
-      await createArea({
+      await createArea(currentFarm?.id, {
         name: formData.name.trim(),
         type: formData.type,
         description: formData.description.trim() || '',

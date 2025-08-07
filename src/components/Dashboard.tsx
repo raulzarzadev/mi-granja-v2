@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
-import { useAnimals } from '@/hooks/useAnimals'
 import Navbar from '@/components/Navbar'
 import AnimalCard from '@/components/AnimalCard'
 import BreedingSection from '@/components/BreedingSection'
@@ -13,6 +12,7 @@ import { useReminders } from '@/hooks/useReminders'
 import ModalAnimalForm from './ModalAnimalForm'
 import ModalAnimalDetails from './ModalAnimalDetails'
 import Tabs from '@/components/Tabs'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 
 /**
  * Dashboard principal de la aplicación
@@ -20,12 +20,13 @@ import Tabs from '@/components/Tabs'
  */
 const Dashboard: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth)
+
   const {
     animals,
-    isLoading: isLoadingAnimals,
-    getStats,
-    filterAnimals
-  } = useAnimals()
+    animalsStats,
+    animalsFiltered,
+    isLoading: isLoadingAnimals
+  } = useAnimalCRUD()
 
   const {
     reminders,
@@ -43,8 +44,9 @@ const Dashboard: React.FC = () => {
     search: ''
   })
 
-  const stats = getStats()
-  const filteredAnimals = filterAnimals(filters)
+  const stats = animalsStats()
+
+  const filteredAnimals = animalsFiltered(filters)
   const formatStatLabel = (key: string) => {
     switch (key) {
       case 'oveja':

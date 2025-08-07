@@ -4,12 +4,10 @@ import { useState } from 'react'
 import { doc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { FarmArea } from '@/types/farm'
-import { useFarms } from './useFarms'
 import { useFarmCRUD } from './useFarmCRUD'
 
 export const useFarmAreas = () => {
-  const { currentFarm } = useFarms()
-  const { updateFarm } = useFarmCRUD()
+  const { updateFarm, currentFarm } = useFarmCRUD()
   const [areas, setAreas] = useState<FarmArea[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

@@ -10,21 +10,16 @@ import ModalInviteCollaborator from './ModalInviteCollaborator'
 import AreaCard from './AreaCard'
 import CollaboratorCard from './CollaboratorCard'
 import { FARM_AREA_TYPES } from '@/types/farm'
-import { useFarms } from '@/hooks/useFarms'
+import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 
 /**
  * Sección principal de gestión de granja
  * Permite crear granja, gestionar áreas y colaboradores
  */
 const FarmSection: React.FC = () => {
-  const { farms, currentFarm, isLoading: farmsLoading } = useFarms()
+  const { farms, currentFarm, isLoading: farmsLoading } = useFarmCRUD()
 
-  console.log({ farms })
-  const {
-    areas,
-    isLoading: areasLoading,
-    getAreaStats
-  } = useFarmAreas(currentFarm?.id)
+  const { areas, isLoading: areasLoading, getAreaStats } = useFarmAreas()
 
   const {
     collaborators,
@@ -246,7 +241,6 @@ const FarmSection: React.FC = () => {
                 <p className="text-gray-600 mb-4">
                   Crea áreas para organizar mejor tu granja
                 </p>
-                <ModalCreateArea />
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

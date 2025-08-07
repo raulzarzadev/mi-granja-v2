@@ -5,8 +5,8 @@ import { Reminder } from '@/types'
 import { Modal } from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
 import ReminderForm from '@/components/ReminderForm'
-import { useAnimals } from '@/hooks/useAnimals'
 import { useReminders } from '@/hooks/useReminders'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 
 interface ModalReminderFormProps {
   initialData?: Partial<Reminder>
@@ -19,7 +19,7 @@ interface ModalReminderFormProps {
 const ModalReminderForm: React.FC<ModalReminderFormProps> = ({
   initialData
 }) => {
-  const { animals } = useAnimals()
+  const { animals } = useAnimalCRUD()
   const { createReminder } = useReminders()
   const { isOpen, openModal, closeModal } = useModal()
 

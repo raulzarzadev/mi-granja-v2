@@ -3,13 +3,15 @@ import { animalsReducer } from './animals/animalsSlice'
 import { authReducer } from './auth/authSlice'
 import { breedingReducer } from './breeding/breedingSlice'
 import { remindersReducer } from './reminders/remindersSlice'
+import { farmReducer } from './farm/farmSlice'
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     animals: animalsReducer,
     breeding: breedingReducer,
-    reminders: remindersReducer
+    reminders: remindersReducer,
+    farm: farmReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

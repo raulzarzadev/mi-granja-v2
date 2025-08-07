@@ -1,3 +1,5 @@
+import { AppDate } from './date'
+
 export interface Farm {
   id: string
   name: string
@@ -15,8 +17,8 @@ export interface Farm {
   }
   areas: FarmArea[]
   collaborators?: FarmCollaborator[]
-  createdAt: Date
-  updatedAt: Date
+  createdAt: AppDate
+  updatedAt: AppDate
 }
 
 export interface FarmArea {
@@ -28,8 +30,8 @@ export interface FarmArea {
   capacity?: number | null
   isActive: boolean
   notes?: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt: AppDate
+  updatedAt: AppDate
 }
 
 export interface FarmCollaborator {
@@ -40,11 +42,11 @@ export interface FarmCollaborator {
   permissions: FarmPermission[]
   isActive: boolean
   invitedBy: string
-  invitedAt: Date
-  acceptedAt?: Date
+  invitedAt: AppDate
+  acceptedAt?: AppDate
   notes?: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt: AppDate
+  updatedAt: AppDate
 }
 
 export interface FarmPermission {
@@ -66,9 +68,9 @@ export interface FarmInvitation {
   permissions: FarmPermission[]
   invitedBy: string
   status: 'pending' | 'accepted' | 'rejected' | 'expired'
-  expiresAt: Date
-  createdAt: Date
-  updatedAt: Date
+  expiresAt: AppDate
+  createdAt: AppDate
+  updatedAt: AppDate
 }
 
 export const FARM_AREA_TYPES = [

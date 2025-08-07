@@ -6,6 +6,10 @@ import { RootState } from '@/features/store'
 /**
  * Hook personalizado para el manejo de animales
  */
+/**
+ *
+ * @deprecated use `useAnimalCRUD` en su lugar
+ */
 export const useAnimals = () => {
   const { animals, isLoading, error } = useSelector(
     (state: RootState) => state.animals

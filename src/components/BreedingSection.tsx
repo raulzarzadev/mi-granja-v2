@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useAnimals } from '@/hooks/useAnimals'
 import { useBreeding } from '@/hooks/useBreeding'
 import { BirthRecord } from '@/types'
 import BreedingCard from '@/components/BreedingCard'
@@ -24,8 +23,13 @@ const BreedingSection: React.FC = () => {
     getUpcomingBirths,
     getStats
   } = useBreedingCRUD()
-  const { create: createAnimal, remove: removeAnimal } = useAnimalCRUD()
-  const { animals } = useAnimals()
+
+  const {
+    create: createAnimal,
+    remove: removeAnimal,
+    animals
+  } = useAnimalCRUD()
+
   const { breedingRecords, isLoading } = useBreeding()
   const { deleteBreedingRecord } = useBreedingCRUD()
 

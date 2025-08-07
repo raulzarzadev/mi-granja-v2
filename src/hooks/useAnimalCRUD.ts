@@ -20,7 +20,8 @@ import { setError } from '@/features/auth/authSlice'
 import {
   addAnimal,
   updateAnimal,
-  removeAnimal
+  removeAnimal,
+  setAnimals
 } from '@/features/animals/animalsSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { Animal } from '@/types/animals'
@@ -33,6 +34,7 @@ import { useAdminActions } from '@/lib/adminActions'
 export const useAnimalCRUD = () => {
   const dispatch = useDispatch()
   const { user } = useSelector((state: RootState) => state.auth)
+  const { animals } = useSelector((state: RootState) => state.animals)
   const { wrapWithAdminMetadata } = useAdminActions()
 
   const [isLoading, setIsLoading] = useState(false)
@@ -186,7 +188,7 @@ export const useAnimalCRUD = () => {
           id: doc.id,
           ...doc.data()
         })) as Animal[]
-
+        dispatch(setAnimals(serializeObj(animals)))
         resolve(animals)
       } catch (error) {
         console.error('Error fetching user animals:', error)
@@ -200,10 +202,59 @@ export const useAnimalCRUD = () => {
     })
   }
 
+  // animasl stats =
+
+  const animalsStats = () => {
+    const stats = {
+      total: animals.length,
+      byType: {} as Record<string, number>,
+      byStage: {} as Record<string, number>,
+      byGender: {} as Record<string, number>
+    }
+
+    animals.forEach((animal) => {
+      // Por tipo
+      stats.byType[animal.type] = (stats.byType[animal.type] || 0) + 1
+
+      // Por etapa
+      stats.byStage[animal.stage] = (stats.byStage[animal.stage] || 0) + 1
+
+      // Por género
+      stats.byGender[animal.gender] = (stats.byGender[animal.gender] || 0) + 1
+    })
+
+    return stats
+  }
+
+  const animalsFiltered = (filters: {
+    type?: string
+    stage?: string
+    gender?: string
+    search?: string
+  }) => {
+    return animals.filter((animal) => {
+      if (filters.type && animal.type !== filters.type) return false
+      if (filters.stage && animal.stage !== filters.stage) return false
+      if (filters.gender && animal.gender !== filters.gender) return false
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase()
+        return (
+          animal.animalNumber.toLowerCase().includes(searchLower) ||
+          animal.notes?.toLowerCase().includes(searchLower) ||
+          false
+        )
+      }
+      return true
+    })
+  }
+
   // Migrar animales al nuevo esquema de animalNumber
 
   return {
     isLoading,
+    animals,
+    animalsFiltered,
+    animalsStats,
     create,
     update,
     remove,

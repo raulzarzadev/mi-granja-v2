@@ -1,61 +1,40 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  Timestamp
-} from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { Timestamp } from 'firebase/firestore'
 import { FarmArea } from '@/types/farm'
-import { useFarms } from './useFarms'
 import { useFarmCRUD } from './useFarmCRUD'
 
 export const useFarmAreas = () => {
-  const { farms } = useFarms()
-  const { updateFarm } = useFarmCRUD()
-  const [areas, setAreas] = useState<FarmArea[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { updateFarm, currentFarm } = useFarmCRUD()
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const areas = currentFarm?.areas || []
 
   const createArea = async (
     farmId: string,
     areaData: Omit<FarmArea, 'id' | 'farmId' | 'createdAt' | 'updatedAt'>
   ) => {
     if (!farmId) throw new Error('ID de granja requerido')
+    setIsLoading(true)
 
     const newArea = {
       ...areaData,
-      farmId,
+      id: crypto.randomUUID(),
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now()
     }
 
     try {
-      const docRef = await addDoc(collection(db, 'farmAreas'), newArea)
-      const createdArea = {
-        id: docRef.id,
-        ...newArea,
-        createdAt: new Date(newArea.createdAt.toMillis()),
-        updatedAt: new Date(newArea.updatedAt.toMillis())
-      }
-
-      setAreas((prev) =>
-        [...prev, createdArea].sort((a, b) => a.name.localeCompare(b.name))
-      )
-
       // Actualizar granja con nueva área
-      const updatedFarm = farms.find((f) => f.id === farmId)
-      if (updatedFarm) {
-        updateFarm(farmId, {
-          areas: [...(updatedFarm.areas || []), createdArea]
-        })
-      }
+      const currentFarmAreas = currentFarm?.areas || []
 
-      return createdArea
+      updateFarm(farmId, {
+        areas: [...currentFarmAreas, newArea]
+      })
+
+      return newArea
     } catch (error) {
       console.error('Error creating farm area:', error)
       setError('Error al crear el área')
@@ -65,48 +44,71 @@ export const useFarmAreas = () => {
     }
   }
 
-  const updateArea = async (
-    areaId: string,
+  const updateArea = async ({
+    areaId,
+    farmId,
+    updates
+  }: {
+    areaId: string
+    farmId: string
     updates: Partial<Omit<FarmArea, 'id' | 'farmId' | 'createdAt'>>
-  ) => {
+  }) => {
+    setIsLoading(true)
     try {
-      const areaRef = doc(db, 'farmAreas', areaId)
-      const updateData = {
+      const currentAreas = currentFarm?.areas || []
+      const areaIndex = currentAreas.findIndex((a) => a.id === areaId)
+      if (areaIndex === -1) {
+        throw new Error('Área no encontrada')
+      }
+      const updatedArea = {
+        ...currentAreas[areaIndex],
         ...updates,
         updatedAt: Timestamp.now()
       }
-
-      await updateDoc(areaRef, updateData)
-
-      setAreas((prev) =>
-        prev
-          .map((area) =>
-            area.id === areaId
-              ? { ...area, ...updates, updatedAt: new Date() }
-              : area
-          )
-          .sort((a, b) => a.name.localeCompare(b.name))
-      )
+      const updatedAreas = [...currentAreas]
+      updatedAreas[areaIndex] = updatedArea
+      await updateFarm(farmId, { areas: updatedAreas })
+      return updatedArea
     } catch (error) {
       console.error('Error updating farm area:', error)
       throw new Error('Error al actualizar el área')
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const deleteArea = async (areaId: string) => {
+  const deleteArea = async ({
+    farmId,
+    areaId
+  }: {
+    farmId: string
+    areaId: string
+  }) => {
     try {
-      await deleteDoc(doc(db, 'farmAreas', areaId))
-      setAreas((prev) => prev.filter((area) => area.id !== areaId))
+      setIsLoading(true)
+      const currentAreas = currentFarm?.areas || []
+      const areaIndex = currentAreas.findIndex((a) => a.id === areaId)
+      if (areaIndex === -1) {
+        throw new Error('Área no encontrada')
+      }
+      const updatedAreas = currentAreas.filter((a) => a.id !== areaId)
+      await updateFarm(farmId, { areas: updatedAreas })
     } catch (error) {
       console.error('Error deleting farm area:', error)
       throw new Error('Error al eliminar el área')
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const toggleAreaStatus = async (areaId: string) => {
     const area = areas.find((a) => a.id === areaId)
     if (area) {
-      await updateArea(areaId, { isActive: !area.isActive })
+      await updateArea({
+        areaId,
+        farmId: currentFarm?.id || '',
+        updates: { isActive: !area.isActive }
+      })
     }
   }
 

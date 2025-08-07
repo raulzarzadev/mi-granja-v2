@@ -1,41 +1,41 @@
 'use client'
 
 import React, { useEffect } from 'react'
-import { Provider, useDispatch } from 'react-redux'
-import { store } from '@/features/store'
+import { Provider, useDispatch, useSelector } from 'react-redux'
+import { RootState, store } from '@/features/store'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth, db } from '@/lib/firebase'
 import { setUser } from '@/features/auth/authSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
-
-import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { setAnimals } from '@/features/animals/animalsSlice'
-import { useBreeding } from '@/hooks/useBreeding'
 import { doc, getDoc } from 'firebase/firestore'
 import { User } from '@/types'
-import { useFarms } from '@/hooks/useFarms'
+import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 
 interface ProvidersProps {
   children: React.ReactNode
 }
 
 const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
-  const { farms } = useFarms()
-  console.log({ farms })
-
-  const { getUserAnimals } = useAnimalCRUD()
   const dispatch = useDispatch()
+
+  //* ==================================== AUTH INITIALIZER
+  const user = useSelector((state: RootState) => state.auth.user)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const userFound = await getDoc(doc(db, 'users', firebaseUser.uid))
-        const userData = userFound.data() as User
-        const serializedUser = serializeObj({
-          ...userData,
-          id: firebaseUser.uid
-        })
-        dispatch(setUser(serializedUser))
+        try {
+          const userFound = await getDoc(doc(db, 'users', firebaseUser.uid))
+          const userData = userFound.data() as User
+          const serializedUser = serializeObj({
+            ...userData,
+            id: firebaseUser.uid
+          })
+          dispatch(setUser(serializedUser))
+        } catch (error) {
+          console.error('Error loading user data:', error)
+        }
       } else {
         dispatch(setUser(null))
       }
@@ -43,19 +43,21 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
     return unsubscribe
   }, [dispatch])
 
+  //* ==================================== FARM INITIALIZER
+  const { loadUserFarms } = useFarmCRUD()
   useEffect(() => {
-    getUserAnimals()
-      .then((animals) => {
-        dispatch(setAnimals(serializeObj(animals)))
-      })
-      .catch((error) => {
-        console.error('Error fetching user animals:', error)
-      })
-  }, [dispatch, getUserAnimals])
+    if (user) {
+      loadUserFarms()
+    }
+  }, [user])
 
-  // Initialize breeding records
-  // This will trigger the useBreeding hook to fetch breeding records
-  useBreeding()
+  //* ==================================== FARM ANIMALS INITIALIZER
+  const { getUserAnimals } = useAnimalCRUD()
+  useEffect(() => {
+    if (user) {
+      getUserAnimals()
+    }
+  }, [user])
 
   return <>{children}</>
 }
