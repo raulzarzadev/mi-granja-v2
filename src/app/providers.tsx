@@ -13,12 +13,16 @@ import { setAnimals } from '@/features/animals/animalsSlice'
 import { useBreeding } from '@/hooks/useBreeding'
 import { doc, getDoc } from 'firebase/firestore'
 import { User } from '@/types'
+import { useFarms } from '@/hooks/useFarms'
 
 interface ProvidersProps {
   children: React.ReactNode
 }
 
 const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
+  const { farms } = useFarms()
+  console.log({ farms })
+
   const { getUserAnimals } = useAnimalCRUD()
   const dispatch = useDispatch()
 

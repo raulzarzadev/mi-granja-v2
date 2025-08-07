@@ -4,6 +4,7 @@ export interface User {
   name?: string
   farmName?: string
   roles: ('admin' | 'farmer' | 'vet')[]
+  currentFarmId?: string // ID de la granja actualmente seleccionada
   createdAt: Date
 }
 
@@ -57,3 +58,6 @@ export interface BirthRecord {
   offspring: OffspringInfo[]
   notes?: string
 }
+
+// Re-exportar tipos de granja
+export * from './farm'

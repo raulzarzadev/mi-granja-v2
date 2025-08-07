@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar'
 import AnimalCard from '@/components/AnimalCard'
 import BreedingSection from '@/components/BreedingSection'
 import ReminderCard from '@/components/ReminderCard'
+import FarmSection from '@/components/FarmSection'
 import { useReminders } from '@/hooks/useReminders'
 import ModalAnimalForm from './ModalAnimalForm'
 import ModalAnimalDetails from './ModalAnimalDetails'
@@ -44,7 +45,6 @@ const Dashboard: React.FC = () => {
 
   const stats = getStats()
   const filteredAnimals = filterAnimals(filters)
-  console.log({ stats })
   const formatStatLabel = (key: string) => {
     switch (key) {
       case 'oveja':
@@ -369,6 +369,10 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       )
+    },
+    {
+      label: '🚜 Granja',
+      content: <FarmSection />
     }
   ]
 
