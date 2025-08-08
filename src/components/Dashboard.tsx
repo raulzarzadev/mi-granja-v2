@@ -387,17 +387,6 @@ const Dashboard: React.FC = () => {
       <FarmSwitcherBar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-2">
-            Granja actual:{' '}
-            <span className="font-medium">
-              {currentFarm?.name || 'sin granja'}
-            </span>
-          </p>
-        </div>
-
         {/* Si no hay granjas, priorizar creación/selección */}
         {farms.length === 0 ? <FarmSection /> : <Tabs tabs={tabs} />}
       </div>

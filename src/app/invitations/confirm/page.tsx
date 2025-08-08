@@ -136,7 +136,8 @@ export default function InvitationConfirmPage() {
         // Redirigir a la granja tras un breve feedback visual
         setTimeout(() => {
           try {
-            router.replace(`/farms/${data.farmId}`)
+            // router.replace(`/farms/${data.farmId}`)
+            router.replace('/')
           } catch {
             router.push('/')
           }
