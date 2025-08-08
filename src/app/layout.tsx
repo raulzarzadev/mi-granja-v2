@@ -15,7 +15,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Mi Granja - Gestión de Ganado',
-  description: 'Aplicación para gestionar tu ganado de manera eficiente'
+  description: 'Aplicación para gestionar tu ganado de manera eficiente',
+  icons: {
+    icon: [{ url: '/logo/logo-migranja-verde.svg', type: 'image/svg+xml' }]
+  }
 }
 
 export default function RootLayout({

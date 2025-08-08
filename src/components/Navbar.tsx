@@ -6,7 +6,6 @@ import { useSelector } from 'react-redux'
 import { useAuth } from '@/hooks/useAuth'
 import { RootState } from '@/features/store'
 import { isUserAdmin } from '@/lib/userUtils'
-import UserImpersonationSelector from './UserImpersonationSelector'
 import { ModalUseImpersonationSelector } from './ModalUseImpersonationSelector'
 import BrandLogo from '@/components/BrandLogo'
 
@@ -37,7 +36,7 @@ const Navbar: React.FC = () => {
           <div className="flex items-center space-x-4">
             <div className="flex-shrink-0">
               <Link href="/" aria-label="Inicio">
-                <BrandLogo variant="blanco" width={140} height={40} />
+                <BrandLogo variant="blanco" height={70} width={70} />
               </Link>
             </div>
 

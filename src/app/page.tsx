@@ -25,9 +25,6 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="w-full max-w-md">
-          <div className="flex justify-center mb-6">
-            <BrandLogo variant="verde" width={200} height={54} />
-          </div>
           <AuthForm />
         </div>
       </div>
