@@ -26,7 +26,9 @@ const FarmSection: React.FC = () => {
     collaborators,
     invitations,
     isLoading: collaboratorsLoading,
-    getCollaboratorStats
+    getCollaboratorStats,
+    cancelInvitation,
+    deleteInvitation
   } = useFarmCollaborators(currentFarm?.id)
 
   const [activeSubTab, setActiveSubTab] = useState<
@@ -308,6 +310,44 @@ const FarmSection: React.FC = () => {
                           <p className="text-xs text-gray-500">
                             Expira: {formatDate(toDate(invitation.expiresAt))}
                           </p>
+                          <div className="mt-3 flex gap-2">
+                            <button
+                              className="text-xs px-3 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100"
+                              onClick={async () => {
+                                if (
+                                  confirm(
+                                    `¿Cancelar la invitación a ${invitation.email}?`
+                                  )
+                                ) {
+                                  try {
+                                    await cancelInvitation(invitation.id)
+                                  } catch (e) {
+                                    console.error(e)
+                                  }
+                                }
+                              }}
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              className="text-xs px-3 py-1 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
+                              onClick={async () => {
+                                if (
+                                  confirm(
+                                    `¿Eliminar definitivamente la invitación a ${invitation.email}? Esta acción no se puede deshacer.`
+                                  )
+                                ) {
+                                  try {
+                                    await deleteInvitation(invitation.id)
+                                  } catch (e) {
+                                    console.error(e)
+                                  }
+                                }
+                              }}
+                            >
+                              Eliminar
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>

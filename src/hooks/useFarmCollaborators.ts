@@ -234,6 +234,17 @@ export const useFarmCollaborators = (farmId?: string) => {
     }
   }
 
+  // Eliminación definitiva de la invitación en Firestore
+  const deleteInvitation = async (invitationId: string) => {
+    try {
+      await deleteDoc(doc(db, 'farmInvitations', invitationId))
+      setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId))
+    } catch (error) {
+      console.error('Error deleting invitation:', error)
+      throw new Error('Error al eliminar la invitación')
+    }
+  }
+
   const getActiveCollaborators = () => collaborators.filter((c) => c.isActive)
   const getPendingInvitations = () =>
     invitations.filter(
@@ -266,6 +277,7 @@ export const useFarmCollaborators = (farmId?: string) => {
     updateCollaborator,
     removeCollaborator,
     cancelInvitation,
+    deleteInvitation,
     getActiveCollaborators,
     getPendingInvitations,
     getCollaboratorStats,
