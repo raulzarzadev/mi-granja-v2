@@ -10,6 +10,7 @@ import {
   ExampleModalAnimalForm,
   ExampleModalReminderForm
 } from '@/components/examples/ModalExamples'
+import EmailTestComponent from '@/components/EmailTestComponent'
 
 /**
  * Página de demostración de componentes UI
@@ -85,6 +86,8 @@ export default function UIShowcasePage() {
               </div>
             </div>
           </section>
+
+          <EmailTestComponent />
 
           {/* Sección: Modales de Negocio */}
           <section>
