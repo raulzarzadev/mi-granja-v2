@@ -4,6 +4,7 @@ import React from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import AuthForm from '@/features/auth/components/AuthForm'
+import BrandLogo from '@/components/BrandLogo'
 import Dashboard from '@/components/Dashboard'
 
 export default function Home() {
@@ -21,7 +22,16 @@ export default function Home() {
 
   // Si el usuario no está autenticado, mostrar formulario de login
   if (!user) {
-    return <AuthForm />
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-md">
+          <div className="flex justify-center mb-6">
+            <BrandLogo variant="verde" width={200} height={54} />
+          </div>
+          <AuthForm />
+        </div>
+      </div>
+    )
   }
 
   // Si el usuario está autenticado, mostrar dashboard

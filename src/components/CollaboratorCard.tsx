@@ -31,7 +31,9 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
     >
       <div className="flex items-start justify-between mb-3 gap-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <span className="text-2xl flex-shrink-0">{roleInfo?.icon || '👤'}</span>
+          <span className="text-2xl flex-shrink-0">
+            {roleInfo?.icon || '👤'}
+          </span>
           <div className="min-w-0">
             <h4
               className="text-lg font-semibold text-gray-900 truncate"

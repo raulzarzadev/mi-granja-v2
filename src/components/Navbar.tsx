@@ -8,6 +8,7 @@ import { RootState } from '@/features/store'
 import { isUserAdmin } from '@/lib/userUtils'
 import UserImpersonationSelector from './UserImpersonationSelector'
 import { ModalUseImpersonationSelector } from './ModalUseImpersonationSelector'
+import BrandLogo from '@/components/BrandLogo'
 
 /**
  * Componente de navegación principal
@@ -35,7 +36,9 @@ const Navbar: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center space-x-4">
             <div className="flex-shrink-0">
-              <span className="text-xl font-bold">🐄</span>
+              <Link href="/" aria-label="Inicio">
+                <BrandLogo variant="blanco" width={140} height={40} />
+              </Link>
             </div>
 
             {/* Enlaces para admins */}
