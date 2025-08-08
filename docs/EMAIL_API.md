@@ -11,7 +11,15 @@ Agrega en tu archivo `.env.local`:
 ```env
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxx
 NEXT_PUBLIC_APP_URL=https://tu-dominio.com
+# Variables de prueba (para EmailTestComponent)
+RESEND_TEST_EMAIL=tu_correo_de_prueba@ejemplo.com
+RESEND_TEST_NAME=Usuario de Prueba
 ```
+
+Notas:
+
+- RESEND_TEST_EMAIL y RESEND_TEST_NAME se usan en el componente `EmailTestComponent` para disparar envíos de prueba sin hardcodear correos.
+- Puedes omitirlas; en ese caso el componente usará valores por defecto (`test@example.com` y `Usuario`).
 
 ### 2. Verificación de dominio
 
