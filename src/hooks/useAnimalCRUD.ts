@@ -35,6 +35,7 @@ export const useAnimalCRUD = () => {
   const dispatch = useDispatch()
   const { user } = useSelector((state: RootState) => state.auth)
   const { animals } = useSelector((state: RootState) => state.animals)
+  const { currentFarm } = useSelector((state: RootState) => state.farm)
   const { wrapWithAdminMetadata } = useAdminActions()
 
   const [isLoading, setIsLoading] = useState(false)
@@ -53,6 +54,7 @@ export const useAnimalCRUD = () => {
       let newAnimal = {
         ...animalData,
         farmerId: user.id,
+        farmId: currentFarm?.id,
         createdAt: now,
         updatedAt: now
       }
@@ -176,9 +178,12 @@ export const useAnimalCRUD = () => {
         return resolve([])
       }
 
+      const constraints = [where('farmerId', '==', user.id)]
+      if (currentFarm?.id)
+        constraints.push(where('farmId', '==', currentFarm.id))
       const q = query(
         collection(db, 'animals'),
-        where('farmerId', '==', user.id),
+        ...constraints,
         orderBy('createdAt', 'desc')
       )
 

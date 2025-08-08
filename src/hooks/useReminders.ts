@@ -18,6 +18,7 @@ import { Reminder } from '@/types'
 
 export const useReminders = () => {
   const { user } = useSelector((state: RootState) => state.auth)
+  const { currentFarm } = useSelector((state: RootState) => state.farm)
   const [reminders, setReminders] = useState<Reminder[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -30,9 +31,11 @@ export const useReminders = () => {
       return
     }
 
+    const constraints = [where('farmerId', '==', user.id)]
+    if (currentFarm?.id) constraints.push(where('farmId', '==', currentFarm.id))
     const q = query(
       collection(db, 'reminders'),
-      where('farmerId', '==', user.id),
+      ...constraints,
       orderBy('dueDate', 'asc')
     )
 
@@ -59,7 +62,7 @@ export const useReminders = () => {
     })
 
     return () => unsubscribe()
-  }, [user])
+  }, [user, currentFarm?.id])
 
   // Crear recordatorio
   const createReminder = async (
@@ -72,6 +75,7 @@ export const useReminders = () => {
       const now = Timestamp.now()
       const docData = {
         farmerId: user.id,
+        farmId: currentFarm?.id,
         animalNumber: data.animalNumber || null,
         title: data.title,
         description: data.description || '',

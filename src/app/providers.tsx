@@ -53,11 +53,13 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
 
   //* ==================================== FARM ANIMALS INITIALIZER
   const { getUserAnimals } = useAnimalCRUD()
+  const currentFarm = useSelector((state: RootState) => state.farm.currentFarm)
   useEffect(() => {
     if (user) {
       getUserAnimals()
     }
-  }, [user])
+    // también cuando cambia la granja actual
+  }, [user, currentFarm?.id])
 
   return <>{children}</>
 }

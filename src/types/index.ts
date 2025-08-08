@@ -29,6 +29,7 @@ export interface MilkProduction {
 export interface Reminder {
   id: string
   farmerId: string
+  farmId?: string
   animalNumber?: string
   title: string
   description: string

@@ -1,6 +1,4 @@
 'use client'
-
-import { useEffect, useCallback } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '@/features/store'
 import {
@@ -157,6 +155,40 @@ export const useFarmCRUD = () => {
   // Cambiar granja actual
   const switchFarm = (farmId: string) => {
     dispatch(setCurrentFarm(farmId))
+  }
+
+  // Cargar una granja por ID (aunque no seas owner) y cambiar contexto
+  const loadAndSwitchFarm = async (farmId: string) => {
+    try {
+      // Si ya está cargada, solo cambiar
+      const existing = farms.find((f) => f.id === farmId)
+      if (existing) {
+        dispatch(setCurrentFarm(farmId))
+        return existing
+      }
+
+      const farmDoc = await getDocs(
+        query(collection(db, 'farms'), where('__name__', '==', farmId))
+      )
+      if (farmDoc.empty) throw new Error('Granja no encontrada')
+      const d = farmDoc.docs[0]
+      const farm = {
+        id: d.id,
+        ...d.data(),
+        areas: d.data().areas || [],
+        collaborators: d.data().collaborators || [],
+        createdAt: d.data().createdAt?.toDate() || new Date(),
+        updatedAt: d.data().updatedAt?.toDate() || new Date()
+      } as Farm
+
+      // Añadir y seleccionar
+      dispatch(serializeObj(addFarm(farm)))
+      dispatch(setCurrentFarm(farmId))
+      return farm
+    } catch (error) {
+      console.error('Error cargando granja por ID:', error)
+      throw error
+    }
   }
 
   // OPERACIONES DE ÁREAS
@@ -411,6 +443,7 @@ export const useFarmCRUD = () => {
     updateFarm,
     deleteFarm,
     switchFarm,
+    loadAndSwitchFarm,
 
     loadUserFarms,
 

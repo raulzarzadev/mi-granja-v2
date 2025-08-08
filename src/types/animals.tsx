@@ -1,6 +1,7 @@
 export interface Animal {
   id: string
   farmerId: string
+  farmId?: string
   animalNumber: string // ID único del animal (asignado por el granjero)
   type: AnimalType
   stage: AnimalStage

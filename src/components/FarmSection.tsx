@@ -6,19 +6,26 @@ import { useFarmCollaborators } from '@/hooks/useFarmCollaborators'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { FARM_AREA_TYPES } from '@/types/farm'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
-import ModalCreateFarm from './ModalCreateFarm'
+// import ModalCreateFarm from './ModalCreateFarm'
 import ModalCreateArea from './ModalCreateArea'
 import AreaCard from './AreaCard'
 import ModalInviteCollaborator from './ModalInviteCollaborator'
 import CollaboratorCard from './CollaboratorCard'
 import { formatDate, toDate } from '@/lib/dates'
+import { useMyInvitations } from '@/hooks/useMyInvitations'
 
 /**
  * Sección principal de gestión de granja
  * Permite crear granja, gestionar áreas y colaboradores
  */
 const FarmSection: React.FC = () => {
-  const { farms, currentFarm, isLoading: farmsLoading } = useFarmCRUD()
+  const {
+    farms,
+    currentFarm,
+    isLoading: farmsLoading,
+    switchFarm,
+    loadAndSwitchFarm
+  } = useFarmCRUD()
 
   const { areas, isLoading: areasLoading, getAreaStats } = useFarmAreas()
 
@@ -40,6 +47,9 @@ const FarmSection: React.FC = () => {
   const areaStats = getAreaStats()
   const collaboratorStats = getCollaboratorStats()
 
+  // Invitaciones del usuario actual para elegir granja si no tiene propias
+  const myInv = useMyInvitations()
+
   if (farmsLoading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -56,15 +66,89 @@ const FarmSection: React.FC = () => {
     return (
       <div className="space-y-6">
         <div className="text-center py-12">
-          <span className="text-6xl mb-4 block">🚜</span>
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">
-            ¡Bienvenido a tu granja!
-          </h3>
-          <p className="text-gray-600 mb-8 max-w-md mx-auto">
-            Para comenzar, necesitas crear tu granja. Aquí podrás gestionar
-            áreas, colaboradores y toda la información de tu operación.
-          </p>
-          <ModalCreateFarm />
+          {myInv.isLoading ? (
+            <div className="flex items-center">
+              <LoadingSpinner />
+              <span className="ml-3 text-gray-600">
+                Cargando invitaciones...
+              </span>
+            </div>
+          ) : myInv.getPending().length === 0 &&
+            myInv.getAccepted().length === 0 ? (
+            <p className="text-gray-600 text-sm">
+              No tienes invitaciones por ahora.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Aceptadas: acceso directo */}
+              {myInv.getAccepted().map((inv) => (
+                <div key={inv.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-gray-900 truncate">
+                      {inv.email}
+                    </span>
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                      Aceptada
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">Rol: {inv.role}</p>
+                  <div className="mt-3">
+                    <button
+                      className="text-sm text-blue-600 hover:underline"
+                      onClick={async () => {
+                        try {
+                          await loadAndSwitchFarm(inv.farmId)
+                        } catch (e) {
+                          console.error(e)
+                          alert('No se pudo cambiar a la granja')
+                        }
+                      }}
+                    >
+                      Ver esta granja
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {/* Pendientes: links para aceptar/rechazar */}
+              {myInv.getPending().map((inv) => (
+                <div
+                  key={inv.id}
+                  className="border rounded-lg p-4 bg-orange-50 border-orange-200"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-gray-900 truncate">
+                      {inv.email}
+                    </span>
+                    <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full">
+                      Pendiente
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">Rol: {inv.role}</p>
+                  <p className="text-xs text-gray-500">
+                    Expira: {formatDate(toDate(inv.expiresAt))}
+                  </p>
+                  <div className="mt-3 flex gap-2">
+                    {inv.token && (
+                      <a
+                        className="text-xs px-3 py-1 rounded-md bg-green-600 text-white hover:bg-green-700"
+                        href={myInv.getConfirmUrl(inv.token, 'accept')}
+                      >
+                        Aceptar
+                      </a>
+                    )}
+                    {inv.token && (
+                      <a
+                        className="text-xs px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700"
+                        href={myInv.getConfirmUrl(inv.token, 'reject')}
+                      >
+                        Rechazar
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     )
@@ -97,8 +181,7 @@ const FarmSection: React.FC = () => {
                   className="px-3 py-2 border border-gray-300 rounded-md text-sm"
                   value={currentFarm.id}
                   onChange={(e) => {
-                    // TODO: Implementar switchFarm
-                    console.log('Switch to farm:', e.target.value)
+                    switchFarm(e.target.value)
                   }}
                 >
                   {farms.map((farm) => (
