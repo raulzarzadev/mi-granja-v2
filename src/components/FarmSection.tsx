@@ -280,7 +280,6 @@ const FarmSection: React.FC = () => {
                 <p className="text-gray-600 mb-4">
                   Invita colaboradores para gestionar la granja juntos
                 </p>
-                <ModalInviteCollaborator />
               </div>
             ) : (
               <div className="space-y-6">
