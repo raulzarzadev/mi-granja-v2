@@ -28,7 +28,9 @@ const FarmSection: React.FC = () => {
     isLoading: collaboratorsLoading,
     getCollaboratorStats,
     cancelInvitation,
-    deleteInvitation
+    revokeInvitation,
+    deleteInvitation,
+    updateCollaborator
   } = useFarmCollaborators(currentFarm?.id)
 
   const [activeSubTab, setActiveSubTab] = useState<
@@ -312,10 +314,11 @@ const FarmSection: React.FC = () => {
                           <div className="mt-3 flex gap-2">
                             <button
                               className="text-xs px-3 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100"
+                              title="Marcar como rechazada (si el invitado la declina)"
                               onClick={async () => {
                                 if (
                                   confirm(
-                                    `¿Cancelar la invitación a ${invitation.email}?`
+                                    `¿Marcar como rechazada la invitación a ${invitation.email}?`
                                   )
                                 ) {
                                   try {
@@ -327,6 +330,24 @@ const FarmSection: React.FC = () => {
                               }}
                             >
                               Cancelar
+                            </button>
+                            <button
+                              className="text-xs px-3 py-1 rounded-md border border-amber-300 text-amber-800 hover:bg-amber-50"
+                              onClick={async () => {
+                                if (
+                                  confirm(
+                                    `¿Revocar la invitación a ${invitation.email}? No podrá usarse más.`
+                                  )
+                                ) {
+                                  try {
+                                    await revokeInvitation(invitation.id)
+                                  } catch (e) {
+                                    console.error(e)
+                                  }
+                                }
+                              }}
+                            >
+                              Revocar
                             </button>
                             <button
                               className="text-xs px-3 py-1 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
@@ -364,6 +385,28 @@ const FarmSection: React.FC = () => {
                         <CollaboratorCard
                           key={collaborator.id}
                           collaborator={collaborator}
+                          onRevoke={async (id) => {
+                            if (
+                              confirm(
+                                '¿Revocar acceso de este colaborador? Podrás reactivarlo más adelante.'
+                              )
+                            ) {
+                              try {
+                                await updateCollaborator(id, {
+                                  isActive: false
+                                })
+                              } catch (e) {
+                                console.error(e)
+                              }
+                            }
+                          }}
+                          onReactivate={async (id) => {
+                            try {
+                              await updateCollaborator(id, { isActive: true })
+                            } catch (e) {
+                              console.error(e)
+                            }
+                          }}
                         />
                       ))}
                     </div>

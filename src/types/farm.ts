@@ -68,7 +68,7 @@ export interface FarmInvitation {
   permissions: FarmPermission[]
   invitedBy: string
   token?: string
-  status: 'pending' | 'accepted' | 'rejected' | 'expired'
+  status: 'pending' | 'accepted' | 'rejected' | 'expired' | 'revoked'
   expiresAt: AppDate
   createdAt: AppDate
   updatedAt: AppDate

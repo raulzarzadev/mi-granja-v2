@@ -6,13 +6,17 @@ import { formatDate, toDate } from '@/lib/dates'
 
 interface CollaboratorCardProps {
   collaborator: FarmCollaborator
+  onRevoke?: (collaboratorId: string) => void | Promise<void>
+  onReactivate?: (collaboratorId: string) => void | Promise<void>
 }
 
 /**
  * Tarjeta para mostrar información de un colaborador
  */
 const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
-  collaborator
+  collaborator,
+  onRevoke,
+  onReactivate
 }) => {
   const roleInfo = COLLABORATOR_ROLES.find(
     (role) => role.value === collaborator.role
@@ -37,16 +41,35 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
             </p>
           </div>
         </div>
-
-        <span
-          className={`text-xs px-2 py-1 rounded-full font-medium ${
-            isActive
-              ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-600'
-          }`}
-        >
-          {isActive ? 'Activo' : 'Inactivo'}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-xs px-2 py-1 rounded-full font-medium ${
+              isActive
+                ? 'bg-green-100 text-green-800'
+                : 'bg-gray-100 text-gray-600'
+            }`}
+          >
+            {isActive ? 'Activo' : 'Inactivo'}
+          </span>
+          {isActive && onRevoke && (
+            <button
+              className="text-xs px-2 py-1 border border-amber-300 text-amber-800 rounded-md hover:bg-amber-50"
+              onClick={() => onRevoke(collaborator.id)}
+              title="Revocar acceso"
+            >
+              Revocar
+            </button>
+          )}
+          {!isActive && onReactivate && (
+            <button
+              className="text-xs px-2 py-1 border border-green-300 text-green-700 rounded-md hover:bg-green-50"
+              onClick={() => onReactivate(collaborator.id)}
+              title="Reactivar acceso"
+            >
+              Reactivar
+            </button>
+          )}
+        </div>
       </div>
 
       {roleInfo?.description && (

@@ -280,6 +280,20 @@ export const useFarmCollaborators = (farmId?: string) => {
     }
   }
 
+  // Revocar invitación por parte del owner/admin (diferente a rejected por el invitado)
+  const revokeInvitation = async (invitationId: string) => {
+    try {
+      await updateDoc(doc(db, 'farmInvitations', invitationId), {
+        status: 'revoked',
+        updatedAt: Timestamp.now()
+      })
+      setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId))
+    } catch (error) {
+      console.error('Error revoking invitation:', error)
+      throw new Error('Error al revocar la invitación')
+    }
+  }
+
   // Eliminación definitiva de la invitación en Firestore
   const deleteInvitation = async (invitationId: string) => {
     try {
@@ -323,6 +337,7 @@ export const useFarmCollaborators = (farmId?: string) => {
     updateCollaborator,
     removeCollaborator,
     cancelInvitation,
+    revokeInvitation,
     deleteInvitation,
     getActiveCollaborators,
     getPendingInvitations,

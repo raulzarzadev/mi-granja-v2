@@ -49,11 +49,29 @@ export default function InvitationConfirmPage() {
           throw new Error('La invitación ha expirado')
         }
 
+        // Si ya fue procesada, informar
+        if (data.status === 'accepted') {
+          setStatus('done')
+          return
+        }
+        if (data.status === 'rejected') {
+          setStatus('error')
+          setErrorMessage('La invitación ya fue rechazada')
+          return
+        }
+        if (data.status === 'revoked') {
+          setStatus('error')
+          setErrorMessage('Esta invitación fue revocada por el propietario')
+          return
+        }
+
         // Si es rechazar, no requiere login
         if (action === 'reject') {
           await updateDoc(doc(db, 'farmInvitations', docRef.id), {
             status: 'rejected',
-            updatedAt: Timestamp.now()
+            updatedAt: Timestamp.now(),
+            // @ts-ignore - solo se usa para tracking opcional
+            rejectedAt: Timestamp.now()
           })
           setStatus('done')
           return
@@ -67,6 +85,27 @@ export default function InvitationConfirmPage() {
           )
           return
         }
+
+        // Verificar que el email del usuario coincide con la invitación (recomendado)
+        const invitedEmail = (data.email || '').toLowerCase().trim()
+        const userEmail = ((user as any).email || '').toLowerCase().trim()
+        if (invitedEmail && userEmail && invitedEmail !== userEmail) {
+          setStatus('error')
+          setErrorMessage(
+            `Esta invitación fue enviada a ${invitedEmail}. Inicia sesión con ese correo para aceptarla.`
+          )
+          return
+        }
+
+        // Evitar duplicados: comprobar si ya es colaborador
+        if (!data.farmId) throw new Error('Invitación inválida (sin farmId)')
+        const existsQ = query(
+          collection(db, 'farmCollaborators'),
+          where('farmId', '==', data.farmId),
+          where('userId', '==', user.id)
+        )
+        const existsSnap = await getDocs(existsQ)
+        const collaboratorAlreadyExists = !existsSnap.empty
 
         // Crear colaborador y marcar invitación como aceptada
         const collaboratorData = {
@@ -82,13 +121,26 @@ export default function InvitationConfirmPage() {
           updatedAt: Timestamp.now()
         }
 
-        await addDoc(collection(db, 'farmCollaborators'), collaboratorData)
+        if (!collaboratorAlreadyExists) {
+          await addDoc(collection(db, 'farmCollaborators'), collaboratorData)
+        }
         await updateDoc(doc(db, 'farmInvitations', docRef.id), {
           status: 'accepted',
-          updatedAt: Timestamp.now()
+          updatedAt: Timestamp.now(),
+          // @ts-ignore - campo de tracking opcional
+          acceptedAt: Timestamp.now()
         })
 
         setStatus('done')
+
+        // Redirigir a la granja tras un breve feedback visual
+        setTimeout(() => {
+          try {
+            router.replace(`/farms/${data.farmId}`)
+          } catch {
+            router.push('/')
+          }
+        }, 1000)
       } catch (e) {
         console.error(e)
         setStatus('error')
