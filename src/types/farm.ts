@@ -67,6 +67,7 @@ export interface FarmInvitation {
   role: FarmCollaborator['role']
   permissions: FarmPermission[]
   invitedBy: string
+  token?: string
   status: 'pending' | 'accepted' | 'rejected' | 'expired'
   expiresAt: AppDate
   createdAt: AppDate

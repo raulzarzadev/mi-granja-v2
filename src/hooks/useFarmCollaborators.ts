@@ -19,8 +19,10 @@ import {
   DEFAULT_PERMISSIONS
 } from '@/types/farm'
 import { toDate } from '@/lib/dates'
+import { useEmail } from '@/hooks/useEmail'
 
 export const useFarmCollaborators = (farmId?: string) => {
+  const { sendEmail } = useEmail()
   const [collaborators, setCollaborators] = useState<FarmCollaborator[]>([])
   const [invitations, setInvitations] = useState<FarmInvitation[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -94,12 +96,18 @@ export const useFarmCollaborators = (farmId?: string) => {
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + 7) // Expira en 7 días
 
+    // Generar token único para la invitación
+    const token = `${farmId}_${Date.now()}_${Math.random()
+      .toString(36)
+      .slice(2, 10)}`
+
     const invitationData = {
       farmId,
       email: email.toLowerCase().trim(),
       role,
       permissions,
       invitedBy,
+      token,
       status: 'pending' as const,
       expiresAt: Timestamp.fromDate(expiresAt),
       createdAt: Timestamp.now(),
@@ -121,8 +129,46 @@ export const useFarmCollaborators = (farmId?: string) => {
 
       setInvitations((prev) => [...prev, createdInvitation])
 
-      // TODO: Enviar email de invitación
-      console.log(`Invitation sent to ${email}`)
+      // Enviar email de invitación con links de aceptar/rechazar
+      const appUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (typeof window !== 'undefined'
+          ? window.location.origin
+          : 'http://localhost:3000')
+      const acceptUrl = `${appUrl}/invitations/confirm?token=${encodeURIComponent(
+        token
+      )}&action=accept`
+      const rejectUrl = `${appUrl}/invitations/confirm?token=${encodeURIComponent(
+        token
+      )}&action=reject`
+
+      try {
+        await sendEmail({
+          to: email,
+          subject: 'Invitación para colaborar en una granja',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #2563eb;">Has sido invitado a colaborar en una granja</h2>
+              <p>Has recibido una invitación para unirte como <strong>${role}</strong>.</p>
+              <p>La invitación expira el <strong>${expiresAt.toLocaleDateString()}</strong>.</p>
+              <div style="margin: 20px 0;">
+                <a href="${acceptUrl}" style="background: #16a34a; color: white; padding: 10px 16px; text-decoration: none; border-radius: 6px; margin-right: 8px;">Aceptar invitación</a>
+                <a href="${rejectUrl}" style="background: #ef4444; color: white; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Rechazar</a>
+              </div>
+              <p style="color: #6b7280; font-size: 12px;">Si los botones no funcionan, copia y pega estos enlaces en tu navegador:</p>
+              <p style="font-size: 12px; word-break: break-all;">Aceptar: ${acceptUrl}</p>
+              <p style="font-size: 12px; word-break: break-all;">Rechazar: ${rejectUrl}</p>
+            </div>
+          `,
+          text: `Has sido invitado como ${role}. Acepta: ${acceptUrl} | Rechaza: ${rejectUrl}`,
+          tags: [
+            { name: 'type', value: 'invitation' },
+            { name: 'farm_id', value: farmId }
+          ]
+        })
+      } catch (e) {
+        console.warn('No se pudo enviar el email de invitación:', e)
+      }
 
       return createdInvitation
     } catch (error) {
