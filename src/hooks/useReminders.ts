@@ -69,13 +69,14 @@ export const useReminders = () => {
     data: Omit<Reminder, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
   ) => {
     if (!user) throw new Error('Usuario no autenticado')
+    if (!currentFarm?.id) throw new Error('Selecciona una granja primero')
 
     setIsSubmitting(true)
     try {
       const now = Timestamp.now()
       const docData = {
         farmerId: user.id,
-        farmId: currentFarm?.id,
+        farmId: currentFarm.id,
         animalNumber: data.animalNumber || null,
         title: data.title,
         description: data.description || '',

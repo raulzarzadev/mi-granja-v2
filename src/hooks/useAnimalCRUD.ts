@@ -47,6 +47,10 @@ export const useAnimalCRUD = () => {
       dispatch(setError('Usuario no autenticado'))
       return
     }
+    if (!currentFarm?.id) {
+      dispatch(setError('Selecciona o crea una granja antes de crear animales'))
+      throw new Error('No hay granja seleccionada')
+    }
 
     setIsLoading(true)
     try {
@@ -54,7 +58,7 @@ export const useAnimalCRUD = () => {
       let newAnimal = {
         ...animalData,
         farmerId: user.id,
-        farmId: currentFarm?.id,
+        farmId: currentFarm.id,
         createdAt: now,
         updatedAt: now
       }

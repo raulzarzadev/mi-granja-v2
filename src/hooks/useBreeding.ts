@@ -17,6 +17,7 @@ import { BreedingRecord } from '@/types/breedings'
 export const useBreeding = () => {
   const dispatch = useDispatch()
   const { user } = useSelector((state: RootState) => state.auth)
+  const { currentFarm } = useSelector((state: RootState) => state.farm)
   const [breedingRecords, setBreedingRecords] = useState<BreedingRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -28,9 +29,11 @@ export const useBreeding = () => {
       return
     }
 
+    const constraints = [where('farmerId', '==', user.id)]
+    if (currentFarm?.id) constraints.push(where('farmId', '==', currentFarm.id))
     const q = query(
       collection(db, 'breedingRecords'),
-      where('farmerId', '==', user.id),
+      ...constraints,
       orderBy('breedingDate', 'desc')
     )
 
@@ -69,7 +72,7 @@ export const useBreeding = () => {
     })
 
     return () => unsubscribe()
-  }, [user, dispatch])
+  }, [user, currentFarm?.id, dispatch])
 
   return {
     breedingRecords,

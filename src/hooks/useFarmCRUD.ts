@@ -49,7 +49,7 @@ export const useFarmCRUD = () => {
     dispatch(setLoading(true))
 
     try {
-      // Granjas donde es propietario
+      // 1) Granjas donde es propietario
       const ownerQuery = query(
         collection(db, 'farms'),
         where('ownerId', '==', user.id)
@@ -64,7 +64,51 @@ export const useFarmCRUD = () => {
         updatedAt: doc.data().updatedAt?.toDate() || new Date()
       })) as Farm[]
 
-      dispatch(serializeObj(setFarms(ownerFarms)))
+      // 2) Granjas donde el usuario es colaborador activo
+      const collabQuery = query(
+        collection(db, 'farmCollaborators'),
+        where('userId', '==', user.id),
+        where('isActive', '==', true)
+      )
+      const collabSnapshot = await getDocs(collabQuery)
+      const collabFarmIds = Array.from(
+        new Set(collabSnapshot.docs.map((d) => (d.data() as any).farmId))
+      ).filter(Boolean) as string[]
+
+      let collaboratorFarms: Farm[] = []
+      if (collabFarmIds.length > 0) {
+        // Firestore 'in' acepta máx 10 IDs; hacer batching
+        const batches: string[][] = []
+        for (let i = 0; i < collabFarmIds.length; i += 10) {
+          batches.push(collabFarmIds.slice(i, i + 10))
+        }
+
+        const batchResults = await Promise.all(
+          batches.map(async (ids) => {
+            const qFarms = query(
+              collection(db, 'farms'),
+              where('__name__', 'in', ids as any)
+            )
+            const snap = await getDocs(qFarms)
+            return snap.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+              areas: doc.data().areas || [],
+              collaborators: doc.data().collaborators || [],
+              createdAt: doc.data().createdAt?.toDate() || new Date(),
+              updatedAt: doc.data().updatedAt?.toDate() || new Date()
+            })) as Farm[]
+          })
+        )
+        collaboratorFarms = batchResults.flat()
+      }
+
+      // 3) Unificar y deduplicar por id
+      const byId = new Map<string, Farm>()
+      ;[...ownerFarms, ...collaboratorFarms].forEach((f) => byId.set(f.id, f))
+      const allFarms = Array.from(byId.values())
+
+      dispatch(serializeObj(setFarms(allFarms)))
     } catch (err) {
       console.error('Error loading farms:', err)
       dispatch(setError('Error al cargar las granjas'))

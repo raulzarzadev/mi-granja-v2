@@ -8,6 +8,7 @@ import { FARM_AREA_TYPES } from '@/types/farm'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 // import ModalCreateFarm from './ModalCreateFarm'
 import ModalCreateArea from './ModalCreateArea'
+import ModalCreateFarm from './ModalCreateFarm'
 import AreaCard from './AreaCard'
 import ModalInviteCollaborator from './ModalInviteCollaborator'
 import CollaboratorCard from './CollaboratorCard'
@@ -75,9 +76,14 @@ const FarmSection: React.FC = () => {
             </div>
           ) : myInv.getPending().length === 0 &&
             myInv.getAccepted().length === 0 ? (
-            <p className="text-gray-600 text-sm">
-              No tienes invitaciones por ahora.
-            </p>
+            <div className="space-y-4">
+              <p className="text-gray-600 text-sm">
+                No tienes invitaciones por ahora.
+              </p>
+              <div className="flex justify-center">
+                <ModalCreateFarm />
+              </div>
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Aceptadas: acceso directo */}
@@ -147,6 +153,13 @@ const FarmSection: React.FC = () => {
                   </div>
                 </div>
               ))}
+              {/* CTA crear granja propia */}
+              <div className="border rounded-lg p-4 flex flex-col items-center justify-center">
+                <p className="text-sm text-gray-600 mb-3">
+                  ¿Quieres crear tu propia granja?
+                </p>
+                <ModalCreateFarm />
+              </div>
             </div>
           )}
         </div>

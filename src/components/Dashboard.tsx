@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import Navbar from '@/components/Navbar'
+import FarmSwitcherBar from '@/components/FarmSwitcherBar'
 import AnimalCard from '@/components/AnimalCard'
 import BreedingSection from '@/components/BreedingSection'
 import ReminderCard from '@/components/ReminderCard'
@@ -13,6 +14,7 @@ import ModalAnimalForm from './ModalAnimalForm'
 import ModalAnimalDetails from './ModalAnimalDetails'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 
 /**
  * Dashboard principal de la aplicación
@@ -20,6 +22,7 @@ import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
  */
 const Dashboard: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth)
+  const { currentFarm, farms } = useFarmCRUD()
 
   const {
     animals,
@@ -381,18 +384,22 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
+      <FarmSwitcherBar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600 mt-2">
-            Bienvenido a {user.farmName || 'tu granja'}, {user.email}
+            Granja actual:{' '}
+            <span className="font-medium">
+              {currentFarm?.name || 'sin granja'}
+            </span>
           </p>
         </div>
 
-        {/* Tabs Component */}
-        <Tabs tabs={tabs} />
+        {/* Si no hay granjas, priorizar creación/selección */}
+        {farms.length === 0 ? <FarmSection /> : <Tabs tabs={tabs} />}
       </div>
     </div>
   )

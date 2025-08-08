@@ -32,10 +32,10 @@ const Navbar: React.FC = () => {
     <nav className="bg-green-600 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo y nombre de la app */}
-          <div className="flex items-center space-x-6">
+          {/* Logo */}
+          <div className="flex items-center space-x-4">
             <div className="flex-shrink-0">
-              <span className="text-xl font-bold">🐄 Mi Granja</span>
+              <span className="text-xl font-bold">🐄</span>
             </div>
 
             {/* Enlaces para admins */}
@@ -71,9 +71,9 @@ const Navbar: React.FC = () => {
               </div>
             )}
 
-            <div className="text-sm">
-              <p className="font-medium">{user?.farmName || 'Mi Granja'}</p>
-              <p className="text-green-100 text-xs">{user?.email}</p>
+            <div className="text-sm text-right">
+              <p className="font-medium">{user?.email}</p>
+              {/* Ubicación de granja removida del navbar */}
             </div>
 
             {/* Botón de logout */}

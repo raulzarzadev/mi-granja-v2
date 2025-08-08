@@ -9,6 +9,7 @@ export interface FemaleBreedingInfo {
 export interface BreedingRecord {
   id: string
   farmerId: string
+  farmId?: string
   maleId: string
   breedingDate: Date | null
   femaleBreedingInfo: FemaleBreedingInfo[] // Información específica de cada hembra

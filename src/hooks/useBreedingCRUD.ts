@@ -21,18 +21,21 @@ export const useBreedingCRUD = () => {
   const { breedingRecords, isLoading } = useBreeding()
   const { user } = useSelector((state: RootState) => state.auth)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { currentFarm } = useSelector((state: RootState) => state.farm)
 
   // Crear registro de monta
   const createBreedingRecord = async (
     data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
   ) => {
     if (!user) throw new Error('Usuario no autenticado')
+    if (!currentFarm?.id) throw new Error('Selecciona una granja primero')
 
     setIsSubmitting(true)
     try {
       const now = Timestamp.now()
       const docData = {
         farmerId: user.id,
+        farmId: currentFarm.id,
         maleId: data.maleId,
         breedingDate: data.breedingDate,
 
