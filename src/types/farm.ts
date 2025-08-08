@@ -38,10 +38,14 @@ export interface FarmCollaborator {
   id: string
   farmId: string
   userId: string
+  // Email del colaborador (opcional; se enriquece desde la colección users)
+  email?: string
   role: 'admin' | 'manager' | 'caretaker' | 'veterinarian' | 'viewer'
   permissions: FarmPermission[]
   isActive: boolean
   invitedBy: string
+  // Email del usuario que invitó (opcional; se enriquece desde users)
+  invitedByEmail?: string
   invitedAt: AppDate
   acceptedAt?: AppDate
   notes?: string

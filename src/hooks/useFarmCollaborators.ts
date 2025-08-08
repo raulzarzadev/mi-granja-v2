@@ -46,14 +46,54 @@ export const useFarmCollaborators = (farmId?: string) => {
         where('farmId', '==', farmId)
       )
       const collaboratorsSnapshot = await getDocs(collaboratorsQuery)
-      const collaboratorsData = collaboratorsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        invitedAt: doc.data().invitedAt?.toDate() || new Date(),
-        acceptedAt: doc.data().acceptedAt?.toDate() || null,
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        updatedAt: doc.data().updatedAt?.toDate() || new Date()
+      const rawCollaborators = collaboratorsSnapshot.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+        invitedAt: d.data().invitedAt?.toDate() || new Date(),
+        acceptedAt: d.data().acceptedAt?.toDate() || null,
+        createdAt: d.data().createdAt?.toDate() || new Date(),
+        updatedAt: d.data().updatedAt?.toDate() || new Date()
       })) as FarmCollaborator[]
+
+      // Enriquecer con emails desde 'users'
+      // Construir set de IDs a consultar
+      const userIds = Array.from(
+        new Set(
+          rawCollaborators
+            .flatMap((c) => [c.userId, c.invitedBy])
+            .filter(Boolean)
+        )
+      ) as string[]
+      let usersById: Record<string, { email?: string }> = {}
+      if (userIds.length > 0) {
+        // Firestore no permite IN con >10; hacer batching
+        const batches: string[][] = []
+        for (let i = 0; i < userIds.length; i += 10)
+          batches.push(userIds.slice(i, i + 10))
+        const batchResults = await Promise.all(
+          batches.map(async (ids) => {
+            const q = query(
+              collection(db, 'users'),
+              where('__name__', 'in', ids as any)
+            )
+            const snap = await getDocs(q)
+            return snap.docs.map((ud) => ({
+              id: ud.id,
+              email: (ud.data() as any).email
+            }))
+          })
+        )
+        usersById = batchResults.flat().reduce((acc, u) => {
+          acc[u.id] = { email: u.email }
+          return acc
+        }, {} as Record<string, { email?: string }>)
+      }
+
+      const collaboratorsData = rawCollaborators.map((c) => ({
+        ...c,
+        email: c.email || usersById[c.userId]?.email,
+        invitedByEmail: usersById[c.invitedBy]?.email
+      }))
 
       // Cargar invitaciones pendientes
       const invitationsQuery = query(

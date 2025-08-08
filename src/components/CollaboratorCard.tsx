@@ -29,19 +29,22 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
         isActive ? 'border-green-200' : 'border-gray-200 opacity-75'
       }`}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">{roleInfo?.icon || '👤'}</span>
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900">
-              {collaborator.userId}
+      <div className="flex items-start justify-between mb-3 gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <span className="text-2xl flex-shrink-0">{roleInfo?.icon || '👤'}</span>
+          <div className="min-w-0">
+            <h4
+              className="text-lg font-semibold text-gray-900 truncate"
+              title={collaborator.email || collaborator.userId}
+            >
+              {collaborator.email || collaborator.userId}
             </h4>
             <p className="text-sm text-gray-500">
               {roleInfo?.label || collaborator.role}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0 whitespace-nowrap self-start">
           <span
             className={`text-xs px-2 py-1 rounded-full font-medium ${
               isActive
@@ -79,7 +82,7 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
       )}
 
       <div className="space-y-2 text-xs text-gray-500">
-        <div className="flex justify-between">
+        <div className="flex items-center justify-between gap-4">
           <span>Se unió:</span>
           <span>
             {collaborator.acceptedAt
@@ -88,9 +91,14 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
           </span>
         </div>
 
-        <div className="flex justify-between">
+        <div className="flex items-center justify-between gap-4">
           <span>Invitado por:</span>
-          <span className="truncate ml-2">{collaborator.invitedBy}</span>
+          <span
+            className="truncate ml-2 text-right max-w-[140px] sm:max-w-[200px] md:max-w-[260px]"
+            title={collaborator.invitedByEmail || collaborator.invitedBy}
+          >
+            {collaborator.invitedByEmail || collaborator.invitedBy}
+          </span>
         </div>
       </div>
 
