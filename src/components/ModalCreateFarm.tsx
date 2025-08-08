@@ -9,8 +9,27 @@ import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 /**
  * Modal para crear una nueva granja
  */
-const ModalCreateFarm: React.FC = () => {
-  const { isOpen, openModal, closeModal } = useModal()
+type ModalCreateFarmProps = {
+  // Control externo del modal (opcional). Si se pasa, el modal será controlado.
+  open?: boolean
+  onClose?: () => void
+  // Muestra el botón de trigger interno. Por defecto true para compatibilidad.
+  showTrigger?: boolean
+  // Callback cuando se crea la granja exitosamente
+  onCreated?: (farm: Farm) => void
+}
+
+const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
+  open,
+  onClose,
+  showTrigger = true,
+  onCreated
+}) => {
+  const modal = useModal()
+  // Resolver modo controlado vs. no controlado
+  const isOpen = open ?? modal.isOpen
+  const openModal = modal.openModal
+  const closeModal = onClose ?? modal.closeModal
   const { createFarm } = useFarmCRUD()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -45,7 +64,9 @@ const ModalCreateFarm: React.FC = () => {
           }
         }
 
-      await createFarm(farmData)
+      const created = await createFarm(farmData)
+      // Notificar a quien controla (si aplica)
+      onCreated?.(created)
 
       // Limpiar formulario
       setFormData({
@@ -87,13 +108,15 @@ const ModalCreateFarm: React.FC = () => {
 
   return (
     <>
-      <button
-        onClick={openModal}
-        className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors"
-      >
-        <span>🚜</span>
-        Crear Mi Granja
-      </button>
+      {showTrigger && (
+        <button
+          onClick={openModal}
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors"
+        >
+          <span>🚜</span>
+          Crear Mi Granja
+        </button>
+      )}
 
       <Modal
         isOpen={isOpen}
