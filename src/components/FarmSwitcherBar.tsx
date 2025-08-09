@@ -59,7 +59,6 @@ const FarmSwitcherBar: React.FC = () => {
   }, [selectedInvitationId, currentFarm])
 
   if ((myFarms?.length || 0) + (invitationFarms?.length || 0) === 0) return null
-  console.log({ myFarms, invitationFarms })
   return (
     <div className="bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">

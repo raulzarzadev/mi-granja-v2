@@ -100,75 +100,102 @@ export const COLLABORATOR_ROLES = [
     value: 'admin',
     label: 'Administrador',
     description: 'Acceso completo a todas las funciones',
-    icon: '👑'
+    icon: '👑',
+    defaultPermissions: [
+      { module: 'animals', actions: ['create', 'read', 'update', 'delete'] },
+      { module: 'breeding', actions: ['create', 'read', 'update', 'delete'] },
+      { module: 'reminders', actions: ['create', 'read', 'update', 'delete'] },
+      { module: 'areas', actions: ['create', 'read', 'update', 'delete'] },
+      {
+        module: 'collaborators',
+        actions: ['create', 'read', 'update', 'delete']
+      },
+      { module: 'reports', actions: ['create', 'read', 'update', 'delete'] }
+    ] as FarmPermission[]
   },
   {
     value: 'manager',
     label: 'Gerente',
     description: 'Gestión de animales, reproducción y colaboradores',
-    icon: '👨‍💼'
+    icon: '👨‍💼',
+    defaultPermissions: [
+      { module: 'animals', actions: ['create', 'read', 'update', 'delete'] },
+      { module: 'breeding', actions: ['create', 'read', 'update', 'delete'] },
+      { module: 'reminders', actions: ['create', 'read', 'update', 'delete'] },
+      { module: 'areas', actions: ['read', 'update'] },
+      { module: 'collaborators', actions: ['read', 'update'] },
+      { module: 'reports', actions: ['read'] }
+    ] as FarmPermission[]
   },
   {
     value: 'caretaker',
     label: 'Cuidador',
     description: 'Gestión diaria de animales y recordatorios',
-    icon: '👨‍🌾'
+    icon: '👨‍🌾',
+    defaultPermissions: [
+      { module: 'animals', actions: ['create', 'read', 'update'] },
+      { module: 'breeding', actions: ['read', 'update'] },
+      { module: 'reminders', actions: ['create', 'read', 'update', 'delete'] },
+      { module: 'areas', actions: ['read'] },
+      { module: 'reports', actions: ['read'] }
+    ] as FarmPermission[]
   },
   {
     value: 'veterinarian',
     label: 'Veterinario',
     description: 'Acceso a registros médicos y de salud',
-    icon: '👨‍⚕️'
+    icon: '👨‍⚕️',
+    defaultPermissions: [
+      { module: 'animals', actions: ['read', 'update'] },
+      { module: 'breeding', actions: ['read', 'update'] },
+      { module: 'reminders', actions: ['create', 'read', 'update'] },
+      { module: 'reports', actions: ['read'] }
+    ] as FarmPermission[]
   },
   {
     value: 'viewer',
     label: 'Observador',
     description: 'Solo lectura de información básica',
-    icon: '👁️'
+    icon: '👁️',
+    defaultPermissions: [
+      { module: 'animals', actions: ['read'] },
+      { module: 'breeding', actions: ['read'] },
+      { module: 'reminders', actions: ['read'] },
+      { module: 'areas', actions: ['read'] },
+      { module: 'reports', actions: ['read'] }
+    ] as FarmPermission[]
   }
 ] as const
 
+export const collaborator_roles = COLLABORATOR_ROLES.map((role) => role.value)
+export type collaborator_roles_type = (typeof collaborator_roles)[number]
+
+export const collaborator_roles_label: Record<collaborator_roles_type, string> =
+  COLLABORATOR_ROLES.map((role) => role.label).reduce((acc, label, index) => {
+    acc[collaborator_roles[index]] = label
+    return acc
+  }, {} as Record<collaborator_roles_type, string>)
+
+export const collaborator_roles_description: Record<
+  collaborator_roles_type,
+  string
+> = COLLABORATOR_ROLES.map((role) => role.description).reduce(
+  (acc, description, index) => {
+    acc[collaborator_roles[index]] = description
+    return acc
+  },
+  {} as Record<collaborator_roles_type, string>
+)
+
+// Helper para mapear rápidamente rol => permisos por defecto
 export const DEFAULT_PERMISSIONS: Record<
   FarmCollaborator['role'],
   FarmPermission[]
-> = {
-  admin: [
-    { module: 'animals', actions: ['create', 'read', 'update', 'delete'] },
-    { module: 'breeding', actions: ['create', 'read', 'update', 'delete'] },
-    { module: 'reminders', actions: ['create', 'read', 'update', 'delete'] },
-    { module: 'areas', actions: ['create', 'read', 'update', 'delete'] },
-    {
-      module: 'collaborators',
-      actions: ['create', 'read', 'update', 'delete']
-    },
-    { module: 'reports', actions: ['create', 'read', 'update', 'delete'] }
-  ],
-  manager: [
-    { module: 'animals', actions: ['create', 'read', 'update', 'delete'] },
-    { module: 'breeding', actions: ['create', 'read', 'update', 'delete'] },
-    { module: 'reminders', actions: ['create', 'read', 'update', 'delete'] },
-    { module: 'areas', actions: ['read', 'update'] },
-    { module: 'collaborators', actions: ['read', 'update'] },
-    { module: 'reports', actions: ['read'] }
-  ],
-  caretaker: [
-    { module: 'animals', actions: ['create', 'read', 'update'] },
-    { module: 'breeding', actions: ['read', 'update'] },
-    { module: 'reminders', actions: ['create', 'read', 'update', 'delete'] },
-    { module: 'areas', actions: ['read'] },
-    { module: 'reports', actions: ['read'] }
-  ],
-  veterinarian: [
-    { module: 'animals', actions: ['read', 'update'] },
-    { module: 'breeding', actions: ['read', 'update'] },
-    { module: 'reminders', actions: ['create', 'read', 'update'] },
-    { module: 'reports', actions: ['read'] }
-  ],
-  viewer: [
-    { module: 'animals', actions: ['read'] },
-    { module: 'breeding', actions: ['read'] },
-    { module: 'reminders', actions: ['read'] },
-    { module: 'areas', actions: ['read'] },
-    { module: 'reports', actions: ['read'] }
-  ]
-}
+> = COLLABORATOR_ROLES.reduce((acc, r) => {
+  acc[r.value as FarmCollaborator['role']] = r.defaultPermissions
+  return acc
+}, {} as Record<FarmCollaborator['role'], FarmPermission[]>)
+
+export const getDefaultPermissionsByRole = (
+  role: FarmCollaborator['role']
+): FarmPermission[] => DEFAULT_PERMISSIONS[role]
