@@ -24,17 +24,7 @@ const FarmSwitcherBar: React.FC = () => {
         setShowCreateModal(true)
         return
       }
-      if (val.startsWith('inv_pending_')) {
-        const id = val.replace('inv_pending_', '')
-        setSelectedInvitationId(id)
-        return
-      }
-      if (val.startsWith('inv_accepted_')) {
-        // accepted invitation -> switch farm
-        const farmId = val.replace('inv_accepted_', '')
-        switchFarm(farmId)
-        return
-      }
+
       switchFarm(val)
     },
     [switchFarm]
