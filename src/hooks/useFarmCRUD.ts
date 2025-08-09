@@ -20,6 +20,8 @@ import {
   setLoading,
   setError,
   setFarms,
+  setMyFarms,
+  setInvitationFarms,
   addFarm,
   updateFarm as updateFarmState,
   removeFarm,
@@ -32,17 +34,17 @@ import {
   removeCollaboratorFromFarm
 } from '@/features/farm/farmSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
-import { useMyInvitations } from './useMyInvitations'
 
 export const useFarmCRUD = () => {
   const dispatch = useDispatch<AppDispatch>()
   const { user } = useSelector((state: RootState) => state.auth)
-  const { farms, currentFarm, isLoading, error } = useSelector(
-    (state: RootState) => state.farm
-  )
+  const { farms, currentFarm, isLoading, error, myFarms, invitationFarms } =
+    useSelector((state: RootState) => state.farm)
   // Cargar granjas del usuario
   const loadUserFarms = async () => {
     if (!user) {
+      dispatch(setMyFarms([]))
+      dispatch(setInvitationFarms([]))
       dispatch(setFarms([]))
       return
     }
@@ -64,27 +66,26 @@ export const useFarmCRUD = () => {
         createdAt: doc.data().createdAt?.toDate() || new Date(),
         updatedAt: doc.data().updatedAt?.toDate() || new Date()
       })) as Farm[]
-      // 2) Granjas donde el usuario tiene invitación aceptada (nuevo modelo)
-      const acceptedInvQuery = query(
+      // 2) Invitaciones (aceptadas o pendientes) para el email del usuario
+      const invitationsQuery = query(
         collection(db, 'farmInvitations'),
-        where('email', '==', user.email),
-        where('status', '==', 'accepted')
+        where('email', '==', user.email)
       )
-      const acceptedInvSnap = await getDocs(acceptedInvQuery)
+      const invitationsSnap = await getDocs(invitationsQuery)
+      const invitations = invitationsSnap.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as any)
+      })) as any[]
 
-      const acceptedFarmIds = Array.from(
-        new Set(
-          acceptedInvSnap.docs
-            .map((d) => (d.data() as any).farmId)
-            .filter(Boolean)
-        )
+      const invitationFarmIds = Array.from(
+        new Set(invitations.map((d) => d.farmId).filter(Boolean))
       ) as string[]
 
       let memberFarms: Farm[] = []
-      if (acceptedFarmIds.length > 0) {
+      if (invitationFarmIds.length > 0) {
         const batches: string[][] = []
-        for (let i = 0; i < acceptedFarmIds.length; i += 10) {
-          batches.push(acceptedFarmIds.slice(i, i + 10))
+        for (let i = 0; i < invitationFarmIds.length; i += 10) {
+          batches.push(invitationFarmIds.slice(i, i + 10))
         }
         const batchResults = await Promise.all(
           batches.map(async (ids) => {
@@ -106,11 +107,38 @@ export const useFarmCRUD = () => {
         memberFarms = batchResults.flat()
       }
 
+      // Enriquecer memberFarms con invitationMeta
+      const invitationByFarm = new Map<string, any[]>()
+      invitations.forEach((inv) => {
+        if (!inv.farmId) return
+        if (!invitationByFarm.has(inv.farmId))
+          invitationByFarm.set(inv.farmId, [])
+        invitationByFarm.get(inv.farmId)!.push(inv)
+      })
+
+      memberFarms = memberFarms.map((f) => {
+        const invs = invitationByFarm.get(f.id) || []
+        // Preferir invitación aceptada si existe, si no la más reciente
+        let chosen = invs.find((i) => i.status === 'accepted') || invs[0]
+        if (chosen) {
+          return {
+            ...f,
+            invitationMeta: {
+              invitationId: chosen.id,
+              status: chosen.status,
+              role: chosen.role
+            }
+          }
+        }
+        return f
+      })
+
       // 3) Unificar y deduplicar por id
       const byId = new Map<string, Farm>()
       ;[...memberFarms, ...ownerFarms].forEach((f) => byId.set(f.id, f))
       const allFarms = Array.from(byId.values())
-
+      dispatch(serializeObj(setMyFarms(ownerFarms)))
+      dispatch(serializeObj(setInvitationFarms(memberFarms)))
       dispatch(serializeObj(setFarms(allFarms)))
 
       // Restaurar última selección si aplica
@@ -530,6 +558,8 @@ export const useFarmCRUD = () => {
   return {
     // Estado
     farms,
+    myFarms,
+    invitationFarms,
     currentFarm,
     isLoading,
     error,

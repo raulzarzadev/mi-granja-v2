@@ -3,7 +3,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  updateDoc
+} from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { FarmInvitation } from '@/types/farm'
 import { toDate } from '@/lib/dates'
@@ -115,6 +122,18 @@ export const useMyInvitations = () => {
     getPending,
     getAccepted,
     getConfirmUrl,
-    refresh: loadInvitations
+    refresh: loadInvitations,
+    rejectInvitation: async (invitationId: string) => {
+      try {
+        await updateDoc(doc(db, 'farmInvitations', invitationId), {
+          status: 'rejected',
+          updatedAt: new Date()
+        } as any)
+        await loadInvitations()
+      } catch (e) {
+        console.error('Error rejecting invitation', e)
+        throw e
+      }
+    }
   }
 }

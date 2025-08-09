@@ -2,7 +2,9 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { Farm, FarmArea } from '@/types/farm'
 
 interface FarmState {
-  farms: Farm[]
+  farms: Farm[] // Unión de todas las granjas con acceso
+  myFarms: Farm[] // Granjas donde soy owner
+  invitationFarms: Farm[] // Granjas accesibles por invitación (pendiente, aceptada, etc.) con invitationMeta
   currentFarm: Farm | null
   isLoading: boolean
   error: string | null
@@ -10,6 +12,8 @@ interface FarmState {
 
 const initialState: FarmState = {
   farms: [],
+  myFarms: [],
+  invitationFarms: [],
   currentFarm: null,
   isLoading: false,
   error: null
@@ -42,6 +46,37 @@ const farmSlice = createSlice({
         !action.payload.find((f) => f.id === state.currentFarm?.id)
       ) {
         state.currentFarm = action.payload.length > 0 ? action.payload[0] : null
+      }
+    },
+    setMyFarms: (state, action: PayloadAction<Farm[]>) => {
+      state.myFarms = action.payload
+      // Sincronizar unión
+      const invitationIds = new Set(state.invitationFarms.map((f) => f.id))
+      const merged = [...action.payload]
+      state.invitationFarms.forEach((f) => {
+        if (!invitationIds.has(f.id)) merged.push(f)
+      })
+      state.farms = merged
+      if (
+        state.currentFarm &&
+        !state.farms.find((f) => f.id === state.currentFarm?.id)
+      ) {
+        state.currentFarm = state.farms[0] || null
+      }
+    },
+    setInvitationFarms: (state, action: PayloadAction<Farm[]>) => {
+      state.invitationFarms = action.payload
+      const myIds = new Set(state.myFarms.map((f) => f.id))
+      const merged = [...state.myFarms]
+      action.payload.forEach((f) => {
+        if (!myIds.has(f.id)) merged.push(f)
+      })
+      state.farms = merged
+      if (
+        state.currentFarm &&
+        !state.farms.find((f) => f.id === state.currentFarm?.id)
+      ) {
+        state.currentFarm = state.farms[0] || null
       }
     },
 
@@ -238,6 +273,8 @@ export const {
   setLoading,
   setError,
   setFarms,
+  setMyFarms,
+  setInvitationFarms,
   addFarm,
   updateFarm,
   removeFarm,

@@ -19,6 +19,12 @@ export interface Farm {
   collaborators?: FarmCollaborator[]
   createdAt: AppDate
   updatedAt: AppDate
+  // Metadatos cuando la granja proviene de una invitación aceptada o pendiente
+  invitationMeta?: {
+    invitationId: string
+    status: FarmInvitation['status']
+    role?: FarmInvitation['role']
+  }
 }
 
 export interface FarmArea {

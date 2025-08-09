@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import { Farm } from '@/types/farm'
 import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditFarm from './ModalEditFarm'
 import { useSelector } from 'react-redux'
@@ -10,7 +11,9 @@ import { useMyInvitations } from '@/hooks/useMyInvitations'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 
 const FarmSwitcherBar: React.FC = () => {
-  const { farms, currentFarm, switchFarm, loadUserFarms } = useFarmCRUD()
+  const { currentFarm, switchFarm, loadUserFarms, myFarms, invitationFarms } =
+    useFarmCRUD()
+
   const myInv = useMyInvitations()
   const { acceptInvitation } = useFarmMembers(undefined)
 
@@ -24,6 +27,7 @@ const FarmSwitcherBar: React.FC = () => {
   const pendingInvs = myInv.getPending()
   const acceptedInvs = myInv.getAccepted()
   const [acceptedRole, setAcceptedRole] = useState<string | null>(null)
+
   useEffect(() => {
     if (currentFarm && user && currentFarm.ownerId !== user.id) {
       const inv = acceptedInvs.find((i) => i.farmId === currentFarm.id)
@@ -44,11 +48,6 @@ const FarmSwitcherBar: React.FC = () => {
         setSelectedInvitationId(val.replace('inv_pending_', ''))
         return
       }
-      if (val.startsWith('inv_accepted_')) {
-        const farmId = val.replace('inv_accepted_', '')
-        switchFarm(farmId)
-        return
-      }
       switchFarm(val)
     },
     [switchFarm]
@@ -59,45 +58,46 @@ const FarmSwitcherBar: React.FC = () => {
     return currentFarm?.id || ''
   }, [selectedInvitationId, currentFarm])
 
-  if (farms.length === 0) return null
-
+  if ((myFarms?.length || 0) + (invitationFarms?.length || 0) === 0) return null
+  console.log({ myFarms, invitationFarms })
   return (
     <div className="bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div className="flex items-center gap-3 flex-wrap">
           <select
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white min-w-[240px]"
+            className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white min-w-[260px]"
             value={selectValue}
             onChange={handleSelectChange}
             aria-label="Seleccionar granja o invitación"
           >
-            {farms.length > 0 && (
+            {myFarms?.length > 0 && (
               <optgroup label="Mis Granjas">
-                {farms.map((farm) => (
+                {myFarms.map((farm: Farm) => (
                   <option key={farm.id} value={farm.id}>
                     {farm.name}
                   </option>
                 ))}
               </optgroup>
             )}
-            {acceptedInvs.length > 0 && (
-              <optgroup label="Acceso por Invitación (Aceptadas)">
-                {acceptedInvs.map((inv) => (
-                  <option key={inv.id} value={'inv_accepted_' + inv.farmId}>
-                    {inv.farmName || 'Granja'} (rol {inv.role})
-                  </option>
-                ))}
+            {invitationFarms?.length > 0 && (
+              <optgroup label="Invitaciones y Accesos">
+                {invitationFarms.map((farm: Farm) => {
+                  const pending = farm.invitationMeta?.status === 'pending'
+                  const value = pending
+                    ? 'inv_pending_' + farm.invitationMeta!.invitationId
+                    : farm.id
+                  return (
+                    <option key={farm.id} value={value}>
+                      {pending ? '⏳' : '✅'} {farm.name}
+                      {farm.invitationMeta?.role &&
+                        ' (' + farm.invitationMeta.role + ')'}{' '}
+                      {pending && '— pendiente'}
+                    </option>
+                  )
+                })}
               </optgroup>
             )}
-            {pendingInvs.length > 0 && (
-              <optgroup label="Invitaciones Pendientes">
-                {pendingInvs.map((inv) => (
-                  <option key={inv.id} value={'inv_pending_' + inv.id}>
-                    Pendiente: {inv.farmName || inv.farmId}
-                  </option>
-                ))}
-              </optgroup>
-            )}
+            {/* Eliminado optgroup duplicado de pendientes; ya se listan en Invitaciones y Accesos */}
 
             <option value="__create__">➕ Crear nueva granja</option>
           </select>
@@ -117,9 +117,9 @@ const FarmSwitcherBar: React.FC = () => {
         </div>
 
         {selectedInvitationId && (
-          <div className="flex items-center gap-2 text-xs bg-orange-50 border border-orange-200 px-3 py-2 rounded-md">
-            <span className="text-orange-700">
-              Invitación pendiente seleccionada
+          <div className="flex items-center flex-wrap gap-2 text-xs bg-orange-50 border border-orange-200 px-3 py-2 rounded-md">
+            <span className="text-orange-700 font-medium">
+              Invitación pendiente
             </span>
             <button
               className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
@@ -143,10 +143,29 @@ const FarmSwitcherBar: React.FC = () => {
               Aceptar
             </button>
             <button
+              className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+              onClick={async () => {
+                const inv = pendingInvs.find(
+                  (i) => i.id === selectedInvitationId
+                )
+                if (!inv) return
+                try {
+                  await myInv.rejectInvitation(inv.id)
+                  setSelectedInvitationId(null)
+                  await loadUserFarms()
+                } catch (e) {
+                  console.error(e)
+                  alert('No se pudo rechazar la invitación')
+                }
+              }}
+            >
+              Rechazar
+            </button>
+            <button
               className="px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
               onClick={() => setSelectedInvitationId(null)}
             >
-              Cancelar
+              Cerrar
             </button>
           </div>
         )}
