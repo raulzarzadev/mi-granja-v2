@@ -1,14 +1,18 @@
 'use client'
 
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditFarm from './ModalEditFarm'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
+import { useMyInvitations } from '@/hooks/useMyInvitations'
+import { useFarmMembers } from '@/hooks/useFarmMembers'
 
 const FarmSwitcherBar: React.FC = () => {
-  const { farms, currentFarm, switchFarm } = useFarmCRUD()
+  const { farms, currentFarm, switchFarm, loadUserFarms } = useFarmCRUD()
+  const myInv = useMyInvitations()
+  const { acceptInvitation } = useFarmMembers(undefined)
 
   const { user } = useSelector((s: RootState) => s.auth)
   const [selectedInvitationId, setSelectedInvitationId] = useState<
@@ -17,6 +21,18 @@ const FarmSwitcherBar: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
 
+  const pendingInvs = myInv.getPending()
+  const acceptedInvs = myInv.getAccepted()
+  const [acceptedRole, setAcceptedRole] = useState<string | null>(null)
+  useEffect(() => {
+    if (currentFarm && user && currentFarm.ownerId !== user.id) {
+      const inv = acceptedInvs.find((i) => i.farmId === currentFarm.id)
+      setAcceptedRole(inv ? inv.role : null)
+    } else {
+      setAcceptedRole(null)
+    }
+  }, [currentFarm, user, acceptedInvs])
+
   const handleSelectChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const val = e.target.value
@@ -24,7 +40,15 @@ const FarmSwitcherBar: React.FC = () => {
         setShowCreateModal(true)
         return
       }
-
+      if (val.startsWith('inv_pending_')) {
+        setSelectedInvitationId(val.replace('inv_pending_', ''))
+        return
+      }
+      if (val.startsWith('inv_accepted_')) {
+        const farmId = val.replace('inv_accepted_', '')
+        switchFarm(farmId)
+        return
+      }
       switchFarm(val)
     },
     [switchFarm]
@@ -56,6 +80,24 @@ const FarmSwitcherBar: React.FC = () => {
                 ))}
               </optgroup>
             )}
+            {acceptedInvs.length > 0 && (
+              <optgroup label="Acceso por Invitación (Aceptadas)">
+                {acceptedInvs.map((inv) => (
+                  <option key={inv.id} value={'inv_accepted_' + inv.farmId}>
+                    {inv.farmName || 'Granja'} (rol {inv.role})
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {pendingInvs.length > 0 && (
+              <optgroup label="Invitaciones Pendientes">
+                {pendingInvs.map((inv) => (
+                  <option key={inv.id} value={'inv_pending_' + inv.id}>
+                    Pendiente: {inv.farmName || inv.farmId}
+                  </option>
+                ))}
+              </optgroup>
+            )}
 
             <option value="__create__">➕ Crear nueva granja</option>
           </select>
@@ -67,7 +109,47 @@ const FarmSwitcherBar: React.FC = () => {
               ✏️ Editar
             </button>
           )}
+          {currentFarm && acceptedRole && user?.id !== currentFarm.ownerId && (
+            <span className="px-2 py-1 text-[10px] uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-200 rounded">
+              Invitado como: {acceptedRole}
+            </span>
+          )}
         </div>
+
+        {selectedInvitationId && (
+          <div className="flex items-center gap-2 text-xs bg-orange-50 border border-orange-200 px-3 py-2 rounded-md">
+            <span className="text-orange-700">
+              Invitación pendiente seleccionada
+            </span>
+            <button
+              className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+              onClick={async () => {
+                const inv = pendingInvs.find(
+                  (i) => i.id === selectedInvitationId
+                )
+                if (!inv || !user?.id) return
+                try {
+                  await acceptInvitation(inv.id, user.id)
+                  setSelectedInvitationId(null)
+                  await loadUserFarms()
+                  switchFarm(inv.farmId)
+                  myInv.refresh()
+                } catch (e) {
+                  console.error(e)
+                  alert('No se pudo aceptar la invitación')
+                }
+              }}
+            >
+              Aceptar
+            </button>
+            <button
+              className="px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              onClick={() => setSelectedInvitationId(null)}
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
 
         {/* Mostrar CTA para crear otra granja cuando ya existe al menos una */}
         <ModalCreateFarm

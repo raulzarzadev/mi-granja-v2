@@ -107,13 +107,10 @@ export const useFarmCRUD = () => {
       }
 
       // 3) Unificar y deduplicar por id
-      const allFullFarms = [...memberFarms, ...ownerFarms]
-      console.log({ allFullFarms, ownerFarms, memberFarms })
       const byId = new Map<string, Farm>()
       ;[...memberFarms, ...ownerFarms].forEach((f) => byId.set(f.id, f))
       const allFarms = Array.from(byId.values())
 
-      console.log({ allFarms })
       dispatch(serializeObj(setFarms(allFarms)))
 
       // Restaurar última selección si aplica
@@ -236,6 +233,34 @@ export const useFarmCRUD = () => {
       if (existing) {
         dispatch(setCurrentFarm(farmId))
         return existing
+      }
+
+      // Validar acceso: owner o invitación aceptada
+      if (!user) throw new Error('No autenticado')
+      const ownerCheck = await getDocs(
+        query(
+          collection(db, 'farms'),
+          where('__name__', '==', farmId),
+          where('ownerId', '==', user.id)
+        )
+      )
+      let hasAccess = !ownerCheck.empty
+      if (!hasAccess) {
+        // Buscar invitación aceptada
+        const invSnap = await getDocs(
+          query(
+            collection(db, 'farmInvitations'),
+            where('farmId', '==', farmId),
+            where('userId', '==', user.id),
+            where('status', '==', 'accepted')
+          )
+        )
+        hasAccess = !invSnap.empty
+        if (!hasAccess) {
+          throw new Error(
+            'Debes aceptar la invitación antes de acceder a esta granja'
+          )
+        }
       }
 
       const farmDoc = await getDocs(
