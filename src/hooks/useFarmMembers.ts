@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSelector } from 'react-redux'
+import { RootState } from '@/features/store'
 import {
   collection,
   query,
@@ -10,7 +12,8 @@ import {
   doc,
   updateDoc,
   deleteDoc,
-  Timestamp
+  Timestamp,
+  onSnapshot
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import {
@@ -20,6 +23,7 @@ import {
   FarmPermission
 } from '@/types/farm'
 import { toDate } from '@/lib/dates'
+import { useEmail } from '@/hooks/useEmail'
 
 /**
  * Hook unificado: miembros de la granja basados exclusivamente en farmInvitations
@@ -29,15 +33,16 @@ export const useFarmMembers = (farmId?: string) => {
   const [invitations, setInvitations] = useState<FarmInvitation[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { user } = useSelector((s: RootState) => s.auth)
+  const { currentFarm } = useSelector((s: RootState) => s.farm)
+  const { sendEmail } = useEmail()
 
   const load = useCallback(async () => {
+    // Mantener función manual de refresco usando getDocs (opcional)
     if (!farmId) {
       setInvitations([])
-      setIsLoading(false)
       return
     }
-    setIsLoading(true)
-    setError(null)
     try {
       const qInv = query(
         collection(db, 'farmInvitations'),
@@ -57,16 +62,48 @@ export const useFarmMembers = (farmId?: string) => {
       })
       setInvitations(data)
     } catch (e) {
-      console.error('Error loading farm members', e)
-      setError('Error al cargar miembros')
-    } finally {
-      setIsLoading(false)
+      console.error('Error load() farm members', e)
     }
   }, [farmId])
 
+  // Suscripción en tiempo real
   useEffect(() => {
-    load()
-  }, [load])
+    if (!farmId) {
+      setInvitations([])
+      setIsLoading(false)
+      return
+    }
+    setIsLoading(true)
+    setError(null)
+    const qInv = query(
+      collection(db, 'farmInvitations'),
+      where('farmId', '==', farmId)
+    )
+    const unsub = onSnapshot(
+      qInv,
+      (snap) => {
+        const data = snap.docs.map((d) => {
+          const v = d.data() as any
+          return {
+            id: d.id,
+            ...v,
+            expiresAt: toDate(v.expiresAt),
+            createdAt: toDate(v.createdAt),
+            updatedAt: toDate(v.updatedAt),
+            acceptedAt: v.acceptedAt ? toDate(v.acceptedAt) : undefined
+          } as FarmInvitation
+        })
+        setInvitations(data)
+        setIsLoading(false)
+      },
+      (err) => {
+        console.error('Error realtime farm members', err)
+        setError('Error en tiempo real')
+        setIsLoading(false)
+      }
+    )
+    return () => unsub()
+  }, [farmId])
 
   // Colaboradores activos = accepted
   const collaborators: FarmCollaborator[] = invitations
@@ -114,16 +151,57 @@ export const useFarmMembers = (farmId?: string) => {
       updatedAt: Timestamp.now()
     }
     const ref = await addDoc(collection(db, 'farmInvitations'), docData)
-    setInvitations((prev) => [
-      ...prev,
-      {
-        id: ref.id,
-        ...docData,
-        expiresAt,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      } as any
-    ])
+    const created = {
+      id: ref.id,
+      ...docData,
+      expiresAt,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    } as any
+    setInvitations((prev) => [...prev, created])
+
+    // Enviar email (best-effort)
+    try {
+      const appUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (typeof window !== 'undefined'
+          ? window.location.origin
+          : 'http://localhost:3000')
+      const acceptUrl = `${appUrl}/invitations/confirm?token=${encodeURIComponent(
+        docData.token
+      )}&action=accept`
+      const rejectUrl = `${appUrl}/invitations/confirm?token=${encodeURIComponent(
+        docData.token
+      )}&action=reject`
+
+      await sendEmail({
+        to: email,
+        subject: 'Invitación para colaborar en una granja',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb; margin-bottom:16px;">Has sido invitado a colaborar en una granja</h2>
+            <p style="margin:0 0 8px 0;">Rol propuesto: <strong>${role}</strong></p>
+            <p style="margin:0 0 16px 0;">La invitación expira el <strong>${expiresAt.toLocaleDateString()}</strong>.</p>
+            <div style="margin: 24px 0; display:flex; gap:12px;">
+              <a href="${acceptUrl}" style="background:#16a34a; color:#fff; padding:12px 18px; text-decoration:none; border-radius:6px; font-weight:600;">Aceptar invitación</a>
+              <a href="${rejectUrl}" style="background:#dc2626; color:#fff; padding:12px 18px; text-decoration:none; border-radius:6px; font-weight:600;">Rechazar</a>
+            </div>
+            <p style="font-size:12px; color:#6b7280;">Si los botones no funcionan copia y pega estos enlaces:</p>
+            <p style="font-size:11px; word-break:break-all; margin:4px 0;">Aceptar: ${acceptUrl}</p>
+            <p style="font-size:11px; word-break:break-all; margin:4px 0;">Rechazar: ${rejectUrl}</p>
+          </div>
+        `,
+        text: `Has sido invitado como ${role}. Acepta: ${acceptUrl} | Rechaza: ${rejectUrl}`,
+        tags: [
+          { name: 'type', value: 'invitation' },
+          { name: 'farm_id', value: farmId }
+        ]
+      })
+    } catch (e) {
+      console.warn('Fallo al enviar email de invitación (continuando):', e)
+    }
+
+    return created
   }
 
   // Aceptar invitación (interno / administrador)
@@ -166,6 +244,15 @@ export const useFarmMembers = (farmId?: string) => {
 
   // Revocar (accepted -> revoked)
   const revokeInvitation = async (invitationId: string) => {
+    // Seguridad en cliente: solo owner / admin / manager
+    const me = invitations
+      .filter((i) => i.status === 'accepted')
+      .find((i) => (i as any).userId === user?.id)
+    const myRole = (me as any)?.role
+    const isOwner = currentFarm && user && currentFarm.ownerId === user.id
+    const allowed = isOwner || myRole === 'admin' || myRole === 'manager'
+    if (!allowed) throw new Error('No autorizado para revocar invitaciones')
+
     const ref = doc(db, 'farmInvitations', invitationId)
     await updateDoc(ref, { status: 'revoked', updatedAt: Timestamp.now() })
     setInvitations((prev) =>

@@ -32,6 +32,7 @@ import {
   removeCollaboratorFromFarm
 } from '@/features/farm/farmSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
+import { useMyInvitations } from './useMyInvitations'
 
 export const useFarmCRUD = () => {
   const dispatch = useDispatch<AppDispatch>()
@@ -63,26 +64,28 @@ export const useFarmCRUD = () => {
         createdAt: doc.data().createdAt?.toDate() || new Date(),
         updatedAt: doc.data().updatedAt?.toDate() || new Date()
       })) as Farm[]
-
-      // 2) Granjas donde el usuario es colaborador activo
-      const collabQuery = query(
-        collection(db, 'farmCollaborators'),
-        where('userId', '==', user.id),
-        where('isActive', '==', true)
+      // 2) Granjas donde el usuario tiene invitación aceptada (nuevo modelo)
+      const acceptedInvQuery = query(
+        collection(db, 'farmInvitations'),
+        where('email', '==', user.email),
+        where('status', '==', 'accepted')
       )
-      const collabSnapshot = await getDocs(collabQuery)
-      const collabFarmIds = Array.from(
-        new Set(collabSnapshot.docs.map((d) => (d.data() as any).farmId))
-      ).filter(Boolean) as string[]
+      const acceptedInvSnap = await getDocs(acceptedInvQuery)
 
-      let collaboratorFarms: Farm[] = []
-      if (collabFarmIds.length > 0) {
-        // Firestore 'in' acepta máx 10 IDs; hacer batching
+      const acceptedFarmIds = Array.from(
+        new Set(
+          acceptedInvSnap.docs
+            .map((d) => (d.data() as any).farmId)
+            .filter(Boolean)
+        )
+      ) as string[]
+
+      let memberFarms: Farm[] = []
+      if (acceptedFarmIds.length > 0) {
         const batches: string[][] = []
-        for (let i = 0; i < collabFarmIds.length; i += 10) {
-          batches.push(collabFarmIds.slice(i, i + 10))
+        for (let i = 0; i < acceptedFarmIds.length; i += 10) {
+          batches.push(acceptedFarmIds.slice(i, i + 10))
         }
-
         const batchResults = await Promise.all(
           batches.map(async (ids) => {
             const qFarms = query(
@@ -100,15 +103,32 @@ export const useFarmCRUD = () => {
             })) as Farm[]
           })
         )
-        collaboratorFarms = batchResults.flat()
+        memberFarms = batchResults.flat()
       }
 
       // 3) Unificar y deduplicar por id
+      const allFullFarms = [...memberFarms, ...ownerFarms]
+      console.log({ allFullFarms, ownerFarms, memberFarms })
       const byId = new Map<string, Farm>()
-      ;[...ownerFarms, ...collaboratorFarms].forEach((f) => byId.set(f.id, f))
+      ;[...memberFarms, ...ownerFarms].forEach((f) => byId.set(f.id, f))
       const allFarms = Array.from(byId.values())
 
+      console.log({ allFarms })
       dispatch(serializeObj(setFarms(allFarms)))
+
+      // Restaurar última selección si aplica
+      try {
+        if (typeof window !== 'undefined') {
+          const lastId = localStorage.getItem('last_farm_id')
+          if (lastId && allFarms.some((f) => f.id === lastId)) {
+            dispatch(setCurrentFarm(lastId))
+          } else if (!currentFarm && allFarms.length > 0) {
+            dispatch(setCurrentFarm(allFarms[0].id))
+          }
+        }
+      } catch (e) {
+        console.warn('No se pudo restaurar last_farm_id', e)
+      }
     } catch (err) {
       console.error('Error loading farms:', err)
       dispatch(setError('Error al cargar las granjas'))
@@ -199,6 +219,13 @@ export const useFarmCRUD = () => {
   // Cambiar granja actual
   const switchFarm = (farmId: string) => {
     dispatch(setCurrentFarm(farmId))
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('last_farm_id', farmId)
+      }
+    } catch (e) {
+      console.warn('No se pudo guardar last_farm_id', e)
+    }
   }
 
   // Cargar una granja por ID (aunque no seas owner) y cambiar contexto

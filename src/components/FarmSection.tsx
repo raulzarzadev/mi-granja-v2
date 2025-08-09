@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useSelector } from 'react-redux'
+import { RootState } from '@/features/store'
 import { useFarmAreas } from '@/hooks/useFarmAreas'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 import LoadingSpinner from '@/components/LoadingSpinner'
@@ -40,6 +42,18 @@ const FarmSection: React.FC = () => {
     deleteInvitation,
     updateCollaborator
   } = useFarmMembers(currentFarm?.id)
+
+  // Usuario actual
+  const { user } = useSelector((s: RootState) => s.auth)
+
+  // Rol del usuario (si es owner consideramos permisos completos)
+  const myCollaborator = collaborators.find(
+    (c) => user && c.userId === user.id && c.isActive
+  )
+  const myRole = myCollaborator?.role
+  const isOwner = !!(currentFarm && user && currentFarm.ownerId === user.id)
+  const canRevokeInvitations =
+    isOwner || myRole === 'admin' || myRole === 'manager'
 
   // TODO: Refactor hacia modelo basado solo en farmInvitations (eliminar collaborators)
 
@@ -452,24 +466,27 @@ const FarmSection: React.FC = () => {
                             >
                               Cancelar
                             </button>
-                            <button
-                              className="text-xs px-3 py-1 rounded-md border border-amber-300 text-amber-800 hover:bg-amber-50"
-                              onClick={async () => {
-                                if (
-                                  confirm(
-                                    `¿Revocar la invitación a ${invitation.email}? No podrá usarse más.`
+                            {canRevokeInvitations && (
+                              <button
+                                className="text-xs px-3 py-1 rounded-md border border-amber-300 text-amber-800 hover:bg-amber-50"
+                                onClick={async () => {
+                                  if (
+                                    !canRevokeInvitations ||
+                                    !confirm(
+                                      `¿Revocar la invitación a ${invitation.email}? No podrá usarse más.`
+                                    )
                                   )
-                                ) {
+                                    return
                                   try {
                                     await revokeInvitation(invitation.id)
                                   } catch (e) {
                                     console.error(e)
                                   }
-                                }
-                              }}
-                            >
-                              Revocar
-                            </button>
+                                }}
+                              >
+                                Revocar
+                              </button>
+                            )}
                             <button
                               className="text-xs px-3 py-1 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
                               onClick={async () => {
