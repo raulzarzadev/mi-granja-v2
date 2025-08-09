@@ -6,7 +6,8 @@ import { useModal } from '@/hooks/useModal'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
-import { COLLABORATOR_ROLES, DEFAULT_PERMISSIONS } from '@/types/farm'
+import { DEFAULT_PERMISSIONS } from '@/types/collaborators'
+import { COLLABORATOR_ROLES } from '@/types/collaborators'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 
 /**

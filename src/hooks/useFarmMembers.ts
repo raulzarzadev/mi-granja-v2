@@ -16,12 +16,11 @@ import {
   onSnapshot
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { FarmInvitation, FarmCollaborator, FarmPermission } from '@/types/farm'
 import {
-  FarmInvitation,
-  DEFAULT_PERMISSIONS,
-  FarmCollaborator,
-  FarmPermission
-} from '@/types/farm'
+  collaborator_roles_label,
+  DEFAULT_PERMISSIONS
+} from '@/types/collaborators'
 import { toDate } from '@/lib/dates'
 import { useEmail } from '@/hooks/useEmail'
 
@@ -191,7 +190,9 @@ export const useFarmMembers = (farmId?: string) => {
             <p style="font-size:11px; word-break:break-all; margin:4px 0;">Rechazar: ${rejectUrl}</p>
           </div>
         `,
-        text: `Has sido invitado como ${role}. Acepta: ${acceptUrl} | Rechaza: ${rejectUrl}`,
+        text: `Has sido invitado como ${
+          collaborator_roles_label[role] || role
+        }. Acepta: ${acceptUrl} | Rechaza: ${rejectUrl}`,
         tags: [
           { name: 'type', value: 'invitation' },
           { name: 'farm_id', value: farmId }

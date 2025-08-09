@@ -2,7 +2,8 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
-import { Farm } from '@/types/farm'
+import { Farm, FarmCollaborator } from '@/types/farm'
+import { collaborator_roles_label } from '@/types/collaborators'
 import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditFarm from './ModalEditFarm'
 import { useSelector } from 'react-redux'
@@ -26,7 +27,9 @@ const FarmSwitcherBar: React.FC = () => {
 
   const pendingInvs = myInv.getPending()
   const acceptedInvs = myInv.getAccepted()
-  const [acceptedRole, setAcceptedRole] = useState<string | null>(null)
+  const [acceptedRole, setAcceptedRole] = useState<
+    FarmCollaborator['role'] | null
+  >(null)
 
   useEffect(() => {
     if (currentFarm && user && currentFarm.ownerId !== user.id) {
@@ -89,7 +92,9 @@ const FarmSwitcherBar: React.FC = () => {
                     <option key={farm.id} value={value}>
                       {pending ? '⏳' : '✅'} {farm.name}
                       {farm.invitationMeta?.role &&
-                        ' (' + farm.invitationMeta.role + ')'}{' '}
+                        ' (' +
+                          collaborator_roles_label[farm.invitationMeta.role] +
+                          ')'}{' '}
                       {pending && '— pendiente'}
                     </option>
                   )
@@ -110,7 +115,8 @@ const FarmSwitcherBar: React.FC = () => {
           )}
           {currentFarm && acceptedRole && user?.id !== currentFarm.ownerId && (
             <span className="px-2 py-1 text-[10px] uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-200 rounded">
-              Invitado como: {acceptedRole}
+              Invitado como:{' '}
+              {collaborator_roles_label[acceptedRole] || acceptedRole}
             </span>
           )}
         </div>
