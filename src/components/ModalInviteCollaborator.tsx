@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { Modal } from './Modal'
 import { useModal } from '@/hooks/useModal'
-import { useFarmCollaborators } from '@/hooks/useFarmCollaborators'
+import { useFarmMembers } from '@/hooks/useFarmMembers'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import { COLLABORATOR_ROLES, DEFAULT_PERMISSIONS } from '@/types/farm'
@@ -16,7 +16,7 @@ const ModalInviteCollaborator: React.FC = () => {
   const { isOpen, openModal, closeModal } = useModal()
   const { user } = useSelector((state: RootState) => state.auth)
   const { currentFarm } = useFarmCRUD()
-  const { inviteCollaborator } = useFarmCollaborators(currentFarm?.id)
+  const { inviteCollaborator } = useFarmMembers(currentFarm?.id)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: '',

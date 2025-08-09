@@ -36,7 +36,7 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
           </span>
           <div className="min-w-0">
             <h4
-              className="text-lg font-semibold text-gray-900 truncate"
+              className="text-xs font-semibold text-gray-900 truncate"
               title={collaborator.email || collaborator.userId}
             >
               {collaborator.email || collaborator.userId}

@@ -32,7 +32,7 @@ export const useMyInvitations = () => {
           where('status', 'in', ['pending', 'accepted'])
         )
         const snap = await getDocs(qInv)
-        const data = snap.docs.map((d) => {
+        const rawInv = snap.docs.map((d) => {
           const v = d.data() as any
           return {
             id: d.id,
@@ -42,6 +42,40 @@ export const useMyInvitations = () => {
             updatedAt: toDate(v.updatedAt)
           } as FarmInvitation
         })
+
+        // Enriquecer con nombres de granja (batch de 10 máximo por 'in')
+        const farmIds = Array.from(new Set(rawInv.map((i) => i.farmId)))
+        let farmNames: Record<string, string> = {}
+        if (farmIds.length > 0) {
+          const batches: string[][] = []
+          ;(function build() {
+            for (let i = 0; i < farmIds.length; i += 10) {
+              batches.push(farmIds.slice(i, i + 10))
+            }
+          })()
+          const batchResults = await Promise.all(
+            batches.map(async (ids) => {
+              const qFarms = query(
+                collection(db, 'farms'),
+                where('__name__', 'in', ids as any)
+              )
+              const fsnap = await getDocs(qFarms)
+              return fsnap.docs.map((fd) => ({
+                id: fd.id,
+                name: (fd.data() as any).name as string
+              }))
+            })
+          )
+          farmNames = batchResults.flat().reduce((acc, f) => {
+            acc[f.id] = f.name
+            return acc
+          }, {} as Record<string, string>)
+        }
+
+        const data = rawInv.map((inv) => ({
+          ...inv,
+          farmName: farmNames[inv.farmId]
+        }))
         setInvitations(data)
       } catch (e) {
         console.error('Error loading my invitations', e)

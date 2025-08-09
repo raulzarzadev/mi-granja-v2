@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { useFarmAreas } from '@/hooks/useFarmAreas'
-import { useFarmCollaborators } from '@/hooks/useFarmCollaborators'
+import { useFarmMembers } from '@/hooks/useFarmMembers'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { FARM_AREA_TYPES } from '@/types/farm'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
@@ -39,7 +39,9 @@ const FarmSection: React.FC = () => {
     revokeInvitation,
     deleteInvitation,
     updateCollaborator
-  } = useFarmCollaborators(currentFarm?.id)
+  } = useFarmMembers(currentFarm?.id)
+
+  // TODO: Refactor hacia modelo basado solo en farmInvitations (eliminar collaborators)
 
   const [activeSubTab, setActiveSubTab] = useState<
     'overview' | 'areas' | 'collaborators'
@@ -50,6 +52,8 @@ const FarmSection: React.FC = () => {
 
   // Invitaciones del usuario actual para elegir granja si no tiene propias
   const myInv = useMyInvitations()
+
+  // console.log({ myInv })
 
   if (farmsLoading) {
     return (
@@ -67,6 +71,9 @@ const FarmSection: React.FC = () => {
     return (
       <div className="space-y-6">
         <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            Invitaciones
+          </h2>
           {myInv.isLoading ? (
             <div className="flex items-center">
               <LoadingSpinner />
@@ -97,6 +104,15 @@ const FarmSection: React.FC = () => {
                       Aceptada
                     </span>
                   </div>
+                  <p className="text-[10px] text-gray-400 mb-1 select-all break-all">
+                    ID: {inv.id}
+                  </p>
+                  {inv.farmName && (
+                    <p className="text-xs text-gray-500 mb-1">
+                      Granja:{' '}
+                      <span className="font-medium">{inv.farmName}</span>
+                    </p>
+                  )}
                   <p className="text-sm text-gray-600">Rol: {inv.role}</p>
                   <div className="mt-3">
                     <button
@@ -129,6 +145,15 @@ const FarmSection: React.FC = () => {
                       Pendiente
                     </span>
                   </div>
+                  <p className="text-[10px] text-gray-400 mb-1 select-all break-all">
+                    ID: {inv.id}
+                  </p>
+                  {inv.farmName && (
+                    <p className="text-xs text-gray-500 mb-1">
+                      Granja:{' '}
+                      <span className="font-medium">{inv.farmName}</span>
+                    </p>
+                  )}
                   <p className="text-sm text-gray-600">Rol: {inv.role}</p>
                   <p className="text-xs text-gray-500">
                     Expira: {formatDate(toDate(inv.expiresAt))}

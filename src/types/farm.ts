@@ -76,6 +76,8 @@ export interface FarmInvitation {
   expiresAt: AppDate
   createdAt: AppDate
   updatedAt: AppDate
+  // Nombre de la granja (enriquecido en cliente)
+  farmName?: string
 }
 
 export const FARM_AREA_TYPES = [

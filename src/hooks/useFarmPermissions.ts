@@ -4,12 +4,12 @@ import { useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import { FarmPermission } from '@/types/farm'
-import { useFarmCollaborators } from './useFarmCollaborators'
+import { useFarmMembers } from './useFarmMembers'
 
 export const useFarmPermissions = () => {
   const { user } = useSelector((s: RootState) => s.auth)
   const { currentFarm } = useSelector((s: RootState) => s.farm)
-  const { collaborators } = useFarmCollaborators(currentFarm?.id)
+  const { collaborators } = useFarmMembers(currentFarm?.id)
 
   const myPerms = useMemo(() => {
     if (!currentFarm || !user) return [] as FarmPermission[]
