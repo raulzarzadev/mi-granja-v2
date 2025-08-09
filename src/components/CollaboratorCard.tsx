@@ -8,6 +8,7 @@ interface CollaboratorCardProps {
   collaborator: FarmCollaborator
   onRevoke?: (collaboratorId: string) => void | Promise<void>
   onReactivate?: (collaboratorId: string) => void | Promise<void>
+  onDelete?: (collaboratorId: string) => void | Promise<void>
 }
 
 /**
@@ -16,7 +17,8 @@ interface CollaboratorCardProps {
 const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
   collaborator,
   onRevoke,
-  onReactivate
+  onReactivate,
+  onDelete
 }) => {
   const roleInfo = COLLABORATOR_ROLES.find(
     (role) => role.value === collaborator.role
@@ -72,6 +74,15 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
               title="Reactivar acceso"
             >
               Reactivar
+            </button>
+          )}
+          {onDelete && (
+            <button
+              className="text-xs px-2 py-1 border border-red-300 text-red-700 rounded-md hover:bg-red-50"
+              onClick={() => onDelete(collaborator.id)}
+              title="Eliminar colaborador"
+            >
+              Eliminar
             </button>
           )}
         </div>

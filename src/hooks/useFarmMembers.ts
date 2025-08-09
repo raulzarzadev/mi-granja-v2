@@ -167,6 +167,13 @@ export const useFarmMembers = (farmId?: string) => {
         | FarmPermission['actions'][number]
         | FarmPermission['actions'][number][]
     ) => {
+      // Owner siempre true
+      if (currentFarm && user && currentFarm.ownerId === user.id) return true
+
+      // Si el colaborador es admin => true
+      const me = collaborators.find((c) => c.userId === user?.id && c.isActive)
+      if (me?.role === 'admin') return true
+
       const requiredArr = Array.isArray(required) ? required : [required]
       return requiredArr.every((act) =>
         myEffectivePermissions.some(
@@ -174,7 +181,7 @@ export const useFarmMembers = (farmId?: string) => {
         )
       )
     },
-    [myEffectivePermissions]
+    [currentFarm, user, collaborators, myEffectivePermissions]
   )
 
   const pendingInvitations = invitations.filter((i) => i.status === 'pending')

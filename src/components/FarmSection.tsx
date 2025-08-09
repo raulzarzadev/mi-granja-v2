@@ -40,7 +40,8 @@ const FarmSection: React.FC = () => {
     cancelInvitation,
     revokeInvitation,
     deleteInvitation,
-    updateCollaborator
+    updateCollaborator,
+    hasPermissions
   } = useFarmMembers(currentFarm?.id)
 
   // Usuario actual
@@ -50,12 +51,8 @@ const FarmSection: React.FC = () => {
   const myCollaborator = collaborators.find(
     (c) => user && c.userId === user.id && c.isActive
   )
-  const myRole = myCollaborator?.role
-  const isOwner = !!(currentFarm && user && currentFarm.ownerId === user.id)
-  const canRevokeInvitations =
-    isOwner || myRole === 'admin' || myRole === 'manager'
-
-  // TODO: Refactor hacia modelo basado solo en farmInvitations (eliminar collaborators)
+  const canRevokeInvitations = hasPermissions('collaborators', 'update')
+  const canDeleteInvitations = hasPermissions('collaborators', 'delete')
 
   const [activeSubTab, setActiveSubTab] = useState<
     'overview' | 'areas' | 'collaborators'
@@ -487,24 +484,26 @@ const FarmSection: React.FC = () => {
                                 Revocar
                               </button>
                             )}
-                            <button
-                              className="text-xs px-3 py-1 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
-                              onClick={async () => {
-                                if (
-                                  confirm(
-                                    `¿Eliminar definitivamente la invitación a ${invitation.email}? Esta acción no se puede deshacer.`
-                                  )
-                                ) {
-                                  try {
-                                    await deleteInvitation(invitation.id)
-                                  } catch (e) {
-                                    console.error(e)
+                            {canDeleteInvitations && (
+                              <button
+                                className="text-xs px-3 py-1 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
+                                onClick={async () => {
+                                  if (
+                                    confirm(
+                                      `¿Eliminar definitivamente la invitación a ${invitation.email}? Esta acción no se puede deshacer.`
+                                    )
+                                  ) {
+                                    try {
+                                      await deleteInvitation(invitation.id)
+                                    } catch (e) {
+                                      console.error(e)
+                                    }
                                   }
-                                }
-                              }}
-                            >
-                              Eliminar
-                            </button>
+                                }}
+                              >
+                                Eliminar
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -545,6 +544,23 @@ const FarmSection: React.FC = () => {
                               console.error(e)
                             }
                           }}
+                          onDelete={
+                            canDeleteInvitations
+                              ? async (id) => {
+                                  if (
+                                    confirm(
+                                      '¿Eliminar definitivamente este colaborador? Esto borrará la invitación / registro asociado.'
+                                    )
+                                  ) {
+                                    try {
+                                      await deleteInvitation(id)
+                                    } catch (e) {
+                                      console.error(e)
+                                    }
+                                  }
+                                }
+                              : undefined
+                          }
                         />
                       ))}
                     </div>
