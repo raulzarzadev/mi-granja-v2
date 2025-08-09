@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import {
@@ -16,10 +16,11 @@ import {
   onSnapshot
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { FarmInvitation, FarmCollaborator, FarmPermission } from '@/types/farm'
+import { FarmInvitation, FarmPermission } from '@/types/farm'
 import {
   collaborator_roles_label,
-  DEFAULT_PERMISSIONS
+  DEFAULT_PERMISSIONS,
+  FarmCollaborator
 } from '@/types/collaborators'
 import { toDate } from '@/lib/dates'
 import { useEmail } from '@/hooks/useEmail'
@@ -105,22 +106,76 @@ export const useFarmMembers = (farmId?: string) => {
   }, [farmId])
 
   // Colaboradores activos = accepted
-  const collaborators: FarmCollaborator[] = invitations
-    .filter((i) => i.status === 'accepted')
-    .map((i) => ({
-      id: i.id,
-      farmId: i.farmId,
-      userId: (i as any).userId || i.email, // fallback al email
-      role: i.role,
-      permissions: DEFAULT_PERMISSIONS[i.role] as FarmPermission[],
-      isActive: true,
-      invitedBy: i.invitedBy,
-      invitedAt: i.createdAt,
-      acceptedAt: (i as any).acceptedAt || i.updatedAt,
-      createdAt: i.createdAt,
-      updatedAt: i.updatedAt,
-      notes: (i as any).notes
-    }))
+  const collaborators: FarmCollaborator[] = useMemo(
+    () =>
+      invitations
+        // .filter((i) => i.status === 'accepted')
+        .map((i) => ({
+          id: i.id,
+          farmId: i.farmId,
+          userId: (i as any).userId || i.email, // fallback al email
+          role: i.role,
+          permissions: DEFAULT_PERMISSIONS[i.role] as FarmPermission[],
+          isActive: i.status === 'accepted',
+          invitedBy: i.invitedBy,
+          invitedAt: i.createdAt,
+          acceptedAt: (i as any).acceptedAt || i.updatedAt,
+          createdAt: i.createdAt,
+          updatedAt: i.updatedAt,
+          notes: (i as any).notes,
+          invitationMeta: {
+            invitationId: (i as any).invitationId || i.id,
+            status: i.status,
+            role: i.role,
+            invitedBy: i.invitedBy,
+            invitedByEmail: (i as any).invitedByEmail,
+            invitedAt: i.createdAt,
+            acceptedAt: (i as any).acceptedAt
+          }
+        })),
+    [invitations]
+  )
+
+  // Permisos efectivos del usuario actual (owner = todos)
+  const myEffectivePermissions = useMemo(() => {
+    if (!currentFarm || !user) return [] as FarmPermission[]
+    if (currentFarm.ownerId === user.id) {
+      return [
+        { module: 'animals', actions: ['create', 'read', 'update', 'delete'] },
+        { module: 'breeding', actions: ['create', 'read', 'update', 'delete'] },
+        {
+          module: 'reminders',
+          actions: ['create', 'read', 'update', 'delete']
+        },
+        { module: 'areas', actions: ['create', 'read', 'update', 'delete'] },
+        {
+          module: 'collaborators',
+          actions: ['create', 'read', 'update', 'delete']
+        },
+        { module: 'reports', actions: ['create', 'read', 'update', 'delete'] }
+      ] as FarmPermission[]
+    }
+    const me = collaborators.find((c) => c.userId === user.id && c.isActive)
+    return me?.permissions || []
+  }, [currentFarm, user, collaborators])
+
+  // hasPermissions: verifica si el usuario actual tiene TODAS las acciones solicitadas en un módulo
+  const hasPermissions = useCallback(
+    (
+      module: FarmPermission['module'],
+      required:
+        | FarmPermission['actions'][number]
+        | FarmPermission['actions'][number][]
+    ) => {
+      const requiredArr = Array.isArray(required) ? required : [required]
+      return requiredArr.every((act) =>
+        myEffectivePermissions.some(
+          (p) => p.module === module && p.actions.includes(act)
+        )
+      )
+    },
+    [myEffectivePermissions]
+  )
 
   const pendingInvitations = invitations.filter((i) => i.status === 'pending')
 
@@ -245,15 +300,10 @@ export const useFarmMembers = (farmId?: string) => {
 
   // Revocar (accepted -> revoked)
   const revokeInvitation = async (invitationId: string) => {
-    // Seguridad en cliente: solo owner / admin / manager
-    const me = invitations
-      .filter((i) => i.status === 'accepted')
-      .find((i) => (i as any).userId === user?.id)
-    const myRole = (me as any)?.role
-    const isOwner = currentFarm && user && currentFarm.ownerId === user.id
-    const allowed = isOwner || myRole === 'admin' || myRole === 'manager'
-    if (!allowed) throw new Error('No autorizado para revocar invitaciones')
-
+    // Lógica: revocar (temporal) requiere permiso update sobre colaboradores
+    if (!hasPermissions('collaborators', 'update')) {
+      throw new Error('No autorizado para revocar invitaciones')
+    }
     const ref = doc(db, 'farmInvitations', invitationId)
     await updateDoc(ref, { status: 'revoked', updatedAt: Timestamp.now() })
     setInvitations((prev) =>
@@ -267,6 +317,10 @@ export const useFarmMembers = (farmId?: string) => {
 
   // Eliminar definitiva
   const deleteInvitation = async (invitationId: string) => {
+    // Eliminar definitiva: requiere permiso delete sobre colaboradores
+    if (!hasPermissions('collaborators', 'delete')) {
+      throw new Error('No autorizado para eliminar invitaciones')
+    }
     await deleteDoc(doc(db, 'farmInvitations', invitationId))
     setInvitations((prev) => prev.filter((i) => i.id !== invitationId))
   }
@@ -331,6 +385,7 @@ export const useFarmMembers = (farmId?: string) => {
     revokeInvitation,
     deleteInvitation,
     updateCollaborator,
+    hasPermissions,
 
     // Utilidades
     getCollaboratorStats,

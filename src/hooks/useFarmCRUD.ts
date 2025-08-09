@@ -15,7 +15,7 @@ import {
   Timestamp
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { Farm, FarmArea, FarmCollaborator } from '@/types/farm'
+import { Farm, FarmArea } from '@/types/farm'
 import {
   setLoading,
   setError,
@@ -34,6 +34,7 @@ import {
   removeCollaboratorFromFarm
 } from '@/features/farm/farmSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
+import { FarmCollaborator } from '@/types/collaborators'
 
 export const useFarmCRUD = () => {
   const dispatch = useDispatch<AppDispatch>()

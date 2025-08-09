@@ -2,8 +2,11 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
-import { Farm, FarmCollaborator } from '@/types/farm'
-import { collaborator_roles_label } from '@/types/collaborators'
+import { Farm } from '@/types/farm'
+import {
+  collaborator_roles_label,
+  FarmCollaborator
+} from '@/types/collaborators'
 import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditFarm from './ModalEditFarm'
 import { useSelector } from 'react-redux'

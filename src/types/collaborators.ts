@@ -1,15 +1,54 @@
-import { FarmPermission, FarmCollaborator } from './farm'
+import { AppDate } from './date'
+import { FarmInvitation, FarmPermission } from './farm'
 
 // Definición consolidada de roles de colaboradores con permisos por defecto
-export interface CollaboratorRoleDefinition {
-  value: FarmCollaborator['role']
-  label: string
-  description: string
-  icon: string
-  defaultPermissions: FarmPermission[]
+// export interface CollaboratorRoleDefinition {
+//   value: CollaboratorRolType
+//   label: string
+//   description: string
+//   icon: string
+//   defaultPermissions: FarmPermission[]
+// }
+
+export interface FarmCollaborator {
+  id: string
+  farmId: string
+  userId: string
+  email?: string
+  role: CollaboratorRolType
+  permissions: FarmPermission[]
+  isActive: boolean
+  /**
+   * @deprecated use invitationMeta instead
+   */
+  invitedBy: string
+  /**
+   * @deprecated use invitationMeta instead
+   */
+  invitedByEmail?: string
+  /**
+   * @deprecated use invitationMeta instead
+   */
+  invitedAt: AppDate
+  /**
+   * @deprecated use invitationMeta instead
+   */
+  acceptedAt?: AppDate
+  notes?: string
+  createdAt: AppDate
+  updatedAt: AppDate
+  invitationMeta?: {
+    invitationId?: string
+    status?: FarmInvitation['status']
+    role?: FarmInvitation['role']
+    invitedBy: string
+    invitedByEmail?: string
+    invitedAt: AppDate
+    acceptedAt?: AppDate
+  }
 }
 
-export const COLLABORATOR_ROLES: readonly CollaboratorRoleDefinition[] = [
+export const COLLABORATOR_ROLES = [
   {
     value: 'admin',
     label: 'Administrador',
@@ -82,27 +121,31 @@ export const COLLABORATOR_ROLES: readonly CollaboratorRoleDefinition[] = [
 ] as const
 
 export const collaborator_roles = COLLABORATOR_ROLES.map((r) => r.value)
-export type collaborator_roles_type = (typeof collaborator_roles)[number]
+export type CollaboratorRolType = (typeof collaborator_roles)[number]
 
-export const collaborator_roles_label: Record<collaborator_roles_type, string> =
+export const collaborator_roles_label: Record<CollaboratorRolType, string> =
   COLLABORATOR_ROLES.reduce((acc, r) => {
     acc[r.value] = r.label
     return acc
-  }, {} as Record<collaborator_roles_type, string>)
+  }, {} as Record<CollaboratorRolType, string>)
 
 export const collaborator_roles_description: Record<
-  collaborator_roles_type,
+  CollaboratorRolType,
   string
 > = COLLABORATOR_ROLES.reduce((acc, r) => {
   acc[r.value] = r.description
   return acc
-}, {} as Record<collaborator_roles_type, string>)
+}, {} as Record<CollaboratorRolType, string>)
 
 export const DEFAULT_PERMISSIONS: Record<
   FarmCollaborator['role'],
   FarmPermission[]
 > = COLLABORATOR_ROLES.reduce((acc, r) => {
-  acc[r.value] = r.defaultPermissions
+  // Convert readonly definitions to mutable copies matching FarmPermission[]
+  acc[r.value] = r.defaultPermissions.map((p) => ({
+    module: p.module,
+    actions: [...p.actions]
+  })) as FarmPermission[]
   return acc
 }, {} as Record<FarmCollaborator['role'], FarmPermission[]>)
 

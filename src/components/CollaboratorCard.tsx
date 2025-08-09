@@ -1,8 +1,7 @@
 'use client'
 
 import React from 'react'
-import { FarmCollaborator } from '@/types/farm'
-import { COLLABORATOR_ROLES } from '@/types/collaborators'
+import { COLLABORATOR_ROLES, FarmCollaborator } from '@/types/collaborators'
 import { formatDate, toDate } from '@/lib/dates'
 
 interface CollaboratorCardProps {

@@ -1,3 +1,4 @@
+import { FarmCollaborator } from './collaborators'
 import { AppDate } from './date'
 
 export interface Farm {
@@ -35,23 +36,6 @@ export interface FarmArea {
   type: 'pasture' | 'barn' | 'feeding' | 'storage' | 'medical' | 'other'
   capacity?: number | null
   isActive: boolean
-  notes?: string
-  createdAt: AppDate
-  updatedAt: AppDate
-}
-
-export interface FarmCollaborator {
-  id: string
-  farmId: string
-  userId: string
-  email?: string
-  role: 'admin' | 'manager' | 'caretaker' | 'veterinarian' | 'viewer'
-  permissions: FarmPermission[]
-  isActive: boolean
-  invitedBy: string
-  invitedByEmail?: string
-  invitedAt: AppDate
-  acceptedAt?: AppDate
   notes?: string
   createdAt: AppDate
   updatedAt: AppDate
