@@ -114,6 +114,7 @@ export const useFarmMembers = (farmId?: string) => {
           id: i.id,
           farmId: i.farmId,
           userId: (i as any).userId || i.email, // fallback al email
+          email: i.email,
           role: i.role,
           permissions: DEFAULT_PERMISSIONS[i.role] as FarmPermission[],
           isActive: i.status === 'accepted',

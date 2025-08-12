@@ -39,7 +39,11 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
           <div className="min-w-0">
             <h4
               className="text-xs font-semibold text-gray-900 truncate"
-              title={collaborator.email || collaborator.userId}
+              title={
+                collaborator.email && collaborator.userId !== collaborator.email
+                  ? `${collaborator.email} (${collaborator.userId})`
+                  : collaborator.email || collaborator.userId
+              }
             >
               {collaborator.email || collaborator.userId}
             </h4>
