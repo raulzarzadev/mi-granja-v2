@@ -103,7 +103,6 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   }
 
   const femaleStatuses = getFemaleStatuses()
-
   const femalesBreedingInfo =
     record?.femaleBreedingInfo.map((info) => {
       const animalInfo = animals.find((a) => info.femaleId === a.id)
@@ -141,7 +140,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       }
 
       return {
-        animalId: animalInfo?.id, // Número del animal para mostrar al usuario
+        animalId: animalInfo?.id || info.femaleId, // Número del animal para mostrar al usuario
         animalNumber: animalInfo?.animalNumber,
         type: animalInfo?.type,
         pregnancyConfirmedDate: info.pregnancyConfirmedDate || null,
@@ -292,12 +291,15 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                 }
               />
             ) : (
-              <div
-                key={femaleAnimal.animalId}
-                className="p-2 bg-gray-50 rounded-md"
-              >
-                <span className="text-gray-500">Animal no encontrado</span>
-              </div>
+              <AnimalNotFound
+                animalId={femaleAnimal.animalId || ''}
+                onDelete={async () => {
+                  return onRemoveFromBreeding?.(
+                    record,
+                    femaleAnimal.animalId || ''
+                  )
+                }}
+              />
             )
           })}
         </div>
@@ -397,6 +399,92 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         )}
       </div>
     </div>
+  )
+}
+
+export const AnimalNotFound = ({
+  animalId,
+  onDelete
+}: {
+  animalId?: string
+  onDelete?: () => void | Promise<void>
+}) => {
+  return (
+    <>
+      <div
+        key={animalId}
+        className="p-2 bg-gray-50 rounded-md flex justify-between items-center"
+      >
+        <span className="text-gray-500">Animal no encontrado</span>
+        {onDelete && (
+          <button
+            onClick={() =>
+              (
+                document.getElementById(
+                  `confirm-delete-${animalId}`
+                ) as HTMLDialogElement | null
+              )?.showModal()
+            }
+            aria-label="Eliminar"
+            title="Eliminar"
+            className="w-5 h-5 flex items-center justify-center font-bold text-white rounded-full bg-red-500 hover:bg-red-600 active:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-300"
+          >
+            -
+          </button>
+        )}
+      </div>
+
+      {onDelete && (
+        <dialog
+          id={`confirm-delete-${animalId}`}
+          className="rounded-lg p-0 backdrop:bg-black/40 max-w-sm w-[90%]"
+        >
+          <form
+            method="dialog"
+            className="p-4 space-y-4"
+            onSubmit={(e) => e.preventDefault()}
+          >
+            <h2 className="text-sm font-semibold text-gray-800">
+              Confirmar eliminación
+            </h2>
+            <p className="text-xs text-gray-600">
+              ¿Seguro que deseas eliminar esta referencia a la hembra (ID:{' '}
+              {animalId}) del registro de monta? Esta acción no se puede
+              deshacer.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() =>
+                  (
+                    document.getElementById(
+                      `confirm-delete-${animalId}`
+                    ) as HTMLDialogElement | null
+                  )?.close()
+                }
+                className="px-3 py-1.5 text-xs rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await onDelete?.()
+                  ;(
+                    document.getElementById(
+                      `confirm-delete-${animalId}`
+                    ) as HTMLDialogElement | null
+                  )?.close()
+                }}
+                className="px-3 py-1.5 text-xs rounded-md bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-red-300"
+              >
+                Eliminar
+              </button>
+            </div>
+          </form>
+        </dialog>
+      )}
+    </>
   )
 }
 
