@@ -66,47 +66,42 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Preparar los datos para Resend
-    const emailPayload: {
-      to: string | string[]
-      subject: string
-      from: string
-      html?: string
-      text?: string
-      cc?: string | string[]
-      bcc?: string | string[]
-      reply_to?: string | string[]
-      tags?: { name: string; value: string }[]
-    } = {
+    // Preparar el contenido de texto (Resend requiere text)
+    const htmlToText = (html: string) =>
+      html
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/\s+/g, ' ')
+        .trim()
+
+    const textContent: string =
+      emailData.text || (emailData.html ? htmlToText(emailData.html) : '')
+
+    // Preparar los datos para Resend (text obligatorio)
+    const emailPayload = {
       to: emailData.to,
       subject: emailData.subject,
-      from: emailData.from || 'Mi Granja <zarza@email.migranja.app>'
-    }
-
-    // Agregar contenido
-    if (emailData.html) {
-      emailPayload.html = emailData.html
-    }
-    if (emailData.text) {
-      emailPayload.text = emailData.text
+      from: emailData.from || 'Mi Granja <zarza@email.migranja.app>',
+      text: textContent,
+      html: emailData.html
     }
 
     // Agregar campos opcionales
-    if (emailData.cc) {
-      emailPayload.cc = emailData.cc
-    }
-    if (emailData.bcc) {
-      emailPayload.bcc = emailData.bcc
-    }
-    if (emailData.reply_to) {
-      emailPayload.reply_to = emailData.reply_to
-    }
-    if (emailData.tags) {
-      emailPayload.tags = emailData.tags
+    const withOptional = {
+      ...emailPayload,
+      ...(emailData.cc ? { cc: emailData.cc } : {}),
+      ...(emailData.bcc ? { bcc: emailData.bcc } : {}),
+      ...(emailData.reply_to ? { reply_to: emailData.reply_to } : {}),
+      ...(emailData.tags ? { tags: emailData.tags } : {})
     }
 
     // Enviar el email usando Resend
-    const data = await resend.emails.send(emailPayload)
+    const data = await resend.emails.send(withOptional)
 
     return NextResponse.json(
       {
