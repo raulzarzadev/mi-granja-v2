@@ -5,12 +5,12 @@ import { BreedingRecord } from '@/types/breedings'
 import { Animal, animal_icon, AnimalType } from '@/types/animals'
 import { MilkProduction, WeightRecord } from '@/types'
 import { useAnimals } from '@/hooks/useAnimals'
-import { useBreeding } from '@/hooks/useBreeding'
 import { formatDate } from '@/lib/dates'
 import { AnimalDetailRow } from './AnimalCard'
 import ModalEditAnimal from './ModalEditAnimal'
 import ButtonConfirm from './buttons/ButtonConfirm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 
 interface AnimalDetailViewProps {
   animal: Animal
@@ -28,7 +28,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
   milkRecords = []
 }) => {
   const { animals: allAnimals } = useAnimals()
-  const { breedingRecords: allBreedingRecords } = useBreeding()
+  const { breedingRecords: allBreedingRecords } = useBreedingCRUD()
   const [activeTab, setActiveTab] = useState<
     'info' | 'breeding' | 'weight' | 'milk'
   >('info')

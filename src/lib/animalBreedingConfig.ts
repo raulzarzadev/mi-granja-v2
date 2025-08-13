@@ -1,5 +1,6 @@
 import { AnimalType } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
+import { toDate } from './dates'
 
 export interface AnimalBreedingConfig {
   type: AnimalType
@@ -140,12 +141,14 @@ export const calculateExpectedBirthDate = (
   breedingDate: Date,
   animalType: AnimalType
 ): Date | null => {
-  if (!breedingDate || isNaN(breedingDate.getTime())) {
+  const date = toDate(breedingDate)
+  if (!date || isNaN(date.getTime())) {
     console.log('Fecha de monta inválida')
     return null
   }
+
   const config = getAnimalBreedingConfig(animalType)
-  const expectedDate = new Date(breedingDate)
+  const expectedDate = date
   expectedDate.setDate(expectedDate.getDate() + config.gestationDays)
   return expectedDate
 }

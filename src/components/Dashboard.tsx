@@ -22,8 +22,7 @@ import { useFarmCRUD } from '@/hooks/useFarmCRUD'
  */
 const Dashboard: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth)
-  const { currentFarm, farms } = useFarmCRUD()
-
+  const { farms } = useFarmCRUD()
   const {
     animals,
     animalsStats,

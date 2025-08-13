@@ -11,6 +11,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import { User } from '@/types'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 
 interface ProvidersProps {
   children: React.ReactNode
@@ -52,14 +53,22 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
   }, [user])
 
   //* ==================================== FARM ANIMALS INITIALIZER
-  const { getUserAnimals } = useAnimalCRUD()
+  const { getFarmAnimals } = useAnimalCRUD()
   const currentFarm = useSelector((state: RootState) => state.farm.currentFarm)
   useEffect(() => {
-    if (user) {
-      getUserAnimals()
+    if (currentFarm) {
+      getFarmAnimals()
     }
     // también cuando cambia la granja actual
-  }, [user, currentFarm?.id])
+  }, [currentFarm?.id])
+
+  //* ==================================== BREEDINGS INITIALIZER
+  const { getFarmBreedings } = useBreedingCRUD()
+  useEffect(() => {
+    if (currentFarm) {
+      getFarmBreedings()
+    }
+  }, [currentFarm?.id])
 
   return <>{children}</>
 }

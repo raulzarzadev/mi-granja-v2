@@ -106,36 +106,45 @@ export const useFarmMembers = (farmId?: string) => {
   }, [farmId])
 
   // Colaboradores activos = accepted
-  const collaborators: FarmCollaborator[] = useMemo(
-    () =>
-      invitations
-        // .filter((i) => i.status === 'accepted')
-        .map((i) => ({
-          id: i.id,
-          farmId: i.farmId,
-          userId: (i as any).userId || i.email, // fallback al email
-          email: i.email,
+  const collaborators: FarmCollaborator[] = useMemo(() => {
+    return invitations.map((i) => {
+      // Si la invitación está aceptada y el email coincide con el usuario autenticado
+      // pero aún no tiene userId persistido, usamos el user.id actual para que
+      // los permisos funcionen correctamente.
+      const resolvedUserId =
+        (i as any).userId ||
+        (i.status === 'accepted' && user?.email && user.email === i.email
+          ? user.id
+          : i.email)
+
+      console.log({ resolvedUserId })
+
+      return {
+        id: i.id,
+        farmId: i.farmId,
+        userId: resolvedUserId,
+        email: i.email,
+        role: i.role,
+        permissions: DEFAULT_PERMISSIONS[i.role] as FarmPermission[],
+        isActive: i.status === 'accepted',
+        invitedBy: i.invitedBy,
+        invitedAt: i.createdAt,
+        acceptedAt: (i as any).acceptedAt || i.updatedAt,
+        createdAt: i.createdAt,
+        updatedAt: i.updatedAt,
+        notes: (i as any).notes,
+        invitationMeta: {
+          invitationId: (i as any).invitationId || i.id,
+          status: i.status,
           role: i.role,
-          permissions: DEFAULT_PERMISSIONS[i.role] as FarmPermission[],
-          isActive: i.status === 'accepted',
           invitedBy: i.invitedBy,
+          invitedByEmail: (i as any).invitedByEmail,
           invitedAt: i.createdAt,
-          acceptedAt: (i as any).acceptedAt || i.updatedAt,
-          createdAt: i.createdAt,
-          updatedAt: i.updatedAt,
-          notes: (i as any).notes,
-          invitationMeta: {
-            invitationId: (i as any).invitationId || i.id,
-            status: i.status,
-            role: i.role,
-            invitedBy: i.invitedBy,
-            invitedByEmail: (i as any).invitedByEmail,
-            invitedAt: i.createdAt,
-            acceptedAt: (i as any).acceptedAt
-          }
-        })),
-    [invitations]
-  )
+          acceptedAt: (i as any).acceptedAt
+        }
+      }
+    })
+  }, [invitations, user])
 
   // Permisos efectivos del usuario actual (owner = todos)
   const myEffectivePermissions = useMemo(() => {

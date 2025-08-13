@@ -174,7 +174,9 @@ export const useAnimalCRUD = () => {
         })
     })
   }
-
+  /**
+   * @deprecated  you should get animals by farm
+   */
   const getUserAnimals = () => {
     return new Promise<Animal[]>(async (resolve, reject) => {
       if (!user?.id) {
@@ -205,6 +207,43 @@ export const useAnimalCRUD = () => {
           error instanceof Error
             ? error.message
             : 'Error al obtener los animales del usuario'
+        dispatch(setError(errorMessage))
+        reject(error)
+      }
+    })
+  }
+
+  const getFarmAnimals = () => {
+    return new Promise<Animal[]>(async (resolve, reject) => {
+      if (!user?.id) {
+        dispatch(setError('Usuario no autenticado'))
+        return resolve([])
+      }
+
+      const constraints = []
+      if (currentFarm?.id)
+        constraints.push(where('farmId', '==', currentFarm.id))
+      const q = query(
+        collection(db, 'animals'),
+        ...constraints,
+        orderBy('createdAt', 'desc')
+      )
+
+      try {
+        const querySnapshot = await getDocs(q)
+        const animals = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Animal[]
+
+        dispatch(setAnimals(serializeObj(animals)))
+        resolve(animals)
+      } catch (error) {
+        console.error('Error fetching farm animals:', error)
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : 'Error al obtener los animales de la granja'
         dispatch(setError(errorMessage))
         reject(error)
       }
@@ -268,6 +307,6 @@ export const useAnimalCRUD = () => {
     update,
     remove,
     get,
-    getUserAnimals
+    getFarmAnimals
   }
 }

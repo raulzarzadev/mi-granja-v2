@@ -6,21 +6,27 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  Timestamp
+  Timestamp,
+  where,
+  query,
+  orderBy,
+  onSnapshot
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { RootState } from '@/features/store'
-import { setBreedingRecords as setBreedingRecordsSlice } from '@/features/breeding/breedingSlice'
-import { useBreeding } from './useBreeding'
+import { setBreedingRecords } from '@/features/breeding/breedingSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { getBreedingUpcomingBirths } from './libs/breeding-helpers'
 import { BreedingRecord } from '@/types/breedings'
 
 export const useBreedingCRUD = () => {
   const dispatch = useDispatch()
-  const { breedingRecords, isLoading } = useBreeding()
+
+  const [isLoading, setIsLoading] = useState(false)
   const { user } = useSelector((state: RootState) => state.auth)
+  const { breedingRecords } = useSelector((state: RootState) => state.breeding)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
   const { currentFarm } = useSelector((state: RootState) => state.farm)
 
   // Crear registro de monta
@@ -111,7 +117,7 @@ export const useBreedingCRUD = () => {
       }
 
       dispatch(
-        setBreedingRecordsSlice(
+        setBreedingRecords(
           serializeObj(
             breedingRecords.map((record) =>
               record.id === id
@@ -141,7 +147,7 @@ export const useBreedingCRUD = () => {
     try {
       await deleteDoc(doc(db, 'breedingRecords', id))
       dispatch(
-        setBreedingRecordsSlice(
+        setBreedingRecords(
           serializeObj(breedingRecords.filter((record) => record.id !== id))
         )
       )
@@ -216,8 +222,51 @@ export const useBreedingCRUD = () => {
     }
   }
 
+  const getFarmBreedings = () => {
+    const constraints = []
+    if (currentFarm?.id) constraints.push(where('farmId', '==', currentFarm.id))
+    const q = query(
+      collection(db, 'breedingRecords'),
+      ...constraints,
+      orderBy('breedingDate', 'desc')
+    )
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const records: BreedingRecord[] = []
+      snapshot.forEach((doc) => {
+        const data = doc.data()
+        records.push({
+          id: doc.id,
+          farmerId: data.farmerId,
+          maleId: data.maleId,
+          breedingDate: data.breedingDate.toDate(),
+          femaleBreedingInfo:
+            data.femaleBreedingInfo?.map(
+              (info: {
+                animalNumber: string
+                pregnancyConfirmedDate?: Timestamp
+                expectedBirthDate?: Timestamp
+                actualBirthDate?: Timestamp
+                offspring?: string[]
+              }) => ({
+                ...info,
+                pregnancyConfirmedDate: info.pregnancyConfirmedDate?.toDate(),
+                expectedBirthDate: info.expectedBirthDate?.toDate(),
+                actualBirthDate: info.actualBirthDate?.toDate()
+              })
+            ) || [],
+          notes: data.notes || '',
+          createdAt: data.createdAt.toDate(),
+          updatedAt: data.updatedAt.toDate()
+        })
+      })
+      dispatch(setBreedingRecords(serializeObj(records)))
+    })
+  }
+
   return {
     breedingRecords,
+    getFarmBreedings,
     isLoading,
     isSubmitting,
     createBreedingRecord,
