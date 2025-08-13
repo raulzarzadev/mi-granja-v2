@@ -13,6 +13,8 @@ interface ModalBirthFormProps {
   animals: Animal[]
   onSubmit: (birthRecord: BirthRecord) => Promise<void>
   isLoading?: boolean
+  /** Si se pasa, se fija esta hembra y no se muestra el selector */
+  selectedFemaleId?: string
 }
 
 /**
@@ -24,7 +26,8 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   breedingRecord,
   animals,
   onSubmit,
-  isLoading = false
+  isLoading = false,
+  selectedFemaleId
 }) => {
   // Obtener solo hembras embarazadas que aún no han parido
   const pregnantFemales =
@@ -39,7 +42,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   const defaultOffspring = (): OffspringInfo => ({
     id: Math.random().toString(36).substring(2, 15),
     animalNumber: Math.random().toString(36).substring(2, 5),
-    weight: '',
+    weight: null,
     color: '',
     status: 'vivo',
     healthIssues: '',
@@ -47,13 +50,20 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   })
 
   const [formData, setFormData] = useState<BirthRecord>({
-    animalId: '',
+    animalId: selectedFemaleId || '',
     birthDate: new Date().toISOString().split('T')[0],
     birthTime: new Date().toTimeString().slice(0, 5),
     totalOffspring: 1,
     offspring: [defaultOffspring()],
     notes: ''
   })
+
+  // Si cambia la hembra seleccionada externamente y no se ha seteado aún
+  React.useEffect(() => {
+    if (selectedFemaleId && formData.animalId !== selectedFemaleId) {
+      setFormData((prev) => ({ ...prev, animalId: selectedFemaleId }))
+    }
+  }, [selectedFemaleId])
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -67,6 +77,8 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
       alert('Todas las crías deben tener un ID único')
       return
     }
+
+    console.log({ formData })
 
     try {
       await onSubmit(formData)
@@ -106,7 +118,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   const handleOffspringChange = (
     index: number,
     field: keyof OffspringInfo,
-    value: string | number | undefined
+    value: string | number | undefined | null
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -135,55 +147,94 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Registrar Parto">
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Selección de hembra */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Hembra que ha parido *
-          </label>
-          {pregnantFemales.length === 0 ? (
-            <p className="text-sm text-gray-600 p-3 bg-gray-50 rounded-md">
-              No hay hembras con embarazos confirmados en esta monta
-            </p>
-          ) : (
-            <div className="grid gap-2">
-              {pregnantFemales.map((female) => (
-                <label
-                  key={female?.id}
-                  className={`flex items-center p-3 border rounded-md cursor-pointer transition-colors ${
-                    formData.animalId === female?.id
-                      ? 'border-green-500 bg-green-50'
-                      : 'border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="animalNumber"
-                    value={female?.id}
-                    checked={formData.animalId === female?.id}
-                    onChange={(e) => handleFemaleChange(e.target.value)}
-                    className="mr-3"
-                  />
-                  <div className="flex items-center gap-2 flex-1">
-                    <span className="text-lg">
-                      {getAnimalTypeIcon(female?.type || '')}
-                    </span>
-                    <div>
-                      <div className="font-medium">{female?.animalNumber}</div>
-                      <div className="text-sm text-gray-600">
-                        {female?.type} • Parto esperado:{' '}
-                        {female?.breedingInfo?.expectedBirthDate
-                          ? new Date(
-                              female.breedingInfo.expectedBirthDate
-                            ).toLocaleDateString('es-ES')
-                          : 'No definido'}
-                      </div>
+        {/* Selección o muestra fija de hembra */}
+        {selectedFemaleId ? (
+          <div className="p-4 border border-green-300 rounded-md bg-green-50 flex items-center gap-3">
+            {(() => {
+              const female = pregnantFemales.find(
+                (f: any) => f?.id === selectedFemaleId
+              )
+              if (!female) {
+                return (
+                  <span className="text-sm text-red-600">
+                    Hembra seleccionada no encontrada en la monta.
+                  </span>
+                )
+              }
+              return (
+                <>
+                  <span className="text-2xl">
+                    {getAnimalTypeIcon(female?.type || '')}
+                  </span>
+                  <div>
+                    <div className="text-lg font-semibold leading-tight">
+                      {female?.animalNumber}
+                    </div>
+                    <div className="text-xs text-gray-700">
+                      {female?.type} • Parto esperado:{' '}
+                      {female?.breedingInfo?.expectedBirthDate
+                        ? new Date(
+                            female.breedingInfo.expectedBirthDate
+                          ).toLocaleDateString('es-ES')
+                        : 'No definido'}
                     </div>
                   </div>
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
+                </>
+              )
+            })()}
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Hembra que ha parido *
+            </label>
+            {pregnantFemales.length === 0 ? (
+              <p className="text-sm text-gray-600 p-3 bg-gray-50 rounded-md">
+                No hay hembras con embarazos confirmados en esta monta
+              </p>
+            ) : (
+              <div className="grid gap-2">
+                {pregnantFemales.map((female) => (
+                  <label
+                    key={female?.id}
+                    className={`flex items-center p-3 border rounded-md cursor-pointer transition-colors ${
+                      formData.animalId === female?.id
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="animalNumber"
+                      value={female?.id}
+                      checked={formData.animalId === female?.id}
+                      onChange={(e) => handleFemaleChange(e.target.value)}
+                      className="mr-3"
+                    />
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="text-lg">
+                        {getAnimalTypeIcon(female?.type || '')}
+                      </span>
+                      <div>
+                        <div className="font-medium">
+                          {female?.animalNumber}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {female?.type} • Parto esperado:{' '}
+                          {female?.breedingInfo?.expectedBirthDate
+                            ? new Date(
+                                female.breedingInfo.expectedBirthDate
+                              ).toLocaleDateString('es-ES')
+                            : 'No definido'}
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {formData.animalId && (
           <>
@@ -324,12 +375,14 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                           type="number"
                           step="0.1"
                           min="0"
-                          value={offspring.weight || ''}
+                          value={offspring.weight ?? ''}
                           onChange={(e) =>
                             handleOffspringChange(
                               index,
                               'weight',
-                              e.target.value ? parseFloat(e.target.value) : ''
+                              e.target.value === ''
+                                ? null
+                                : parseFloat(e.target.value)
                             )
                           }
                           placeholder="Ej: 2.5"

@@ -5,7 +5,7 @@ export interface Animal {
   animalNumber: string // ID único del animal (asignado por el granjero)
   type: AnimalType
   stage: AnimalStage
-  weight?: number | string
+  weight?: number | string | null
   age?: number
   birthDate?: Date
   gender: AnimalGender
@@ -14,6 +14,10 @@ export interface Animal {
   notes?: string
   createdAt: Date
   updatedAt: Date
+  // Estado de destete
+  isWeaned?: boolean
+  weanedAt?: Date
+  weaningNotes?: string
   // Metadata de admin para rastrear acciones administrativas
   adminAction?: {
     performedByAdmin: boolean

@@ -140,6 +140,27 @@ export const useAnimalCRUD = () => {
     }
   }
 
+  // Marcar destete (wean)
+  const wean = async (
+    animalId: string,
+    opts?: { stageDecision?: 'engorda' | 'reproductor'; notes?: string }
+  ) => {
+    const stageMap: Record<string, Animal['stage'] | undefined> = {
+      engorda: 'engorda',
+      reproductor: 'reproductor'
+    }
+    const updateData: Partial<Animal> = {
+      isWeaned: true,
+      weanedAt: new Date(),
+      weaningNotes: opts?.notes
+    }
+    if (opts?.stageDecision) {
+      const nextStage = stageMap[opts.stageDecision]
+      if (nextStage) updateData.stage = nextStage
+    }
+    await update(animalId, updateData)
+  }
+
   // Buscar animales por ID
   const get = (animalId: string) => {
     return new Promise<Animal | null>((resolve, reject) => {
@@ -286,11 +307,13 @@ export const useAnimalCRUD = () => {
       if (filters.gender && animal.gender !== filters.gender) return false
       if (filters.search) {
         const searchLower = filters.search.toLowerCase()
-        return (
-          animal.animalNumber.toLowerCase().includes(searchLower) ||
-          animal.notes?.toLowerCase().includes(searchLower) ||
-          false
+        if (
+          !(
+            animal.animalNumber.toLowerCase().includes(searchLower) ||
+            animal.notes?.toLowerCase().includes(searchLower)
+          )
         )
+          return false
       }
       return true
     })
@@ -299,14 +322,16 @@ export const useAnimalCRUD = () => {
   // Migrar animales al nuevo esquema de animalNumber
 
   return {
-    isLoading,
     animals,
-    animalsFiltered,
-    animalsStats,
+    isLoading,
     create,
     update,
     remove,
     get,
-    getFarmAnimals
+    getUserAnimals,
+    getFarmAnimals,
+    animalsStats,
+    animalsFiltered,
+    wean
   }
 }
