@@ -29,6 +29,20 @@ const BreedingTabs: React.FC = () => {
     React.useState<BreedingRecord | null>(null)
 
   const pregnancies = getActivePregnancies()
+  // Lista plana de hembras embarazadas (cada hembra como item)
+  const pregnantFemales = useMemo(
+    () =>
+      breedingRecords.flatMap((record) =>
+        record.femaleBreedingInfo
+          .filter((f) => f.pregnancyConfirmedDate && !f.actualBirthDate)
+          .map((info) => ({
+            record,
+            info,
+            animal: animals.find((a) => a.id === info.femaleId)
+          }))
+      ),
+    [breedingRecords, animals]
+  )
   const birthsWindow = getBirthsWindow(14)
   const birthsSummary = getBirthsWindowSummary(14)
 
@@ -106,34 +120,102 @@ const BreedingTabs: React.FC = () => {
   const tabs = [
     {
       label: '🤰 Embarazos',
-      badgeCount: pregnancies.length,
+      badgeCount: pregnantFemales.length,
       content: (
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-lg font-semibold mb-4">
               Embarazos Confirmados
             </h3>
-            {pregnancies.length === 0 ? (
+            {pregnantFemales.length === 0 ? (
               <p className="text-sm text-gray-500">
                 No hay embarazos confirmados.
               </p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pregnancies.map((r) => (
-                  <BreedingCard
-                    key={r.id}
-                    record={r}
-                    animals={animals}
-                    onEdit={setEditingRecord}
-                    onAddBirth={setBirthRecord}
-                    onConfirmPregnancy={setConfirmPregnancyRecord}
-                    onUnconfirmPregnancy={handleUnconfirmPregnancy}
-                    onDelete={(rec) => deleteBreedingRecord(rec.id)}
-                    onRemoveFromBreeding={handleRemoveFromBreeding}
-                    onDeleteBirth={() => null}
-                  />
-                ))}
-              </div>
+              <ul className="divide-y">
+                {pregnantFemales.map(({ record, info, animal }) => {
+                  const expected = info.expectedBirthDate
+                    ? new Date(info.expectedBirthDate)
+                    : null
+                  const daysLeft = expected
+                    ? Math.round((expected.getTime() - Date.now()) / 86400000)
+                    : null
+                  return (
+                    <li
+                      key={record.id + info.femaleId}
+                      className="py-3 flex flex-col sm:flex-row sm:items-center gap-3"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-lg">
+                            {animal?.type === 'oveja'
+                              ? '🐑'
+                              : animal?.type === 'cabra'
+                              ? '🐐'
+                              : animal?.type?.includes('vaca')
+                              ? '🐄'
+                              : '🐾'}
+                          </span>
+                          <span className="font-medium">
+                            {animal?.animalNumber || info.femaleId}
+                          </span>
+                          {expected && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-700">
+                              {expected.toLocaleDateString()} (
+                              {daysLeft !== null
+                                ? daysLeft === 0
+                                  ? 'Hoy'
+                                  : daysLeft > 0
+                                  ? `En ${daysLeft}d`
+                                  : `Hace ${Math.abs(daysLeft)}d`
+                                : '—'}
+                              )
+                            </span>
+                          )}
+                          {info.pregnancyConfirmedDate && (
+                            <span className="text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded">
+                              Confirmado
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1 truncate">
+                          Monta: {record.id}{' '}
+                          {record.breedingDate && (
+                            <>
+                              ·{' '}
+                              {new Date(
+                                record.breedingDate
+                              ).toLocaleDateString()}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded"
+                          onClick={() => setEditingRecord(record)}
+                        >
+                          Ver monta
+                        </button>
+                        <button
+                          className="text-xs bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1 rounded"
+                          onClick={() => setBirthRecord(record)}
+                        >
+                          Registrar parto
+                        </button>
+                        <button
+                          className="text-xs bg-red-50 hover:bg-red-100 text-red-700 px-3 py-1 rounded"
+                          onClick={() =>
+                            handleUnconfirmPregnancy(record, info.femaleId)
+                          }
+                        >
+                          Desconfirmar
+                        </button>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
             )}
           </div>
         </div>
