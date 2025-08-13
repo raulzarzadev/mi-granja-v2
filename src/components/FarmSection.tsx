@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
-import { useFarmAreas } from '@/hooks/useFarmAreas'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { FARM_AREA_TYPES } from '@/types/farm'
@@ -16,6 +15,7 @@ import ModalInviteCollaborator from './ModalInviteCollaborator'
 import CollaboratorCard from './CollaboratorCard'
 import { formatDate, toDate } from '@/lib/dates'
 import { useMyInvitations } from '@/hooks/useMyInvitations'
+import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
 
 /**
  * Sección principal de gestión de granja
@@ -30,7 +30,7 @@ const FarmSection: React.FC = () => {
     loadAndSwitchFarm
   } = useFarmCRUD()
 
-  const { areas, isLoading: areasLoading, getAreaStats } = useFarmAreas()
+  const { areas, isLoading: areasLoading, getAreaStats } = useFarmAreasCRUD()
 
   const {
     collaborators,

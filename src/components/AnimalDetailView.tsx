@@ -4,7 +4,6 @@ import React, { useState } from 'react'
 import { BreedingRecord } from '@/types/breedings'
 import { Animal, animal_icon, AnimalType } from '@/types/animals'
 import { MilkProduction, WeightRecord } from '@/types'
-import { useAnimals } from '@/hooks/useAnimals'
 import { formatDate } from '@/lib/dates'
 import { AnimalDetailRow } from './AnimalCard'
 import ModalEditAnimal from './ModalEditAnimal'
@@ -27,7 +26,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
   weightRecords = [],
   milkRecords = []
 }) => {
-  const { animals: allAnimals } = useAnimals()
+  const { animals: allAnimals } = useAnimalCRUD()
   const { breedingRecords: allBreedingRecords } = useBreedingCRUD()
   const [activeTab, setActiveTab] = useState<
     'info' | 'breeding' | 'weight' | 'milk'

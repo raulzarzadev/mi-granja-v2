@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase'
 import { FarmArea } from '@/types/farm'
 import { useFarmCRUD } from './useFarmCRUD'
 
-export const useFarmAreas = () => {
+export const useFarmAreasCRUD = () => {
   const { updateFarm, currentFarm } = useFarmCRUD()
   const [areas, setAreas] = useState<FarmArea[]>([])
   const [isLoading, setIsLoading] = useState(true)

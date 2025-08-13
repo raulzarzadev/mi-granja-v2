@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { FarmArea, FARM_AREA_TYPES } from '@/types/farm'
-import { useFarmAreas } from '@/hooks/useFarmAreas'
+import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
 
 interface AreaCardProps {
   area: FarmArea
@@ -12,7 +12,7 @@ interface AreaCardProps {
  * Tarjeta para mostrar información de un área de la granja
  */
 const AreaCard: React.FC<AreaCardProps> = ({ area }) => {
-  const { toggleAreaStatus } = useFarmAreas()
+  const { toggleAreaStatus } = useFarmAreasCRUD()
   const areaType = FARM_AREA_TYPES.find((type) => type.value === area.type)
 
   const handleToggleStatus = async (e: React.MouseEvent) => {

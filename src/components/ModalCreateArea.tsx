@@ -3,9 +3,9 @@
 import React, { useState } from 'react'
 import { Modal } from './Modal'
 import { useModal } from '@/hooks/useModal'
-import { useFarmAreas } from '@/hooks/useFarmAreas'
 import { FARM_AREA_TYPES } from '@/types/farm'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
 
 /**
  * Modal para crear una nueva área de la granja
@@ -13,7 +13,7 @@ import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 const ModalCreateArea: React.FC = () => {
   const { isOpen, openModal, closeModal } = useModal()
   const { currentFarm } = useFarmCRUD()
-  const { createArea } = useFarmAreas()
+  const { createArea } = useFarmAreasCRUD()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
