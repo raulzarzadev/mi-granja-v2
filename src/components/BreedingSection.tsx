@@ -354,7 +354,7 @@ const BreedingSection: React.FC = () => {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Próximos Partos ({upcomingBirths.length})
+              Próximos partos ({upcomingBirths.length})
             </button>
           </div>
         </div>
