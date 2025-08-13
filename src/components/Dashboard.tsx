@@ -6,7 +6,7 @@ import { RootState } from '@/features/store'
 import Navbar from '@/components/Navbar'
 import FarmSwitcherBar from '@/components/FarmSwitcherBar'
 import AnimalCard from '@/components/AnimalCard'
-import BreedingSection from '@/components/BreedingSection'
+import BreedingTabs from '@/components/BreedingTabs'
 import ReminderCard from '@/components/ReminderCard'
 import FarmSection from '@/components/FarmSection'
 import { useReminders } from '@/hooks/useReminders'
@@ -268,7 +268,7 @@ const Dashboard: React.FC = () => {
     },
     {
       label: '🐣 Reproducción',
-      content: <BreedingSection />
+      content: <BreedingTabs />
     },
     {
       label: '📋 Recordatorios',

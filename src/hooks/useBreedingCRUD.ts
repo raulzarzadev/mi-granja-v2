@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   collection,
@@ -15,9 +15,10 @@ import {
 import { db } from '@/lib/firebase'
 import { RootState } from '@/features/store'
 import { setBreedingRecords } from '@/features/breeding/breedingSlice'
-import { serializeObj } from '@/features/libs/serializeObj'
+import { deserializeObj, serializeObj } from '@/features/libs/serializeObj'
 import { getBreedingUpcomingBirths } from './libs/breeding-helpers'
 import { BreedingRecord } from '@/types/breedings'
+import { toDate } from 'date-fns'
 
 export const useBreedingCRUD = () => {
   const dispatch = useDispatch()
@@ -219,6 +220,121 @@ export const useBreedingCRUD = () => {
     }
   }
 
+  // ============== Births Window (past due / upcoming) ==============
+  // Cache simple por "days" + firma de datos para evitar recálculos pesados
+  const windowsCache = useRef<
+    Map<
+      number,
+      { signature: string; value: ReturnType<typeof buildBirthsWindow> }
+    >
+  >(new Map())
+  const summariesCache = useRef<
+    Map<
+      number,
+      { signature: string; value: ReturnType<typeof buildBirthsWindowSummary> }
+    >
+  >(new Map())
+
+  interface FemaleInfoLite {
+    femaleId: string
+    expectedBirthDate?: Date | null
+    actualBirthDate?: Date | null
+    pregnancyConfirmedDate?: Date | null
+  }
+
+  const buildSignature = () => {
+    // Firma basada en ids + timestamps relevantes
+    return breedingRecords
+      .map((r) =>
+        [
+          r.id,
+          r.femaleBreedingInfo
+            .map((f) =>
+              [
+                f.femaleId,
+                f.expectedBirthDate
+                  ? toDate(f.expectedBirthDate)?.getTime()
+                  : 0,
+                f.actualBirthDate ? toDate(f.actualBirthDate)?.getTime() : 0,
+                f.pregnancyConfirmedDate
+                  ? toDate(f.pregnancyConfirmedDate)?.getTime()
+                  : 0
+              ].join(':')
+            )
+            .join('|')
+        ].join('#')
+      )
+      .join(';')
+  }
+
+  const normalizeDate = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate())
+
+  const buildBirthsWindow = (days: number) => {
+    const now = normalizeDate(new Date())
+    const msDay = 86400000
+    const pastDue: {
+      record: BreedingRecord
+      info: FemaleInfoLite
+      daysDiff: number
+    }[] = []
+    const upcoming: {
+      record: BreedingRecord
+      info: FemaleInfoLite
+      daysDiff: number
+    }[] = []
+
+    breedingRecords.forEach((record) => {
+      record.femaleBreedingInfo.forEach((info) => {
+        if (!info.expectedBirthDate || info.actualBirthDate) return
+        const expected = normalizeDate(new Date(info.expectedBirthDate))
+        const diffDays = Math.round(
+          (expected.getTime() - now.getTime()) / msDay
+        )
+        if (diffDays < 0 && Math.abs(diffDays) <= days) {
+          pastDue.push({ record, info, daysDiff: diffDays })
+        } else if (diffDays >= 0 && diffDays <= days) {
+          upcoming.push({ record, info, daysDiff: diffDays })
+        }
+      })
+    })
+
+    // Ordenar: pastDue más antiguos primero (más negativos), upcoming más cercanos primero
+    pastDue.sort((a, b) => a.daysDiff - b.daysDiff) // e.g. -10, -2
+    upcoming.sort((a, b) => a.daysDiff - b.daysDiff) // e.g. 0,1,2
+
+    return { pastDue, upcoming, days }
+  }
+
+  const buildBirthsWindowSummary = (
+    window: ReturnType<typeof buildBirthsWindow>
+  ) => {
+    return {
+      pastDueCount: window.pastDue.length,
+      upcomingCount: window.upcoming.length,
+      windowDays: window.days
+    }
+  }
+
+  const getBirthsWindow = (days = 7) => {
+    const signature = buildSignature()
+    const cached = windowsCache.current.get(days)
+    if (cached && cached.signature === signature) return cached.value
+    const value = buildBirthsWindow(days)
+    windowsCache.current.set(days, { signature, value })
+    return value
+  }
+
+  const getBirthsWindowSummary = (days = 7) => {
+    const signature = buildSignature()
+    const cached = summariesCache.current.get(days)
+    if (cached && cached.signature === signature) return cached.value
+    const window = getBirthsWindow(days)
+    const value = buildBirthsWindowSummary(window)
+    summariesCache.current.set(days, { signature, value })
+    return value
+  }
+
   const getFarmBreedings = () => {
     const constraints = []
     if (currentFarm?.id) constraints.push(where('farmId', '==', currentFarm.id))
@@ -262,7 +378,7 @@ export const useBreedingCRUD = () => {
   }
 
   return {
-    breedingRecords,
+    breedingRecords: deserializeObj(breedingRecords),
     getFarmBreedings,
     isLoading,
     isSubmitting,
@@ -272,6 +388,8 @@ export const useBreedingCRUD = () => {
     getRecordsByAnimal,
     getActivePregnancies,
     getUpcomingBirths,
+    getBirthsWindow,
+    getBirthsWindowSummary,
     getStats
   }
 }
