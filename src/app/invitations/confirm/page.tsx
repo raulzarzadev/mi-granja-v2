@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { Suspense, useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
@@ -18,7 +18,7 @@ import { db } from '@/lib/firebase'
 import type { FarmInvitation } from '@/types/farm'
 import { toDate } from '@/lib/dates'
 
-export default function InvitationConfirmPage() {
+function InvitationConfirmInner() {
   const params = useSearchParams()
   const router = useRouter()
   const token = params.get('token') || ''
@@ -231,5 +231,30 @@ export default function InvitationConfirmPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function InvitationConfirmPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+          <div className="bg-white rounded-lg shadow p-8 max-w-md w-full text-center">
+            <div className="mb-4">
+              <span className="text-5xl">✉️</span>
+            </div>
+            <h1 className="text-xl font-semibold mb-4">
+              Confirmación de invitación
+            </h1>
+            <div className="space-y-3">
+              <LoadingSpinner />
+              <p className="text-gray-600">Cargando…</p>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <InvitationConfirmInner />
+    </Suspense>
   )
 }
