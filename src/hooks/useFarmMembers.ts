@@ -117,8 +117,6 @@ export const useFarmMembers = (farmId?: string) => {
           ? user.id
           : i.email)
 
-      console.log({ resolvedUserId })
-
       return {
         id: i.id,
         farmId: i.farmId,
