@@ -4,11 +4,6 @@ import { Resend } from 'resend'
 // Inicializar Resend
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-interface EmailRecipient {
-  email: string
-  name?: string
-}
-
 interface EmailRequest {
   to: string | string[]
   from?: string
@@ -72,7 +67,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Preparar los datos para Resend
-    const emailPayload: any = {
+    const emailPayload: {
+      to: string | string[]
+      subject: string
+      from: string
+      html?: string
+      text?: string
+      cc?: string | string[]
+      bcc?: string | string[]
+      reply_to?: string | string[]
+      tags?: { name: string; value: string }[]
+    } = {
       to: emailData.to,
       subject: emailData.subject,
       from: emailData.from || 'Mi Granja <zarza@email.migranja.app>'

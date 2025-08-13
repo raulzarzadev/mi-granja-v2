@@ -70,7 +70,6 @@ export default function InvitationConfirmPage() {
           await updateDoc(doc(db, 'farmInvitations', docRef.id), {
             status: 'rejected',
             updatedAt: Timestamp.now(),
-            // @ts-ignore - solo se usa para tracking opcional
             rejectedAt: Timestamp.now()
           })
           setStatus('done')
@@ -127,7 +126,6 @@ export default function InvitationConfirmPage() {
         await updateDoc(doc(db, 'farmInvitations', docRef.id), {
           status: 'accepted',
           updatedAt: Timestamp.now(),
-          // @ts-ignore - campo de tracking opcional
           acceptedAt: Timestamp.now()
         })
 

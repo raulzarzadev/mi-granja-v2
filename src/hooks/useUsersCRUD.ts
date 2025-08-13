@@ -115,7 +115,8 @@ export const useUsersCRUD = () => {
         throw new Error('User already exists')
       }
       // Aquí podrías agregar lógica para validar el email, roles, etc.
-      data.createdAt = serverTimestamp() as any // Asegurar que createdAt sea un timestamp
+      //@ts-expect-error force un timestamp
+      data.createdAt = serverTimestamp() // Asegurar que createdAt sea un timestamp
       data.roles = data.roles || [] // Asegurarse de que roles sea un array if not provided
       data.farmName = data.farmName || '' // Asegurar que farmName esté definido
       data.id = data.id || crypto.randomUUID() // Generar un ID único si no se proporciona

@@ -16,11 +16,10 @@ const BreedingTabs: React.FC = () => {
     breedingRecords,
     updateBreedingRecord,
     deleteBreedingRecord,
-    getActivePregnancies,
     getBirthsWindow,
     getBirthsWindowSummary
   } = useBreedingCRUD()
-  const { animals, wean, update, create } = useAnimalCRUD()
+  const { animals, wean, create } = useAnimalCRUD()
   const [editingRecord, setEditingRecord] =
     React.useState<BreedingRecord | null>(null)
   const [birthRecord, setBirthRecord] = React.useState<BreedingRecord | null>(
@@ -30,7 +29,6 @@ const BreedingTabs: React.FC = () => {
   const [confirmPregnancyRecord, setConfirmPregnancyRecord] =
     React.useState<BreedingRecord | null>(null)
 
-  const pregnancies = getActivePregnancies()
   // Lista plana de hembras embarazadas (cada hembra como item)
   const pregnantFemales = useMemo(
     () =>
@@ -485,7 +483,7 @@ const BreedingTabs: React.FC = () => {
           setBirthRecord(null)
           setBirthFemaleId(null)
         }}
-        breedingRecord={birthRecord as any}
+        breedingRecord={birthRecord as BreedingRecord}
         animals={animals}
         selectedFemaleId={birthFemaleId || undefined}
         onSubmit={async (form) => {
@@ -565,7 +563,7 @@ const BreedingTabs: React.FC = () => {
       <ModalConfirmPregnancy
         isOpen={!!confirmPregnancyRecord}
         onClose={() => setConfirmPregnancyRecord(null)}
-        breedingRecord={confirmPregnancyRecord as any}
+        breedingRecord={confirmPregnancyRecord as BreedingRecord}
         animals={animals}
         onSubmit={(r) => updateBreedingRecord(r.id, r)}
         isLoading={false}

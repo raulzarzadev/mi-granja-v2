@@ -3,9 +3,9 @@ import { Icon, IconName } from '../Icon/icon'
 
 //options
 
-const VARIANTS = ['outline', 'ghost', 'filled', 'link'] as const
-const SIZES = ['icon', 'sm', 'md', 'lg'] as const
-const COLORS = [
+export const VARIANTS = ['outline', 'ghost', 'filled', 'link'] as const
+export const SIZES = ['icon', 'sm', 'md', 'lg'] as const
+export const COLORS = [
   'error',
   'primary',
   'success',

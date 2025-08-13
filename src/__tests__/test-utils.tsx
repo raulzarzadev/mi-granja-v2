@@ -72,7 +72,6 @@ export const createMockFirebaseUser = (overrides = {}) => ({
 
 // Mock Firebase auth responses
 export const mockFirebaseAuthSuccess = (user = createMockFirebaseUser()) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockAuth = (global as any).mockAuth
   mockAuth.signInWithEmailAndPassword.mockResolvedValue({ user })
   mockAuth.createUserWithEmailAndPassword.mockResolvedValue({ user })
@@ -82,7 +81,6 @@ export const mockFirebaseAuthSuccess = (user = createMockFirebaseUser()) => {
 export const mockFirebaseAuthError = (
   error = new Error('Authentication failed')
 ) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockAuth = (global as any).mockAuth
   mockAuth.signInWithEmailAndPassword.mockRejectedValue(error)
   mockAuth.createUserWithEmailAndPassword.mockRejectedValue(error)
@@ -90,7 +88,6 @@ export const mockFirebaseAuthError = (
 }
 
 export const mockFirestoreSuccess = () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockFirestore = (global as any).mockFirestore
   mockFirestore.doc.mockReturnValue({})
   mockFirestore.getDoc.mockResolvedValue({
@@ -105,7 +102,6 @@ export const mockFirestoreSuccess = () => {
 }
 
 export const mockFirestoreError = (error = new Error('Firestore error')) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockFirestore = (global as any).mockFirestore
   mockFirestore.getDoc.mockRejectedValue(error)
   mockFirestore.setDoc.mockRejectedValue(error)

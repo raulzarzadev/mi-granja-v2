@@ -86,7 +86,6 @@ export const useWeight = () => {
     setIsSubmitting(true)
     try {
       const docRef = doc(db, 'weightRecords', id)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: Record<string, any> = {}
 
       if (updates.weight !== undefined) updateData.weight = updates.weight

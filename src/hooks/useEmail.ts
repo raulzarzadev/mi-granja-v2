@@ -17,7 +17,7 @@ interface EmailData {
 interface EmailResponse {
   success: boolean
   message?: string
-  data?: any
+  data?: string
   error?: string
 }
 

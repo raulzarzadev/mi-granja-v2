@@ -1,8 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useSelector } from 'react-redux'
-import { RootState } from '@/features/store'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { FARM_AREA_TYPES } from '@/types/farm'
@@ -45,12 +43,7 @@ const FarmSection: React.FC = () => {
   } = useFarmMembers(currentFarm?.id)
 
   // Usuario actual
-  const { user } = useSelector((s: RootState) => s.auth)
 
-  // Rol del usuario (si es owner consideramos permisos completos)
-  const myCollaborator = collaborators.find(
-    (c) => user && c.userId === user.id && c.isActive
-  )
   const canRevokeInvitations = hasPermissions('collaborators', 'update')
   const canDeleteInvitations = hasPermissions('collaborators', 'delete')
 

@@ -120,7 +120,7 @@ export const useFarmCRUD = () => {
       memberFarms = memberFarms.map((f) => {
         const invs = invitationByFarm.get(f.id) || []
         // Preferir invitación aceptada si existe, si no la más reciente
-        let chosen = invs.find((i) => i.status === 'accepted') || invs[0]
+        const chosen = invs.find((i) => i.status === 'accepted') || invs[0]
         if (chosen) {
           return {
             ...f,

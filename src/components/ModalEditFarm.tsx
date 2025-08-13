@@ -27,7 +27,8 @@ const ModalEditFarm: React.FC<ModalEditFarmProps> = ({
   const isOpen = open ?? modal.isOpen
   const openModal = modal.openModal
   const closeModal = () => {
-    onClose ? onClose() : modal.closeModal()
+    onClose?.()
+    modal.closeModal()
   }
   const { updateFarm } = useFarmCRUD()
   const { user } = useSelector((s: RootState) => s.auth)

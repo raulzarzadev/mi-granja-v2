@@ -23,7 +23,7 @@ import { toDate } from 'date-fns'
 export const useBreedingCRUD = () => {
   const dispatch = useDispatch()
 
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading] = useState(false)
   const { user } = useSelector((state: RootState) => state.auth)
   const { breedingRecords } = useSelector((state: RootState) => state.breeding)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -82,7 +82,6 @@ export const useBreedingCRUD = () => {
     setIsSubmitting(true)
     try {
       const docRef = doc(db, 'breedingRecords', id)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: Record<string, any> = {
         updatedAt: Timestamp.now()
       }
@@ -180,10 +179,6 @@ export const useBreedingCRUD = () => {
 
   // Obtener partos próximos (dentro de 7 días)
   const getUpcomingBirths = () => {
-    //TODO: Calculate next birth, upcoming births within the next week and all upcoming births
-    const now = new Date()
-    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-
     return breedingRecords.filter((record) => {
       const upcoming = getBreedingUpcomingBirths(record)
       return upcoming
@@ -344,7 +339,7 @@ export const useBreedingCRUD = () => {
       orderBy('breedingDate', 'desc')
     )
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    onSnapshot(q, (snapshot) => {
       const records: BreedingRecord[] = []
       snapshot.forEach((doc) => {
         const data = doc.data()

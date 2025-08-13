@@ -40,7 +40,14 @@ export const useMyInvitations = () => {
         )
         const snap = await getDocs(qInv)
         const rawInv = snap.docs.map((d) => {
-          const v = d.data() as any
+          const v = d.data() as Omit<
+            FarmInvitation,
+            'id' | 'farmName' | 'expiresAt' | 'createdAt' | 'updatedAt'
+          > & {
+            expiresAt: import('@/types/date').AppDate
+            createdAt: import('@/types/date').AppDate
+            updatedAt: import('@/types/date').AppDate
+          }
           return {
             id: d.id,
             ...v,
@@ -64,19 +71,21 @@ export const useMyInvitations = () => {
             batches.map(async (ids) => {
               const qFarms = query(
                 collection(db, 'farms'),
-                where('__name__', 'in', ids as any)
+                where('__name__', 'in', ids)
               )
               const fsnap = await getDocs(qFarms)
               return fsnap.docs.map((fd) => ({
                 id: fd.id,
-                name: (fd.data() as any).name as string
+                name: (fd.data() as { name?: string }).name || ''
               }))
             })
           )
-          farmNames = batchResults.flat().reduce((acc, f) => {
-            acc[f.id] = f.name
-            return acc
-          }, {} as Record<string, string>)
+          farmNames = batchResults
+            .flat()
+            .reduce<Record<string, string>>((acc, f) => {
+              acc[f.id] = f.name
+              return acc
+            }, {})
         }
 
         const data = rawInv.map((inv) => ({
@@ -128,7 +137,7 @@ export const useMyInvitations = () => {
         await updateDoc(doc(db, 'farmInvitations', invitationId), {
           status: 'rejected',
           updatedAt: new Date()
-        } as any)
+        })
         await loadInvitations()
       } catch (e) {
         console.error('Error rejecting invitation', e)

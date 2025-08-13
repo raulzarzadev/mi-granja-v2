@@ -105,7 +105,6 @@ export const useReminders = () => {
     setIsSubmitting(true)
     try {
       const docRef = doc(db, 'reminders', id)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: Record<string, any> = {
         updatedAt: Timestamp.now()
       }

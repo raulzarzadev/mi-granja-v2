@@ -9,7 +9,6 @@ import { isUserAdmin } from '@/lib/userUtils'
 import { Modal } from './Modal'
 import UserImpersonationSelector from './UserImpersonationSelector'
 import BrandLogo from '@/components/BrandLogo'
-import Button from './buttons/Button'
 
 /**
  * Componente de navegación principal

@@ -2,7 +2,9 @@ import { Timestamp } from 'firebase/firestore'
 
 export type AppDate = Date | string | number | Timestamp
 
-export const isAppDate = (date: any): date is AppDate => {
+export const isAppDate = (
+  date: string | number | Timestamp | Date
+): date is AppDate => {
   return (
     date instanceof Date ||
     typeof date === 'string' ||
