@@ -195,6 +195,7 @@ export const useFarmMembers = (farmId?: string) => {
   )
 
   const pendingInvitations = invitations.filter((i) => i.status === 'pending')
+  const activeCollaborators = collaborators.filter((i) => i.isActive)
 
   // Invitación nueva
   const inviteCollaborator = async (
@@ -465,7 +466,7 @@ export const useFarmMembers = (farmId?: string) => {
 
   return {
     // Estado
-    collaborators,
+    collaborators: activeCollaborators,
     invitations: pendingInvitations,
     isLoading,
     error,
