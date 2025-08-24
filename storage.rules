@@ -1,0 +1,35 @@
+// Reglas de seguridad para Firebase Storage - Mi Granja 2
+// Estructura esperada:
+// - avatars/{uid}/...
+// - farms/{farmId}/logo/... (usar metadata para validar en backend si necesitas ownerId)
+// - animals/{animalId}/photos/{file}
+// NOTA: Storage rules no pueden leer Firestore de forma fiable en todas las regiones. Para
+// validar membresía de granja, hazlo en la app o mediante Cloud Functions que firmen uploads.
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Avatares: el usuario puede leer/escribir su propio folder
+    match /avatars/{userId}/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Logos de granja: lectura pública opcional (aquí deshabilitada por privacidad)
+    match /farms/{farmId}/logo/{allPaths=**} {
+      allow read: if false; // cambia a true si quieres público
+      // Escribe sólo si autenticado. Recomendado: validar en app/CF si es miembro u owner.
+      allow write: if request.auth != null;
+    }
+
+    // Fotos de animales: lectura privada, escritura autenticada
+    match /animals/{animalId}/photos/{allPaths=**} {
+      allow read: if request.auth != null; // puedes abrir a público si lo necesitas
+      allow write: if request.auth != null; // valida membresía en app/CF
+    }
+
+    // Default deny
+    match /{allPaths=**} { allow read, write: if false; }
+  }
+}

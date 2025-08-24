@@ -13,7 +13,9 @@ import {
   updateDoc,
   deleteDoc,
   Timestamp,
-  onSnapshot
+  onSnapshot,
+  arrayUnion,
+  arrayRemove
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { FarmInvitation, FarmPermission } from '@/types/farm'
@@ -285,6 +287,21 @@ export const useFarmMembers = (farmId?: string) => {
       acceptedAt: now,
       updatedAt: now
     })
+    // Añadir a arrays de la granja para validación por reglas
+    try {
+      const inv = invitations.find((i) => i.id === invitationId)
+      if (inv?.farmId) {
+        const farmRef = doc(db, 'farms', inv.farmId)
+        await updateDoc(farmRef, {
+          collaboratorsIds: arrayUnion(userId),
+          ...(inv.email
+            ? { collaboratorsEmails: arrayUnion(inv.email.toLowerCase()) }
+            : {})
+        })
+      }
+    } catch (e) {
+      console.warn('No se pudo actualizar arrays de colaboradores en farm:', e)
+    }
     setInvitations((prev) =>
       prev.map((i) =>
         i.id === invitationId
@@ -321,6 +338,21 @@ export const useFarmMembers = (farmId?: string) => {
     }
     const ref = doc(db, 'farmInvitations', invitationId)
     await updateDoc(ref, { status: 'revoked', updatedAt: Timestamp.now() })
+    // Quitar de arrays de la granja si estaba aceptada (tiene userId)
+    try {
+      const inv = invitations.find((i) => i.id === invitationId)
+      if (inv?.farmId && (inv as any).userId) {
+        const farmRef = doc(db, 'farms', inv.farmId)
+        await updateDoc(farmRef, {
+          collaboratorsIds: arrayRemove((inv as any).userId),
+          ...(inv.email
+            ? { collaboratorsEmails: arrayRemove(inv.email.toLowerCase()) }
+            : {})
+        })
+      }
+    } catch (e) {
+      console.warn('No se pudo quitar colaborador de arrays en farm:', e)
+    }
     setInvitations((prev) =>
       prev.map((i) =>
         i.id === invitationId
@@ -335,6 +367,24 @@ export const useFarmMembers = (farmId?: string) => {
     // Eliminar definitiva: requiere permiso delete sobre colaboradores
     if (!hasPermissions('collaborators', 'delete')) {
       throw new Error('No autorizado para eliminar invitaciones')
+    }
+    // Si estaba aceptada, quitar de arrays
+    try {
+      const inv = invitations.find((i) => i.id === invitationId)
+      if (inv?.farmId && (inv as any).userId) {
+        const farmRef = doc(db, 'farms', inv.farmId)
+        await updateDoc(farmRef, {
+          collaboratorsIds: arrayRemove((inv as any).userId),
+          ...(inv.email
+            ? { collaboratorsEmails: arrayRemove(inv.email.toLowerCase()) }
+            : {})
+        })
+      }
+    } catch (e) {
+      console.warn(
+        'No se pudo limpiar arrays de farm al eliminar invitación:',
+        e
+      )
     }
     await deleteDoc(doc(db, 'farmInvitations', invitationId))
     setInvitations((prev) => prev.filter((i) => i.id !== invitationId))
@@ -361,6 +411,33 @@ export const useFarmMembers = (farmId?: string) => {
     }
 
     await updateDoc(doc(db, 'farmInvitations', invitationId), updateData)
+
+    // Sincronizar arrays en farms si cambia estado activo
+    try {
+      if (typeof updates.isActive === 'boolean') {
+        const farmRef = doc(db, 'farms', inv.farmId)
+        const userId = (inv as any).userId
+        const email = inv.email?.toLowerCase()
+        if (updates.isActive) {
+          // Activado -> accepted
+          await updateDoc(farmRef, {
+            ...(userId ? { collaboratorsIds: arrayUnion(userId) } : {}),
+            ...(email ? { collaboratorsEmails: arrayUnion(email) } : {})
+          })
+        } else {
+          // Desactivado -> revoked
+          await updateDoc(farmRef, {
+            ...(userId ? { collaboratorsIds: arrayRemove(userId) } : {}),
+            ...(email ? { collaboratorsEmails: arrayRemove(email) } : {})
+          })
+        }
+      }
+    } catch (e) {
+      console.warn(
+        'No se pudo sincronizar arrays de farm tras update colaborador:',
+        e
+      )
+    }
 
     setInvitations((prev) =>
       prev.map((i) =>

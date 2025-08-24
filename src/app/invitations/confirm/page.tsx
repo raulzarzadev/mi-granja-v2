@@ -11,8 +11,8 @@ import {
   where,
   doc,
   updateDoc,
-  addDoc,
-  Timestamp
+  Timestamp,
+  arrayUnion
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { FarmInvitation } from '@/types/farm'
@@ -96,38 +96,28 @@ function InvitationConfirmInner() {
           return
         }
 
-        // Evitar duplicados: comprobar si ya es colaborador
+        // Validar farmId
         if (!data.farmId) throw new Error('Invitación inválida (sin farmId)')
-        const existsQ = query(
-          collection(db, 'farmCollaborators'),
-          where('farmId', '==', data.farmId),
-          where('userId', '==', user.id)
-        )
-        const existsSnap = await getDocs(existsQ)
-        const collaboratorAlreadyExists = !existsSnap.empty
 
-        // Crear colaborador y marcar invitación como aceptada
-        const collaboratorData = {
-          farmId: data.farmId,
-          userId: user.id,
-          role: data.role,
-          permissions: data.permissions,
-          isActive: true,
-          invitedBy: data.invitedBy,
-          invitedAt: data.createdAt ? toDate(data.createdAt) : Timestamp.now(),
-          acceptedAt: Timestamp.now(),
-          createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now()
-        }
-
-        if (!collaboratorAlreadyExists) {
-          await addDoc(collection(db, 'farmCollaborators'), collaboratorData)
-        }
+        // Marcar invitación como aceptada y asociarla al usuario actual
         await updateDoc(doc(db, 'farmInvitations', docRef.id), {
           status: 'accepted',
+          userId: user.id,
           updatedAt: Timestamp.now(),
           acceptedAt: Timestamp.now()
         })
+
+        // Añadir a arrays de la granja para validar acceso por reglas desde el cliente
+        try {
+          await updateDoc(doc(db, 'farms', data.farmId), {
+            collaboratorsIds: arrayUnion(user.id),
+            ...(data.email
+              ? { collaboratorsEmails: arrayUnion(data.email.toLowerCase()) }
+              : {})
+          })
+        } catch (e) {
+          console.warn('No se pudo actualizar arrays de farm tras aceptar:', e)
+        }
 
         setStatus('done')
 

@@ -78,8 +78,14 @@ export const useFarmCRUD = () => {
         ...(d.data() as any)
       })) as any[]
 
+      // Solo podemos leer farms de invitaciones aceptadas; las pendientes/revoked no tienen permiso de lectura
       const invitationFarmIds = Array.from(
-        new Set(invitations.map((d) => d.farmId).filter(Boolean))
+        new Set(
+          invitations
+            .filter((d) => d.status === 'accepted')
+            .map((d) => d.farmId)
+            .filter(Boolean)
+        )
       ) as string[]
 
       let memberFarms: Farm[] = []
@@ -177,6 +183,8 @@ export const useFarmCRUD = () => {
       ownerId: user.id,
       areas: [],
       collaborators: [],
+      collaboratorsIds: [],
+      collaboratorsEmails: [],
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now()
     }
@@ -189,6 +197,8 @@ export const useFarmCRUD = () => {
         ownerId: user.id,
         areas: [],
         collaborators: [],
+        // Los siguientes arrays no forman parte del tipo Farm actual, pero existen en Firestore para reglas.
+        // Se mantienen fuera del tipo para no romper UI; son usados solo por reglas.
         createdAt: new Date(),
         updatedAt: new Date()
       }
