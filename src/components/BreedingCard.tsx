@@ -6,7 +6,7 @@ import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import Button from './buttons/Button'
 import { Icon } from './Icon/icon'
 import { BreedingRecord } from '@/types/breedings'
-import { formatDate } from '@/lib/dates'
+import { formatDate, fromNow } from '@/lib/dates'
 import { Animal } from '@/types/animals'
 import ModalBreedingAnimalDetails from './ModalBreedingAnimalDetails'
 
@@ -325,37 +325,14 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                           {femaleAnimal.status === 'monta' && 'En monta'}
                         </span>
                         {femaleAnimal.status === 'embarazada' && (
-                          <>
-                            <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                              Probable parto:{' '}
-                              {femaleAnimal.expectedBirthDate
-                                ? formatDate(femaleAnimal.expectedBirthDate)
-                                : 'Calculando...'}
-                            </span>
-                            {femaleAnimal.expectedBirthDate &&
-                              (() => {
-                                const msPerDay = 1000 * 60 * 60 * 24
-                                const diffDays = Math.ceil(
-                                  (femaleAnimal.expectedBirthDate.getTime() -
-                                    Date.now()) /
-                                    msPerDay
-                                )
-                                const overdue = diffDays < 0
-                                return (
-                                  <span
-                                    className={`text-xs px-2 py-1 rounded-full ${
-                                      overdue
-                                        ? 'bg-red-100 text-red-800'
-                                        : 'bg-purple-100 text-purple-800'
-                                    }`}
-                                  >
-                                    {Math.abs(diffDays)} día
-                                    {Math.abs(diffDays) !== 1 ? 's' : ''}{' '}
-                                    {overdue ? 'de retraso' : 'restantes'}
-                                  </span>
-                                )
-                              })()}
-                          </>
+                          <div className="flex items-center gap-2">
+                            <div className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                              <span className="text-xs font-medium text-blue-800">
+                                Parto{' '}
+                              </span>
+                              {fromNow(femaleAnimal.expectedBirthDate)}
+                            </div>
+                          </div>
                         )}
                         {femaleAnimal.status === 'parida' &&
                           femaleAnimal.actualBirthDate && (

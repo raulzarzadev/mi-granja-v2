@@ -71,3 +71,47 @@ export const animalAge = (birthDate: Date | string | number | Timestamp) => {
     return `${days}d`
   }
 }
+
+export function fromNow(
+  date: string | number | string | Timestamp | Date | null
+) {
+  if (!date) {
+    console.error('fromNow: date is null or undefined')
+    return ''
+  }
+
+  const now = new Date()
+  const pastDate = toDate(date)
+  const diff = now.getTime() - pastDate.getTime()
+
+  if (diff < 0) {
+    const futureDiff = Math.abs(diff)
+    const days = Math.floor(futureDiff / (1000 * 60 * 60 * 24))
+    const weeks = Math.floor(days / 7)
+    const months = Math.floor(days / 30)
+    const years = Math.floor(months / 12)
+
+    if (years > 0) {
+      return `en ${years} año${years > 1 ? 's' : ''}`
+    }
+    if (months > 0) {
+      return `en ${months} mes${months > 1 ? 'es' : ''}`
+    }
+    if (weeks > 0) {
+      return `en ${weeks} semana${weeks > 1 ? 's' : ''}`
+    }
+    return `en ${days} día${days > 1 ? 's' : ''}`
+  }
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  const months = Math.floor(days / 30)
+  const years = Math.floor(months / 12)
+
+  if (years > 0) {
+    return `${years} año${years > 1 ? 's' : ''} atrás`
+  }
+  if (months > 0) {
+    return `${months} mes${months > 1 ? 'es' : ''} atrás`
+  }
+  return `${days} día${days > 1 ? 's' : ''} atrás`
+}
