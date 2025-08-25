@@ -36,8 +36,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     ...initialData
   })
 
-  console.log({ formData, initialData })
-
   // Derivar animalsIds de femaleBreedingInfo
   const breedingAnimalIds =
     formData?.femaleBreedingInfo?.map((info) => info.femaleId) || []
@@ -67,7 +65,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
       breedingDate: new Date(formData?.breedingDate || new Date()),
       femaleBreedingInfo: formData?.femaleBreedingInfo || []
     }
-    console.log({ breedingData })
     try {
       await onSubmit(breedingData)
     } catch (error) {
@@ -462,7 +459,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             </label>
             <div className="space-y-3 bg-gray-50 p-4 rounded-md">
               {getSelectedFemales().map((animal) => {
-                console.log({ formData })
                 const femaleInfo = formData.femaleBreedingInfo?.find(
                   (info) => info.femaleId === animal?.id
                 )
