@@ -18,7 +18,7 @@ import { setBreedingRecords } from '@/features/breeding/breedingSlice'
 import { deserializeObj, serializeObj } from '@/features/libs/serializeObj'
 import { getBreedingUpcomingBirths } from './libs/breeding-helpers'
 import { BreedingRecord } from '@/types/breedings'
-import { toDate } from 'date-fns'
+import { toDate, toLocalDateStart } from '@/lib/dates'
 
 export const useBreedingCRUD = () => {
   const dispatch = useDispatch()
@@ -44,19 +44,27 @@ export const useBreedingCRUD = () => {
         farmerId: user.id,
         farmId: currentFarm.id,
         maleId: data.maleId,
-        breedingDate: data.breedingDate,
+        breedingDate: data.breedingDate
+          ? Timestamp.fromDate(toLocalDateStart(new Date(data.breedingDate)))
+          : null,
 
         femaleBreedingInfo:
           data.femaleBreedingInfo?.map((info) => ({
             ...info,
             pregnancyConfirmedDate: info.pregnancyConfirmedDate
-              ? Timestamp.fromDate(new Date(info.pregnancyConfirmedDate))
+              ? Timestamp.fromDate(
+                  toLocalDateStart(new Date(info.pregnancyConfirmedDate))
+                )
               : null,
             expectedBirthDate: info.expectedBirthDate
-              ? Timestamp.fromDate(new Date(info.expectedBirthDate))
+              ? Timestamp.fromDate(
+                  toLocalDateStart(new Date(info.expectedBirthDate))
+                )
               : null,
             actualBirthDate: info.actualBirthDate
-              ? Timestamp.fromDate(new Date(info.actualBirthDate))
+              ? Timestamp.fromDate(
+                  toLocalDateStart(new Date(info.actualBirthDate))
+                )
               : null
           })) || [],
 
@@ -97,13 +105,19 @@ export const useBreedingCRUD = () => {
           (info) => ({
             ...info,
             pregnancyConfirmedDate: info.pregnancyConfirmedDate
-              ? Timestamp.fromDate(new Date(info.pregnancyConfirmedDate))
+              ? Timestamp.fromDate(
+                  toLocalDateStart(new Date(info.pregnancyConfirmedDate))
+                )
               : null,
             expectedBirthDate: info.expectedBirthDate
-              ? Timestamp.fromDate(new Date(info.expectedBirthDate))
+              ? Timestamp.fromDate(
+                  toLocalDateStart(new Date(info.expectedBirthDate))
+                )
               : null,
             actualBirthDate: info.actualBirthDate
-              ? Timestamp.fromDate(new Date(info.actualBirthDate))
+              ? Timestamp.fromDate(
+                  toLocalDateStart(new Date(info.actualBirthDate))
+                )
               : null
           })
         )
@@ -112,7 +126,7 @@ export const useBreedingCRUD = () => {
       // Convertir fechas a Timestamp
       if (updates.breedingDate) {
         updateData.breedingDate = Timestamp.fromDate(
-          new Date(updates.breedingDate)
+          toLocalDateStart(new Date(updates.breedingDate))
         )
       }
 
@@ -347,7 +361,7 @@ export const useBreedingCRUD = () => {
           id: doc.id,
           farmerId: data.farmerId,
           maleId: data.maleId,
-          breedingDate: data.breedingDate.toDate(),
+          breedingDate: toLocalDateStart(data.breedingDate.toDate()),
           femaleBreedingInfo:
             data.femaleBreedingInfo?.map(
               (info: {
@@ -358,9 +372,15 @@ export const useBreedingCRUD = () => {
                 offspring?: string[]
               }) => ({
                 ...info,
-                pregnancyConfirmedDate: info.pregnancyConfirmedDate?.toDate(),
-                expectedBirthDate: info.expectedBirthDate?.toDate(),
-                actualBirthDate: info.actualBirthDate?.toDate()
+                pregnancyConfirmedDate: info.pregnancyConfirmedDate
+                  ? toLocalDateStart(info.pregnancyConfirmedDate.toDate())
+                  : undefined,
+                expectedBirthDate: info.expectedBirthDate
+                  ? toLocalDateStart(info.expectedBirthDate.toDate())
+                  : undefined,
+                actualBirthDate: info.actualBirthDate
+                  ? toLocalDateStart(info.actualBirthDate.toDate())
+                  : undefined
               })
             ) || [],
           notes: data.notes || '',

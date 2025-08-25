@@ -5,6 +5,7 @@ import { Modal } from './Modal'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { BreedingRecord } from '@/types/breedings'
 import { Animal } from '@/types/animals'
+import { InputDate } from './inputs/input-date'
 
 interface ModalConfirmPregnancyProps {
   isOpen: boolean
@@ -116,7 +117,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
         ) : (
           <>
             {/* Fecha de confirmación */}
-            <div>
+            {/* <div>
               <label
                 htmlFor="confirmationDate"
                 className="block text-sm font-medium text-gray-700 mb-1"
@@ -134,7 +135,18 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
               <p className="text-xs text-gray-600 mt-1">
                 Esta fecha se usará para calcular el parto esperado
               </p>
-            </div>
+            </div> */}
+            <InputDate
+              label="Fecha de confirmación"
+              value={new Date()}
+              onChange={(date) =>
+                setConfirmationDate(
+                  date ? date.toISOString().split('T')[0] : ''
+                )
+              }
+              mode="date"
+              helperText={'Esta fecha se usará para calcular el parto esperado'}
+            />
 
             {/* Lista de hembras para confirmar */}
             <div>

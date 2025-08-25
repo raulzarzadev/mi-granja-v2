@@ -28,6 +28,14 @@ export const toDate = (date: string | number | string | Timestamp | Date) => {
   throw new Error('Invalid date type')
 }
 
+// Normaliza una fecha al inicio del día en horario local (00:00)
+export const startOfLocalDay = (d: Date) =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate())
+
+// Convierte cualquier input válido a Date y normaliza al inicio del día local
+export const toLocalDateStart = (date: string | number | Timestamp | Date) =>
+  startOfLocalDay(toDate(date as any))
+
 export const animalAge = (birthDate: Date | string | number | Timestamp) => {
   const date = toDate(birthDate)
   const now = new Date()

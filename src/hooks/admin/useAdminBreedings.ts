@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { BreedingRecord } from '@/types/breedings'
+import { toLocalDateStart } from '@/lib/dates'
 
 interface UseAdminBreedingsReturn {
   breedings: BreedingRecord[]
@@ -31,7 +32,9 @@ export const useAdminBreedings = (): UseAdminBreedingsReturn => {
           id: doc.id,
           farmerId: data.farmerId,
           maleId: data.maleId,
-          breedingDate: data.breedingDate?.toDate() || new Date(),
+          breedingDate: data.breedingDate
+            ? toLocalDateStart(data.breedingDate.toDate())
+            : new Date(),
           femaleBreedingInfo:
             data.femaleBreedingInfo?.map(
               (info: {
@@ -42,9 +45,15 @@ export const useAdminBreedings = (): UseAdminBreedingsReturn => {
                 offspring?: string[]
               }) => ({
                 femaleId: info.femaleId,
-                pregnancyConfirmedDate: info.pregnancyConfirmedDate?.toDate(),
-                expectedBirthDate: info.expectedBirthDate?.toDate(),
-                actualBirthDate: info.actualBirthDate?.toDate(),
+                pregnancyConfirmedDate: info.pregnancyConfirmedDate
+                  ? toLocalDateStart(info.pregnancyConfirmedDate.toDate())
+                  : undefined,
+                expectedBirthDate: info.expectedBirthDate
+                  ? toLocalDateStart(info.expectedBirthDate.toDate())
+                  : undefined,
+                actualBirthDate: info.actualBirthDate
+                  ? toLocalDateStart(info.actualBirthDate.toDate())
+                  : undefined,
                 offspring: info.offspring || []
               })
             ) || [],

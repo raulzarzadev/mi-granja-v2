@@ -1,6 +1,6 @@
 import { AnimalType } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
-import { toDate } from './dates'
+import { toDate, toLocalDateStart } from './dates'
 
 export interface AnimalBreedingConfig {
   type: AnimalType
@@ -148,9 +148,11 @@ export const calculateExpectedBirthDate = (
   }
 
   const config = getAnimalBreedingConfig(animalType)
-  const expectedDate = date
-  expectedDate.setDate(expectedDate.getDate() + config.gestationDays)
-  return expectedDate
+  // No mutar la fecha original y normalizar a inicio de día local
+  const base = toLocalDateStart(date)
+  const expected = new Date(base)
+  expected.setDate(expected.getDate() + config.gestationDays)
+  return expected
 }
 
 export const calculateNextExpectedBirthDate = (

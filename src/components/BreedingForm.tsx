@@ -36,6 +36,8 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     ...initialData
   })
 
+  console.log({ formData, initialData })
+
   // Derivar animalsIds de femaleBreedingInfo
   const breedingAnimalIds =
     formData?.femaleBreedingInfo?.map((info) => info.femaleId) || []
@@ -60,13 +62,14 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
+    const breedingData = {
+      maleId: formData?.maleId || '',
+      breedingDate: new Date(formData?.breedingDate || new Date()),
+      femaleBreedingInfo: formData?.femaleBreedingInfo || []
+    }
+    console.log({ breedingData })
     try {
-      await onSubmit({
-        maleId: formData?.maleId || '',
-        breedingDate: new Date(formData?.breedingDate || new Date()),
-        femaleBreedingInfo: formData?.femaleBreedingInfo || []
-      })
+      await onSubmit(breedingData)
     } catch (error) {
       console.error('Error registrando monta:', error)
     }
@@ -322,10 +325,12 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
           <div>
             <InputDate
               value={formData.breedingDate || new Date()}
-              onChange={(date) =>
-                setFormData({ ...formData, breedingDate: date })
-              }
+              onChange={(date) => {
+                console.log({ date })
+                return setFormData({ ...formData, breedingDate: date })
+              }}
               label="Fecha de Monta"
+              mode="date"
               required
             />
           </div>
@@ -589,6 +594,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                                           date as Date
                                         )
                                       }
+                                      mode="date"
                                       required
                                     />
                                     {/* Parto esperado específico */}
@@ -597,6 +603,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                                         disabled
                                         label="Fecha de parto esperado"
                                         value={femaleInfo.expectedBirthDate}
+                                        mode="date"
                                       />
                                     )}
                                     {/* <div>
