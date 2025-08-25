@@ -496,7 +496,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                               <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-medium">
                                 🍼 Parto Registrado
                               </span>
-                              <button
+                              {/* <button
                                 type="button"
                                 onClick={() => {
                                   if (
@@ -514,7 +514,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                                 className="text-xs text-red-600 hover:text-red-800 underline"
                               >
                                 Cancelar Parto
-                              </button>
+                              </button> */}
                             </div>
 
                             {femaleInfo.offspring &&
