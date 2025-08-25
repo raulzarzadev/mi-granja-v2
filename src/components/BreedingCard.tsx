@@ -50,32 +50,6 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
     }
   }
 
-  const getDaysUntilBirth = () => {
-    if (!record.breedingDate || !animalsType) return null
-
-    const expectedBirthDate = calculateExpectedBirthDate(
-      record.breedingDate,
-      animalsType
-    )
-    if (!expectedBirthDate) return null
-
-    const now = new Date()
-    const daysUntil = Math.ceil(
-      (expectedBirthDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-    )
-
-    const animalNumber =
-      animals.find((a) => a.id === record.femaleBreedingInfo[0]?.femaleId)
-        ?.animalNumber || 'Estimado'
-
-    return {
-      daysUntil,
-      femaleAnimalNumber: animalNumber
-    }
-  }
-
-  const birthInfo = getDaysUntilBirth()
-
   const getFemaleStatuses = () => {
     //TODO: los estados son , Monta en proceso, no. de partos, no. de embarazos confirmados,
     // algo asi Monta en proceso. Partos:2 Embarazos:3 Pendientes: 1
@@ -118,33 +92,35 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       }
 
       const expectedBirthDate = () => {
-        // if animalType is not set
-        if (!animalsType) return null
+        // Priorizar el tipo de la hembra; si no, usar el del macho
+        const typeForCalc = animalInfo?.type || animalsType
+        if (!typeForCalc) return null
 
-        // if actual birth date is set, return null
+        // si ya parió, no hay fecha probable
         if (info.actualBirthDate) return null
 
-        //if confirmed pregnancy is set
+        // si hay embarazo confirmado, calcular desde esa fecha
         if (info.pregnancyConfirmedDate) {
-          return calculateExpectedBirthDate(
+          const res = calculateExpectedBirthDate(
             info.pregnancyConfirmedDate,
-            animalsType
+            typeForCalc
           )
+          return res
         }
 
-        // if NOT confirmed pregnancy is set
+        // si no hay confirmación, opcionalmente usar la fecha de monta
         if (record.breedingDate)
-          return calculateExpectedBirthDate(record.breedingDate, animalsType)
-        //
+          return calculateExpectedBirthDate(record.breedingDate, typeForCalc)
+
         return null
       }
-
+      const expected = expectedBirthDate()
       return {
         animalId: animalInfo?.id || info.femaleId, // Número del animal para mostrar al usuario
         animalNumber: animalInfo?.animalNumber,
         type: animalInfo?.type,
         pregnancyConfirmedDate: info.pregnancyConfirmedDate || null,
-        expectedBirthDate: expectedBirthDate(),
+        expectedBirthDate: expected,
         actualBirthDate: info.actualBirthDate || null,
         status
       }
@@ -154,16 +130,80 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
     .map((info) => info.offspring || [])
     .flat()
 
-  // const nextBirthAnimal = femalesBreedingInfo.sort((a, b) => {
-  //   if (a.expectedBirthDate && b.expectedBirthDate) {
-  //     return a.expectedBirthDate.getTime() - b.expectedBirthDate.getTime()
-  //   }
-  //   return 0
-  // })[0]
+  // Orden de hembras:
+  // 1) En monta (pendiente de confirmación)
+  // 2) Embarazadas con fecha probable de parto vencida
+  // 3) Embarazadas con fecha probable futura (más próximas primero)
+  // 4) Al final, las que ya han parido (más reciente primero)
+  const sortedFemales = React.useMemo(() => {
+    const now = Date.now()
+
+    const getGroup = (f: (typeof femalesBreedingInfo)[number]) => {
+      if (f.status === 'monta') return 0
+      if (f.status === 'embarazada') {
+        if (f.expectedBirthDate && f.expectedBirthDate.getTime() < now) {
+          return 1 // vencida
+        }
+        return 2 // próxima
+      }
+      return 3 // parida
+    }
+
+    const getAnimalNumber = (f: (typeof femalesBreedingInfo)[number]) =>
+      String(f.animalNumber ?? '')
+
+    return [...femalesBreedingInfo].sort((a, b) => {
+      const ga = getGroup(a)
+      const gb = getGroup(b)
+      if (ga !== gb) return ga - gb
+
+      // Dentro del mismo grupo, ordenar por criterio específico
+      switch (ga) {
+        case 0: // monta: por número de animal asc para estabilidad
+          return getAnimalNumber(a).localeCompare(getAnimalNumber(b), 'es', {
+            numeric: true
+          })
+        case 1: // embarazada vencida: más vencida primero (fecha más antigua)
+          if (a.expectedBirthDate && b.expectedBirthDate) {
+            return a.expectedBirthDate.getTime() - b.expectedBirthDate.getTime()
+          }
+          if (a.expectedBirthDate) return -1
+          if (b.expectedBirthDate) return 1
+          return 0
+        case 2: // embarazada próxima: más cercana primero (fecha ascendente)
+          if (a.expectedBirthDate && b.expectedBirthDate) {
+            return a.expectedBirthDate.getTime() - b.expectedBirthDate.getTime()
+          }
+          if (a.expectedBirthDate) return -1
+          if (b.expectedBirthDate) return 1
+          return 0
+        case 3: // parida: más reciente primero (fecha desc)
+          if (a.actualBirthDate && b.actualBirthDate) {
+            return b.actualBirthDate.getTime() - a.actualBirthDate.getTime()
+          }
+          if (a.actualBirthDate) return -1
+          if (b.actualBirthDate) return 1
+          return 0
+        default:
+          return 0
+      }
+    })
+  }, [femalesBreedingInfo])
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
       {/* Header con estado */}
+      {/* Fechas */}
+      <div className="space-y-1 text-sm">
+        <div className="flex justify-end">
+          <span className="text-gray-600 mr-2">Fecha: </span>
+          <span className="font-medium">
+            {record.breedingDate
+              ? formatDate(record.breedingDate, 'EEE dd/MMM/yy')
+              : 'No disponible'}
+          </span>
+        </div>
+      </div>
       <div className="flex items-center justify-between mb-3">
         <span
           className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
@@ -246,7 +286,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
           </p>
         )}
         <div className="ml-6 mb-2 space-y-2">
-          {femalesBreedingInfo.map((femaleAnimal) => {
+          {sortedFemales.map((femaleAnimal) => {
             const animal = animals.find((a) => a.id === femaleAnimal.animalId)
             return animal ? (
               <ModalBreedingAnimalDetails
@@ -284,6 +324,50 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                           {femaleAnimal.status === 'embarazada' && 'Embarazada'}
                           {femaleAnimal.status === 'monta' && 'En monta'}
                         </span>
+                        {femaleAnimal.status === 'embarazada' && (
+                          <>
+                            <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                              Probable parto:{' '}
+                              {femaleAnimal.expectedBirthDate
+                                ? formatDate(femaleAnimal.expectedBirthDate)
+                                : 'Calculando...'}
+                            </span>
+                            {femaleAnimal.expectedBirthDate &&
+                              (() => {
+                                const msPerDay = 1000 * 60 * 60 * 24
+                                const diffDays = Math.ceil(
+                                  (femaleAnimal.expectedBirthDate.getTime() -
+                                    Date.now()) /
+                                    msPerDay
+                                )
+                                const overdue = diffDays < 0
+                                return (
+                                  <span
+                                    className={`text-xs px-2 py-1 rounded-full ${
+                                      overdue
+                                        ? 'bg-red-100 text-red-800'
+                                        : 'bg-purple-100 text-purple-800'
+                                    }`}
+                                  >
+                                    {Math.abs(diffDays)} día
+                                    {Math.abs(diffDays) !== 1 ? 's' : ''}{' '}
+                                    {overdue ? 'de retraso' : 'restantes'}
+                                  </span>
+                                )
+                              })()}
+                          </>
+                        )}
+                        {femaleAnimal.status === 'parida' &&
+                          femaleAnimal.actualBirthDate && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+                              Parto: {formatDate(femaleAnimal.actualBirthDate)}
+                            </span>
+                          )}
+                        {femaleAnimal.status === 'monta' && (
+                          <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">
+                            Pendiente de confirmación
+                          </span>
+                        )}
                       </div>
                       <Icon icon="view" className="w-4 h-4 text-gray-400" />
                     </div>
@@ -302,35 +386,6 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
               />
             )
           })}
-        </div>
-      </div>
-
-      {/* Fechas */}
-      <div className="space-y-1 text-sm">
-        <div className="flex justify-between">
-          <span className="text-gray-600">Fecha de monta:</span>
-          <span className="font-medium">
-            {record.breedingDate
-              ? formatDate(record.breedingDate)
-              : 'No disponible'}
-          </span>
-        </div>
-
-        <div className="flex justify-between">
-          <span className="text-gray-600">Próximo parto esperado:</span>
-          <span className="font-medium">
-            {record.femaleBreedingInfo.some(
-              (info) => info.pregnancyConfirmedDate && !info.actualBirthDate
-            )
-              ? birthInfo
-                ? `${Math.abs(birthInfo.daysUntil)} días ${
-                    birthInfo.daysUntil >= 0 ? 'restantes' : 'de retraso'
-                  }`
-                : 'Calculando...'
-              : record.femaleBreedingInfo.some((info) => info.actualBirthDate)
-              ? 'Todos los partos completados'
-              : 'No hay embarazos confirmados'}
-          </span>
         </div>
       </div>
 
