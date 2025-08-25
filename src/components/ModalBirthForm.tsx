@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { BirthRecord, OffspringInfo } from '@/types'
 import { Modal } from './Modal'
 import { BreedingRecord } from '@/types/breedings'
-import { Animal } from '@/types/animals'
+import { Animal, animal_icon } from '@/types/animals'
 
 interface ModalBirthFormProps {
   isOpen: boolean
@@ -128,22 +128,6 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
     }))
   }
 
-  const getAnimalTypeIcon = (type: string) => {
-    switch (type) {
-      case 'oveja':
-        return '🐑'
-      case 'cabra':
-        return '🐐'
-      case 'vaca_leche':
-      case 'vaca_engorda':
-        return '🐄'
-      case 'cerdo':
-        return '🐷'
-      default:
-        return '🐾'
-    }
-  }
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Registrar Parto">
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -163,9 +147,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
               }
               return (
                 <>
-                  <span className="text-2xl">
-                    {getAnimalTypeIcon(female?.type || '')}
-                  </span>
+                  <span className="text-2xl">{animal_icon[female?.type]}</span>
                   <div>
                     <div className="text-lg font-semibold leading-tight">
                       {female?.animalNumber}
@@ -213,7 +195,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                     />
                     <div className="flex items-center gap-2 flex-1">
                       <span className="text-lg">
-                        {getAnimalTypeIcon(female?.type || '')}
+                        {animal_icon[female?.type || 'otro']}
                       </span>
                       <div>
                         <div className="font-medium">

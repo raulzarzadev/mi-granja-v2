@@ -602,28 +602,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                                         mode="date"
                                       />
                                     )}
-                                    {/* <div>
-                              <label
-                                htmlFor={`expected-birth-${animal?.id}`}
-                                className="block text-xs font-medium text-gray-600 mb-1"
-                              >
-                                Parto esperado
-                              </label>
-                              <input
-                                type="date"
-                                id={`expected-birth-${animal?.id}`}
-                                value={expectedBirthDateStr}
-                                onChange={(e) =>
-                                  handleFemaleBreedingChange(
-                                    animal?.id || '',
-                                    'expectedBirthDate',
-                                    e.target.value
-                                  )
-                                }
-                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
-                                placeholder="Se calcula automáticamente"
-                              />
-                            </div> */}
                                   </div>
                                 </div>
                               </div>
