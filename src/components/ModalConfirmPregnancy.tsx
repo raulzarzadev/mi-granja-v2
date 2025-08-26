@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Modal } from './Modal'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { BreedingRecord } from '@/types/breedings'
@@ -14,6 +14,7 @@ interface ModalConfirmPregnancyProps {
   animals: Animal[]
   onSubmit: (updatedRecord: BreedingRecord) => Promise<void>
   isLoading?: boolean
+  selectedAnimal: string | null
 }
 
 /**
@@ -25,7 +26,8 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
   breedingRecord,
   animals,
   onSubmit,
-  isLoading = false
+  isLoading = false,
+  selectedAnimal
 }) => {
   // Obtener hembras que aún no tienen embarazo confirmado
   const unconfirmedFemales =
@@ -98,6 +100,12 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
     onClose()
   }
 
+  useEffect(() => {
+    if (selectedAnimal) {
+      setSelectedFemales([selectedAnimal])
+    }
+  }, [selectedAnimal])
+
   return (
     <Modal isOpen={isOpen} onClose={handleCancel} title="Confirmar Embarazos">
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -116,26 +124,6 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
           </div>
         ) : (
           <>
-            {/* Fecha de confirmación */}
-            {/* <div>
-              <label
-                htmlFor="confirmationDate"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Fecha de confirmación *
-              </label>
-              <input
-                type="date"
-                id="confirmationDate"
-                value={confirmationDate}
-                onChange={(e) => setConfirmationDate(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              <p className="text-xs text-gray-600 mt-1">
-                Esta fecha se usará para calcular el parto esperado
-              </p>
-            </div> */}
             <InputDate
               label="Fecha de confirmación"
               value={new Date()}

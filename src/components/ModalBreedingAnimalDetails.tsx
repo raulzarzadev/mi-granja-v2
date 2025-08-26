@@ -3,24 +3,20 @@
 import React from 'react'
 import { Animal } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
+import { BreedingActionHandlers } from '@/types/components/breeding'
 import { Modal } from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
 import { Icon } from './Icon/icon'
 import { formatDate } from '@/lib/dates'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 
-interface ModalBreedingAnimalDetailsProps {
+interface ModalBreedingAnimalDetailsProps extends BreedingActionHandlers {
   animal: Animal
   record: BreedingRecord
   animalType: 'male' | 'female'
   status?: 'parida' | 'embarazada' | 'monta'
   triggerComponent?: React.ReactNode
-  allAnimals: Animal[]
-  onConfirmPregnancy?: (record: BreedingRecord) => void
-  onUnconfirmPregnancy?: (record: BreedingRecord, femaleId: string) => void
-  onRemoveFromBreeding?: (record: BreedingRecord, animalId: string) => void
-  onDeleteBirth?: (record: BreedingRecord, femaleId: string) => void
-  onAddBirth?: (record: BreedingRecord) => void
+  animals: Animal[]
 }
 
 /**
@@ -32,7 +28,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
   animalType,
   status,
   triggerComponent,
-  allAnimals,
+  animals,
   onConfirmPregnancy,
   onUnconfirmPregnancy,
   onRemoveFromBreeding,
@@ -49,7 +45,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
   const expectedBirthDate = () => {
     if (animalType === 'male') return null
 
-    const maleAnimal = allAnimals.find((a) => a.id === record.maleId)
+    const maleAnimal = animals.find((a) => a.id === record.maleId)
     const animalsType = maleAnimal?.type
 
     if (!animalsType) return null
@@ -195,7 +191,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {femaleInfo.offspring.map((offspringId) => {
-                    const offspring = allAnimals.find(
+                    const offspring = animals.find(
                       (animal) => animal.id === offspringId
                     )
                     return (
@@ -235,7 +231,9 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                 <>
                   <button
                     onClick={() =>
-                      handleAction(() => onConfirmPregnancy?.(record))
+                      handleAction(() =>
+                        onConfirmPregnancy?.(record, animal.id)
+                      )
                     }
                     className="w-full px-4 py-2 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md flex items-center justify-center gap-2 transition-colors"
                   >

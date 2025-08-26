@@ -64,6 +64,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
       setFormData((prev) => ({ ...prev, animalId: selectedFemaleId }))
     }
   }, [selectedFemaleId])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 

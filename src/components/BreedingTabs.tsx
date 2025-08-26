@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import Tabs from '@/components/Tabs'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -9,6 +9,7 @@ import ModalConfirmPregnancy from '@/components/ModalConfirmPregnancy'
 import BreedingCard from '@/components/BreedingCard'
 import BirthsWindowSummary from '@/components/BirthsWindowSummary'
 import ModalBreedingForm from '@/components/ModalBreedingForm'
+import { BreedingActionHandlers } from '@/types/components/breeding'
 
 // Nuevo componente que segmenta la reproducción en 3 tabs: Embarazos, Partos, Montas
 const BreedingTabs: React.FC = () => {
@@ -28,6 +29,15 @@ const BreedingTabs: React.FC = () => {
   const [birthFemaleId, setBirthFemaleId] = React.useState<string | null>(null)
   const [confirmPregnancyRecord, setConfirmPregnancyRecord] =
     React.useState<BreedingRecord | null>(null)
+
+  const [selectedAnimal, setSelectedAnimal] = useState<null | string>(null)
+
+  const handleOpenConfirmPregnancy: BreedingActionHandlers['onConfirmPregnancy'] =
+    (props, femaleId) => {
+      setConfirmPregnancyRecord(props)
+      setSelectedAnimal(femaleId)
+    }
+  console.log({ confirmPregnancyRecord })
 
   // Lista plana de hembras embarazadas (cada hembra como item)
   const pregnantFemales = useMemo(
@@ -393,7 +403,9 @@ const BreedingTabs: React.FC = () => {
                           animals={animals}
                           onEdit={setEditingRecord}
                           onAddBirth={setBirthRecord}
-                          onConfirmPregnancy={setConfirmPregnancyRecord}
+                          onConfirmPregnancy={(record, femaleId) => {
+                            handleOpenConfirmPregnancy(record, femaleId)
+                          }}
                           onUnconfirmPregnancy={handleUnconfirmPregnancy}
                           onDelete={(rec) => deleteBreedingRecord(rec.id)}
                           onRemoveFromBreeding={handleRemoveFromBreeding}
@@ -567,6 +579,7 @@ const BreedingTabs: React.FC = () => {
         animals={animals}
         onSubmit={(r) => updateBreedingRecord(r.id, r)}
         isLoading={false}
+        selectedAnimal={selectedAnimal}
       />
     </>
   )

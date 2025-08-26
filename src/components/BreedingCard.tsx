@@ -9,17 +9,13 @@ import { BreedingRecord } from '@/types/breedings'
 import { formatDate, fromNow } from '@/lib/dates'
 import { Animal } from '@/types/animals'
 import ModalBreedingAnimalDetails from './ModalBreedingAnimalDetails'
+import { BreedingActionHandlers } from '@/types/components/breeding'
 
-interface BreedingCardProps {
+interface BreedingCardProps extends BreedingActionHandlers {
   record: BreedingRecord
   animals: Animal[]
   onEdit?: (record: BreedingRecord) => void
-  onAddBirth?: (record: BreedingRecord) => void
   onDelete?: (record: BreedingRecord) => void
-  onConfirmPregnancy?: (record: BreedingRecord) => void
-  onUnconfirmPregnancy?: (record: BreedingRecord, femaleId: string) => void
-  onRemoveFromBreeding?: (record: BreedingRecord, animalId: string) => void
-  onDeleteBirth?: (record: BreedingRecord, femaleId: string) => void
 }
 
 /**
@@ -250,7 +246,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
               animal={male}
               record={record}
               animalType="male"
-              allAnimals={animals}
+              animals={animals}
               onRemoveFromBreeding={onRemoveFromBreeding}
               triggerComponent={
                 <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md hover:bg-gray-100 cursor-pointer transition-colors">
@@ -295,7 +291,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                 record={record}
                 animalType="female"
                 status={femaleAnimal.status}
-                allAnimals={animals}
+                animals={animals}
                 onConfirmPregnancy={onConfirmPregnancy}
                 onUnconfirmPregnancy={onUnconfirmPregnancy}
                 onRemoveFromBreeding={onRemoveFromBreeding}
