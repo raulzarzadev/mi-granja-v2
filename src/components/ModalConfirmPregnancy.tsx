@@ -103,6 +103,8 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
   useEffect(() => {
     if (selectedAnimal) {
       setSelectedFemales([selectedAnimal])
+    } else {
+      setSelectedFemales([])
     }
   }, [selectedAnimal])
 
