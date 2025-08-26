@@ -32,12 +32,18 @@ const BreedingTabs: React.FC = () => {
 
   const [selectedAnimal, setSelectedAnimal] = useState<null | string>(null)
 
+  const handleOpenAddBirth: BreedingActionHandlers['onAddBirth'] = (
+    record,
+    femaleId
+  ) => {
+    setBirthRecord(record)
+    setBirthFemaleId(femaleId)
+  }
   const handleOpenConfirmPregnancy: BreedingActionHandlers['onConfirmPregnancy'] =
     (props, femaleId) => {
       setConfirmPregnancyRecord(props)
       setSelectedAnimal(femaleId)
     }
-  console.log({ confirmPregnancyRecord })
 
   // Lista plana de hembras embarazadas (cada hembra como item)
   const pregnantFemales = useMemo(
@@ -402,7 +408,7 @@ const BreedingTabs: React.FC = () => {
                           record={r}
                           animals={animals}
                           onEdit={setEditingRecord}
-                          onAddBirth={setBirthRecord}
+                          onAddBirth={handleOpenAddBirth}
                           onConfirmPregnancy={(record, femaleId) => {
                             handleOpenConfirmPregnancy(record, femaleId)
                           }}
@@ -430,7 +436,7 @@ const BreedingTabs: React.FC = () => {
                           record={r}
                           animals={animals}
                           onEdit={setEditingRecord}
-                          onAddBirth={setBirthRecord}
+                          onAddBirth={handleOpenAddBirth}
                           onConfirmPregnancy={setConfirmPregnancyRecord}
                           onUnconfirmPregnancy={handleUnconfirmPregnancy}
                           onDelete={(rec) => deleteBreedingRecord(rec.id)}
@@ -462,7 +468,7 @@ const BreedingTabs: React.FC = () => {
                       record={r}
                       animals={animals}
                       onEdit={setEditingRecord}
-                      onAddBirth={setBirthRecord}
+                      onAddBirth={handleOpenAddBirth}
                       onConfirmPregnancy={setConfirmPregnancyRecord}
                       onUnconfirmPregnancy={handleUnconfirmPregnancy}
                       onDelete={(rec) => deleteBreedingRecord(rec.id)}

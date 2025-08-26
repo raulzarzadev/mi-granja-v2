@@ -258,7 +258,9 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
               {animalType === 'female' && status === 'embarazada' && (
                 <>
                   <button
-                    onClick={() => handleAction(() => onAddBirth?.(record))}
+                    onClick={() =>
+                      handleAction(() => onAddBirth?.(record, animal.id))
+                    }
                     className="w-full px-4 py-2 text-sm text-green-600 bg-green-50 hover:bg-green-100 rounded-md flex items-center justify-center gap-2 transition-colors"
                   >
                     <Icon icon="baby" className="w-4 h-4" />

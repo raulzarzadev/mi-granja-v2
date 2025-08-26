@@ -5,5 +5,5 @@ export type BreedingActionHandlers = {
   onUnconfirmPregnancy?: (record: BreedingRecord, femaleId: string) => void
   onRemoveFromBreeding?: (record: BreedingRecord, animalId: string) => void
   onDeleteBirth?: (record: BreedingRecord, femaleId: string) => void
-  onAddBirth?: (record: BreedingRecord) => void
+  onAddBirth?: (record: BreedingRecord, femaleId: string) => void
 }

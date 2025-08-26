@@ -189,6 +189,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                     <input
                       type="radio"
                       name="animalNumber"
+                      defaultValue={selectedFemaleId}
                       value={female?.id}
                       checked={formData.animalId === female?.id}
                       onChange={(e) => handleFemaleChange(e.target.value)}
