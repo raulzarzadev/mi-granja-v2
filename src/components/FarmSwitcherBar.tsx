@@ -29,19 +29,21 @@ const FarmSwitcherBar: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false)
 
   const pendingInvs = myInv.getPending()
-  const acceptedInvs = myInv.getAccepted()
   const [acceptedRole, setAcceptedRole] = useState<
     FarmCollaborator['role'] | null
   >(null)
 
   useEffect(() => {
     if (currentFarm && user && currentFarm.ownerId !== user.id) {
-      const inv = acceptedInvs.find((i) => i.farmId === currentFarm.id)
-      setAcceptedRole(inv ? inv.role : null)
+      const list = myInv.getAccepted()
+      const inv = list.find((i) => i.farmId === currentFarm.id)
+      const nextRole = inv ? inv.role : null
+      setAcceptedRole((prev) => (prev === nextRole ? prev : nextRole))
     } else {
-      setAcceptedRole(null)
+      setAcceptedRole((prev) => (prev === null ? prev : null))
     }
-  }, [currentFarm, user, acceptedInvs])
+    // Dependencias reducidas para evitar bucles por referencias nuevas en cada render
+  }, [currentFarm?.id, user?.id])
 
   const handleSelectChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {

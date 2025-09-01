@@ -4,11 +4,19 @@ import React from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import { animal_icon, animal_stage_labels, gender_icon } from '@/types/animals'
+import {
+  animal_icon,
+  animal_stage_labels,
+  gender_icon,
+  animal_status_labels,
+  animal_status_colors,
+  AnimalStatus
+} from '@/types/animals'
 import { useAdminAnimals } from '@/hooks/admin/useAdminAnimals'
 
 export default function AdminAnimals() {
-  const { animals, isLoading, error } = useAdminAnimals()
+  const { animals, isLoading, error, fetchByStatus } = useAdminAnimals()
+  const [status, setStatus] = React.useState<AnimalStatus>('activo')
 
   if (isLoading) {
     return (
@@ -46,8 +54,30 @@ export default function AdminAnimals() {
             Vista general de todos los animales en el sistema
           </p>
         </div>
-        <div className="text-sm text-gray-500">
-          Total: {animals.length} animales
+        <div className="flex items-center gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Estado
+            </label>
+            <select
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              value={status}
+              onChange={async (e) => {
+                const val = e.target.value as AnimalStatus
+                setStatus(val)
+                await fetchByStatus(val)
+              }}
+            >
+              {Object.entries(animal_status_labels).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="text-sm text-gray-500">
+            Total: {animals.length} animales
+          </div>
         </div>
       </div>
 
@@ -95,6 +125,9 @@ export default function AdminAnimals() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Fecha Registro
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Estado
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -131,6 +164,15 @@ export default function AdminAnimals() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {format(animal.createdAt, 'PP', { locale: es })}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <span
+                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      animal_status_colors[animal.status || 'activo']
+                    }`}
+                  >
+                    {animal_status_labels[animal.status || 'activo']}
+                  </span>
                 </td>
               </tr>
             ))}

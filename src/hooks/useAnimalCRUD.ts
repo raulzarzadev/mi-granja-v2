@@ -235,16 +235,17 @@ export const useAnimalCRUD = () => {
     })
   }
 
-  const getFarmAnimals = () => {
+  const getFarmAnimals = (opts?: { status?: AnimalStatus }) => {
     return new Promise<Animal[]>(async (resolve, reject) => {
       if (!user?.id) {
         dispatch(setError('Usuario no autenticado'))
         return resolve([])
       }
 
-      const constraints = []
+      const constraints = [] as any[]
       if (currentFarm?.id)
         constraints.push(where('farmId', '==', currentFarm.id))
+      if (opts?.status) constraints.push(where('status', '==', opts.status))
       const q = query(
         collection(db, 'animals'),
         ...constraints,
@@ -258,8 +259,14 @@ export const useAnimalCRUD = () => {
           ...doc.data()
         })) as Animal[]
 
-        dispatch(setAnimals(serializeObj(animals)))
-        resolve(animals)
+        console.log({ animals })
+        if (opts?.status) {
+          // Cuando filtramos por estado, devolvemos resultados sin mutar el store global
+          resolve(serializeObj(animals))
+        } else {
+          dispatch(setAnimals(serializeObj(animals)))
+          resolve(animals)
+        }
       } catch (error) {
         console.error('Error fetching farm animals:', error)
         const errorMessage =
@@ -271,8 +278,6 @@ export const useAnimalCRUD = () => {
       }
     })
   }
-
-  // animasl stats =
 
   const animalsStats = () => {
     const stats = {
@@ -296,16 +301,26 @@ export const useAnimalCRUD = () => {
     return stats
   }
 
-  const animalsFiltered = (filters: {
-    type?: string
-    stage?: string
-    gender?: string
-    search?: string
-    includeInactive?: boolean
-  }) => {
-    return animals.filter((animal) => {
+  const animalsFiltered = (
+    filters: {
+      type?: string
+      stage?: string
+      gender?: string
+      search?: string
+      includeInactive?: boolean
+      status?: AnimalStatus
+    },
+    baseList?: Animal[]
+  ) => {
+    const list = baseList ?? animals
+    return list.filter((animal) => {
       const status: AnimalStatus = animal.status || 'activo'
-      if (!filters.includeInactive && status !== 'activo') return false
+      // Si se especifica un status, filtrar por ese status y no aplicar la exclusión de inactivos
+      if (filters.status) {
+        if (status !== filters.status) return false
+      } else {
+        if (!filters.includeInactive && status !== 'activo') return false
+      }
       if (filters.type && animal.type !== filters.type) return false
       if (filters.stage && animal.stage !== filters.stage) return false
       if (filters.gender && animal.gender !== filters.gender) return false

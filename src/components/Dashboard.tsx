@@ -14,7 +14,9 @@ import ModalAnimalForm from './ModalAnimalForm'
 import ModalAnimalDetails from './ModalAnimalDetails'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { animal_status_labels, AnimalStatus } from '@/types/animals'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import { setAnimals } from '@/features/animals/animalsSlice'
 
 /**
  * Dashboard principal de la aplicación
@@ -27,8 +29,10 @@ const Dashboard: React.FC = () => {
     animals,
     animalsStats,
     animalsFiltered,
-    isLoading: isLoadingAnimals
+    isLoading: isLoadingAnimals,
+    getFarmAnimals
   } = useAnimalCRUD()
+  const [statusAnimals, setStatusAnimals] = useState<typeof animals>([])
 
   const {
     reminders,
@@ -40,15 +44,48 @@ const Dashboard: React.FC = () => {
     getUpcomingReminders
   } = useReminders()
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<{
+    status: AnimalStatus
+    type: string
+    stage: string
+    search: string
+  }>({
+    status: 'activo',
     type: '',
     stage: '',
     search: ''
   })
 
+  // Recargar animales desde BD cuando cambia el filtro de estado (solo no-activo)
+  React.useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      if (filters.status !== 'activo') {
+        const list = await getFarmAnimals({ status: filters.status })
+        if (cancelled) return
+        setAnimals(list)
+        setStatusAnimals((prev) => {
+          const prevIds = prev.map((a) => a.id).join(',')
+          const newIds = list.map((a) => a.id).join(',')
+          return prevIds === newIds ? prev : list
+        })
+      } else {
+        setStatusAnimals((prev) => (prev.length === 0 ? prev : []))
+        // Nota: los 'activos' ya se cargan por el initializer
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [filters.status])
+
   const stats = animalsStats()
 
-  const filteredAnimals = animalsFiltered(filters)
+  const filteredAnimals =
+    filters.status === 'activo'
+      ? animalsFiltered(filters)
+      : animalsFiltered(filters, statusAnimals)
   const formatStatLabel = (key: string) => {
     switch (key) {
       case 'oveja':
@@ -83,6 +120,8 @@ const Dashboard: React.FC = () => {
   if (!user) {
     return null
   }
+
+  console.log({ filteredAnimals })
 
   const tabs = [
     {
@@ -146,7 +185,33 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Filtros */}
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-4 gap-4">
+                {/* Status primero */}
+                <div>
+                  <label
+                    htmlFor="statusFilter"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Estado
+                  </label>
+                  <select
+                    id="statusFilter"
+                    value={filters.status}
+                    onChange={async (e) => {
+                      const value = e.target.value as AnimalStatus
+                      setFilters((prev) => ({ ...prev, status: value }))
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    {Object.entries(animal_status_labels).map(
+                      ([key, label]) => (
+                        <option key={key} value={key}>
+                          {label}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
                 <div>
                   <label
                     htmlFor="searchFilter"
