@@ -24,7 +24,7 @@ import {
   setAnimals
 } from '@/features/animals/animalsSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
-import { Animal } from '@/types/animals'
+import { Animal, AnimalStatus } from '@/types/animals'
 import { useAdminActions } from '@/lib/adminActions'
 
 /**
@@ -90,6 +90,7 @@ export const useAnimalCRUD = () => {
       return
     }
 
+    console.log({ updateData })
     setIsLoading(true)
     try {
       const animalRef = doc(db, 'animals', animalId)
@@ -300,8 +301,11 @@ export const useAnimalCRUD = () => {
     stage?: string
     gender?: string
     search?: string
+    includeInactive?: boolean
   }) => {
     return animals.filter((animal) => {
+      const status: AnimalStatus = animal.status || 'activo'
+      if (!filters.includeInactive && status !== 'activo') return false
       if (filters.type && animal.type !== filters.type) return false
       if (filters.stage && animal.stage !== filters.stage) return false
       if (filters.gender && animal.gender !== filters.gender) return false
@@ -319,6 +323,39 @@ export const useAnimalCRUD = () => {
     })
   }
 
+  // Marcar estado del animal (muerto, vendido, perdido, activo)
+  const markStatus = async (
+    animalId: string,
+    data: {
+      status: Exclude<AnimalStatus, 'activo'> | 'activo'
+      statusAt?: Date
+      statusNotes?: string
+      soldInfo?: Animal['soldInfo']
+      lostInfo?: Animal['lostInfo']
+    }
+  ) => {
+    const effectiveStatusAt = data.statusAt || new Date()
+    const updateData: Partial<Animal> = {
+      status: data.status,
+      statusAt: effectiveStatusAt
+    }
+
+    if (data.statusNotes) updateData.statusNotes = data.statusNotes
+    if (data.soldInfo) updateData.soldInfo = data.soldInfo
+    if (data.lostInfo) updateData.lostInfo = data.lostInfo
+    await update(animalId, updateData)
+  }
+
+  // Marcar como encontrado si estaba perdido
+  const markFound = async (animalId: string) => {
+    const now = new Date()
+    await update(animalId, {
+      status: 'activo',
+      statusAt: now,
+      lostInfo: { lostAt: now, foundAt: now }
+    })
+  }
+
   // Migrar animales al nuevo esquema de animalNumber
 
   return {
@@ -332,6 +369,8 @@ export const useAnimalCRUD = () => {
     getFarmAnimals,
     animalsStats,
     animalsFiltered,
-    wean
+    wean,
+    markStatus,
+    markFound
   }
 }

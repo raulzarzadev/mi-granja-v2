@@ -55,7 +55,10 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
   // Filtrar animales por género y capacidad reproductiva
   const males = animals.filter(
-    (animal) => animal.gender === 'macho' && animal.stage === 'reproductor'
+    (animal) =>
+      (animal.status ?? 'activo') === 'activo' &&
+      animal.gender === 'macho' &&
+      animal.stage === 'reproductor'
   )
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -289,6 +292,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
     return animals.filter(
       (animal) =>
+        (animal.status ?? 'activo') === 'activo' &&
         animal.gender === 'hembra' &&
         animal.type === selectedMale.type && // Mismo tipo que el macho
         (animal.stage === 'reproductor' || animal.stage === 'lechera')

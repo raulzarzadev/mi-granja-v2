@@ -4,10 +4,13 @@ import {
   Animal,
   animal_icon,
   animal_stage_icons,
-  gender_icon
+  gender_icon,
+  animal_status_labels,
+  animal_status_colors
 } from '@/types/animals'
 import React from 'react'
 import AdminActionIndicator from './AdminActionIndicator'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 
 interface AnimalCardProps {
   animal: Animal
@@ -19,6 +22,7 @@ interface AnimalCardProps {
  * Diseñado para ser responsive y fácil de usar en móviles
  */
 const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
+  const { markFound } = useAnimalCRUD()
   return (
     <div
       className={`bg-white rounded-lg shadow-md p-4 border border-gray-200 hover:shadow-lg transition-shadow ${
@@ -30,6 +34,29 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
       onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
     >
       <AnimalDetailRow animal={animal} />
+      {/* Badge de estado si no está activo */}
+      {animal.status && animal.status !== 'activo' && (
+        <div className="mt-2 flex items-center justify-between">
+          <span
+            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+              animal_status_colors[animal.status]
+            }`}
+          >
+            {animal_status_labels[animal.status]}
+          </span>
+          {animal.status === 'perdido' && (
+            <button
+              className="text-xs text-green-700 hover:text-green-900 underline"
+              onClick={(e) => {
+                e.stopPropagation()
+                markFound(animal.id)
+              }}
+            >
+              Marcar como encontrado
+            </button>
+          )}
+        </div>
+      )}
       <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
         {animal.age && (
           <div>

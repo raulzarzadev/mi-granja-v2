@@ -2,7 +2,13 @@
 
 import React, { useState } from 'react'
 import { BreedingRecord } from '@/types/breedings'
-import { Animal, animal_icon, AnimalType } from '@/types/animals'
+import {
+  Animal,
+  animal_icon,
+  AnimalType,
+  animal_status_colors,
+  animal_status_labels
+} from '@/types/animals'
 import { MilkProduction, WeightRecord } from '@/types'
 import { formatDate } from '@/lib/dates'
 import { AnimalDetailRow } from './AnimalCard'
@@ -32,7 +38,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
     'info' | 'breeding' | 'weight' | 'milk'
   >('info')
 
-  const { remove: deleteAnimal } = useAnimalCRUD()
+  const { remove: deleteAnimal, markStatus, markFound } = useAnimalCRUD()
 
   const breedingRecords = allBreedingRecords.filter(
     (record) =>
@@ -96,6 +102,18 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
         <div className="bg-green-600 text-white p-3">
           <div className="flex items-center justify-between">
             <AnimalDetailRow animal={animal} />
+            {/* Estado */}
+            {animal.status && (
+              <div className="ml-2">
+                <span
+                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                    animal_status_colors[animal.status || 'activo']
+                  }`}
+                >
+                  {animal_status_labels[animal.status || 'activo']}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -366,6 +384,52 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
         </div>
 
         <div className="my-2 flex items-center justify-around p-3 mb-8">
+          {/* Acciones de estado rápidas */}
+          <div className="flex gap-2">
+            <button
+              className="px-3 py-1 text-sm rounded bg-yellow-100 text-yellow-800 border border-yellow-200"
+              onClick={() =>
+                markStatus(animal.id, {
+                  status: 'vendido',
+                  statusNotes: 'Marcado desde detalle'
+                })
+              }
+            >
+              Marcar vendido
+            </button>
+            <button
+              className="px-3 py-1 text-sm rounded bg-gray-200 text-gray-800 border border-gray-300"
+              onClick={() =>
+                markStatus(animal.id, {
+                  status: 'muerto',
+                  statusNotes: 'Marcado desde detalle'
+                })
+              }
+            >
+              Marcar muerto
+            </button>
+            {animal.status === 'perdido' ? (
+              <button
+                className="px-3 py-1 text-sm rounded bg-green-100 text-green-800 border border-green-200"
+                onClick={() => markFound(animal.id)}
+              >
+                Marcar encontrado
+              </button>
+            ) : (
+              <button
+                className="px-3 py-1 text-sm rounded bg-red-100 text-red-800 border border-red-200"
+                onClick={() =>
+                  markStatus(animal.id, {
+                    status: 'perdido',
+                    statusNotes: 'Marcado desde detalle',
+                    lostInfo: { lostAt: new Date() }
+                  })
+                }
+              >
+                Marcar perdido
+              </button>
+            )}
+          </div>
           <ButtonConfirm
             openLabel="Eliminar animal"
             confirmLabel="Eliminar"
