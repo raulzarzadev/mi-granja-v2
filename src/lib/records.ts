@@ -22,7 +22,6 @@ export function buildRecordFromForm(form: RecordFormState): RecordPayload {
   }
 
   if (form.description?.trim()) base.description = form.description.trim()
-  if (form.notes?.trim()) base.notes = form.notes.trim()
 
   if (form.type === 'health') {
     const isClinical = clinicalCategories.includes(form.category as any)

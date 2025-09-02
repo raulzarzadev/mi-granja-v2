@@ -35,8 +35,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
     nextDueDate: '',
     batch: '',
     veterinarian: '',
-    cost: '',
-    notes: ''
+    cost: ''
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -55,8 +54,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
       nextDueDate: '',
       batch: '',
       veterinarian: '',
-      cost: '',
-      notes: ''
+      cost: ''
     })
   }
 
