@@ -295,7 +295,7 @@ const ClinicalHistorySection: React.FC<ClinicalHistorySectionProps> = ({
   )
 
   return (
-    <div className="space-y-4 pb-16">
+    <div className="space-y-4 ">
       {/* Header y botón agregar */}
       <div className="flex justify-between items-center">
         <div>

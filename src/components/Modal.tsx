@@ -81,70 +81,74 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 flex items-stretch sm:items-center sm:justify-center p-0 sm:p-4 z-50 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-black/70 z-50 animate-in fade-in duration-200"
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)'
+      }}
     >
-      <div
-        className={`
-          bg-white w-screen h-[100svh] max-w-none rounded-none 
-          sm:rounded-lg sm:w-full ${sizeClasses[size]} lg:max-w-4xl xl:max-w-5xl sm:h-auto sm:max-h-[90vh]
-          shadow-none sm:shadow-xl animate-in zoom-in-95 duration-200 
-          flex flex-col overflow-hidden
-          ${className}
-        `}
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          paddingTop: 'env(safe-area-inset-top)',
-          paddingLeft: 'env(safe-area-inset-left)',
-          paddingRight: 'env(safe-area-inset-right)'
-        }}
-      >
-        {/* Header fijo */}
-        {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-3 py-2 border-b border-gray-200 bg-white flex-shrink-0">
-            {title && (
-              <h2
-                id="modal-title"
-                className="text-xl font-semibold text-gray-900 truncate pr-4"
-              >
-                {title}
-              </h2>
-            )}
-            {showCloseButton && (
-              <button
-                onClick={onClose}
-                className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
-                aria-label="Cerrar modal"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Contenido con scroll */}
+      {/* Contenedor centrado para desktop */}
+      <div className="h-full w-full flex items-center justify-center p-0 sm:p-4">
         <div
-          className="flex-1 overflow-y-auto p-3 sm:p-4"
-          style={{
-            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))'
-          }}
+          className={`
+            bg-white w-full h-full rounded-none
+            sm:rounded-lg sm:w-auto sm:h-auto sm:max-h-[90vh] sm:min-w-96 ${sizeClasses[size]} lg:max-w-4xl xl:max-w-5xl
+            shadow-none sm:shadow-xl animate-in zoom-in-95 duration-200 
+            flex flex-col max-w-none
+            ${className}
+          `}
+          onClick={(e) => e.stopPropagation()}
         >
-          {children}
+          {/* Header fijo */}
+          {(title || showCloseButton) && (
+            <div className="flex items-center justify-between p-3 py-3 border-b border-gray-200 bg-white flex-shrink-0">
+              {title && (
+                <h2
+                  id="modal-title"
+                  className="text-xl font-semibold text-gray-900 truncate pr-4"
+                >
+                  {title}
+                </h2>
+              )}
+              {showCloseButton && (
+                <button
+                  onClick={onClose}
+                  className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
+                  aria-label="Cerrar modal"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Contenido scrolleable */}
+          <div
+            className="flex-1 overflow-y-scroll p-3 sm:p-4 "
+            style={{
+              WebkitOverflowScrolling: 'touch'
+            }}
+          >
+            {children}
+          </div>
         </div>
       </div>
     </div>

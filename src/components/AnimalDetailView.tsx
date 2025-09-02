@@ -406,7 +406,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
   ]
 
   return (
-    <div className="bg-white  w-full max-h-[90vh] overflow-hidden">
+    <div className="bg-white w-full h-auto">
       {/* Header */}
       <div className="bg-green-600 text-white p-2 mb-2">
         <div className="flex items-center justify-between">
