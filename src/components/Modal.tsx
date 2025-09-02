@@ -90,7 +90,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         className={`
           bg-white w-screen h-[100svh] max-w-none rounded-none 
-          sm:rounded-lg sm:w-full ${sizeClasses[size]} sm:h-auto sm:max-h-[90vh]
+          sm:rounded-lg sm:w-full ${sizeClasses[size]} md:max-w-3xl sm:h-auto sm:max-h-[90vh]
           overflow-hidden shadow-none sm:shadow-xl animate-in zoom-in-95 duration-200 
           ${className}
         `}
