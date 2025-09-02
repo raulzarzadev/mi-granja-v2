@@ -17,9 +17,7 @@ import ButtonConfirm from './buttons/ButtonConfirm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import Tabs from '@/components/Tabs'
-import NotesSection from '@/components/NotesSection'
-import ClinicalHistorySection from '@/components/ClinicalHistorySection'
-import HealthHistorySection from '@/components/HealthHistorySection'
+import AnimalRecordsSection from '@/components/AnimalRecordsSection'
 
 interface AnimalDetailViewProps {
   animal: Animal
@@ -330,16 +328,8 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
       )
     },
     {
-      label: '📝 Notas',
-      content: <NotesSection animal={animal} />
-    },
-    {
-      label: '🏥 Historial Clínico',
-      content: <ClinicalHistorySection animal={animal} />
-    },
-    {
-      label: '💉 Historial de Salud',
-      content: <HealthHistorySection animal={animal} />
+      label: '� Registros',
+      content: <AnimalRecordsSection animal={animal} />
     },
     {
       label: '⚙️ Configuración',

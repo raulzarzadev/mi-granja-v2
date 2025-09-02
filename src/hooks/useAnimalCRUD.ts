@@ -24,13 +24,7 @@ import {
   setAnimals
 } from '@/features/animals/animalsSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
-import {
-  Animal,
-  AnimalStatus,
-  NoteEntry,
-  ClinicalEntry,
-  HealthEvent
-} from '@/types/animals'
+import { Animal, AnimalStatus, AnimalRecord } from '@/types/animals'
 import { useAdminActions } from '@/lib/adminActions'
 
 /**
@@ -383,81 +377,7 @@ export const useAnimalCRUD = () => {
     }
   }
 
-  // === FUNCIONES DE NOTAS ===
-
-  // Agregar nota a un animal
-  const addNote = async (animalId: string, noteText: string) => {
-    if (!user?.id) {
-      dispatch(setError('Usuario no autenticado'))
-      return
-    }
-
-    const animal = animals.find((a) => a.id === animalId)
-    if (!animal) {
-      dispatch(setError('Animal no encontrado'))
-      return
-    }
-
-    const newNote: NoteEntry = {
-      id: crypto.randomUUID(),
-      text: noteText.trim(),
-      createdAt: new Date(),
-      createdBy: user.id
-    }
-
-    const updatedNotesLog = [...(animal.notesLog || []), newNote]
-
-    await update(animalId, { notesLog: updatedNotesLog })
-    console.log('Nota agregada al animal:', animalId)
-  }
-
-  // Actualizar nota existente
-  const updateNote = async (
-    animalId: string,
-    noteId: string,
-    newText: string
-  ) => {
-    if (!user?.id) {
-      dispatch(setError('Usuario no autenticado'))
-      return
-    }
-
-    const animal = animals.find((a) => a.id === animalId)
-    if (!animal || !animal.notesLog) {
-      dispatch(setError('Animal o notas no encontradas'))
-      return
-    }
-
-    const updatedNotesLog = animal.notesLog.map((note) =>
-      note.id === noteId
-        ? { ...note, text: newText.trim(), updatedAt: new Date() }
-        : note
-    )
-
-    await update(animalId, { notesLog: updatedNotesLog })
-    console.log('Nota actualizada:', noteId)
-  }
-
-  // Eliminar nota
-  const removeNote = async (animalId: string, noteId: string) => {
-    if (!user?.id) {
-      dispatch(setError('Usuario no autenticado'))
-      return
-    }
-
-    const animal = animals.find((a) => a.id === animalId)
-    if (!animal || !animal.notesLog) {
-      dispatch(setError('Animal o notas no encontradas'))
-      return
-    }
-
-    const updatedNotesLog = animal.notesLog.filter((note) => note.id !== noteId)
-
-    await update(animalId, { notesLog: updatedNotesLog })
-    console.log('Nota eliminada:', noteId)
-  }
-
-  // === FUNCIONES DE HISTORIAL CLÍNICO ===
+  // === FUNCIONES DE HISTORIAL CLÍNICO (LEGACY) ===
 
   // Helper para limpiar campos undefined
   const cleanUndefinedFields = <T extends Record<string, any>>(obj: T): T => {
@@ -470,13 +390,17 @@ export const useAnimalCRUD = () => {
     return cleaned
   }
 
-  // Agregar entrada al historial clínico
-  const addClinicalEntry = async (
+  // (Eliminadas en favor del sistema unificado de registros)
+
+  // === FUNCIONES DE EVENTOS DE SALUD (LEGACY) ===
+  // Eliminadas en favor del sistema unificado de registros
+
+  // === SISTEMA UNIFICADO DE REGISTROS ===
+
+  // Agregar registro unificado
+  const addRecord = async (
     animalId: string,
-    entryData: Omit<
-      ClinicalEntry,
-      'id' | 'createdAt' | 'createdBy' | 'isResolved'
-    >
+    recordData: Omit<AnimalRecord, 'id' | 'createdAt' | 'createdBy'>
   ) => {
     if (!user?.id) {
       dispatch(setError('Usuario no autenticado'))
@@ -489,28 +413,26 @@ export const useAnimalCRUD = () => {
       return
     }
 
-    // Limpiar campos undefined del entryData
-    const cleanedEntryData = cleanUndefinedFields(entryData)
+    const cleanedRecordData = cleanUndefinedFields(recordData)
 
-    const newEntry: ClinicalEntry = cleanUndefinedFields({
-      ...cleanedEntryData,
+    const newRecord: AnimalRecord = cleanUndefinedFields({
+      ...cleanedRecordData,
       id: crypto.randomUUID(),
-      isResolved: false,
       createdAt: new Date(),
       createdBy: user.id
     })
 
-    const updatedClinicalHistory = [...(animal.clinicalHistory || []), newEntry]
+    const updatedRecords = [...(animal.records || []), newRecord]
 
-    await update(animalId, { clinicalHistory: updatedClinicalHistory })
-    console.log('Entrada clínica agregada al animal:', animalId)
+    await update(animalId, { records: updatedRecords })
+    console.log('Registro agregado al animal:', animalId)
   }
 
-  // Resolver entrada clínica (marcar como resuelta)
-  const resolveClinicalEntry = async (
+  // Actualizar registro
+  const updateRecord = async (
     animalId: string,
-    entryId: string,
-    resolvedDate?: Date
+    recordId: string,
+    updateData: Partial<AnimalRecord>
   ) => {
     if (!user?.id) {
       dispatch(setError('Usuario no autenticado'))
@@ -518,160 +440,104 @@ export const useAnimalCRUD = () => {
     }
 
     const animal = animals.find((a) => a.id === animalId)
-    if (!animal || !animal.clinicalHistory) {
-      dispatch(setError('Animal o historial clínico no encontrado'))
+    if (!animal || !animal.records) {
+      dispatch(setError('Animal o registros no encontrados'))
       return
     }
 
-    const updatedClinicalHistory = animal.clinicalHistory.map((entry) =>
-      entry.id === entryId
-        ? cleanUndefinedFields({
-            ...entry,
-            isResolved: true,
-            resolvedDate: resolvedDate || new Date(),
-            updatedAt: new Date()
-          })
-        : entry
-    )
-
-    await update(animalId, { clinicalHistory: updatedClinicalHistory })
-    console.log('Entrada clínica resuelta:', entryId)
-  }
-
-  // Reactivar entrada clínica (desmarcar como resuelta)
-  const reopenClinicalEntry = async (animalId: string, entryId: string) => {
-    if (!user?.id) {
-      dispatch(setError('Usuario no autenticado'))
-      return
-    }
-
-    const animal = animals.find((a) => a.id === animalId)
-    if (!animal || !animal.clinicalHistory) {
-      dispatch(setError('Animal o historial clínico no encontrado'))
-      return
-    }
-
-    const updatedClinicalHistory = animal.clinicalHistory.map((entry) => {
-      if (entry.id === entryId) {
-        const updatedEntry = {
-          ...entry,
-          isResolved: false,
-          updatedAt: new Date()
-        }
-        // Eliminar resolvedDate del objeto completamente
-        delete (updatedEntry as any).resolvedDate
-        return cleanUndefinedFields(updatedEntry)
-      }
-      return entry
-    })
-
-    await update(animalId, { clinicalHistory: updatedClinicalHistory })
-    console.log('Entrada clínica reabierta:', entryId)
-  }
-
-  // Actualizar entrada clínica
-  const updateClinicalEntry = async (
-    animalId: string,
-    entryId: string,
-    updateData: Partial<ClinicalEntry>
-  ) => {
-    if (!user?.id) {
-      dispatch(setError('Usuario no autenticado'))
-      return
-    }
-
-    const animal = animals.find((a) => a.id === animalId)
-    if (!animal || !animal.clinicalHistory) {
-      dispatch(setError('Animal o historial clínico no encontrado'))
-      return
-    }
-
-    // Limpiar campos undefined del updateData
     const cleanedUpdateData = cleanUndefinedFields(updateData)
 
-    const updatedClinicalHistory = animal.clinicalHistory.map((entry) =>
-      entry.id === entryId
+    const updatedRecords = animal.records.map((record) =>
+      record.id === recordId
         ? cleanUndefinedFields({
-            ...entry,
+            ...record,
             ...cleanedUpdateData,
             updatedAt: new Date()
           })
-        : entry
+        : record
     )
 
-    await update(animalId, { clinicalHistory: updatedClinicalHistory })
-    console.log('Entrada clínica actualizada:', entryId)
+    await update(animalId, { records: updatedRecords })
+    console.log('Registro actualizado:', recordId)
   }
 
-  // Eliminar entrada clínica
-  const removeClinicalEntry = async (animalId: string, entryId: string) => {
+  // Eliminar registro
+  const removeRecord = async (animalId: string, recordId: string) => {
     if (!user?.id) {
       dispatch(setError('Usuario no autenticado'))
       return
     }
 
     const animal = animals.find((a) => a.id === animalId)
-    if (!animal || !animal.clinicalHistory) {
-      dispatch(setError('Animal o historial clínico no encontrado'))
+    if (!animal || !animal.records) {
+      dispatch(setError('Animal o registros no encontrados'))
       return
     }
 
-    const updatedClinicalHistory = animal.clinicalHistory.filter(
-      (entry) => entry.id !== entryId
+    const updatedRecords = animal.records.filter(
+      (record) => record.id !== recordId
     )
 
-    await update(animalId, { clinicalHistory: updatedClinicalHistory })
-    console.log('Entrada clínica eliminada:', entryId)
+    await update(animalId, { records: updatedRecords })
+    console.log('Registro eliminado:', recordId)
   }
 
-  // === FUNCIONES DE EVENTOS DE SALUD ===
-
-  // Agregar evento de salud (individual)
-  const addHealthEvent = async (
+  // Resolver caso clínico
+  const resolveRecord = async (
     animalId: string,
-    eventData: Omit<
-      HealthEvent,
-      | 'id'
-      | 'createdAt'
-      | 'createdBy'
-      | 'appliedToAnimals'
-      | 'isBulkApplication'
-    >
+    recordId: string,
+    treatment?: string
   ) => {
     if (!user?.id) {
       dispatch(setError('Usuario no autenticado'))
       return
     }
 
-    const animal = animals.find((a) => a.id === animalId)
-    if (!animal) {
-      dispatch(setError('Animal no encontrado'))
+    const updateData: Partial<AnimalRecord> = {
+      isResolved: true,
+      resolvedDate: new Date(),
+      ...(treatment ? { treatment } : {})
+    }
+
+    await updateRecord(animalId, recordId, updateData)
+    console.log('Caso clínico resuelto:', recordId)
+  }
+
+  // Reabrir caso clínico
+  const reopenRecord = async (animalId: string, recordId: string) => {
+    if (!user?.id) {
+      dispatch(setError('Usuario no autenticado'))
       return
     }
 
-    // Limpiar campos undefined del eventData
-    const cleanedEventData = cleanUndefinedFields(eventData)
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal || !animal.records) {
+      dispatch(setError('Animal o registros no encontrados'))
+      return
+    }
 
-    const newEvent: HealthEvent = cleanUndefinedFields({
-      ...cleanedEventData,
-      id: crypto.randomUUID(),
-      appliedToAnimals: [animalId],
-      isBulkApplication: false,
-      createdAt: new Date(),
-      createdBy: user.id
+    const updatedRecords = animal.records.map((record) => {
+      if (record.id === recordId) {
+        const { resolvedDate: _resolvedDate, ...recordWithoutResolvedDate } =
+          record
+        return cleanUndefinedFields({
+          ...recordWithoutResolvedDate,
+          isResolved: false,
+          updatedAt: new Date()
+        })
+      }
+      return record
     })
 
-    const updatedHealthHistory = [...(animal.healthHistory || []), newEvent]
-
-    await update(animalId, { healthHistory: updatedHealthHistory })
-    console.log('Evento de salud agregado al animal:', animalId)
+    await update(animalId, { records: updatedRecords })
+    console.log('Caso clínico reabierto:', recordId)
   }
 
-  // Agregar evento de salud masivo
-  const addBulkHealthEvent = async (
+  // Agregar registro masivo (para vacunas/tratamientos)
+  const addBulkRecord = async (
     animalIds: string[],
-    eventData: Omit<
-      HealthEvent,
+    recordData: Omit<
+      AnimalRecord,
       | 'id'
       | 'createdAt'
       | 'createdBy'
@@ -689,11 +555,10 @@ export const useAnimalCRUD = () => {
       return
     }
 
-    // Limpiar campos undefined del eventData
-    const cleanedEventData = cleanUndefinedFields(eventData)
+    const cleanedRecordData = cleanUndefinedFields(recordData)
 
-    const newEvent: HealthEvent = cleanUndefinedFields({
-      ...cleanedEventData,
+    const newRecord: AnimalRecord = cleanUndefinedFields({
+      ...cleanedRecordData,
       id: crypto.randomUUID(),
       appliedToAnimals: animalIds,
       isBulkApplication: true,
@@ -701,94 +566,35 @@ export const useAnimalCRUD = () => {
       createdBy: user.id
     })
 
-    // Aplicar el evento a todos los animales seleccionados
+    // Aplicar el registro a todos los animales seleccionados
     const updatePromises = animalIds.map(async (animalId) => {
       const animal = animals.find((a) => a.id === animalId)
       if (animal) {
-        const updatedHealthHistory = [...(animal.healthHistory || []), newEvent]
-        await update(animalId, { healthHistory: updatedHealthHistory })
+        const updatedRecords = [...(animal.records || []), newRecord]
+        await update(animalId, { records: updatedRecords })
       }
     })
 
     await Promise.all(updatePromises)
-    console.log(
-      'Evento de salud masivo aplicado a:',
-      animalIds.length,
-      'animales'
-    )
+    console.log('Registro masivo aplicado a:', animalIds.length, 'animales')
   }
 
-  // Eliminar evento de salud
-  const removeHealthEvent = async (animalId: string, eventId: string) => {
-    if (!user?.id) {
-      dispatch(setError('Usuario no autenticado'))
-      return
-    }
-
-    const animal = animals.find((a) => a.id === animalId)
-    if (!animal || !animal.healthHistory) {
-      dispatch(setError('Animal o historial de salud no encontrado'))
-      return
-    }
-
-    const updatedHealthHistory = animal.healthHistory.filter(
-      (event) => event.id !== eventId
-    )
-
-    await update(animalId, { healthHistory: updatedHealthHistory })
-    console.log('Evento de salud eliminado:', eventId)
-  }
-
-  // Actualizar evento de salud
-  const updateHealthEvent = async (
-    animalId: string,
-    eventId: string,
-    updateData: Partial<HealthEvent>
-  ) => {
-    if (!user?.id) {
-      dispatch(setError('Usuario no autenticado'))
-      return
-    }
-
-    const animal = animals.find((a) => a.id === animalId)
-    if (!animal || !animal.healthHistory) {
-      dispatch(setError('Animal o historial de salud no encontrado'))
-      return
-    }
-
-    // Limpiar campos undefined del updateData
-    const cleanedUpdateData = cleanUndefinedFields(updateData)
-
-    const updatedHealthHistory = animal.healthHistory.map((event) =>
-      event.id === eventId
-        ? cleanUndefinedFields({
-            ...event,
-            ...cleanedUpdateData,
-            updatedAt: new Date()
-          })
-        : event
-    )
-
-    await update(animalId, { healthHistory: updatedHealthHistory })
-    console.log('Evento de salud actualizado:', eventId)
-  }
-
-  // Obtener próximos vencimientos de vacunas
-  const getUpcomingVaccinations = (daysAhead: number = 30) => {
+  // Obtener próximos vencimientos de registros de salud
+  const getUpcomingHealthRecords = (daysAhead: number = 30) => {
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() + daysAhead)
 
     const upcoming: Array<{
       animal: Animal
-      event: HealthEvent
+      record: AnimalRecord
       daysUntilDue: number
     }> = []
 
     animals.forEach((animal) => {
-      if (animal.healthHistory) {
-        animal.healthHistory.forEach((event) => {
-          if (event.nextDueDate && event.type === 'vaccine') {
-            const dueDate = new Date(event.nextDueDate)
+      if (animal.records) {
+        animal.records.forEach((record) => {
+          if (record.nextDueDate && record.type === 'health') {
+            const dueDate = new Date(record.nextDueDate)
             if (dueDate <= cutoffDate) {
               const daysUntilDue = Math.ceil(
                 (dueDate.getTime() - new Date().getTime()) /
@@ -796,7 +602,7 @@ export const useAnimalCRUD = () => {
               )
               upcoming.push({
                 animal,
-                event,
+                record,
                 daysUntilDue
               })
             }
@@ -824,21 +630,12 @@ export const useAnimalCRUD = () => {
     wean,
     markStatus,
     markFound,
-    // Funciones de notas
-    addNote,
-    updateNote,
-    removeNote,
-    // Funciones de historial clínico
-    addClinicalEntry,
-    resolveClinicalEntry,
-    reopenClinicalEntry,
-    updateClinicalEntry,
-    removeClinicalEntry,
-    // Funciones de eventos de salud
-    addHealthEvent,
-    addBulkHealthEvent,
-    removeHealthEvent,
-    updateHealthEvent,
-    getUpcomingVaccinations
+    addRecord,
+    updateRecord,
+    removeRecord,
+    resolveRecord,
+    reopenRecord,
+    addBulkRecord,
+    getUpcomingHealthRecords
   }
 }

@@ -1,43 +1,35 @@
-export interface NoteEntry {
+// Sistema unificado de registros de animales
+export interface AnimalRecord {
   id: string
-  text: string
-  createdAt: Date
-  createdBy: string // userId
-  updatedAt?: Date
-}
+  // Categorización del registro
+  type: 'note' | 'health'
+  category: RecordCategory
 
-export interface ClinicalEntry {
-  id: string
-  type: 'illness' | 'injury' | 'treatment' | 'surgery' | 'other'
+  // Información básica (todos los tipos)
   title: string
-  description: string
-  severity: 'low' | 'medium' | 'high' | 'critical'
-  startDate: Date
-  resolvedDate?: Date
-  isResolved: boolean
-  treatment?: string
-  veterinarian?: string
-  cost?: number
-  notes?: string
-  createdAt: Date
-  createdBy: string
-  updatedAt?: Date
-}
-
-export interface HealthEvent {
-  id: string
-  type: 'vaccine' | 'treatment' | 'deworming' | 'supplement' | 'other'
-  name: string // Nombre de la vacuna/tratamiento
   description?: string
-  applicationDate: Date
+  date: Date // Fecha principal del evento
+
+  // Campos específicos para casos clínicos
+  severity?: 'low' | 'medium' | 'high' | 'critical'
+  isResolved?: boolean
+  resolvedDate?: Date
+  treatment?: string
+
+  // Campos específicos para eventos de salud (vacunas/medicamentos)
   nextDueDate?: Date // Para vacunas que requieren refuerzo
   batch?: string // Lote de la vacuna/medicamento
+
+  // Campos comunes
   veterinarian?: string
   cost?: number
   notes?: string
-  // Para aplicación masiva
+
+  // Para aplicación masiva (eventos de salud)
   appliedToAnimals?: string[] // IDs de animales
   isBulkApplication?: boolean
+
+  // Metadata
   createdAt: Date
   createdBy: string
   updatedAt?: Date
@@ -59,12 +51,8 @@ export interface Animal {
   notes?: string
   createdAt: Date
   updatedAt: Date
-  // Sistema de notas
-  notesLog?: NoteEntry[]
-  // Historial clínico
-  clinicalHistory?: ClinicalEntry[]
-  // Historial de salud (vacunas y tratamientos)
-  healthHistory?: HealthEvent[]
+  // Sistema unificado de registros
+  records?: AnimalRecord[]
   // Estado general del animal
   status?: AnimalStatus // default lógico: 'activo'
   statusAt?: Date
@@ -90,90 +78,6 @@ export interface Animal {
     originalTimestamp: Date
     impersonationReason?: string
   }
-}
-
-export const clinical_types = [
-  'illness',
-  'injury',
-  'treatment',
-  'surgery',
-  'other'
-] as const
-
-export const clinical_types_labels: Record<ClinicalEntry['type'], string> = {
-  illness: 'Enfermedad',
-  injury: 'Lesión',
-  treatment: 'Tratamiento',
-  surgery: 'Cirugía',
-  other: 'Otro'
-}
-
-export const clinical_severities = [
-  'low',
-  'medium',
-  'high',
-  'critical'
-] as const
-
-export const clinical_severities_labels: Record<
-  ClinicalEntry['severity'],
-  string
-> = {
-  low: 'Leve',
-  medium: 'Moderada',
-  high: 'Alta',
-  critical: 'Crítica'
-}
-
-export const clinical_severities_colors: Record<
-  ClinicalEntry['severity'],
-  string
-> = {
-  low: 'bg-green-100 text-green-800',
-  medium: 'bg-yellow-100 text-yellow-800',
-  high: 'bg-orange-100 text-orange-800',
-  critical: 'bg-red-100 text-red-800'
-}
-
-export const clinical_types_icons: Record<ClinicalEntry['type'], string> = {
-  illness: '🦠',
-  injury: '🩹',
-  treatment: '💊',
-  surgery: '🏥',
-  other: '📋'
-}
-
-// Tipos y helpers para eventos de salud
-export const health_event_types = [
-  'vaccine',
-  'treatment',
-  'deworming',
-  'supplement',
-  'other'
-] as const
-
-export const health_event_types_labels: Record<HealthEvent['type'], string> = {
-  vaccine: 'Vacuna',
-  treatment: 'Tratamiento',
-  deworming: 'Desparasitación',
-  supplement: 'Suplemento',
-  other: 'Otro'
-}
-
-export const health_event_types_icons: Record<HealthEvent['type'], string> = {
-  vaccine: '💉',
-  treatment: '💊',
-  deworming: '🪱',
-  supplement: '🧪',
-  other: '🏥'
-}
-
-export const health_event_types_colors: Record<HealthEvent['type'], string> = {
-  vaccine: 'bg-blue-100 text-blue-800',
-  treatment: 'bg-green-100 text-green-800',
-  deworming: 'bg-orange-100 text-orange-800',
-  supplement: 'bg-purple-100 text-purple-800',
-  other: 'bg-gray-100 text-gray-800'
 }
 
 export const animals_genders = ['macho', 'hembra'] as const
@@ -248,6 +152,86 @@ export const animal_icon: Record<AnimalType, string> = {
   gato: '🐱',
   equino: '🐴',
   otro: '🐾'
+}
+
+// ===== SISTEMA UNIFICADO DE REGISTROS =====
+
+export const record_types = ['note', 'health'] as const
+export type RecordType = (typeof record_types)[number]
+
+export const record_categories = [
+  'general',
+  'illness',
+  'injury',
+  'vaccine',
+  'treatment',
+  'deworming',
+  'supplement',
+  'surgery',
+  'observation',
+  'other'
+] as const
+export type RecordCategory = (typeof record_categories)[number]
+
+export const record_type_labels: Record<RecordType, string> = {
+  note: 'Nota',
+  health: 'Salud'
+}
+
+export const record_category_labels: Record<RecordCategory, string> = {
+  general: 'General',
+  illness: 'Enfermedad',
+  injury: 'Lesión',
+  vaccine: 'Vacuna',
+  treatment: 'Tratamiento',
+  deworming: 'Desparasitación',
+  supplement: 'Suplemento',
+  surgery: 'Cirugía',
+  observation: 'Observación',
+  other: 'Otro'
+}
+
+export const record_category_icons: Record<RecordCategory, string> = {
+  general: '📝',
+  illness: '🦠',
+  injury: '🩹',
+  vaccine: '💉',
+  treatment: '💊',
+  deworming: '🐛',
+  supplement: '🧪',
+  surgery: '🏥',
+  observation: '👁️',
+  other: '📋'
+}
+
+export const record_category_colors: Record<RecordCategory, string> = {
+  general: 'bg-gray-100 text-gray-800',
+  illness: 'bg-red-100 text-red-800',
+  injury: 'bg-orange-100 text-orange-800',
+  vaccine: 'bg-green-100 text-green-800',
+  treatment: 'bg-blue-100 text-blue-800',
+  deworming: 'bg-purple-100 text-purple-800',
+  supplement: 'bg-indigo-100 text-indigo-800',
+  surgery: 'bg-red-100 text-red-800',
+  observation: 'bg-yellow-100 text-yellow-800',
+  other: 'bg-gray-100 text-gray-800'
+}
+
+export const record_severities = ['low', 'medium', 'high', 'critical'] as const
+export type RecordSeverity = (typeof record_severities)[number]
+
+export const record_severity_labels: Record<RecordSeverity, string> = {
+  low: 'Leve',
+  medium: 'Moderada',
+  high: 'Alta',
+  critical: 'Crítica'
+}
+
+export const record_severity_colors: Record<RecordSeverity, string> = {
+  low: 'bg-green-100 text-green-800',
+  medium: 'bg-yellow-100 text-yellow-800',
+  high: 'bg-orange-100 text-orange-800',
+  critical: 'bg-red-100 text-red-800'
 }
 
 export const animal_stage_colors: Record<AnimalStage, string> = {
