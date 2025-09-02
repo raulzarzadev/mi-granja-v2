@@ -29,9 +29,13 @@ const RecordsTab: React.FC = () => {
     category: '' as AnimalRecord['category'] | '',
     dateFrom: '',
     dateTo: '',
-    search: ''
+    search: '',
+    application: '' as '' | 'bulk' | 'single'
   })
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [sortApp, setSortApp] = useState<'none' | 'bulkFirst' | 'singleFirst'>(
+    'none'
+  )
 
   // Helpers: leer/escribir filtros en la URL
   const readFiltersFromURL = (): typeof filters => {
@@ -42,7 +46,8 @@ const RecordsTab: React.FC = () => {
       category: (p.get('category') as AnimalRecord['category'] | '') || '',
       dateFrom: p.get('from') || '',
       dateTo: p.get('to') || '',
-      search: p.get('q') || ''
+      search: p.get('q') || '',
+      application: (p.get('app') as '' | 'bulk' | 'single') || ''
     }
   }
 
@@ -54,6 +59,7 @@ const RecordsTab: React.FC = () => {
     if (f.dateFrom) q.set('from', f.dateFrom)
     if (f.dateTo) q.set('to', f.dateTo)
     if (f.search) q.set('q', f.search)
+    if (f.application) q.set('app', f.application)
     return q
   }
 
@@ -122,6 +128,16 @@ const RecordsTab: React.FC = () => {
 
       // Filtro por categoría
       if (filters.category && record.category !== filters.category) return false
+
+      // Filtro por tipo de aplicación (masivo/individual)
+      if (filters.application) {
+        const looksBulk =
+          !!record.isBulkApplication ||
+          (Array.isArray(record.appliedToAnimals) &&
+            record.appliedToAnimals.length > 0)
+        if (filters.application === 'bulk' && !looksBulk) return false
+        if (filters.application === 'single' && looksBulk) return false
+      }
 
       // Filtro por rango de fechas
       if (filters.dateFrom) {
@@ -263,6 +279,26 @@ const RecordsTab: React.FC = () => {
     )
   }, [filteredRecords])
 
+  // Orden para visualización (por tipo de aplicación)
+  const displayedRows: TableRow[] = useMemo(() => {
+    if (sortApp === 'none') return groupedRows
+    const priority = (r: TableRow) =>
+      r.__isGrouped
+        ? sortApp === 'bulkFirst'
+          ? 0
+          : 1
+        : sortApp === 'bulkFirst'
+        ? 1
+        : 0
+    return [...groupedRows].sort((a, b) => {
+      const pa = priority(a)
+      const pb = priority(b)
+      if (pa !== pb) return pa - pb
+      // desempate por fecha desc
+      return new Date(b.date).getTime() - new Date(a.date).getTime()
+    })
+  }, [groupedRows, sortApp])
+
   const resetFilters = () => {
     setFilters({
       animalId: '',
@@ -270,7 +306,8 @@ const RecordsTab: React.FC = () => {
       category: '',
       dateFrom: '',
       dateTo: '',
-      search: ''
+      search: '',
+      application: ''
     })
   }
 
@@ -324,6 +361,27 @@ const RecordsTab: React.FC = () => {
           <div className="p-4 pt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               {/* Animal */}
+
+              {/* Aplicación */}
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Aplicación
+                </label>
+                <select
+                  value={filters.application}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      application: e.target.value as '' | 'bulk' | 'single'
+                    }))
+                  }
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                >
+                  <option value="">Todas</option>
+                  <option value="bulk">Masivo</option>
+                  <option value="single">Individual</option>
+                </select>
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Animal</label>
                 <select
@@ -467,7 +525,30 @@ const RecordsTab: React.FC = () => {
                     Animal
                   </th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Aplicación
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSortApp((s) =>
+                          s === 'none'
+                            ? 'bulkFirst'
+                            : s === 'bulkFirst'
+                            ? 'singleFirst'
+                            : 'none'
+                        )
+                      }
+                      className="inline-flex items-center gap-1 text-gray-600 hover:text-gray-900"
+                      title="Ordenar por aplicación"
+                    >
+                      Aplicación
+                      {sortApp === 'bulkFirst' && (
+                        <span className="text-[10px]">(Masivo primero)</span>
+                      )}
+                      {sortApp === 'singleFirst' && (
+                        <span className="text-[10px]">
+                          (Individual primero)
+                        </span>
+                      )}
+                    </button>
                   </th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Categoría
@@ -487,7 +568,7 @@ const RecordsTab: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {groupedRows.map((record) => (
+                {displayedRows.map((record) => (
                   <tr
                     key={`${record.id}-${
                       record.__isGrouped ? 'g' : record.animalId
