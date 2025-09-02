@@ -24,7 +24,7 @@ import {
   setAnimals
 } from '@/features/animals/animalsSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
-import { Animal, AnimalStatus, NoteEntry } from '@/types/animals'
+import { Animal, AnimalStatus, NoteEntry, ClinicalEntry } from '@/types/animals'
 import { useAdminActions } from '@/lib/adminActions'
 
 /**
@@ -451,6 +451,173 @@ export const useAnimalCRUD = () => {
     console.log('Nota eliminada:', noteId)
   }
 
+  // === FUNCIONES DE HISTORIAL CLÍNICO ===
+
+  // Helper para limpiar campos undefined
+  const cleanUndefinedFields = <T extends Record<string, any>>(obj: T): T => {
+    const cleaned = {} as T
+    Object.keys(obj).forEach((key) => {
+      if (obj[key] !== undefined) {
+        cleaned[key as keyof T] = obj[key]
+      }
+    })
+    return cleaned
+  }
+
+  // Agregar entrada al historial clínico
+  const addClinicalEntry = async (
+    animalId: string,
+    entryData: Omit<
+      ClinicalEntry,
+      'id' | 'createdAt' | 'createdBy' | 'isResolved'
+    >
+  ) => {
+    if (!user?.id) {
+      dispatch(setError('Usuario no autenticado'))
+      return
+    }
+
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal) {
+      dispatch(setError('Animal no encontrado'))
+      return
+    }
+
+    // Limpiar campos undefined del entryData
+    const cleanedEntryData = cleanUndefinedFields(entryData)
+
+    const newEntry: ClinicalEntry = cleanUndefinedFields({
+      ...cleanedEntryData,
+      id: crypto.randomUUID(),
+      isResolved: false,
+      createdAt: new Date(),
+      createdBy: user.id
+    })
+
+    const updatedClinicalHistory = [...(animal.clinicalHistory || []), newEntry]
+
+    await update(animalId, { clinicalHistory: updatedClinicalHistory })
+    console.log('Entrada clínica agregada al animal:', animalId)
+  }
+
+  // Resolver entrada clínica (marcar como resuelta)
+  const resolveClinicalEntry = async (
+    animalId: string,
+    entryId: string,
+    resolvedDate?: Date
+  ) => {
+    if (!user?.id) {
+      dispatch(setError('Usuario no autenticado'))
+      return
+    }
+
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal || !animal.clinicalHistory) {
+      dispatch(setError('Animal o historial clínico no encontrado'))
+      return
+    }
+
+    const updatedClinicalHistory = animal.clinicalHistory.map((entry) =>
+      entry.id === entryId
+        ? cleanUndefinedFields({
+            ...entry,
+            isResolved: true,
+            resolvedDate: resolvedDate || new Date(),
+            updatedAt: new Date()
+          })
+        : entry
+    )
+
+    await update(animalId, { clinicalHistory: updatedClinicalHistory })
+    console.log('Entrada clínica resuelta:', entryId)
+  }
+
+  // Reactivar entrada clínica (desmarcar como resuelta)
+  const reopenClinicalEntry = async (animalId: string, entryId: string) => {
+    if (!user?.id) {
+      dispatch(setError('Usuario no autenticado'))
+      return
+    }
+
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal || !animal.clinicalHistory) {
+      dispatch(setError('Animal o historial clínico no encontrado'))
+      return
+    }
+
+    const updatedClinicalHistory = animal.clinicalHistory.map((entry) => {
+      if (entry.id === entryId) {
+        const updatedEntry = {
+          ...entry,
+          isResolved: false,
+          updatedAt: new Date()
+        }
+        // Eliminar resolvedDate del objeto completamente
+        delete (updatedEntry as any).resolvedDate
+        return cleanUndefinedFields(updatedEntry)
+      }
+      return entry
+    })
+
+    await update(animalId, { clinicalHistory: updatedClinicalHistory })
+    console.log('Entrada clínica reabierta:', entryId)
+  }
+
+  // Actualizar entrada clínica
+  const updateClinicalEntry = async (
+    animalId: string,
+    entryId: string,
+    updateData: Partial<ClinicalEntry>
+  ) => {
+    if (!user?.id) {
+      dispatch(setError('Usuario no autenticado'))
+      return
+    }
+
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal || !animal.clinicalHistory) {
+      dispatch(setError('Animal o historial clínico no encontrado'))
+      return
+    }
+
+    // Limpiar campos undefined del updateData
+    const cleanedUpdateData = cleanUndefinedFields(updateData)
+
+    const updatedClinicalHistory = animal.clinicalHistory.map((entry) =>
+      entry.id === entryId
+        ? cleanUndefinedFields({
+            ...entry,
+            ...cleanedUpdateData,
+            updatedAt: new Date()
+          })
+        : entry
+    )
+
+    await update(animalId, { clinicalHistory: updatedClinicalHistory })
+    console.log('Entrada clínica actualizada:', entryId)
+  }
+
+  // Eliminar entrada clínica
+  const removeClinicalEntry = async (animalId: string, entryId: string) => {
+    if (!user?.id) {
+      dispatch(setError('Usuario no autenticado'))
+      return
+    }
+
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal || !animal.clinicalHistory) {
+      dispatch(setError('Animal o historial clínico no encontrado'))
+      return
+    }
+
+    const updatedClinicalHistory = animal.clinicalHistory.filter(
+      (entry) => entry.id !== entryId
+    )
+
+    await update(animalId, { clinicalHistory: updatedClinicalHistory })
+    console.log('Entrada clínica eliminada:', entryId)
+  }
+
   // Migrar animales al nuevo esquema de animalNumber
 
   return {
@@ -470,6 +637,12 @@ export const useAnimalCRUD = () => {
     // Funciones de notas
     addNote,
     updateNote,
-    removeNote
+    removeNote,
+    // Funciones de historial clínico
+    addClinicalEntry,
+    resolveClinicalEntry,
+    reopenClinicalEntry,
+    updateClinicalEntry,
+    removeClinicalEntry
   }
 }

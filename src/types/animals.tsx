@@ -6,6 +6,24 @@ export interface NoteEntry {
   updatedAt?: Date
 }
 
+export interface ClinicalEntry {
+  id: string
+  type: 'illness' | 'injury' | 'treatment' | 'surgery' | 'other'
+  title: string
+  description: string
+  severity: 'low' | 'medium' | 'high' | 'critical'
+  startDate: Date
+  resolvedDate?: Date
+  isResolved: boolean
+  treatment?: string
+  veterinarian?: string
+  cost?: number
+  notes?: string
+  createdAt: Date
+  createdBy: string
+  updatedAt?: Date
+}
+
 export interface Animal {
   id: string
   farmerId: string
@@ -24,6 +42,8 @@ export interface Animal {
   updatedAt: Date
   // Sistema de notas
   notesLog?: NoteEntry[]
+  // Historial clínico
+  clinicalHistory?: ClinicalEntry[]
   // Estado general del animal
   status?: AnimalStatus // default lógico: 'activo'
   statusAt?: Date
@@ -49,6 +69,57 @@ export interface Animal {
     originalTimestamp: Date
     impersonationReason?: string
   }
+}
+
+export const clinical_types = [
+  'illness',
+  'injury',
+  'treatment',
+  'surgery',
+  'other'
+] as const
+
+export const clinical_types_labels: Record<ClinicalEntry['type'], string> = {
+  illness: 'Enfermedad',
+  injury: 'Lesión',
+  treatment: 'Tratamiento',
+  surgery: 'Cirugía',
+  other: 'Otro'
+}
+
+export const clinical_severities = [
+  'low',
+  'medium',
+  'high',
+  'critical'
+] as const
+
+export const clinical_severities_labels: Record<
+  ClinicalEntry['severity'],
+  string
+> = {
+  low: 'Leve',
+  medium: 'Moderada',
+  high: 'Alta',
+  critical: 'Crítica'
+}
+
+export const clinical_severities_colors: Record<
+  ClinicalEntry['severity'],
+  string
+> = {
+  low: 'bg-green-100 text-green-800',
+  medium: 'bg-yellow-100 text-yellow-800',
+  high: 'bg-orange-100 text-orange-800',
+  critical: 'bg-red-100 text-red-800'
+}
+
+export const clinical_types_icons: Record<ClinicalEntry['type'], string> = {
+  illness: '🦠',
+  injury: '🩹',
+  treatment: '💊',
+  surgery: '🏥',
+  other: '📋'
 }
 
 export const animals_genders = ['macho', 'hembra'] as const

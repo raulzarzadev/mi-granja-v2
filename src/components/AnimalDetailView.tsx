@@ -18,6 +18,7 @@ import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import Tabs from '@/components/Tabs'
 import NotesSection from '@/components/NotesSection'
+import ClinicalHistorySection from '@/components/ClinicalHistorySection'
 
 interface AnimalDetailViewProps {
   animal: Animal
@@ -332,6 +333,10 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
       content: <NotesSection animal={animal} />
     },
     {
+      label: '🏥 Historial Clínico',
+      content: <ClinicalHistorySection animal={animal} />
+    },
+    {
       label: '⚙️ Configuración',
       content: (
         <div className="space-y-2">
@@ -401,30 +406,28 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
   ]
 
   return (
-    <div>
-      <div className="bg-white max-w-4xl w-full max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="bg-green-600 text-white p-2 mb-2">
-          <div className="flex items-center justify-between">
-            <AnimalDetailRow animal={animal} />
-            {/* Estado */}
-            {animal.status && (
-              <div className="ml-2">
-                <span
-                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                    animal_status_colors[animal.status || 'activo']
-                  }`}
-                >
-                  {animal_status_labels[animal.status || 'activo']}
-                </span>
-              </div>
-            )}
-          </div>
+    <div className="bg-white  w-full max-h-[90vh] overflow-hidden">
+      {/* Header */}
+      <div className="bg-green-600 text-white p-2 mb-2">
+        <div className="flex items-center justify-between">
+          <AnimalDetailRow animal={animal} />
+          {/* Estado */}
+          {animal.status && (
+            <div className="ml-2">
+              <span
+                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                  animal_status_colors[animal.status || 'activo']
+                }`}
+              >
+                {animal_status_labels[animal.status || 'activo']}
+              </span>
+            </div>
+          )}
         </div>
-
-        {/* Tabs (componente compartido) */}
-        <Tabs tabs={tabs} />
       </div>
+
+      {/* Tabs (componente compartido) */}
+      <Tabs tabs={tabs} />
     </div>
   )
 }
