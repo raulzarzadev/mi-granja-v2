@@ -24,11 +24,11 @@ export interface ModalProps {
 }
 
 const sizeClasses = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
-  full: 'max-w-[95vw]'
+  sm: 'sm:max-w-sm',
+  md: 'sm:max-w-md',
+  lg: 'sm:max-w-lg',
+  xl: 'sm:max-w-xl',
+  full: 'sm:max-w-[95vw]'
 }
 
 /**
@@ -81,7 +81,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/70  flex items-center justify-center p-4 py-2 z-50 animate-in fade-in duration-200 "
+      className="fixed inset-0 bg-black/70  flex items-stretch sm:items-center sm:justify-center p-0 sm:p-4 sm:py-2 z-50 animate-in fade-in duration-200 "
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
@@ -89,50 +89,60 @@ export const Modal: React.FC<ModalProps> = ({
     >
       <div
         className={`
-          bg-white rounded-lg w-full ${sizeClasses[size]} max-h-[90vh] 
-          overflow-hidden shadow-xl animate-in zoom-in-95 duration-200 
+          bg-white w-screen h-[100svh] max-w-none rounded-none 
+          sm:rounded-lg sm:w-full ${sizeClasses[size]} sm:h-auto sm:max-h-[90vh]
+          overflow-hidden shadow-none sm:shadow-xl animate-in zoom-in-95 duration-200 
           ${className}
         `}
         onClick={(e) => e.stopPropagation()}
+        style={{
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          paddingLeft: 'env(safe-area-inset-left)',
+          paddingRight: 'env(safe-area-inset-right)'
+        }}
       >
-        {/* Header */}
-        {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-3 py-2 border-b border-gray-200">
-            {title && (
-              <h2
-                id="modal-title"
-                className="text-xl font-semibold text-gray-900 truncate pr-4"
-              >
-                {title}
-              </h2>
-            )}
-            {showCloseButton && (
-              <button
-                onClick={onClose}
-                className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
-                aria-label="Cerrar modal"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+        {/* Layout column to allow content to scroll under a fixed header on mobile/fullscreen */}
+        <div className="flex h-full w-full flex-col">
+          {/* Header */}
+          {(title || showCloseButton) && (
+            <div className="flex items-center justify-between p-3 py-2 border-b border-gray-200">
+              {title && (
+                <h2
+                  id="modal-title"
+                  className="text-xl font-semibold text-gray-900 truncate pr-4"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            )}
-          </div>
-        )}
+                  {title}
+                </h2>
+              )}
+              {showCloseButton && (
+                <button
+                  onClick={onClose}
+                  className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
+                  aria-label="Cerrar modal"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
+          )}
 
-        {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-120px)] py-4 px-2">
-          {children}
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto sm:max-h-[calc(90vh-120px)] py-4 px-2">
+            {children}
+          </div>
         </div>
       </div>
     </div>
