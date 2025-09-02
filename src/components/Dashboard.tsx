@@ -14,6 +14,7 @@ import ModalAnimalForm from './ModalAnimalForm'
 import ModalAnimalDetails from './ModalAnimalDetails'
 import ModalBulkHealthAction from './ModalBulkHealthAction'
 import HealthRemindersCard from './HealthRemindersCard'
+import RecordsTab from './RecordsTab'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import {
@@ -487,7 +488,11 @@ const Dashboard: React.FC = () => {
       )
     },
     {
-      label: '🐣 Reproducción',
+      label: '� Registros',
+      content: <RecordsTab />
+    },
+    {
+      label: '�🐣 Reproducción',
       content: <BreedingTabs />
     },
     {
