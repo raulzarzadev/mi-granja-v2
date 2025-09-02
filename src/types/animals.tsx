@@ -1,3 +1,11 @@
+export interface NoteEntry {
+  id: string
+  text: string
+  createdAt: Date
+  createdBy: string // userId
+  updatedAt?: Date
+}
+
 export interface Animal {
   id: string
   farmerId: string
@@ -14,6 +22,8 @@ export interface Animal {
   notes?: string
   createdAt: Date
   updatedAt: Date
+  // Sistema de notas
+  notesLog?: NoteEntry[]
   // Estado general del animal
   status?: AnimalStatus // default lógico: 'activo'
   statusAt?: Date

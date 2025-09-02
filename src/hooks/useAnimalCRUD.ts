@@ -24,7 +24,7 @@ import {
   setAnimals
 } from '@/features/animals/animalsSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
-import { Animal, AnimalStatus } from '@/types/animals'
+import { Animal, AnimalStatus, NoteEntry } from '@/types/animals'
 import { useAdminActions } from '@/lib/adminActions'
 
 /**
@@ -377,6 +377,80 @@ export const useAnimalCRUD = () => {
     }
   }
 
+  // === FUNCIONES DE NOTAS ===
+
+  // Agregar nota a un animal
+  const addNote = async (animalId: string, noteText: string) => {
+    if (!user?.id) {
+      dispatch(setError('Usuario no autenticado'))
+      return
+    }
+
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal) {
+      dispatch(setError('Animal no encontrado'))
+      return
+    }
+
+    const newNote: NoteEntry = {
+      id: crypto.randomUUID(),
+      text: noteText.trim(),
+      createdAt: new Date(),
+      createdBy: user.id
+    }
+
+    const updatedNotesLog = [...(animal.notesLog || []), newNote]
+
+    await update(animalId, { notesLog: updatedNotesLog })
+    console.log('Nota agregada al animal:', animalId)
+  }
+
+  // Actualizar nota existente
+  const updateNote = async (
+    animalId: string,
+    noteId: string,
+    newText: string
+  ) => {
+    if (!user?.id) {
+      dispatch(setError('Usuario no autenticado'))
+      return
+    }
+
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal || !animal.notesLog) {
+      dispatch(setError('Animal o notas no encontradas'))
+      return
+    }
+
+    const updatedNotesLog = animal.notesLog.map((note) =>
+      note.id === noteId
+        ? { ...note, text: newText.trim(), updatedAt: new Date() }
+        : note
+    )
+
+    await update(animalId, { notesLog: updatedNotesLog })
+    console.log('Nota actualizada:', noteId)
+  }
+
+  // Eliminar nota
+  const removeNote = async (animalId: string, noteId: string) => {
+    if (!user?.id) {
+      dispatch(setError('Usuario no autenticado'))
+      return
+    }
+
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal || !animal.notesLog) {
+      dispatch(setError('Animal o notas no encontradas'))
+      return
+    }
+
+    const updatedNotesLog = animal.notesLog.filter((note) => note.id !== noteId)
+
+    await update(animalId, { notesLog: updatedNotesLog })
+    console.log('Nota eliminada:', noteId)
+  }
+
   // Migrar animales al nuevo esquema de animalNumber
 
   return {
@@ -392,6 +466,10 @@ export const useAnimalCRUD = () => {
     animalsFiltered,
     wean,
     markStatus,
-    markFound
+    markFound,
+    // Funciones de notas
+    addNote,
+    updateNote,
+    removeNote
   }
 }

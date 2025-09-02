@@ -17,6 +17,7 @@ import ButtonConfirm from './buttons/ButtonConfirm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import Tabs from '@/components/Tabs'
+import NotesSection from '@/components/NotesSection'
 
 interface AnimalDetailViewProps {
   animal: Animal
@@ -325,6 +326,10 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
           )}
         </div>
       )
+    },
+    {
+      label: '📝 Notas',
+      content: <NotesSection animal={animal} />
     },
     {
       label: '⚙️ Configuración',
