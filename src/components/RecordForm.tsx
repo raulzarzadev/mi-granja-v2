@@ -65,7 +65,7 @@ export const RecordForm: React.FC<Props> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 ">
       <div>
-        <label className="block text-sm font-medium mb-1">Tipo</label>
+        <label className="block text-sm font-medium ">Tipo</label>
         <select
           value={value.type}
           onChange={(e) => {
@@ -86,7 +86,7 @@ export const RecordForm: React.FC<Props> = ({
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Categoría</label>
+        <label className="block text-sm font-medium ">Categoría</label>
         <select
           value={value.category}
           onChange={(e) =>
@@ -106,7 +106,7 @@ export const RecordForm: React.FC<Props> = ({
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Título *</label>
+        <label className="block text-sm font-medium ">Título *</label>
         <input
           type="text"
           value={value.title}
@@ -117,7 +117,7 @@ export const RecordForm: React.FC<Props> = ({
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">
+        <label className="block text-sm font-medium ">
           {mode === 'bulk' ? 'Fecha de aplicación' : 'Fecha'}
         </label>
         <input
@@ -131,7 +131,7 @@ export const RecordForm: React.FC<Props> = ({
       {value.type === 'health' && isClinicalCategory && (
         <>
           <div>
-            <label className="block text-sm font-medium mb-1">Severidad</label>
+            <label className="block text-sm font-medium ">Severidad</label>
             <select
               value={value.severity}
               onChange={(e) =>
@@ -161,7 +161,7 @@ export const RecordForm: React.FC<Props> = ({
           </div>
           {value.isResolved && (
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-sm font-medium ">
                 Fecha de resolución
               </label>
               <input
@@ -175,9 +175,7 @@ export const RecordForm: React.FC<Props> = ({
             </div>
           )}
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium mb-1">
-              Tratamiento
-            </label>
+            <label className="block text-sm font-medium ">Tratamiento</label>
             <input
               type="text"
               value={value.treatment}
@@ -193,7 +191,7 @@ export const RecordForm: React.FC<Props> = ({
       {value.type === 'health' && (
         <>
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium ">
               Próximo vencimiento
             </label>
             <input
@@ -206,9 +204,7 @@ export const RecordForm: React.FC<Props> = ({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Lote / Batch
-            </label>
+            <label className="block text-sm font-medium ">Lote / Batch</label>
             <input
               type="text"
               value={value.batch}
@@ -217,9 +213,7 @@ export const RecordForm: React.FC<Props> = ({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Veterinario
-            </label>
+            <label className="block text-sm font-medium ">Veterinario</label>
             <input
               type="text"
               value={value.veterinarian}
@@ -230,7 +224,7 @@ export const RecordForm: React.FC<Props> = ({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium ">
               {mode === 'bulk' ? 'Costo por animal' : 'Costo'}
             </label>
             <input
@@ -245,7 +239,7 @@ export const RecordForm: React.FC<Props> = ({
       )}
 
       <div className="sm:col-span-2">
-        <label className="block text-sm font-medium mb-1">Descripción</label>
+        <label className="block text-sm font-medium ">Descripción</label>
         <textarea
           value={value.description}
           onChange={(e) => onChange({ ...value, description: e.target.value })}
