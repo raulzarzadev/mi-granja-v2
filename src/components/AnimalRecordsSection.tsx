@@ -2,16 +2,10 @@
 
 import React, { useMemo, useState } from 'react'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import {
-  Animal,
-  AnimalRecord,
-  record_category_labels,
-  record_category_icons,
-  record_category_colors
-} from '@/types/animals'
+import { Animal, AnimalRecord } from '@/types/animals'
 import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 import RecordForm, { RecordFormState } from '@/components/RecordForm'
+import RecordRow from '@/components/RecordRow'
 import { buildRecordFromForm } from '@/lib/records'
 
 interface Props {
@@ -26,7 +20,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editing, setEditing] = useState<UnifiedRecord | null>(null)
-  const [form, setForm] = useState<RecordFormState>({
+  const initialFormState = (): RecordFormState => ({
     type: 'note',
     category: 'general',
     title: '',
@@ -41,6 +35,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
     veterinarian: '',
     cost: ''
   })
+  const [form, setForm] = useState<RecordFormState>(() => initialFormState())
 
   const unifiedRecords: UnifiedRecord[] = useMemo(() => {
     const unified = [...((animal.records as UnifiedRecord[]) || [])]
@@ -51,25 +46,9 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
 
   const resetForm = () => {
     setEditing(null)
-    setForm({
-      type: 'note',
-      category: 'general',
-      title: '',
-      description: '',
-      date: new Date().toISOString().split('T')[0],
-      severity: '',
-      isResolved: false,
-      resolvedDate: '',
-      treatment: '',
-      nextDueDate: '',
-      batch: '',
-      veterinarian: '',
-      cost: ''
-    })
+    setForm(initialFormState())
     setIsFormOpen(false)
   }
-
-  // opciones de categoría ahora las maneja RecordForm
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -112,22 +91,6 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
     })
   }
 
-  const onDelete = async (id: string) => {
-    if (!confirm('¿Eliminar registro?')) return
-    await removeRecord(animal.id, id)
-  }
-
-  const TypeBadge = ({ rec }: { rec: UnifiedRecord }) => (
-    <span
-      className={`px-2 py-1 rounded-full text-xs font-medium ${
-        record_category_colors[rec.category]
-      }`}
-    >
-      {record_category_icons[rec.category]}{' '}
-      {record_category_labels[rec.category]}
-    </span>
-  )
-
   return (
     <div className="space-y-4 pb-24">
       <div className="flex items-center justify-between">
@@ -141,7 +104,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       </div>
 
       {isFormOpen && (
-        <div className="bg-gray-50 rounded-lg p-3 space-y-3 ">
+        <div className="bg-gray-50 rounded-lg p-3 space-y-3">
           <div className="flex justify-between items-center">
             <h4 className="font-medium">
               {editing ? 'Editar registro' : 'Nuevo registro'}
@@ -153,9 +116,8 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
               ✕
             </button>
           </div>
-          <form onSubmit={onSubmit} className="space-y-3 ">
+          <form onSubmit={onSubmit} className="space-y-3">
             <RecordForm value={form} onChange={setForm} mode="single" />
-
             <div className="flex gap-2">
               <button
                 type="submit"
@@ -184,97 +146,17 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       ) : (
         <div className="space-y-2">
           {unifiedRecords.map((rec) => (
-            <div
+            <RecordRow
               key={rec.id}
-              className="border border-gray-200 rounded-lg p-3 bg-white"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <TypeBadge rec={rec} />
-                    <span className="font-medium">{rec.title}</span>
-                    {/* Sin badge legacy, datos ya unificados */}
-                  </div>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <div>
-                      📅{' '}
-                      {format(new Date(rec.date), 'dd/MM/yyyy', { locale: es })}
-                      {rec.nextDueDate && (
-                        <span className="ml-2 text-xs text-yellow-700">
-                          ⏰ Próximo:{' '}
-                          {format(new Date(rec.nextDueDate), 'dd/MM/yyyy', {
-                            locale: es
-                          })}
-                        </span>
-                      )}
-                    </div>
-                    {rec.description && <div>📝 {rec.description}</div>}
-                    {rec.veterinarian && <div>👨‍⚕️ {rec.veterinarian}</div>}
-                    {rec.cost !== undefined && <div>💰 ${rec.cost}</div>}
-                    {rec.severity && (
-                      <div>
-                        <span className="text-xs text-gray-500 mr-1">
-                          Severidad:
-                        </span>
-                        {rec.severity}
-                      </div>
-                    )}
-                    {rec.isResolved && rec.resolvedDate && (
-                      <div className="text-xs text-green-700">
-                        Resuelto:{' '}
-                        {format(new Date(rec.resolvedDate), 'dd/MM/yyyy', {
-                          locale: es
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {
-                  <div className="flex gap-1 ml-2">
-                    {rec.type === 'health' &&
-                      ['illness', 'injury', 'treatment', 'surgery'].includes(
-                        rec.category as any
-                      ) &&
-                      !rec.isResolved && (
-                        <button
-                          onClick={() => resolveRecord(animal.id, rec.id)}
-                          className="text-green-700 hover:text-green-900 text-sm px-2 py-1"
-                          title="Marcar resuelto"
-                        >
-                          ✅
-                        </button>
-                      )}
-                    {rec.type === 'health' &&
-                      ['illness', 'injury', 'treatment', 'surgery'].includes(
-                        rec.category as any
-                      ) &&
-                      rec.isResolved && (
-                        <button
-                          onClick={() => reopenRecord(animal.id, rec.id)}
-                          className="text-yellow-700 hover:text-yellow-900 text-sm px-2 py-1"
-                          title="Reabrir caso"
-                        >
-                          ♻️
-                        </button>
-                      )}
-                    <button
-                      onClick={() => onEdit(rec)}
-                      className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1"
-                      title="Editar registro"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={() => onDelete(rec.id)}
-                      className="text-red-600 hover:text-red-800 text-sm px-2 py-1"
-                      title="Eliminar registro"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                }
-              </div>
-            </div>
+              rec={rec}
+              onEdit={onEdit}
+              onDelete={async (id) => {
+                if (!confirm('¿Eliminar registro?')) return
+                await removeRecord(animal.id, id)
+              }}
+              onResolve={(id) => resolveRecord(animal.id, id)}
+              onReopen={(id) => reopenRecord(animal.id, id)}
+            />
           ))}
         </div>
       )}
