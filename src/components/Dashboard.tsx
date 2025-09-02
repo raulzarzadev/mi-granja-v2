@@ -137,52 +137,6 @@ const Dashboard: React.FC = () => {
       label: '🐄 Animales',
       content: (
         <>
-          {/* Estadísticas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-0">
-            {/* <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold">{stats.total}</span>
-                  </div>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">
-                    Total de Animales
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {stats.total}
-                  </p>
-                </div>
-              </div>
-            </div> */}
-
-            {/* Estadísticas por tipo */}
-            {/* {Object.entries(stats.byType).map(([type, count]) => (
-              <div key={type} className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <span className="text-2xl">
-                      {type === 'oveja'
-                        ? '🐑'
-                        : type.includes('vaca')
-                        ? '🐄'
-                        : type === 'cabra'
-                        ? '🐐'
-                        : '🐷'}
-                    </span>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-500">
-                      {formatStatLabel(type)}
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900">{count}</p>
-                  </div>
-                </div>
-              </div>
-            ))} */}
-          </div>
-
           {/* Controles */}
           <div className="bg-white rounded-lg shadow mb-6">
             <div className="p-6">
@@ -233,7 +187,7 @@ const Dashboard: React.FC = () => {
                     onChange={(e) =>
                       setFilters((prev) => ({
                         ...prev,
-                        type: e.target.value
+                        type: e.target.value as AnimalType | ''
                       }))
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -261,7 +215,7 @@ const Dashboard: React.FC = () => {
                     onChange={(e) =>
                       setFilters((prev) => ({
                         ...prev,
-                        stage: e.target.value
+                        stage: e.target.value as AnimalStage | ''
                       }))
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -289,7 +243,7 @@ const Dashboard: React.FC = () => {
                     onChange={(e) =>
                       setFilters((prev) => ({
                         ...prev,
-                        gender: e.target.value
+                        gender: e.target.value as AnimalGender | ''
                       }))
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
