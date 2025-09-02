@@ -14,7 +14,15 @@ import ModalAnimalForm from './ModalAnimalForm'
 import ModalAnimalDetails from './ModalAnimalDetails'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { animal_status_labels, AnimalStatus } from '@/types/animals'
+import {
+  animal_status_labels,
+  AnimalGender,
+  animals_stages_labels,
+  animals_types_labels,
+  AnimalStage,
+  AnimalStatus,
+  AnimalType
+} from '@/types/animals'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { setAnimals } from '@/features/animals/animalsSlice'
 
@@ -32,7 +40,7 @@ const Dashboard: React.FC = () => {
     isLoading: isLoadingAnimals,
     getFarmAnimals
   } = useAnimalCRUD()
-  const [statusAnimals, setStatusAnimals] = useState<typeof animals>([])
+  const [_statusAnimals, setStatusAnimals] = useState<typeof animals>([])
 
   const {
     reminders,
@@ -44,17 +52,23 @@ const Dashboard: React.FC = () => {
     getUpcomingReminders
   } = useReminders()
 
-  const [filters, setFilters] = useState<{
+  interface AnimalFilters {
     status: AnimalStatus
-    type: string
-    stage: string
+    type: AnimalType | ''
+    stage: AnimalStage | ''
+    gender: AnimalGender | ''
     search: string
-  }>({
+  }
+
+  const initialFilter: AnimalFilters = {
     status: 'activo',
-    type: '',
+    type: 'oveja',
     stage: '',
+    gender: '',
     search: ''
-  })
+  }
+
+  const [filters, setFilters] = useState<AnimalFilters>(initialFilter)
 
   // Recargar animales desde BD cuando cambia el filtro de estado (solo no-activo)
   React.useEffect(() => {
@@ -80,12 +94,9 @@ const Dashboard: React.FC = () => {
     }
   }, [filters.status])
 
-  const stats = animalsStats()
+  const _stats = animalsStats()
 
-  const filteredAnimals =
-    filters.status === 'activo'
-      ? animalsFiltered(filters)
-      : animalsFiltered(filters, statusAnimals)
+  const filteredAnimals = animalsFiltered(filters)
   const formatStatLabel = (key: string) => {
     switch (key) {
       case 'oveja':
@@ -121,16 +132,14 @@ const Dashboard: React.FC = () => {
     return null
   }
 
-  console.log({ filteredAnimals })
-
   const tabs = [
     {
       label: '🐄 Animales',
       content: (
         <>
           {/* Estadísticas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-0">
+            {/* <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
@@ -146,10 +155,10 @@ const Dashboard: React.FC = () => {
                   </p>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Estadísticas por tipo */}
-            {Object.entries(stats.byType).map(([type, count]) => (
+            {/* {Object.entries(stats.byType).map(([type, count]) => (
               <div key={type} className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -171,7 +180,7 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            ))} */}
           </div>
 
           {/* Controles */}
@@ -186,7 +195,6 @@ const Dashboard: React.FC = () => {
 
               {/* Filtros */}
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-4 gap-4">
-                {/* Status primero */}
                 <div>
                   <label
                     htmlFor="statusFilter"
@@ -214,28 +222,6 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div>
                   <label
-                    htmlFor="searchFilter"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Buscar
-                  </label>
-                  <input
-                    id="searchFilter"
-                    type="text"
-                    placeholder="ID o notas..."
-                    value={filters.search}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        search: e.target.value
-                      }))
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
-                </div>
-
-                <div>
-                  <label
                     htmlFor="typeFilter"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
@@ -253,14 +239,15 @@ const Dashboard: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="">Todos</option>
-                    <option value="oveja">Ovejas</option>
-                    <option value="vaca_leche">Vacas Lecheras</option>
-                    <option value="vaca_engorda">Vacas de Engorda</option>
-                    <option value="cabra">Cabras</option>
-                    <option value="cerdo">Cerdos</option>
+                    {Object.entries(animals_types_labels).map(
+                      ([key, value]) => (
+                        <option key={key} value={key}>
+                          {value}
+                        </option>
+                      )
+                    )}
                   </select>
                 </div>
-
                 <div>
                   <label
                     htmlFor="stageFilter"
@@ -280,14 +267,121 @@ const Dashboard: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="">Todas</option>
-                    <option value="cria">Crías</option>
-                    <option value="engorda">Engorda</option>
-                    <option value="lechera">Lecheras</option>
-                    <option value="reproductor">Reproductores</option>
-                    <option value="descarte">Descarte</option>
+                    {Object.entries(animals_stages_labels).map(
+                      ([key, value]) => (
+                        <option key={key} value={key}>
+                          {value}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label
+                    htmlFor="genderFilter"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Género
+                  </label>
+                  <select
+                    id="genderFilter"
+                    value={filters.gender}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        gender: e.target.value
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="">Todos</option>
+                    <option value="macho">Macho</option>
+                    <option value="hembra">Hembra</option>
                   </select>
                 </div>
               </div>
+              {/* Buscar */}
+              <div>
+                <label
+                  htmlFor="searchFilter"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Buscar
+                </label>
+                <input
+                  id="searchFilter"
+                  type="text"
+                  placeholder="ID o notas..."
+                  value={filters.search}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      search: e.target.value
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Conteo de animales filtrados */}
+          <div className="bg-white rounded-lg shadow mb-4">
+            <div className="px-6 py-3 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">
+                  Resultados:
+                </span>
+                <span className="text-sm font-bold text-gray-900">
+                  {filteredAnimals.length}{' '}
+                  {filteredAnimals.length === 1 ? 'animal' : 'animales'}
+                  {filters.status !== 'activo' ||
+                  filters.type ||
+                  filters.stage ||
+                  filters.gender ||
+                  filters.search ? (
+                    <span className="text-gray-500 font-normal">
+                      {' '}
+                      filtrados
+                    </span>
+                  ) : (
+                    <span className="text-gray-500 font-normal"> en total</span>
+                  )}
+                </span>
+              </div>
+              {(filters.status !== 'activo' ||
+                filters.type ||
+                filters.stage ||
+                filters.gender ||
+                filters.search) && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {filters.status !== 'activo' && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {animal_status_labels[filters.status]}
+                    </span>
+                  )}
+                  {filters.type && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      {formatStatLabel(filters.type)}
+                    </span>
+                  )}
+                  {filters.stage && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      {formatStatLabel(filters.stage)}
+                    </span>
+                  )}
+                  {filters.gender && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+                      {formatStatLabel(filters.gender)}
+                    </span>
+                  )}
+                  {filters.search && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      Búsqueda: {filters.search}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

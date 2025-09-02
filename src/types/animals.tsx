@@ -62,6 +62,20 @@ export const animals_types = [
   'otro'
 ] as const
 
+export const animals_types_labels: Record<AnimalType, string> = {
+  oveja: 'Oveja',
+  vaca: 'Vaca',
+  // vaca_leche: 'Vaca Lechera',
+  // vaca_engorda: 'Vaca de Engorda',
+  cabra: 'Cabra',
+  cerdo: 'Cerdo',
+  gallina: 'Gallina',
+  perro: 'Perro',
+  gato: 'Gato',
+  equino: 'Equino',
+  otro: 'Otro'
+}
+
 export const animals_stages = [
   'cria',
   'engorda',
@@ -69,7 +83,13 @@ export const animals_stages = [
   'reproductor',
   'descarte'
 ] as const
-
+export const animals_stages_labels: Record<AnimalStage, string> = {
+  cria: 'Cría',
+  engorda: 'Engorda',
+  lechera: 'Lechera',
+  reproductor: 'Reproductor',
+  descarte: 'Descarte'
+}
 export type AnimalType = (typeof animals_types)[number]
 export type AnimalStage = (typeof animals_stages)[number]
 export const animal_statuses = [
@@ -78,6 +98,7 @@ export const animal_statuses = [
   'vendido',
   'perdido'
 ] as const
+
 export type AnimalStatus = (typeof animal_statuses)[number]
 
 export const animal_icon: Record<AnimalType, string> = {

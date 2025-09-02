@@ -107,9 +107,15 @@ export const useAnimalCRUD = () => {
 
       await updateDoc(animalRef, updatedData)
 
-      dispatch(updateAnimal({ id: animalId, data: updateData }))
+      // Actualizar Redux con datos serializados
+      dispatch(
+        updateAnimal({
+          id: animalId,
+          data: serializeObj(updatedData)
+        })
+      )
 
-      console.log('Animal actualizado:', animalId)
+      console.log('Animal actualizado:', animalId, updatedData)
     } catch (error) {
       console.error('Error actualizando animal:', error)
       dispatch(setError('Error actualizando animal'))
@@ -363,12 +369,14 @@ export const useAnimalCRUD = () => {
 
   // Marcar como encontrado si estaba perdido
   const markFound = async (animalId: string) => {
-    const now = new Date()
-    await update(animalId, {
-      status: 'activo',
-      statusAt: now,
-      lostInfo: { lostAt: now, foundAt: now }
-    })
+    try {
+      await markStatus(animalId, {
+        status: 'activo',
+        statusNotes: 'animal encontrado'
+      })
+    } catch {
+      console.log('No se pudo marcar como encontrado el animal:', animalId)
+    }
   }
 
   // Migrar animales al nuevo esquema de animalNumber
