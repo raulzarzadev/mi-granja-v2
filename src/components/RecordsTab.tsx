@@ -9,7 +9,8 @@ import {
   record_category_colors,
   record_type_labels,
   record_categories,
-  record_types
+  record_types,
+  record_severity_labels
 } from '@/types/animals'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -72,7 +73,6 @@ const RecordsTab: React.FC = () => {
     // Abrir los filtros si hay alguno aplicado
     const anyApplied = Object.values(urlFilters).some((v) => v)
     setFiltersOpen((open) => (anyApplied ? true : open))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
   // Actualizar la URL cuando cambien los filtros (debounce ligero)
@@ -139,11 +139,66 @@ const RecordsTab: React.FC = () => {
 
       // Filtro por búsqueda en título y descripción
       if (filters.search) {
-        const searchLower = filters.search.toLowerCase()
-        const titleMatch = record.title.toLowerCase().includes(searchLower)
-        const descMatch =
-          record.description?.toLowerCase().includes(searchLower) || false
-        if (!titleMatch && !descMatch) return false
+        const searchLower = filters.search.trim().toLowerCase()
+        const clinicalCats = [
+          'illness',
+          'injury',
+          'treatment',
+          'surgery'
+        ] as const
+        const statusLabel =
+          record.type === 'health' &&
+          clinicalCats.includes(record.category as any)
+            ? record.isResolved
+              ? 'resuelto'
+              : 'activo'
+            : ''
+        const looksBulk =
+          !!record.isBulkApplication ||
+          (Array.isArray(record.appliedToAnimals) &&
+            record.appliedToAnimals.length > 0)
+        const severity = (record as any).severity as
+          | undefined
+          | keyof typeof record_severity_labels
+        const severityLabel = severity ? record_severity_labels[severity] : ''
+        const dateStr = (() => {
+          try {
+            return format(new Date(record.date), 'dd/MM/yyyy', { locale: es })
+          } catch {
+            return ''
+          }
+        })()
+        const nextDueStr = (() => {
+          try {
+            return record.nextDueDate
+              ? format(new Date(record.nextDueDate), 'dd/MM/yyyy', {
+                  locale: es
+                })
+              : ''
+          } catch {
+            return ''
+          }
+        })()
+
+        const parts = [
+          record.title,
+          record.description || '',
+          record.veterinarian || '',
+          record.batch || '',
+          record.treatment || '',
+          record.notes || '',
+          record.animalNumber || '',
+          record_category_labels[record.category],
+          record_type_labels[record.type],
+          statusLabel,
+          severityLabel,
+          dateStr,
+          nextDueStr
+        ]
+        // Indicador textual de masivo/individual para búsqueda
+        parts.push(looksBulk ? 'masivo' : 'individual')
+        const haystack = parts.join(' | ').toLowerCase()
+        if (!haystack.includes(searchLower)) return false
       }
 
       return true
@@ -412,6 +467,9 @@ const RecordsTab: React.FC = () => {
                     Animal
                   </th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Aplicación
+                  </th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Categoría
                   </th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -444,6 +502,11 @@ const RecordsTab: React.FC = () => {
                     <td className="px-2 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {record.__isGrouped ? (
                         <div className="max-w-sm">
+                          <div className="mb-1">
+                            <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                              💠 Masivo
+                            </span>
+                          </div>
                           <div className="text-gray-700 ">
                             Aplicado a{' '}
                             <span className="text-xs text-gray-500">
@@ -469,7 +532,23 @@ const RecordsTab: React.FC = () => {
                           </div>
                         </div>
                       ) : (
-                        <>{(record as URecord).animalNumber}</>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-gray-50 text-gray-700 border border-gray-200">
+                            ● Individual
+                          </span>
+                          <span>{(record as URecord).animalNumber}</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-2 py-1 whitespace-nowrap text-xs">
+                      {record.__isGrouped ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                          💠 Masivo
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-50 text-gray-700 border border-gray-200">
+                          ● Individual
+                        </span>
                       )}
                     </td>
                     <td className="px-2 py-1 whitespace-nowrap">
