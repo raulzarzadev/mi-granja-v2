@@ -1,17 +1,11 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import {
-  Animal,
-  AnimalRecord,
-  record_category_labels,
-  record_category_icons,
-  record_type_labels,
-  record_types,
-  record_categories
-} from '@/types/animals'
+import { Animal } from '@/types/animals'
 import { Modal } from '@/components/Modal'
+import RecordForm, { RecordFormState } from '@/components/RecordForm'
+import { buildRecordFromForm } from '@/lib/records'
 
 interface ModalBulkHealthActionProps {
   isOpen: boolean
@@ -28,33 +22,22 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
 }) => {
   const { addBulkRecord } = useAnimalCRUD()
 
-  const noteCategories = [
-    'general',
-    'observation',
-    'other'
-  ] as AnimalRecord['category'][]
-  const clinicalCategories = record_categories
-
-  const [formData, setFormData] = useState({
-    type: 'health' as AnimalRecord['type'],
-    category: 'vaccine' as AnimalRecord['category'],
+  const [formData, setFormData] = useState<RecordFormState>({
+    type: 'health',
+    category: 'vaccine',
     title: '',
     description: '',
-    applicationDate: new Date().toISOString().split('T')[0],
-    severity: '' as '' | NonNullable<AnimalRecord['severity']>,
+    date: new Date().toISOString().split('T')[0],
+    severity: '',
+    isResolved: false,
+    resolvedDate: '',
     treatment: '',
     nextDueDate: '',
     batch: '',
     veterinarian: '',
-    cost: ''
+    cost: '',
+    notes: ''
   })
-
-  const availableCategories = useMemo<
-    ReadonlyArray<AnimalRecord['category']>
-  >(() => {
-    if (formData.type === 'note') return noteCategories
-    return record_categories
-  }, [formData.type])
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -64,13 +47,16 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
       category: 'vaccine',
       title: '',
       description: '',
-      applicationDate: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split('T')[0],
       severity: '',
+      isResolved: false,
+      resolvedDate: '',
       treatment: '',
       nextDueDate: '',
       batch: '',
       veterinarian: '',
-      cost: ''
+      cost: '',
+      notes: ''
     })
   }
 
@@ -96,46 +82,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
 
     try {
       // Preparar los datos limpiando campos vacíos
-      const recordData: Omit<
-        AnimalRecord,
-        | 'id'
-        | 'createdAt'
-        | 'createdBy'
-        | 'appliedToAnimals'
-        | 'isBulkApplication'
-      > = {
-        type: formData.type,
-        category: formData.category,
-        title: formData.title.trim(),
-        date: new Date(formData.applicationDate),
-        ...(formData.description
-          ? { description: formData.description.trim() }
-          : {}),
-        // ...(formData.notes ? { notes: formData.notes.trim() } : {}),
-        // Campos clínicos integrados cuando la categoría es clínica
-        ...(['illness', 'injury', 'treatment', 'surgery'].includes(
-          formData.category as any
-        )
-          ? {
-              ...(formData.severity ? { severity: formData.severity } : {}),
-              ...(formData.treatment
-                ? { treatment: formData.treatment.trim() }
-                : {})
-            }
-          : {}),
-        ...(formData.type === 'health'
-          ? {
-              ...(formData.nextDueDate
-                ? { nextDueDate: new Date(formData.nextDueDate) }
-                : {}),
-              ...(formData.batch ? { batch: formData.batch.trim() } : {}),
-              ...(formData.veterinarian
-                ? { veterinarian: formData.veterinarian.trim() }
-                : {}),
-              ...(formData.cost ? { cost: parseFloat(formData.cost) } : {})
-            }
-          : {})
-      }
+      const recordData = buildRecordFromForm(formData)
 
       const animalIds = selectedAnimals.map((animal) => animal.id)
       await addBulkRecord(animalIds, recordData)
@@ -150,9 +97,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
     }
   }
 
-  const getCategoryIcon = (category: AnimalRecord['category']) => {
-    return record_category_icons[category] || '💉'
-  }
+  // iconos y etiquetas ahora los maneja RecordForm
 
   const getTotalCost = () => {
     const unitCost = parseFloat(formData.cost) || 0
@@ -183,151 +128,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
 
         {/* Formulario del registro */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Tipo</label>
-            <select
-              value={formData.type}
-              onChange={(e) => {
-                const newType = e.target.value as AnimalRecord['type']
-                const firstCategory = (
-                  newType === 'note' ? noteCategories[0] : clinicalCategories[0]
-                ) as AnimalRecord['category']
-                setFormData({
-                  ...formData,
-                  type: newType,
-                  category: firstCategory
-                })
-              }}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
-              required
-            >
-              {record_types.map((t) => (
-                <option key={t} value={t}>
-                  {record_type_labels[t]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Categoría</label>
-            <select
-              value={formData.category}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  category: e.target.value as AnimalRecord['category']
-                })
-              }
-              className="w-full border rounded-lg px-3 py-2 text-sm"
-              required
-            >
-              {availableCategories.map((c) => (
-                <option key={c} value={c}>
-                  {getCategoryIcon(c)} {record_category_labels[c]}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Título / Producto *
-            </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-              className="w-full border rounded-lg px-3 py-2 text-sm"
-              placeholder="Ej: Vacuna Triple, Vitamina B12..."
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Fecha de Aplicación
-            </label>
-            <input
-              type="date"
-              value={formData.applicationDate}
-              onChange={(e) =>
-                setFormData({ ...formData, applicationDate: e.target.value })
-              }
-              className="w-full border rounded-lg px-3 py-2 text-sm"
-              required
-            />
-          </div>
-
-          {formData.type === 'health' && (
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Próximo Vencimiento
-              </label>
-              <input
-                type="date"
-                value={formData.nextDueDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, nextDueDate: e.target.value })
-                }
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-                placeholder="Opcional"
-              />
-            </div>
-          )}
-
-          {formData.type === 'health' && (
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Lote/Batch
-              </label>
-              <input
-                type="text"
-                value={formData.batch}
-                onChange={(e) =>
-                  setFormData({ ...formData, batch: e.target.value })
-                }
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-                placeholder="Número de lote"
-              />
-            </div>
-          )}
-
-          {formData.type === 'health' && (
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Veterinario
-              </label>
-              <input
-                type="text"
-                value={formData.veterinarian}
-                onChange={(e) =>
-                  setFormData({ ...formData, veterinarian: e.target.value })
-                }
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-                placeholder="Nombre del veterinario"
-              />
-            </div>
-          )}
-
-          {formData.type === 'health' && (
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Costo por Animal
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.cost}
-                onChange={(e) =>
-                  setFormData({ ...formData, cost: e.target.value })
-                }
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-                placeholder="0.00"
-              />
-            </div>
-          )}
+          <RecordForm value={formData} onChange={setFormData} mode="bulk" />
 
           {formData.type === 'health' && formData.cost && (
             <div>
@@ -341,31 +142,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
           )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Descripción</label>
-          <textarea
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
-            className="w-full border rounded-lg px-3 py-2 text-sm"
-            rows={2}
-            placeholder="Detalles del registro..."
-          />
-        </div>
-
-        {/* <div>
-          <label className="block text-sm font-medium mb-1">Notas</label>
-          <textarea
-            value={formData.notes}
-            onChange={(e) =>
-              setFormData({ ...formData, notes: e.target.value })
-            }
-            className="w-full border rounded-lg px-3 py-2 text-sm"
-            rows={3}
-            placeholder="Observaciones sobre la aplicación masiva..."
-          />
-        </div> */}
+        {/* Campos de descripción y notas están incluidos en RecordForm */}
 
         {/* Botones de acción */}
         <div className="flex gap-3 pt-4 border-t">

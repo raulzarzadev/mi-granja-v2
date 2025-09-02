@@ -7,12 +7,12 @@ import {
   AnimalRecord,
   record_category_labels,
   record_category_icons,
-  record_category_colors,
-  record_type_labels,
-  record_categories
+  record_category_colors
 } from '@/types/animals'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import RecordForm, { RecordFormState } from '@/components/RecordForm'
+import { buildRecordFromForm } from '@/lib/records'
 
 interface Props {
   animal: Animal
@@ -26,18 +26,16 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editing, setEditing] = useState<UnifiedRecord | null>(null)
-  const [form, setForm] = useState({
-    type: 'note' as AnimalRecord['type'],
-    category: 'general' as AnimalRecord['category'],
+  const [form, setForm] = useState<RecordFormState>({
+    type: 'note',
+    category: 'general',
     title: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
-    // clínico
-    severity: '' as '' | NonNullable<AnimalRecord['severity']>,
+    severity: '',
     isResolved: false,
     resolvedDate: '',
     treatment: '',
-    // salud
     nextDueDate: '',
     batch: '',
     veterinarian: '',
@@ -73,49 +71,13 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
     setIsFormOpen(false)
   }
 
-  const categoryOptions = (type: AnimalRecord['type']) => {
-    if (type === 'note') return ['general', 'observation', 'other'] as const
-    // Todo lo médico va a 'health' con categorías clínicas allí
-    return record_categories
-  }
+  // opciones de categoría ahora las maneja RecordForm
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.title.trim()) return alert('El título es requerido')
 
-    const base: Partial<AnimalRecord> = {
-      type: form.type,
-      category: form.category as any,
-      title: form.title.trim(),
-      description: form.description?.trim() || undefined,
-      date: new Date(form.date),
-      notes: form.notes?.trim() || undefined
-    }
-
-    if (
-      form.type === 'health' &&
-      ['illness', 'injury', 'treatment', 'surgery'].includes(
-        form.category as any
-      )
-    ) {
-      Object.assign(base, {
-        severity: form.severity || undefined,
-        isResolved: !!form.isResolved,
-        resolvedDate: form.resolvedDate
-          ? new Date(form.resolvedDate)
-          : undefined,
-        treatment: form.treatment?.trim() || undefined
-      })
-    }
-
-    if (form.type === 'health') {
-      Object.assign(base, {
-        nextDueDate: form.nextDueDate ? new Date(form.nextDueDate) : undefined,
-        batch: form.batch?.trim() || undefined,
-        veterinarian: form.veterinarian?.trim() || undefined,
-        cost: form.cost ? parseFloat(form.cost) : undefined
-      })
-    }
+    const base = buildRecordFromForm(form)
 
     if (editing) {
       await updateRecord(animal.id, editing.id, base)
@@ -195,236 +157,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
             </button>
           </div>
           <form onSubmit={onSubmit} className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">Tipo</label>
-                <select
-                  value={form.type}
-                  onChange={(e) => {
-                    const t = e.target.value as AnimalRecord['type']
-                    setForm((f) => ({
-                      ...f,
-                      type: t,
-                      category: categoryOptions(t)[0] as any
-                    }))
-                  }}
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                >
-                  {(['note', 'health'] as const).map((t) => (
-                    <option key={t} value={t}>
-                      {record_type_labels[t]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Categoría
-                </label>
-                <select
-                  value={form.category}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, category: e.target.value as any }))
-                  }
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                >
-                  {categoryOptions(form.type).map((c) => (
-                    <option key={c} value={c}>
-                      {
-                        record_category_labels[
-                          c as keyof typeof record_category_labels
-                        ]
-                      }
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Título *
-                </label>
-                <input
-                  type="text"
-                  value={form.title}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, title: e.target.value }))
-                  }
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Fecha</label>
-                <input
-                  type="date"
-                  value={form.date}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, date: e.target.value }))
-                  }
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                />
-              </div>
-
-              {form.type === 'health' &&
-                ['illness', 'injury', 'treatment', 'surgery'].includes(
-                  form.category as any
-                ) && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Severidad
-                      </label>
-                      <select
-                        value={form.severity}
-                        onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            severity: e.target.value as any
-                          }))
-                        }
-                        className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                      >
-                        <option value="">Sin especificar</option>
-                        <option value="low">Leve</option>
-                        <option value="medium">Moderada</option>
-                        <option value="high">Alta</option>
-                        <option value="critical">Crítica</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        id="resolved"
-                        type="checkbox"
-                        checked={form.isResolved}
-                        onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            isResolved: e.target.checked
-                          }))
-                        }
-                      />
-                      <label htmlFor="resolved" className="text-sm">
-                        Caso resuelto
-                      </label>
-                    </div>
-                    {form.isResolved && (
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Fecha de resolución
-                        </label>
-                        <input
-                          type="date"
-                          value={form.resolvedDate}
-                          onChange={(e) =>
-                            setForm((f) => ({
-                              ...f,
-                              resolvedDate: e.target.value
-                            }))
-                          }
-                          className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                        />
-                      </div>
-                    )}
-                    <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium mb-1">
-                        Tratamiento
-                      </label>
-                      <input
-                        type="text"
-                        value={form.treatment}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, treatment: e.target.value }))
-                        }
-                        className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                      />
-                    </div>
-                  </>
-                )}
-
-              {form.type === 'health' && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Próximo vencimiento
-                    </label>
-                    <input
-                      type="date"
-                      value={form.nextDueDate}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, nextDueDate: e.target.value }))
-                      }
-                      className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Lote / Batch
-                    </label>
-                    <input
-                      type="text"
-                      value={form.batch}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, batch: e.target.value }))
-                      }
-                      className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Veterinario
-                    </label>
-                    <input
-                      type="text"
-                      value={form.veterinarian}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, veterinarian: e.target.value }))
-                      }
-                      className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Costo
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={form.cost}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, cost: e.target.value }))
-                      }
-                      className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                    />
-                  </div>
-                </>
-              )}
-
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-medium mb-1">
-                  Descripción
-                </label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, description: e.target.value }))
-                  }
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                  rows={2}
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-medium mb-1">Notas</label>
-                <textarea
-                  value={form.notes}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, notes: e.target.value }))
-                  }
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                  rows={2}
-                />
-              </div>
-            </div>
+            <RecordForm value={form} onChange={setForm} mode="single" />
 
             <div className="flex gap-2">
               <button
