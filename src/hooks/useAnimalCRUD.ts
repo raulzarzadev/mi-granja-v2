@@ -106,7 +106,6 @@ export const useAnimalCRUD = () => {
       )
 
       await updateDoc(animalRef, updatedData)
-
       // Actualizar Redux con datos serializados
       dispatch(
         updateAnimal({
@@ -265,7 +264,6 @@ export const useAnimalCRUD = () => {
           ...doc.data()
         })) as Animal[]
 
-        console.log({ animals })
         if (opts?.status) {
           // Cuando filtramos por estado, devolvemos resultados sin mutar el store global
           resolve(serializeObj(animals))
