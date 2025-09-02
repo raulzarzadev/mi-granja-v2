@@ -127,7 +127,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
         </div>
 
         {/* Formulario del registro */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="">
           <RecordForm value={formData} onChange={setFormData} mode="bulk" />
 
           {formData.type === 'health' && formData.cost && (

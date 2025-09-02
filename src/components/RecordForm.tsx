@@ -63,7 +63,7 @@ export const RecordForm: React.FC<Props> = ({
   const isClinicalCategory = clinicalCategories.includes(value.category)
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 ">
       <div>
         <label className="block text-sm font-medium mb-1">Tipo</label>
         <select
@@ -249,8 +249,9 @@ export const RecordForm: React.FC<Props> = ({
         <textarea
           value={value.description}
           onChange={(e) => onChange({ ...value, description: e.target.value })}
-          className="w-full border rounded-lg px-2 py-1.5 text-sm"
+          className="w-full border rounded-lg px-2 py-1.5 text-sm resize-none field-sizing-content"
           rows={2}
+          placeholder="Describe los detalles para agregar contexto..."
         />
       </div>
     </div>

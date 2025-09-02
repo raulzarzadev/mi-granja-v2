@@ -39,8 +39,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
     nextDueDate: '',
     batch: '',
     veterinarian: '',
-    cost: '',
-    notes: ''
+    cost: ''
   })
 
   const unifiedRecords: UnifiedRecord[] = useMemo(() => {
@@ -65,8 +64,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       nextDueDate: '',
       batch: '',
       veterinarian: '',
-      cost: '',
-      notes: ''
+      cost: ''
     })
     setIsFormOpen(false)
   }
@@ -110,8 +108,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
         : '',
       batch: rec.batch || '',
       veterinarian: rec.veterinarian || '',
-      cost: rec.cost?.toString() || '',
-      notes: rec.notes || ''
+      cost: rec.cost?.toString() || ''
     })
   }
 
@@ -144,7 +141,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       </div>
 
       {isFormOpen && (
-        <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+        <div className="bg-gray-50 rounded-lg p-3 space-y-3 ">
           <div className="flex justify-between items-center">
             <h4 className="font-medium">
               {editing ? 'Editar registro' : 'Nuevo registro'}
@@ -156,7 +153,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
               ✕
             </button>
           </div>
-          <form onSubmit={onSubmit} className="space-y-3">
+          <form onSubmit={onSubmit} className="space-y-3 ">
             <RecordForm value={form} onChange={setForm} mode="single" />
 
             <div className="flex gap-2">
