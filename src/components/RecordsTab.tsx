@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import {
   AnimalRecord,
@@ -13,9 +13,13 @@ import {
 } from '@/types/animals'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 const RecordsTab: React.FC = () => {
   const { animals } = useAnimalCRUD()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   // Estados para filtros
   const [filters, setFilters] = useState({
@@ -26,6 +30,62 @@ const RecordsTab: React.FC = () => {
     dateTo: '',
     search: ''
   })
+  const [filtersOpen, setFiltersOpen] = useState(false)
+
+  // Helpers: leer/escribir filtros en la URL
+  const readFiltersFromURL = (): typeof filters => {
+    const p = searchParams
+    return {
+      animalId: p.get('animalId') || '',
+      type: (p.get('type') as AnimalRecord['type'] | '') || '',
+      category: (p.get('category') as AnimalRecord['category'] | '') || '',
+      dateFrom: p.get('from') || '',
+      dateTo: p.get('to') || '',
+      search: p.get('q') || ''
+    }
+  }
+
+  const buildQueryFromFilters = (f: typeof filters) => {
+    const q = new URLSearchParams()
+    if (f.animalId) q.set('animalId', f.animalId)
+    if (f.type) q.set('type', f.type)
+    if (f.category) q.set('category', f.category)
+    if (f.dateFrom) q.set('from', f.dateFrom)
+    if (f.dateTo) q.set('to', f.dateTo)
+    if (f.search) q.set('q', f.search)
+    return q
+  }
+
+  // Inicializar filtros desde la URL en el primer render y cuando cambien los query params externamente
+  useEffect(() => {
+    const urlFilters = readFiltersFromURL()
+    setFilters((prev) => {
+      const same =
+        prev.animalId === urlFilters.animalId &&
+        prev.type === urlFilters.type &&
+        prev.category === urlFilters.category &&
+        prev.dateFrom === urlFilters.dateFrom &&
+        prev.dateTo === urlFilters.dateTo &&
+        prev.search === urlFilters.search
+      return same ? prev : urlFilters
+    })
+    // Abrir los filtros si hay alguno aplicado
+    const anyApplied = Object.values(urlFilters).some((v) => v)
+    setFiltersOpen((open) => (anyApplied ? true : open))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  // Actualizar la URL cuando cambien los filtros (debounce ligero)
+  useEffect(() => {
+    const q = buildQueryFromFilters(filters)
+    const next = q.toString()
+    const curr = searchParams.toString()
+    if (next === curr) return
+    const t = setTimeout(() => {
+      router.replace(next ? `${pathname}?${next}` : pathname)
+    }, 250)
+    return () => clearTimeout(t)
+  }, [filters, pathname, router, searchParams])
 
   // Consolidar todos los registros de todos los animales
   type URecord = AnimalRecord & { animalId: string; animalNumber: string }
@@ -187,120 +247,148 @@ const RecordsTab: React.FC = () => {
       </div>
 
       {/* Filtros */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="text-lg font-medium mb-4">Filtros</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          {/* Animal */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Animal</label>
-            <select
-              value={filters.animalId}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, animalId: e.target.value }))
-              }
-              className="w-full border rounded-lg px-2 py-1.5 text-sm"
-            >
-              <option value="">Todos</option>
-              {animals.map((animal) => (
-                <option key={animal.id} value={animal.id}>
-                  {animal.animalNumber || 'Sin número'}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Tipo */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Tipo</label>
-            <select
-              value={filters.type}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  type: e.target.value as AnimalRecord['type'] | '',
-                  category: '' // Reset category when type changes
-                }))
-              }
-              className="w-full border rounded-lg px-2 py-1.5 text-sm"
-            >
-              <option value="">Todos</option>
-              {record_types.map((type) => (
-                <option key={type} value={type}>
-                  {record_type_labels[type]}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Categoría */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Categoría</label>
-            <select
-              value={filters.category}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  category: e.target.value as AnimalRecord['category'] | ''
-                }))
-              }
-              className="w-full border rounded-lg px-2 py-1.5 text-sm"
-            >
-              <option value="">Todas</option>
-              {getAvailableCategories().map((category) => (
-                <option key={category} value={category}>
-                  {
-                    record_category_icons[
-                      category as keyof typeof record_category_icons
-                    ]
-                  }{' '}
-                  {
-                    record_category_labels[
-                      category as keyof typeof record_category_labels
-                    ]
+      <div className="bg-white rounded-lg shadow">
+        <div className="flex items-center justify-between p-4">
+          <h3 className="text-lg font-medium">Filtros</h3>
+          <button
+            onClick={() => setFiltersOpen((v) => !v)}
+            className="text-sm text-blue-600 hover:text-blue-800"
+            aria-expanded={filtersOpen}
+            aria-controls="filters-panel"
+          >
+            {filtersOpen ? 'Ocultar' : 'Mostrar'}
+          </button>
+        </div>
+        <div
+          id="filters-panel"
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${
+            filtersOpen ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+          }`}
+          aria-hidden={!filtersOpen}
+        >
+          <div className="p-4 pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+              {/* Animal */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Animal</label>
+                <select
+                  value={filters.animalId}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      animalId: e.target.value
+                    }))
                   }
-                </option>
-              ))}
-            </select>
-          </div>
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                >
+                  <option value="">Todos</option>
+                  {animals.map((animal) => (
+                    <option key={animal.id} value={animal.id}>
+                      {animal.animalNumber || 'Sin número'}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Fecha desde */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Desde</label>
-            <input
-              type="date"
-              value={filters.dateFrom}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, dateFrom: e.target.value }))
-              }
-              className="w-full border rounded-lg px-2 py-1.5 text-sm"
-            />
-          </div>
+              {/* Tipo */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Tipo</label>
+                <select
+                  value={filters.type}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      type: e.target.value as AnimalRecord['type'] | '',
+                      category: '' // Reset category when type changes
+                    }))
+                  }
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                >
+                  <option value="">Todos</option>
+                  {record_types.map((type) => (
+                    <option key={type} value={type}>
+                      {record_type_labels[type]}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Fecha hasta */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Hasta</label>
-            <input
-              type="date"
-              value={filters.dateTo}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, dateTo: e.target.value }))
-              }
-              className="w-full border rounded-lg px-2 py-1.5 text-sm"
-            />
-          </div>
+              {/* Categoría */}
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Categoría
+                </label>
+                <select
+                  value={filters.category}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      category: e.target.value as AnimalRecord['category'] | ''
+                    }))
+                  }
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                >
+                  <option value="">Todas</option>
+                  {getAvailableCategories().map((category) => (
+                    <option key={category} value={category}>
+                      {
+                        record_category_icons[
+                          category as keyof typeof record_category_icons
+                        ]
+                      }{' '}
+                      {
+                        record_category_labels[
+                          category as keyof typeof record_category_labels
+                        ]
+                      }
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Búsqueda */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Buscar</label>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, search: e.target.value }))
-              }
-              placeholder="Título o descripción..."
-              className="w-full border rounded-lg px-2 py-1.5 text-sm"
-            />
+              {/* Fecha desde */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Desde</label>
+                <input
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      dateFrom: e.target.value
+                    }))
+                  }
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                />
+              </div>
+
+              {/* Fecha hasta */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Hasta</label>
+                <input
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, dateTo: e.target.value }))
+                  }
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                />
+              </div>
+
+              {/* Búsqueda */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Buscar</label>
+                <input
+                  type="text"
+                  value={filters.search}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, search: e.target.value }))
+                  }
+                  placeholder="Título o descripción..."
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

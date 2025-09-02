@@ -488,15 +488,15 @@ const Dashboard: React.FC = () => {
       )
     },
     {
-      label: '� Registros',
+      label: '📋 Registros',
       content: <RecordsTab />
     },
     {
-      label: '�🐣 Reproducción',
+      label: '🐣 Reproducción',
       content: <BreedingTabs />
     },
     {
-      label: '📋 Recordatorios',
+      label: '📆 Recordatorios',
       badgeCount: getOverdueReminders().length,
       content: (
         <div className="space-y-6">

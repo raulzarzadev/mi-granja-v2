@@ -328,7 +328,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
       )
     },
     {
-      label: '� Registros',
+      label: '📋 Registros',
       content: <AnimalRecordsSection animal={animal} />
     },
     {
