@@ -24,6 +24,25 @@ export interface ClinicalEntry {
   updatedAt?: Date
 }
 
+export interface HealthEvent {
+  id: string
+  type: 'vaccine' | 'treatment' | 'deworming' | 'supplement' | 'other'
+  name: string // Nombre de la vacuna/tratamiento
+  description?: string
+  applicationDate: Date
+  nextDueDate?: Date // Para vacunas que requieren refuerzo
+  batch?: string // Lote de la vacuna/medicamento
+  veterinarian?: string
+  cost?: number
+  notes?: string
+  // Para aplicación masiva
+  appliedToAnimals?: string[] // IDs de animales
+  isBulkApplication?: boolean
+  createdAt: Date
+  createdBy: string
+  updatedAt?: Date
+}
+
 export interface Animal {
   id: string
   farmerId: string
@@ -44,6 +63,8 @@ export interface Animal {
   notesLog?: NoteEntry[]
   // Historial clínico
   clinicalHistory?: ClinicalEntry[]
+  // Historial de salud (vacunas y tratamientos)
+  healthHistory?: HealthEvent[]
   // Estado general del animal
   status?: AnimalStatus // default lógico: 'activo'
   statusAt?: Date
@@ -120,6 +141,39 @@ export const clinical_types_icons: Record<ClinicalEntry['type'], string> = {
   treatment: '💊',
   surgery: '🏥',
   other: '📋'
+}
+
+// Tipos y helpers para eventos de salud
+export const health_event_types = [
+  'vaccine',
+  'treatment',
+  'deworming',
+  'supplement',
+  'other'
+] as const
+
+export const health_event_types_labels: Record<HealthEvent['type'], string> = {
+  vaccine: 'Vacuna',
+  treatment: 'Tratamiento',
+  deworming: 'Desparasitación',
+  supplement: 'Suplemento',
+  other: 'Otro'
+}
+
+export const health_event_types_icons: Record<HealthEvent['type'], string> = {
+  vaccine: '💉',
+  treatment: '💊',
+  deworming: '🪱',
+  supplement: '🧪',
+  other: '🏥'
+}
+
+export const health_event_types_colors: Record<HealthEvent['type'], string> = {
+  vaccine: 'bg-blue-100 text-blue-800',
+  treatment: 'bg-green-100 text-green-800',
+  deworming: 'bg-orange-100 text-orange-800',
+  supplement: 'bg-purple-100 text-purple-800',
+  other: 'bg-gray-100 text-gray-800'
 }
 
 export const animals_genders = ['macho', 'hembra'] as const

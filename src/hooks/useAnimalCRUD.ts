@@ -24,7 +24,13 @@ import {
   setAnimals
 } from '@/features/animals/animalsSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
-import { Animal, AnimalStatus, NoteEntry, ClinicalEntry } from '@/types/animals'
+import {
+  Animal,
+  AnimalStatus,
+  NoteEntry,
+  ClinicalEntry,
+  HealthEvent
+} from '@/types/animals'
 import { useAdminActions } from '@/lib/adminActions'
 
 /**
@@ -618,6 +624,190 @@ export const useAnimalCRUD = () => {
     console.log('Entrada clínica eliminada:', entryId)
   }
 
+  // === FUNCIONES DE EVENTOS DE SALUD ===
+
+  // Agregar evento de salud (individual)
+  const addHealthEvent = async (
+    animalId: string,
+    eventData: Omit<
+      HealthEvent,
+      | 'id'
+      | 'createdAt'
+      | 'createdBy'
+      | 'appliedToAnimals'
+      | 'isBulkApplication'
+    >
+  ) => {
+    if (!user?.id) {
+      dispatch(setError('Usuario no autenticado'))
+      return
+    }
+
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal) {
+      dispatch(setError('Animal no encontrado'))
+      return
+    }
+
+    // Limpiar campos undefined del eventData
+    const cleanedEventData = cleanUndefinedFields(eventData)
+
+    const newEvent: HealthEvent = cleanUndefinedFields({
+      ...cleanedEventData,
+      id: crypto.randomUUID(),
+      appliedToAnimals: [animalId],
+      isBulkApplication: false,
+      createdAt: new Date(),
+      createdBy: user.id
+    })
+
+    const updatedHealthHistory = [...(animal.healthHistory || []), newEvent]
+
+    await update(animalId, { healthHistory: updatedHealthHistory })
+    console.log('Evento de salud agregado al animal:', animalId)
+  }
+
+  // Agregar evento de salud masivo
+  const addBulkHealthEvent = async (
+    animalIds: string[],
+    eventData: Omit<
+      HealthEvent,
+      | 'id'
+      | 'createdAt'
+      | 'createdBy'
+      | 'appliedToAnimals'
+      | 'isBulkApplication'
+    >
+  ) => {
+    if (!user?.id) {
+      dispatch(setError('Usuario no autenticado'))
+      return
+    }
+
+    if (animalIds.length === 0) {
+      dispatch(setError('No se han seleccionado animales'))
+      return
+    }
+
+    // Limpiar campos undefined del eventData
+    const cleanedEventData = cleanUndefinedFields(eventData)
+
+    const newEvent: HealthEvent = cleanUndefinedFields({
+      ...cleanedEventData,
+      id: crypto.randomUUID(),
+      appliedToAnimals: animalIds,
+      isBulkApplication: true,
+      createdAt: new Date(),
+      createdBy: user.id
+    })
+
+    // Aplicar el evento a todos los animales seleccionados
+    const updatePromises = animalIds.map(async (animalId) => {
+      const animal = animals.find((a) => a.id === animalId)
+      if (animal) {
+        const updatedHealthHistory = [...(animal.healthHistory || []), newEvent]
+        await update(animalId, { healthHistory: updatedHealthHistory })
+      }
+    })
+
+    await Promise.all(updatePromises)
+    console.log(
+      'Evento de salud masivo aplicado a:',
+      animalIds.length,
+      'animales'
+    )
+  }
+
+  // Eliminar evento de salud
+  const removeHealthEvent = async (animalId: string, eventId: string) => {
+    if (!user?.id) {
+      dispatch(setError('Usuario no autenticado'))
+      return
+    }
+
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal || !animal.healthHistory) {
+      dispatch(setError('Animal o historial de salud no encontrado'))
+      return
+    }
+
+    const updatedHealthHistory = animal.healthHistory.filter(
+      (event) => event.id !== eventId
+    )
+
+    await update(animalId, { healthHistory: updatedHealthHistory })
+    console.log('Evento de salud eliminado:', eventId)
+  }
+
+  // Actualizar evento de salud
+  const updateHealthEvent = async (
+    animalId: string,
+    eventId: string,
+    updateData: Partial<HealthEvent>
+  ) => {
+    if (!user?.id) {
+      dispatch(setError('Usuario no autenticado'))
+      return
+    }
+
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal || !animal.healthHistory) {
+      dispatch(setError('Animal o historial de salud no encontrado'))
+      return
+    }
+
+    // Limpiar campos undefined del updateData
+    const cleanedUpdateData = cleanUndefinedFields(updateData)
+
+    const updatedHealthHistory = animal.healthHistory.map((event) =>
+      event.id === eventId
+        ? cleanUndefinedFields({
+            ...event,
+            ...cleanedUpdateData,
+            updatedAt: new Date()
+          })
+        : event
+    )
+
+    await update(animalId, { healthHistory: updatedHealthHistory })
+    console.log('Evento de salud actualizado:', eventId)
+  }
+
+  // Obtener próximos vencimientos de vacunas
+  const getUpcomingVaccinations = (daysAhead: number = 30) => {
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() + daysAhead)
+
+    const upcoming: Array<{
+      animal: Animal
+      event: HealthEvent
+      daysUntilDue: number
+    }> = []
+
+    animals.forEach((animal) => {
+      if (animal.healthHistory) {
+        animal.healthHistory.forEach((event) => {
+          if (event.nextDueDate && event.type === 'vaccine') {
+            const dueDate = new Date(event.nextDueDate)
+            if (dueDate <= cutoffDate) {
+              const daysUntilDue = Math.ceil(
+                (dueDate.getTime() - new Date().getTime()) /
+                  (1000 * 60 * 60 * 24)
+              )
+              upcoming.push({
+                animal,
+                event,
+                daysUntilDue
+              })
+            }
+          }
+        })
+      }
+    })
+
+    return upcoming.sort((a, b) => a.daysUntilDue - b.daysUntilDue)
+  }
+
   // Migrar animales al nuevo esquema de animalNumber
 
   return {
@@ -643,6 +833,12 @@ export const useAnimalCRUD = () => {
     resolveClinicalEntry,
     reopenClinicalEntry,
     updateClinicalEntry,
-    removeClinicalEntry
+    removeClinicalEntry,
+    // Funciones de eventos de salud
+    addHealthEvent,
+    addBulkHealthEvent,
+    removeHealthEvent,
+    updateHealthEvent,
+    getUpcomingVaccinations
   }
 }

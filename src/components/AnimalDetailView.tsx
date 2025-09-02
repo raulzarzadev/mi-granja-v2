@@ -19,6 +19,7 @@ import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import Tabs from '@/components/Tabs'
 import NotesSection from '@/components/NotesSection'
 import ClinicalHistorySection from '@/components/ClinicalHistorySection'
+import HealthHistorySection from '@/components/HealthHistorySection'
 
 interface AnimalDetailViewProps {
   animal: Animal
@@ -335,6 +336,10 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
     {
       label: '🏥 Historial Clínico',
       content: <ClinicalHistorySection animal={animal} />
+    },
+    {
+      label: '💉 Historial de Salud',
+      content: <HealthHistorySection animal={animal} />
     },
     {
       label: '⚙️ Configuración',

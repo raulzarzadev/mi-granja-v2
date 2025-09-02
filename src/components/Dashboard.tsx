@@ -12,6 +12,8 @@ import FarmSection from '@/components/FarmSection'
 import { useReminders } from '@/hooks/useReminders'
 import ModalAnimalForm from './ModalAnimalForm'
 import ModalAnimalDetails from './ModalAnimalDetails'
+import ModalBulkHealthAction from './ModalBulkHealthAction'
+import HealthRemindersCard from './HealthRemindersCard'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import {
@@ -70,6 +72,11 @@ const Dashboard: React.FC = () => {
 
   const [filters, setFilters] = useState<AnimalFilters>(initialFilter)
 
+  // Estado para selección múltiple y aplicaciones masivas
+  const [selectedAnimals, setSelectedAnimals] = useState<string[]>([])
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [isBulkHealthModalOpen, setIsBulkHealthModalOpen] = useState(false)
+
   // Recargar animales desde BD cuando cambia el filtro de estado (solo no-activo)
   React.useEffect(() => {
     let cancelled = false
@@ -97,6 +104,32 @@ const Dashboard: React.FC = () => {
   const _stats = animalsStats()
 
   const filteredAnimals = animalsFiltered(filters)
+
+  // Funciones para selección múltiple
+  const toggleAnimalSelection = (animalId: string) => {
+    setSelectedAnimals((prev) =>
+      prev.includes(animalId)
+        ? prev.filter((id) => id !== animalId)
+        : [...prev, animalId]
+    )
+  }
+
+  const selectAllVisibleAnimals = () => {
+    const visibleIds = filteredAnimals.map((animal) => animal.id)
+    setSelectedAnimals(visibleIds)
+  }
+
+  const clearSelection = () => {
+    setSelectedAnimals([])
+    setIsSelectionMode(false)
+  }
+
+  const getSelectedAnimalsData = () => {
+    return filteredAnimals.filter((animal) =>
+      selectedAnimals.includes(animal.id)
+    )
+  }
+
   const formatStatLabel = (key: string) => {
     switch (key) {
       case 'oveja':
@@ -337,6 +370,53 @@ const Dashboard: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Botones de selección múltiple */}
+            {filteredAnimals.length > 0 && (
+              <div className="px-6 py-3 border-t border-gray-100 bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {!isSelectionMode ? (
+                      <button
+                        onClick={() => setIsSelectionMode(true)}
+                        className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                      >
+                        📋 Seleccionar Múltiples
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={selectAllVisibleAnimals}
+                          className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-700 transition-colors"
+                        >
+                          ✅ Seleccionar Todos ({filteredAnimals.length})
+                        </button>
+                        <button
+                          onClick={clearSelection}
+                          className="bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-gray-700 transition-colors"
+                        >
+                          ❌ Cancelar
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {isSelectionMode && selectedAnimals.length > 0 && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-gray-700">
+                        {selectedAnimals.length} seleccionados
+                      </span>
+                      <button
+                        onClick={() => setIsBulkHealthModalOpen(true)}
+                        className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-700 transition-colors"
+                      >
+                        💉 Aplicar Evento de Salud
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Lista de animales */}
@@ -366,11 +446,38 @@ const Dashboard: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredAnimals.map((animal) => (
-                    <ModalAnimalDetails
-                      animal={animal}
-                      key={animal.id}
-                      triggerComponent={<AnimalCard animal={animal} />}
-                    ></ModalAnimalDetails>
+                    <div key={animal.id} className="relative">
+                      {/* Checkbox de selección */}
+                      {isSelectionMode && (
+                        <div className="absolute top-2 left-2 z-10">
+                          <input
+                            type="checkbox"
+                            checked={selectedAnimals.includes(animal.id)}
+                            onChange={() => toggleAnimalSelection(animal.id)}
+                            className="w-5 h-5 text-blue-600 bg-white border-2 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                          />
+                        </div>
+                      )}
+
+                      {/* Card del animal */}
+                      {isSelectionMode ? (
+                        <div
+                          onClick={() => toggleAnimalSelection(animal.id)}
+                          className={`cursor-pointer transition-all ${
+                            selectedAnimals.includes(animal.id)
+                              ? 'ring-2 ring-blue-500 ring-offset-2'
+                              : 'hover:shadow-lg'
+                          }`}
+                        >
+                          <AnimalCard animal={animal} />
+                        </div>
+                      ) : (
+                        <ModalAnimalDetails
+                          animal={animal}
+                          triggerComponent={<AnimalCard animal={animal} />}
+                        />
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
@@ -468,6 +575,10 @@ const Dashboard: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Recordatorios de salud */}
+                <HealthRemindersCard />
+
+                {/* Recordatorios normales */}
                 {reminders.map((reminder) => (
                   <ReminderCard
                     key={reminder.id}
@@ -502,6 +613,17 @@ const Dashboard: React.FC = () => {
         {/* Si no hay granjas, priorizar creación/selección */}
         {farms.length === 0 ? <FarmSection /> : <Tabs tabs={tabs} />}
       </div>
+
+      {/* Modal de aplicación masiva de eventos de salud */}
+      <ModalBulkHealthAction
+        isOpen={isBulkHealthModalOpen}
+        onClose={() => setIsBulkHealthModalOpen(false)}
+        selectedAnimals={getSelectedAnimalsData()}
+        onSuccess={() => {
+          clearSelection()
+          setIsBulkHealthModalOpen(false)
+        }}
+      />
     </div>
   )
 }
