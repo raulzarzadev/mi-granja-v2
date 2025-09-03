@@ -157,9 +157,9 @@ export const useAnimalCRUD = () => {
     }
     const updateData: Partial<Animal> = {
       isWeaned: true,
-      weanedAt: new Date(),
-      weaningNotes: opts?.notes
+      weanedAt: new Date()
     }
+    if (opts?.notes) updateData.weaningNotes = opts?.notes
     if (opts?.stageDecision) {
       const nextStage = stageMap[opts.stageDecision]
       if (nextStage) updateData.stage = nextStage

@@ -27,9 +27,12 @@ const WeaningRemindersCard: React.FC = () => {
 
   // Mostrar siempre la tarjeta para que se vea la sección en el tab Recordatorios
 
-  const handleWean = async (animalId: string) => {
+  const handleWean = async (
+    animalId: string,
+    options?: { stageDecision?: 'engorda' | 'reproductor' }
+  ) => {
     try {
-      await wean(animalId)
+      await wean(animalId, options)
     } catch (e) {
       console.error('Error marcando destete:', e)
     }
@@ -97,12 +100,24 @@ const WeaningRemindersCard: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => handleWean(animal.id)}
-                className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md bg-green-600 text-white hover:bg-green-700"
-              >
-                Marcar destetado
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() =>
+                    handleWean(animal.id, { stageDecision: 'engorda' })
+                  }
+                  className="shrink-0 inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-green-600 text-white hover:bg-green-700"
+                >
+                  Destetar→Engorda
+                </button>
+                <button
+                  onClick={() =>
+                    handleWean(animal.id, { stageDecision: 'reproductor' })
+                  }
+                  className="shrink-0 inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  Destetar→Repro
+                </button>
+              </div>
             </div>
           </div>
         ))}

@@ -5,7 +5,7 @@ import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { Animal } from '@/types/animals'
 import { Modal } from '@/components/Modal'
 import RecordForm, { RecordFormState } from '@/components/RecordForm'
-import { buildRecordFromForm } from '@/lib/records'
+import { buildRecordFromForm, getTodayLocalDateString } from '@/lib/records'
 
 interface ModalBulkHealthActionProps {
   isOpen: boolean
@@ -27,7 +27,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
     category: 'vaccine',
     title: '',
     description: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayLocalDateString(),
     severity: '',
     isResolved: false,
     resolvedDate: '',
@@ -46,7 +46,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
       category: 'vaccine',
       title: '',
       description: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayLocalDateString(),
       severity: '',
       isResolved: false,
       resolvedDate: '',

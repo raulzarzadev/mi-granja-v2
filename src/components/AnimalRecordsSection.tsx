@@ -6,7 +6,7 @@ import { Animal, AnimalRecord } from '@/types/animals'
 import { format } from 'date-fns'
 import RecordForm, { RecordFormState } from '@/components/RecordForm'
 import RecordRow from '@/components/RecordRow'
-import { buildRecordFromForm } from '@/lib/records'
+import { buildRecordFromForm, getTodayLocalDateString } from '@/lib/records'
 
 interface Props {
   animal: Animal
@@ -25,7 +25,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
     category: 'general',
     title: '',
     description: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayLocalDateString(),
     severity: '',
     isResolved: false,
     resolvedDate: '',
