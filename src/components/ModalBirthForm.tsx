@@ -5,6 +5,7 @@ import { BirthRecord, OffspringInfo } from '@/types'
 import { Modal } from './Modal'
 import { BreedingRecord } from '@/types/breedings'
 import { Animal, animal_icon } from '@/types/animals'
+import DateTimeInput from './inputs/DateTimeInput'
 
 interface ModalBirthFormProps {
   isOpen: boolean
@@ -225,25 +226,23 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
             {/* Fecha y hora del parto */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label
-                  htmlFor="birthDate"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Fecha del parto *
-                </label>
-                <input
-                  type="date"
-                  id="birthDate"
-                  value={formData.birthDate}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      birthDate: e.target.value
-                    }))
-                  }
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
+                {/* Fecha del parto */}
+                <div>
+                  <DateTimeInput
+                    value={
+                      formData.birthDate ? new Date(formData.birthDate) : null
+                    }
+                    onChange={(date) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        birthDate: date ? date.toISOString().split('T')[0] : ''
+                      }))
+                    }
+                    label="Fecha del parto"
+                    type="date"
+                    required
+                  />
+                </div>
               </div>
               <div>
                 <label

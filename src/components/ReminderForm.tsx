@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import DateTimeInput from './inputs/DateTimeInput'
 
 interface Reminder {
   id: string
@@ -188,20 +189,17 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
 
       {/* Fecha */}
       <div>
-        <label
-          htmlFor="dueDate"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
-          Fecha límite *
-        </label>
-        <input
+        <DateTimeInput
+          value={formData.dueDate ? new Date(formData.dueDate) : null}
+          onChange={(date) => {
+            setFormData((prev) => ({
+              ...prev,
+              dueDate: date ? date.toISOString().split('T')[0] : ''
+            }))
+          }}
+          label="Fecha límite"
           type="date"
-          id="dueDate"
-          name="dueDate"
-          value={formData.dueDate}
-          onChange={handleChange}
           required
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
         />
       </div>
 

@@ -11,6 +11,7 @@ import {
 } from '@/types/animals'
 import { toDate } from 'date-fns'
 import React, { useState } from 'react'
+import DateTimeInput from './inputs/DateTimeInput'
 
 interface AnimalFormProps {
   onSubmit: (
@@ -302,19 +303,25 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
 
       {/* Fecha de Nacimiento */}
       <div>
-        <label
-          htmlFor="birthDate"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
-          Fecha de Nacimiento
-        </label>
-        <input
+        <DateTimeInput
+          value={formData.birthDate ? new Date(formData.birthDate) : null}
+          onChange={(date) => {
+            setFormData((prev) => ({
+              ...prev,
+              birthDate: date ? date.toISOString().split('T')[0] : ''
+            }))
+
+            // Limpiar error del campo al cambiar
+            if (errors.birthDate) {
+              setErrors((prev) => ({
+                ...prev,
+                birthDate: ''
+              }))
+            }
+          }}
+          label="Fecha de Nacimiento"
           type="date"
-          id="birthDate"
-          name="birthDate"
-          value={formData.birthDate}
-          onChange={handleInputChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          placeholder="Selecciona la fecha de nacimiento"
           disabled={isLoading}
         />
       </div>

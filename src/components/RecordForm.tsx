@@ -8,6 +8,7 @@ import {
   record_categories,
   record_type_labels
 } from '@/types/animals'
+import DateTimeInput from './inputs/DateTimeInput'
 
 export type RecordFormState = {
   type: AnimalRecord['type']
@@ -117,14 +118,16 @@ export const RecordForm: React.FC<Props> = ({
       </div>
 
       <div>
-        <label className="block text-sm font-medium ">
-          {mode === 'bulk' ? 'Fecha de aplicación' : 'Fecha'}
-        </label>
-        <input
+        <DateTimeInput
+          value={value.date ? new Date(value.date) : null}
+          onChange={(date) => {
+            onChange({
+              ...value,
+              date: date ? date.toISOString().split('T')[0] : ''
+            })
+          }}
+          label={mode === 'bulk' ? 'Fecha de aplicación' : 'Fecha'}
           type="date"
-          value={value.date}
-          onChange={(e) => onChange({ ...value, date: e.target.value })}
-          className="w-full border rounded-lg px-2 py-1.5 text-sm"
         />
       </div>
 
@@ -161,16 +164,16 @@ export const RecordForm: React.FC<Props> = ({
           </div>
           {value.isResolved && (
             <div>
-              <label className="block text-sm font-medium ">
-                Fecha de resolución
-              </label>
-              <input
-                type="date"
-                value={value.resolvedDate}
-                onChange={(e) =>
-                  onChange({ ...value, resolvedDate: e.target.value })
+              <DateTimeInput
+                value={value.resolvedDate ? new Date(value.resolvedDate) : null}
+                onChange={(date) =>
+                  onChange({
+                    ...value,
+                    resolvedDate: date ? date.toISOString().split('T')[0] : ''
+                  })
                 }
-                className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                label="Fecha de resolución"
+                type="date"
               />
             </div>
           )}
@@ -191,16 +194,16 @@ export const RecordForm: React.FC<Props> = ({
       {value.type === 'health' && (
         <>
           <div>
-            <label className="block text-sm font-medium ">
-              Próximo vencimiento
-            </label>
-            <input
-              type="date"
-              value={value.nextDueDate}
-              onChange={(e) =>
-                onChange({ ...value, nextDueDate: e.target.value })
+            <DateTimeInput
+              value={value.nextDueDate ? new Date(value.nextDueDate) : null}
+              onChange={(date) =>
+                onChange({
+                  ...value,
+                  nextDueDate: date ? date.toISOString().split('T')[0] : ''
+                })
               }
-              className="w-full border rounded-lg px-2 py-1.5 text-sm"
+              label="Próximo vencimiento"
+              type="date"
             />
           </div>
           <div>

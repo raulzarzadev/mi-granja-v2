@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { BreedingRecord, FemaleBreedingInfo } from '@/types/breedings'
-import { InputDate } from './inputs/input-date'
+import DateTimeInput from './inputs/DateTimeInput'
 import { Animal } from '@/types/animals'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 
@@ -324,14 +324,14 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         <div>
           {/* Fecha de monta */}
           <div>
-            <InputDate
+            <DateTimeInput
               value={formData.breedingDate || new Date()}
               onChange={(date) => {
                 console.log({ date })
                 return setFormData({ ...formData, breedingDate: date })
               }}
               label="Fecha de Monta"
-              mode="date"
+              type="date"
               required
             />
           </div>
@@ -584,7 +584,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     {/* Fecha de confirmación */}
 
-                                    <InputDate
+                                    <DateTimeInput
                                       label="Fecha de confirmación"
                                       value={femaleInfo.pregnancyConfirmedDate}
                                       onChange={(date) =>
@@ -594,16 +594,17 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                                           date as Date
                                         )
                                       }
-                                      mode="date"
+                                      type="date"
                                       required
                                     />
                                     {/* Parto esperado específico */}
                                     {femaleInfo.expectedBirthDate && (
-                                      <InputDate
+                                      <DateTimeInput
                                         disabled
                                         label="Fecha de parto esperado"
                                         value={femaleInfo.expectedBirthDate}
-                                        mode="date"
+                                        onChange={() => {}} // No-op para campo disabled
+                                        type="date"
                                       />
                                     )}
                                   </div>
