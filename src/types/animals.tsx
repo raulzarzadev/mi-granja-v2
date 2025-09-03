@@ -70,6 +70,8 @@ export interface Animal {
   isWeaned?: boolean
   weanedAt?: Date
   weaningNotes?: string
+  // Override opcional para días de destete recomendados
+  customWeaningDays?: number
   // Metadata de admin para rastrear acciones administrativas
   adminAction?: {
     performedByAdmin: boolean
@@ -129,6 +131,12 @@ export const animals_stages_labels: Record<AnimalStage, string> = {
   reproductor: 'Reproductor',
   descarte: 'Descarte'
 }
+
+export const animals_genders_labels: Record<AnimalGender, string> = {
+  macho: 'Macho',
+  hembra: 'Hembra'
+}
+
 export type AnimalType = (typeof animals_types)[number]
 export type AnimalStage = (typeof animals_stages)[number]
 export const animal_statuses = [

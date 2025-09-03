@@ -41,6 +41,10 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
     birthDate: initialData?.birthDate
       ? toDate(initialData?.birthDate)?.toISOString().split('T')[0]
       : '',
+    customWeaningDays:
+      typeof initialData?.customWeaningDays === 'number'
+        ? String(initialData.customWeaningDays)
+        : '',
     motherId: initialData?.motherId || '',
     fatherId: initialData?.fatherId || '',
     notes: initialData?.notes || ''
@@ -103,6 +107,15 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       newErrors.age = 'La edad debe ser un número válido mayor o igual a 0'
     }
 
+    if (
+      formData.customWeaningDays &&
+      (isNaN(Number(formData.customWeaningDays)) ||
+        Number(formData.customWeaningDays) <= 0)
+    ) {
+      newErrors.customWeaningDays =
+        'Debe ser un número válido mayor a 0 (o deja vacío para usar el defecto)'
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -126,6 +139,9 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       ...(formData.weight && { weight: Number(formData.weight) }),
       ...(formData.age && { age: Number(formData.age) }),
       ...(formData.birthDate && { birthDate: new Date(formData.birthDate) }),
+      ...(formData.customWeaningDays && {
+        customWeaningDays: Number(formData.customWeaningDays)
+      }),
       ...(formData.motherId.trim() && { motherId: formData.motherId.trim() }),
       ...(formData.fatherId.trim() && { fatherId: formData.fatherId.trim() }),
       ...(formData.notes.trim() && { notes: formData.notes.trim() })
@@ -301,6 +317,37 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
           disabled={isLoading}
         />
+      </div>
+
+      {/* Días de destete (override) */}
+      <div>
+        <label
+          htmlFor="customWeaningDays"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          Días de destete (opcional)
+        </label>
+        <input
+          type="number"
+          id="customWeaningDays"
+          name="customWeaningDays"
+          value={formData.customWeaningDays}
+          onChange={handleInputChange}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+            errors.customWeaningDays ? 'border-red-500' : 'border-gray-300'
+          }`}
+          placeholder="Ej: 60"
+          min="1"
+          disabled={isLoading}
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Si lo dejas vacío, se usará el valor por defecto según la especie.
+        </p>
+        {errors.customWeaningDays && (
+          <p className="text-red-500 text-xs mt-1">
+            {errors.customWeaningDays}
+          </p>
+        )}
       </div>
 
       {/* Padres en una fila */}

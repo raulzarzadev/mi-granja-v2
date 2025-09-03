@@ -14,12 +14,14 @@ import ModalAnimalForm from './ModalAnimalForm'
 import ModalAnimalDetails from './ModalAnimalDetails'
 import ModalBulkHealthAction from './ModalBulkHealthAction'
 import HealthRemindersCard from './HealthRemindersCard'
+import WeaningRemindersCard from './WeaningRemindersCard'
 import RecordsTab from './RecordsTab'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import {
   animal_status_labels,
   AnimalGender,
+  animals_genders_labels,
   animals_stages_labels,
   animals_types_labels,
   AnimalStage,
@@ -131,35 +133,16 @@ const Dashboard: React.FC = () => {
     )
   }
 
-  const formatStatLabel = (key: string) => {
-    switch (key) {
-      case 'oveja':
-        return 'Ovejas'
-      case 'vaca_leche':
-        return 'Vacas Lecheras'
-      case 'vaca_engorda':
-        return 'Vacas de Engorda'
-      case 'cabra':
-        return 'Cabras'
-      case 'cerdo':
-        return 'Cerdos'
-      case 'cria':
-        return 'Crías'
-      case 'engorda':
-        return 'En Engorda'
-      case 'lechera':
-        return 'Lecheras'
-      case 'reproductor':
-        return 'Reproductores'
-      case 'descarte':
-        return 'Descarte'
-      case 'macho':
-        return 'Machos'
-      case 'hembra':
-        return 'Hembras'
-      default:
-        return key
+  const formatStatLabel = (
+    key: AnimalStage | AnimalType | AnimalGender | AnimalStatus
+  ) => {
+    const labels: Record<string, string> = {
+      ...animals_types_labels,
+      ...animals_stages_labels,
+      ...animals_genders_labels,
+      ...animal_status_labels
     }
+    return labels[key] || key
   }
 
   if (!user) {
@@ -559,8 +542,19 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Lista de recordatorios */}
+          {/* Recordatorios automáticos */}
+          <div className="grid grid-cols-1 md:grid-cols-2  gap-4">
+            {/* Recordatorios de salud */}
+            <HealthRemindersCard />
+            {/* Recordatorios de destete */}
+            <WeaningRemindersCard />
+          </div>
+
+          {/* Lista de recordatorios manuales */}
           <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Recordatorios personalizados
+            </h3>
             {remindersLoading ? (
               <div className="flex justify-center items-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
@@ -572,7 +566,7 @@ const Dashboard: React.FC = () => {
               <div className="text-center py-12">
                 <span className="text-6xl mb-4 block">📋</span>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No tienes recordatorios
+                  No tienes recordatorios personalizados
                 </h3>
                 <p className="text-gray-600 mb-6">
                   Crea recordatorios para no olvidar tareas importantes
@@ -580,9 +574,6 @@ const Dashboard: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Recordatorios de salud */}
-                <HealthRemindersCard />
-
                 {/* Recordatorios normales */}
                 {reminders.map((reminder) => (
                   <ReminderCard

@@ -1,4 +1,4 @@
-import { AnimalType } from '@/types/animals'
+import { AnimalType, Animal } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 import { toDate, toLocalDateStart } from './dates'
 
@@ -11,9 +11,11 @@ export interface AnimalBreedingConfig {
   minBreedingAge: number // En meses
   maxBreedingAge?: number // En meses
   breedingCycleDays: number // Ciclo estral
+  weaningDays: number // Días de destete recomendados
   description: string
 }
-
+//* COnfiguración de animales por monta, tiempo de crianza, destete, lactancia, etc.
+//* config animals  weaning time,
 export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
   {
     oveja: {
@@ -25,6 +27,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
       minBreedingAge: 8, // 8 meses
       maxBreedingAge: 96, // 8 años
       breedingCycleDays: 17,
+      weaningDays: 60,
       description: 'Ovejas: gestación ~5 meses, temporada de abril a julio'
     },
     cabra: {
@@ -36,6 +39,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
       minBreedingAge: 7,
       maxBreedingAge: 84, // 7 años
       breedingCycleDays: 21,
+      weaningDays: 60,
       description: 'Cabras: gestación ~5 meses, temporada de agosto a enero'
     },
     vaca: {
@@ -47,6 +51,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
       minBreedingAge: 15, // 15 meses
       maxBreedingAge: 180, // 15 años
       breedingCycleDays: 21,
+      weaningDays: 120,
       description: 'Vacas lecheras: gestación ~9.3 meses, reproducción anual'
     },
     // vaca_engorda: {
@@ -69,6 +74,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
       minBreedingAge: 6,
       maxBreedingAge: 60, // 5 años
       breedingCycleDays: 21,
+      weaningDays: 28,
       description: 'Cerdos: gestación ~3.8 meses, camadas grandes'
     },
     gallina: {
@@ -80,6 +86,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
       minBreedingAge: 5, // 5 meses
       maxBreedingAge: 36, // 3 años de producción óptima
       breedingCycleDays: 1, // postura casi diaria
+      weaningDays: 0,
       description:
         'Gallinas: incubación ~21 días, puesta regular durante todo el año'
     },
@@ -92,6 +99,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
       minBreedingAge: 12, // 12 meses
       maxBreedingAge: 84, // 7 años
       breedingCycleDays: 180, // ~6 meses entre ciclos
+      weaningDays: 56,
       description: 'Perros: gestación ~63 días, dos ciclos estrales por año'
     },
     gato: {
@@ -103,6 +111,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
       minBreedingAge: 6, // 6 meses
       maxBreedingAge: 84, // 7 años
       breedingCycleDays: 14, // ~2 semanas durante temporada
+      weaningDays: 56,
       description:
         'Gatos: gestación ~64 días, temporada reproductiva principalmente primavera-verano'
     },
@@ -115,6 +124,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
       minBreedingAge: 36, // 3 años
       maxBreedingAge: 180, // 15 años
       breedingCycleDays: 21,
+      weaningDays: 180,
       description:
         'Equinos: gestación ~340 días, reproducción principalmente en primavera-verano'
     },
@@ -127,9 +137,26 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
       minBreedingAge: 12,
       maxBreedingAge: 96,
       breedingCycleDays: 21,
+      weaningDays: 60,
       description: 'Configuración genérica para otras especies'
     }
   }
+
+// Obtiene días de destete recomendados. Si se pasa un animal con override, lo usa.
+export const getWeaningDays = (
+  animalOrType: AnimalType | Pick<Animal, 'type' | 'customWeaningDays'>
+): number => {
+  const type =
+    typeof animalOrType === 'string' ? animalOrType : animalOrType.type
+  const override =
+    typeof animalOrType === 'string'
+      ? undefined
+      : animalOrType.customWeaningDays
+  if (typeof override === 'number' && !Number.isNaN(override) && override > 0) {
+    return override
+  }
+  return ANIMAL_BREEDING_CONFIGS[type]?.weaningDays ?? 60
+}
 
 export const getAnimalBreedingConfig = (
   animalType: AnimalType

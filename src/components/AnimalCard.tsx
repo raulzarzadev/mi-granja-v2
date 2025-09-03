@@ -9,6 +9,9 @@ import {
   animal_status_colors
 } from '@/types/animals'
 import React from 'react'
+import { addDays, differenceInCalendarDays, format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import AdminActionIndicator from './AdminActionIndicator'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 
@@ -72,6 +75,46 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
           </div>
         )}
       </div>
+      {/* Destete objetivo */}
+      {animal.birthDate && !animal.isWeaned && (
+        <div className="mt-3 p-2 rounded text-sm flex items-center justify-between border bg-yellow-50 border-yellow-200 text-yellow-900">
+          <div className="flex items-center gap-2">
+            <span>🍼</span>
+            <span className="font-medium">Destete objetivo:</span>
+            <span>
+              {format(
+                addDays(animal.birthDate as Date, getWeaningDays(animal)),
+                'dd/MM/yyyy',
+                { locale: es }
+              )}
+            </span>
+          </div>
+          {(() => {
+            const due = addDays(
+              animal.birthDate as Date,
+              getWeaningDays(animal)
+            )
+            const days = differenceInCalendarDays(due, new Date())
+            return (
+              <span
+                className={`text-xs px-2 py-0.5 rounded ${
+                  days < 0
+                    ? 'bg-red-100 text-red-800'
+                    : days <= 7
+                    ? 'bg-orange-100 text-orange-800'
+                    : 'bg-green-100 text-green-800'
+                }`}
+              >
+                {days < 0
+                  ? `Vencido hace ${Math.abs(days)} d`
+                  : days === 0
+                  ? 'Hoy'
+                  : `En ${days} d`}
+              </span>
+            )
+          })()}
+        </div>
+      )}
       {animal.notes && (
         <div className="mt-3 p-2 bg-gray-50 rounded text-sm text-gray-700">
           {animal.notes.length > 60
