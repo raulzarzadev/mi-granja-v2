@@ -39,9 +39,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
     gender: initialData?.gender || animals_genders[0],
     weight: initialData?.weight || '',
     age: initialData?.age || '',
-    birthDate: initialData?.birthDate
-      ? toDate(initialData?.birthDate)?.toISOString().split('T')[0]
-      : '',
+    birthDate: initialData?.birthDate ? toDate(initialData?.birthDate) : null,
     customWeaningDays:
       typeof initialData?.customWeaningDays === 'number'
         ? String(initialData.customWeaningDays)
@@ -139,7 +137,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       gender: formData.gender,
       ...(formData.weight && { weight: Number(formData.weight) }),
       ...(formData.age && { age: Number(formData.age) }),
-      ...(formData.birthDate && { birthDate: new Date(formData.birthDate) }),
+      ...(formData.birthDate && { birthDate: formData.birthDate }),
       ...(formData.customWeaningDays && {
         customWeaningDays: Number(formData.customWeaningDays)
       }),
@@ -304,11 +302,11 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       {/* Fecha de Nacimiento */}
       <div>
         <DateTimeInput
-          value={formData.birthDate ? new Date(formData.birthDate) : null}
+          value={formData.birthDate}
           onChange={(date) => {
             setFormData((prev) => ({
               ...prev,
-              birthDate: date ? date.toISOString().split('T')[0] : ''
+              birthDate: date
             }))
 
             // Limpiar error del campo al cambiar
@@ -320,8 +318,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
             }
           }}
           label="Fecha de Nacimiento"
-          type="date"
-          placeholder="Selecciona la fecha de nacimiento"
+          type="datetime"
           disabled={isLoading}
         />
       </div>
