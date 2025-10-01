@@ -7,8 +7,9 @@ import AuthForm from '@/features/auth/components/AuthForm'
 import Dashboard from '@/components/Dashboard'
 
 export default function Home() {
-  const { user, isLoading } = useSelector((state: RootState) => state.auth)
-  if (isLoading) {
+  const { user } = useSelector((state: RootState) => state.auth)
+
+  if (user === undefined) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -20,7 +21,7 @@ export default function Home() {
   }
 
   // Si el usuario no está autenticado, mostrar formulario de login
-  if (!user) {
+  if (user === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="w-full max-w-md">
