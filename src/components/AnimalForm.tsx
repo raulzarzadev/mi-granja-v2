@@ -39,6 +39,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
     gender: initialData?.gender || animals_genders[0],
     weight: initialData?.weight || '',
     age: initialData?.age || '',
+    breed: initialData?.breed || '',
     birthDate: initialData?.birthDate ? toDate(initialData?.birthDate) : null,
     customWeaningDays:
       typeof initialData?.customWeaningDays === 'number'
@@ -135,6 +136,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       type: formData.type,
       stage: formData.stage,
       gender: formData.gender,
+      breed: formData.breed || '',
       ...(formData.weight && { weight: Number(formData.weight) }),
       ...(formData.age && { age: Number(formData.age) }),
       ...(formData.birthDate && { birthDate: formData.birthDate }),
@@ -198,6 +200,25 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
             </option>
           ))}
         </select>
+      </div>
+      {/* Raza */}
+      <div>
+        <label
+          htmlFor="breed"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          Raza
+        </label>
+        <input
+          type="text"
+          id="breed"
+          name="breed"
+          value={formData.breed}
+          onChange={handleInputChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          placeholder="Ej: Holstein, Angus, Dorper"
+          disabled={isLoading}
+        />
       </div>
 
       {/* Etapa */}

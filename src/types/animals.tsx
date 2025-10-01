@@ -41,7 +41,9 @@ export interface Animal {
   farmId?: string
   animalNumber: string // ID único del animal (asignado por el granjero)
   type: AnimalType
+  breed?: string // Raza del animal
   stage: AnimalStage
+
   weight?: number | string | null
   age?: number
   birthDate?: Date

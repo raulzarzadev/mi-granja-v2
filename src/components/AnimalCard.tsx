@@ -142,7 +142,8 @@ export const AnimalDetailRow: React.FC<{
       <div className="flex items-center justify-between ">
         <span className="font-bold text-xl">#{animal.animalNumber}</span>
         <div className="text-xs text-gray-500">
-          {animal.type || 'Sin nombre'} {animal.gender} {animal.stage}
+          {animal.type || 'Sin nombre'} {animal?.breed || ''} {animal.gender}{' '}
+          {animal.stage}
         </div>
         <div className="flex items-center space-x-3">
           <div>
