@@ -107,6 +107,12 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">
+                    Raza
+                  </label>
+                  <p className="text-gray-900">{animal.breed || ''}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
                     Fecha de Nacimiento
                   </label>
                   <p className="text-gray-900">
