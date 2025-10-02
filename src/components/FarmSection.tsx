@@ -10,10 +10,12 @@ import ModalCreateArea from './ModalCreateArea'
 import ModalCreateFarm from './ModalCreateFarm'
 import AreaCard from './AreaCard'
 import ModalInviteCollaborator from './ModalInviteCollaborator'
+import ModalEditCollaborator from './ModalEditCollaborator'
 import CollaboratorCard from './CollaboratorCard'
 import { formatDate, toDate } from '@/lib/dates'
 import { useMyInvitations } from '@/hooks/useMyInvitations'
 import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
+import { FarmCollaborator } from '@/types/collaborators'
 
 /**
  * Sección principal de gestión de granja
@@ -35,7 +37,6 @@ const FarmSection: React.FC = () => {
     invitations,
     isLoading: collaboratorsLoading,
     getCollaboratorStats,
-    cancelInvitation,
     revokeInvitation,
     deleteInvitation,
     updateCollaborator,
@@ -43,6 +44,11 @@ const FarmSection: React.FC = () => {
   } = useFarmMembers(currentFarm?.id)
 
   const activeColaborators = collaborators.filter((c) => c.isActive)
+
+  // Estado para el modal de edición
+  const [editingCollaborator, setEditingCollaborator] =
+    useState<FarmCollaborator | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   // Usuario actual
 
@@ -550,6 +556,10 @@ const FarmSection: React.FC = () => {
                         <CollaboratorCard
                           key={collaborator.id}
                           collaborator={collaborator}
+                          onEdit={(collab) => {
+                            setEditingCollaborator(collab)
+                            setIsEditModalOpen(true)
+                          }}
                           onRevoke={async (id) => {
                             if (
                               confirm(
@@ -599,6 +609,17 @@ const FarmSection: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de edición de colaborador */}
+      <ModalEditCollaborator
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setEditingCollaborator(null)
+        }}
+        collaborator={editingCollaborator}
+        farmId={currentFarm?.id}
+      />
     </div>
   )
 }

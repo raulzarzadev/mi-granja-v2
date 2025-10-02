@@ -1,9 +1,8 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { COLLABORATOR_ROLES, FarmCollaborator } from '@/types/collaborators'
 import { formatDate, toDate } from '@/lib/dates'
-import { useAuth } from '@/hooks/useAuth'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 
 interface CollaboratorCardProps {
@@ -11,6 +10,7 @@ interface CollaboratorCardProps {
   onRevoke?: (collaboratorId: string) => void | Promise<void>
   onReactivate?: (collaboratorId: string) => void | Promise<void>
   onDelete?: (collaboratorId: string) => void | Promise<void>
+  onEdit?: (collaborator: FarmCollaborator) => void | Promise<void>
 }
 
 /**
@@ -20,15 +20,36 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
   collaborator,
   onRevoke,
   onReactivate,
-  onDelete
+  onDelete,
+  onEdit
 }) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
   const roleInfo = COLLABORATOR_ROLES.find(
     (role) => role.value === collaborator.role
   )
   const isActive = collaborator.isActive
   const { hasPermissions } = useFarmMembers()
 
-  const canManageInvite = hasPermissions('invitations', 'update') // TODO: Permisos de gestión de colaboradores
+  const canManageInvite = hasPermissions('invitations', 'update')
+
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false)
+      }
+    }
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isMenuOpen])
 
   return (
     <div
@@ -36,8 +57,9 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
         isActive ? 'border-green-200' : 'border-gray-200 opacity-75'
       }`}
     >
-      {/* Estado del colaborador */}
-      <div className="flex items-center gap-2 flex-shrink-0 whitespace-nowrap justify-end">
+      {/* Header con estado y menú */}
+      <div className="flex items-center justify-between mb-3">
+        {/* Estado del colaborador */}
         <span
           className={`text-xs px-2 py-1 rounded-full font-medium ${
             isActive
@@ -47,36 +69,136 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
         >
           {isActive ? 'Activo' : 'Inactivo'}
         </span>
+
+        {/* Menú de tres puntos */}
         {canManageInvite && (
-          <>
-            {isActive && onRevoke && (
-              <button
-                className="text-xs px-2 py-1 border border-amber-300 text-amber-800 rounded-md hover:bg-amber-50"
-                onClick={() => onRevoke(collaborator.id)}
-                title="Revocar acceso"
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              title="Opciones"
+            >
+              <svg
+                className="w-5 h-5 text-gray-600"
+                fill="currentColor"
+                viewBox="0 0 20 20"
               >
-                Revocar
-              </button>
+                <circle cx="10" cy="5" r="1.5" />
+                <circle cx="10" cy="10" r="1.5" />
+                <circle cx="10" cy="15" r="1.5" />
+              </svg>
+            </button>
+
+            {/* Menú desplegable */}
+            {isMenuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                <div className="py-1">
+                  {onEdit && (
+                    <button
+                      onClick={() => {
+                        onEdit(collaborator)
+                        setIsMenuOpen(false)
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                      Editar
+                    </button>
+                  )}
+
+                  {isActive && onRevoke && (
+                    <button
+                      onClick={() => {
+                        onRevoke(collaborator.id)
+                        setIsMenuOpen(false)
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-amber-700 hover:bg-amber-50 flex items-center gap-2"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                        />
+                      </svg>
+                      Revocar acceso
+                    </button>
+                  )}
+
+                  {!isActive && onReactivate && (
+                    <button
+                      onClick={() => {
+                        onReactivate(collaborator.id)
+                        setIsMenuOpen(false)
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Reactivar acceso
+                    </button>
+                  )}
+
+                  {onDelete && (
+                    <>
+                      <div className="border-t border-gray-200 my-1" />
+                      <button
+                        onClick={() => {
+                          onDelete(collaborator.id)
+                          setIsMenuOpen(false)
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                        Eliminar
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
             )}
-            {!isActive && onReactivate && (
-              <button
-                className="text-xs px-2 py-1 border border-green-300 text-green-700 rounded-md hover:bg-green-50"
-                onClick={() => onReactivate(collaborator.id)}
-                title="Reactivar acceso"
-              >
-                Reactivar
-              </button>
-            )}
-            {onDelete && (
-              <button
-                className="text-xs px-2 py-1 border border-red-300 text-red-700 rounded-md hover:bg-red-50"
-                onClick={() => onDelete(collaborator.id)}
-                title="Eliminar colaborador"
-              >
-                Eliminar
-              </button>
-            )}
-          </>
+          </div>
         )}
       </div>
 
