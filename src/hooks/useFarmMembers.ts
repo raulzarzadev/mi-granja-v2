@@ -234,7 +234,7 @@ export const useFarmMembers = (farmId?: string) => {
     await sendInvitationEmail({
       token: docData.token,
       role: docData.role,
-      expiresAt: docData.expiresAt,
+      expiresAt: toDate(docData.expiresAt),
       farmId: docData.farmId,
       email: docData.email
     })
@@ -360,7 +360,7 @@ export const useFarmMembers = (farmId?: string) => {
     updates: Partial<{
       role: FarmCollaborator['role']
       isActive: boolean
-      notes: string
+      notes: string | null
     }>
   ) => {
     const inv = invitations.find((i) => i.id === invitationId)
