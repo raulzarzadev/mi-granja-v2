@@ -195,7 +195,7 @@ export const useFarmMembers = (farmId?: string) => {
   )
 
   const pendingInvitations = invitations.filter((i) => i.status === 'pending')
-  const activeCollaborators = collaborators.filter((i) => i.isActive)
+  //const activeCollaborators = collaborators.filter((i) => i.isActive)
 
   // Invitación nueva
   const inviteCollaborator = async (
@@ -231,50 +231,13 @@ export const useFarmMembers = (farmId?: string) => {
       updatedAt: new Date()
     } as any
     setInvitations((prev) => [...prev, created])
-
-    // Enviar email (best-effort)
-    try {
-      const appUrl =
-        process.env.NEXT_PUBLIC_APP_URL ||
-        (typeof window !== 'undefined'
-          ? window.location.origin
-          : 'http://localhost:3000')
-      const acceptUrl = `${appUrl}/invitations/confirm?token=${encodeURIComponent(
-        docData.token
-      )}&action=accept`
-      const rejectUrl = `${appUrl}/invitations/confirm?token=${encodeURIComponent(
-        docData.token
-      )}&action=reject`
-
-      await sendEmail({
-        to: email,
-        subject: 'Invitación para colaborar en una granja',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #2563eb; margin-bottom:16px;">Has sido invitado a colaborar en una granja</h2>
-            <p style="margin:0 0 8px 0;">Rol propuesto: <strong>${role}</strong></p>
-            <p style="margin:0 0 16px 0;">La invitación expira el <strong>${expiresAt.toLocaleDateString()}</strong>.</p>
-            <div style="margin: 24px 0; display:flex; gap:12px;">
-              <a href="${acceptUrl}" style="background:#16a34a; color:#fff; padding:12px 18px; text-decoration:none; border-radius:6px; font-weight:600;">Aceptar invitación</a>
-              <a href="${rejectUrl}" style="background:#dc2626; color:#fff; padding:12px 18px; text-decoration:none; border-radius:6px; font-weight:600;">Rechazar</a>
-            </div>
-            <p style="font-size:12px; color:#6b7280;">Si los botones no funcionan copia y pega estos enlaces:</p>
-            <p style="font-size:11px; word-break:break-all; margin:4px 0;">Aceptar: ${acceptUrl}</p>
-            <p style="font-size:11px; word-break:break-all; margin:4px 0;">Rechazar: ${rejectUrl}</p>
-          </div>
-        `,
-        text: `Has sido invitado como ${
-          collaborator_roles_label[role] || role
-        }. Acepta: ${acceptUrl} | Rechaza: ${rejectUrl}`,
-        tags: [
-          { name: 'type', value: 'invitation' },
-          { name: 'farm_id', value: farmId }
-        ]
-      })
-    } catch (e) {
-      console.warn('Fallo al enviar email de invitación (continuando):', e)
-    }
-
+    await sendInvitationEmail({
+      token: docData.token,
+      role: docData.role,
+      expiresAt: docData.expiresAt,
+      farmId: docData.farmId,
+      email: docData.email
+    })
     return created
   }
 
@@ -449,6 +412,25 @@ export const useFarmMembers = (farmId?: string) => {
     )
   }
 
+  const resendInvitation = async ({
+    invitationId
+  }: {
+    invitationId: string
+  }) => {
+    const inv = invitations.find((i) => i.id === invitationId)
+    if (!inv) throw new Error('Invitación no encontrada')
+    if (inv.status !== 'pending') {
+      throw new Error('Sólo se pueden reenviar invitaciones pendientes')
+    }
+    await sendInvitationEmail({
+      token: inv.token || '',
+      role: inv.role,
+      expiresAt: toDate(inv.expiresAt),
+      farmId: inv.farmId,
+      email: inv.email
+    })
+  }
+
   const getCollaboratorStats = () => {
     const active = collaborators
     const pending = pendingInvitations
@@ -464,9 +446,68 @@ export const useFarmMembers = (farmId?: string) => {
     }
   }
 
+  const sendInvitationEmail = async ({
+    token,
+    role,
+    expiresAt,
+    farmId,
+    email
+  }: {
+    token: string
+    role: FarmCollaborator['role']
+    expiresAt: Date
+    farmId: string
+    email: string
+  }) => {
+    // Enviar email (best-effort)
+    try {
+      const appUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (typeof window !== 'undefined'
+          ? window.location.origin
+          : 'http://localhost:3000')
+      const acceptUrl = `${appUrl}/invitations/confirm?token=${encodeURIComponent(
+        token
+      )}&action=accept`
+      const rejectUrl = `${appUrl}/invitations/confirm?token=${encodeURIComponent(
+        token
+      )}&action=reject`
+
+      await sendEmail({
+        to: email,
+        subject: 'Invitación para colaborar en una granja',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb; margin-bottom:16px;">Has sido invitado a colaborar en una granja</h2>
+            <p style="margin:0 0 8px 0;">Rol propuesto: <strong>${
+              collaborator_roles_label[role] || role
+            }</strong></p>
+            <p style="margin:0 0 16px 0;">La invitación expira el <strong>${expiresAt.toLocaleDateString()}</strong>.</p>
+            <div style="margin: 24px 0; display:flex; gap:12px;">
+              <a href="${acceptUrl}" style="background:#16a34a; color:#fff; padding:12px 18px; text-decoration:none; border-radius:6px; font-weight:600;">Aceptar invitación</a>
+              <a href="${rejectUrl}" style="background:#dc2626; color:#fff; padding:12px 18px; text-decoration:none; border-radius:6px; font-weight:600;">Rechazar</a>
+            </div>
+            <p style="font-size:12px; color:#6b7280;">Si los botones no funcionan copia y pega estos enlaces:</p>
+            <p style="font-size:11px; word-break:break-all; margin:4px 0;">Aceptar: ${acceptUrl}</p>
+            <p style="font-size:11px; word-break:break-all; margin:4px 0;">Rechazar: ${rejectUrl}</p>
+          </div>
+        `,
+        text: `Has sido invitado como ${
+          collaborator_roles_label[role] || role
+        }. Acepta: ${acceptUrl} | Rechaza: ${rejectUrl}`,
+        tags: [
+          { name: 'type', value: 'invitation' },
+          { name: 'farm_id', value: farmId }
+        ]
+      })
+    } catch (e) {
+      console.warn('Fallo al enviar email de invitación (continuando):', e)
+    }
+  }
+
   return {
     // Estado
-    collaborators: activeCollaborators,
+    collaborators,
     invitations: pendingInvitations,
     isLoading,
     error,
@@ -478,6 +519,7 @@ export const useFarmMembers = (farmId?: string) => {
     revokeInvitation,
     deleteInvitation,
     updateCollaborator,
+    resendInvitation,
     hasPermissions,
 
     // Utilidades

@@ -77,7 +77,8 @@ export const COLLABORATOR_ROLES = [
       { module: 'reminders', actions: ['create', 'read', 'update', 'delete'] },
       { module: 'areas', actions: ['read', 'update'] },
       { module: 'collaborators', actions: ['read', 'update'] },
-      { module: 'reports', actions: ['read'] }
+      { module: 'reports', actions: ['read'] },
+      { module: 'invitations', actions: ['read', 'update', 'create'] }
     ]
   },
   {
@@ -90,7 +91,8 @@ export const COLLABORATOR_ROLES = [
       { module: 'breeding', actions: ['read', 'update'] },
       { module: 'reminders', actions: ['create', 'read', 'update', 'delete'] },
       { module: 'areas', actions: ['read'] },
-      { module: 'reports', actions: ['read'] }
+      { module: 'reports', actions: ['read'] },
+      { module: 'invitations', actions: ['read'] }
     ]
   },
   {
@@ -102,7 +104,8 @@ export const COLLABORATOR_ROLES = [
       { module: 'animals', actions: ['read', 'update'] },
       { module: 'breeding', actions: ['read', 'update'] },
       { module: 'reminders', actions: ['create', 'read', 'update'] },
-      { module: 'reports', actions: ['read'] }
+      { module: 'reports', actions: ['read'] },
+      { module: 'invitations', actions: ['read'] }
     ]
   },
   {
@@ -115,7 +118,8 @@ export const COLLABORATOR_ROLES = [
       { module: 'breeding', actions: ['read'] },
       { module: 'reminders', actions: ['read'] },
       { module: 'areas', actions: ['read'] },
-      { module: 'reports', actions: ['read'] }
+      { module: 'reports', actions: ['read'] },
+      { module: 'invitations', actions: ['read'] }
     ]
   }
 ] as const

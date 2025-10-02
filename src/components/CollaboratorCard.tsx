@@ -3,6 +3,8 @@
 import React from 'react'
 import { COLLABORATOR_ROLES, FarmCollaborator } from '@/types/collaborators'
 import { formatDate, toDate } from '@/lib/dates'
+import { useAuth } from '@/hooks/useAuth'
+import { useFarmMembers } from '@/hooks/useFarmMembers'
 
 interface CollaboratorCardProps {
   collaborator: FarmCollaborator
@@ -24,6 +26,9 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
     (role) => role.value === collaborator.role
   )
   const isActive = collaborator.isActive
+  const { hasPermissions } = useFarmMembers()
+
+  const canManageInvite = hasPermissions('invitations', 'update') // TODO: Permisos de gestión de colaboradores
 
   return (
     <div
@@ -31,6 +36,52 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
         isActive ? 'border-green-200' : 'border-gray-200 opacity-75'
       }`}
     >
+      {/* Estado del colaborador */}
+      <div className="flex items-center gap-2 flex-shrink-0 whitespace-nowrap justify-end">
+        <span
+          className={`text-xs px-2 py-1 rounded-full font-medium ${
+            isActive
+              ? 'bg-green-100 text-green-800'
+              : 'bg-gray-100 text-gray-600'
+          }`}
+        >
+          {isActive ? 'Activo' : 'Inactivo'}
+        </span>
+        {canManageInvite && (
+          <>
+            {isActive && onRevoke && (
+              <button
+                className="text-xs px-2 py-1 border border-amber-300 text-amber-800 rounded-md hover:bg-amber-50"
+                onClick={() => onRevoke(collaborator.id)}
+                title="Revocar acceso"
+              >
+                Revocar
+              </button>
+            )}
+            {!isActive && onReactivate && (
+              <button
+                className="text-xs px-2 py-1 border border-green-300 text-green-700 rounded-md hover:bg-green-50"
+                onClick={() => onReactivate(collaborator.id)}
+                title="Reactivar acceso"
+              >
+                Reactivar
+              </button>
+            )}
+            {onDelete && (
+              <button
+                className="text-xs px-2 py-1 border border-red-300 text-red-700 rounded-md hover:bg-red-50"
+                onClick={() => onDelete(collaborator.id)}
+                title="Eliminar colaborador"
+              >
+                Eliminar
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Información del colaborador */}
+
       <div className="flex items-start justify-between mb-3 gap-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <span className="text-2xl flex-shrink-0">
@@ -51,44 +102,6 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
               {roleInfo?.label || collaborator.role}
             </p>
           </div>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0 whitespace-nowrap self-start">
-          <span
-            className={`text-xs px-2 py-1 rounded-full font-medium ${
-              isActive
-                ? 'bg-green-100 text-green-800'
-                : 'bg-gray-100 text-gray-600'
-            }`}
-          >
-            {isActive ? 'Activo' : 'Inactivo'}
-          </span>
-          {isActive && onRevoke && (
-            <button
-              className="text-xs px-2 py-1 border border-amber-300 text-amber-800 rounded-md hover:bg-amber-50"
-              onClick={() => onRevoke(collaborator.id)}
-              title="Revocar acceso"
-            >
-              Revocar
-            </button>
-          )}
-          {!isActive && onReactivate && (
-            <button
-              className="text-xs px-2 py-1 border border-green-300 text-green-700 rounded-md hover:bg-green-50"
-              onClick={() => onReactivate(collaborator.id)}
-              title="Reactivar acceso"
-            >
-              Reactivar
-            </button>
-          )}
-          {onDelete && (
-            <button
-              className="text-xs px-2 py-1 border border-red-300 text-red-700 rounded-md hover:bg-red-50"
-              onClick={() => onDelete(collaborator.id)}
-              title="Eliminar colaborador"
-            >
-              Eliminar
-            </button>
-          )}
         </div>
       </div>
 

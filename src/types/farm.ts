@@ -49,6 +49,7 @@ export interface FarmPermission {
     | 'areas'
     | 'collaborators'
     | 'reports'
+    | 'invitations'
   actions: ('create' | 'read' | 'update' | 'delete')[]
 }
 
@@ -85,3 +86,8 @@ export {
   DEFAULT_PERMISSIONS,
   getDefaultPermissionsByRole
 } from './collaborators'
+
+/**
+ * 
+{"id":"443766598811720","name":"Lavarenta","phone_numbers":{"data":[{"verified_name":"Lavarenta","code_verification_status":"NOT_VERIFIED","display_phone_number":"+52 1 612 183 8341","quality_rating":"GREEN","platform_type":"CLOUD_API","throughput":{"level":"STANDARD"},"id":"378162705390851"}],"paging":{"cursors":{"before":"QVFIU0JYYk0wQ3Nnb09nUkNlRnpPRktrY29hejEyMFhjOGQ3b3ltSHZAOZAnVocnJCZAXUxdUs1OXRpLWg1T084VDg5dDYZD","after":"QVFIU0JYYk0wQ3Nnb09nUkNlRnpPRktrY29hejEyMFhjOGQ3b3ltSHZAOZAnVocnJCZAXUxdUs1OXRpLWg1T084VDg5dDYZD"}}}}%  
+ */

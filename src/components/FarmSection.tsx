@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import { FARM_AREA_TYPES } from '@/types/farm'
+import { FARM_AREA_TYPES, FarmInvitation } from '@/types/farm'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 // import ModalCreateFarm from './ModalCreateFarm'
 import ModalCreateArea from './ModalCreateArea'
@@ -42,6 +42,8 @@ const FarmSection: React.FC = () => {
     hasPermissions
   } = useFarmMembers(currentFarm?.id)
 
+  const activeColaborators = collaborators.filter((c) => c.isActive)
+
   // Usuario actual
 
   const canRevokeInvitations = hasPermissions('collaborators', 'update')
@@ -59,6 +61,16 @@ const FarmSection: React.FC = () => {
 
   // console.log({ myInv })
 
+  const { resendInvitation } = useFarmMembers(currentFarm?.id)
+
+  const handleResendInvitation = async ({
+    invitation
+  }: {
+    invitation: FarmInvitation
+  }) => {
+    // Lógica para reenviar la invitación
+    await resendInvitation({ invitationId: invitation.id })
+  }
   if (farmsLoading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -438,6 +450,28 @@ const FarmSection: React.FC = () => {
                           </p>
                           <div className="mt-3 flex gap-2">
                             <button
+                              className="text-xs px-3 py-1 rounded-md border border-blue-300 text-blue-700 hover:bg-blue-50"
+                              title="Reenviar invitación"
+                              onClick={async () => {
+                                if (
+                                  confirm(
+                                    `¿Reenviar invitación a ${invitation.email}?`
+                                  )
+                                ) {
+                                  try {
+                                    handleResendInvitation({
+                                      invitation
+                                    })
+                                  } catch (e) {
+                                    console.error(e)
+                                  }
+                                }
+                              }}
+                            >
+                              Reenviar
+                            </button>
+
+                            {/* <button
                               className="text-xs px-3 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100"
                               title="Marcar como rechazada (si el invitado la declina)"
                               onClick={async () => {
@@ -455,7 +489,8 @@ const FarmSection: React.FC = () => {
                               }}
                             >
                               Cancelar
-                            </button>
+                            </button> */}
+
                             {canRevokeInvitations && (
                               <button
                                 className="text-xs px-3 py-1 rounded-md border border-amber-300 text-amber-800 hover:bg-amber-50"
@@ -505,13 +540,13 @@ const FarmSection: React.FC = () => {
                 )}
 
                 {/* Colaboradores activos */}
-                {collaborators.length > 0 && (
+                {activeColaborators.length > 0 && (
                   <div>
                     <h4 className="text-md font-medium text-gray-900 mb-3">
-                      Colaboradores Activos ({collaborators.length})
+                      Colaboradores Activos ({activeColaborators.length})
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {collaborators.map((collaborator) => (
+                      {activeColaborators.map((collaborator) => (
                         <CollaboratorCard
                           key={collaborator.id}
                           collaborator={collaborator}
