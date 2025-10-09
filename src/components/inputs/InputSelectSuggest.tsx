@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
+import { Icon } from '../Icon/icon'
 
 export interface SelectSuggestOption<T = string> {
   id: string
@@ -68,18 +69,16 @@ function InputSelectSuggest<T = string>({
   // Filtrar opciones según búsqueda
   const getFilteredOptions = () => {
     if (!searchValue) {
-      return options.filter((opt) => !selectedIds.includes(opt.id))
+      return options // Mostrar todas las opciones cuando no hay búsqueda
     }
 
-    const filtered = options.filter((option) => {
+    return options.filter((option) => {
       if (filterFunction) {
         return filterFunction(option, searchValue)
       }
       // Búsqueda por defecto en label
       return option.label.toLowerCase().includes(searchValue.toLowerCase())
     })
-
-    return filtered.filter((opt) => !selectedIds.includes(opt.id))
   }
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,10 +102,17 @@ function InputSelectSuggest<T = string>({
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       if (selectedIndex >= 0 && selectedIndex < filteredOptions.length) {
-        onSelect(filteredOptions[selectedIndex].id)
-        setSelectedIndex(-1)
-        setSearchValue('')
-      } else if (filteredOptions.length === 1) {
+        const selectedOption = filteredOptions[selectedIndex]
+        // Solo seleccionar si no está ya seleccionado
+        if (!selectedIds.includes(selectedOption.id)) {
+          onSelect(selectedOption.id)
+          setSelectedIndex(-1)
+          setSearchValue('')
+        }
+      } else if (
+        filteredOptions.length === 1 &&
+        !selectedIds.includes(filteredOptions[0].id)
+      ) {
         onSelect(filteredOptions[0].id)
         setSearchValue('')
       }
@@ -182,45 +188,45 @@ function InputSelectSuggest<T = string>({
               {emptyMessage}
             </div>
           ) : (
-            getFilteredOptions().map((option, index) => (
-              <div key={option.id} className="flex items-center">
-                <button
-                  type="button"
-                  id={`${id}-option-${index}`}
-                  role="option"
-                  aria-selected={selectedIndex === index}
-                  ref={(el) => {
-                    dropdownItemRefs.current[index] = el
-                  }}
-                  onClick={() => handleSelect(option.id)}
-                  className={`w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b border-gray-100 last:border-b-0 flex items-center gap-1 transition-colors ${
-                    selectedIndex === index
-                      ? 'bg-blue-100 ring-2 ring-blue-400'
-                      : ''
-                  }`}
-                >
-                  {renderOption
-                    ? renderOption(option, selectedIds.includes(option.id))
-                    : defaultRenderOption(
-                        option,
-                        selectedIds.includes(option.id)
-                      )}
-                </button>
+            getFilteredOptions().map((option, index) => {
+              const isSelected = selectedIds.includes(option.id)
+              return (
+                <div key={option.id} className="flex items-center">
+                  <button
+                    type="button"
+                    id={`${id}-option-${index}`}
+                    role="option"
+                    aria-selected={selectedIndex === index}
+                    ref={(el) => {
+                      dropdownItemRefs.current[index] = el
+                    }}
+                    onClick={() => !isSelected && handleSelect(option.id)}
+                    disabled={isSelected}
+                    className={`w-full text-left px-3 py-2 focus:outline-none border-b border-gray-100 last:border-b-0 flex items-center gap-1 transition-colors ${
+                      isSelected
+                        ? 'bg-green-50 cursor-default'
+                        : selectedIndex === index
+                        ? 'bg-blue-100 ring-2 ring-blue-400 hover:bg-gray-100 focus:bg-gray-100'
+                        : 'hover:bg-gray-100 focus:bg-gray-100'
+                    }`}
+                  >
+                    {renderOption
+                      ? renderOption(option, isSelected)
+                      : defaultRenderOption(option, isSelected)}
+                  </button>
 
-                {showRemoveButton &&
-                  selectedIds.includes(option.id) &&
-                  onRemove && (
+                  {showRemoveButton && isSelected && onRemove && (
                     <button
                       type="button"
-                      onClick={() => onRemove(option.id)}
-                      className="ml-2 mr-2 text-red-600 hover:text-red-800 focus:outline-none font-bold text-lg leading-none"
-                      title="Remover"
+                      onClick={() => onRemove(option?.id || '')}
+                      className="ml-2 text-red-400 hover:text-red-600 focus:outline-none font-bold text-lg leading-none"
                     >
-                      ✕
+                      <Icon icon="close" />
                     </button>
                   )}
-              </div>
-            ))
+                </div>
+              )
+            })
           )}
         </div>
       )}

@@ -349,6 +349,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
               selectedIds={breedingAnimalIds}
               onSelect={handleSelectFemale}
               onRemove={handleRemoveFemale}
+              showRemoveButton={true}
               placeholder={`Buscar hembra ${selectedMale.type} por número...`}
               emptyMessage={
                 filteredFemales.length === 0
@@ -413,25 +414,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                                   <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-medium">
                                     🍼 Parto Registrado
                                   </span>
-                                  {/* <button
-                                type="button"
-                                onClick={() => {
-                                  if (
-                                    confirm(
-                                      '¿Estás seguro? Se borrarán todos los datos de las crías asociadas.'
-                                    )
-                                  ) {
-                                    handleFemaleBreedingChange(
-                                      animal?.id || '',
-                                      'actualBirthDate',
-                                      ''
-                                    )
-                                  }
-                                }}
-                                className="text-xs text-red-600 hover:text-red-800 underline"
-                              >
-                                Cancelar Parto
-                              </button> */}
                                 </div>
 
                                 {femaleInfo.offspring &&
@@ -535,7 +517,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                               onClick={() =>
                                 handleRemoveFemale(animal?.id || '')
                               }
-                              className="ml-2 text-green-700 hover:text-green-900 focus:outline-none font-bold text-lg leading-none"
+                              className="ml-2 text-red-400 hover:text-red-600 focus:outline-none font-bold text-lg leading-none"
                             >
                               <Icon icon="close" />
                             </button>
