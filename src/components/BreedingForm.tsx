@@ -320,198 +320,164 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-1">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Fecha de monta */}
+        <DateTimeInput
+          value={formData.breedingDate || new Date()}
+          onChange={(date) => {
+            console.log({ date })
+            return setFormData({ ...formData, breedingDate: date })
+          }}
+          label="Fecha de Monta"
+          type="date"
+          required
+        />
         {/* Macho */}
-        <div>
-          {/* Fecha de monta */}
-          <div>
-            <DateTimeInput
-              value={formData.breedingDate || new Date()}
-              onChange={(date) => {
-                console.log({ date })
-                return setFormData({ ...formData, breedingDate: date })
-              }}
-              label="Fecha de Monta"
-              type="date"
-              required
-            />
-          </div>
-          {!selectedMale ? (
-            <p className="text-sm text-gray-600 mt-1 font-medium">
-              Primero selecciona un macho para ver las hembras compatibles
-            </p>
-          ) : breedingAnimalIds.length === 0 ? (
-            <p className="text-sm text-gray-600 mt-1 font-medium">
-              Debes seleccionar al menos una hembra {selectedMale.type}
-            </p>
-          ) : null}
-          <label
+        {!selectedMale ? (
+          <p className="text-sm text-gray-600 mt-1 font-medium">
+            Primero selecciona un macho para ver las hembras compatibles
+          </p>
+        ) : breedingAnimalIds.length === 0 ? (
+          <p className="text-sm text-gray-600 mt-1 font-medium">
+            Debes seleccionar al menos una hembra {selectedMale.type}
+          </p>
+        ) : null}
+        {/* <label
             htmlFor="maleId"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
             Macho *
-          </label>
-          <select
-            id="maleId"
-            name="maleId"
-            value={formData.maleId}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-          >
-            <option value="">Seleccionar macho</option>
-            {males.map((animal) => (
-              <option key={animal.id} value={animal.id}>
-                {animal.animalNumber} - {animal.type}
-              </option>
-            ))}
-          </select>
-          {males.length === 0 && (
-            <p className="text-sm text-gray-600 mt-1 font-medium">
-              No hay machos reproductores disponibles
-            </p>
-          )}
-        </div>
-        {/* Hembra */}
-        <div>
-          <label
-            htmlFor="femaleSearch"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Hembra(s) *
-          </label>
+          </label> */}
+        <select
+          id="maleId"
+          name="maleId"
+          value={formData.maleId}
+          onChange={handleChange}
+          required
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
+          <option value="">Seleccionar macho</option>
+          {males.map((animal) => (
+            <option key={animal.id} value={animal.id}>
+              {animal.animalNumber} - {animal.type}
+            </option>
+          ))}
+        </select>
+        {males.length === 0 && (
+          <p className="text-sm text-gray-600 mt-1 font-medium">
+            No hay machos reproductores disponibles
+          </p>
+        )}
+        {/* Hembras */}
+        {selectedMale && (
+          <>
+            {/* Input de búsqueda */}
+            <div className="relative">
+              <input
+                type="text"
+                id="femaleSearch"
+                value={femaleSearch}
+                onChange={handleFemaleSearch}
+                onKeyDown={handleKeyDown}
+                onFocus={() => setShowFemaleDropdown(true)}
+                onBlur={() =>
+                  setTimeout(() => setShowFemaleDropdown(false), 200)
+                }
+                placeholder={
+                  selectedMale
+                    ? `Buscar hembra ${selectedMale.type} por número...`
+                    : 'Primero selecciona un macho'
+                }
+                disabled={!selectedMale}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              />
 
-          {/* Badges de hembras seleccionadas */}
-          {/* {breedingAnimalIds.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-2">
-              {getSelectedFemales().map((animal) => (
-                <div
-                  key={animal?.id}
-                  className={
-                    'flex items-center bg-green-100 text-green-900 px-3 py-1 rounded-full text-sm font-medium'
-                  }
-                >
-                  <span>
-                    {animal?.animalNumber} - {animal?.type}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveFemale(animal?.id || '')}
-                    className="ml-2 text-green-700 hover:text-green-900 focus:outline-none font-bold text-lg leading-none"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )} */}
-
-          {/* Input de búsqueda */}
-          <div className="relative">
-            <input
-              type="text"
-              id="femaleSearch"
-              value={femaleSearch}
-              onChange={handleFemaleSearch}
-              onKeyDown={handleKeyDown}
-              onFocus={() => setShowFemaleDropdown(true)}
-              onBlur={() => setTimeout(() => setShowFemaleDropdown(false), 200)}
-              placeholder={
-                selectedMale
-                  ? `Buscar hembra ${selectedMale.type} por número...`
-                  : 'Primero selecciona un macho'
-              }
-              disabled={!selectedMale}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            />
-
-            {/* Dropdown de sugerencias */}
-            {showFemaleDropdown && selectedMale && (
-              <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto mt-1">
-                {getFilteredFemales().length === 0 ? (
-                  <div className="px-3 py-2 text-gray-600 text-sm font-medium">
-                    {filteredFemales.length === 0
-                      ? `No hay hembras ${selectedMale.type} disponibles`
-                      : 'No se encontraron hembras'}
-                  </div>
-                ) : (
-                  getFilteredFemales().map((animal) => (
-                    <div key={animal.id} className="flex items-center ">
-                      <button
-                        type="button"
-                        onClick={() => handleSelectFemale(animal.id)}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b border-gray-100 last:border-b-0 flex items-center gap-1"
-                      >
-                        <div className="font-semibold text-gray-900">
-                          {animal.animalNumber} - {animal.type}
-                        </div>
-                        <div className="text-sm text-gray-600 font-medium">
-                          ({animal.stage})
-                        </div>
-                      </button>
-                      {breedingAnimalIds.includes(animal.id) && (
+              {/* Dropdown de sugerencias */}
+              {showFemaleDropdown && selectedMale && (
+                <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto mt-1">
+                  {getFilteredFemales().length === 0 ? (
+                    <div className="px-3 py-2 text-gray-600 text-sm font-medium">
+                      {filteredFemales.length === 0
+                        ? `No hay hembras ${selectedMale.type} disponibles`
+                        : 'No se encontraron hembras'}
+                    </div>
+                  ) : (
+                    getFilteredFemales().map((animal) => (
+                      <div key={animal.id} className="flex items-center ">
                         <button
                           type="button"
-                          onClick={() => handleRemoveFemale(animal?.id || '')}
-                          className="ml-2 text-green-700 hover:text-green-900 focus:outline-none font-bold text-lg leading-none"
+                          onClick={() => handleSelectFemale(animal.id)}
+                          className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b border-gray-100 last:border-b-0 flex items-center gap-1"
                         >
-                          <Icon icon="close" />
+                          <div className="font-semibold text-gray-900">
+                            {animal.animalNumber} - {animal.type}
+                          </div>
+                          <div className="text-sm text-gray-600 font-medium">
+                            ({animal.stage})
+                          </div>
                         </button>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Estado de embarazo por hembra */}
-        {breedingAnimalIds.length > 0 && (
-          <div>
-            <label className="block text-sm  font-medium text-gray-700 ">
-              Estado de Embarazo por Hembra
-            </label>
-            <div className="space-y-3 bg-gray-50  rounded-md">
-              {getSelectedFemales().map((animal) => {
-                const femaleInfo = formData.femaleBreedingInfo?.find(
-                  (info) => info.femaleId === animal?.id
-                )
-
-                if (femaleInfo)
-                  //#region Confirm
-                  return (
-                    <div
-                      key={animal?.id}
-                      className="bg-white p-2 rounded border"
-                    >
-                      <div className="flex items-center justify-between ">
-                        <span className="font-medium text-gray-900">
-                          {animal?.animalNumber} - {animal?.type}
-                        </span>
-                        {}
-                        {!femaleInfo.pregnancyConfirmedDate && (
+                        {breedingAnimalIds.includes(animal.id) && (
                           <button
                             type="button"
-                            onClick={() =>
-                              handleFemaleBreedingChange(
-                                animal?.id || '',
-                                'pregnancyConfirmed',
-                                true
-                              )
-                            }
-                            className="px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors"
+                            onClick={() => handleRemoveFemale(animal?.id || '')}
+                            className="ml-2 text-green-700 hover:text-green-900 focus:outline-none font-bold text-lg leading-none"
                           >
-                            Confirmar Embarazo
+                            <Icon icon="close" />
                           </button>
                         )}
-                        {femaleInfo.actualBirthDate && (
-                          <div className="grid">
-                            <div className="flex items-center gap-2">
-                              <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-medium">
-                                🍼 Parto Registrado
-                              </span>
-                              {/* <button
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Estado de embarazo por hembra */}
+            {breedingAnimalIds.length > 0 && (
+              <div>
+                <label className="block text-sm  font-medium text-gray-700 ">
+                  Hembras seleccionadas ({breedingAnimalIds.length || 0})
+                </label>
+                <div className="space-y-3 bg-gray-50  rounded-md">
+                  {getSelectedFemales().map((animal) => {
+                    const femaleInfo = formData.femaleBreedingInfo?.find(
+                      (info) => info.femaleId === animal?.id
+                    )
+
+                    if (femaleInfo)
+                      //#region Confirm
+                      return (
+                        <div
+                          key={animal?.id}
+                          className="bg-white p-2 rounded border"
+                        >
+                          <div className="flex items-center justify-between ">
+                            <span className="font-medium text-gray-900">
+                              {animal?.animalNumber} - {animal?.type}
+                            </span>
+                            {}
+                            {!femaleInfo.pregnancyConfirmedDate && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleFemaleBreedingChange(
+                                    animal?.id || '',
+                                    'pregnancyConfirmed',
+                                    true
+                                  )
+                                }
+                                className="px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors"
+                              >
+                                Confirmar Embarazo
+                              </button>
+                            )}
+                            {femaleInfo.actualBirthDate && (
+                              <div className="grid">
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-medium">
+                                    🍼 Parto Registrado
+                                  </span>
+                                  {/* <button
                                 type="button"
                                 onClick={() => {
                                   if (
@@ -530,114 +496,122 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                               >
                                 Cancelar Parto
                               </button> */}
-                            </div>
+                                </div>
 
-                            {femaleInfo.offspring &&
-                              femaleInfo.offspring.length > 0 && (
-                                <div className="mt-2 flex items-center">
-                                  <div className="text-xs text-gray-600 mr-2">
-                                    Descendencia:
-                                  </div>
-                                  <div className="flex flex-wrap gap-1">
-                                    {femaleInfo.offspring.map((offspringId) => {
-                                      const offspring = animals.find(
-                                        (animal) => animal.id === offspringId
-                                      )
-                                      return offspring ? (
-                                        <span
-                                          key={offspringId}
-                                          className="inline-flex items-center px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded "
-                                        >
-                                          {offspring.animalNumber}
-                                        </span>
-                                      ) : (
-                                        <span
-                                          key={offspringId}
-                                          className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
-                                        >
-                                          ID: {offspringId}
-                                        </span>
-                                      )
-                                    })}
+                                {femaleInfo.offspring &&
+                                  femaleInfo.offspring.length > 0 && (
+                                    <div className="mt-2 flex items-center">
+                                      <div className="text-xs text-gray-600 mr-2">
+                                        Descendencia:
+                                      </div>
+                                      <div className="flex flex-wrap gap-1">
+                                        {femaleInfo.offspring.map(
+                                          (offspringId) => {
+                                            const offspring = animals.find(
+                                              (animal) =>
+                                                animal.id === offspringId
+                                            )
+                                            return offspring ? (
+                                              <span
+                                                key={offspringId}
+                                                className="inline-flex items-center px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded "
+                                              >
+                                                {offspring.animalNumber}
+                                              </span>
+                                            ) : (
+                                              <span
+                                                key={offspringId}
+                                                className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
+                                              >
+                                                ID: {offspringId}
+                                              </span>
+                                            )
+                                          }
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                              </div>
+                            )}
+                            {femaleInfo.pregnancyConfirmedDate &&
+                              !femaleInfo.actualBirthDate && (
+                                <div className="grid grid-cols-1 gap-1  ">
+                                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium flex max-w-max ml-auto ">
+                                    ✓ Embarazo Confirmado
+                                  </span>
+                                  <div>
+                                    {/* Estado del embarazo */}
+                                    <div className="space-y-3">
+                                      {/* Controles para embarazo confirmado */}
+                                      <div className="flex items-center justify-end">
+                                        <div className="flex items-center gap-2">
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              handleFemaleBreedingChange(
+                                                animal?.id || '',
+                                                'pregnancyConfirmed',
+                                                false
+                                              )
+                                            }
+                                            className="text-xs text-red-600 hover:text-red-800 underline"
+                                          >
+                                            Desconfirmar
+                                          </button>
+                                        </div>
+                                      </div>
+
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {/* Fecha de confirmación */}
+
+                                        <DateTimeInput
+                                          label="Fecha de confirmación"
+                                          value={
+                                            femaleInfo.pregnancyConfirmedDate
+                                          }
+                                          onChange={(date) =>
+                                            handleFemaleBreedingChange(
+                                              animal?.id || '',
+                                              'pregnancyConfirmedDate',
+                                              date as Date
+                                            )
+                                          }
+                                          type="date"
+                                          required
+                                        />
+                                        {/* Parto esperado específico */}
+                                        {femaleInfo.expectedBirthDate && (
+                                          <DateTimeInput
+                                            disabled
+                                            label="Fecha de parto esperado"
+                                            value={femaleInfo.expectedBirthDate}
+                                            onChange={() => {}} // No-op para campo disabled
+                                            type="date"
+                                          />
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleRemoveFemale(animal?.id || '')
+                              }
+                              className="ml-2 text-green-700 hover:text-green-900 focus:outline-none font-bold text-lg leading-none"
+                            >
+                              <Icon icon="close" />
+                            </button>
                           </div>
-                        )}
-                        {femaleInfo.pregnancyConfirmedDate &&
-                          !femaleInfo.actualBirthDate && (
-                            <div className="grid grid-cols-1 gap-1  ">
-                              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium flex max-w-max ml-auto ">
-                                ✓ Embarazo Confirmado
-                              </span>
-                              <div>
-                                {/* Estado del embarazo */}
-                                <div className="space-y-3">
-                                  {/* Controles para embarazo confirmado */}
-                                  <div className="flex items-center justify-end">
-                                    <div className="flex items-center gap-2">
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          handleFemaleBreedingChange(
-                                            animal?.id || '',
-                                            'pregnancyConfirmed',
-                                            false
-                                          )
-                                        }
-                                        className="text-xs text-red-600 hover:text-red-800 underline"
-                                      >
-                                        Desconfirmar
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {/* Fecha de confirmación */}
-
-                                    <DateTimeInput
-                                      label="Fecha de confirmación"
-                                      value={femaleInfo.pregnancyConfirmedDate}
-                                      onChange={(date) =>
-                                        handleFemaleBreedingChange(
-                                          animal?.id || '',
-                                          'pregnancyConfirmedDate',
-                                          date as Date
-                                        )
-                                      }
-                                      type="date"
-                                      required
-                                    />
-                                    {/* Parto esperado específico */}
-                                    {femaleInfo.expectedBirthDate && (
-                                      <DateTimeInput
-                                        disabled
-                                        label="Fecha de parto esperado"
-                                        value={femaleInfo.expectedBirthDate}
-                                        onChange={() => {}} // No-op para campo disabled
-                                        type="date"
-                                      />
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveFemale(animal?.id || '')}
-                          className="ml-2 text-green-700 hover:text-green-900 focus:outline-none font-bold text-lg leading-none"
-                        >
-                          <Icon icon="close" />
-                        </button>
-                      </div>
-                    </div>
-                  )
-              })}
-            </div>
-          </div>
+                        </div>
+                      )
+                  })}
+                </div>
+              </div>
+            )}
+          </>
         )}
-
         {/* Notas */}
         <div>
           <label
