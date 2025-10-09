@@ -9,7 +9,7 @@ import { useFarmCRUD } from './useFarmCRUD'
 export const useFarmAreasCRUD = () => {
   const { updateFarm, currentFarm } = useFarmCRUD()
   const [areas, setAreas] = useState<FarmArea[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const createArea = async (
@@ -32,6 +32,7 @@ export const useFarmAreasCRUD = () => {
 
     try {
       updateFarm(farmId, { areas: [...farmAreas, newArea] })
+      setIsLoading(false)
     } catch (error) {
       console.error('Error creating farm area:', error)
       setError('Error al crear el área')

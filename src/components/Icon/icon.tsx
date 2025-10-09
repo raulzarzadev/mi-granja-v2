@@ -15,8 +15,10 @@ import {
   FaCalendarCheck,
   FaCalendarDay,
   FaCalendarAlt,
-  FaEllipsisV
+  FaEllipsisV,
+  FaCheckCircle
 } from 'react-icons/fa'
+import { IoMdCloseCircleOutline } from 'react-icons/io'
 import { IoBedSharp } from 'react-icons/io5'
 import { LuBaby } from 'react-icons/lu'
 import { MdOutlinePregnantWoman } from 'react-icons/md'
@@ -47,7 +49,9 @@ export const icons = {
   calendarCheck: FaCalendarCheck,
   calendarDay: FaCalendarDay,
   calendar: FaCalendarAlt,
-  more: FaEllipsisV
+  more: FaEllipsisV,
+  close: IoMdCloseCircleOutline,
+  check_circle: FaCheckCircle
 } as const
 export type IconName = keyof typeof icons
 // https://react-icons.github.io/react-icons/

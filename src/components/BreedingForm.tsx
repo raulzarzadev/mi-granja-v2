@@ -6,6 +6,7 @@ import { BreedingRecord, FemaleBreedingInfo } from '@/types/breedings'
 import DateTimeInput from './inputs/DateTimeInput'
 import { Animal } from '@/types/animals'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { Icon } from './Icon/icon'
 
 interface BreedingFormProps {
   animals: Animal[]
@@ -302,7 +303,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   const filteredFemales = getFilteredFemalesByMaleType()
 
   return (
-    <div className="space-y-4">
+    <div>
       {/* Badge de tipo de animal */}
       {selectedMale && (
         <div className="flex justify-end">
@@ -319,7 +320,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-1">
         {/* Macho */}
         <div>
           {/* Fecha de monta */}
@@ -381,7 +382,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
           </label>
 
           {/* Badges de hembras seleccionadas */}
-          {breedingAnimalIds.length > 0 && (
+          {/* {breedingAnimalIds.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-2">
               {getSelectedFemales().map((animal) => (
                 <div
@@ -403,7 +404,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                 </div>
               ))}
             </div>
-          )}
+          )} */}
 
           {/* Input de búsqueda */}
           <div className="relative">
@@ -435,19 +436,29 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                   </div>
                 ) : (
                   getFilteredFemales().map((animal) => (
-                    <button
-                      key={animal.id}
-                      type="button"
-                      onClick={() => handleSelectFemale(animal.id)}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b border-gray-100 last:border-b-0"
-                    >
-                      <div className="font-semibold text-gray-900">
-                        {animal.animalNumber} - {animal.type}
-                      </div>
-                      <div className="text-sm text-gray-600 font-medium">
-                        ({animal.stage})
-                      </div>
-                    </button>
+                    <div key={animal.id} className="flex items-center ">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectFemale(animal.id)}
+                        className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b border-gray-100 last:border-b-0 flex items-center gap-1"
+                      >
+                        <div className="font-semibold text-gray-900">
+                          {animal.animalNumber} - {animal.type}
+                        </div>
+                        <div className="text-sm text-gray-600 font-medium">
+                          ({animal.stage})
+                        </div>
+                      </button>
+                      {breedingAnimalIds.includes(animal.id) && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFemale(animal?.id || '')}
+                          className="ml-2 text-green-700 hover:text-green-900 focus:outline-none font-bold text-lg leading-none"
+                        >
+                          <Icon icon="close" />
+                        </button>
+                      )}
+                    </div>
                   ))
                 )}
               </div>
@@ -458,10 +469,10 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         {/* Estado de embarazo por hembra */}
         {breedingAnimalIds.length > 0 && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm  font-medium text-gray-700 ">
               Estado de Embarazo por Hembra
             </label>
-            <div className="space-y-3 bg-gray-50 p-4 rounded-md">
+            <div className="space-y-3 bg-gray-50  rounded-md">
               {getSelectedFemales().map((animal) => {
                 const femaleInfo = formData.femaleBreedingInfo?.find(
                   (info) => info.femaleId === animal?.id
@@ -472,9 +483,9 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                   return (
                     <div
                       key={animal?.id}
-                      className="bg-white p-3 rounded border"
+                      className="bg-white p-2 rounded border"
                     >
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between ">
                         <span className="font-medium text-gray-900">
                           {animal?.animalNumber} - {animal?.type}
                         </span>
@@ -612,6 +623,13 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                               </div>
                             </div>
                           )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFemale(animal?.id || '')}
+                          className="ml-2 text-green-700 hover:text-green-900 focus:outline-none font-bold text-lg leading-none"
+                        >
+                          <Icon icon="close" />
+                        </button>
                       </div>
                     </div>
                   )

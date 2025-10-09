@@ -37,14 +37,12 @@ const ModalBreedingForm = ({}) => {
         title="Registrar Monta"
         size="md"
       >
-        <div className="p-6">
-          <BreedingForm
-            animals={animals}
-            onSubmit={handleSubmit}
-            onCancel={closeModal}
-            isLoading={isSubmitting}
-          />
-        </div>
+        <BreedingForm
+          animals={animals}
+          onSubmit={handleSubmit}
+          onCancel={closeModal}
+          isLoading={isSubmitting}
+        />
       </Modal>
     </>
   )
