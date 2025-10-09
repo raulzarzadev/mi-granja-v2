@@ -14,6 +14,7 @@ import { es } from 'date-fns/locale'
 import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import AdminActionIndicator from './AdminActionIndicator'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { BadgeAnimalStatus } from './Badges/BadgeAnimalStatus'
 
 interface AnimalCardProps {
   animal: Animal
@@ -25,6 +26,7 @@ interface AnimalCardProps {
  * Diseñado para ser responsive y fácil de usar en móviles
  */
 const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
+  console.log({ animal })
   const { markFound } = useAnimalCRUD()
   return (
     <div
@@ -139,6 +141,9 @@ export const AnimalDetailRow: React.FC<{
 
   return (
     <div className="w-full flex flex-col space-y-1">
+      <div className="flex justify-end">
+        <BadgeAnimalStatus status={animal.status} />
+      </div>
       <div className="flex items-center justify-between ">
         <span className="font-bold text-xl">#{animal.animalNumber}</span>
         <div className="text-xs text-gray-500">

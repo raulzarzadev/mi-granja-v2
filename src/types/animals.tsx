@@ -141,7 +141,20 @@ export const animals_genders_labels: Record<AnimalGender, string> = {
 
 export type AnimalType = (typeof animals_types)[number]
 export type AnimalStage = (typeof animals_stages)[number]
+
+export const breeding_animal_status = ['monta', 'embarazada', 'parida'] as const
+export type AnimalBreedingStatus = (typeof breeding_animal_status)[number]
+export const breeding_animal_status_labels: Record<
+  AnimalBreedingStatus,
+  string
+> = {
+  monta: 'En monta',
+  embarazada: 'Embarazada',
+  parida: 'Parida'
+}
+
 export const animal_statuses = [
+  // Estado general del animal
   'activo',
   'muerto',
   'vendido',

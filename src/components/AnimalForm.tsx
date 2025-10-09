@@ -3,11 +3,13 @@
 import {
   Animal,
   animal_icon,
+  animal_statuses,
   animals_genders,
   animals_stages,
   animals_types,
   AnimalStage,
-  AnimalType
+  AnimalType,
+  breeding_animal_status
 } from '@/types/animals'
 import { toDate } from 'date-fns'
 import React, { useState } from 'react'
@@ -47,7 +49,8 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
         : '',
     motherId: initialData?.motherId || '',
     fatherId: initialData?.fatherId || '',
-    notes: initialData?.notes || ''
+    notes: initialData?.notes || '',
+    status: initialData?.status || 'activo'
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -137,6 +140,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       stage: formData.stage,
       gender: formData.gender,
       breed: formData.breed || '',
+      status: formData.status,
       ...(formData.weight && { weight: Number(formData.weight) }),
       ...(formData.age && { age: Number(formData.age) }),
       ...(formData.birthDate && { birthDate: formData.birthDate }),
@@ -245,7 +249,34 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
         </select>
       </div>
 
+      {/* Status */}
+
+      <div>
+        <label
+          htmlFor="status"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          Estado *
+        </label>
+        <select
+          id="status"
+          name="status"
+          value={formData.status}
+          onChange={handleInputChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          disabled={isLoading}
+        >
+          {[...animal_statuses, ...breeding_animal_status].map((status) => (
+            <option key={status} value={status}>
+              {status.charAt(0).toUpperCase() +
+                status.slice(1).replace('_', ' ')}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* Género */}
+
       <div>
         <label
           htmlFor="gender"

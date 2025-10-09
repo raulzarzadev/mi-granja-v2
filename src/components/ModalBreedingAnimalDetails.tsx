@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Animal } from '@/types/animals'
+import { Animal, AnimalBreedingStatus } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 import { Modal } from '@/components/Modal'
@@ -9,12 +9,13 @@ import { useModal } from '@/hooks/useModal'
 import { Icon } from './Icon/icon'
 import { formatDate } from '@/lib/dates'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
+import { BadgeAnimalStatus } from './Badges/BadgeAnimalStatus'
 
 interface ModalBreedingAnimalDetailsProps extends BreedingActionHandlers {
   animal: Animal
   record: BreedingRecord
   animalType: 'male' | 'female'
-  status?: 'parida' | 'embarazada' | 'monta'
+  status?: AnimalBreedingStatus
   triggerComponent?: React.ReactNode
   animals: Animal[]
 }
@@ -128,19 +129,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                 <>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Estado:</span>
-                    <span
-                      className={`font-medium px-2 py-1 rounded-full text-xs ${
-                        status === 'parida'
-                          ? 'bg-green-100 text-green-800'
-                          : status === 'embarazada'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}
-                    >
-                      {status === 'parida' && 'Ha parido'}
-                      {status === 'embarazada' && 'Embarazada'}
-                      {status === 'monta' && 'En monta'}
-                    </span>
+                    <BadgeAnimalStatus status={status} />
                   </div>
 
                   {status === 'embarazada' &&

@@ -7,9 +7,10 @@ import Button from './buttons/Button'
 import { Icon } from './Icon/icon'
 import { BreedingRecord } from '@/types/breedings'
 import { formatDate, fromNow } from '@/lib/dates'
-import { Animal } from '@/types/animals'
+import { Animal, AnimalBreedingStatus } from '@/types/animals'
 import ModalBreedingAnimalDetails from './ModalBreedingAnimalDetails'
 import { BreedingActionHandlers } from '@/types/components/breeding'
+import { BadgeAnimalStatus } from './Badges/BadgeAnimalStatus'
 
 interface BreedingCardProps extends BreedingActionHandlers {
   record: BreedingRecord
@@ -78,7 +79,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       const animalInfo = animals.find((a) => info.femaleId === a.id)
 
       // Determinar el estado real de la hembra
-      let status: 'parida' | 'embarazada' | 'monta' = 'monta'
+      let status: AnimalBreedingStatus = 'monta'
       if (info.actualBirthDate) {
         status = 'parida'
       } else if (info.pregnancyConfirmedDate) {
@@ -307,19 +308,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                         <span className="text-xs px-2 py-1 bg-gray-200 rounded-full text-gray-600">
                           {femaleAnimal.type}
                         </span>
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full ${
-                            femaleAnimal.status === 'parida'
-                              ? 'bg-green-100 text-green-800'
-                              : femaleAnimal.status === 'embarazada'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}
-                        >
-                          {femaleAnimal.status === 'parida' && 'Parida'}
-                          {femaleAnimal.status === 'embarazada' && 'Embarazada'}
-                          {femaleAnimal.status === 'monta' && 'En monta'}
-                        </span>
+
+                        <BadgeAnimalStatus status={femaleAnimal.status} />
                         {femaleAnimal.status === 'embarazada' && (
                           <div className="flex items-center gap-2">
                             <div className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
@@ -336,11 +326,11 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                               Parto: {formatDate(femaleAnimal.actualBirthDate)}
                             </span>
                           )}
-                        {femaleAnimal.status === 'monta' && (
+                        {/* {femaleAnimal.status === 'monta' && (
                           <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">
                             Pendiente de confirmación
                           </span>
-                        )}
+                        )} */}
                       </div>
                       <Icon icon="view" className="w-4 h-4 text-gray-400" />
                     </div>
