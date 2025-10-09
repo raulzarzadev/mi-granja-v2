@@ -140,11 +140,11 @@ export const AnimalDetailRow: React.FC<{
 
   return (
     <div className="w-full flex flex-col space-y-1">
-      <div className="flex justify-end">
-        <BadgeAnimalStatus status={animal.status || 'activo'} />
-      </div>
+      <div className="flex justify-end"></div>
       <div className="flex items-center justify-between ">
-        <span className="font-bold text-xl">#{animal.animalNumber}</span>
+        <span className="font-bold text-xl text-nowrap p-0.5">
+          #{animal.animalNumber}
+        </span>
         <div className="text-xs text-gray-500">
           {animal.type || 'Sin nombre'} {animal?.breed || ''} {animal.gender}{' '}
           {animal.stage}
@@ -156,6 +156,7 @@ export const AnimalDetailRow: React.FC<{
             {gender_icon[animal.gender]}
           </div>
         </div>
+        <BadgeAnimalStatus status={animal.status || 'activo'} />
       </div>
     </div>
   )
