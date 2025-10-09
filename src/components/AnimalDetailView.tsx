@@ -18,6 +18,7 @@ import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import Tabs from '@/components/Tabs'
 import AnimalRecordsSection from '@/components/AnimalRecordsSection'
+import { animalAge } from '@/lib/animal-utils'
 
 interface AnimalDetailViewProps {
   animal: Animal
@@ -45,27 +46,6 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
         (female) => female.femaleId === animal.id
       ) || record.maleId === animal.id
   )
-
-  const getAge = () => {
-    if (!animal.birthDate)
-      return animal.age ? `${animal.age} meses (aprox.)` : 'No registrado'
-
-    const birth = new Date(animal.birthDate)
-    const today = new Date()
-    const diffMonths =
-      (today.getFullYear() - birth.getFullYear()) * 12 +
-      (today.getMonth() - birth.getMonth())
-
-    if (diffMonths < 12) {
-      return `${diffMonths} meses`
-    } else {
-      const years = Math.floor(diffMonths / 12)
-      const months = diffMonths % 12
-      return `${years} año${years !== 1 ? 's' : ''} ${
-        months > 0 ? `y ${months} meses` : ''
-      }`
-    }
-  }
 
   const getMother = () => {
     if (!animal.motherId) return null
@@ -103,7 +83,9 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                   <label className="text-sm font-medium text-gray-500">
                     Edad
                   </label>
-                  <p className="text-gray-900">{getAge()}</p>
+                  <p className="text-gray-900">
+                    {animalAge(animal, { format: 'long' })}
+                  </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">

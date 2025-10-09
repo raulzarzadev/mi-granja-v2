@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { Animal, AnimalStatus } from '@/types/animals'
+import { animalAge } from '@/lib/animal-utils'
 
 interface UseAdminAnimalsReturn {
   animals: Animal[]
@@ -11,17 +12,6 @@ interface UseAdminAnimalsReturn {
   error: string | null
   refreshAnimals: () => Promise<void>
   fetchByStatus: (status: AnimalStatus) => Promise<void>
-}
-
-const getAge = (birthDate: Date | null | undefined): number | null => {
-  if (!birthDate) return null
-  const today = new Date()
-  let age = today.getFullYear() - birthDate.getFullYear()
-  const m = today.getMonth() - birthDate.getMonth()
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-    age--
-  }
-  return age
 }
 
 export const useAdminAnimals = (): UseAdminAnimalsReturn => {
@@ -32,7 +22,7 @@ export const useAdminAnimals = (): UseAdminAnimalsReturn => {
   const mapDoc = (doc: any): Animal => {
     const data = doc.data()
     const birthdateDate = data.birthDate?.toDate()
-    const age = getAge(birthdateDate)
+    const age = animalAge(birthdateDate, { format: 'months' })
     return {
       id: doc.id,
       farmerId: data.farmerId,

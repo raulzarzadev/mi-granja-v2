@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react'
 import ButtonClose from './buttons/ButtonClose'
+import { Icon, IconName } from './Icon/icon'
 
 export interface ModalProps {
   /** Si el modal está abierto o cerrado */
@@ -22,6 +23,10 @@ export interface ModalProps {
   showCloseButton?: boolean
   /** Clase CSS adicional para el contenido */
   className?: string
+  /** Icono opcional junto al título */
+  icon?: IconName
+  /** Clase CSS adicional para el icono */
+  iconClassName?: string
 }
 
 const sizeClasses = {
@@ -45,7 +50,9 @@ export const Modal: React.FC<ModalProps> = ({
   closeOnOverlayClick = true,
   closeOnEscape = true,
   showCloseButton = true,
-  className = ''
+  className = '',
+  icon,
+  iconClassName
 }) => {
   // Manejar tecla Escape
   useEffect(() => {
@@ -107,15 +114,19 @@ export const Modal: React.FC<ModalProps> = ({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header fijo */}
+
           {(title || showCloseButton) && (
             <div className="flex items-center justify-between p-3 py-3 border-b border-gray-200 bg-white flex-shrink-0">
               {title && (
-                <h2
-                  id="modal-title"
-                  className="text-xl font-semibold text-gray-900 truncate pr-4"
-                >
-                  {title}
-                </h2>
+                <div className="flex items-center gap-2">
+                  {icon && <Icon icon={icon} className={iconClassName} />}
+                  <h2
+                    id="modal-title"
+                    className="text-xl font-semibold text-gray-900 truncate pr-4"
+                  >
+                    {title}
+                  </h2>
+                </div>
               )}
               {showCloseButton && (
                 <ButtonClose

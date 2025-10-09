@@ -31,6 +31,7 @@ import { useAdminActions } from '@/lib/adminActions'
  * Hook personalizado para el manejo de animales
  * Gestiona CRUD operations con Firestore y estado global con Redux
  */
+
 export const useAnimalCRUD = () => {
   const dispatch = useDispatch()
   const { user } = useSelector((state: RootState) => state.auth)
@@ -149,15 +150,19 @@ export const useAnimalCRUD = () => {
   // Marcar destete (wean)
   const wean = async (
     animalId: string,
-    opts?: { stageDecision?: 'engorda' | 'reproductor'; notes?: string }
+    opts?: {
+      weanDate?: Date
+      stageDecision?: WeanNextStage
+      notes?: string
+    }
   ) => {
     const stageMap: Record<string, Animal['stage'] | undefined> = {
       engorda: 'engorda',
       reproductor: 'reproductor'
     }
     const updateData: Partial<Animal> = {
-      isWeaned: true,
-      weanedAt: new Date()
+      // isWeaned: true,
+      weanedAt: opts?.weanDate || new Date()
     }
     if (opts?.notes) updateData.weaningNotes = opts?.notes
     if (opts?.stageDecision) {
@@ -639,3 +644,5 @@ export const useAnimalCRUD = () => {
     getUpcomingHealthRecords
   }
 }
+
+export type WeanNextStage = 'engorda' | 'reproductor'

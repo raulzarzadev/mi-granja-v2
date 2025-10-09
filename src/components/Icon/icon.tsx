@@ -22,6 +22,7 @@ import { IoMdCloseCircleOutline } from 'react-icons/io'
 import { IoBedSharp } from 'react-icons/io5'
 import { LuBaby } from 'react-icons/lu'
 import { MdOutlinePregnantWoman } from 'react-icons/md'
+import { TbBabyBottle } from 'react-icons/tb'
 
 export interface IconProps {
   icon: IconName
@@ -51,7 +52,8 @@ export const icons = {
   calendar: FaCalendarAlt,
   more: FaEllipsisV,
   close: IoMdCloseCircleOutline,
-  check_circle: FaCheckCircle
+  check_circle: FaCheckCircle,
+  babyBottle: TbBabyBottle
 } as const
 export type IconName = keyof typeof icons
 // https://react-icons.github.io/react-icons/
