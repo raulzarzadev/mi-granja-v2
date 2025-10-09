@@ -26,7 +26,6 @@ interface AnimalCardProps {
  * Diseñado para ser responsive y fácil de usar en móviles
  */
 const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
-  console.log({ animal })
   const { markFound } = useAnimalCRUD()
   return (
     <div
@@ -142,7 +141,7 @@ export const AnimalDetailRow: React.FC<{
   return (
     <div className="w-full flex flex-col space-y-1">
       <div className="flex justify-end">
-        <BadgeAnimalStatus status={animal.status} />
+        <BadgeAnimalStatus status={animal.status || 'activo'} />
       </div>
       <div className="flex items-center justify-between ">
         <span className="font-bold text-xl">#{animal.animalNumber}</span>

@@ -326,11 +326,6 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                               Parto: {formatDate(femaleAnimal.actualBirthDate)}
                             </span>
                           )}
-                        {/* {femaleAnimal.status === 'monta' && (
-                          <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">
-                            Pendiente de confirmación
-                          </span>
-                        )} */}
                       </div>
                       <Icon icon="view" className="w-4 h-4 text-gray-400" />
                     </div>
