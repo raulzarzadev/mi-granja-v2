@@ -10,6 +10,7 @@ import InputSelectSuggest, {
 import { Animal } from '@/types/animals'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { Icon } from './Icon/icon'
+import ButtonClose from './buttons/ButtonClose'
 
 interface BreedingFormProps {
   animals: Animal[]
@@ -512,15 +513,12 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                                   </div>
                                 </div>
                               )}
-                            <button
-                              type="button"
+                            <ButtonClose
                               onClick={() =>
                                 handleRemoveFemale(animal?.id || '')
                               }
-                              className="ml-2 text-red-400 hover:text-red-600 focus:outline-none font-bold text-lg leading-none"
-                            >
-                              <Icon icon="close" />
-                            </button>
+                              title="Quitar hembra"
+                            />
                           </div>
                         </div>
                       )

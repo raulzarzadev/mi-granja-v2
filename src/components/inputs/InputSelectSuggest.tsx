@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { Icon } from '../Icon/icon'
+import ButtonClose from '../buttons/ButtonClose'
 
 export interface SelectSuggestOption<T = string> {
   id: string
@@ -191,7 +192,18 @@ function InputSelectSuggest<T = string>({
             getFilteredOptions().map((option, index) => {
               const isSelected = selectedIds.includes(option.id)
               return (
-                <div key={option.id} className="flex items-center">
+                <div
+                  key={option.id}
+                  className={`flex items-center  px-3 py-2 cursor-pointer ${
+                    isSelected
+                      ? 'bg-green-50 '
+                      : selectedIndex === index
+                      ? 'bg-blue-100 ring-2 ring-blue-400 hover:bg-gray-100 focus:bg-gray-100'
+                      : 'hover:bg-gray-100 focus:bg-gray-100'
+                  }
+                  border-b border-gray-100 last:border-b-0
+                  `}
+                >
                   <button
                     type="button"
                     id={`${id}-option-${index}`}
@@ -202,13 +214,7 @@ function InputSelectSuggest<T = string>({
                     }}
                     onClick={() => !isSelected && handleSelect(option.id)}
                     disabled={isSelected}
-                    className={`w-full text-left px-3 py-2 focus:outline-none border-b border-gray-100 last:border-b-0 flex items-center gap-1 transition-colors ${
-                      isSelected
-                        ? 'bg-green-50 cursor-default'
-                        : selectedIndex === index
-                        ? 'bg-blue-100 ring-2 ring-blue-400 hover:bg-gray-100 focus:bg-gray-100'
-                        : 'hover:bg-gray-100 focus:bg-gray-100'
-                    }`}
+                    className={`w-full text-left focus:outline-none  flex items-center gap-1 transition-colors cursor-pointer`}
                   >
                     {renderOption
                       ? renderOption(option, isSelected)
@@ -216,13 +222,10 @@ function InputSelectSuggest<T = string>({
                   </button>
 
                   {showRemoveButton && isSelected && onRemove && (
-                    <button
-                      type="button"
+                    <ButtonClose
                       onClick={() => onRemove(option?.id || '')}
-                      className="ml-2 text-red-400 hover:text-red-600 focus:outline-none font-bold text-lg leading-none"
-                    >
-                      <Icon icon="close" />
-                    </button>
+                      title="Quitar hembra"
+                    />
                   )}
                 </div>
               )

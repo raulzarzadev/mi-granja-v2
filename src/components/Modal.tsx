@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect } from 'react'
+import ButtonClose from './buttons/ButtonClose'
 
 export interface ModalProps {
   /** Si el modal está abierto o cerrado */
@@ -117,25 +118,11 @@ export const Modal: React.FC<ModalProps> = ({
                 </h2>
               )}
               {showCloseButton && (
-                <button
+                <ButtonClose
                   onClick={onClose}
-                  className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
-                  aria-label="Cerrar modal"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
+                  title="cerrar modal"
+                  className="text-gray-800"
+                />
               )}
             </div>
           )}
