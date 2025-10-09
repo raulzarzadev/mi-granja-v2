@@ -40,7 +40,6 @@ const Dashboard: React.FC = () => {
   const { farms } = useFarmCRUD()
   const {
     animals,
-    animalsStats,
     animalsFiltered,
     isLoading: isLoadingAnimals,
     getFarmAnimals
@@ -103,8 +102,6 @@ const Dashboard: React.FC = () => {
       cancelled = true
     }
   }, [filters.status])
-
-  const _stats = animalsStats()
 
   const filteredAnimals = animalsFiltered(filters)
 

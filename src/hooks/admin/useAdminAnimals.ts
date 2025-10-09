@@ -13,6 +13,17 @@ interface UseAdminAnimalsReturn {
   fetchByStatus: (status: AnimalStatus) => Promise<void>
 }
 
+const getAge = (birthDate: Date | null | undefined): number | null => {
+  if (!birthDate) return null
+  const today = new Date()
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const m = today.getMonth() - birthDate.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--
+  }
+  return age
+}
+
 export const useAdminAnimals = (): UseAdminAnimalsReturn => {
   const [animals, setAnimals] = useState<Animal[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -20,6 +31,8 @@ export const useAdminAnimals = (): UseAdminAnimalsReturn => {
 
   const mapDoc = (doc: any): Animal => {
     const data = doc.data()
+    const birthdateDate = data.birthDate?.toDate()
+    const age = getAge(birthdateDate)
     return {
       id: doc.id,
       farmerId: data.farmerId,
@@ -28,8 +41,8 @@ export const useAdminAnimals = (): UseAdminAnimalsReturn => {
       stage: data.stage,
       gender: data.gender,
       weight: data.weight,
-      age: data.age,
-      birthDate: data.birthDate?.toDate(),
+      age, // Calculated age from birthDate
+      birthDate: birthdateDate,
       motherId: data.motherId,
       fatherId: data.fatherId,
       notes: data.notes || '',

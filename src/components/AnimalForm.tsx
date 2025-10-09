@@ -75,10 +75,32 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
     >
   ) => {
     const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }))
+
+    // Si se está modificando la edad, calcular la fecha de nacimiento automáticamente
+    if (name === 'age' && value) {
+      const ageInMonths = Number(value)
+      if (!isNaN(ageInMonths) && ageInMonths >= 0) {
+        const today = new Date()
+        const birthDate = new Date(today)
+        birthDate.setMonth(today.getMonth() - ageInMonths)
+
+        setFormData((prev) => ({
+          ...prev,
+          [name]: value,
+          birthDate: birthDate
+        }))
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: value
+        }))
+      }
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value
+      }))
+    }
 
     // Limpiar error del campo al escribir
     if (errors[name]) {
@@ -356,9 +378,20 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
         <DateTimeInput
           value={formData.birthDate}
           onChange={(date) => {
+            // Calcular edad en meses automáticamente si hay fecha
+            let calculatedAge = ''
+            if (date) {
+              const today = new Date()
+              const monthsDiff =
+                (today.getFullYear() - date.getFullYear()) * 12 +
+                (today.getMonth() - date.getMonth())
+              calculatedAge = Math.max(0, monthsDiff).toString()
+            }
+
             setFormData((prev) => ({
               ...prev,
-              birthDate: date
+              birthDate: date,
+              age: calculatedAge
             }))
 
             // Limpiar error del campo al cambiar

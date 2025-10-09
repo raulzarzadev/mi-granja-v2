@@ -45,7 +45,7 @@ export interface Animal {
   stage: AnimalStage
 
   weight?: number | string | null
-  age?: number
+  age?: number | null
   birthDate?: Date
   gender: AnimalGender
   motherId?: string
