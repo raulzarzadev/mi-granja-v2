@@ -4,6 +4,9 @@ import React, { useEffect, useState } from 'react'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { BreedingRecord, FemaleBreedingInfo } from '@/types/breedings'
 import DateTimeInput from './inputs/DateTimeInput'
+import InputSelectSuggest, {
+  SelectSuggestOption
+} from './inputs/InputSelectSuggest'
 import { Animal } from '@/types/animals'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { Icon } from './Icon/icon'
@@ -41,8 +44,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   const breedingAnimalIds =
     formData?.femaleBreedingInfo?.map((info) => info.femaleId) || []
 
-  const [femaleSearch, setFemaleSearch] = useState('')
-  const [showFemaleDropdown, setShowFemaleDropdown] = useState(false)
   const [animalType, setAnimalType] = useState<Animal['type'] | null>(null)
   useEffect(() => {
     // Actualizar tipo de animal cuando se seleccione un macho
@@ -124,12 +125,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     }
   }
 
-  // Permitir selección de múltiples hembras con autocompletado
-  const handleFemaleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFemaleSearch(e.target.value)
-    setShowFemaleDropdown(true)
-  }
-
+  // Permitir selección de múltiples hembras
   const handleSelectFemale = (animalId: string) => {
     if (!breedingAnimalIds?.includes(animalId)) {
       // Agregar nueva hembra a femaleBreedingInfo
@@ -144,8 +140,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         femaleBreedingInfo: [...(prev.femaleBreedingInfo || []), newFemaleInfo]
       }))
     }
-    setFemaleSearch('')
-    setShowFemaleDropdown(false)
   }
 
   const handleRemoveFemale = (animalId: string) => {
@@ -157,33 +151,16 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     }))
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      const filteredFemales = getFilteredFemales()
-      if (filteredFemales.length === 1) {
-        handleSelectFemale(filteredFemales[0].id)
-      }
-    }
-  }
+  // Convertir animales a opciones para el InputSelectSuggest
+  const getFemaleOptions = (): SelectSuggestOption<Animal>[] => {
+    if (!selectedMale) return []
 
-  const getFilteredFemales = () => {
-    if (!selectedMale) {
-      return [] // No mostrar hembras hasta que se seleccione un macho
-    }
-
-    const availableFemales = filteredFemales
-
-    if (!femaleSearch) return availableFemales
-    return availableFemales
-      .filter(
-        (animal) =>
-          animal.animalNumber
-            .toLowerCase()
-            .includes(femaleSearch.toLowerCase()) ||
-          animal.type.toLowerCase().includes(femaleSearch.toLowerCase())
-      )
-      .filter((animal) => !breedingAnimalIds.includes(animal.id))
+    return filteredFemales.map((animal) => ({
+      id: animal.id,
+      label: `${animal.animalNumber} - ${animal.type}`,
+      secondaryLabel: animal.stage,
+      data: animal
+    }))
   }
 
   const getSelectedFemales = () => {
@@ -342,12 +319,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             Debes seleccionar al menos una hembra {selectedMale.type}
           </p>
         ) : null}
-        {/* <label
-            htmlFor="maleId"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Macho *
-          </label> */}
+
         <select
           id="maleId"
           name="maleId"
@@ -371,66 +343,30 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         {/* Hembras */}
         {selectedMale && (
           <>
-            {/* Input de búsqueda */}
-            <div className="relative">
-              <input
-                type="text"
-                id="femaleSearch"
-                value={femaleSearch}
-                onChange={handleFemaleSearch}
-                onKeyDown={handleKeyDown}
-                onFocus={() => setShowFemaleDropdown(true)}
-                onBlur={() =>
-                  setTimeout(() => setShowFemaleDropdown(false), 200)
-                }
-                placeholder={
-                  selectedMale
-                    ? `Buscar hembra ${selectedMale.type} por número...`
-                    : 'Primero selecciona un macho'
-                }
-                disabled={!selectedMale}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-              />
-
-              {/* Dropdown de sugerencias */}
-              {showFemaleDropdown && selectedMale && (
-                <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto mt-1">
-                  {getFilteredFemales().length === 0 ? (
-                    <div className="px-3 py-2 text-gray-600 text-sm font-medium">
-                      {filteredFemales.length === 0
-                        ? `No hay hembras ${selectedMale.type} disponibles`
-                        : 'No se encontraron hembras'}
-                    </div>
-                  ) : (
-                    getFilteredFemales().map((animal) => (
-                      <div key={animal.id} className="flex items-center ">
-                        <button
-                          type="button"
-                          onClick={() => handleSelectFemale(animal.id)}
-                          className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b border-gray-100 last:border-b-0 flex items-center gap-1"
-                        >
-                          <div className="font-semibold text-gray-900">
-                            {animal.animalNumber} - {animal.type}
-                          </div>
-                          <div className="text-sm text-gray-600 font-medium">
-                            ({animal.stage})
-                          </div>
-                        </button>
-                        {breedingAnimalIds.includes(animal.id) && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveFemale(animal?.id || '')}
-                            className="ml-2 text-green-700 hover:text-green-900 focus:outline-none font-bold text-lg leading-none"
-                          >
-                            <Icon icon="close" />
-                          </button>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
+            <InputSelectSuggest
+              id="female-select"
+              options={getFemaleOptions()}
+              selectedIds={breedingAnimalIds}
+              onSelect={handleSelectFemale}
+              onRemove={handleRemoveFemale}
+              placeholder={`Buscar hembra ${selectedMale.type} por número...`}
+              emptyMessage={
+                filteredFemales.length === 0
+                  ? `No hay hembras ${selectedMale.type} disponibles`
+                  : 'No se encontraron hembras'
+              }
+              disabled={!selectedMale}
+              filterFunction={(option, searchValue) => {
+                return (
+                  option.label
+                    .toLowerCase()
+                    .includes(searchValue.toLowerCase()) ||
+                  (option.data?.type || '')
+                    .toLowerCase()
+                    .includes(searchValue.toLowerCase())
+                )
+              }}
+            />
 
             {/* Estado de embarazo por hembra */}
             {breedingAnimalIds.length > 0 && (
