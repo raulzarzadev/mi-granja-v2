@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Icon } from '../Icon/icon'
 import ButtonClose from '../buttons/ButtonClose'
 
 export interface SelectSuggestOption<T = string> {

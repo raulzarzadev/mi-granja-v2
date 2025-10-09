@@ -9,7 +9,6 @@ import InputSelectSuggest, {
 } from './inputs/InputSelectSuggest'
 import { Animal } from '@/types/animals'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { Icon } from './Icon/icon'
 import ButtonClose from './buttons/ButtonClose'
 
 interface BreedingFormProps {
