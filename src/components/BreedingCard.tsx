@@ -287,7 +287,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
             const animal = animals.find((a) => a.id === femaleAnimal.animalId)
             return animal ? (
               <ModalBreedingAnimalDetails
-                key={femaleAnimal.animalNumber}
+                key={femaleAnimal.animalId}
                 animal={animal}
                 record={record}
                 animalType="female"
