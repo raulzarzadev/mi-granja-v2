@@ -27,7 +27,7 @@ export function ButtonClose({
       disabled={disabled}
       className={`ml-2 text-red-400 hover:text-red-600 focus:outline-none font-bold text-lg leading-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${className} flex items-center`}
     >
-      {showTitle && <span className="text-sm mr-1">{showTitle} </span>}
+      {showTitle && <span className="text-sm mr-1">{showTitle || title} </span>}
       <Icon icon="close" />
     </button>
   )

@@ -71,8 +71,6 @@ export function InputSelectSuggest<T = string>({
       })
     }
   }, [selectedIndex])
-
-  // Filtrar opciones según búsqueda
   const getFilteredOptions = () => {
     if (!searchValue) {
       return options // Mostrar todas las opciones cuando no hay búsqueda
@@ -215,6 +213,16 @@ export function InputSelectSuggest<T = string>({
           role="listbox"
           className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto mt-1"
         >
+          {/* Barra superior con botón cerrar (discreto) */}
+          <div className="sticky top-0 z-10 flex justify-end bg-white/90 border-b border-gray-100 px-2 py-1">
+            <ButtonClose
+              showTitle="Cerrar selector"
+              title="Cerrar"
+              className="text-gray-500 hover:text-gray-700"
+              onClick={() => setShowDropdown(false)}
+            />
+          </div>
+
           {getFilteredOptions().length === 0 ? (
             <div className="px-3 py-2 text-gray-600 text-sm font-medium">
               {emptyMessage}
@@ -263,6 +271,7 @@ export function InputSelectSuggest<T = string>({
                         e.stopPropagation()
                         onRemove(option?.id || '')
                       }}
+                      showTitle="Quitar"
                       onMouseDown={(e) => {
                         e.stopPropagation()
                       }}
