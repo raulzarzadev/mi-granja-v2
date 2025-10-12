@@ -487,7 +487,7 @@ const BreedingTabs: React.FC = () => {
 
   return (
     <>
-      <Tabs tabs={tabs} />
+      <Tabs tabs={tabs} tabsId="breeding-tabs" />
       <ModalEditBreeding
         animals={animals}
         record={editingRecord}

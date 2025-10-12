@@ -1,4 +1,4 @@
-import React, { useState, ReactNode, KeyboardEvent } from 'react'
+import React, { useState, ReactNode, KeyboardEvent, useEffect } from 'react'
 
 type Tab = {
   label: string
@@ -9,10 +9,67 @@ type Tab = {
 type TabsProps = {
   tabs: Tab[]
   initialActiveTab?: number
+  /** Identificador único para persistir el estado. Si no se proporciona, se genera automáticamente */
+  tabsId?: string
+  /** Si debe persistir el estado en localStorage (por defecto true) */
+  persistState?: boolean
 }
 
-const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0 }) => {
-  const [activeTab, setActiveTab] = useState(initialActiveTab)
+const Tabs: React.FC<TabsProps> = ({
+  tabs,
+  initialActiveTab = 0,
+  tabsId,
+  persistState = true
+}) => {
+  // Generar un ID único si no se proporciona
+  const finalTabsId =
+    tabsId || `tabs-${Math.random().toString(36).substr(2, 9)}`
+  const storageKey = `tabs-state-${finalTabsId}`
+
+  // Función para obtener el estado inicial desde localStorage
+  const getInitialActiveTab = (): number => {
+    if (!persistState || typeof window === 'undefined') {
+      return initialActiveTab
+    }
+
+    try {
+      const savedState = localStorage.getItem(storageKey)
+      if (savedState !== null) {
+        const savedIndex = parseInt(savedState, 10)
+        // Validar que el índice guardado sea válido
+        if (savedIndex >= 0 && savedIndex < tabs.length) {
+          return savedIndex
+        }
+      }
+    } catch (error) {
+      console.warn('Error reading tabs state from localStorage:', error)
+    }
+
+    return initialActiveTab
+  }
+
+  const [activeTab, setActiveTab] = useState(getInitialActiveTab)
+
+  // Función para cambiar tab y guardar en localStorage
+  const changeActiveTab = (newIndex: number) => {
+    setActiveTab(newIndex)
+
+    if (persistState && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(storageKey, newIndex.toString())
+      } catch (error) {
+        console.warn('Error saving tabs state to localStorage:', error)
+      }
+    }
+  }
+
+  // Actualizar el estado cuando cambien los tabs o la prop initialActiveTab
+  useEffect(() => {
+    const newInitialTab = getInitialActiveTab()
+    if (newInitialTab !== activeTab) {
+      setActiveTab(newInitialTab)
+    }
+  }, [tabs.length, initialActiveTab])
 
   const handleKey = (e: KeyboardEvent<HTMLDivElement>) => {
     if (['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) {
@@ -23,7 +80,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0 }) => {
         next = (activeTab - 1 + tabs.length) % tabs.length
       if (e.key === 'Home') next = 0
       if (e.key === 'End') next = tabs.length - 1
-      setActiveTab(next)
+      changeActiveTab(next)
     }
   }
 
@@ -45,7 +102,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0 }) => {
               aria-selected={isActive}
               aria-controls={`tab-panel-${index}`}
               id={`tab-${index}`}
-              onClick={() => setActiveTab(index)}
+              onClick={() => changeActiveTab(index)}
               className={`group relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium outline-none transition-all border ${
                 isActive
                   ? 'bg-green-600 text-white border-green-600 shadow-sm'

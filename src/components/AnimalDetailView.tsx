@@ -410,7 +410,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
       </div>
 
       {/* Tabs (componente compartido) */}
-      <Tabs tabs={tabs} />
+      <Tabs tabs={tabs} tabsId={`animal-detail-${animal.id}`} />
     </div>
   )
 }

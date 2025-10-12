@@ -604,7 +604,11 @@ const Dashboard: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Si no hay granjas, priorizar creación/selección */}
-        {farms.length === 0 ? <FarmSection /> : <Tabs tabs={tabs} />}
+        {farms.length === 0 ? (
+          <FarmSection />
+        ) : (
+          <Tabs tabs={tabs} tabsId="dashboard-main" />
+        )}
       </div>
 
       {/* Modal de aplicación masiva de eventos de salud */}
