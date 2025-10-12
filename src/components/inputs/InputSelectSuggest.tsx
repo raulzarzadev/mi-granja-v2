@@ -190,7 +190,7 @@ function InputSelectSuggest<T = string>({
             getFilteredOptions().map((option, index) => {
               const isSelected = selectedIds.includes(option.id)
               return (
-                <button
+                <div
                   key={option.id}
                   className={`flex items-center  px-3 py-2 cursor-pointer w-full ${
                     isSelected
@@ -204,9 +204,9 @@ function InputSelectSuggest<T = string>({
                   onClick={() => {
                     handleSelect(option.id)
                   }}
-                  type="button"
                 >
-                  <div
+                  <button
+                    type="button"
                     // type="button"
                     id={`${id}-option-${index}`}
                     role="option"
@@ -219,7 +219,7 @@ function InputSelectSuggest<T = string>({
                     {renderOption
                       ? renderOption(option, isSelected)
                       : defaultRenderOption(option, isSelected)}
-                  </div>
+                  </button>
 
                   {showRemoveButton && isSelected && onRemove && (
                     <ButtonClose
@@ -227,7 +227,7 @@ function InputSelectSuggest<T = string>({
                       title="Quitar hembra"
                     />
                   )}
-                </button>
+                </div>
               )
             })
           )}

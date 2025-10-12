@@ -368,8 +368,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                 )
               }}
             />
-
-            {/* Estado de embarazo por hembra */}
             {breedingAnimalIds.length > 0 && (
               <div>
                 <label className="block text-sm  font-medium text-gray-700 ">
