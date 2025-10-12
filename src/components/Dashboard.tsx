@@ -468,13 +468,10 @@ const Dashboard: React.FC = () => {
       )
     },
     {
-      label: '📋 Registros',
-      content: <RecordsTab />
-    },
-    {
       label: '🐣 Reproducción',
       content: <BreedingTabs />
     },
+
     {
       label: '📆 Recordatorios',
       badgeCount: getOverdueReminders().length,
@@ -590,6 +587,10 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       )
+    },
+    {
+      label: '📋 Registros',
+      content: <RecordsTab />
     },
     {
       label: '🚜 Granja',
