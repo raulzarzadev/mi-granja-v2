@@ -128,7 +128,6 @@ function InputSelectSuggest<T = string>({
   const handleSelect = (optionId: string) => {
     onSelect(optionId)
     setSearchValue('')
-    setSelectedIndex(-1)
   }
 
   const defaultRenderOption = (
@@ -177,7 +176,7 @@ function InputSelectSuggest<T = string>({
       />
 
       {/* Dropdown de sugerencias */}
-      {showDropdown && !disabled && (
+      {showDropdown && (
         <div
           id={`${id}-dropdown`}
           role="listbox"
@@ -191,9 +190,9 @@ function InputSelectSuggest<T = string>({
             getFilteredOptions().map((option, index) => {
               const isSelected = selectedIds.includes(option.id)
               return (
-                <div
+                <button
                   key={option.id}
-                  className={`flex items-center  px-3 py-2 cursor-pointer ${
+                  className={`flex items-center  px-3 py-2 cursor-pointer w-full ${
                     isSelected
                       ? 'bg-green-50 '
                       : selectedIndex === index
@@ -202,23 +201,25 @@ function InputSelectSuggest<T = string>({
                   }
                   border-b border-gray-100 last:border-b-0
                   `}
+                  onClick={() => {
+                    handleSelect(option.id)
+                  }}
+                  type="button"
                 >
-                  <button
-                    type="button"
+                  <div
+                    // type="button"
                     id={`${id}-option-${index}`}
                     role="option"
                     aria-selected={selectedIndex === index}
-                    ref={(el) => {
-                      dropdownItemRefs.current[index] = el
-                    }}
-                    onClick={() => !isSelected && handleSelect(option.id)}
-                    disabled={isSelected}
+                    // ref={(el) => {
+                    //   dropdownItemRefs.current[index] = el
+                    // }}
                     className={`w-full text-left focus:outline-none  flex items-center gap-1 transition-colors cursor-pointer`}
                   >
                     {renderOption
                       ? renderOption(option, isSelected)
                       : defaultRenderOption(option, isSelected)}
-                  </button>
+                  </div>
 
                   {showRemoveButton && isSelected && onRemove && (
                     <ButtonClose
@@ -226,7 +227,7 @@ function InputSelectSuggest<T = string>({
                       title="Quitar hembra"
                     />
                   )}
-                </div>
+                </button>
               )
             })
           )}
