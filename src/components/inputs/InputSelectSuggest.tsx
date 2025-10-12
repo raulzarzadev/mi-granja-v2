@@ -132,7 +132,10 @@ export function InputSelectSuggest<T = string>({
     isSelectingRef.current = true
     onSelect(optionId)
     setSearchValue('')
-    setSelectedIndex(-1)
+    const currentIndex = getFilteredOptions().findIndex(
+      (opt) => opt.id === optionId
+    )
+    setSelectedIndex(currentIndex)
 
     // Pequeño delay para asegurar que la selección se complete
     setTimeout(() => {
@@ -228,13 +231,15 @@ export function InputSelectSuggest<T = string>({
                   id={`${id}-option-${index}`}
                   role="option"
                   aria-selected={selectedIndex === index}
-                  className={`flex items-center px-3 py-2 cursor-pointer w-full ${
-                    isSelected
-                      ? 'bg-green-50'
-                      : selectedIndex === index
-                      ? 'bg-blue-100 ring-2 ring-blue-400 hover:bg-gray-100'
-                      : 'hover:bg-gray-100'
-                  } border-b border-gray-100 last:border-b-0`}
+                  className={`flex items-center px-3 py-2 cursor-pointer w-full
+                    ${
+                      selectedIndex === index
+                        ? 'bg-blue-100 ring-2 ring-blue-400'
+                        : ''
+                    }
+                    ${
+                      isSelected ? 'bg-green-50' : 'hover:bg-gray-100'
+                    } border-b border-gray-100 last:border-b-0`}
                   onMouseDown={(e) => {
                     // Prevenir el blur del input
                     e.preventDefault()
