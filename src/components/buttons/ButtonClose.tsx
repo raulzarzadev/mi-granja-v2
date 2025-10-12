@@ -1,13 +1,12 @@
 import React from 'react'
 import { Icon } from '../Icon/icon'
 
-interface ButtonCloseProps {
-  onClick: () => void
+type ButtonCloseProps = {
   className?: string
   title?: string
   disabled?: boolean
   showTitle?: string | boolean
-}
+} & React.HTMLProps<HTMLButtonElement>
 
 /**
  * Botón de cerrar/eliminar reutilizable con icono X

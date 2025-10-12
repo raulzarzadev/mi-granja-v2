@@ -4,12 +4,13 @@ import React, { useEffect, useState } from 'react'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { BreedingRecord, FemaleBreedingInfo } from '@/types/breedings'
 import DateTimeInput from './inputs/DateTimeInput'
-import InputSelectSuggest, {
-  SelectSuggestOption
-} from './inputs/InputSelectSuggest'
 import { Animal } from '@/types/animals'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import ButtonClose from './buttons/ButtonClose'
+import {
+  InputSelectSuggest,
+  SelectSuggestOption
+} from './inputs/InputSelectSuggest'
 
 interface BreedingFormProps {
   animals: Animal[]

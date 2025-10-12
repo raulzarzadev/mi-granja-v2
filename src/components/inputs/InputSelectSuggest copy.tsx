@@ -36,7 +36,7 @@ interface InputSelectSuggestProps<T = string> {
  * Componente de input con autocompletado y navegación por teclado
  * Permite seleccionar múltiples opciones con búsqueda y navegación accesible
  */
-export function InputSelectSuggest<T = string>({
+function InputSelectSuggest<T = string>({
   options,
   selectedIds,
   onSelect,
@@ -54,13 +54,7 @@ export function InputSelectSuggest<T = string>({
   const [searchValue, setSearchValue] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(-1)
-  const dropdownItemRefs = useRef<(HTMLDivElement | null)[]>([])
-
-  // Ref para el contenedor completo para detectar clicks dentro/fuera
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  // Ref para prevenir el cierre durante la selección
-  const isSelectingRef = useRef(false)
+  const dropdownItemRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   // Scroll automático al elemento seleccionado
   useEffect(() => {
@@ -111,13 +105,16 @@ export function InputSelectSuggest<T = string>({
         const selectedOption = filteredOptions[selectedIndex]
         // Solo seleccionar si no está ya seleccionado
         if (!selectedIds.includes(selectedOption.id)) {
-          handleSelect(selectedOption.id)
+          onSelect(selectedOption.id)
+          setSelectedIndex(-1)
+          setSearchValue('')
         }
       } else if (
         filteredOptions.length === 1 &&
         !selectedIds.includes(filteredOptions[0].id)
       ) {
-        handleSelect(filteredOptions[0].id)
+        onSelect(filteredOptions[0].id)
+        setSearchValue('')
       }
     } else if (e.key === 'Escape') {
       setShowDropdown(false)
@@ -129,15 +126,8 @@ export function InputSelectSuggest<T = string>({
   }
 
   const handleSelect = (optionId: string) => {
-    isSelectingRef.current = true
     onSelect(optionId)
     setSearchValue('')
-    setSelectedIndex(-1)
-
-    // Pequeño delay para asegurar que la selección se complete
-    setTimeout(() => {
-      isSelectingRef.current = false
-    }, 100)
   }
 
   const defaultRenderOption = (
@@ -155,7 +145,7 @@ export function InputSelectSuggest<T = string>({
   )
 
   return (
-    <div ref={containerRef} className={`relative ${className}`}>
+    <div className={`relative ${className}`}>
       {label && (
         <label
           htmlFor={id}
@@ -179,27 +169,7 @@ export function InputSelectSuggest<T = string>({
         onChange={handleSearch}
         onKeyDown={handleKeyDown}
         onFocus={() => setShowDropdown(true)}
-        onBlur={(e) => {
-          // Verificar si el click fue dentro del contenedor
-          const relatedTarget = e.relatedTarget as HTMLElement
-
-          // Si estamos en proceso de selección, no cerrar
-          if (isSelectingRef.current) {
-            return
-          }
-
-          // Si el click fue dentro del contenedor, no cerrar
-          if (containerRef.current?.contains(relatedTarget)) {
-            return
-          }
-
-          // Cerrar después de un pequeño delay
-          setTimeout(() => {
-            if (!isSelectingRef.current) {
-              setShowDropdown(false)
-            }
-          }, 150)
-        }}
+        onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
         placeholder={placeholder}
         disabled={disabled}
         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -222,45 +192,38 @@ export function InputSelectSuggest<T = string>({
               return (
                 <div
                   key={option.id}
-                  ref={(el) => {
-                    dropdownItemRefs.current[index] = el
-                  }}
-                  id={`${id}-option-${index}`}
-                  role="option"
-                  aria-selected={selectedIndex === index}
-                  className={`flex items-center px-3 py-2 cursor-pointer w-full ${
+                  className={`flex items-center  px-3 py-2 cursor-pointer w-full ${
                     isSelected
-                      ? 'bg-green-50'
+                      ? 'bg-green-50 '
                       : selectedIndex === index
-                      ? 'bg-blue-100 ring-2 ring-blue-400 hover:bg-gray-100'
-                      : 'hover:bg-gray-100'
-                  } border-b border-gray-100 last:border-b-0`}
-                  onMouseDown={(e) => {
-                    // Prevenir el blur del input
-                    e.preventDefault()
-                    handleSelect(option.id)
-                  }}
-                  onClick={(e) => {
-                    // Fallback para dispositivos táctiles
-                    e.preventDefault()
+                      ? 'bg-blue-100 ring-2 ring-blue-400 hover:bg-gray-100 focus:bg-gray-100'
+                      : 'hover:bg-gray-100 focus:bg-gray-100'
+                  }
+                  border-b border-gray-100 last:border-b-0
+                  `}
+                  onClick={() => {
                     handleSelect(option.id)
                   }}
                 >
-                  <div className="w-full text-left flex items-center gap-1">
+                  <button
+                    type="button"
+                    // type="button"
+                    id={`${id}-option-${index}`}
+                    role="option"
+                    aria-selected={selectedIndex === index}
+                    // ref={(el) => {
+                    //   dropdownItemRefs.current[index] = el
+                    // }}
+                    className={`w-full text-left focus:outline-none  flex items-center gap-1 transition-colors cursor-pointer`}
+                  >
                     {renderOption
                       ? renderOption(option, isSelected)
                       : defaultRenderOption(option, isSelected)}
-                  </div>
+                  </button>
 
                   {showRemoveButton && isSelected && onRemove && (
                     <ButtonClose
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onRemove(option?.id || '')
-                      }}
-                      onMouseDown={(e) => {
-                        e.stopPropagation()
-                      }}
+                      onClick={() => onRemove(option?.id || '')}
                       title="Quitar hembra"
                     />
                   )}
@@ -273,3 +236,5 @@ export function InputSelectSuggest<T = string>({
     </div>
   )
 }
+
+export default InputSelectSuggest
