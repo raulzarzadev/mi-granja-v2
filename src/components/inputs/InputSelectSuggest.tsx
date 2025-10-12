@@ -271,11 +271,11 @@ export function InputSelectSuggest<T = string>({
                         e.stopPropagation()
                         onRemove(option?.id || '')
                       }}
-                      showTitle="Quitar"
+                      showTitle="Omitir"
                       onMouseDown={(e) => {
                         e.stopPropagation()
                       }}
-                      title="Quitar hembra"
+                      title="Omitir hembra"
                     />
                   )}
                 </div>

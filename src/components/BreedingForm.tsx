@@ -515,7 +515,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                               onClick={() =>
                                 handleRemoveFemale(animal?.id || '')
                               }
-                              showTitle="Quitar hembra"
+                              showTitle="Omitir"
                               title="Quitar hembra"
                             />
                           </div>
