@@ -30,6 +30,7 @@ export const useAdminBreedings = (): UseAdminBreedingsReturn => {
         const data = doc.data()
         breedingsData.push({
           id: doc.id,
+          breedingId: data.breedingId || '', // Campo agregado para compatibilidad
           farmerId: data.farmerId,
           maleId: data.maleId,
           breedingDate: data.breedingDate

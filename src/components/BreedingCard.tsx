@@ -190,15 +190,23 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
       {/* Header con estado */}
-      {/* Fechas */}
-      <div className="space-y-1 text-sm">
-        <div className="flex justify-end">
-          <span className="text-gray-600 mr-2">Fecha: </span>
-          <span className="font-medium">
-            {record.breedingDate
-              ? formatDate(record.breedingDate, 'EEE dd/MMM/yy')
-              : 'No disponible'}
-          </span>
+      {/* Fechas e ID */}
+      <div className="space-y-1 text-sm mb-2">
+        <div className="flex justify-between items-center">
+          <div className="text-gray-600">
+            <span className="font-medium"></span>{' '}
+            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">
+              {record.breedingId || 'Sin ID'}
+            </span>
+          </div>
+          <div>
+            <span className="text-gray-600 mr-2">Fecha: </span>
+            <span className="font-medium">
+              {record.breedingDate
+                ? formatDate(record.breedingDate, 'EEE dd/MMM/yy')
+                : 'No disponible'}
+            </span>
+          </div>
         </div>
       </div>
       <div className="flex items-center justify-between mb-3">

@@ -30,9 +30,31 @@ export const useBreedingCRUD = () => {
 
   const { currentFarm } = useSelector((state: RootState) => state.farm)
 
+  // Función para generar ID legible por humanos
+  const generateBreedingId = (breedingDate: Date): string => {
+    const day = breedingDate.getDate().toString().padStart(2, '0')
+    const month = (breedingDate.getMonth() + 1).toString().padStart(2, '0')
+    const year = breedingDate.getFullYear().toString().slice(-2)
+    const baseId = `${day}-${month}-${year}`
+
+    // Buscar registros existentes para la misma fecha
+    const sameDate = breedingRecords.filter((record) => {
+      if (!record.breedingDate) return false
+      const recordDate = toDate(record.breedingDate)
+      return recordDate.toDateString() === breedingDate.toDateString()
+    })
+
+    // Generar consecutivo
+    const consecutive = (sameDate.length + 1).toString().padStart(2, '0')
+    return `${baseId}-${consecutive}`
+  }
+
   // Crear registro de monta
   const createBreedingRecord = async (
-    data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
+    data: Omit<
+      BreedingRecord,
+      'id' | 'farmerId' | 'createdAt' | 'updatedAt' | 'breedingId'
+    >
   ) => {
     if (!user) throw new Error('Usuario no autenticado')
     if (!currentFarm?.id) throw new Error('Selecciona una granja primero')
@@ -40,7 +62,13 @@ export const useBreedingCRUD = () => {
     setIsSubmitting(true)
     try {
       const now = Timestamp.now()
+      const breedingDate = data.breedingDate
+        ? new Date(data.breedingDate)
+        : new Date()
+      const breedingId = generateBreedingId(breedingDate)
+
       const docData = {
+        breedingId,
         farmerId: user.id,
         farmId: currentFarm.id,
         maleId: data.maleId,
@@ -95,6 +123,7 @@ export const useBreedingCRUD = () => {
       }
 
       // Añadir campos básicos si existen
+      if (updates.breedingId) updateData.breedingId = updates.breedingId
       if (updates.maleId) updateData.maleId = updates.maleId
 
       if (updates.notes !== undefined) updateData.notes = updates.notes
@@ -359,6 +388,7 @@ export const useBreedingCRUD = () => {
         const data = doc.data()
         records.push({
           id: doc.id,
+          breedingId: data.breedingId || '', // Campo agregado para compatibilidad
           farmerId: data.farmerId,
           maleId: data.maleId,
           breedingDate: toLocalDateStart(data.breedingDate.toDate()),

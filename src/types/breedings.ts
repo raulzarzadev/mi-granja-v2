@@ -8,6 +8,7 @@ export interface FemaleBreedingInfo {
 
 export interface BreedingRecord {
   id: string
+  breedingId: string // ID legible por humanos, ej: "10-10-25-01"
   farmerId: string
   farmId?: string
   maleId: string

@@ -6,6 +6,7 @@ import { BreedingRecord, FemaleBreedingInfo } from '@/types/breedings'
 import DateTimeInput from './inputs/DateTimeInput'
 import { Animal } from '@/types/animals'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import ButtonClose from './buttons/ButtonClose'
 import {
   InputSelectSuggest,
@@ -34,8 +35,44 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   initialData
 }) => {
   const { remove } = useAnimalCRUD()
+  const { breedingRecords } = useBreedingCRUD()
+
+  // Estado para errores de validación
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Función para validar que el breedingId no esté duplicado
+  const validateBreedingId = (breedingId: string): string | null => {
+    if (!breedingId.trim()) {
+      return 'El ID de monta es requerido'
+    }
+
+    // Verificar duplicados, excluyendo el registro actual si es edición
+    const isDuplicate = breedingRecords.some(
+      (record) =>
+        record.breedingId === breedingId.trim() && record.id !== initialData?.id
+    )
+
+    if (isDuplicate) {
+      return `Ya existe una monta con el ID "${breedingId.trim()}"`
+    }
+
+    return null
+  }
+
+  // Función para generar ID legible por humanos
+  const generateBreedingId = (breedingDate: Date): string => {
+    const day = breedingDate.getDate().toString().padStart(2, '0')
+    const month = (breedingDate.getMonth() + 1).toString().padStart(2, '0')
+    const year = breedingDate.getFullYear().toString().slice(-2)
+    const baseId = `${day}-${month}-${year}`
+
+    // Para el formulario, solo mostramos el formato base
+    // El consecutivo se agregará al momento de guardar
+    return `${baseId}-01`
+  }
   const [formData, setFormData] = useState<Partial<BreedingRecord>>({
     maleId: initialData?.maleId || '',
+    breedingId: initialData?.breedingId || '',
     breedingDate: initialData?.breedingDate || new Date(),
     femaleBreedingInfo: initialData?.femaleBreedingInfo || [],
     ...initialData
@@ -46,6 +83,34 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     formData?.femaleBreedingInfo?.map((info) => info.femaleId) || []
 
   const [animalType, setAnimalType] = useState<Animal['type'] | null>(null)
+
+  // Actualizar breedingId automáticamente cuando cambie la fecha
+  useEffect(() => {
+    if (formData.breedingDate && !initialData) {
+      const newBreedingId = generateBreedingId(new Date(formData.breedingDate))
+      setFormData((prev) => ({
+        ...prev,
+        breedingId: newBreedingId
+      }))
+    }
+  }, [formData.breedingDate, initialData])
+
+  // Manejar cambios en el breedingId
+  const handleBreedingIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setFormData((prev) => ({
+      ...prev,
+      breedingId: value
+    }))
+
+    // Validar en tiempo real
+    const error = validateBreedingId(value)
+    setErrors((prev) => ({
+      ...prev,
+      breedingId: error || ''
+    }))
+  }
+
   useEffect(() => {
     // Actualizar tipo de animal cuando se seleccione un macho
     const selectedMale = animals.find((animal) => animal.id === formData.maleId)
@@ -66,9 +131,22 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validar breedingId antes de enviar
+    const breedingIdError = validateBreedingId(formData.breedingId || '')
+    if (breedingIdError) {
+      setErrors((prev) => ({
+        ...prev,
+        breedingId: breedingIdError
+      }))
+      return
+    }
+
+    const breedingDate = new Date(formData?.breedingDate || new Date())
     const breedingData = {
+      breedingId: formData?.breedingId || generateBreedingId(breedingDate),
       maleId: formData?.maleId || '',
-      breedingDate: new Date(formData?.breedingDate || new Date()),
+      breedingDate: breedingDate,
       femaleBreedingInfo: formData?.femaleBreedingInfo || []
     }
     try {
@@ -282,9 +360,46 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
   return (
     <div>
-      {/* Badge de tipo de animal */}
+      {/* Badge de tipo de animal e ID */}
       {selectedMale && (
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center gap-4">
+          <div className="flex-1">
+            <label
+              htmlFor="breedingId"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              ID de Monta
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                id="breedingId"
+                value={formData.breedingId || ''}
+                onChange={handleBreedingIdChange}
+                placeholder="Ej: 10-10-25-01"
+                className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 font-mono ${
+                  errors.breedingId ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const newId = generateBreedingId(
+                    new Date(formData.breedingDate || new Date())
+                  )
+                  setFormData((prev) => ({ ...prev, breedingId: newId }))
+                  setErrors((prev) => ({ ...prev, breedingId: '' }))
+                }}
+                className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                title="Generar ID automáticamente"
+              >
+                🔄
+              </button>
+            </div>
+            {errors.breedingId && (
+              <p className="mt-1 text-sm text-red-600">{errors.breedingId}</p>
+            )}
+          </div>
           <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
             <span className="mr-1">
               {selectedMale.type === 'oveja' && '🐑'}
@@ -558,7 +673,11 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
           <button
             type="submit"
             disabled={
-              isLoading || !formData.maleId || breedingAnimalIds.length === 0
+              isLoading ||
+              !formData.maleId ||
+              breedingAnimalIds.length === 0 ||
+              !!errors.breedingId ||
+              !formData.breedingId?.trim()
             }
             className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
@@ -570,6 +689,10 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
               ? 'Selecciona un macho'
               : breedingAnimalIds.length === 0
               ? 'Selecciona hembras'
+              : !!errors.breedingId
+              ? 'ID duplicado'
+              : !formData.breedingId?.trim()
+              ? 'Ingresa ID de monta'
               : initialData
               ? 'Actualizar Monta'
               : 'Registrar Monta'}
