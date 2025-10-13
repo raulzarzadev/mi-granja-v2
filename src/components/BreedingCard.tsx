@@ -284,7 +284,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
             <Icon icon="female" />
           </span>
           <span className="font-medium">
-            Hembras{' '}
+            Hembras
             <span className="text-sm ">
               ({femalesBreedingInfo.length || 0})
             </span>

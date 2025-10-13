@@ -15,6 +15,7 @@ const WeaningRemindersCard: React.FC = () => {
   const dueSoon = animals
     .filter((a) => a.status !== 'muerto' && a.status !== 'vendido')
     .filter((a) => !a.isWeaned && a.birthDate)
+    .filter((a) => a.stage === 'cria')
     .map((a) => {
       const due = addDays(a.birthDate as Date, getWeaningDays(a))
       const daysUntil = differenceInCalendarDays(due, today)
