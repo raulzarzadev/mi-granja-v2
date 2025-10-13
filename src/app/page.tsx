@@ -4,7 +4,7 @@ import React from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import AuthForm from '@/features/auth/components/AuthForm'
-import Dashboard from '@/components/Dashboard'
+import Dashboard from '@/components/Dashboard/Dashboard'
 
 export default function Home() {
   const { user } = useSelector((state: RootState) => state.auth)

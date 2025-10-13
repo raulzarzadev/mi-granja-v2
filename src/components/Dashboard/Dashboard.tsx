@@ -10,26 +10,15 @@ import BreedingTabs from '@/components/BreedingTabs'
 import ReminderCard from '@/components/ReminderCard'
 import FarmSection from '@/components/FarmSection'
 import { useReminders } from '@/hooks/useReminders'
-import ModalAnimalForm from './ModalAnimalForm'
-import ModalAnimalDetails from './ModalAnimalDetails'
-import ModalBulkHealthAction from './ModalBulkHealthAction'
-import HealthRemindersCard from './HealthRemindersCard'
-import WeaningRemindersCard from './WeaningRemindersCard'
-import RecordsTab from './RecordsTab'
+import ModalAnimalDetails from '../ModalAnimalDetails'
+import ModalBulkHealthAction from '../ModalBulkHealthAction'
+import HealthRemindersCard from '../HealthRemindersCard'
+import WeaningRemindersCard from '../WeaningRemindersCard'
+import RecordsTab from '../RecordsTab'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import {
-  animal_status_labels,
-  AnimalGender,
-  animals_genders_labels,
-  animals_stages_labels,
-  animals_types_labels,
-  AnimalStage,
-  AnimalStatus,
-  AnimalType
-} from '@/types/animals'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
-import { setAnimals } from '@/features/animals/animalsSlice'
+import { AnimalsFilters, useAnimalFilters } from './Animals/animals-filters'
 
 /**
  * Dashboard principal de la aplicación
@@ -38,13 +27,11 @@ import { setAnimals } from '@/features/animals/animalsSlice'
 const Dashboard: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth)
   const { farms } = useFarmCRUD()
-  const {
-    animals,
-    animalsFiltered,
-    isLoading: isLoadingAnimals,
-    getFarmAnimals
-  } = useAnimalCRUD()
-  const [_statusAnimals, setStatusAnimals] = useState<typeof animals>([])
+  const { isLoading: isLoadingAnimals } = useAnimalCRUD()
+
+  // Usar el hook personalizado para filtros de animales
+  const { filters, setFilters, filteredAnimals, animals, formatStatLabel } =
+    useAnimalFilters()
 
   const {
     reminders,
@@ -56,54 +43,10 @@ const Dashboard: React.FC = () => {
     getUpcomingReminders
   } = useReminders()
 
-  interface AnimalFilters {
-    status: AnimalStatus
-    type: AnimalType | ''
-    stage: AnimalStage | ''
-    gender: AnimalGender | ''
-    search: string
-  }
-
-  const initialFilter: AnimalFilters = {
-    status: 'activo',
-    type: 'oveja',
-    stage: '',
-    gender: '',
-    search: ''
-  }
-
-  const [filters, setFilters] = useState<AnimalFilters>(initialFilter)
-
   // Estado para selección múltiple y aplicaciones masivas
   const [selectedAnimals, setSelectedAnimals] = useState<string[]>([])
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [isBulkHealthModalOpen, setIsBulkHealthModalOpen] = useState(false)
-
-  // Recargar animales desde BD cuando cambia el filtro de estado (solo no-activo)
-  React.useEffect(() => {
-    let cancelled = false
-    const load = async () => {
-      if (filters.status !== 'activo') {
-        const list = await getFarmAnimals({ status: filters.status })
-        if (cancelled) return
-        setAnimals(list)
-        setStatusAnimals((prev) => {
-          const prevIds = prev.map((a) => a.id).join(',')
-          const newIds = list.map((a) => a.id).join(',')
-          return prevIds === newIds ? prev : list
-        })
-      } else {
-        setStatusAnimals((prev) => (prev.length === 0 ? prev : []))
-        // Nota: los 'activos' ya se cargan por el initializer
-      }
-    }
-    load()
-    return () => {
-      cancelled = true
-    }
-  }, [filters.status])
-
-  const filteredAnimals = animalsFiltered(filters)
 
   // Funciones para selección múltiple
   const toggleAnimalSelection = (animalId: string) => {
@@ -130,18 +73,6 @@ const Dashboard: React.FC = () => {
     )
   }
 
-  const formatStatLabel = (
-    key: AnimalStage | AnimalType | AnimalGender | AnimalStatus
-  ) => {
-    const labels: Record<string, string> = {
-      ...animals_types_labels,
-      ...animals_stages_labels,
-      ...animals_genders_labels,
-      ...animal_status_labels
-    }
-    return labels[key] || key
-  }
-
   if (!user) {
     return null
   }
@@ -152,147 +83,7 @@ const Dashboard: React.FC = () => {
       content: (
         <>
           {/* Controles */}
-          <div className="bg-white rounded-lg shadow mb-6">
-            <div className="p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Mis Animales
-                </h2>
-                <ModalAnimalForm mode="create" />
-              </div>
-
-              {/* Filtros */}
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div>
-                  <label
-                    htmlFor="statusFilter"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Estado
-                  </label>
-                  <select
-                    id="statusFilter"
-                    value={filters.status}
-                    onChange={async (e) => {
-                      const value = e.target.value as AnimalStatus
-                      setFilters((prev) => ({ ...prev, status: value }))
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    {Object.entries(animal_status_labels).map(
-                      ([key, label]) => (
-                        <option key={key} value={key}>
-                          {label}
-                        </option>
-                      )
-                    )}
-                  </select>
-                </div>
-                <div>
-                  <label
-                    htmlFor="typeFilter"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Tipo
-                  </label>
-                  <select
-                    id="typeFilter"
-                    value={filters.type}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        type: e.target.value as AnimalType | ''
-                      }))
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="">Todos</option>
-                    {Object.entries(animals_types_labels).map(
-                      ([key, value]) => (
-                        <option key={key} value={key}>
-                          {value}
-                        </option>
-                      )
-                    )}
-                  </select>
-                </div>
-                <div>
-                  <label
-                    htmlFor="stageFilter"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Etapa
-                  </label>
-                  <select
-                    id="stageFilter"
-                    value={filters.stage}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        stage: e.target.value as AnimalStage | ''
-                      }))
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="">Todas</option>
-                    {Object.entries(animals_stages_labels).map(
-                      ([key, value]) => (
-                        <option key={key} value={key}>
-                          {value}
-                        </option>
-                      )
-                    )}
-                  </select>
-                </div>
-                <div>
-                  <label
-                    htmlFor="genderFilter"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Género
-                  </label>
-                  <select
-                    id="genderFilter"
-                    value={filters.gender}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        gender: e.target.value as AnimalGender | ''
-                      }))
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="">Todos</option>
-                    <option value="macho">Macho</option>
-                    <option value="hembra">Hembra</option>
-                  </select>
-                </div>
-              </div>
-              {/* Buscar */}
-              <div>
-                <label
-                  htmlFor="searchFilter"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Buscar
-                </label>
-                <input
-                  id="searchFilter"
-                  type="text"
-                  placeholder="ID o notas..."
-                  value={filters.search}
-                  onChange={(e) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      search: e.target.value
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-            </div>
-          </div>
-
+          <AnimalsFilters filters={filters} setFilters={setFilters} />
           {/* Conteo de animales filtrados */}
           <div className="bg-white rounded-lg shadow mb-4">
             <div className="px-6 py-3 border-b border-gray-200">
@@ -325,7 +116,7 @@ const Dashboard: React.FC = () => {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {filters.status !== 'activo' && (
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {animal_status_labels[filters.status]}
+                      {formatStatLabel(filters.status)}
                     </span>
                   )}
                   {filters.type && (
@@ -426,40 +217,44 @@ const Dashboard: React.FC = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredAnimals.map((animal) => (
-                    <div key={animal.id} className="relative">
-                      {/* Checkbox de selección */}
-                      {isSelectionMode && (
-                        <div className="absolute top-2 left-2 z-10">
-                          <input
-                            type="checkbox"
-                            checked={selectedAnimals.includes(animal.id)}
-                            onChange={() => toggleAnimalSelection(animal.id)}
-                            className="w-5 h-5 text-blue-600 bg-white border-2 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                          />
-                        </div>
-                      )}
+                  {filteredAnimals
+                    .sort((a, b) =>
+                      a.animalNumber.localeCompare(b.animalNumber)
+                    )
+                    .map((animal) => (
+                      <div key={animal.id} className="relative">
+                        {/* Checkbox de selección */}
+                        {isSelectionMode && (
+                          <div className="absolute top-2 left-2 z-10">
+                            <input
+                              type="checkbox"
+                              checked={selectedAnimals.includes(animal.id)}
+                              onChange={() => toggleAnimalSelection(animal.id)}
+                              className="w-5 h-5 text-blue-600 bg-white border-2 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                            />
+                          </div>
+                        )}
 
-                      {/* Card del animal */}
-                      {isSelectionMode ? (
-                        <div
-                          onClick={() => toggleAnimalSelection(animal.id)}
-                          className={`cursor-pointer transition-all ${
-                            selectedAnimals.includes(animal.id)
-                              ? 'ring-2 ring-blue-500 ring-offset-2'
-                              : 'hover:shadow-lg'
-                          }`}
-                        >
-                          <AnimalCard animal={animal} />
-                        </div>
-                      ) : (
-                        <ModalAnimalDetails
-                          animal={animal}
-                          triggerComponent={<AnimalCard animal={animal} />}
-                        />
-                      )}
-                    </div>
-                  ))}
+                        {/* Card del animal */}
+                        {isSelectionMode ? (
+                          <div
+                            onClick={() => toggleAnimalSelection(animal.id)}
+                            className={`cursor-pointer transition-all ${
+                              selectedAnimals.includes(animal.id)
+                                ? 'ring-2 ring-blue-500 ring-offset-2'
+                                : 'hover:shadow-lg'
+                            }`}
+                          >
+                            <AnimalCard animal={animal} />
+                          </div>
+                        ) : (
+                          <ModalAnimalDetails
+                            animal={animal}
+                            triggerComponent={<AnimalCard animal={animal} />}
+                          />
+                        )}
+                      </div>
+                    ))}
                 </div>
               )}
             </div>
