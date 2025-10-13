@@ -126,7 +126,7 @@ export const useBreedingCRUD = () => {
       if (updates.breedingId) updateData.breedingId = updates.breedingId
       if (updates.maleId) updateData.maleId = updates.maleId
 
-      if (updates.notes !== undefined) updateData.notes = updates.notes
+      if (!!updates.notes) updateData.notes = updates.notes
 
       // Manejar femaleBreedingInfo con conversión de fechas
       if (updates.femaleBreedingInfo) {

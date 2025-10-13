@@ -10,7 +10,7 @@ export interface SelectSuggestOption<T = string> {
   data?: T
 }
 
-interface InputSelectSuggestProps<T = string> {
+export interface InputSelectSuggestProps<T = string> {
   options: SelectSuggestOption<T>[]
   selectedIds: string[]
   onSelect: (id: string) => void
