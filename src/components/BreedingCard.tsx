@@ -283,14 +283,20 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
           <span className="text-pink-500">
             <Icon icon="female" />
           </span>
-          <span className="font-medium">Hembra(s):</span>
+          <span className="font-medium">
+            Hembras{' '}
+            <span className="text-sm ">
+              ({femalesBreedingInfo.length || 0})
+            </span>
+            :
+          </span>
         </div>
         {femalesBreedingInfo.length === 0 && (
           <p className="text-sm text-gray-500 mb-2">
             No hay hembras involucradas
           </p>
         )}
-        <div className="ml-6 mb-2 space-y-2">
+        <div className="ml-6 mb-2 space-y-2 max-h-60 overflow-y-scroll pr-2 female-list">
           {sortedFemales.map((femaleAnimal) => {
             const animal = animals.find((a) => a.id === femaleAnimal.animalId)
             return animal ? (
