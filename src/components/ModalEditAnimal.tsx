@@ -18,7 +18,7 @@ interface ModalEditAnimalProps {
  */
 const ModalEditAnimal: React.FC<ModalEditAnimalProps> = ({ animal }) => {
   const { isOpen, openModal, closeModal } = useModal()
-  const { update: updateAnimal } = useAnimalCRUD()
+  const { update: updateAnimal, animals } = useAnimalCRUD()
   const handleEditAnimal = (
     animalNumber: string,
     animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
@@ -51,6 +51,7 @@ const ModalEditAnimal: React.FC<ModalEditAnimalProps> = ({ animal }) => {
               handleEditAnimal(animal.id, data)
             }}
             onCancel={closeModal}
+            existingAnimals={animals}
           />
         </div>
       </Modal>

@@ -21,7 +21,7 @@ const ModalAnimalForm: React.FC<ModalAnimalFormProps> = ({
   initialData,
   mode = 'create'
 }) => {
-  const { create: createAnimal, isLoading } = useAnimalCRUD()
+  const { create: createAnimal, isLoading, animals } = useAnimalCRUD()
   const { isOpen, openModal, closeModal } = useModal()
 
   const handleCreateAnimal = async (
@@ -56,6 +56,7 @@ const ModalAnimalForm: React.FC<ModalAnimalFormProps> = ({
             onCancel={closeModal}
             isLoading={isLoading}
             initialData={initialData}
+            existingAnimals={animals}
           />
         </div>
       </Modal>

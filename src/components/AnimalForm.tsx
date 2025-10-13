@@ -22,6 +22,7 @@ interface AnimalFormProps {
   onCancel: () => void
   initialData?: Partial<Animal>
   isLoading?: boolean
+  existingAnimals?: Animal[] // Lista de animales existentes para validar duplicados
 }
 
 /**
@@ -32,7 +33,8 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
   onSubmit,
   onCancel,
   initialData,
-  isLoading = false
+  isLoading = false,
+  existingAnimals = []
 }) => {
   const [formData, setFormData] = useState({
     animalNumber: initialData?.animalNumber || '',
@@ -76,6 +78,32 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
   ) => {
     const { name, value } = e.target
 
+    // valida que el numero de animal no exista
+
+    if (
+      name === 'animalNumber' &&
+      existingAnimals.some((animal) => {
+        const trimmedLoweCaseValue = value.trim().toLowerCase()
+        const animalNumberLower = animal.animalNumber.trim().toLowerCase()
+        return (
+          animalNumberLower === trimmedLoweCaseValue &&
+          animal.id !== initialData?.id // Permitir el mismo número si es edición del mismo animal
+        )
+      })
+    ) {
+      setErrors((prev) => ({
+        ...prev,
+        animalNumber: `Ya existe un animal con el número "${value}"`
+      }))
+    } else {
+      if (errors['animalNumber']) {
+        setErrors((prev) => ({
+          ...prev,
+          animalNumber: ''
+        }))
+      }
+    }
+
     // Si se está modificando la edad, calcular la fecha de nacimiento automáticamente
     if (name === 'age' && value) {
       const ageInMonths = Number(value)
@@ -116,6 +144,17 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
 
     if (!formData.animalNumber.trim()) {
       newErrors.animalNumber = 'El ID del animal es requerido'
+    } else {
+      // Validar que el número no esté duplicado
+      const trimmedNumber = formData.animalNumber.trim()
+      const isDuplicate = existingAnimals.some(
+        (animal) =>
+          animal.animalNumber === trimmedNumber && animal.id !== initialData?.id // Permitir el mismo número si es edición del mismo animal
+      )
+
+      if (isDuplicate) {
+        newErrors.animalNumber = `Ya existe un animal con el número "${trimmedNumber}"`
+      }
     }
 
     if (
