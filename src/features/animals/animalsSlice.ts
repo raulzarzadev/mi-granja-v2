@@ -24,11 +24,17 @@ const animalsSlice = createSlice({
       state.isLoading = action.payload
     },
     setAnimals: (state, action: PayloadAction<Animal[]>) => {
-      state.animals = serializeObj(action.payload)
+      state.animals = serializeObj(action.payload).sort((a, b) =>
+        a?.animalNumber?.localeCompare(b?.animalNumber)
+      )
       state.error = null
     },
     addAnimal: (state, action: PayloadAction<Animal>) => {
       state.animals.push(serializeObj(action.payload))
+      // Reordenar después de agregar
+      state.animals.sort((a, b) =>
+        a?.animalNumber?.localeCompare(b?.animalNumber)
+      )
     },
 
     updateAnimal: (
@@ -44,6 +50,12 @@ const animalsSlice = createSlice({
           ...action.payload.data,
           updatedAt: new Date()
         })
+        // Reordenar si se cambió el animalNumber
+        if (action.payload.data.animalNumber) {
+          state.animals.sort((a, b) =>
+            a?.animalNumber?.localeCompare(b?.animalNumber)
+          )
+        }
       }
     },
     removeAnimal: (state, action: PayloadAction<string>) => {

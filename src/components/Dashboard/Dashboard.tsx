@@ -224,44 +224,40 @@ const Dashboard: React.FC = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredAnimals
-                    .sort((a, b) =>
-                      a.animalNumber.localeCompare(b.animalNumber)
-                    )
-                    .map((animal) => (
-                      <div key={animal.id} className="relative">
-                        {/* Checkbox de selección */}
-                        {isSelectionMode && (
-                          <div className="absolute top-2 left-2 z-10">
-                            <input
-                              type="checkbox"
-                              checked={selectedAnimals.includes(animal.id)}
-                              onChange={() => toggleAnimalSelection(animal.id)}
-                              className="w-5 h-5 text-blue-600 bg-white border-2 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                            />
-                          </div>
-                        )}
-
-                        {/* Card del animal */}
-                        {isSelectionMode ? (
-                          <div
-                            onClick={() => toggleAnimalSelection(animal.id)}
-                            className={`cursor-pointer transition-all ${
-                              selectedAnimals.includes(animal.id)
-                                ? 'ring-2 ring-blue-500 ring-offset-2'
-                                : 'hover:shadow-lg'
-                            }`}
-                          >
-                            <AnimalCard animal={animal} />
-                          </div>
-                        ) : (
-                          <ModalAnimalDetails
-                            animal={animal}
-                            triggerComponent={<AnimalCard animal={animal} />}
+                  {filteredAnimals.map((animal) => (
+                    <div key={animal.id} className="relative">
+                      {/* Checkbox de selección */}
+                      {isSelectionMode && (
+                        <div className="absolute top-2 left-2 z-10">
+                          <input
+                            type="checkbox"
+                            checked={selectedAnimals.includes(animal.id)}
+                            onChange={() => toggleAnimalSelection(animal.id)}
+                            className="w-5 h-5 text-blue-600 bg-white border-2 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                           />
-                        )}
-                      </div>
-                    ))}
+                        </div>
+                      )}
+
+                      {/* Card del animal */}
+                      {isSelectionMode ? (
+                        <div
+                          onClick={() => toggleAnimalSelection(animal.id)}
+                          className={`cursor-pointer transition-all ${
+                            selectedAnimals.includes(animal.id)
+                              ? 'ring-2 ring-blue-500 ring-offset-2'
+                              : 'hover:shadow-lg'
+                          }`}
+                        >
+                          <AnimalCard animal={animal} />
+                        </div>
+                      ) : (
+                        <ModalAnimalDetails
+                          animal={animal}
+                          triggerComponent={<AnimalCard animal={animal} />}
+                        />
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
