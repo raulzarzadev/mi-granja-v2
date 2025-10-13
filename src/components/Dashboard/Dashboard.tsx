@@ -98,6 +98,7 @@ const Dashboard: React.FC = () => {
                   filters.type ||
                   filters.stage ||
                   filters.gender ||
+                  filters.breedingStatus ||
                   filters.search ? (
                     <span className="text-gray-500 font-normal">
                       {' '}
@@ -112,6 +113,7 @@ const Dashboard: React.FC = () => {
                 filters.type ||
                 filters.stage ||
                 filters.gender ||
+                filters.breedingStatus ||
                 filters.search) && (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {filters.status !== 'activo' && (
@@ -132,6 +134,11 @@ const Dashboard: React.FC = () => {
                   {filters.gender && (
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
                       {formatStatLabel(filters.gender)}
+                    </span>
+                  )}
+                  {filters.breedingStatus && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                      {formatStatLabel(filters.breedingStatus)}
                     </span>
                   )}
                   {filters.search && (
