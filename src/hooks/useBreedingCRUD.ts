@@ -19,6 +19,8 @@ import { deserializeObj, serializeObj } from '@/features/libs/serializeObj'
 import { getBreedingUpcomingBirths } from './libs/breeding-helpers'
 import { BreedingRecord } from '@/types/breedings'
 import { toDate, toLocalDateStart } from '@/lib/dates'
+import { NewCommentInput } from '@/types/comment'
+import { Comment } from '@/types/comment'
 
 export const useBreedingCRUD = () => {
   const dispatch = useDispatch()
@@ -118,18 +120,33 @@ export const useBreedingCRUD = () => {
     setIsSubmitting(true)
     try {
       const docRef = doc(db, 'breedingRecords', id)
-      const updateData: Record<string, any> = {
+
+      const updateData: Record<string, unknown> = {
         updatedAt: Timestamp.now()
       }
 
-      // Añadir campos básicos si existen
-      if (updates.breedingId) updateData.breedingId = updates.breedingId
-      if (updates.maleId) updateData.maleId = updates.maleId
+      const hasProp = <K extends keyof typeof updates>(key: K) =>
+        Object.prototype.hasOwnProperty.call(updates, key)
 
-      if (!!updates.notes) updateData.notes = updates.notes
+      if (hasProp('breedingId')) {
+        updateData.breedingId = updates.breedingId ?? null
+      }
 
-      // Manejar femaleBreedingInfo con conversión de fechas
-      if (updates.femaleBreedingInfo) {
+      if (hasProp('maleId')) {
+        updateData.maleId = updates.maleId ?? null
+      }
+
+      if (hasProp('notes')) {
+        updateData.notes = updates.notes ?? ''
+      }
+
+      if (hasProp('breedingDate')) {
+        updateData.breedingDate = updates.breedingDate
+          ? Timestamp.fromDate(toLocalDateStart(new Date(updates.breedingDate)))
+          : null
+      }
+
+      if (hasProp('femaleBreedingInfo') && updates.femaleBreedingInfo) {
         updateData.femaleBreedingInfo = updates.femaleBreedingInfo.map(
           (info) => ({
             ...info,
@@ -152,11 +169,15 @@ export const useBreedingCRUD = () => {
         )
       }
 
-      // Convertir fechas a Timestamp
-      if (updates.breedingDate) {
-        updateData.breedingDate = Timestamp.fromDate(
-          toLocalDateStart(new Date(updates.breedingDate))
-        )
+      if (hasProp('comments')) {
+        const commentToFirestore = (comment: Comment) => ({
+          ...comment,
+          createdAt: comment.createdAt
+            ? Timestamp.fromDate(new Date(comment.createdAt))
+            : Timestamp.now()
+        })
+
+        updateData.comments = updates.comments?.map(commentToFirestore) ?? []
       }
 
       dispatch(
@@ -422,6 +443,26 @@ export const useBreedingCRUD = () => {
     })
   }
 
+  const onAddComment = async (breedingId: string, comment: NewCommentInput) => {
+    if (!user) throw new Error('Usuario no autenticado')
+
+    const record = breedingRecords.find((b) => b.id === breedingId)
+    if (!record) throw new Error('Registro de monta no encontrado')
+
+    const newComment = {
+      id: `cmt-${Date.now()}`, // ID temporal, idealmente generado por el backend
+      content: comment.content,
+      urgency: comment.urgency || 'none',
+      createdAt: new Date(),
+      createdBy: user.id
+    }
+
+    const updatedComments = [newComment, ...(record.comments || [])]
+
+    await updateBreedingRecord(breedingId, { comments: updatedComments })
+    return newComment
+  }
+
   return {
     breedingRecords: deserializeObj(breedingRecords),
     getFarmBreedings,
@@ -435,6 +476,7 @@ export const useBreedingCRUD = () => {
     getUpcomingBirths,
     getBirthsWindow,
     getBirthsWindowSummary,
-    getStats
+    getStats,
+    onAddComment
   }
 }

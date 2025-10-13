@@ -628,14 +628,14 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         </>
       ) : null}
 
-      <TextField
+      {/* <TextField
         name="notes"
         label="Notas"
         placeholder="Observaciones sobre la monta..."
         multiline
         rows={3}
         disabled={isLoading || isSubmitting}
-      />
+      /> */}
 
       <div className="flex gap-3 pt-4">
         <button

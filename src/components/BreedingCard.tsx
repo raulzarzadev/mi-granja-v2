@@ -3,7 +3,6 @@
 import React from 'react'
 
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
-import Button from './buttons/Button'
 import { Icon } from './Icon/icon'
 import { BreedingRecord } from '@/types/breedings'
 import { formatDate, fromNow } from '@/lib/dates'
@@ -11,6 +10,10 @@ import { Animal, AnimalBreedingStatus } from '@/types/animals'
 import ModalBreedingAnimalDetails from './ModalBreedingAnimalDetails'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 import { BadgeAnimalStatus } from './Badges/BadgeAnimalStatus'
+import { NewCommentInput } from '@/types/comment'
+import { Comments } from './comments/modal-comments'
+import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
+import catchError from '@/lib/catchError'
 
 interface BreedingCardProps extends BreedingActionHandlers {
   record: BreedingRecord
@@ -33,6 +36,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   onRemoveFromBreeding,
   onDeleteBirth
 }) => {
+  const { onAddComment } = useBreedingCRUD()
   // Manejar múltiples hembras
   const male = animals.find((a) => a.id === record.maleId)
 
@@ -44,6 +48,16 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       )
     ) {
       onDelete?.(record)
+    }
+  }
+  const [recordComments, setRecordComments] = React.useState(
+    record.comments || []
+  )
+  const handleAddComment = async (comment: NewCommentInput) => {
+    const [error, data] = await catchError(onAddComment(record.id, comment))
+    if (error) console.error(error)
+    if (data) {
+      setRecordComments((prev) => [...prev, data])
     }
   }
 
@@ -187,17 +201,74 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
     })
   }, [femalesBreedingInfo])
 
+  const renderActionMenu = () => {
+    if (!onEdit && !onDelete) {
+      return null
+    }
+
+    return (
+      <details className="relative">
+        <summary className="list-none cursor-pointer p-1 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-200">
+          <span className="sr-only">Abrir acciones</span>
+          <Icon icon="more" className="w-5 h-5 text-gray-500" />
+        </summary>
+        <div className="absolute left-0 mt-2 w-36 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+          <ul className="py-1 text-sm text-gray-700">
+            {onEdit ? (
+              <li>
+                <button
+                  type="button"
+                  className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  onClick={(event) => {
+                    onEdit?.(record)
+                    event.currentTarget
+                      .closest('details')
+                      ?.removeAttribute('open')
+                  }}
+                >
+                  <Icon icon="edit" className="w-4 h-4 text-gray-500" />
+                  Editar
+                </button>
+              </li>
+            ) : null}
+            {onDelete ? (
+              <li>
+                <button
+                  type="button"
+                  className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2 text-red-600"
+                  onClick={(event) => {
+                    handleDelete()
+                    event.currentTarget
+                      .closest('details')
+                      ?.removeAttribute('open')
+                  }}
+                >
+                  <Icon icon="delete" className="w-4 h-4" />
+                  Eliminar
+                </button>
+              </li>
+            ) : null}
+          </ul>
+        </div>
+      </details>
+    )
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-4">
       {/* Header con estado */}
       {/* Fechas e ID */}
-      <div className="space-y-1 text-sm mb-2">
+
+      <div className="space-y-1 text-sm">
         <div className="flex justify-between items-center">
-          <div className="text-gray-600">
-            <span className="font-medium"></span>{' '}
-            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">
-              {record.breedingId || 'Sin ID'}
-            </span>
+          <div className="flex items-center gap-3">
+            {renderActionMenu()}
+            <div className="text-gray-600">
+              <span className="font-medium"></span>{' '}
+              <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">
+                {record.breedingId || 'Sin ID'}
+              </span>
+            </div>
           </div>
           <div>
             <span className="text-gray-600 mr-2">Fecha: </span>
@@ -400,30 +471,13 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         </div>
       )}
 
-      {/* Notas */}
-      {record.notes && (
-        <div className="mt-3 pt-3 border-t border-gray-100">
-          <p className="text-sm text-gray-600">{record.notes}</p>
-        </div>
-      )}
-
-      <div className="grid gap-2">
-        {onEdit && (
-          <Button onClick={() => onEdit(record)} icon="edit" color="primary">
-            Editar
-          </Button>
-        )}
-
-        {onDelete && (
-          <Button
-            onClick={handleDelete}
-            color="error"
-            variant="ghost"
-            icon="delete"
-          >
-            Eliminar
-          </Button>
-        )}
+      <div className="space-y-3">
+        <Comments
+          comments={recordComments ?? []}
+          onAddComment={handleAddComment}
+          title="Comentarios de la monta"
+          emptyStateText="Esta monta aún no tiene comentarios registrados."
+        />
       </div>
     </div>
   )

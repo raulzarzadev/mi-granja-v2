@@ -1,3 +1,5 @@
+import { Comment } from './comment'
+
 export interface FemaleBreedingInfo {
   femaleId: string // NOTA: Este campo almacena el ID de Firestore del animal hembra, no el animalNumber del usuario
   pregnancyConfirmedDate?: Date | null
@@ -15,6 +17,7 @@ export interface BreedingRecord {
   breedingDate: Date | null
   femaleBreedingInfo: FemaleBreedingInfo[] // Información específica de cada hembra
   notes?: string
+  comments?: Comment[]
   createdAt?: Date
   updatedAt?: Date
 }
