@@ -372,45 +372,45 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   return (
     <div>
       {/* Badge de tipo de animal e ID */}
-      {selectedMale && (
-        <div className="flex justify-between items-center gap-4">
-          <div className="flex-1">
-            <label
-              htmlFor="breedingId"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              ID de Monta
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                id="breedingId"
-                value={formData.breedingId || ''}
-                onChange={handleBreedingIdChange}
-                placeholder="Ej: 10-10-25-01"
-                className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 font-mono ${
-                  errors.breedingId ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const newId = generateBreedingId(
-                    new Date(formData.breedingDate || new Date())
-                  )
-                  setFormData((prev) => ({ ...prev, breedingId: newId }))
-                  setErrors((prev) => ({ ...prev, breedingId: '' }))
-                }}
-                className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
-                title="Generar ID automáticamente"
-              >
-                🔄
-              </button>
-            </div>
-            {errors.breedingId && (
-              <p className="mt-1 text-sm text-red-600">{errors.breedingId}</p>
-            )}
-          </div>
+      <div className="flex-1">
+        <label
+          htmlFor="breedingId"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          ID de Monta
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            id="breedingId"
+            value={formData.breedingId || ''}
+            onChange={handleBreedingIdChange}
+            placeholder="Ej: 10-10-25-01"
+            className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 font-mono ${
+              errors.breedingId ? 'border-red-500' : 'border-gray-300'
+            }`}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              const newId = generateBreedingId(
+                new Date(formData.breedingDate || new Date())
+              )
+              setFormData((prev) => ({ ...prev, breedingId: newId }))
+              setErrors((prev) => ({ ...prev, breedingId: '' }))
+            }}
+            className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+            title="Generar ID automáticamente"
+          >
+            🔄
+          </button>
+        </div>
+        {errors.breedingId && (
+          <p className="mt-1 text-sm text-red-600">{errors.breedingId}</p>
+        )}
+      </div>
+      <div className="flex justify-between items-center gap-4">
+        {selectedMale && (
           <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
             <span className="mr-1">
               {selectedMale.type === 'oveja' && '🐑'}
@@ -421,8 +421,8 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             {selectedMale.type.charAt(0).toUpperCase() +
               selectedMale.type.slice(1).replace('_', ' ')}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Fecha de monta */}
