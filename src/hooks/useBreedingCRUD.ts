@@ -29,7 +29,6 @@ export const useBreedingCRUD = () => {
   const { user } = useSelector((state: RootState) => state.auth)
   const { breedingRecords } = useSelector((state: RootState) => state.breeding)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
   const { currentFarm } = useSelector((state: RootState) => state.farm)
 
   // Función para generar ID legible por humanos
@@ -436,7 +435,8 @@ export const useBreedingCRUD = () => {
             ) || [],
           notes: data.notes || '',
           createdAt: data.createdAt.toDate(),
-          updatedAt: data.updatedAt.toDate()
+          updatedAt: data.updatedAt.toDate(),
+          ...data
         })
       })
       dispatch(setBreedingRecords(serializeObj(records)))

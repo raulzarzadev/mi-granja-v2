@@ -5,16 +5,15 @@ import { z } from 'zod'
 
 import { Modal } from '../Modal'
 import Button from '../buttons/Button'
-import { Icon } from '../Icon/icon'
 import { Form } from '../forms/Form'
 import { useZodForm } from '@/hooks/useZodForm'
 import { TextField } from '../forms/TextField'
 import { SelectField } from '../forms/SelectField'
-import { fromNow, formatDate, toDate } from '@/lib/dates'
-import { urgencyColor, Urgency } from '@/lib/animal-utils'
+import { formatDate, toDate } from '@/lib/dates'
 import { Comment, NewCommentInput } from '@/types/comment'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useAuth } from '@/hooks/useAuth'
+import { BadgeUrgency, Urgency } from '../Badges/BadgeUrgency'
 
 const urgencyLabels: Record<Urgency, string> = {
   none: 'Sin prioridad',
@@ -193,15 +192,7 @@ export const Comments: React.FC<CommentsProps> = ({
                         <p className="text-sm text-gray-800 whitespace-pre-line">
                           {comment.content}
                         </p>
-                        {urgencyLevel && urgencyLevel !== 'none' ? (
-                          <span
-                            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${urgencyColor(
-                              urgencyLevel
-                            )}`}
-                          >
-                            {urgencyLabels[urgencyLevel]}
-                          </span>
-                        ) : null}
+                        <BadgeUrgency level={urgencyLevel} />
                       </div>
                       <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
                         <span>
