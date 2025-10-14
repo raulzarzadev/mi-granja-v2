@@ -137,7 +137,7 @@ export const Comments: React.FC<CommentsProps> = ({
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-gray-800">
             {urgentCount > 0 ? (
-              <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+              <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 ">
                 {urgentCount} urgente{urgentCount !== 1 ? 's' : ''}
               </span>
             ) : null}
@@ -158,17 +158,18 @@ export const Comments: React.FC<CommentsProps> = ({
       <Modal isOpen={isModalOpen} onClose={closeModal} title={title} size="lg">
         <div className="space-y-2">
           <section className="space-y-1">
-            <Form form={form} onSubmit={handleSubmit} className="space-y-2">
+            <Form form={form} onSubmit={handleSubmit} className="space-y-1 ">
               <TextField<NewCommentFormValues>
                 name="content"
-                label="Comentario"
+                //  label="Comentario"
                 multiline
                 rows={4}
                 placeholder="Escribe tu comentario"
               />
               <SelectField<NewCommentFormValues>
                 name="urgency"
-                label="Prioridad"
+                // label="Prioridad"
+
                 options={urgencyOptions}
               />
               {submitError ? (
@@ -179,6 +180,7 @@ export const Comments: React.FC<CommentsProps> = ({
                   type="button"
                   variant="ghost"
                   color="neutral"
+                  size="sm"
                   onClick={() => reset({ content: '', urgency: 'none' })}
                   disabled={formState.isSubmitting}
                 >
@@ -187,6 +189,7 @@ export const Comments: React.FC<CommentsProps> = ({
                 <Button
                   type="submit"
                   color="primary"
+                  size="sm"
                   disabled={formState.isSubmitting}
                 >
                   {formState.isSubmitting
