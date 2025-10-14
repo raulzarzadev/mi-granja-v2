@@ -265,9 +265,16 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       {/* Fechas e ID */}
 
       <div className="space-y-1 text-sm">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            {renderActionMenu()}
+        <div className="grid grid-cols-3 items-center">
+          <div>
+            <span className="text-gray-600 "></span>
+            <span className="font-medium">
+              {record.breedingDate
+                ? formatDate(record.breedingDate, 'EEE dd MMM yy')
+                : 'No disponible'}
+            </span>
+          </div>
+          <div className="flex items-center justify-center gap-3">
             <div className="text-gray-600">
               <span className="font-medium"></span>{' '}
               <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">
@@ -275,14 +282,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
               </span>
             </div>
           </div>
-          <div>
-            <span className="text-gray-600 mr-2">Fecha: </span>
-            <span className="font-medium">
-              {record.breedingDate
-                ? formatDate(record.breedingDate, 'EEE dd/MMM/yy')
-                : 'No disponible'}
-            </span>
-          </div>
+          <div className="flex justify-end">{renderActionMenu()}</div>
         </div>
       </div>
       <div className="flex items-center justify-between mb-3">
