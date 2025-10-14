@@ -16,7 +16,6 @@ import { SuggestField } from './forms/SuggestField'
 import { useZodForm } from '@/hooks/useZodForm'
 import { z } from 'zod'
 import { toDate } from 'date-fns'
-import { Controller } from 'react-hook-form'
 
 interface BreedingFormProps {
   animals: Animal[]
@@ -627,15 +626,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
           ) : null}
         </>
       ) : null}
-
-      {/* <TextField
-        name="notes"
-        label="Notas"
-        placeholder="Observaciones sobre la monta..."
-        multiline
-        rows={3}
-        disabled={isLoading || isSubmitting}
-      /> */}
 
       <div className="flex gap-3 pt-4">
         <button
