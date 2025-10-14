@@ -21,7 +21,6 @@ const BreedingTabs: React.FC = () => {
     getBirthsWindowSummary
   } = useBreedingCRUD()
 
-  console.log({ breedingRecords })
   const { animals, wean, create } = useAnimalCRUD()
   const [editingRecord, setEditingRecord] =
     React.useState<BreedingRecord | null>(null)

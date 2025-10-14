@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { Icon } from './Icon/icon'
@@ -36,7 +36,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   onRemoveFromBreeding,
   onDeleteBirth
 }) => {
-  const { onAddComment } = useBreedingCRUD()
+  const { onAddComment, handleUpdateCommentUrgency } = useBreedingCRUD()
   // Manejar múltiples hembras
   const male = animals.find((a) => a.id === record.maleId)
 
@@ -53,6 +53,11 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   const [recordComments, setRecordComments] = React.useState(
     record.comments || []
   )
+
+  useEffect(() => {
+    setRecordComments(record.comments || [])
+  }, [record.comments])
+
   const handleAddComment = async (comment: NewCommentInput) => {
     const [error, data] = await catchError(onAddComment(record.id, comment))
     if (error) console.error(error)
@@ -474,6 +479,9 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       <div className="space-y-3">
         <Comments
           comments={recordComments ?? []}
+          handleUrgencyChange={(commentId, newLevel) => {
+            handleUpdateCommentUrgency(record.id, commentId, newLevel)
+          }}
           onAddComment={handleAddComment}
           title="Comentarios de la monta"
           emptyStateText="Esta monta aún no tiene comentarios registrados."

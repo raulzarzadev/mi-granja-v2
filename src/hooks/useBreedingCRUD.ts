@@ -462,6 +462,28 @@ export const useBreedingCRUD = () => {
     await updateBreedingRecord(breedingId, { comments: updatedComments })
     return newComment
   }
+  const handleUpdateCommentUrgency = async (
+    breedingId: string,
+    commentId: string,
+    newLevel: NewCommentInput['urgency']
+  ) => {
+    const record = breedingRecords.find((b) => b.id === breedingId)
+    if (!record) throw new Error('Registro de monta no encontrado')
+
+    const updatedComments = record.comments?.map((comment) =>
+      comment.id === commentId ? { ...comment, urgency: newLevel } : comment
+    )
+
+    await updateBreedingRecord(breedingId, { comments: updatedComments })
+
+    setBreedingRecords(
+      serializeObj(
+        breedingRecords.map((r) =>
+          r.id === breedingId ? { ...r, comments: updatedComments || [] } : r
+        )
+      )
+    )
+  }
 
   return {
     breedingRecords: deserializeObj(breedingRecords),
@@ -477,6 +499,7 @@ export const useBreedingCRUD = () => {
     getBirthsWindow,
     getBirthsWindowSummary,
     getStats,
-    onAddComment
+    onAddComment,
+    handleUpdateCommentUrgency
   }
 }

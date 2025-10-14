@@ -58,12 +58,14 @@ interface CommentsProps {
     input: NewCommentInput
   ) => Promise<Comment | void> | Comment | void
   title?: string
+  handleUrgencyChange: (commentId: string, newLevel: Urgency) => void
   emptyStateText?: string
 }
 
 export const Comments: React.FC<CommentsProps> = ({
   comments,
   onAddComment,
+  handleUrgencyChange,
   title = 'Comentarios',
   emptyStateText = 'Todavía no hay comentarios. Agrega el primero para dejar registro.'
 }) => {
@@ -192,7 +194,12 @@ export const Comments: React.FC<CommentsProps> = ({
                         <p className="text-sm text-gray-800 whitespace-pre-line">
                           {comment.content}
                         </p>
-                        <BadgeUrgency level={urgencyLevel} />
+                        <BadgeUrgency
+                          level={urgencyLevel}
+                          onChange={(newLevel) =>
+                            handleUrgencyChange(comment.id, newLevel)
+                          }
+                        />
                       </div>
                       <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
                         <span>
