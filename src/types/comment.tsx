@@ -1,4 +1,4 @@
-import { Urgency } from '@/lib/animal-utils'
+import { Urgency } from '@/components/Badges/BadgeUrgency'
 
 export type Comment = {
   content: string
