@@ -119,16 +119,7 @@ export const Comments: React.FC<CommentsProps> = ({
 
     try {
       setSubmitError(null)
-      const result = await onAddComment?.(payload)
-      const fallback: Comment = {
-        id: `temp-${Date.now()}`,
-        content: payload.content,
-        urgency: payload.urgency,
-        createdAt: new Date()
-      }
-      const newComment = result ?? fallback
-
-      setLocalComments((prev) => sortByRecency([...prev, newComment]))
+      await onAddComment?.(payload)
       reset({ content: '', urgency: 'none' })
     } catch (error) {
       console.error('No se pudo agregar el comentario', error)
@@ -165,11 +156,50 @@ export const Comments: React.FC<CommentsProps> = ({
       </div>
 
       <Modal isOpen={isModalOpen} onClose={closeModal} title={title} size="lg">
-        <div className="space-y-6">
-          <section className="space-y-3">
+        <div className="space-y-2">
+          <section className="space-y-1">
+            <Form form={form} onSubmit={handleSubmit} className="space-y-2">
+              <TextField<NewCommentFormValues>
+                name="content"
+                label="Comentario"
+                multiline
+                rows={4}
+                placeholder="Escribe tu comentario"
+              />
+              <SelectField<NewCommentFormValues>
+                name="urgency"
+                label="Prioridad"
+                options={urgencyOptions}
+              />
+              {submitError ? (
+                <p className="text-sm text-red-600">{submitError}</p>
+              ) : null}
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  color="neutral"
+                  onClick={() => reset({ content: '', urgency: 'none' })}
+                  disabled={formState.isSubmitting}
+                >
+                  Limpiar
+                </Button>
+                <Button
+                  type="submit"
+                  color="primary"
+                  disabled={formState.isSubmitting}
+                >
+                  {formState.isSubmitting
+                    ? 'Guardando...'
+                    : 'Agregar comentario'}
+                </Button>
+              </div>
+            </Form>
+          </section>
+          <section className="space-y-2">
             <header className="flex items-center justify-between">
               <h3 className="text-base font-semibold text-gray-800">
-                Historial de comentarios
+                Comentarios ({commentCount})
               </h3>
               {urgentCount > 0 ? (
                 <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
@@ -179,7 +209,7 @@ export const Comments: React.FC<CommentsProps> = ({
             </header>
 
             {localComments.length > 0 ? (
-              <ul className="space-y-3">
+              <ul className="space-y-2">
                 {localComments.map((comment) => {
                   const createdAt = comment.createdAt
                     ? formatDate(toDate(comment.createdAt), 'dd/MM/yy HH:mm')
@@ -220,49 +250,6 @@ export const Comments: React.FC<CommentsProps> = ({
                 {emptyStateText}
               </p>
             )}
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-base font-semibold text-gray-800">
-              Agregar comentario
-            </h3>
-            <Form form={form} onSubmit={handleSubmit} className="space-y-2">
-              <TextField<NewCommentFormValues>
-                name="content"
-                label="Comentario"
-                multiline
-                rows={4}
-                placeholder="Escribe tu comentario"
-              />
-              <SelectField<NewCommentFormValues>
-                name="urgency"
-                label="Prioridad"
-                options={urgencyOptions}
-              />
-              {submitError ? (
-                <p className="text-sm text-red-600">{submitError}</p>
-              ) : null}
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  color="neutral"
-                  onClick={() => reset({ content: '', urgency: 'none' })}
-                  disabled={formState.isSubmitting}
-                >
-                  Limpiar
-                </Button>
-                <Button
-                  type="submit"
-                  color="primary"
-                  disabled={formState.isSubmitting}
-                >
-                  {formState.isSubmitting
-                    ? 'Guardando...'
-                    : 'Agregar comentario'}
-                </Button>
-              </div>
-            </Form>
           </section>
         </div>
       </Modal>

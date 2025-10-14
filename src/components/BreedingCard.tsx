@@ -62,7 +62,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
     const [error, data] = await catchError(onAddComment(record.id, comment))
     if (error) console.error(error)
     if (data) {
-      setRecordComments((prev) => [...prev, data])
+      console.log('message_added')
     }
   }
 
