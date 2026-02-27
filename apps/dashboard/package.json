@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "NEXT_PUBLIC_USE_EMULATOR=true next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "biome check .",
@@ -15,8 +15,7 @@
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
     "test:e2e": "cypress run",
-    "test:e2e:dev": "cypress open",
-    "dev:emulator": "NEXT_PUBLIC_USE_EMULATOR=true next dev --turbopack"
+    "test:e2e:dev": "cypress open"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

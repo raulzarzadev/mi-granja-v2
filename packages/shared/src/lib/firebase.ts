@@ -20,11 +20,16 @@ export const db = getFirestore(app)
 export const storage = getStorage(app)
 
 // Conectar a emuladores en desarrollo
-if (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true') {
+const useEmulator =
+  typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_USE_EMULATOR === 'true'
+
+if (useEmulator) {
+  console.log('🔧 Conectando a Firebase Emulators...')
   try {
     connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true })
     connectFirestoreEmulator(db, 'localhost', 8080)
     connectStorageEmulator(storage, 'localhost', 9199)
+    console.log('✅ Firebase Emulators conectados')
   } catch (_e) {
     // Emuladores ya conectados (HMR)
   }

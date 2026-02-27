@@ -26,7 +26,7 @@ export const isUserAdmin = (user: User | null): boolean => {
   if (user.roles?.includes('admin')) return true
 
   // Verificar por email (fallback)
-  return ADMIN_EMAILS.includes(user.email.toLowerCase())
+  return !!user.email && ADMIN_EMAILS.includes(user.email.toLowerCase())
 }
 
 /**
