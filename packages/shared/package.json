@@ -1,0 +1,19 @@
+{
+  "name": "@mi-granja/shared",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    "./types": "./src/types/index.ts",
+    "./types/*": "./src/types/*.tsx",
+    "./lib/*": "./src/lib/*.ts",
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "firebase": "^11.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5"
+  }
+}
