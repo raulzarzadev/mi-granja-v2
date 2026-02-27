@@ -9,7 +9,8 @@
       "WebSearch",
       "Bash(npx biome:*)",
       "Bash(lsof:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(ls:*)"
     ]
   }
 }

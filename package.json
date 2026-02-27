@@ -14,9 +14,9 @@
     "dev:landing": "turbo run dev --filter=@mi-granja/landing",
     "build:dashboard": "turbo run build --filter=@mi-granja/dashboard",
     "build:landing": "turbo run build --filter=@mi-granja/landing",
-    "emulators": "firebase emulators:start --import=.firebase-data --export-on-exit=.firebase-data",
-    "emulators:start": "firebase emulators:start",
-    "emulators:kill": "lsof -ti :9099,:8080,:9199,:4000,:4400,:4500 | xargs kill 2>/dev/null; echo '✅ Emuladores detenidos'",
+    "emulators": "firebase emulators:start --config firebase/firebase.json --import=firebase/data --export-on-exit=firebase/data",
+    "emulators:start": "firebase emulators:start --config firebase/firebase.json",
+    "emulators:kill": "lsof -ti :9099 -ti :8080 -ti :9199 -ti :4000 -ti :4400 -ti :4500 | xargs kill 2>/dev/null; mv *-debug.log firebase/ 2>/dev/null; echo '✅ Emuladores detenidos'",
     "seed": "npx tsx scripts/seed-emulators.ts"
   },
   "devDependencies": {
