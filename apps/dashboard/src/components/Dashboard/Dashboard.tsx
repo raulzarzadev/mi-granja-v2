@@ -17,6 +17,7 @@ import ModalAnimalDetails from '../ModalAnimalDetails'
 import ModalBulkHealthAction from '../ModalBulkHealthAction'
 import RecordsTab from '../RecordsTab'
 import WeaningRemindersCard from '../WeaningRemindersCard'
+import AnimalsTable from './Animals/AnimalsTable'
 import { AnimalsFilters, useAnimalFilters } from './Animals/animals-filters'
 
 /**
@@ -55,6 +56,7 @@ const Dashboard: React.FC = () => {
   const [selectedAnimals, setSelectedAnimals] = useState<string[]>([])
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [isBulkHealthModalOpen, setIsBulkHealthModalOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
 
   // Funciones para selección múltiple
   const toggleAnimalSelection = (animalId: string) => {
@@ -100,7 +102,7 @@ const Dashboard: React.FC = () => {
 
           {/* Lista de animales */}
           <div className="bg-white rounded-lg shadow">
-            {/* Barra de selección múltiple dentro del card */}
+            {/* Barra de selección múltiple + toggle vista */}
             {filteredAnimals.length > 0 && (
               <div className="px-4 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -128,21 +130,70 @@ const Dashboard: React.FC = () => {
                       </button>
                     </>
                   )}
+
+                  {isSelectionMode && selectedAnimals.length > 0 && (
+                    <>
+                      <span className="text-gray-300">|</span>
+                      <span className="text-xs text-gray-500">
+                        {selectedAnimals.length} seleccionados
+                      </span>
+                      <button
+                        onClick={() => setIsBulkHealthModalOpen(true)}
+                        className="bg-green-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-green-700 transition-colors"
+                      >
+                        Aplicar Registro
+                      </button>
+                    </>
+                  )}
                 </div>
 
-                {isSelectionMode && selectedAnimals.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">
-                      {selectedAnimals.length} seleccionados
-                    </span>
-                    <button
-                      onClick={() => setIsBulkHealthModalOpen(true)}
-                      className="bg-green-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-green-700 transition-colors"
+                {/* Toggle cards/tabla */}
+                <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setViewMode('cards')}
+                    className={`p-1.5 transition-colors ${
+                      viewMode === 'cards'
+                        ? 'bg-green-100 text-green-700'
+                        : 'text-gray-500 hover:bg-gray-100'
+                    }`}
+                    title="Vista de tarjetas"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      className="w-4 h-4"
                     >
-                      Aplicar Registro
-                    </button>
-                  </div>
-                )}
+                      <path
+                        fillRule="evenodd"
+                        d="M4.25 2A2.25 2.25 0 0 0 2 4.25v2.5A2.25 2.25 0 0 0 4.25 9h2.5A2.25 2.25 0 0 0 9 6.75v-2.5A2.25 2.25 0 0 0 6.75 2h-2.5Zm0 9A2.25 2.25 0 0 0 2 13.25v2.5A2.25 2.25 0 0 0 4.25 18h2.5A2.25 2.25 0 0 0 9 15.75v-2.5A2.25 2.25 0 0 0 6.75 11h-2.5Zm9-9A2.25 2.25 0 0 0 11 4.25v2.5A2.25 2.25 0 0 0 13.25 9h2.5A2.25 2.25 0 0 0 18 6.75v-2.5A2.25 2.25 0 0 0 15.75 2h-2.5Zm0 9A2.25 2.25 0 0 0 11 13.25v2.5A2.25 2.25 0 0 0 13.25 18h2.5A2.25 2.25 0 0 0 18 15.75v-2.5A2.25 2.25 0 0 0 15.75 11h-2.5Z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('table')}
+                    className={`p-1.5 transition-colors ${
+                      viewMode === 'table'
+                        ? 'bg-green-100 text-green-700'
+                        : 'text-gray-500 hover:bg-gray-100'
+                    }`}
+                    title="Vista de tabla"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      className="w-4 h-4"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M2 3.75A.75.75 0 0 1 2.75 3h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 3.75Zm0 4.167a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Zm0 4.166a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Zm0 4.167a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
             )}
             <div className="p-2 md:p-6 md:pt-2">
@@ -165,7 +216,7 @@ const Dashboard: React.FC = () => {
                       : 'Intenta ajustar los filtros de búsqueda'}
                   </p>
                 </div>
-              ) : (
+              ) : viewMode === 'cards' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 md:gap-6 gap-2">
                   {filteredAnimals.map((animal) => (
                     <div key={animal.id} className="relative">
@@ -202,6 +253,13 @@ const Dashboard: React.FC = () => {
                     </div>
                   ))}
                 </div>
+              ) : (
+                <AnimalsTable
+                  animals={filteredAnimals}
+                  isSelectionMode={isSelectionMode}
+                  selectedAnimals={selectedAnimals}
+                  onToggleSelection={toggleAnimalSelection}
+                />
               )}
             </div>
           </div>

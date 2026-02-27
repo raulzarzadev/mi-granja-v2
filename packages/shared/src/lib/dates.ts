@@ -2,7 +2,8 @@ import { toDate as fnsToDate, format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Timestamp } from 'firebase/firestore'
 
-export const formatDate = (date: Date, stringFormat = 'dd/MM/yyyy') => {
+export const formatDate = (date: Date | null | undefined, stringFormat = 'dd/MM/yyyy') => {
+  if (!date) return '—'
   const validDate = toDate(date)
   return format(validDate, stringFormat, { locale: es })
 }
