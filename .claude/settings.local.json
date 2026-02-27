@@ -10,7 +10,8 @@
       "Bash(npx biome:*)",
       "Bash(lsof:*)",
       "Bash(kill:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(curl:*)"
     ]
   }
 }

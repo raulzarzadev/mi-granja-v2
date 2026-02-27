@@ -11,7 +11,7 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore'
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080'
 process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099'
 
-const app = initializeApp({ projectId: 'mi-granja-dev' })
+const app = initializeApp({ projectId: 'mi-granja-app' })
 const db = getFirestore(app)
 const auth = getAuth(app)
 
@@ -73,7 +73,9 @@ async function seedFarm() {
   const farm = {
     id: FARM_ID,
     name: 'Rancho El Sol',
+    ownerId: ADMIN_UID,
     createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
     createdBy: ADMIN_UID,
     location: {
       state: 'Baja California Sur',
@@ -91,6 +93,8 @@ async function seedFarm() {
         joinedAt: Timestamp.now(),
       },
     ],
+    collaboratorsIds: [ADMIN_UID],
+    collaboratorsEmails: ['admin@migranja.com'],
   }
 
   await db.collection('farms').doc(FARM_ID).set(farm)

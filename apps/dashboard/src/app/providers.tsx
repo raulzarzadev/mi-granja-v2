@@ -28,10 +28,11 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
       if (firebaseUser) {
         try {
           const userFound = await getDoc(doc(db, 'users', firebaseUser.uid))
-          const userData = userFound.data() as User
+          const userData = userFound.exists() ? (userFound.data() as User) : ({} as User)
           const serializedUser = serializeObj({
             ...userData,
             id: firebaseUser.uid,
+            email: userData?.email || firebaseUser.email || '',
           })
           dispatch(setUser(serializedUser))
         } catch (error) {
@@ -50,7 +51,9 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
     if (user) {
       loadUserFarms()
     }
+
   }, [user])
+
 
   //* ==================================== FARM ANIMALS INITIALIZER
   const { getFarmAnimals } = useAnimalCRUD()

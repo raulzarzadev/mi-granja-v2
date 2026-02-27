@@ -55,8 +55,10 @@ export const useFarmCRUD = () => {
 
     try {
       // 1) Granjas donde es propietario
+      console.log('🔍 loadUserFarms - user.id:', user.id, 'user.email:', user.email)
       const ownerQuery = query(collection(db, 'farms'), where('ownerId', '==', user.id))
       const ownerSnapshot = await getDocs(ownerQuery)
+      console.log('🔍 ownerFarms found:', ownerSnapshot.size)
       const ownerFarms = ownerSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
