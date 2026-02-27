@@ -5,7 +5,6 @@ import { useSelector } from 'react-redux'
 import AnimalCard from '@/components/AnimalCard'
 import BreedingTabs from '@/components/BreedingTabs'
 import FarmSection from '@/components/FarmSection'
-import FarmSwitcherBar from '@/components/FarmSwitcherBar'
 import Navbar from '@/components/Navbar'
 import ReminderCard from '@/components/ReminderCard'
 import Tabs from '@/components/Tabs'
@@ -26,11 +25,21 @@ import { AnimalsFilters, useAnimalFilters } from './Animals/animals-filters'
  */
 const Dashboard: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth)
-  const { farms } = useFarmCRUD()
+  const { farms, currentFarm } = useFarmCRUD()
   const { isLoading: isLoadingAnimals } = useAnimalCRUD()
 
   // Usar el hook personalizado para filtros de animales
-  const { filters, setFilters, filteredAnimals, animals, formatStatLabel } = useAnimalFilters()
+  const {
+    filters,
+    setFilters,
+    filteredAnimals,
+    animals,
+    formatStatLabel,
+    activeFilterCount,
+    availableTypes,
+    availableStages,
+    availableGenders,
+  } = useAnimalFilters()
 
   const {
     reminders,
@@ -77,119 +86,66 @@ const Dashboard: React.FC = () => {
       label: '🐄 Animales',
       content: (
         <>
-          {/* Controles */}
-          <AnimalsFilters filters={filters} setFilters={setFilters} />
-          {/* Conteo de animales filtrados */}
-          <div className="bg-white rounded-lg shadow mb-4">
-            <div className="px-6 py-3 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Resultados:</span>
-                <span className="text-sm font-bold text-gray-900">
-                  {filteredAnimals.length} {filteredAnimals.length === 1 ? 'animal' : 'animales'}
-                  {filters.status !== 'activo' ||
-                  filters.type ||
-                  filters.stage ||
-                  filters.gender ||
-                  filters.breedingStatus ||
-                  filters.search ? (
-                    <span className="text-gray-500 font-normal"> filtrados</span>
-                  ) : (
-                    <span className="text-gray-500 font-normal"> en total</span>
-                  )}
-                </span>
-              </div>
-              {(filters.status !== 'activo' ||
-                filters.type ||
-                filters.stage ||
-                filters.gender ||
-                filters.breedingStatus ||
-                filters.search) && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {filters.status !== 'activo' && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {formatStatLabel(filters.status)}
-                    </span>
-                  )}
-                  {filters.type && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      {formatStatLabel(filters.type)}
-                    </span>
-                  )}
-                  {filters.stage && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                      {formatStatLabel(filters.stage)}
-                    </span>
-                  )}
-                  {filters.gender && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
-                      {formatStatLabel(filters.gender)}
-                    </span>
-                  )}
-                  {filters.breedingStatus && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                      {formatStatLabel(filters.breedingStatus)}
-                    </span>
-                  )}
-                  {filters.search && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                      Búsqueda: {filters.search}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Botones de selección múltiple */}
-            {filteredAnimals.length > 0 && (
-              <div className="px-6 py-3 border-t border-gray-100 bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {!isSelectionMode ? (
-                      <button
-                        onClick={() => setIsSelectionMode(true)}
-                        className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition-colors"
-                      >
-                        📋 Seleccionar Múltiples
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          onClick={selectAllVisibleAnimals}
-                          className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-700 transition-colors"
-                        >
-                          ✅ Seleccionar Todos ({filteredAnimals.length})
-                        </button>
-                        <button
-                          onClick={clearSelection}
-                          className="bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-gray-700 transition-colors"
-                        >
-                          ❌ Cancelar
-                        </button>
-                      </>
-                    )}
-                  </div>
-
-                  {isSelectionMode && selectedAnimals.length > 0 && (
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-gray-700">
-                        {selectedAnimals.length} seleccionados
-                      </span>
-                      <button
-                        onClick={() => setIsBulkHealthModalOpen(true)}
-                        className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-700 transition-colors"
-                      >
-                        Aplicar Registro Multiple 📋
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Filtros compactos */}
+          <AnimalsFilters
+            filters={filters}
+            setFilters={setFilters}
+            filteredCount={filteredAnimals.length}
+            activeFilterCount={activeFilterCount}
+            availableTypes={availableTypes}
+            availableStages={availableStages}
+            availableGenders={availableGenders}
+            formatStatLabel={formatStatLabel}
+          />
 
           {/* Lista de animales */}
           <div className="bg-white rounded-lg shadow">
-            <div className="p-6">
+            {/* Barra de selección múltiple dentro del card */}
+            {filteredAnimals.length > 0 && (
+              <div className="px-4 py-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {!isSelectionMode ? (
+                    <button
+                      onClick={() => setIsSelectionMode(true)}
+                      className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                      Seleccionar
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={selectAllVisibleAnimals}
+                        className="text-xs text-green-600 hover:text-green-800 transition-colors"
+                      >
+                        Todos ({filteredAnimals.length})
+                      </button>
+                      <span className="text-gray-300">|</span>
+                      <button
+                        onClick={clearSelection}
+                        className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {isSelectionMode && selectedAnimals.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">
+                      {selectedAnimals.length} seleccionados
+                    </span>
+                    <button
+                      onClick={() => setIsBulkHealthModalOpen(true)}
+                      className="bg-green-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-green-700 transition-colors"
+                    >
+                      Aplicar Registro
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="p-2 md:p-6 md:pt-2">
               {isLoadingAnimals ? (
                 <div className="flex justify-center items-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
@@ -210,7 +166,7 @@ const Dashboard: React.FC = () => {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 md:gap-6 gap-2">
                   {filteredAnimals.map((animal) => (
                     <div key={animal.id} className="relative">
                       {/* Checkbox de selección */}
@@ -378,9 +334,13 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <FarmSwitcherBar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+        {/* Título de la granja siempre visible */}
+        {currentFarm && (
+          <h1 className="text-lg font-semibold text-gray-900 mb-2">{currentFarm.name}</h1>
+        )}
+
         {/* Si no hay granjas, priorizar creación/selección */}
         {farms.length === 0 ? <FarmSection /> : <Tabs tabs={tabs} tabsId="dashboard-main" />}
       </div>

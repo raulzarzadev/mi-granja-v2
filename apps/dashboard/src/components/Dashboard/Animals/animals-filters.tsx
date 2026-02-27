@@ -118,6 +118,20 @@ export const useAnimalFilters = () => {
     return labels[key] || key
   }
 
+  // Opciones disponibles basadas en los animales reales de la granja
+  const availableTypes = [...new Set(animals.map((a) => a.type))].sort()
+  const availableStages = [...new Set(animals.map((a) => a.stage))].sort()
+  const availableGenders = [...new Set(animals.map((a) => a.gender))].sort()
+
+  // Contar filtros activos (excluyendo los defaults)
+  const activeFilterCount = [
+    filters.status !== 'activo',
+    filters.type !== '',
+    filters.stage !== '',
+    filters.gender !== '',
+    filters.breedingStatus !== '',
+  ].filter(Boolean).length
+
   return {
     filters,
     setFilters,
@@ -125,6 +139,10 @@ export const useAnimalFilters = () => {
     animals,
     statusAnimals,
     formatStatLabel,
+    activeFilterCount,
+    availableTypes,
+    availableStages,
+    availableGenders,
   }
 }
 
@@ -132,31 +150,95 @@ export const useAnimalFilters = () => {
 interface AnimalsFiltersProps {
   filters: AnimalFilters
   setFilters: React.Dispatch<React.SetStateAction<AnimalFilters>>
+  filteredCount: number
+  activeFilterCount: number
+  availableTypes: string[]
+  availableStages: string[]
+  availableGenders: string[]
+  formatStatLabel: (
+    key: AnimalStage | AnimalType | AnimalGender | AnimalStatus | AnimalBreedingStatus | 'libre',
+  ) => string
 }
 
-export const AnimalsFilters = ({ filters, setFilters }: AnimalsFiltersProps) => {
-  return (
-    <div className="bg-white rounded-lg shadow mb-6">
-      <div className="p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-          <h2 className="text-xl font-semibold text-gray-900">Mis Animales</h2>
-          <ModalAnimalForm mode="create" />
-        </div>
+const FilterIcon = ({ active }: { active: boolean }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+    className={`w-5 h-5 ${active ? 'text-green-600' : 'text-gray-500'}`}
+  >
+    <path
+      fillRule="evenodd"
+      d="M2.628 1.601C5.028 1.206 7.49 1 10 1s4.973.206 7.372.601a.75.75 0 0 1 .628.74v2.288a2.25 2.25 0 0 1-.659 1.59l-4.682 4.683a2.25 2.25 0 0 0-.659 1.59v3.037c0 .684-.31 1.33-.844 1.757l-1.937 1.55A.75.75 0 0 1 8 18.25v-5.757a2.25 2.25 0 0 0-.659-1.591L2.659 6.22A2.25 2.25 0 0 1 2 4.629V2.34a.75.75 0 0 1 .628-.74Z"
+      clipRule="evenodd"
+    />
+  </svg>
+)
 
-        {/* Filtros */}
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-5 gap-4">
-          <div>
-            <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700 mb-1">
-              Estado
-            </label>
+export const AnimalsFilters = ({
+  filters,
+  setFilters,
+  filteredCount,
+  activeFilterCount,
+  availableTypes,
+  availableStages,
+  availableGenders,
+  formatStatLabel,
+}: AnimalsFiltersProps) => {
+  const [showFilters, setShowFilters] = useState(false)
+
+  const hasActiveFilters =
+    filters.status !== 'activo' ||
+    filters.type !== '' ||
+    filters.stage !== '' ||
+    filters.gender !== '' ||
+    filters.breedingStatus !== '' ||
+    filters.search !== ''
+
+  return (
+    <div className="bg-white rounded-lg shadow mb-4">
+      {/* Barra principal: búsqueda + filtro + crear */}
+      <div className="px-4 py-3 flex items-center gap-2">
+        <input
+          type="text"
+          placeholder="Buscar por ID o notas..."
+          value={filters.search}
+          onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+          className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
+
+        {/* Botón filtro */}
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={`relative p-2 rounded-lg border transition-colors ${
+            showFilters || activeFilterCount > 0
+              ? 'border-green-500 bg-green-50'
+              : 'border-gray-300 hover:bg-gray-50'
+          }`}
+          title="Filtros"
+        >
+          <FilterIcon active={showFilters || activeFilterCount > 0} />
+          {activeFilterCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 bg-green-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+
+        {/* Botón crear */}
+        <ModalAnimalForm mode="create" compact />
+      </div>
+
+      {/* Panel de filtros colapsable */}
+      {showFilters && (
+        <div className="px-4 pb-3 pt-1 border-t border-gray-100">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-2">
             <select
-              id="statusFilter"
               value={filters.status}
-              onChange={async (e) => {
-                const value = e.target.value as AnimalStatus
-                setFilters((prev) => ({ ...prev, status: value }))
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, status: e.target.value as AnimalStatus }))
+              }
+              className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               {Object.entries(animal_status_labels).map(([key, label]) => (
                 <option key={key} value={key}>
@@ -164,85 +246,53 @@ export const AnimalsFilters = ({ filters, setFilters }: AnimalsFiltersProps) => 
                 </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label htmlFor="typeFilter" className="block text-sm font-medium text-gray-700 mb-1">
-              Tipo
-            </label>
+
             <select
-              id="typeFilter"
               value={filters.type}
               onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  type: e.target.value as AnimalType | '',
-                }))
+                setFilters((prev) => ({ ...prev, type: e.target.value as AnimalType | '' }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             >
-              <option value="">Todos</option>
-              {Object.entries(animals_types_labels).map(([key, value]) => (
+              <option value="">Tipo: Todos</option>
+              {availableTypes.map((key) => (
                 <option key={key} value={key}>
-                  {value}
+                  {animals_types_labels[key as AnimalType] || key}
                 </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label htmlFor="stageFilter" className="block text-sm font-medium text-gray-700 mb-1">
-              Etapa
-            </label>
+
             <select
-              id="stageFilter"
               value={filters.stage}
               onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  stage: e.target.value as AnimalStage | '',
-                }))
+                setFilters((prev) => ({ ...prev, stage: e.target.value as AnimalStage | '' }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             >
-              <option value="">Todas</option>
-              {Object.entries(animals_stages_labels).map(([key, value]) => (
+              <option value="">Etapa: Todas</option>
+              {availableStages.map((key) => (
                 <option key={key} value={key}>
-                  {value}
+                  {animals_stages_labels[key as AnimalStage] || key}
                 </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label htmlFor="genderFilter" className="block text-sm font-medium text-gray-700 mb-1">
-              Género
-            </label>
+
             <select
-              id="genderFilter"
               value={filters.gender}
               onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  gender: e.target.value as AnimalGender | '',
-                }))
+                setFilters((prev) => ({ ...prev, gender: e.target.value as AnimalGender | '' }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             >
-              <option value="">Todos</option>
-              {Object.entries(animals_genders_labels).map(([key, value]) => (
+              <option value="">Genero: Todos</option>
+              {availableGenders.map((key) => (
                 <option key={key} value={key}>
-                  {value}
+                  {animals_genders_labels[key as AnimalGender] || key}
                 </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label
-              htmlFor="breedingStatusFilter"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Estado de Cría
-            </label>
+
             <select
-              id="breedingStatusFilter"
               value={filters.breedingStatus}
               onChange={(e) =>
                 setFilters((prev) => ({
@@ -250,9 +300,9 @@ export const AnimalsFilters = ({ filters, setFilters }: AnimalsFiltersProps) => 
                   breedingStatus: e.target.value as AnimalBreedingStatus | 'libre' | '',
                 }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             >
-              <option value="">Todos</option>
+              <option value="">Cria: Todos</option>
               <option value="libre">Libre</option>
               {Object.entries(breeding_animal_status_labels).map(([key, value]) => (
                 <option key={key} value={key}>
@@ -261,26 +311,63 @@ export const AnimalsFilters = ({ filters, setFilters }: AnimalsFiltersProps) => 
               ))}
             </select>
           </div>
+          {hasActiveFilters && (
+            <button
+              onClick={() =>
+                setFilters({
+                  status: 'activo',
+                  type: '',
+                  stage: '',
+                  gender: '',
+                  breedingStatus: '',
+                  search: '',
+                })
+              }
+              className="text-xs text-red-500 hover:text-red-700 transition-colors"
+            >
+              Limpiar filtros
+            </button>
+          )}
         </div>
-        {/* Buscar */}
-        <div>
-          <label htmlFor="searchFilter" className="block text-sm font-medium text-gray-700 mb-1">
-            Buscar
-          </label>
-          <input
-            id="searchFilter"
-            type="text"
-            placeholder="ID o notas..."
-            value={filters.search}
-            onChange={(e) =>
-              setFilters((prev) => ({
-                ...prev,
-                search: e.target.value,
-              }))
-            }
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
+      )}
+
+      {/* Resumen de resultados + filtros activos */}
+      <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          {hasActiveFilters && (
+            <>
+              {filters.type && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  {formatStatLabel(filters.type)}
+                </span>
+              )}
+              {filters.status !== 'activo' && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {formatStatLabel(filters.status)}
+                </span>
+              )}
+              {filters.stage && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  {formatStatLabel(filters.stage)}
+                </span>
+              )}
+              {filters.gender && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+                  {formatStatLabel(filters.gender)}
+                </span>
+              )}
+              {filters.breedingStatus && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                  {formatStatLabel(filters.breedingStatus)}
+                </span>
+              )}
+            </>
+          )}
         </div>
+        <span className="text-xs text-gray-500 whitespace-nowrap">
+          <span className="font-semibold text-gray-700">{filteredCount}</span>{' '}
+          {filteredCount === 1 ? 'animal' : 'animales'}
+        </span>
       </div>
     </div>
   )

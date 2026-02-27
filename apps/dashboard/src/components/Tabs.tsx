@@ -105,7 +105,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persist
               <span className="whitespace-nowrap select-none leading-none">{tab.label}</span>
               {typeof tab.badgeCount === 'number' && tab.badgeCount > 0 && (
                 <span
-                  className={`inline-flex items-center justify-center rounded-full px-2 h-5 min-w-[1.25rem] text-[10px] font-semibold tracking-wide leading-none transition-colors ${
+                  className={`inline-flex items-center justify-center rounded-full px-2 h-5 min-w-5 text-[10px] font-semibold tracking-wide leading-none transition-colors ${
                     isActive
                       ? 'bg-white/20 text-white'
                       : 'bg-gray-200 text-gray-700 group-hover:bg-gray-300'
@@ -122,13 +122,13 @@ const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persist
         })}
       </div>
       {/* Línea decorativa (opcional) */}
-      <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mt-2" />
+      <div className="h-px bg-linear-to-r from-transparent via-gray-200 to-transparent mt-2" />
       {/* Contenido */}
       <div
         id={`tab-panel-${activeTab}`}
         role="tabpanel"
         aria-labelledby={`tab-${activeTab}`}
-        className="mt-4"
+       // className="mt-4"
       >
         {tabs[activeTab]?.content}
       </div>

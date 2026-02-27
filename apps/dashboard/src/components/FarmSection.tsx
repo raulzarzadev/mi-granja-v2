@@ -11,7 +11,7 @@ import { FarmCollaborator } from '@/types/collaborators'
 import { FARM_AREA_TYPES, FarmInvitation } from '@/types/farm'
 import AreaCard from './AreaCard'
 import CollaboratorCard from './CollaboratorCard'
-// import ModalCreateFarm from './ModalCreateFarm'
+import FarmSwitcherBar from './FarmSwitcherBar'
 import ModalCreateArea from './ModalCreateArea'
 import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditCollaborator from './ModalEditCollaborator'
@@ -191,39 +191,23 @@ const FarmSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Selector de granja + invitaciones */}
+      <FarmSwitcherBar />
+
       {/* Header con información de la granja actual */}
       {currentFarm && (
         <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">{currentFarm.name}</h2>
-              {currentFarm.description && (
-                <p className="text-gray-600 mt-1">{currentFarm.description}</p>
-              )}
-              {currentFarm.location?.city && (
-                <p className="text-sm text-gray-500 mt-1">
-                  📍 {currentFarm.location.city}
-                  {currentFarm.location.state && `, ${currentFarm.location.state}`}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center space-x-2">
-              {farms.length > 1 && (
-                <select
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  value={currentFarm.id}
-                  onChange={(e) => {
-                    switchFarm(e.target.value)
-                  }}
-                >
-                  {farms.map((farm) => (
-                    <option key={farm.id} value={farm.id}>
-                      {farm.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
+          <div className="mb-4">
+            <h2 className="text-2xl font-bold text-gray-900">{currentFarm.name}</h2>
+            {currentFarm.description && (
+              <p className="text-gray-600 mt-1">{currentFarm.description}</p>
+            )}
+            {currentFarm.location?.city && (
+              <p className="text-sm text-gray-500 mt-1">
+                📍 {currentFarm.location.city}
+                {currentFarm.location.state && `, ${currentFarm.location.state}`}
+              </p>
+            )}
           </div>
 
           {/* Navegación de sub-tabs */}
