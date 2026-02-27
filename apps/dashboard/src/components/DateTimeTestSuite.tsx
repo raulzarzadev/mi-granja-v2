@@ -5,17 +5,11 @@ import DateTimeInput from './inputs/DateTimeInput'
 
 const DateTimeTestSuite: React.FC = () => {
   const [testResults, setTestResults] = useState<string[]>([])
-  const [dateValue, setDateValue] = useState<Date | null>(
-    new Date(2024, 8, 15, 14, 30)
-  ) // 15 sep 2024, 14:30
-  const [dateOnlyValue, setDateOnlyValue] = useState<Date | null>(
-    new Date(2024, 11, 25)
-  ) // 25 dic 2024
+  const [dateValue, setDateValue] = useState<Date | null>(new Date(2024, 8, 15, 14, 30)) // 15 sep 2024, 14:30
+  const [dateOnlyValue, setDateOnlyValue] = useState<Date | null>(new Date(2024, 11, 25)) // 25 dic 2024
 
   const addResult = (test: string, passed: boolean, details?: string) => {
-    const result = `${passed ? '✅' : '❌'} ${test}${
-      details ? ` - ${details}` : ''
-    }`
+    const result = `${passed ? '✅' : '❌'} ${test}${details ? ` - ${details}` : ''}`
     setTestResults((prev) => [...prev, result])
   }
 
@@ -32,7 +26,7 @@ const DateTimeTestSuite: React.FC = () => {
         dateValue?.getFullYear() === 2024 &&
         dateValue?.getHours() === 14 &&
         dateValue?.getMinutes() === 30,
-      `Esperado: 15/Sep/2024 14:30, Actual: ${dateValue?.toLocaleString()}`
+      `Esperado: 15/Sep/2024 14:30, Actual: ${dateValue?.toLocaleString()}`,
     )
 
     addResult(
@@ -40,7 +34,7 @@ const DateTimeTestSuite: React.FC = () => {
       dateOnlyValue?.getDate() === 25 &&
         dateOnlyValue?.getMonth() === 11 &&
         dateOnlyValue?.getFullYear() === 2024,
-      `Esperado: 25/Dic/2024, Actual: ${dateOnlyValue?.toLocaleDateString()}`
+      `Esperado: 25/Dic/2024, Actual: ${dateOnlyValue?.toLocaleDateString()}`,
     )
   }
 
@@ -48,30 +42,28 @@ const DateTimeTestSuite: React.FC = () => {
     {
       name: 'Fecha específica con hora',
       date: new Date(2023, 5, 10, 9, 15), // 10 jun 2023, 09:15
-      type: 'datetime' as const
+      type: 'datetime' as const,
     },
     {
       name: 'Fecha de año pasado',
       date: new Date(2022, 0, 1), // 1 ene 2022
-      type: 'date' as const
+      type: 'date' as const,
     },
     {
       name: 'Fecha de año futuro',
       date: new Date(2026, 11, 31, 23, 59), // 31 dic 2026, 23:59
-      type: 'datetime' as const
+      type: 'datetime' as const,
     },
     {
       name: 'Fecha actual',
       date: new Date(),
-      type: 'datetime' as const
-    }
+      type: 'datetime' as const,
+    },
   ]
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold text-center">
-        Batería de Pruebas - DateTimeInput
-      </h1>
+      <h1 className="text-3xl font-bold text-center">Batería de Pruebas - DateTimeInput</h1>
 
       {/* Controles de prueba */}
       <div className="bg-gray-100 p-4 rounded-lg">
@@ -106,9 +98,7 @@ const DateTimeTestSuite: React.FC = () => {
 
       {/* Prueba principal - Componente interactivo */}
       <div className="bg-white border p-4 rounded-lg">
-        <h2 className="text-xl font-semibold mb-4">
-          Prueba Principal - Modo DateTime
-        </h2>
+        <h2 className="text-xl font-semibold mb-4">Prueba Principal - Modo DateTime</h2>
         <DateTimeInput
           type="datetime"
           value={dateValue}
@@ -116,14 +106,11 @@ const DateTimeTestSuite: React.FC = () => {
           label="Fecha y Hora de Prueba"
         />{' '}
         <div className="mt-4 p-3 bg-gray-50 rounded">
-          <strong>Valor actual:</strong>{' '}
-          {dateValue ? dateValue.toString() : 'null'}
+          <strong>Valor actual:</strong> {dateValue ? dateValue.toString() : 'null'}
           <br />
-          <strong>Fecha legible:</strong>{' '}
-          {dateValue ? dateValue.toLocaleString('es-ES') : 'null'}
+          <strong>Fecha legible:</strong> {dateValue ? dateValue.toLocaleString('es-ES') : 'null'}
           <br />
-          <strong>ISO String:</strong>{' '}
-          {dateValue ? dateValue.toISOString() : 'null'}
+          <strong>ISO String:</strong> {dateValue ? dateValue.toISOString() : 'null'}
         </div>
         <div className="mt-4 space-x-2">
           <button
@@ -149,9 +136,7 @@ const DateTimeTestSuite: React.FC = () => {
 
       {/* Prueba modo Date */}
       <div className="bg-white border p-4 rounded-lg">
-        <h2 className="text-xl font-semibold mb-4">
-          Prueba Secundaria - Modo Date
-        </h2>
+        <h2 className="text-xl font-semibold mb-4">Prueba Secundaria - Modo Date</h2>
         <DateTimeInput
           type="date"
           value={dateOnlyValue}
@@ -159,8 +144,7 @@ const DateTimeTestSuite: React.FC = () => {
           label="Solo Fecha"
         />{' '}
         <div className="mt-4 p-3 bg-gray-50 rounded">
-          <strong>Valor actual:</strong>{' '}
-          {dateOnlyValue ? dateOnlyValue.toString() : 'null'}
+          <strong>Valor actual:</strong> {dateOnlyValue ? dateOnlyValue.toString() : 'null'}
           <br />
           <strong>Fecha legible:</strong>{' '}
           {dateOnlyValue ? dateOnlyValue.toLocaleDateString('es-ES') : 'null'}
@@ -186,22 +170,14 @@ const DateTimeTestSuite: React.FC = () => {
       <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
         <h3 className="font-semibold">Tests Manuales Recomendados:</h3>
         <ul className="mt-2 space-y-1 text-sm">
-          <li>
-            1. Cambiar el día y verificar que se mantienen mes, año, hora y
-            minuto
-          </li>
+          <li>1. Cambiar el día y verificar que se mantienen mes, año, hora y minuto</li>
           <li>2. Cambiar el año y verificar que no se reduce el día</li>
           <li>3. Cambiar la hora y verificar que los minutos se mantienen</li>
           <li>4. Cambiar los minutos y verificar que la hora se mantiene</li>
           <li>5. Probar con fechas de febrero (28/29 días)</li>
           <li>6. Probar con meses de 30 y 31 días</li>
-          <li>
-            7. Verificar que el modo &lsquo;date&rsquo; no muestra hora/minuto
-          </li>
-          <li>
-            8. Verificar que el modo &lsquo;datetime&rsquo; muestra todos los
-            campos
-          </li>
+          <li>7. Verificar que el modo &lsquo;date&rsquo; no muestra hora/minuto</li>
+          <li>8. Verificar que el modo &lsquo;datetime&rsquo; muestra todos los campos</li>
         </ul>
       </div>
     </div>

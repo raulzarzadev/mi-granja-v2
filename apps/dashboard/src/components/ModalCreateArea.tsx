@@ -1,11 +1,11 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Modal } from './Modal'
+import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
+import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useModal } from '@/hooks/useModal'
 import { FARM_AREA_TYPES } from '@/types/farm'
-import { useFarmCRUD } from '@/hooks/useFarmCRUD'
-import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
+import { Modal } from './Modal'
 
 /**
  * Modal para crear una nueva área de la granja
@@ -20,7 +20,7 @@ const ModalCreateArea: React.FC = () => {
     type: 'other' as const,
     description: '',
     capacity: '',
-    notes: ''
+    notes: '',
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,7 +42,7 @@ const ModalCreateArea: React.FC = () => {
         description: formData.description.trim() || '',
         capacity: formData.capacity ? parseInt(formData.capacity) : null,
         isActive: true,
-        notes: formData.notes.trim() || ''
+        notes: formData.notes.trim() || '',
       })
 
       // Limpiar formulario
@@ -51,7 +51,7 @@ const ModalCreateArea: React.FC = () => {
         type: 'other',
         description: '',
         capacity: '',
-        notes: ''
+        notes: '',
       })
 
       closeModal()
@@ -65,7 +65,7 @@ const ModalCreateArea: React.FC = () => {
   const handleChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }))
   }
 
@@ -79,19 +79,11 @@ const ModalCreateArea: React.FC = () => {
         Nueva Área
       </button>
 
-      <Modal
-        isOpen={isOpen}
-        onClose={closeModal}
-        title="Crear Nueva Área"
-        size="md"
-      >
+      <Modal isOpen={isOpen} onClose={closeModal} title="Crear Nueva Área" size="md">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Nombre del área */}
           <div>
-            <label
-              htmlFor="areaName"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
+            <label htmlFor="areaName" className="block text-sm font-medium text-gray-700 mb-2">
               Nombre del Área *
             </label>
             <input
@@ -107,10 +99,7 @@ const ModalCreateArea: React.FC = () => {
 
           {/* Tipo de área */}
           <div>
-            <label
-              htmlFor="areaType"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
+            <label htmlFor="areaType" className="block text-sm font-medium text-gray-700 mb-2">
               Tipo de Área *
             </label>
             <select
@@ -148,10 +137,7 @@ const ModalCreateArea: React.FC = () => {
 
           {/* Capacidad */}
           <div>
-            <label
-              htmlFor="areaCapacity"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
+            <label htmlFor="areaCapacity" className="block text-sm font-medium text-gray-700 mb-2">
               Capacidad (Opcional)
             </label>
             <input
@@ -170,10 +156,7 @@ const ModalCreateArea: React.FC = () => {
 
           {/* Notas */}
           <div>
-            <label
-              htmlFor="areaNotes"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
+            <label htmlFor="areaNotes" className="block text-sm font-medium text-gray-700 mb-2">
               Notas (Opcional)
             </label>
             <textarea

@@ -34,7 +34,7 @@ const sizeClasses = {
   md: 'sm:max-w-md',
   lg: 'sm:max-w-lg',
   xl: 'sm:max-w-xl',
-  full: 'sm:max-w-[95vw]'
+  full: 'sm:max-w-[95vw]',
 }
 
 /**
@@ -52,7 +52,7 @@ export const Modal: React.FC<ModalProps> = ({
   showCloseButton = true,
   className = '',
   icon,
-  iconClassName
+  iconClassName,
 }) => {
   // Manejar tecla Escape
   useEffect(() => {
@@ -98,7 +98,7 @@ export const Modal: React.FC<ModalProps> = ({
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         paddingLeft: 'env(safe-area-inset-left)',
-        paddingRight: 'env(safe-area-inset-right)'
+        paddingRight: 'env(safe-area-inset-right)',
       }}
     >
       {/* Contenedor centrado para desktop */}
@@ -129,11 +129,7 @@ export const Modal: React.FC<ModalProps> = ({
                 </div>
               )}
               {showCloseButton && (
-                <ButtonClose
-                  onClick={onClose}
-                  title="cerrar modal"
-                  className="text-gray-800"
-                />
+                <ButtonClose onClick={onClose} title="cerrar modal" className="text-gray-800" />
               )}
             </div>
           )}
@@ -142,7 +138,7 @@ export const Modal: React.FC<ModalProps> = ({
           <div
             className="flex-1 overflow-y-scroll p-3 sm:p-4 "
             style={{
-              WebkitOverflowScrolling: 'touch'
+              WebkitOverflowScrolling: 'touch',
             }}
           >
             {children}

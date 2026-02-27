@@ -2,10 +2,10 @@
 
 import React from 'react'
 import {
+  AdminActionMetadata,
   formatAdminActionMessage,
-  isAdminAction,
   getAdminInfo,
-  AdminActionMetadata
+  isAdminAction,
 } from '@/lib/adminActions'
 import { Animal } from '@/types/animals'
 
@@ -19,10 +19,7 @@ interface AdminActionIndicatorProps {
  * @param data - Datos que pueden contener metadata de admin
  * @param className - Clases CSS adicionales
  */
-const AdminActionIndicator: React.FC<AdminActionIndicatorProps> = ({
-  data,
-  className = ''
-}) => {
+const AdminActionIndicator: React.FC<AdminActionIndicatorProps> = ({ data, className = '' }) => {
   // Cast del objeto para que sea compatible con las funciones de adminActions
   const dataWithAdmin = data as {
     [key: string]: unknown
@@ -41,9 +38,7 @@ const AdminActionIndicator: React.FC<AdminActionIndicatorProps> = ({
   }
 
   return (
-    <div
-      className={`bg-blue-50 border border-blue-200 rounded-md p-2 text-xs ${className}`}
-    >
+    <div className={`bg-blue-50 border border-blue-200 rounded-md p-2 text-xs ${className}`}>
       <div className="flex items-center space-x-1">
         <span className="text-blue-600">🛡️</span>
         <span className="text-blue-800 font-medium">{message}</span>

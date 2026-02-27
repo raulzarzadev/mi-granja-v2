@@ -1,6 +1,6 @@
 import { Urgency } from '@/types/comment'
 
-export { type Urgency }
+export type { Urgency }
 
 export const BadgeUrgency: React.FC<{
   level?: Urgency
@@ -9,7 +9,7 @@ export const BadgeUrgency: React.FC<{
   return (
     <span
       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${urgencyColor(
-        level
+        level,
       )}`}
     >
       {/* {urgencyLabels[level]} */}
@@ -46,5 +46,5 @@ const urgencyLabels: Record<Urgency, string> = {
   none: 'Sin urgencia',
   low: 'Baja',
   medium: 'Media',
-  high: 'Alta'
+  high: 'Alta',
 }

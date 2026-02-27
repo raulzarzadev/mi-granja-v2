@@ -1,5 +1,5 @@
-import { Animal } from '../types/animals'
 import { toDate } from 'date-fns'
+import { Animal } from '../types/animals'
 
 /**
  * Calcula la edad de un animal en diferentes formatos
@@ -17,15 +17,12 @@ import { toDate } from 'date-fns'
 export function animalAge(animal: Animal, options: { format: 'months' }): number
 
 // Sobrecarga: cuando format es 'short' o 'long' (o no se especifica), retorna string
-export function animalAge(
-  animal: Animal,
-  options?: { format?: 'short' | 'long' }
-): string
+export function animalAge(animal: Animal, options?: { format?: 'short' | 'long' }): string
 
 // Implementación real
 export function animalAge(
   animal: Animal,
-  options?: { format?: 'months' | 'short' | 'long' }
+  options?: { format?: 'months' | 'short' | 'long' },
 ): string | number {
   const format = options?.format || 'long'
 
@@ -70,9 +67,7 @@ export function animalAge(
     case 'short':
       if (years > 0) {
         if (months > 0) {
-          return days > 0
-            ? `${years}a${months}m${days}d`
-            : `${years}a${months}m`
+          return days > 0 ? `${years}a${months}m${days}d` : `${years}a${months}m`
         } else {
           return days > 0 ? `${years}a${days}d` : `${years}a`
         }

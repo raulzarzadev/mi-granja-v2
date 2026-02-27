@@ -1,4 +1,4 @@
-import React, { useState, ReactNode, KeyboardEvent, useEffect } from 'react'
+import React, { KeyboardEvent, ReactNode, useEffect, useState } from 'react'
 
 type Tab = {
   label: string
@@ -15,15 +15,9 @@ type TabsProps = {
   persistState?: boolean
 }
 
-const Tabs: React.FC<TabsProps> = ({
-  tabs,
-  initialActiveTab = 0,
-  tabsId,
-  persistState = true
-}) => {
+const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persistState = true }) => {
   // Generar un ID único si no se proporciona
-  const finalTabsId =
-    tabsId || `tabs-${Math.random().toString(36).substr(2, 9)}`
+  const finalTabsId = tabsId || `tabs-${Math.random().toString(36).substr(2, 9)}`
   const storageKey = `tabs-state-${finalTabsId}`
 
   // Función para obtener el estado inicial desde localStorage
@@ -76,8 +70,7 @@ const Tabs: React.FC<TabsProps> = ({
       e.preventDefault()
       let next = activeTab
       if (e.key === 'ArrowRight') next = (activeTab + 1) % tabs.length
-      if (e.key === 'ArrowLeft')
-        next = (activeTab - 1 + tabs.length) % tabs.length
+      if (e.key === 'ArrowLeft') next = (activeTab - 1 + tabs.length) % tabs.length
       if (e.key === 'Home') next = 0
       if (e.key === 'End') next = tabs.length - 1
       changeActiveTab(next)
@@ -109,9 +102,7 @@ const Tabs: React.FC<TabsProps> = ({
                   : 'bg-white/70 text-gray-600 border-gray-200 hover:bg-gray-50'
               } focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1`}
             >
-              <span className="whitespace-nowrap select-none leading-none">
-                {tab.label}
-              </span>
+              <span className="whitespace-nowrap select-none leading-none">{tab.label}</span>
               {typeof tab.badgeCount === 'number' && tab.badgeCount > 0 && (
                 <span
                   className={`inline-flex items-center justify-center rounded-full px-2 h-5 min-w-[1.25rem] text-[10px] font-semibold tracking-wide leading-none transition-colors ${

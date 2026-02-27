@@ -1,35 +1,28 @@
 'use client'
 
+import { addDoc, collection, doc, updateDoc } from 'firebase/firestore'
 import React, { useState } from 'react'
-import { User } from '@/types'
-import { updateDoc, doc, addDoc, collection } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { User } from '@/types'
 
 interface AdminUserActionsProps {
   user: User
   onClose: () => void
 }
 
-export default function AdminUserActions({
-  user,
-  onClose
-}: AdminUserActionsProps) {
+export default function AdminUserActions({ user, onClose }: AdminUserActionsProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [newRole, setNewRole] = useState('')
 
   const handleAddRole = async () => {
-    if (!newRole || user.roles.includes(newRole as 'admin' | 'farmer' | 'vet'))
-      return
+    if (!newRole || user.roles.includes(newRole as 'admin' | 'farmer' | 'vet')) return
 
     setIsLoading(true)
     try {
-      const updatedRoles = [
-        ...user.roles,
-        newRole as 'admin' | 'farmer' | 'vet'
-      ]
+      const updatedRoles = [...user.roles, newRole as 'admin' | 'farmer' | 'vet']
       await updateDoc(doc(db, 'users', user.id), {
         roles: updatedRoles,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
 
       // Registrar la acción
@@ -39,7 +32,7 @@ export default function AdminUserActions({
         targetUserEmail: user.email,
         newRole: newRole,
         timestamp: new Date(),
-        adminNote: `Rol ${newRole} agregado por admin`
+        adminNote: `Rol ${newRole} agregado por admin`,
       })
 
       setNewRole('')
@@ -63,7 +56,7 @@ export default function AdminUserActions({
       const updatedRoles = user.roles.filter((role) => role !== roleToRemove)
       await updateDoc(doc(db, 'users', user.id), {
         roles: updatedRoles,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
 
       // Registrar la acción
@@ -73,7 +66,7 @@ export default function AdminUserActions({
         targetUserEmail: user.email,
         removedRole: roleToRemove,
         timestamp: new Date(),
-        adminNote: `Rol ${roleToRemove} removido por admin`
+        adminNote: `Rol ${roleToRemove} removido por admin`,
       })
 
       alert('Rol removido exitosamente')
@@ -93,7 +86,7 @@ export default function AdminUserActions({
       await updateDoc(doc(db, 'users', user.id), {
         suspended: true,
         suspendedAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
 
       // Registrar la acción
@@ -102,7 +95,7 @@ export default function AdminUserActions({
         targetUserId: user.id,
         targetUserEmail: user.email,
         timestamp: new Date(),
-        adminNote: `Usuario suspendido por admin`
+        adminNote: `Usuario suspendido por admin`,
       })
 
       alert('Usuario suspendido exitosamente')
@@ -120,13 +113,8 @@ export default function AdminUserActions({
       <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div className="mt-3">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-gray-900">
-              Acciones para {user.email}
-            </h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <h3 className="text-lg font-medium text-gray-900">Acciones para {user.email}</h3>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
               ✕
             </button>
           </div>
@@ -134,19 +122,13 @@ export default function AdminUserActions({
           <div className="space-y-4">
             {/* Información del usuario */}
             <div className="bg-gray-50 p-3 rounded">
-              <p className="text-sm text-gray-600">
-                Granja: {user.farmName || 'Sin nombre'}
-              </p>
-              <p className="text-sm text-gray-600">
-                Roles actuales: {user.roles.join(', ')}
-              </p>
+              <p className="text-sm text-gray-600">Granja: {user.farmName || 'Sin nombre'}</p>
+              <p className="text-sm text-gray-600">Roles actuales: {user.roles.join(', ')}</p>
             </div>
 
             {/* Gestión de roles */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-2">
-                Gestionar Roles
-              </h4>
+              <h4 className="font-medium text-gray-900 mb-2">Gestionar Roles</h4>
 
               {/* Roles actuales */}
               <div className="mb-3">
@@ -194,9 +176,7 @@ export default function AdminUserActions({
 
             {/* Acciones peligrosas */}
             <div className="border-t pt-4">
-              <h4 className="font-medium text-red-700 mb-2">
-                Acciones Administrativas
-              </h4>
+              <h4 className="font-medium text-red-700 mb-2">Acciones Administrativas</h4>
               <button
                 onClick={suspendUser}
                 disabled={isLoading}

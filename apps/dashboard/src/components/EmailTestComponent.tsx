@@ -3,13 +3,11 @@
 import React, { useState } from 'react'
 import { useEmail } from '@/hooks/useEmail'
 
-const EMAIL_TEST =
-  process.env.NEXT_PUBLIC_RESEND_TEST_EMAIL || 'test@example.com'
+const EMAIL_TEST = process.env.NEXT_PUBLIC_RESEND_TEST_EMAIL || 'test@example.com'
 const NAME_TEST = process.env.NEXT_PUBLIC_RESEND_TEST_NAME || 'Usuario'
 
 const EmailTestComponent: React.FC = () => {
-  const { sendEmail, sendWelcomeEmail, sendReminderEmail, isLoading, error } =
-    useEmail()
+  const { sendEmail, sendWelcomeEmail, sendReminderEmail, isLoading, error } = useEmail()
   const [emailResult, setEmailResult] = useState<string>('')
 
   const handleSendBasicEmail = async () => {
@@ -18,15 +16,11 @@ const EmailTestComponent: React.FC = () => {
         to: EMAIL_TEST,
         subject: `Email de prueba para ${NAME_TEST}`,
         html: '<h1>¡Hola!</h1><p>Este es un email de prueba desde Mi Granja.</p>',
-        text: '¡Hola! Este es un email de prueba desde Mi Granja.'
+        text: '¡Hola! Este es un email de prueba desde Mi Granja.',
       })
-      setEmailResult(
-        `Email enviado exitosamente: ${JSON.stringify(result.data, null, 2)}`
-      )
+      setEmailResult(`Email enviado exitosamente: ${JSON.stringify(result.data, null, 2)}`)
     } catch (err) {
-      setEmailResult(
-        `Error: ${err instanceof Error ? err.message : 'Error desconocido'}`
-      )
+      setEmailResult(`Error: ${err instanceof Error ? err.message : 'Error desconocido'}`)
     }
   }
 
@@ -34,15 +28,11 @@ const EmailTestComponent: React.FC = () => {
     try {
       const result = await sendWelcomeEmail({
         userName: NAME_TEST,
-        userEmail: EMAIL_TEST
+        userEmail: EMAIL_TEST,
       })
-      setEmailResult(
-        `Email de bienvenida enviado: ${JSON.stringify(result.data, null, 2)}`
-      )
+      setEmailResult(`Email de bienvenida enviado: ${JSON.stringify(result.data, null, 2)}`)
     } catch (err) {
-      setEmailResult(
-        `Error: ${err instanceof Error ? err.message : 'Error desconocido'}`
-      )
+      setEmailResult(`Error: ${err instanceof Error ? err.message : 'Error desconocido'}`)
     }
   }
 
@@ -52,16 +42,11 @@ const EmailTestComponent: React.FC = () => {
         userName: NAME_TEST,
         userEmail: EMAIL_TEST,
         reminderType: 'Vacunación de ganado',
-        reminderText:
-          'Recuerda vacunar a las vacas del área norte mañana a las 8:00 AM.'
+        reminderText: 'Recuerda vacunar a las vacas del área norte mañana a las 8:00 AM.',
       })
-      setEmailResult(
-        `Email de recordatorio enviado: ${JSON.stringify(result.data, null, 2)}`
-      )
+      setEmailResult(`Email de recordatorio enviado: ${JSON.stringify(result.data, null, 2)}`)
     } catch (err) {
-      setEmailResult(
-        `Error: ${err instanceof Error ? err.message : 'Error desconocido'}`
-      )
+      setEmailResult(`Error: ${err instanceof Error ? err.message : 'Error desconocido'}`)
     }
   }
 

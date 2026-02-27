@@ -10,7 +10,7 @@ describe('Animal Migration to animalNumber', () => {
       oveja: 'O',
       vaca_leche: 'V',
       vaca_engorda: 'V',
-      cerdo: 'P'
+      cerdo: 'P',
     }
 
     // Verificar que los prefijos son correctos
@@ -69,16 +69,12 @@ describe('Animal Migration to animalNumber', () => {
     }
 
     if (needsMigration('C001')) {
-      throw new Error(
-        'Animal with existing animalNumber should not need migration'
-      )
+      throw new Error('Animal with existing animalNumber should not need migration')
     }
 
     // 2. Generación de números únicos debe ser incremental
     const existingNumbers = ['C001', 'C002', 'C005']
-    const maxNumber = Math.max(
-      ...existingNumbers.map((n) => parseInt(n.slice(1)))
-    )
+    const maxNumber = Math.max(...existingNumbers.map((n) => parseInt(n.slice(1))))
     const nextNumber = maxNumber + 1
 
     if (nextNumber !== 6) {
@@ -90,7 +86,7 @@ describe('Animal Migration to animalNumber', () => {
       const map: Record<string, string> = {
         cabra: 'C',
         vaca_leche: 'V',
-        oveja: 'O'
+        oveja: 'O',
       }
       return map[type] || 'X'
     }

@@ -14,7 +14,7 @@ type BrandLogoProps = {
 const paths: Record<'verde' | 'blanco' | 'negro', string> = {
   verde: '/logo/logo-migranja-verde.svg',
   blanco: '/logo/logo-migranja-blanco.svg',
-  negro: '/logo/logo-migranja-negro.svg'
+  negro: '/logo/logo-migranja-negro.svg',
 }
 
 const BrandLogo: React.FC<BrandLogoProps> = ({
@@ -22,7 +22,7 @@ const BrandLogo: React.FC<BrandLogoProps> = ({
   width = 180,
   height = 48,
   className,
-  alt
+  alt,
 }) => {
   const src = paths[variant]
   return (

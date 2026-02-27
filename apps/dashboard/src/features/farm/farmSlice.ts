@@ -16,7 +16,7 @@ const initialState: FarmState = {
   invitationFarms: [],
   currentFarm: null,
   isLoading: false,
-  error: null
+  error: null,
 }
 
 const farmSlice = createSlice({
@@ -41,10 +41,7 @@ const farmSlice = createSlice({
       state.error = null
 
       // Si no hay granja actual o ya no existe, establecer la primera
-      if (
-        !state.currentFarm ||
-        !action.payload.find((f) => f.id === state.currentFarm?.id)
-      ) {
+      if (!state.currentFarm || !action.payload.find((f) => f.id === state.currentFarm?.id)) {
         state.currentFarm = action.payload.length > 0 ? action.payload[0] : null
       }
     },
@@ -57,10 +54,7 @@ const farmSlice = createSlice({
         if (!invitationIds.has(f.id)) merged.push(f)
       })
       state.farms = merged
-      if (
-        state.currentFarm &&
-        !state.farms.find((f) => f.id === state.currentFarm?.id)
-      ) {
+      if (state.currentFarm && !state.farms.find((f) => f.id === state.currentFarm?.id)) {
         state.currentFarm = state.farms[0] || null
       }
     },
@@ -72,10 +66,7 @@ const farmSlice = createSlice({
         if (!myIds.has(f.id)) merged.push(f)
       })
       state.farms = merged
-      if (
-        state.currentFarm &&
-        !state.farms.find((f) => f.id === state.currentFarm?.id)
-      ) {
+      if (state.currentFarm && !state.farms.find((f) => f.id === state.currentFarm?.id)) {
         state.currentFarm = state.farms[0] || null
       }
     },
@@ -89,10 +80,7 @@ const farmSlice = createSlice({
       }
     },
 
-    updateFarm: (
-      state,
-      action: PayloadAction<{ id: string; updates: Partial<Farm> }>
-    ) => {
+    updateFarm: (state, action: PayloadAction<{ id: string; updates: Partial<Farm> }>) => {
       const { id, updates } = action.payload
       const farmIndex = state.farms.findIndex((farm) => farm.id === id)
 
@@ -126,10 +114,7 @@ const farmSlice = createSlice({
     },
 
     // Acciones para áreas dentro de la granja
-    addAreaToFarm: (
-      state,
-      action: PayloadAction<{ farmId: string; area: FarmArea }>
-    ) => {
+    addAreaToFarm: (state, action: PayloadAction<{ farmId: string; area: FarmArea }>) => {
       const { farmId, area } = action.payload
       const farm = state.farms.find((f) => f.id === farmId)
       const farmAreas = farm?.areas || []
@@ -150,7 +135,7 @@ const farmSlice = createSlice({
         farmId: string
         areaId: string
         updates: Partial<FarmArea>
-      }>
+      }>,
     ) => {
       const { farmId, areaId, updates } = action.payload
       const farm = state.farms.find((f) => f.id === farmId)
@@ -169,10 +154,7 @@ const farmSlice = createSlice({
       }
     },
 
-    removeAreaFromFarm: (
-      state,
-      action: PayloadAction<{ farmId: string; areaId: string }>
-    ) => {
+    removeAreaFromFarm: (state, action: PayloadAction<{ farmId: string; areaId: string }>) => {
       const { farmId, areaId } = action.payload
       const farm = state.farms.find((f) => f.id === farmId)
       const farmAreas = farm?.areas || []
@@ -193,7 +175,7 @@ const farmSlice = createSlice({
       action: PayloadAction<{
         farmId: string
         collaborator: NonNullable<Farm['collaborators']>[0]
-      }>
+      }>,
     ) => {
       const { farmId, collaborator } = action.payload
       const farm = state.farms.find((f) => f.id === farmId)
@@ -218,19 +200,17 @@ const farmSlice = createSlice({
         farmId: string
         collaboratorId: string
         updates: Partial<NonNullable<Farm['collaborators']>[0]>
-      }>
+      }>,
     ) => {
       const { farmId, collaboratorId, updates } = action.payload
       const farm = state.farms.find((f) => f.id === farmId)
 
       if (farm?.collaborators) {
-        const collaboratorIndex = farm.collaborators.findIndex(
-          (c) => c.id === collaboratorId
-        )
+        const collaboratorIndex = farm.collaborators.findIndex((c) => c.id === collaboratorId)
         if (collaboratorIndex !== -1) {
           farm.collaborators[collaboratorIndex] = {
             ...farm.collaborators[collaboratorIndex],
-            ...updates
+            ...updates,
           }
           farm.updatedAt = new Date()
 
@@ -247,15 +227,13 @@ const farmSlice = createSlice({
       action: PayloadAction<{
         farmId: string
         collaboratorId: string
-      }>
+      }>,
     ) => {
       const { farmId, collaboratorId } = action.payload
       const farm = state.farms.find((f) => f.id === farmId)
 
       if (farm?.collaborators) {
-        farm.collaborators = farm.collaborators.filter(
-          (c) => c.id !== collaboratorId
-        )
+        farm.collaborators = farm.collaborators.filter((c) => c.id !== collaboratorId)
         farm.updatedAt = new Date()
 
         // Si es la granja actual, actualizar también
@@ -265,8 +243,8 @@ const farmSlice = createSlice({
       }
     },
 
-    clearFarms: () => initialState
-  }
+    clearFarms: () => initialState,
+  },
 })
 
 export const {
@@ -285,7 +263,7 @@ export const {
   addCollaboratorToFarm,
   updateCollaboratorInFarm,
   removeCollaboratorFromFarm,
-  clearFarms
+  clearFarms,
 } = farmSlice.actions
 
 export const farmReducer = farmSlice.reducer

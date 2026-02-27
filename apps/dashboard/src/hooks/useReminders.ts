@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react'
-import { useSelector } from 'react-redux'
 import {
-  collection,
   addDoc,
-  updateDoc,
+  collection,
   deleteDoc,
   doc,
-  query,
-  where,
-  orderBy,
   onSnapshot,
-  Timestamp
+  orderBy,
+  query,
+  Timestamp,
+  updateDoc,
+  where,
 } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
+import { db } from '@/lib/firebase'
 import { Reminder } from '@/types'
 
 export const useReminders = () => {
@@ -33,11 +33,7 @@ export const useReminders = () => {
 
     const constraints = [where('farmerId', '==', user.id)]
     if (currentFarm?.id) constraints.push(where('farmId', '==', currentFarm.id))
-    const q = query(
-      collection(db, 'reminders'),
-      ...constraints,
-      orderBy('dueDate', 'asc')
-    )
+    const q = query(collection(db, 'reminders'), ...constraints, orderBy('dueDate', 'asc'))
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const remindersData: Reminder[] = []
@@ -54,7 +50,7 @@ export const useReminders = () => {
           priority: data.priority || 'medium',
           type: data.type || 'other',
           createdAt: data.createdAt.toDate(),
-          updatedAt: data.updatedAt.toDate()
+          updatedAt: data.updatedAt.toDate(),
         })
       })
       setReminders(remindersData)
@@ -66,7 +62,7 @@ export const useReminders = () => {
 
   // Crear recordatorio
   const createReminder = async (
-    data: Omit<Reminder, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
+    data: Omit<Reminder, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>,
   ) => {
     if (!user) throw new Error('Usuario no autenticado')
     if (!currentFarm?.id) throw new Error('Selecciona una granja primero')
@@ -85,7 +81,7 @@ export const useReminders = () => {
         priority: data.priority || 'medium',
         type: data.type || 'other',
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       }
 
       await addDoc(collection(db, 'reminders'), docData)
@@ -100,24 +96,21 @@ export const useReminders = () => {
   // Actualizar recordatorio
   const updateReminder = async (
     id: string,
-    updates: Partial<Omit<Reminder, 'id' | 'farmerId' | 'createdAt'>>
+    updates: Partial<Omit<Reminder, 'id' | 'farmerId' | 'createdAt'>>,
   ) => {
     setIsSubmitting(true)
     try {
       const docRef = doc(db, 'reminders', id)
       const updateData: Record<string, any> = {
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       }
 
       if (updates.title !== undefined) updateData.title = updates.title
-      if (updates.description !== undefined)
-        updateData.description = updates.description
-      if (updates.completed !== undefined)
-        updateData.completed = updates.completed
+      if (updates.description !== undefined) updateData.description = updates.description
+      if (updates.completed !== undefined) updateData.completed = updates.completed
       if (updates.priority !== undefined) updateData.priority = updates.priority
       if (updates.type !== undefined) updateData.type = updates.type
-      if (updates.animalNumber !== undefined)
-        updateData.animalNumber = updates.animalNumber
+      if (updates.animalNumber !== undefined) updateData.animalNumber = updates.animalNumber
 
       if (updates.dueDate) {
         updateData.dueDate = Timestamp.fromDate(new Date(updates.dueDate))
@@ -152,9 +145,7 @@ export const useReminders = () => {
 
   // Obtener recordatorios por animal
   const getRemindersByAnimal = (animalNumber: string) => {
-    return reminders.filter(
-      (reminder) => reminder.animalNumber === animalNumber
-    )
+    return reminders.filter((reminder) => reminder.animalNumber === animalNumber)
   }
 
   // Obtener recordatorios pendientes
@@ -167,9 +158,7 @@ export const useReminders = () => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    return reminders.filter(
-      (reminder) => !reminder.completed && new Date(reminder.dueDate) < today
-    )
+    return reminders.filter((reminder) => !reminder.completed && new Date(reminder.dueDate) < today)
   }
 
   // Obtener recordatorios de hoy
@@ -212,7 +201,7 @@ export const useReminders = () => {
       completed,
       overdue,
       today,
-      upcoming
+      upcoming,
     }
   }
 
@@ -229,6 +218,6 @@ export const useReminders = () => {
     getOverdueReminders,
     getTodayReminders,
     getUpcomingReminders,
-    getStats
+    getStats,
   }
 }

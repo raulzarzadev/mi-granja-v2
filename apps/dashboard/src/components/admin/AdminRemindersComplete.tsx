@@ -1,10 +1,10 @@
 'use client'
 
-import React from 'react'
-import { useAdminReminders } from '@/hooks/admin/useAdminReminders'
-import { format, isAfter, isBefore, addDays } from 'date-fns'
+import { addDays, format, isAfter, isBefore } from 'date-fns'
 import { es } from 'date-fns/locale'
+import React from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { useAdminReminders } from '@/hooks/admin/useAdminReminders'
 
 export default function AdminRemindersComplete() {
   const { reminders, isLoading, error } = useAdminReminders()
@@ -29,16 +29,11 @@ export default function AdminRemindersComplete() {
   const now = new Date()
   const tomorrow = addDays(now, 1)
 
-  const overdue = reminders.filter(
-    (r) => !r.completed && isBefore(r.dueDate, now)
-  )
+  const overdue = reminders.filter((r) => !r.completed && isBefore(r.dueDate, now))
   const today = reminders.filter(
-    (r) =>
-      !r.completed && isAfter(r.dueDate, now) && isBefore(r.dueDate, tomorrow)
+    (r) => !r.completed && isAfter(r.dueDate, now) && isBefore(r.dueDate, tomorrow),
   )
-  const upcoming = reminders.filter(
-    (r) => !r.completed && isAfter(r.dueDate, tomorrow)
-  )
+  const upcoming = reminders.filter((r) => !r.completed && isAfter(r.dueDate, tomorrow))
   const completed = reminders.filter((r) => r.completed)
 
   const getPriorityColor = (priority: string) => {
@@ -73,43 +68,29 @@ export default function AdminRemindersComplete() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Gestión de Recordatorios
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Vista general de los recordatorios en el sistema
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">Gestión de Recordatorios</h1>
+          <p className="text-gray-600 mt-1">Vista general de los recordatorios en el sistema</p>
         </div>
-        <div className="text-sm text-gray-500">
-          Total: {reminders.length} recordatorios
-        </div>
+        <div className="text-sm text-gray-500">Total: {reminders.length} recordatorios</div>
       </div>
 
       {/* Estadísticas rápidas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-red-50 p-4 rounded-lg shadow border-l-4 border-red-400">
           <div className="text-sm text-red-600 font-medium">Vencidos</div>
-          <div className="text-2xl font-bold text-red-900">
-            {overdue.length}
-          </div>
+          <div className="text-2xl font-bold text-red-900">{overdue.length}</div>
         </div>
         <div className="bg-yellow-50 p-4 rounded-lg shadow border-l-4 border-yellow-400">
           <div className="text-sm text-yellow-600 font-medium">Hoy</div>
-          <div className="text-2xl font-bold text-yellow-900">
-            {today.length}
-          </div>
+          <div className="text-2xl font-bold text-yellow-900">{today.length}</div>
         </div>
         <div className="bg-blue-50 p-4 rounded-lg shadow border-l-4 border-blue-400">
           <div className="text-sm text-blue-600 font-medium">Próximos</div>
-          <div className="text-2xl font-bold text-blue-900">
-            {upcoming.length}
-          </div>
+          <div className="text-2xl font-bold text-blue-900">{upcoming.length}</div>
         </div>
         <div className="bg-green-50 p-4 rounded-lg shadow border-l-4 border-green-400">
           <div className="text-sm text-green-600 font-medium">Completados</div>
-          <div className="text-2xl font-bold text-green-900">
-            {completed.length}
-          </div>
+          <div className="text-2xl font-bold text-green-900">{completed.length}</div>
         </div>
       </div>
 
@@ -149,17 +130,11 @@ export default function AdminRemindersComplete() {
                 {overdue.map((reminder) => (
                   <tr key={reminder.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className="text-2xl">
-                        {getTypeIcon(reminder.type)}
-                      </span>
+                      <span className="text-2xl">{getTypeIcon(reminder.type)}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {reminder.title}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {reminder.description}
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{reminder.title}</div>
+                      <div className="text-sm text-gray-500">{reminder.description}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {reminder.animalNumber || 'General'}
@@ -173,7 +148,7 @@ export default function AdminRemindersComplete() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(
-                          reminder.priority
+                          reminder.priority,
                         )}`}
                       >
                         {reminder.priority}
@@ -190,9 +165,7 @@ export default function AdminRemindersComplete() {
       {/* Todos los recordatorios */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">
-            Todos los Recordatorios
-          </h3>
+          <h3 className="text-lg font-medium text-gray-900">Todos los Recordatorios</h3>
         </div>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -238,12 +211,8 @@ export default function AdminRemindersComplete() {
                   <span className="text-2xl">{getTypeIcon(reminder.type)}</span>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-gray-900">
-                    {reminder.title}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {reminder.description}
-                  </div>
+                  <div className="text-sm font-medium text-gray-900">{reminder.title}</div>
+                  <div className="text-sm text-gray-500">{reminder.description}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {reminder.animalNumber || 'General'}
@@ -257,7 +226,7 @@ export default function AdminRemindersComplete() {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(
-                      reminder.priority
+                      reminder.priority,
                     )}`}
                   >
                     {reminder.priority}
@@ -270,9 +239,7 @@ export default function AdminRemindersComplete() {
 
         {reminders.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-gray-500">
-              No se encontraron recordatorios registrados
-            </p>
+            <p className="text-gray-500">No se encontraron recordatorios registrados</p>
           </div>
         )}
       </div>

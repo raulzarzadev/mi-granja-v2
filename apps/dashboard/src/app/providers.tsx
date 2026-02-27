@@ -1,17 +1,17 @@
 'use client'
 
+import { onAuthStateChanged } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 import React, { useEffect } from 'react'
 import { Provider, useDispatch, useSelector } from 'react-redux'
-import { RootState, store } from '@/features/store'
-import { onAuthStateChanged } from 'firebase/auth'
-import { auth, db } from '@/lib/firebase'
 import { setUser } from '@/features/auth/authSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
-import { doc, getDoc } from 'firebase/firestore'
-import { User } from '@/types'
-import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import { RootState, store } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
+import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import { auth, db } from '@/lib/firebase'
+import { User } from '@/types'
 
 interface ProvidersProps {
   children: React.ReactNode
@@ -31,7 +31,7 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
           const userData = userFound.data() as User
           const serializedUser = serializeObj({
             ...userData,
-            id: firebaseUser.uid
+            id: firebaseUser.uid,
           })
           dispatch(setUser(serializedUser))
         } catch (error) {

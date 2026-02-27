@@ -1,4 +1,4 @@
-import { format, toDate as fnsToDate } from 'date-fns'
+import { toDate as fnsToDate, format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Timestamp } from 'firebase/firestore'
 
@@ -29,16 +29,13 @@ export const toDate = (date: string | number | string | Timestamp | Date) => {
 }
 
 // Normaliza una fecha al inicio del día en horario local (00:00)
-export const startOfLocalDay = (d: Date) =>
-  new Date(d.getFullYear(), d.getMonth(), d.getDate())
+export const startOfLocalDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
 
 // Convierte cualquier input válido a Date y normaliza al inicio del día local
 export const toLocalDateStart = (date: string | number | Timestamp | Date) =>
   startOfLocalDay(toDate(date as any))
 
-export function fromNow(
-  date: string | number | string | Timestamp | Date | null
-) {
+export function fromNow(date: string | number | string | Timestamp | Date | null) {
   if (!date) {
     console.error('fromNow: date is null or undefined')
     return ''

@@ -1,7 +1,7 @@
+import { useState } from 'react'
 import { useModal } from '@/hooks/useModal'
 import { Modal } from '../Modal'
 import Button, { ButtonProps } from './Button'
-import { useState } from 'react'
 
 export default function ButtonConfirm({
   openLabel = 'Confirmar',
@@ -10,7 +10,7 @@ export default function ButtonConfirm({
   confirmText = '¿Estás seguro de que quieres continuar?',
   onConfirm,
   openProps,
-  confirmProps
+  confirmProps,
 }: {
   openLabel?: string
   closeLabel?: string
@@ -21,7 +21,7 @@ export default function ButtonConfirm({
   confirmProps?: ButtonProps
 }) {
   const modal = useModal({
-    title: 'Confirmación'
+    title: 'Confirmación',
   })
   const [isLoading, setIsLoading] = useState(false)
 
@@ -64,11 +64,7 @@ export default function ButtonConfirm({
             >
               {closeLabel}
             </Button>
-            <Button
-              onClick={handleConfirm}
-              disabled={isLoading}
-              {...confirmProps}
-            >
+            <Button onClick={handleConfirm} disabled={isLoading} {...confirmProps}>
               {confirmLabel}
             </Button>
           </div>

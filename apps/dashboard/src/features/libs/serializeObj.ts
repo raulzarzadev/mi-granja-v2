@@ -1,1 +1,1 @@
-export { serializeObj, deserializeObj } from '@mi-granja/shared/lib/serializeObj'
+export { deserializeObj, serializeObj } from '@mi-granja/shared/lib/serializeObj'

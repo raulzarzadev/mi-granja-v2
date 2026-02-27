@@ -1,14 +1,13 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Modal } from './Modal'
-import { useModal } from '@/hooks/useModal'
-import { useFarmMembers } from '@/hooks/useFarmMembers'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
-import { DEFAULT_PERMISSIONS } from '@/types/collaborators'
-import { COLLABORATOR_ROLES } from '@/types/collaborators'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import { useFarmMembers } from '@/hooks/useFarmMembers'
+import { useModal } from '@/hooks/useModal'
+import { COLLABORATOR_ROLES, DEFAULT_PERMISSIONS } from '@/types/collaborators'
+import { Modal } from './Modal'
 
 /**
  * Modal para invitar colaboradores a la granja
@@ -22,12 +21,10 @@ const ModalInviteCollaborator: React.FC = () => {
   const [formData, setFormData] = useState({
     email: '',
     role: 'caretaker' as const,
-    notes: ''
+    notes: '',
   })
 
-  const selectedRole = COLLABORATOR_ROLES.find(
-    (role) => role.value === formData.role
-  )
+  const selectedRole = COLLABORATOR_ROLES.find((role) => role.value === formData.role)
   const selectedPermissions = DEFAULT_PERMISSIONS[formData.role]
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,7 +42,7 @@ const ModalInviteCollaborator: React.FC = () => {
       setFormData({
         email: '',
         role: 'caretaker',
-        notes: ''
+        notes: '',
       })
 
       closeModal()
@@ -59,7 +56,7 @@ const ModalInviteCollaborator: React.FC = () => {
   const handleChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }))
   }
 
@@ -73,12 +70,7 @@ const ModalInviteCollaborator: React.FC = () => {
         Invitar Colaborador
       </button>
 
-      <Modal
-        isOpen={isOpen}
-        onClose={closeModal}
-        title="Invitar Colaborador"
-        size="md"
-      >
+      <Modal isOpen={isOpen} onClose={closeModal} title="Invitar Colaborador" size="md">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email */}
           <div>
@@ -122,9 +114,7 @@ const ModalInviteCollaborator: React.FC = () => {
             </select>
 
             {selectedRole && (
-              <p className="text-sm text-gray-600 mt-2">
-                {selectedRole.description}
-              </p>
+              <p className="text-sm text-gray-600 mt-2">{selectedRole.description}</p>
             )}
           </div>
 
@@ -135,13 +125,8 @@ const ModalInviteCollaborator: React.FC = () => {
             </h4>
             <div className="space-y-2">
               {selectedPermissions.map((permission, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <span className="text-gray-700 capitalize">
-                    {permission.module}
-                  </span>
+                <div key={index} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-700 capitalize">{permission.module}</span>
                   <div className="flex gap-1">
                     {permission.actions.map((action) => (
                       <span
@@ -159,9 +144,7 @@ const ModalInviteCollaborator: React.FC = () => {
 
           {/* Información adicional */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-yellow-800 mb-2">
-              📧 Proceso de invitación
-            </h4>
+            <h4 className="text-sm font-medium text-yellow-800 mb-2">📧 Proceso de invitación</h4>
             <ul className="text-sm text-yellow-700 space-y-1">
               <li>• Se enviará una invitación por correo electrónico</li>
               <li>• La invitación expirará en 7 días</li>

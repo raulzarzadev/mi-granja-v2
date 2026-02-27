@@ -29,21 +29,17 @@ const BirthsWindowSummary: React.FC<BirthsWindowSummaryProps> = ({
   pastDue,
   upcoming,
   days,
-  onSelectRecord
+  onSelectRecord,
 }) => {
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <section>
         <h4 className="font-semibold text-sm flex items-center gap-2 mb-2 text-red-600">
           Atrasados
-          <span className="px-2 py-0.5 rounded bg-red-100 text-xs">
-            {pastDue.length}
-          </span>
+          <span className="px-2 py-0.5 rounded bg-red-100 text-xs">{pastDue.length}</span>
         </h4>
         {pastDue.length === 0 ? (
-          <p className="text-xs text-gray-500">
-            Sin partos atrasados (últimos {days} días).
-          </p>
+          <p className="text-xs text-gray-500">Sin partos atrasados (últimos {days} días).</p>
         ) : (
           <ul className="space-y-1 text-sm">
             {pastDue.map((item) => (
@@ -53,9 +49,7 @@ const BirthsWindowSummary: React.FC<BirthsWindowSummaryProps> = ({
                 onClick={() => onSelectRecord?.(item.record)}
               >
                 <span className="font-medium">Hembra {item.info.femaleId}</span>
-                <span className="text-xs text-red-700">
-                  {formatRelative(item.daysDiff)}
-                </span>
+                <span className="text-xs text-red-700">{formatRelative(item.daysDiff)}</span>
               </li>
             ))}
           </ul>
@@ -64,14 +58,10 @@ const BirthsWindowSummary: React.FC<BirthsWindowSummaryProps> = ({
       <section>
         <h4 className="font-semibold text-sm flex items-center gap-2 mb-2 text-yellow-600">
           Próximos
-          <span className="px-2 py-0.5 rounded bg-yellow-100 text-xs">
-            {upcoming.length}
-          </span>
+          <span className="px-2 py-0.5 rounded bg-yellow-100 text-xs">{upcoming.length}</span>
         </h4>
         {upcoming.length === 0 ? (
-          <p className="text-xs text-gray-500">
-            No hay partos en los próximos {days} días.
-          </p>
+          <p className="text-xs text-gray-500">No hay partos en los próximos {days} días.</p>
         ) : (
           <ul className="space-y-1 text-sm">
             {upcoming.map((item) => (
@@ -81,9 +71,7 @@ const BirthsWindowSummary: React.FC<BirthsWindowSummaryProps> = ({
                 onClick={() => onSelectRecord?.(item.record)}
               >
                 <span className="font-medium">Hembra {item.info.femaleId}</span>
-                <span className="text-xs text-yellow-700">
-                  {formatRelative(item.daysDiff)}
-                </span>
+                <span className="text-xs text-yellow-700">{formatRelative(item.daysDiff)}</span>
               </li>
             ))}
           </ul>

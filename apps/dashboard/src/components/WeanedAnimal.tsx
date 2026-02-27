@@ -1,15 +1,15 @@
 'use client'
 
-import { getWeaningDays } from '@/lib/animalBreedingConfig'
-import { Animal } from '@/types/animals'
 import { addDays, differenceInCalendarDays, format, toDate } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useState } from 'react'
+import { setLoading } from '@/features/auth/authSlice'
+import { useAnimalCRUD, WeanNextStage } from '@/hooks/useAnimalCRUD'
+import { getWeaningDays } from '@/lib/animalBreedingConfig'
+import { Animal } from '@/types/animals'
+import Button from './buttons/Button'
 import { Icon } from './Icon/icon'
 import { Modal } from './Modal'
-import { useAnimalCRUD, WeanNextStage } from '@/hooks/useAnimalCRUD'
-import { setLoading } from '@/features/auth/authSlice'
-import Button from './buttons/Button'
 
 interface WeanedAnimalProps {
   animal: Animal
@@ -108,15 +108,11 @@ interface ModalWeanAnimalProps {
   onWean?: (animalId: string, weanDate: Date) => void
 }
 
-const ModalWeanAnimal = ({
-  animal,
-  targetWeanDate,
-  onClose
-}: ModalWeanAnimalProps) => {
+const ModalWeanAnimal = ({ animal, targetWeanDate, onClose }: ModalWeanAnimalProps) => {
   const { wean } = useAnimalCRUD()
 
   const [weanDate, setWeanDate] = useState<Date>(
-    animal.weanedAt ? toDate(animal.weanedAt) : new Date()
+    animal.weanedAt ? toDate(animal.weanedAt) : new Date(),
   )
   const [isLoading, setIsLoading] = useState(false)
 
@@ -126,7 +122,7 @@ const ModalWeanAnimal = ({
 
     await wean(animal.id, {
       weanDate,
-      stageDecision
+      stageDecision,
     })
 
     onClose()
@@ -148,8 +144,7 @@ const ModalWeanAnimal = ({
 
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex justify-between">
           <p className="text-sm text-blue-900">
-            <span className="font-semibold">Animal:</span>{' '}
-            {animal?.animalNumber}
+            <span className="font-semibold">Animal:</span> {animal?.animalNumber}
           </p>
           <p className="text-sm text-blue-900">
             <span className="font-semibold">Destete objetivo:</span>{' '}
@@ -159,10 +154,7 @@ const ModalWeanAnimal = ({
 
         <form className="space-y-4">
           <div>
-            <label
-              htmlFor="weanDate"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
+            <label htmlFor="weanDate" className="block text-sm font-medium text-gray-700 mb-2">
               Fecha de destete {animal.weanedAt ? '(actual)' : ''}
             </label>
             <input

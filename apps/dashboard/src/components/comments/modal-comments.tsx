@@ -2,36 +2,30 @@
 
 import React from 'react'
 import { z } from 'zod'
-
-import { Modal } from '../Modal'
-import Button from '../buttons/Button'
-import { Form } from '../forms/Form'
+import { useAuth } from '@/hooks/useAuth'
+import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useZodForm } from '@/hooks/useZodForm'
-import { TextField } from '../forms/TextField'
-import { SelectField } from '../forms/SelectField'
 import { formatDate, toDate } from '@/lib/dates'
 import { Comment, NewCommentInput } from '@/types/comment'
-import { useFarmCRUD } from '@/hooks/useFarmCRUD'
-import { useAuth } from '@/hooks/useAuth'
 import { BadgeUrgency, Urgency } from '../Badges/BadgeUrgency'
+import Button from '../buttons/Button'
+import { Form } from '../forms/Form'
+import { SelectField } from '../forms/SelectField'
+import { TextField } from '../forms/TextField'
+import { Modal } from '../Modal'
 
 const urgencyLabels: Record<Urgency, string> = {
   none: 'Sin prioridad',
   low: 'Baja',
   medium: 'Media',
-  high: 'Alta'
+  high: 'Alta',
 }
 
-const urgencyValues = [
-  'none',
-  'low',
-  'medium',
-  'high'
-] as const satisfies readonly Urgency[]
+const urgencyValues = ['none', 'low', 'medium', 'high'] as const satisfies readonly Urgency[]
 
 const newCommentSchema = z.object({
   content: z.string().trim().min(1, 'Agrega un comentario antes de guardar.'),
-  urgency: z.enum(urgencyValues).default('none')
+  urgency: z.enum(urgencyValues).default('none'),
 })
 
 type NewCommentFormValues = z.infer<typeof newCommentSchema>
@@ -49,14 +43,11 @@ const getTime = (date?: Date) => {
   }
 }
 
-const isUrgent = (urgency?: Urgency) =>
-  urgency === 'medium' || urgency === 'high'
+const isUrgent = (urgency?: Urgency) => urgency === 'medium' || urgency === 'high'
 
 interface CommentsProps {
   comments?: Comment[]
-  onAddComment?: (
-    input: NewCommentInput
-  ) => Promise<Comment | void> | Comment | void
+  onAddComment?: (input: NewCommentInput) => Promise<Comment | void> | Comment | void
   title?: string
   handleUrgencyChange: (commentId: string, newLevel: Urgency) => void
   emptyStateText?: string
@@ -67,14 +58,14 @@ export const Comments: React.FC<CommentsProps> = ({
   onAddComment,
   handleUrgencyChange,
   title = 'Comentarios',
-  emptyStateText = 'Todavía no hay comentarios. Agrega el primero para dejar registro.'
+  emptyStateText = 'Todavía no hay comentarios. Agrega el primero para dejar registro.',
 }) => {
   const { user } = useAuth()
   const { currentFarm } = useFarmCRUD()
   const collaborators = currentFarm?.collaborators || []
   const [isModalOpen, setIsModalOpen] = React.useState(false)
   const [localComments, setLocalComments] = React.useState<Comment[]>(() =>
-    sortByRecency(comments ?? [])
+    sortByRecency(comments ?? []),
   )
   const [submitError, setSubmitError] = React.useState<string | null>(null)
 
@@ -86,24 +77,22 @@ export const Comments: React.FC<CommentsProps> = ({
     schema: newCommentSchema,
     defaultValues: {
       content: '',
-      urgency: 'none'
-    }
+      urgency: 'none',
+    },
   })
 
   const { formState, reset } = form
 
   const commentCount = localComments.length
-  const urgentCount = localComments.filter((comment) =>
-    isUrgent(comment.urgency)
-  ).length
+  const urgentCount = localComments.filter((comment) => isUrgent(comment.urgency)).length
 
   const urgencyOptions = React.useMemo(
     () =>
       urgencyValues.map((value) => ({
         value,
-        label: urgencyLabels[value]
+        label: urgencyLabels[value],
       })),
-    []
+    [],
   )
 
   const closeModal = () => {
@@ -114,7 +103,7 @@ export const Comments: React.FC<CommentsProps> = ({
   const handleSubmit = async (values: NewCommentFormValues) => {
     const payload: NewCommentInput = {
       content: values.content.trim(),
-      urgency: values.urgency || 'none'
+      urgency: values.urgency || 'none',
     }
 
     try {
@@ -172,9 +161,7 @@ export const Comments: React.FC<CommentsProps> = ({
 
                 options={urgencyOptions}
               />
-              {submitError ? (
-                <p className="text-sm text-red-600">{submitError}</p>
-              ) : null}
+              {submitError ? <p className="text-sm text-red-600">{submitError}</p> : null}
               <div className="flex items-center justify-end gap-2">
                 <Button
                   type="button"
@@ -186,15 +173,8 @@ export const Comments: React.FC<CommentsProps> = ({
                 >
                   Limpiar
                 </Button>
-                <Button
-                  type="submit"
-                  color="primary"
-                  size="sm"
-                  disabled={formState.isSubmitting}
-                >
-                  {formState.isSubmitting
-                    ? 'Guardando...'
-                    : 'Agregar comentario'}
+                <Button type="submit" color="primary" size="sm" disabled={formState.isSubmitting}>
+                  {formState.isSubmitting ? 'Guardando...' : 'Agregar comentario'}
                 </Button>
               </div>
             </Form>
@@ -229,17 +209,13 @@ export const Comments: React.FC<CommentsProps> = ({
                         </p>
                         <BadgeUrgency
                           level={urgencyLevel}
-                          onChange={(newLevel) =>
-                            handleUrgencyChange(comment.id, newLevel)
-                          }
+                          onChange={(newLevel) => handleUrgencyChange(comment.id, newLevel)}
                         />
                       </div>
                       <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
                         <span>
                           {comment.createdBy
-                            ? ` ${
-                                collaboratorDetails(comment.createdBy)?.email
-                              }`
+                            ? ` ${collaboratorDetails(comment.createdBy)?.email}`
                             : 'Autor desconocido'}
                         </span>
                         {createdAt ? <span>{createdAt}</span> : null}

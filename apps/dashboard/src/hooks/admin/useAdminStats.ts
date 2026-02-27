@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { collection, getDocs } from 'firebase/firestore'
+import { useEffect, useState } from 'react'
 import { db } from '@/lib/firebase'
-import { User, Reminder } from '@/types'
+import { Reminder, User } from '@/types'
 import { Animal } from '@/types/animals'
 
 interface AdminStats {
@@ -28,7 +28,7 @@ export const useAdminStats = (): AdminStats => {
     recentUsers: [],
     recentAnimals: [],
     isLoading: true,
-    error: null
+    error: null,
   })
 
   useEffect(() => {
@@ -37,17 +37,16 @@ export const useAdminStats = (): AdminStats => {
         setStats((prev) => ({ ...prev, isLoading: true, error: null }))
 
         // Obtener estadísticas en paralelo
-        const [usersData, animalsData, breedingsData, remindersData] =
-          await Promise.all([
-            // Usuarios
-            getDocs(collection(db, 'users')),
-            // Animales
-            getDocs(collection(db, 'animals')),
-            // Reproducciones
-            getDocs(collection(db, 'breedingRecords')),
-            // Recordatorios
-            getDocs(collection(db, 'reminders'))
-          ])
+        const [usersData, animalsData, breedingsData, remindersData] = await Promise.all([
+          // Usuarios
+          getDocs(collection(db, 'users')),
+          // Animales
+          getDocs(collection(db, 'animals')),
+          // Reproducciones
+          getDocs(collection(db, 'breedingRecords')),
+          // Recordatorios
+          getDocs(collection(db, 'reminders')),
+        ])
 
         // Procesar usuarios
         const users: User[] = []
@@ -58,7 +57,7 @@ export const useAdminStats = (): AdminStats => {
             email: data.email,
             farmName: data.farmName || '',
             roles: data.roles || ['farmer'],
-            createdAt: data.createdAt?.toDate() || new Date()
+            createdAt: data.createdAt?.toDate() || new Date(),
           })
         })
 
@@ -78,7 +77,7 @@ export const useAdminStats = (): AdminStats => {
             birthDate: data.birthDate?.toDate(),
             notes: data.notes || '',
             createdAt: data.createdAt?.toDate() || new Date(),
-            updatedAt: data.updatedAt?.toDate() || new Date()
+            updatedAt: data.updatedAt?.toDate() || new Date(),
           })
         })
 
@@ -98,7 +97,7 @@ export const useAdminStats = (): AdminStats => {
             priority: data.priority || 'medium',
             type: data.type || 'other',
             createdAt: data.createdAt?.toDate() || new Date(),
-            updatedAt: data.updatedAt?.toDate() || new Date()
+            updatedAt: data.updatedAt?.toDate() || new Date(),
           }
           reminders.push(reminder)
           if (!reminder.completed) activeCount++
@@ -123,17 +122,14 @@ export const useAdminStats = (): AdminStats => {
           recentUsers,
           recentAnimals,
           isLoading: false,
-          error: null
+          error: null,
         })
       } catch (error) {
         console.error('Error fetching admin stats:', error)
         setStats((prev) => ({
           ...prev,
           isLoading: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : 'Error al cargar estadísticas'
+          error: error instanceof Error ? error.message : 'Error al cargar estadísticas',
         }))
       }
     }

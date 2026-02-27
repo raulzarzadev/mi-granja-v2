@@ -3,10 +3,10 @@
 import React, { useMemo } from 'react'
 import {
   AnimalRecord,
+  record_categories,
   record_category_icons,
   record_category_labels,
-  record_categories,
-  record_type_labels
+  record_type_labels,
 } from '@/types/animals'
 import { RecordFormState } from '@/types/records'
 import DateTimeInput from './inputs/DateTimeInput'
@@ -23,26 +23,19 @@ const clinicalCategories: ReadonlyArray<AnimalRecord['category']> = [
   'illness',
   'injury',
   'treatment',
-  'surgery'
+  'surgery',
 ]
 
-export const RecordForm: React.FC<Props> = ({
-  value,
-  onChange,
-  mode = 'single'
-}) => {
-  const noteCategories = useMemo(
-    () => ['general', 'observation', 'other'] as const,
-    []
-  )
+export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }) => {
+  const noteCategories = useMemo(() => ['general', 'observation', 'other'] as const, [])
 
   // Para salud, excluir categorías propias de notas
   const healthCategories = useMemo(
     () =>
       record_categories.filter(
-        (c) => c !== 'general' && c !== 'observation'
+        (c) => c !== 'general' && c !== 'observation',
       ) as AnimalRecord['category'][],
-    []
+    [],
   )
 
   const availableCategories: ReadonlyArray<AnimalRecord['category']> =
@@ -80,7 +73,7 @@ export const RecordForm: React.FC<Props> = ({
           onChange={(e) =>
             onChange({
               ...value,
-              category: e.target.value as AnimalRecord['category']
+              category: e.target.value as AnimalRecord['category'],
             })
           }
           className="w-full border rounded-lg px-2 py-1.5 text-sm"
@@ -110,7 +103,7 @@ export const RecordForm: React.FC<Props> = ({
           onChange={(date) => {
             onChange({
               ...value,
-              date: date ? date.toISOString().split('T')[0] : ''
+              date: date ? date.toISOString().split('T')[0] : '',
             })
           }}
           label={mode === 'bulk' ? 'Fecha de aplicación' : 'Fecha'}
@@ -124,9 +117,7 @@ export const RecordForm: React.FC<Props> = ({
             <label className="block text-sm font-medium ">Severidad</label>
             <select
               value={value.severity}
-              onChange={(e) =>
-                onChange({ ...value, severity: e.target.value as any })
-              }
+              onChange={(e) => onChange({ ...value, severity: e.target.value as any })}
               className="w-full border rounded-lg px-2 py-1.5 text-sm"
             >
               <option value="">Sin especificar</option>
@@ -141,9 +132,7 @@ export const RecordForm: React.FC<Props> = ({
               id="resolved"
               type="checkbox"
               checked={value.isResolved}
-              onChange={(e) =>
-                onChange({ ...value, isResolved: e.target.checked })
-              }
+              onChange={(e) => onChange({ ...value, isResolved: e.target.checked })}
             />
             <label htmlFor="resolved" className="text-sm">
               Caso resuelto
@@ -156,7 +145,7 @@ export const RecordForm: React.FC<Props> = ({
                 onChange={(date) =>
                   onChange({
                     ...value,
-                    resolvedDate: date ? date.toISOString().split('T')[0] : ''
+                    resolvedDate: date ? date.toISOString().split('T')[0] : '',
                   })
                 }
                 label="Fecha de resolución"
@@ -169,9 +158,7 @@ export const RecordForm: React.FC<Props> = ({
             <input
               type="text"
               value={value.treatment}
-              onChange={(e) =>
-                onChange({ ...value, treatment: e.target.value })
-              }
+              onChange={(e) => onChange({ ...value, treatment: e.target.value })}
               className="w-full border rounded-lg px-2 py-1.5 text-sm"
             />
           </div>
@@ -186,7 +173,7 @@ export const RecordForm: React.FC<Props> = ({
               onChange={(date) =>
                 onChange({
                   ...value,
-                  nextDueDate: date ? date.toISOString().split('T')[0] : ''
+                  nextDueDate: date ? date.toISOString().split('T')[0] : '',
                 })
               }
               label="Próximo vencimiento"
@@ -207,9 +194,7 @@ export const RecordForm: React.FC<Props> = ({
             <input
               type="text"
               value={value.veterinarian}
-              onChange={(e) =>
-                onChange({ ...value, veterinarian: e.target.value })
-              }
+              onChange={(e) => onChange({ ...value, veterinarian: e.target.value })}
               className="w-full border rounded-lg px-2 py-1.5 text-sm"
             />
           </div>

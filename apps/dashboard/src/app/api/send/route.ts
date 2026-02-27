@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'RESEND_API_KEY no está configurada'
+          error: 'RESEND_API_KEY no está configurada',
         },
-        { status: 500 }
+        { status: 500 },
       )
     }
 
@@ -33,16 +33,13 @@ export async function POST(request: NextRequest) {
     const emailData: EmailRequest = await request.json()
 
     // Validación básica
-    if (
-      !emailData.to ||
-      (Array.isArray(emailData.to) && emailData.to.length === 0)
-    ) {
+    if (!emailData.to || (Array.isArray(emailData.to) && emailData.to.length === 0)) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Se requiere al menos un destinatario'
+          error: 'Se requiere al menos un destinatario',
         },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -50,9 +47,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'El asunto del email es requerido'
+          error: 'El asunto del email es requerido',
         },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -60,9 +57,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Se requiere contenido HTML o texto'
+          error: 'Se requiere contenido HTML o texto',
         },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -79,8 +76,7 @@ export async function POST(request: NextRequest) {
         .replace(/\s+/g, ' ')
         .trim()
 
-    const textContent: string =
-      emailData.text || (emailData.html ? htmlToText(emailData.html) : '')
+    const textContent: string = emailData.text || (emailData.html ? htmlToText(emailData.html) : '')
 
     // Preparar los datos para Resend (text obligatorio)
     const emailPayload = {
@@ -88,7 +84,7 @@ export async function POST(request: NextRequest) {
       subject: emailData.subject,
       from: emailData.from || 'Mi Granja <zarza@email.migranja.app>',
       text: textContent,
-      html: emailData.html
+      html: emailData.html,
     }
 
     // Agregar campos opcionales
@@ -97,7 +93,7 @@ export async function POST(request: NextRequest) {
       ...(emailData.cc ? { cc: emailData.cc } : {}),
       ...(emailData.bcc ? { bcc: emailData.bcc } : {}),
       ...(emailData.reply_to ? { reply_to: emailData.reply_to } : {}),
-      ...(emailData.tags ? { tags: emailData.tags } : {})
+      ...(emailData.tags ? { tags: emailData.tags } : {}),
     }
 
     // Enviar el email usando Resend
@@ -107,9 +103,9 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         message: 'Email enviado exitosamente',
-        data: data
+        data: data,
       },
-      { status: 200 }
+      { status: 200 },
     )
   } catch (error) {
     console.error('Error enviando email:', error)
@@ -118,9 +114,9 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Error interno del servidor',
-        message: error instanceof Error ? error.message : 'Error desconocido'
+        message: error instanceof Error ? error.message : 'Error desconocido',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -135,16 +131,16 @@ export async function GET() {
       service: 'Email Service',
       status: 'online',
       configured: isConfigured,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     })
   } catch (error) {
     return NextResponse.json(
       {
         service: 'Email Service',
         status: 'error',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        error: error instanceof Error ? error.message : 'Error desconocido',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

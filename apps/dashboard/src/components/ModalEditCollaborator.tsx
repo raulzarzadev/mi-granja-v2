@@ -1,12 +1,10 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Modal } from './Modal'
+import React, { useEffect, useState } from 'react'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
-import { FarmCollaborator } from '@/types/collaborators'
-import { DEFAULT_PERMISSIONS } from '@/types/collaborators'
-import { COLLABORATOR_ROLES } from '@/types/collaborators'
 import { formatDate, toDate } from '@/lib/dates'
+import { COLLABORATOR_ROLES, DEFAULT_PERMISSIONS, FarmCollaborator } from '@/types/collaborators'
+import { Modal } from './Modal'
 
 interface ModalEditCollaboratorProps {
   isOpen: boolean
@@ -22,13 +20,13 @@ const ModalEditCollaborator: React.FC<ModalEditCollaboratorProps> = ({
   isOpen,
   onClose,
   collaborator,
-  farmId
+  farmId,
 }) => {
   const { updateCollaborator } = useFarmMembers(farmId)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     role: collaborator?.role || ('caretaker' as const),
-    notes: collaborator?.notes || ''
+    notes: collaborator?.notes || '',
   })
 
   // Actualizar formData cuando cambia el collaborator
@@ -36,14 +34,12 @@ const ModalEditCollaborator: React.FC<ModalEditCollaboratorProps> = ({
     if (collaborator) {
       setFormData({
         role: collaborator.role as typeof formData.role,
-        notes: collaborator.notes || ''
+        notes: collaborator.notes || '',
       })
     }
   }, [collaborator])
 
-  const selectedRole = COLLABORATOR_ROLES.find(
-    (role) => role.value === formData.role
-  )
+  const selectedRole = COLLABORATOR_ROLES.find((role) => role.value === formData.role)
   const selectedPermissions = DEFAULT_PERMISSIONS[formData.role]
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,7 +53,7 @@ const ModalEditCollaborator: React.FC<ModalEditCollaboratorProps> = ({
     try {
       await updateCollaborator(collaborator.id, {
         role: formData.role,
-        notes: formData.notes.trim() || null
+        notes: formData.notes.trim() || null,
       })
 
       onClose()
@@ -71,7 +67,7 @@ const ModalEditCollaborator: React.FC<ModalEditCollaboratorProps> = ({
   const handleChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }))
   }
 
@@ -80,12 +76,7 @@ const ModalEditCollaborator: React.FC<ModalEditCollaboratorProps> = ({
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Editar Colaborador"
-      size="md"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Editar Colaborador" size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Información del colaborador (no editable) */}
         <div className="bg-gray-50 rounded-lg p-4">
@@ -127,11 +118,7 @@ const ModalEditCollaborator: React.FC<ModalEditCollaboratorProps> = ({
             ))}
           </select>
 
-          {selectedRole && (
-            <p className="text-sm text-gray-600 mt-2">
-              {selectedRole.description}
-            </p>
-          )}
+          {selectedRole && <p className="text-sm text-gray-600 mt-2">{selectedRole.description}</p>}
         </div>
 
         {/* Vista previa de permisos */}
@@ -141,13 +128,8 @@ const ModalEditCollaborator: React.FC<ModalEditCollaboratorProps> = ({
           </h4>
           <div className="space-y-2">
             {selectedPermissions.map((permission, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between text-sm"
-              >
-                <span className="text-gray-700 capitalize">
-                  {permission.module}
-                </span>
+              <div key={index} className="flex items-center justify-between text-sm">
+                <span className="text-gray-700 capitalize">{permission.module}</span>
                 <div className="flex gap-1">
                   {permission.actions.map((action) => (
                     <span
@@ -203,12 +185,7 @@ const ModalEditCollaborator: React.FC<ModalEditCollaboratorProps> = ({
               </>
             ) : (
               <>
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"

@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
-import { COLLABORATOR_ROLES, FarmCollaborator } from '@/types/collaborators'
-import { formatDate, toDate } from '@/lib/dates'
+import React, { useEffect, useRef, useState } from 'react'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
+import { formatDate, toDate } from '@/lib/dates'
+import { COLLABORATOR_ROLES, FarmCollaborator } from '@/types/collaborators'
 
 interface CollaboratorCardProps {
   collaborator: FarmCollaborator
@@ -21,14 +21,12 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
   onRevoke,
   onReactivate,
   onDelete,
-  onEdit
+  onEdit,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const roleInfo = COLLABORATOR_ROLES.find(
-    (role) => role.value === collaborator.role
-  )
+  const roleInfo = COLLABORATOR_ROLES.find((role) => role.value === collaborator.role)
   const isActive = collaborator.isActive
   const { hasPermissions } = useFarmMembers()
 
@@ -62,9 +60,7 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
         {/* Estado del colaborador */}
         <span
           className={`text-xs px-2 py-1 rounded-full font-medium ${
-            isActive
-              ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-600'
+            isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
           }`}
         >
           {isActive ? 'Activo' : 'Inactivo'}
@@ -78,11 +74,7 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
               className="p-1 hover:bg-gray-100 rounded-full transition-colors"
               title="Opciones"
             >
-              <svg
-                className="w-5 h-5 text-gray-600"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
+              <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
                 <circle cx="10" cy="5" r="1.5" />
                 <circle cx="10" cy="10" r="1.5" />
                 <circle cx="10" cy="15" r="1.5" />
@@ -206,9 +198,7 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
 
       <div className="flex items-start justify-between mb-3 gap-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <span className="text-2xl flex-shrink-0">
-            {roleInfo?.icon || '👤'}
-          </span>
+          <span className="text-2xl flex-shrink-0">{roleInfo?.icon || '👤'}</span>
           <div className="min-w-0">
             <h4
               className="text-xs font-semibold text-gray-900 truncate"
@@ -220,26 +210,20 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
             >
               {collaborator.email || collaborator.userId}
             </h4>
-            <p className="text-sm text-gray-500">
-              {roleInfo?.label || collaborator.role}
-            </p>
+            <p className="text-sm text-gray-500">{roleInfo?.label || collaborator.role}</p>
           </div>
         </div>
       </div>
 
       {roleInfo?.description && (
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-          {roleInfo.description}
-        </p>
+        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{roleInfo.description}</p>
       )}
 
       <div className="space-y-2 text-xs text-gray-500">
         <div className="flex items-center justify-between gap-4">
           <span>Se unió:</span>
           <span>
-            {collaborator.acceptedAt
-              ? formatDate(toDate(collaborator.acceptedAt))
-              : 'Pendiente'}
+            {collaborator.acceptedAt ? formatDate(toDate(collaborator.acceptedAt)) : 'Pendiente'}
           </span>
         </div>
 
@@ -256,10 +240,7 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
 
       {collaborator.notes && (
         <div className="mt-3 pt-3 border-t border-gray-100">
-          <p
-            className="text-xs text-gray-500 line-clamp-2"
-            title={collaborator.notes}
-          >
+          <p className="text-xs text-gray-500 line-clamp-2" title={collaborator.notes}>
             📝 {collaborator.notes}
           </p>
         </div>

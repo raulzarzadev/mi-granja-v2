@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 :root {
   --background: #ffffff;
@@ -27,9 +27,7 @@ body {
 
 /* Configuración global para placeholders más visibles */
 ::placeholder {
-  color: rgb(
-    75 85 99
-  ) !important; /* gray-600 - más oscuro para mejor visibilidad */
+  color: rgb(75 85 99) !important; /* gray-600 - más oscuro para mejor visibilidad */
   opacity: 1 !important; /* Firefox */
 }
 
@@ -64,29 +62,29 @@ select {
 
 /* Cuando el select no tiene valor seleccionado (muestra placeholder) */
 select:invalid,
-select[value=''],
+select[value=""],
 select:not([value]) {
   color: rgb(75 85 99) !important; /* gray-600 para placeholder */
 }
 
 /* Opciones placeholder específicas */
-select option[value=''] {
+select option[value=""] {
   color: rgb(75 85 99); /* gray-600 */
 }
 
 /* Opciones normales */
-select option:not([value='']) {
+select option:not([value=""]) {
   color: rgb(17 24 39); /* gray-900 */
 }
 
 /* Configuración global para texto de inputs más visible */
-input[type='text'],
-input[type='email'],
-input[type='password'],
-input[type='number'],
-input[type='tel'],
-input[type='url'],
-input[type='date'],
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="date"],
 textarea,
 select {
   color: rgb(17 24 39) !important; /* gray-900 - texto oscuro */

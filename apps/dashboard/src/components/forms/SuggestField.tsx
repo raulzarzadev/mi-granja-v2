@@ -7,12 +7,12 @@ import {
   FieldPath,
   FieldValues,
   RegisterOptions,
-  useFormContext
+  useFormContext,
 } from 'react-hook-form'
 import {
   InputSelectSuggest,
   InputSelectSuggestProps,
-  SelectSuggestOption
+  SelectSuggestOption,
 } from '../inputs/InputSelectSuggest'
 
 type BaseSuggestFieldProps<TOptionData> = Omit<
@@ -20,20 +20,15 @@ type BaseSuggestFieldProps<TOptionData> = Omit<
   'selectedIds' | 'onSelect' | 'onRemove'
 >
 
-export interface SuggestFieldProps<
-  TFieldValues extends FieldValues,
-  TOptionData = string
-> extends BaseSuggestFieldProps<TOptionData> {
+export interface SuggestFieldProps<TFieldValues extends FieldValues, TOptionData = string>
+  extends BaseSuggestFieldProps<TOptionData> {
   name: FieldPath<TFieldValues>
   rules?: RegisterOptions<TFieldValues, FieldPath<TFieldValues>>
   onAddOption?: (option: SelectSuggestOption<TOptionData>) => void
   onRemoveOption?: (option: SelectSuggestOption<TOptionData>) => void
 }
 
-export function SuggestField<
-  TFieldValues extends FieldValues,
-  TOptionData = string
->({
+export function SuggestField<TFieldValues extends FieldValues, TOptionData = string>({
   name,
   rules,
   options,
@@ -50,14 +45,12 @@ export function SuggestField<
       rules={rules}
       render={({
         field,
-        fieldState
+        fieldState,
       }: {
         field: ControllerRenderProps<TFieldValues, FieldPath<TFieldValues>>
         fieldState: { error?: { message?: string } }
       }) => {
-        const value = Array.isArray(field.value)
-          ? (field.value as string[])
-          : []
+        const value = Array.isArray(field.value) ? (field.value as string[]) : []
 
         const handleSelect = (id: string) => {
           if (value.includes(id)) {
@@ -91,9 +84,7 @@ export function SuggestField<
               onRemove={handleRemove}
             />
             {fieldState.error?.message ? (
-              <p className="text-xs text-red-600">
-                {String(fieldState.error.message)}
-              </p>
+              <p className="text-xs text-red-600">{String(fieldState.error.message)}</p>
             ) : null}
           </div>
         )

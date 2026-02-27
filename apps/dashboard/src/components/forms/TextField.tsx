@@ -1,12 +1,7 @@
 'use client'
 
 import React, { forwardRef, MutableRefObject } from 'react'
-import {
-  FieldPath,
-  FieldValues,
-  RegisterOptions,
-  useFormContext
-} from 'react-hook-form'
+import { FieldPath, FieldValues, RegisterOptions, useFormContext } from 'react-hook-form'
 
 interface SharedTextFieldProps<TFieldValues extends FieldValues> {
   name: FieldPath<TFieldValues>
@@ -42,7 +37,7 @@ function TextFieldComponent<TFieldValues extends FieldValues>(
     disabled,
     ...rest
   }: TextFieldProps<TFieldValues>,
-  ref: React.ForwardedRef<HTMLInputElement | HTMLTextAreaElement>
+  ref: React.ForwardedRef<HTMLInputElement | HTMLTextAreaElement>,
 ) {
   const { register, getFieldState, formState } = useFormContext<TFieldValues>()
 
@@ -52,20 +47,14 @@ function TextFieldComponent<TFieldValues extends FieldValues>(
   const baseClassName = `w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 placeholder:text-gray-500  resize-none ${
     error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
   }`
-  const finalClassName = className
-    ? `${baseClassName} ${className}`.trim()
-    : baseClassName
+  const finalClassName = className ? `${baseClassName} ${className}`.trim() : baseClassName
 
-  const handleRef = (
-    element: HTMLInputElement | HTMLTextAreaElement | null
-  ) => {
+  const handleRef = (element: HTMLInputElement | HTMLTextAreaElement | null) => {
     registerRef(element)
     if (typeof ref === 'function') {
       ref(element)
     } else if (ref) {
-      ;(
-        ref as MutableRefObject<HTMLInputElement | HTMLTextAreaElement | null>
-      ).current = element
+      ;(ref as MutableRefObject<HTMLInputElement | HTMLTextAreaElement | null>).current = element
     }
   }
 
@@ -75,16 +64,13 @@ function TextFieldComponent<TFieldValues extends FieldValues>(
     'aria-invalid': !!error,
     'aria-describedby': helperText ? `${name}-helper` : undefined,
     className: finalClassName,
-    disabled: disabled ?? formState.isSubmitting
+    disabled: disabled ?? formState.isSubmitting,
   }
 
   return (
     <div className="space-y-1">
       {label ? (
-        <label
-          htmlFor={name}
-          className="block text-sm font-medium text-gray-700"
-        >
+        <label htmlFor={name} className="block text-sm font-medium text-gray-700">
           {label}
         </label>
       ) : null}
@@ -93,10 +79,7 @@ function TextFieldComponent<TFieldValues extends FieldValues>(
           {...(rest as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
           {...sharedProps}
           ref={handleRef}
-          rows={
-            (rest as React.TextareaHTMLAttributes<HTMLTextAreaElement>).rows ??
-            3
-          }
+          rows={(rest as React.TextareaHTMLAttributes<HTMLTextAreaElement>).rows ?? 3}
         />
       ) : (
         <input
@@ -110,19 +93,17 @@ function TextFieldComponent<TFieldValues extends FieldValues>(
           {helperText}
         </p>
       ) : null}
-      {error?.message ? (
-        <p className="text-xs text-red-600">{String(error.message)}</p>
-      ) : null}
+      {error?.message ? <p className="text-xs text-red-600">{String(error.message)}</p> : null}
     </div>
   )
 }
 
 const TextField = forwardRef(TextFieldComponent) as <
-  TFieldValues extends FieldValues = FieldValues
+  TFieldValues extends FieldValues = FieldValues,
 >(
   props: TextFieldProps<TFieldValues> & {
     ref?: React.Ref<HTMLInputElement | HTMLTextAreaElement>
-  }
+  },
 ) => ReturnType<typeof TextFieldComponent>
 
 export { TextField }

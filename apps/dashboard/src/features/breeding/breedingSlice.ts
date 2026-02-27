@@ -13,7 +13,7 @@ const initialState: BreedingState = {
   breedingRecords: [],
   isLoading: false,
   error: null,
-  selectedRecord: null
+  selectedRecord: null,
 }
 
 const breedingSlice = createSlice({
@@ -31,25 +31,16 @@ const breedingSlice = createSlice({
       state.breedingRecords.push(serializeObj(action.payload))
     },
     updateBreedingRecord: (state, action: PayloadAction<BreedingRecord>) => {
-      const index = state.breedingRecords.findIndex(
-        (record) => record.id === action.payload.id
-      )
+      const index = state.breedingRecords.findIndex((record) => record.id === action.payload.id)
       if (index !== -1) {
         state.breedingRecords[index] = serializeObj(action.payload)
       }
     },
     removeBreedingRecord: (state, action: PayloadAction<string>) => {
-      state.breedingRecords = state.breedingRecords.filter(
-        (record) => record.id !== action.payload
-      )
+      state.breedingRecords = state.breedingRecords.filter((record) => record.id !== action.payload)
     },
-    setSelectedRecord: (
-      state,
-      action: PayloadAction<BreedingRecord | null>
-    ) => {
-      state.selectedRecord = action.payload
-        ? serializeObj(action.payload)
-        : null
+    setSelectedRecord: (state, action: PayloadAction<BreedingRecord | null>) => {
+      state.selectedRecord = action.payload ? serializeObj(action.payload) : null
     },
 
     setError: (state, action: PayloadAction<string>) => {
@@ -58,8 +49,8 @@ const breedingSlice = createSlice({
     },
     clearError: (state) => {
       state.error = null
-    }
-  }
+    },
+  },
 })
 
 export const {
@@ -70,7 +61,7 @@ export const {
   removeBreedingRecord,
   setSelectedRecord,
   setError,
-  clearError
+  clearError,
 } = breedingSlice.actions
 
 export const breedingReducer = breedingSlice.reducer

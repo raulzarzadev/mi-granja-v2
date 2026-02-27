@@ -19,7 +19,7 @@ describe('ID Consistency Integration', () => {
     // Simular búsqueda de animal por ID de Firestore
     const animalFoundById = {
       id: firestoreAnimalId,
-      animalNumber: userAssignedAnimalNumber
+      animalNumber: userAssignedAnimalNumber,
     }
 
     // Verificar que encontramos el animal correcto
@@ -72,20 +72,20 @@ describe('ID Consistency Integration', () => {
       femaleBreedingInfo: [
         {
           femaleId: femaleFirestoreId, // Debe usar Firestore ID para relaciones
-          pregnancyConfirmedDate: new Date()
-        }
-      ]
+          pregnancyConfirmedDate: new Date(),
+        },
+      ],
     }
 
     // Para mostrar al usuario, necesitamos buscar los animalNumbers
     const animals = [
       { id: maleFirestoreId, animalNumber: 'M001' },
-      { id: femaleFirestoreId, animalNumber: 'H001' }
+      { id: femaleFirestoreId, animalNumber: 'H001' },
     ]
 
     const maleForDisplay = animals.find((a) => a.id === breedingRecord.maleId)
     const femaleForDisplay = animals.find(
-      (a) => a.id === breedingRecord.femaleBreedingInfo[0].femaleId
+      (a) => a.id === breedingRecord.femaleBreedingInfo[0].femaleId,
     )
 
     if (!maleForDisplay || maleForDisplay.animalNumber !== 'M001') {

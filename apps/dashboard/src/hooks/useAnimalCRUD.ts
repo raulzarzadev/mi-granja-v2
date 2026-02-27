@@ -1,31 +1,26 @@
 'use client'
 
-import { useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 import {
-  collection,
   addDoc,
-  updateDoc,
+  collection,
   deleteDoc,
-  query,
-  where,
-  orderBy,
   doc,
   getDoc,
-  getDocs
+  getDocs,
+  orderBy,
+  query,
+  updateDoc,
+  where,
 } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
-import { RootState } from '@/features/store'
+import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { addAnimal, removeAnimal, setAnimals, updateAnimal } from '@/features/animals/animalsSlice'
 import { setError } from '@/features/auth/authSlice'
-import {
-  addAnimal,
-  updateAnimal,
-  removeAnimal,
-  setAnimals
-} from '@/features/animals/animalsSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
-import { Animal, AnimalStatus, AnimalRecord } from '@/types/animals'
+import { RootState } from '@/features/store'
 import { useAdminActions } from '@/lib/adminActions'
+import { db } from '@/lib/firebase'
+import { Animal, AnimalRecord, AnimalStatus } from '@/types/animals'
 
 /**
  * Hook personalizado para el manejo de animales
@@ -42,7 +37,7 @@ export const useAnimalCRUD = () => {
   const [isLoading, setIsLoading] = useState(false)
 
   const create = async (
-    animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
+    animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>,
   ) => {
     if (!user?.id) {
       dispatch(setError('Usuario no autenticado'))
@@ -61,7 +56,7 @@ export const useAnimalCRUD = () => {
         farmerId: user.id,
         farmId: currentFarm.id,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       }
 
       // Añadir metadata de admin si se está haciendo impersonación
@@ -75,8 +70,7 @@ export const useAnimalCRUD = () => {
       return docRef.id
     } catch (error) {
       console.error('Error creating animal:', error, { animalData })
-      const errorMessage =
-        error instanceof Error ? error.message : 'Error al crear el animal'
+      const errorMessage = error instanceof Error ? error.message : 'Error al crear el animal'
       dispatch(setError(errorMessage))
       throw error
     } finally {
@@ -97,22 +91,19 @@ export const useAnimalCRUD = () => {
       const animalRef = doc(db, 'animals', animalId)
       let updatedData = {
         ...updateData,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       }
 
       // Añadir metadata de admin si se está haciendo impersonación
-      updatedData = wrapWithAdminMetadata(
-        updatedData,
-        'Actualización de animal'
-      )
+      updatedData = wrapWithAdminMetadata(updatedData, 'Actualización de animal')
 
       await updateDoc(animalRef, updatedData)
       // Actualizar Redux con datos serializados
       dispatch(
         updateAnimal({
           id: animalId,
-          data: serializeObj(updatedData)
-        })
+          data: serializeObj(updatedData),
+        }),
       )
 
       console.log('Animal actualizado:', animalId, updatedData)
@@ -138,8 +129,7 @@ export const useAnimalCRUD = () => {
       console.log('Animal eliminado:', animalId)
     } catch (error) {
       console.error('Error deleting animal:', error)
-      const errorMessage =
-        error instanceof Error ? error.message : 'Error al eliminar el animal'
+      const errorMessage = error instanceof Error ? error.message : 'Error al eliminar el animal'
       dispatch(setError(errorMessage))
       throw error
     } finally {
@@ -154,15 +144,15 @@ export const useAnimalCRUD = () => {
       weanDate?: Date
       stageDecision?: WeanNextStage
       notes?: string
-    }
+    },
   ) => {
     const stageMap: Record<string, Animal['stage'] | undefined> = {
       engorda: 'engorda',
-      reproductor: 'reproductor'
+      reproductor: 'reproductor',
     }
     const updateData: Partial<Animal> = {
       // isWeaned: true,
-      weanedAt: opts?.weanDate || new Date()
+      weanedAt: opts?.weanDate || new Date(),
     }
     if (opts?.notes) updateData.weaningNotes = opts?.notes
     if (opts?.stageDecision) {
@@ -189,7 +179,7 @@ export const useAnimalCRUD = () => {
               ...data,
               id: docSnapshot.id,
               createdAt: data.createdAt,
-              updatedAt: data.updatedAt
+              updatedAt: data.updatedAt,
             })
           } else {
             resolve(null)
@@ -197,10 +187,7 @@ export const useAnimalCRUD = () => {
         })
         .catch((error) => {
           console.error('Error fetching animal:', error)
-          const errorMessage =
-            error instanceof Error
-              ? error.message
-              : 'Error al obtener el animal'
+          const errorMessage = error instanceof Error ? error.message : 'Error al obtener el animal'
           dispatch(setError(errorMessage))
           reject(error)
         })
@@ -217,28 +204,21 @@ export const useAnimalCRUD = () => {
       }
 
       const constraints = [where('farmerId', '==', user.id)]
-      if (currentFarm?.id)
-        constraints.push(where('farmId', '==', currentFarm.id))
-      const q = query(
-        collection(db, 'animals'),
-        ...constraints,
-        orderBy('createdAt', 'desc')
-      )
+      if (currentFarm?.id) constraints.push(where('farmId', '==', currentFarm.id))
+      const q = query(collection(db, 'animals'), ...constraints, orderBy('createdAt', 'desc'))
 
       try {
         const querySnapshot = await getDocs(q)
         const animals = querySnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         })) as Animal[]
         dispatch(setAnimals(serializeObj(animals)))
         resolve(animals)
       } catch (error) {
         console.error('Error fetching user animals:', error)
         const errorMessage =
-          error instanceof Error
-            ? error.message
-            : 'Error al obtener los animales del usuario'
+          error instanceof Error ? error.message : 'Error al obtener los animales del usuario'
         dispatch(setError(errorMessage))
         reject(error)
       }
@@ -253,20 +233,15 @@ export const useAnimalCRUD = () => {
       }
 
       const constraints = [] as any[]
-      if (currentFarm?.id)
-        constraints.push(where('farmId', '==', currentFarm.id))
+      if (currentFarm?.id) constraints.push(where('farmId', '==', currentFarm.id))
       if (opts?.status) constraints.push(where('status', '==', opts.status))
-      const q = query(
-        collection(db, 'animals'),
-        ...constraints,
-        orderBy('createdAt', 'desc')
-      )
+      const q = query(collection(db, 'animals'), ...constraints, orderBy('createdAt', 'desc'))
 
       try {
         const querySnapshot = await getDocs(q)
         const animals = querySnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         })) as Animal[]
 
         if (opts?.status) {
@@ -279,9 +254,7 @@ export const useAnimalCRUD = () => {
       } catch (error) {
         console.error('Error fetching farm animals:', error)
         const errorMessage =
-          error instanceof Error
-            ? error.message
-            : 'Error al obtener los animales de la granja'
+          error instanceof Error ? error.message : 'Error al obtener los animales de la granja'
         dispatch(setError(errorMessage))
         reject(error)
       }
@@ -293,7 +266,7 @@ export const useAnimalCRUD = () => {
       total: animals.length,
       byType: {} as Record<string, number>,
       byStage: {} as Record<string, number>,
-      byGender: {} as Record<string, number>
+      byGender: {} as Record<string, number>,
     }
 
     animals.forEach((animal) => {
@@ -319,7 +292,7 @@ export const useAnimalCRUD = () => {
       includeInactive?: boolean
       status?: AnimalStatus
     },
-    baseList?: Animal[]
+    baseList?: Animal[],
   ) => {
     const list = baseList ?? animals
     return list.filter((animal) => {
@@ -356,12 +329,12 @@ export const useAnimalCRUD = () => {
       statusNotes?: string
       soldInfo?: Animal['soldInfo']
       lostInfo?: Animal['lostInfo']
-    }
+    },
   ) => {
     const effectiveStatusAt = data.statusAt || new Date()
     const updateData: Partial<Animal> = {
       status: data.status,
-      statusAt: effectiveStatusAt
+      statusAt: effectiveStatusAt,
     }
 
     if (data.statusNotes) updateData.statusNotes = data.statusNotes
@@ -375,7 +348,7 @@ export const useAnimalCRUD = () => {
     try {
       await markStatus(animalId, {
         status: 'activo',
-        statusNotes: 'animal encontrado'
+        statusNotes: 'animal encontrado',
       })
     } catch {
       console.log('No se pudo marcar como encontrado el animal:', animalId)
@@ -405,7 +378,7 @@ export const useAnimalCRUD = () => {
   // Agregar registro unificado
   const addRecord = async (
     animalId: string,
-    recordData: Omit<AnimalRecord, 'id' | 'createdAt' | 'createdBy'>
+    recordData: Omit<AnimalRecord, 'id' | 'createdAt' | 'createdBy'>,
   ) => {
     if (!user?.id) {
       dispatch(setError('Usuario no autenticado'))
@@ -424,7 +397,7 @@ export const useAnimalCRUD = () => {
       ...cleanedRecordData,
       id: crypto.randomUUID(),
       createdAt: new Date(),
-      createdBy: user.id
+      createdBy: user.id,
     })
 
     const updatedRecords = [...(animal.records || []), newRecord]
@@ -437,7 +410,7 @@ export const useAnimalCRUD = () => {
   const updateRecord = async (
     animalId: string,
     recordId: string,
-    updateData: Partial<AnimalRecord>
+    updateData: Partial<AnimalRecord>,
   ) => {
     if (!user?.id) {
       dispatch(setError('Usuario no autenticado'))
@@ -457,9 +430,9 @@ export const useAnimalCRUD = () => {
         ? cleanUndefinedFields({
             ...record,
             ...cleanedUpdateData,
-            updatedAt: new Date()
+            updatedAt: new Date(),
           })
-        : record
+        : record,
     )
 
     await update(animalId, { records: updatedRecords })
@@ -479,20 +452,14 @@ export const useAnimalCRUD = () => {
       return
     }
 
-    const updatedRecords = animal.records.filter(
-      (record) => record.id !== recordId
-    )
+    const updatedRecords = animal.records.filter((record) => record.id !== recordId)
 
     await update(animalId, { records: updatedRecords })
     console.log('Registro eliminado:', recordId)
   }
 
   // Resolver caso clínico
-  const resolveRecord = async (
-    animalId: string,
-    recordId: string,
-    treatment?: string
-  ) => {
+  const resolveRecord = async (animalId: string, recordId: string, treatment?: string) => {
     if (!user?.id) {
       dispatch(setError('Usuario no autenticado'))
       return
@@ -501,7 +468,7 @@ export const useAnimalCRUD = () => {
     const updateData: Partial<AnimalRecord> = {
       isResolved: true,
       resolvedDate: new Date(),
-      ...(treatment ? { treatment } : {})
+      ...(treatment ? { treatment } : {}),
     }
 
     await updateRecord(animalId, recordId, updateData)
@@ -523,12 +490,11 @@ export const useAnimalCRUD = () => {
 
     const updatedRecords = animal.records.map((record) => {
       if (record.id === recordId) {
-        const { resolvedDate: _resolvedDate, ...recordWithoutResolvedDate } =
-          record
+        const { resolvedDate: _resolvedDate, ...recordWithoutResolvedDate } = record
         return cleanUndefinedFields({
           ...recordWithoutResolvedDate,
           isResolved: false,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
       }
       return record
@@ -543,12 +509,8 @@ export const useAnimalCRUD = () => {
     animalIds: string[],
     recordData: Omit<
       AnimalRecord,
-      | 'id'
-      | 'createdAt'
-      | 'createdBy'
-      | 'appliedToAnimals'
-      | 'isBulkApplication'
-    >
+      'id' | 'createdAt' | 'createdBy' | 'appliedToAnimals' | 'isBulkApplication'
+    >,
   ) => {
     if (!user?.id) {
       dispatch(setError('Usuario no autenticado'))
@@ -568,7 +530,7 @@ export const useAnimalCRUD = () => {
       appliedToAnimals: animalIds,
       isBulkApplication: true,
       createdAt: new Date(),
-      createdBy: user.id
+      createdBy: user.id,
     })
 
     // Aplicar el registro a todos los animales seleccionados
@@ -602,13 +564,12 @@ export const useAnimalCRUD = () => {
             const dueDate = new Date(record.nextDueDate)
             if (dueDate <= cutoffDate) {
               const daysUntilDue = Math.ceil(
-                (dueDate.getTime() - new Date().getTime()) /
-                  (1000 * 60 * 60 * 24)
+                (dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
               )
               upcoming.push({
                 animal,
                 record,
-                daysUntilDue
+                daysUntilDue,
               })
             }
           }
@@ -641,7 +602,7 @@ export const useAnimalCRUD = () => {
     resolveRecord,
     reopenRecord,
     addBulkRecord,
-    getUpcomingHealthRecords
+    getUpcomingHealthRecords,
   }
 }
 

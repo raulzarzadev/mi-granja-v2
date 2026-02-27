@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore'
+import { collection, doc, getDocs, updateDoc } from 'firebase/firestore'
+import { useEffect, useState } from 'react'
 import { db } from '@/lib/firebase'
 import { User } from '@/types'
 
@@ -33,7 +33,7 @@ export const useAdminUsers = (): UseAdminUsersReturn => {
           email: data.email,
           farmName: data.farmName || '',
           roles: data.roles || ['farmer'],
-          createdAt: data.createdAt?.toDate() || new Date()
+          createdAt: data.createdAt?.toDate() || new Date(),
         })
       })
 
@@ -50,7 +50,7 @@ export const useAdminUsers = (): UseAdminUsersReturn => {
     try {
       await updateDoc(doc(db, 'users', userId), {
         roles: newRoles,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
 
       // Actualizar el estado local
@@ -58,8 +58,8 @@ export const useAdminUsers = (): UseAdminUsersReturn => {
         prev.map((user) =>
           user.id === userId
             ? { ...user, roles: newRoles as ('admin' | 'farmer' | 'vet')[] }
-            : user
-        )
+            : user,
+        ),
       )
     } catch (err) {
       console.error('Error updating user roles:', err)
@@ -76,6 +76,6 @@ export const useAdminUsers = (): UseAdminUsersReturn => {
     isLoading,
     error,
     updateUserRoles,
-    refreshUsers: fetchUsers
+    refreshUsers: fetchUsers,
   }
 }

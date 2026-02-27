@@ -1,8 +1,8 @@
 'use client'
 
 import React from 'react'
-import { Farm } from '@/types/farm'
 import { formatDate, toDate } from '@/lib/dates'
+import { Farm } from '@/types/farm'
 
 interface FarmCardProps {
   farm: Farm
@@ -30,14 +30,10 @@ const FarmCard: React.FC<FarmCardProps> = ({ farm }) => {
       </div>
 
       {farm.description && (
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-          {farm.description}
-        </p>
+        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{farm.description}</p>
       )}
 
-      <div className="text-xs text-gray-500">
-        Creada: {formatDate(toDate(farm.createdAt))}
-      </div>
+      <div className="text-xs text-gray-500">Creada: {formatDate(toDate(farm.createdAt))}</div>
     </div>
   )
 }

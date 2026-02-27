@@ -1,11 +1,11 @@
 'use client'
 
 import React from 'react'
-import { Animal } from '@/types/animals'
 import { Modal } from '@/components/Modal'
-import { useModal } from '@/hooks/useModal'
-import AnimalForm from './AnimalForm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useModal } from '@/hooks/useModal'
+import { Animal } from '@/types/animals'
+import AnimalForm from './AnimalForm'
 import Button from './buttons/Button'
 
 interface ModalEditAnimalProps {
@@ -21,29 +21,18 @@ const ModalEditAnimal: React.FC<ModalEditAnimalProps> = ({ animal }) => {
   const { update: updateAnimal, animals } = useAnimalCRUD()
   const handleEditAnimal = (
     animalNumber: string,
-    animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
+    animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>,
   ) => {
     updateAnimal(animalNumber, animalData)
     closeModal()
   }
   return (
     <>
-      <Button
-        onClick={openModal}
-        className="cursor-pointer"
-        icon="edit"
-        color="primary"
-        size="sm"
-      >
+      <Button onClick={openModal} className="cursor-pointer" icon="edit" color="primary" size="sm">
         Editar
       </Button>
 
-      <Modal
-        isOpen={isOpen}
-        onClose={closeModal}
-        title={'Detalles del animal'}
-        size="lg"
-      >
+      <Modal isOpen={isOpen} onClose={closeModal} title={'Detalles del animal'} size="lg">
         <div className="p-2">
           <AnimalForm
             initialData={animal}

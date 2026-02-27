@@ -1,20 +1,20 @@
 'use client'
 
-import React, { useState, useMemo, useEffect } from 'react'
-import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import {
-  AnimalRecord,
-  record_category_labels,
-  record_category_icons,
-  record_category_colors,
-  record_type_labels,
-  record_categories,
-  record_types,
-  record_severity_labels
-} from '@/types/animals'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import React, { useEffect, useMemo, useState } from 'react'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import {
+  AnimalRecord,
+  record_categories,
+  record_category_colors,
+  record_category_icons,
+  record_category_labels,
+  record_severity_labels,
+  record_type_labels,
+  record_types,
+} from '@/types/animals'
 
 const RecordsTab: React.FC = () => {
   const { animals } = useAnimalCRUD()
@@ -30,12 +30,10 @@ const RecordsTab: React.FC = () => {
     dateFrom: '',
     dateTo: '',
     search: '',
-    application: '' as '' | 'bulk' | 'single'
+    application: '' as '' | 'bulk' | 'single',
   })
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [sortApp, setSortApp] = useState<'none' | 'bulkFirst' | 'singleFirst'>(
-    'none'
-  )
+  const [sortApp, setSortApp] = useState<'none' | 'bulkFirst' | 'singleFirst'>('none')
 
   // Helpers: leer/escribir filtros en la URL
   const readFiltersFromURL = (): typeof filters => {
@@ -47,7 +45,7 @@ const RecordsTab: React.FC = () => {
       dateFrom: p.get('from') || '',
       dateTo: p.get('to') || '',
       search: p.get('q') || '',
-      application: (p.get('app') as '' | 'bulk' | 'single') || ''
+      application: (p.get('app') as '' | 'bulk' | 'single') || '',
     }
   }
 
@@ -105,16 +103,14 @@ const RecordsTab: React.FC = () => {
           records.push({
             ...record,
             animalId: animal.id,
-            animalNumber: animal.animalNumber || 'Sin número'
+            animalNumber: animal.animalNumber || 'Sin número',
           })
         })
       }
     })
 
     // Ordenar por fecha descendente
-    return records.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    )
+    return records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }, [animals])
 
   // Aplicar filtros
@@ -133,8 +129,7 @@ const RecordsTab: React.FC = () => {
       if (filters.application) {
         const looksBulk =
           !!record.isBulkApplication ||
-          (Array.isArray(record.appliedToAnimals) &&
-            record.appliedToAnimals.length > 0)
+          (Array.isArray(record.appliedToAnimals) && record.appliedToAnimals.length > 0)
         if (filters.application === 'bulk' && !looksBulk) return false
         if (filters.application === 'single' && looksBulk) return false
       }
@@ -156,26 +151,17 @@ const RecordsTab: React.FC = () => {
       // Filtro por búsqueda en título y descripción
       if (filters.search) {
         const searchLower = filters.search.trim().toLowerCase()
-        const clinicalCats = [
-          'illness',
-          'injury',
-          'treatment',
-          'surgery'
-        ] as const
+        const clinicalCats = ['illness', 'injury', 'treatment', 'surgery'] as const
         const statusLabel =
-          record.type === 'health' &&
-          clinicalCats.includes(record.category as any)
+          record.type === 'health' && clinicalCats.includes(record.category as any)
             ? record.isResolved
               ? 'resuelto'
               : 'activo'
             : ''
         const looksBulk =
           !!record.isBulkApplication ||
-          (Array.isArray(record.appliedToAnimals) &&
-            record.appliedToAnimals.length > 0)
-        const severity = (record as any).severity as
-          | undefined
-          | keyof typeof record_severity_labels
+          (Array.isArray(record.appliedToAnimals) && record.appliedToAnimals.length > 0)
+        const severity = (record as any).severity as undefined | keyof typeof record_severity_labels
         const severityLabel = severity ? record_severity_labels[severity] : ''
         const dateStr = (() => {
           try {
@@ -188,7 +174,7 @@ const RecordsTab: React.FC = () => {
           try {
             return record.nextDueDate
               ? format(new Date(record.nextDueDate), 'dd/MM/yyyy', {
-                  locale: es
+                  locale: es,
                 })
               : ''
           } catch {
@@ -209,7 +195,7 @@ const RecordsTab: React.FC = () => {
           statusLabel,
           severityLabel,
           dateStr,
-          nextDueStr
+          nextDueStr,
         ]
         // Indicador textual de masivo/individual para búsqueda
         parts.push(looksBulk ? 'masivo' : 'individual')
@@ -231,10 +217,7 @@ const RecordsTab: React.FC = () => {
 
   const groupedRows: TableRow[] = useMemo(() => {
     const nonBulk: URecord[] = []
-    const map = new Map<
-      string,
-      { rep: URecord; animals: Array<{ id: string; number: string }> }
-    >()
+    const map = new Map<string, { rep: URecord; animals: Array<{ id: string; number: string }> }>()
 
     const dateKey = (d: Date | string) => new Date(d).toISOString().slice(0, 10) // yyyy-MM-dd
 
@@ -249,13 +232,13 @@ const RecordsTab: React.FC = () => {
           dateKey(r.date),
           r.title,
           r.batch || '',
-          r.veterinarian || ''
+          r.veterinarian || '',
         ].join('|')
         const entry = map.get(key)
         if (!entry) {
           map.set(key, {
             rep: r,
-            animals: [{ id: r.animalId, number: r.animalNumber }]
+            animals: [{ id: r.animalId, number: r.animalNumber }],
           })
         } else {
           if (!entry.animals.some((a) => a.id === r.animalId)) {
@@ -270,26 +253,18 @@ const RecordsTab: React.FC = () => {
     const bulkRows: TableRow[] = Array.from(map.values()).map((g) => ({
       ...g.rep,
       __isGrouped: true as const,
-      __animals: g.animals
+      __animals: g.animals,
     }))
 
     const rows: TableRow[] = [...nonBulk, ...bulkRows]
-    return rows.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    )
+    return rows.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }, [filteredRecords])
 
   // Orden para visualización (por tipo de aplicación)
   const displayedRows: TableRow[] = useMemo(() => {
     if (sortApp === 'none') return groupedRows
     const priority = (r: TableRow) =>
-      r.__isGrouped
-        ? sortApp === 'bulkFirst'
-          ? 0
-          : 1
-        : sortApp === 'bulkFirst'
-        ? 1
-        : 0
+      r.__isGrouped ? (sortApp === 'bulkFirst' ? 0 : 1) : sortApp === 'bulkFirst' ? 1 : 0
     return [...groupedRows].sort((a, b) => {
       const pa = priority(a)
       const pb = priority(b)
@@ -307,7 +282,7 @@ const RecordsTab: React.FC = () => {
       dateFrom: '',
       dateTo: '',
       search: '',
-      application: ''
+      application: '',
     })
   }
 
@@ -316,9 +291,7 @@ const RecordsTab: React.FC = () => {
       return ['general', 'observation', 'other']
     }
     if (filters.type === 'health') {
-      return record_categories.filter(
-        (c) => c !== 'general' && c !== 'observation'
-      )
+      return record_categories.filter((c) => c !== 'general' && c !== 'observation')
     }
     return record_categories
   }
@@ -327,13 +300,8 @@ const RecordsTab: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">
-          📋 Registros ({groupedRows.length})
-        </h2>
-        <button
-          onClick={resetFilters}
-          className="text-sm text-blue-600 hover:text-blue-800"
-        >
+        <h2 className="text-xl font-semibold text-gray-900">📋 Registros ({groupedRows.length})</h2>
+        <button onClick={resetFilters} className="text-sm text-blue-600 hover:text-blue-800">
           Limpiar filtros
         </button>
       </div>
@@ -364,15 +332,13 @@ const RecordsTab: React.FC = () => {
 
               {/* Aplicación */}
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Aplicación
-                </label>
+                <label className="block text-sm font-medium mb-1">Aplicación</label>
                 <select
                   value={filters.application}
                   onChange={(e) =>
                     setFilters((prev) => ({
                       ...prev,
-                      application: e.target.value as '' | 'bulk' | 'single'
+                      application: e.target.value as '' | 'bulk' | 'single',
                     }))
                   }
                   className="w-full border rounded-lg px-2 py-1.5 text-sm"
@@ -389,7 +355,7 @@ const RecordsTab: React.FC = () => {
                   onChange={(e) =>
                     setFilters((prev) => ({
                       ...prev,
-                      animalId: e.target.value
+                      animalId: e.target.value,
                     }))
                   }
                   className="w-full border rounded-lg px-2 py-1.5 text-sm"
@@ -412,7 +378,7 @@ const RecordsTab: React.FC = () => {
                     setFilters((prev) => ({
                       ...prev,
                       type: e.target.value as AnimalRecord['type'] | '',
-                      category: '' // Reset category when type changes
+                      category: '', // Reset category when type changes
                     }))
                   }
                   className="w-full border rounded-lg px-2 py-1.5 text-sm"
@@ -428,15 +394,13 @@ const RecordsTab: React.FC = () => {
 
               {/* Categoría */}
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Categoría
-                </label>
+                <label className="block text-sm font-medium mb-1">Categoría</label>
                 <select
                   value={filters.category}
                   onChange={(e) =>
                     setFilters((prev) => ({
                       ...prev,
-                      category: e.target.value as AnimalRecord['category'] | ''
+                      category: e.target.value as AnimalRecord['category'] | '',
                     }))
                   }
                   className="w-full border rounded-lg px-2 py-1.5 text-sm"
@@ -444,16 +408,8 @@ const RecordsTab: React.FC = () => {
                   <option value="">Todas</option>
                   {getAvailableCategories().map((category) => (
                     <option key={category} value={category}>
-                      {
-                        record_category_icons[
-                          category as keyof typeof record_category_icons
-                        ]
-                      }{' '}
-                      {
-                        record_category_labels[
-                          category as keyof typeof record_category_labels
-                        ]
-                      }
+                      {record_category_icons[category as keyof typeof record_category_icons]}{' '}
+                      {record_category_labels[category as keyof typeof record_category_labels]}
                     </option>
                   ))}
                 </select>
@@ -468,7 +424,7 @@ const RecordsTab: React.FC = () => {
                   onChange={(e) =>
                     setFilters((prev) => ({
                       ...prev,
-                      dateFrom: e.target.value
+                      dateFrom: e.target.value,
                     }))
                   }
                   className="w-full border rounded-lg px-2 py-1.5 text-sm"
@@ -481,9 +437,7 @@ const RecordsTab: React.FC = () => {
                 <input
                   type="date"
                   value={filters.dateTo}
-                  onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, dateTo: e.target.value }))
-                  }
+                  onChange={(e) => setFilters((prev) => ({ ...prev, dateTo: e.target.value }))}
                   className="w-full border rounded-lg px-2 py-1.5 text-sm"
                 />
               </div>
@@ -494,9 +448,7 @@ const RecordsTab: React.FC = () => {
                 <input
                   type="text"
                   value={filters.search}
-                  onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, search: e.target.value }))
-                  }
+                  onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
                   placeholder="Título o descripción..."
                   className="w-full border rounded-lg px-2 py-1.5 text-sm"
                 />
@@ -529,11 +481,7 @@ const RecordsTab: React.FC = () => {
                       type="button"
                       onClick={() =>
                         setSortApp((s) =>
-                          s === 'none'
-                            ? 'bulkFirst'
-                            : s === 'bulkFirst'
-                            ? 'singleFirst'
-                            : 'none'
+                          s === 'none' ? 'bulkFirst' : s === 'bulkFirst' ? 'singleFirst' : 'none',
                         )
                       }
                       className="inline-flex items-center gap-1 text-gray-600 hover:text-gray-900"
@@ -544,9 +492,7 @@ const RecordsTab: React.FC = () => {
                         <span className="text-[10px]">(Masivo primero)</span>
                       )}
                       {sortApp === 'singleFirst' && (
-                        <span className="text-[10px]">
-                          (Individual primero)
-                        </span>
+                        <span className="text-[10px]">(Individual primero)</span>
                       )}
                     </button>
                   </th>
@@ -570,14 +516,12 @@ const RecordsTab: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {displayedRows.map((record) => (
                   <tr
-                    key={`${record.id}-${
-                      record.__isGrouped ? 'g' : record.animalId
-                    }`}
+                    key={`${record.id}-${record.__isGrouped ? 'g' : record.animalId}`}
                     className="hover:bg-gray-50"
                   >
                     <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900">
                       {format(new Date(record.date), 'dd/MM/yyyy', {
-                        locale: es
+                        locale: es,
                       })}
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -604,12 +548,11 @@ const RecordsTab: React.FC = () => {
                                 #{a.number}
                               </span>
                             ))}
-                            {record.__animals &&
-                              record.__animals.length > 5 && (
-                                <span className="text-xs text-gray-500">
-                                  y {record.__animals.length - 5} más
-                                </span>
-                              )}
+                            {record.__animals && record.__animals.length > 5 && (
+                              <span className="text-xs text-gray-500">
+                                y {record.__animals.length - 5} más
+                              </span>
+                            )}
                           </div>
                         </div>
                       ) : (
@@ -648,18 +591,13 @@ const RecordsTab: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-2 py-1 text-sm text-gray-500">
-                      <div
-                        className="max-w-xs truncate"
-                        title={record.description || ''}
-                      >
+                      <div className="max-w-xs truncate" title={record.description || ''}>
                         {record.description || '-'}
                       </div>
                     </td>
                     <td className="px-2 py-1 whitespace-nowrap text-sm">
                       {record.type === 'health' &&
-                      ['illness', 'injury', 'treatment', 'surgery'].includes(
-                        record.category
-                      ) ? (
+                      ['illness', 'injury', 'treatment', 'surgery'].includes(record.category) ? (
                         <span
                           className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                             record.isResolved
@@ -677,7 +615,7 @@ const RecordsTab: React.FC = () => {
                       {record.nextDueDate ? (
                         <span className="text-orange-600">
                           {format(new Date(record.nextDueDate), 'dd/MM/yyyy', {
-                            locale: es
+                            locale: es,
                           })}
                         </span>
                       ) : (

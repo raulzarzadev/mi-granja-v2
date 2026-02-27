@@ -1,19 +1,12 @@
 'use client'
 
+import { collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore'
 import { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  doc,
-  updateDoc
-} from 'firebase/firestore'
+import { toDate } from '@/lib/dates'
 import { db } from '@/lib/firebase'
 import { FarmInvitation } from '@/types/farm'
-import { toDate } from '@/lib/dates'
 
 export const useMyInvitations = () => {
   const { user } = useSelector((state: RootState) => state.auth)
@@ -36,7 +29,7 @@ export const useMyInvitations = () => {
           collection(db, 'farmInvitations'),
           where('email', '==', email),
           // Mostrar pendientes y aceptadas
-          where('status', 'in', ['pending', 'accepted'])
+          where('status', 'in', ['pending', 'accepted']),
         )
         const snap = await getDocs(qInv)
         const rawInv = snap.docs.map((d) => {
@@ -53,7 +46,7 @@ export const useMyInvitations = () => {
             ...v,
             expiresAt: toDate(v.expiresAt),
             createdAt: toDate(v.createdAt),
-            updatedAt: toDate(v.updatedAt)
+            updatedAt: toDate(v.updatedAt),
           } as FarmInvitation
         })
 
@@ -69,28 +62,23 @@ export const useMyInvitations = () => {
           })()
           const batchResults = await Promise.all(
             batches.map(async (ids) => {
-              const qFarms = query(
-                collection(db, 'farms'),
-                where('__name__', 'in', ids)
-              )
+              const qFarms = query(collection(db, 'farms'), where('__name__', 'in', ids))
               const fsnap = await getDocs(qFarms)
               return fsnap.docs.map((fd) => ({
                 id: fd.id,
-                name: (fd.data() as { name?: string }).name || ''
+                name: (fd.data() as { name?: string }).name || '',
               }))
-            })
+            }),
           )
-          farmNames = batchResults
-            .flat()
-            .reduce<Record<string, string>>((acc, f) => {
-              acc[f.id] = f.name
-              return acc
-            }, {})
+          farmNames = batchResults.flat().reduce<Record<string, string>>((acc, f) => {
+            acc[f.id] = f.name
+            return acc
+          }, {})
         }
 
         const data = rawInv.map((inv) => ({
           ...inv,
-          farmName: farmNames[inv.farmId]
+          farmName: farmNames[inv.farmId],
         }))
         setInvitations(data)
       } catch (e) {
@@ -100,7 +88,7 @@ export const useMyInvitations = () => {
         setIsLoading(false)
       }
     },
-    [email]
+    [email],
   )
 
   useEffect(() => {
@@ -108,20 +96,14 @@ export const useMyInvitations = () => {
   }, [loadInvitations])
 
   const getPending = () =>
-    invitations.filter(
-      (i) => i.status === 'pending' && new Date() < i.expiresAt
-    )
+    invitations.filter((i) => i.status === 'pending' && new Date() < i.expiresAt)
   const getAccepted = () => invitations.filter((i) => i.status === 'accepted')
 
   const getConfirmUrl = (token: string, action: 'accept' | 'reject') => {
     const appUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
-      (typeof window !== 'undefined'
-        ? window.location.origin
-        : 'http://localhost:3000')
-    return `${appUrl}/invitations/confirm?token=${encodeURIComponent(
-      token
-    )}&action=${action}`
+      (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
+    return `${appUrl}/invitations/confirm?token=${encodeURIComponent(token)}&action=${action}`
   }
 
   return {
@@ -136,13 +118,13 @@ export const useMyInvitations = () => {
       try {
         await updateDoc(doc(db, 'farmInvitations', invitationId), {
           status: 'rejected',
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         await loadInvitations()
       } catch (e) {
         console.error('Error rejecting invitation', e)
         throw e
       }
-    }
+    },
   }
 }

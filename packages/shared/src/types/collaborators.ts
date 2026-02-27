@@ -61,10 +61,10 @@ export const COLLABORATOR_ROLES = [
       { module: 'areas', actions: ['create', 'read', 'update', 'delete'] },
       {
         module: 'collaborators',
-        actions: ['create', 'read', 'update', 'delete']
+        actions: ['create', 'read', 'update', 'delete'],
       },
-      { module: 'reports', actions: ['create', 'read', 'update', 'delete'] }
-    ]
+      { module: 'reports', actions: ['create', 'read', 'update', 'delete'] },
+    ],
   },
   {
     value: 'manager',
@@ -78,8 +78,8 @@ export const COLLABORATOR_ROLES = [
       { module: 'areas', actions: ['read', 'update'] },
       { module: 'collaborators', actions: ['read', 'update'] },
       { module: 'reports', actions: ['read'] },
-      { module: 'invitations', actions: ['read', 'update', 'create'] }
-    ]
+      { module: 'invitations', actions: ['read', 'update', 'create'] },
+    ],
   },
   {
     value: 'caretaker',
@@ -92,8 +92,8 @@ export const COLLABORATOR_ROLES = [
       { module: 'reminders', actions: ['create', 'read', 'update', 'delete'] },
       { module: 'areas', actions: ['read'] },
       { module: 'reports', actions: ['read'] },
-      { module: 'invitations', actions: ['read'] }
-    ]
+      { module: 'invitations', actions: ['read'] },
+    ],
   },
   {
     value: 'veterinarian',
@@ -105,8 +105,8 @@ export const COLLABORATOR_ROLES = [
       { module: 'breeding', actions: ['read', 'update'] },
       { module: 'reminders', actions: ['create', 'read', 'update'] },
       { module: 'reports', actions: ['read'] },
-      { module: 'invitations', actions: ['read'] }
-    ]
+      { module: 'invitations', actions: ['read'] },
+    ],
   },
   {
     value: 'viewer',
@@ -119,40 +119,44 @@ export const COLLABORATOR_ROLES = [
       { module: 'reminders', actions: ['read'] },
       { module: 'areas', actions: ['read'] },
       { module: 'reports', actions: ['read'] },
-      { module: 'invitations', actions: ['read'] }
-    ]
-  }
+      { module: 'invitations', actions: ['read'] },
+    ],
+  },
 ] as const
 
 export const collaborator_roles = COLLABORATOR_ROLES.map((r) => r.value)
 export type CollaboratorRolType = (typeof collaborator_roles)[number]
 
 export const collaborator_roles_label: Record<CollaboratorRolType, string> =
-  COLLABORATOR_ROLES.reduce((acc, r) => {
-    acc[r.value] = r.label
-    return acc
-  }, {} as Record<CollaboratorRolType, string>)
+  COLLABORATOR_ROLES.reduce(
+    (acc, r) => {
+      acc[r.value] = r.label
+      return acc
+    },
+    {} as Record<CollaboratorRolType, string>,
+  )
 
-export const collaborator_roles_description: Record<
-  CollaboratorRolType,
-  string
-> = COLLABORATOR_ROLES.reduce((acc, r) => {
-  acc[r.value] = r.description
-  return acc
-}, {} as Record<CollaboratorRolType, string>)
+export const collaborator_roles_description: Record<CollaboratorRolType, string> =
+  COLLABORATOR_ROLES.reduce(
+    (acc, r) => {
+      acc[r.value] = r.description
+      return acc
+    },
+    {} as Record<CollaboratorRolType, string>,
+  )
 
-export const DEFAULT_PERMISSIONS: Record<
-  FarmCollaborator['role'],
-  FarmPermission[]
-> = COLLABORATOR_ROLES.reduce((acc, r) => {
-  // Convert readonly definitions to mutable copies matching FarmPermission[]
-  acc[r.value] = r.defaultPermissions.map((p) => ({
-    module: p.module,
-    actions: [...p.actions]
-  })) as FarmPermission[]
-  return acc
-}, {} as Record<FarmCollaborator['role'], FarmPermission[]>)
+export const DEFAULT_PERMISSIONS: Record<FarmCollaborator['role'], FarmPermission[]> =
+  COLLABORATOR_ROLES.reduce(
+    (acc, r) => {
+      // Convert readonly definitions to mutable copies matching FarmPermission[]
+      acc[r.value] = r.defaultPermissions.map((p) => ({
+        module: p.module,
+        actions: [...p.actions],
+      })) as FarmPermission[]
+      return acc
+    },
+    {} as Record<FarmCollaborator['role'], FarmPermission[]>,
+  )
 
-export const getDefaultPermissionsByRole = (
-  role: FarmCollaborator['role']
-): FarmPermission[] => DEFAULT_PERMISSIONS[role]
+export const getDefaultPermissionsByRole = (role: FarmCollaborator['role']): FarmPermission[] =>
+  DEFAULT_PERMISSIONS[role]

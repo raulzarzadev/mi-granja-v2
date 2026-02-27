@@ -1,12 +1,12 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
-import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { Animal, AnimalRecord } from '@/types/animals'
 import { format } from 'date-fns'
+import React, { useMemo, useState } from 'react'
 import RecordForm, { RecordFormState } from '@/components/RecordForm'
 import RecordRow from '@/components/RecordRow'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { buildRecordFromForm, getTodayLocalDateString } from '@/lib/records'
+import { Animal, AnimalRecord } from '@/types/animals'
 
 interface Props {
   animal: Animal
@@ -15,8 +15,7 @@ interface Props {
 type UnifiedRecord = AnimalRecord
 
 const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
-  const { addRecord, updateRecord, removeRecord, resolveRecord, reopenRecord } =
-    useAnimalCRUD()
+  const { addRecord, updateRecord, removeRecord, resolveRecord, reopenRecord } = useAnimalCRUD()
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editing, setEditing] = useState<UnifiedRecord | null>(null)
@@ -33,15 +32,13 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
     nextDueDate: '',
     batch: '',
     veterinarian: '',
-    cost: ''
+    cost: '',
   })
   const [form, setForm] = useState<RecordFormState>(() => initialFormState())
 
   const unifiedRecords: UnifiedRecord[] = useMemo(() => {
     const unified = [...((animal.records as UnifiedRecord[]) || [])]
-    return unified.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    )
+    return unified.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }, [animal.records])
 
   const resetForm = () => {
@@ -59,10 +56,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
     if (editing) {
       await updateRecord(animal.id, editing.id, base)
     } else {
-      await addRecord(
-        animal.id,
-        base as Omit<AnimalRecord, 'id' | 'createdAt' | 'createdBy'>
-      )
+      await addRecord(animal.id, base as Omit<AnimalRecord, 'id' | 'createdAt' | 'createdBy'>)
     }
     resetForm()
   }
@@ -78,16 +72,12 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       date: format(new Date(rec.date), 'yyyy-MM-dd'),
       severity: (rec.severity as any) || '',
       isResolved: !!rec.isResolved,
-      resolvedDate: rec.resolvedDate
-        ? format(new Date(rec.resolvedDate), 'yyyy-MM-dd')
-        : '',
+      resolvedDate: rec.resolvedDate ? format(new Date(rec.resolvedDate), 'yyyy-MM-dd') : '',
       treatment: rec.treatment || '',
-      nextDueDate: rec.nextDueDate
-        ? format(new Date(rec.nextDueDate), 'yyyy-MM-dd')
-        : '',
+      nextDueDate: rec.nextDueDate ? format(new Date(rec.nextDueDate), 'yyyy-MM-dd') : '',
       batch: rec.batch || '',
       veterinarian: rec.veterinarian || '',
-      cost: rec.cost?.toString() || ''
+      cost: rec.cost?.toString() || '',
     })
   }
 
@@ -106,13 +96,8 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       {isFormOpen && (
         <div className="bg-gray-50 rounded-lg p-3 space-y-3">
           <div className="flex justify-between items-center">
-            <h4 className="font-medium">
-              {editing ? 'Editar registro' : 'Nuevo registro'}
-            </h4>
-            <button
-              onClick={resetForm}
-              className="text-gray-500 hover:text-gray-700"
-            >
+            <h4 className="font-medium">{editing ? 'Editar registro' : 'Nuevo registro'}</h4>
+            <button onClick={resetForm} className="text-gray-500 hover:text-gray-700">
               ✕
             </button>
           </div>

@@ -1,11 +1,11 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { Animal } from '@/types/animals'
 import { Modal } from '@/components/Modal'
 import RecordForm, { RecordFormState } from '@/components/RecordForm'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { buildRecordFromForm, getTodayLocalDateString } from '@/lib/records'
+import { Animal } from '@/types/animals'
 
 interface ModalBulkHealthActionProps {
   isOpen: boolean
@@ -18,7 +18,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
   isOpen,
   onClose,
   selectedAnimals,
-  onSuccess
+  onSuccess,
 }) => {
   const { addBulkRecord } = useAnimalCRUD()
 
@@ -35,7 +35,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
     nextDueDate: '',
     batch: '',
     veterinarian: '',
-    cost: ''
+    cost: '',
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -54,7 +54,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
       nextDueDate: '',
       batch: '',
       veterinarian: '',
-      cost: ''
+      cost: '',
     })
   }
 
@@ -103,11 +103,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title="Aplicación de Registro Multiple"
-    >
+    <Modal isOpen={isOpen} onClose={handleClose} title="Aplicación de Registro Multiple">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Información de animales seleccionados */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -130,9 +126,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
 
           {formData.type === 'health' && formData.cost && (
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Costo Total
-              </label>
+              <label className="block text-sm font-medium mb-1">Costo Total</label>
               <div className="w-full border rounded-lg px-3 py-2 text-sm bg-gray-50 font-medium">
                 ${getTotalCost().toFixed(2)}
               </div>

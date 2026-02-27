@@ -10,9 +10,7 @@ describe('Authentication Flow', () => {
       cy.contains('Acceso a Mi Granja').should('be.visible')
       cy.get('input[name="email"]').should('be.visible')
       cy.get('input[name="password"]').should('be.visible')
-      cy.get('button[type="submit"]')
-        .contains('Iniciar Sesión')
-        .should('be.visible')
+      cy.get('button[type="submit"]').contains('Iniciar Sesión').should('be.visible')
     })
 
     it('should switch to register form', () => {
@@ -23,9 +21,7 @@ describe('Authentication Flow', () => {
       cy.contains('Registro en Mi Granja').should('be.visible')
       cy.get('input[name="confirmPassword"]').should('be.visible')
       cy.get('input[name="farmName"]').should('be.visible')
-      cy.get('button[type="submit"]')
-        .contains('Registrarse')
-        .should('be.visible')
+      cy.get('button[type="submit"]').contains('Registrarse').should('be.visible')
     })
 
     it('should validate email field', () => {
@@ -53,9 +49,7 @@ describe('Authentication Flow', () => {
       // Enter short password
       cy.get('input[name="password"]').type('123')
       cy.get('button[type="submit"]').click()
-      cy.contains('La contraseña debe tener al menos 6 caracteres').should(
-        'be.visible'
-      )
+      cy.contains('La contraseña debe tener al menos 6 caracteres').should('be.visible')
     })
 
     it('should validate password confirmation in register mode', () => {
@@ -81,7 +75,7 @@ describe('Authentication Flow', () => {
       cy.intercept('POST', '**/auth/**', {
         delay: 1000,
         statusCode: 200,
-        body: { success: true }
+        body: { success: true },
       }).as('authRequest')
 
       cy.get('button[type="submit"]').click()
@@ -99,9 +93,7 @@ describe('Authentication Flow', () => {
 
       cy.contains('Iniciar sesión con enlace por email').should('be.visible')
       cy.get('input[name="password"]').should('not.exist')
-      cy.get('button[type="submit"]')
-        .contains('Enviar enlace')
-        .should('be.visible')
+      cy.get('button[type="submit"]').contains('Enviar enlace').should('be.visible')
     })
 
     it('should send email link and show confirmation', () => {
@@ -112,7 +104,7 @@ describe('Authentication Flow', () => {
       // Mock successful email link sending
       cy.intercept('POST', '**/auth/**', {
         statusCode: 200,
-        body: { success: true }
+        body: { success: true },
       }).as('sendEmailLink')
 
       cy.get('input[name="email"]').type('test@test.com')
@@ -131,7 +123,7 @@ describe('Authentication Flow', () => {
       // Mock successful email link sending
       cy.intercept('POST', '**/auth/**', {
         statusCode: 200,
-        body: { success: true }
+        body: { success: true },
       }).as('sendEmailLink')
 
       cy.get('input[name="email"]').type('test@test.com')
@@ -153,9 +145,7 @@ describe('Authentication Flow', () => {
       cy.contains('Cambiar a contraseña').click()
 
       cy.get('input[name="password"]').should('be.visible')
-      cy.get('button[type="submit"]')
-        .contains('Iniciar Sesión')
-        .should('be.visible')
+      cy.get('button[type="submit"]').contains('Iniciar Sesión').should('be.visible')
     })
   })
 
@@ -171,8 +161,8 @@ describe('Authentication Flow', () => {
         statusCode: 200,
         body: {
           user: { uid: '123', email: 'test@test.com' },
-          success: true
-        }
+          success: true,
+        },
       }).as('completeAuth')
 
       // Visit with mock email link parameters
@@ -189,18 +179,14 @@ describe('Authentication Flow', () => {
 
       cy.contains('Confirma tu email').should('be.visible')
       cy.get('input[name="email"]').should('be.visible')
-      cy.get('button[type="submit"]')
-        .contains('Completar autenticación')
-        .should('be.visible')
+      cy.get('button[type="submit"]').contains('Completar autenticación').should('be.visible')
     })
 
     it('should handle invalid email link', () => {
       cy.visit('/auth/complete')
 
       cy.contains('Error').should('be.visible')
-      cy.contains(
-        'El enlace de autenticación no es válido o ha expirado'
-      ).should('be.visible')
+      cy.contains('El enlace de autenticación no es válido o ha expirado').should('be.visible')
       cy.contains('Volver al login').should('be.visible')
     })
 
@@ -212,7 +198,7 @@ describe('Authentication Flow', () => {
       // Mock error response
       cy.intercept('POST', '**/auth/**', {
         statusCode: 400,
-        body: { error: 'Invalid email link' }
+        body: { error: 'Invalid email link' },
       }).as('completeAuthError')
 
       cy.visit('/auth/complete?apiKey=test&oobCode=test&mode=signIn')
@@ -270,9 +256,7 @@ describe('Authentication Flow', () => {
       // Form should be usable on mobile
       cy.get('input[name="email"]').type('test@test.com')
       cy.get('input[name="password"]').type('password123')
-      cy.get('button[type="submit"]')
-        .should('be.visible')
-        .and('not.be.disabled')
+      cy.get('button[type="submit"]').should('be.visible').and('not.be.disabled')
     })
   })
 })

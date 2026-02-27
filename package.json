@@ -9,12 +9,20 @@
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "test": "turbo run test",
+    "format": "biome format --write .",
     "dev:dashboard": "turbo run dev --filter=@mi-granja/dashboard",
     "dev:landing": "turbo run dev --filter=@mi-granja/landing",
     "build:dashboard": "turbo run build --filter=@mi-granja/dashboard",
-    "build:landing": "turbo run build --filter=@mi-granja/landing"
+    "build:landing": "turbo run build --filter=@mi-granja/landing",
+    "emulators": "firebase emulators:start --import=.firebase-data --export-on-exit=.firebase-data",
+    "emulators:start": "firebase emulators:start",
+    "emulators:kill": "lsof -ti :9099,:8080,:9199,:4000,:4400,:4500 | xargs kill 2>/dev/null; echo '✅ Emuladores detenidos'",
+    "seed": "npx tsx scripts/seed-emulators.ts"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "firebase-tools": "^13.30.0",
+    "tsx": "^4.19.0",
     "turbo": "^2.5.0"
   }
 }

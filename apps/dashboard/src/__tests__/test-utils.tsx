@@ -1,8 +1,12 @@
-import React from 'react'
-import { render } from '@testing-library/react'
-import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
+import { render } from '@testing-library/react'
+import React from 'react'
+import { Provider } from 'react-redux'
+import { animalsReducer } from '@/features/animals/animalsSlice'
 import { authReducer } from '@/features/auth/authSlice'
+import { breedingReducer } from '@/features/breeding/breedingSlice'
+import { farmReducer } from '@/features/farm/farmSlice'
+import { remindersReducer } from '@/features/reminders/remindersSlice'
 import { User } from '@/types'
 import '@testing-library/jest-dom'
 
@@ -12,13 +16,17 @@ export const createMockUser = (overrides?: Partial<User>): User => ({
   farmName: 'Test Farm',
   roles: ['farmer'],
   createdAt: new Date('2023-01-01'),
-  ...overrides
+  ...overrides,
 })
 
 export const createMockStore = (initialAuthState = {}) => {
   return configureStore({
     reducer: {
-      auth: authReducer
+      auth: authReducer,
+      animals: animalsReducer,
+      breeding: breedingReducer,
+      reminders: remindersReducer,
+      farm: farmReducer,
     },
     preloadedState: {
       auth: {
@@ -27,15 +35,19 @@ export const createMockStore = (initialAuthState = {}) => {
         error: null,
         emailLinkSent: false,
         emailForLink: null,
-        ...initialAuthState
-      }
-    }
+        ...initialAuthState,
+      },
+    },
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        serializableCheck: false,
+      }),
   })
 }
 
 export const renderWithProviders = (
   ui: React.ReactElement,
-  { store = createMockStore(), ...renderOptions } = {}
+  { store = createMockStore(), ...renderOptions } = {},
 ) => {
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <Provider store={store}>{children}</Provider>
@@ -43,18 +55,18 @@ export const renderWithProviders = (
 
   return {
     store,
-    ...render(ui, { wrapper: Wrapper, ...renderOptions })
+    ...render(ui, { wrapper: Wrapper, ...renderOptions }),
   }
 }
 
 export const renderWithAuth = (
   ui: React.ReactElement,
   user: User | null = null,
-  otherAuthState = {}
+  otherAuthState = {},
 ) => {
   const store = createMockStore({
     user,
-    ...otherAuthState
+    ...otherAuthState,
   })
 
   return renderWithProviders(ui, { store })
@@ -67,7 +79,7 @@ export const createMockFirebaseUser = (overrides = {}) => ({
   emailVerified: true,
   displayName: null,
   photoURL: null,
-  ...overrides
+  ...overrides,
 })
 
 // Mock Firebase auth responses
@@ -78,9 +90,7 @@ export const mockFirebaseAuthSuccess = (user = createMockFirebaseUser()) => {
   mockAuth.signInWithEmailLink.mockResolvedValue({ user })
 }
 
-export const mockFirebaseAuthError = (
-  error = new Error('Authentication failed')
-) => {
+export const mockFirebaseAuthError = (error = new Error('Authentication failed')) => {
   const mockAuth = (global as any).mockAuth
   mockAuth.signInWithEmailAndPassword.mockRejectedValue(error)
   mockAuth.createUserWithEmailAndPassword.mockRejectedValue(error)
@@ -95,8 +105,8 @@ export const mockFirestoreSuccess = () => {
     data: () => ({
       email: 'test@test.com',
       farmName: 'Test Farm',
-      createdAt: new Date()
-    })
+      createdAt: new Date(),
+    }),
   })
   mockFirestore.setDoc.mockResolvedValue(undefined)
 }
@@ -108,8 +118,7 @@ export const mockFirestoreError = (error = new Error('Firestore error')) => {
 }
 
 // Wait for async operations
-export const waitForAuthOperation = () =>
-  new Promise((resolve) => setTimeout(resolve, 0))
+export const waitForAuthOperation = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 const testUtils = {
   createMockUser,
@@ -121,7 +130,7 @@ const testUtils = {
   mockFirebaseAuthError,
   mockFirestoreSuccess,
   mockFirestoreError,
-  waitForAuthOperation
+  waitForAuthOperation,
 }
 
 export default testUtils
@@ -142,7 +151,6 @@ describe('Test Utils', () => {
       auth: { user: User | null; isLoading: boolean }
     }
     if (state.auth.user !== null) throw new Error('User should be null')
-    if (state.auth.isLoading !== false)
-      throw new Error('Loading should be false')
+    if (state.auth.isLoading !== false) throw new Error('Loading should be false')
   })
 })

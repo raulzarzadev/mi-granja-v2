@@ -6,9 +6,7 @@ function formatDateForInput(date: Date, mode: 'date' | 'datetime'): string {
   const hours = String(date.getHours()).padStart(2, '0')
   const minutes = String(date.getMinutes()).padStart(2, '0')
 
-  return mode === 'date'
-    ? `${year}-${month}-${day}`
-    : `${year}-${month}-${day}T${hours}:${minutes}`
+  return mode === 'date' ? `${year}-${month}-${day}` : `${year}-${month}-${day}T${hours}:${minutes}`
 }
 
 function parseDateFromInput(value: string, mode: 'date' | 'datetime'): Date {
@@ -31,7 +29,7 @@ export function InputDate({
   error,
   required,
   mode = 'datetime',
-  helperText
+  helperText,
 }: {
   value: Date | null | string | undefined
   disabled?: boolean
@@ -60,9 +58,7 @@ export function InputDate({
   }
 
   return (
-    <label
-      className={`block ${className || ''} ${error ? 'text-red-600' : ''}`}
-    >
+    <label className={`block ${className || ''} ${error ? 'text-red-600' : ''}`}>
       {label && (
         <span className="block text-sm font-medium text-gray-700 mb-1">
           {label}
@@ -73,21 +69,15 @@ export function InputDate({
         type={mode === 'date' ? 'date' : 'datetime-local'}
         value={getDateValue()}
         onChange={(e) => {
-          const date = e.target.value
-            ? parseDateFromInput(e.target.value, mode)
-            : null
+          const date = e.target.value ? parseDateFromInput(e.target.value, mode) : null
           if (onChange) {
             onChange(date)
           }
         }}
         className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 disabled:opacity-50 ${
-          error
-            ? 'border-red-600 focus:ring-red-500'
-            : 'border-gray-300 focus:ring-blue-500'
+          error ? 'border-red-600 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
         }`}
-        placeholder={
-          mode === 'date' ? 'Seleccionar fecha' : 'Seleccionar fecha y hora'
-        }
+        placeholder={mode === 'date' ? 'Seleccionar fecha' : 'Seleccionar fecha y hora'}
         disabled={disabled}
         aria-invalid={!!error}
       />

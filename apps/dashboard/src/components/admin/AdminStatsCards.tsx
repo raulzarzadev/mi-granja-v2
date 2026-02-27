@@ -1,8 +1,8 @@
 'use client'
 
 import React from 'react'
-import { useAdminStats } from '@/hooks/admin/useAdminStats'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { useAdminStats } from '@/hooks/admin/useAdminStats'
 
 export default function AdminStatsCards() {
   const {
@@ -12,7 +12,7 @@ export default function AdminStatsCards() {
     totalReminders,
     activeReminders,
     isLoading,
-    error
+    error,
   } = useAdminStats()
 
   if (isLoading) {
@@ -38,7 +38,7 @@ export default function AdminStatsCards() {
       icon: '👥',
       color: 'bg-blue-500',
       bgColor: 'bg-blue-50',
-      textColor: 'text-blue-700'
+      textColor: 'text-blue-700',
     },
     {
       title: 'Total Animales',
@@ -46,7 +46,7 @@ export default function AdminStatsCards() {
       icon: '🐄',
       color: 'bg-green-500',
       bgColor: 'bg-green-50',
-      textColor: 'text-green-700'
+      textColor: 'text-green-700',
     },
     {
       title: 'Reproducciones',
@@ -54,7 +54,7 @@ export default function AdminStatsCards() {
       icon: '💕',
       color: 'bg-pink-500',
       bgColor: 'bg-pink-50',
-      textColor: 'text-pink-700'
+      textColor: 'text-pink-700',
     },
     {
       title: 'Recordatorios Activos',
@@ -62,8 +62,8 @@ export default function AdminStatsCards() {
       icon: '⏰',
       color: 'bg-yellow-500',
       bgColor: 'bg-yellow-50',
-      textColor: 'text-yellow-700'
-    }
+      textColor: 'text-yellow-700',
+    },
   ]
 
   return (
@@ -71,14 +71,10 @@ export default function AdminStatsCards() {
       {stats.map((stat, index) => (
         <div key={index} className={`${stat.bgColor} rounded-lg p-6 border`}>
           <div className="flex items-center">
-            <div className={`${stat.color} rounded-lg p-3 text-white text-xl`}>
-              {stat.icon}
-            </div>
+            <div className={`${stat.color} rounded-lg p-3 text-white text-xl`}>{stat.icon}</div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-              <p className={`text-2xl font-bold ${stat.textColor}`}>
-                {stat.value}
-              </p>
+              <p className={`text-2xl font-bold ${stat.textColor}`}>{stat.value}</p>
             </div>
           </div>
         </div>

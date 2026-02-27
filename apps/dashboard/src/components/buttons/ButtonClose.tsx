@@ -17,7 +17,7 @@ export function ButtonClose({
   className = '',
   title = 'Cerrar',
   disabled = false,
-  showTitle = false
+  showTitle = false,
 }: ButtonCloseProps) {
   return (
     <button

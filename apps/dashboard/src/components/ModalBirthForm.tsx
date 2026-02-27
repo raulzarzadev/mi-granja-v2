@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react'
 import { BirthRecord, OffspringInfo } from '@/types'
-import { Modal } from './Modal'
-import { BreedingRecord } from '@/types/breedings'
 import { Animal, animal_icon } from '@/types/animals'
+import { BreedingRecord } from '@/types/breedings'
 import DateTimeInput from './inputs/DateTimeInput'
+import { Modal } from './Modal'
 
 interface ModalBirthFormProps {
   isOpen: boolean
@@ -28,7 +28,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   animals,
   onSubmit,
   isLoading = false,
-  selectedFemaleId
+  selectedFemaleId,
 }) => {
   // Obtener solo hembras embarazadas que aún no han parido
   const pregnantFemales =
@@ -47,7 +47,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
     color: '',
     status: 'vivo',
     healthIssues: '',
-    gender: 'hembra'
+    gender: 'hembra',
   })
 
   const [formData, setFormData] = useState<BirthRecord>({
@@ -56,7 +56,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
     birthTime: new Date().toTimeString().slice(0, 5),
     totalOffspring: 1,
     offspring: [defaultOffspring()],
-    notes: ''
+    notes: '',
   })
 
   // Si cambia la hembra seleccionada externamente y no se ha seteado aún
@@ -93,7 +93,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   const handleFemaleChange = (animalId: string) => {
     setFormData((prev) => ({
       ...prev,
-      animalId
+      animalId,
     }))
   }
 
@@ -113,20 +113,20 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
     setFormData((prev) => ({
       ...prev,
       totalOffspring: count,
-      offspring: currentOffspring
+      offspring: currentOffspring,
     }))
   }
 
   const handleOffspringChange = (
     index: number,
     field: keyof OffspringInfo,
-    value: string | number | undefined | null
+    value: string | number | undefined | null,
   ) => {
     setFormData((prev) => ({
       ...prev,
       offspring: prev.offspring.map((offspring, i) =>
-        i === index ? { ...offspring, [field]: value } : offspring
-      )
+        i === index ? { ...offspring, [field]: value } : offspring,
+      ),
     }))
   }
 
@@ -137,9 +137,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
         {selectedFemaleId ? (
           <div className="p-4 border border-green-300 rounded-md bg-green-50 flex items-center gap-3">
             {(() => {
-              const female = pregnantFemales.find(
-                (f: any) => f?.id === selectedFemaleId
-              )
+              const female = pregnantFemales.find((f: any) => f?.id === selectedFemaleId)
               if (!female) {
                 return (
                   <span className="text-sm text-red-600">
@@ -157,9 +155,9 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                     <div className="text-xs text-gray-700">
                       {female?.type} • Parto esperado:{' '}
                       {female?.breedingInfo?.expectedBirthDate
-                        ? new Date(
-                            female.breedingInfo.expectedBirthDate
-                          ).toLocaleDateString('es-ES')
+                        ? new Date(female.breedingInfo.expectedBirthDate).toLocaleDateString(
+                            'es-ES',
+                          )
                         : 'No definido'}
                     </div>
                   </div>
@@ -197,19 +195,15 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                       className="mr-3"
                     />
                     <div className="flex items-center gap-2 flex-1">
-                      <span className="text-lg">
-                        {animal_icon[female?.type || 'otro']}
-                      </span>
+                      <span className="text-lg">{animal_icon[female?.type || 'otro']}</span>
                       <div>
-                        <div className="font-medium">
-                          {female?.animalNumber}
-                        </div>
+                        <div className="font-medium">{female?.animalNumber}</div>
                         <div className="text-sm text-gray-600">
                           {female?.type} • Parto esperado:{' '}
                           {female?.breedingInfo?.expectedBirthDate
-                            ? new Date(
-                                female.breedingInfo.expectedBirthDate
-                              ).toLocaleDateString('es-ES')
+                            ? new Date(female.breedingInfo.expectedBirthDate).toLocaleDateString(
+                                'es-ES',
+                              )
                             : 'No definido'}
                         </div>
                       </div>
@@ -229,13 +223,11 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                 {/* Fecha del parto */}
                 <div>
                   <DateTimeInput
-                    value={
-                      formData.birthDate ? new Date(formData.birthDate) : null
-                    }
+                    value={formData.birthDate ? new Date(formData.birthDate) : null}
                     onChange={(date) =>
                       setFormData((prev) => ({
                         ...prev,
-                        birthDate: date ? date.toISOString().split('T')[0] : ''
+                        birthDate: date ? date.toISOString().split('T')[0] : '',
                       }))
                     }
                     label="Fecha del parto"
@@ -245,10 +237,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                 </div>
               </div>
               <div>
-                <label
-                  htmlFor="birthTime"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="birthTime" className="block text-sm font-medium text-gray-700 mb-1">
                   Hora del parto *
                 </label>
                 <input
@@ -258,7 +247,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      birthTime: e.target.value
+                      birthTime: e.target.value,
                     }))
                   }
                   required
@@ -278,9 +267,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
               <select
                 id="totalOffspring"
                 value={formData.totalOffspring}
-                onChange={(e) =>
-                  handleOffspringCountChange(parseInt(e.target.value))
-                }
+                onChange={(e) => handleOffspringCountChange(parseInt(e.target.value))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
@@ -293,18 +280,14 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
 
             {/* Información de cada cría */}
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-3">
-                Información de las crías
-              </h4>
+              <h4 className="text-sm font-medium text-gray-700 mb-3">Información de las crías</h4>
               <div className="space-y-4">
                 {formData.offspring.map((offspring, index) => (
                   <div
                     key={offspring.id}
                     className="p-4 border border-gray-200 rounded-md bg-gray-50"
                   >
-                    <h5 className="font-medium text-gray-800 mb-3">
-                      Cría #{index + 1}
-                    </h5>
+                    <h5 className="font-medium text-gray-800 mb-3">Cría #{index + 1}</h5>
 
                     <div className="grid grid-cols-2 gap-3">
                       {/* ID de la cría */}
@@ -316,11 +299,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                           type="text"
                           value={offspring.animalNumber}
                           onChange={(e) =>
-                            handleOffspringChange(
-                              index,
-                              'animalNumber',
-                              e.target.value
-                            )
+                            handleOffspringChange(index, 'animalNumber', e.target.value)
                           }
                           placeholder="Ej: OV-001"
                           required
@@ -335,13 +314,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                         </label>
                         <select
                           value={offspring.gender}
-                          onChange={(e) =>
-                            handleOffspringChange(
-                              index,
-                              'gender',
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => handleOffspringChange(index, 'gender', e.target.value)}
                           className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
                         >
                           <option value="hembra">Hembra</option>
@@ -363,9 +336,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                             handleOffspringChange(
                               index,
                               'weight',
-                              e.target.value === ''
-                                ? null
-                                : parseFloat(e.target.value)
+                              e.target.value === '' ? null : parseFloat(e.target.value),
                             )
                           }
                           placeholder="Ej: 2.5"
@@ -381,13 +352,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                         <input
                           type="text"
                           value={offspring.color || ''}
-                          onChange={(e) =>
-                            handleOffspringChange(
-                              index,
-                              'color',
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => handleOffspringChange(index, 'color', e.target.value)}
                           placeholder="Ej: Blanco, Negro, Marrón"
                           className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
                         />
@@ -400,13 +365,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                         </label>
                         <select
                           value={offspring.status}
-                          onChange={(e) =>
-                            handleOffspringChange(
-                              index,
-                              'status',
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => handleOffspringChange(index, 'status', e.target.value)}
                           className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
                         >
                           <option value="vivo">Vivo y saludable</option>
@@ -424,11 +383,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                           <textarea
                             value={offspring.healthIssues || ''}
                             onChange={(e) =>
-                              handleOffspringChange(
-                                index,
-                                'healthIssues',
-                                e.target.value
-                              )
+                              handleOffspringChange(index, 'healthIssues', e.target.value)
                             }
                             placeholder="Describe los problemas de salud..."
                             rows={2}
@@ -444,18 +399,13 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
 
             {/* Notas generales */}
             <div>
-              <label
-                htmlFor="notes"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
                 Notas del parto
               </label>
               <textarea
                 id="notes"
                 value={formData.notes}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, notes: e.target.value }))
-                }
+                onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
                 rows={3}
                 placeholder="Observaciones sobre el parto, complicaciones, etc..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"

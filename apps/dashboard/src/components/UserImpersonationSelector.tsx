@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useUsersCRUD } from '@/hooks/useUsersCRUD'
 import { User } from '@/types'
@@ -9,14 +9,11 @@ interface UserImpersonationSelectorProps {
   onClose: () => void
 }
 
-const UserImpersonationSelector: React.FC<UserImpersonationSelectorProps> = ({
-  onClose
-}) => {
+const UserImpersonationSelector: React.FC<UserImpersonationSelectorProps> = ({ onClose }) => {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const { user, impersonatingUser, startImpersonation, stopImpersonation } =
-    useAuth()
+  const { user, impersonatingUser, startImpersonation, stopImpersonation } = useAuth()
 
   const { find } = useUsersCRUD()
 
@@ -58,8 +55,7 @@ const UserImpersonationSelector: React.FC<UserImpersonationSelectorProps> = ({
   const filteredUsers = users.filter(
     (u) =>
       u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (u.farmName &&
-        u.farmName.toLowerCase().includes(searchTerm.toLowerCase()))
+      (u.farmName && u.farmName.toLowerCase().includes(searchTerm.toLowerCase())),
   )
 
   if (loading) {
@@ -71,8 +67,7 @@ const UserImpersonationSelector: React.FC<UserImpersonationSelectorProps> = ({
       {impersonatingUser && (
         <div className="bg-yellow-100 border border-yellow-400 rounded p-3 mb-4">
           <p className="text-sm">
-            <strong>Actuando como:</strong>{' '}
-            {impersonatingUser.farmName || impersonatingUser.email}
+            <strong>Actuando como:</strong> {impersonatingUser.farmName || impersonatingUser.email}
           </p>
           <button
             onClick={handleStopImpersonation}
@@ -99,9 +94,7 @@ const UserImpersonationSelector: React.FC<UserImpersonationSelectorProps> = ({
             onClick={() => handleImpersonate(targetUser)}
           >
             <div>
-              <p className="font-medium">
-                {targetUser.farmName || 'Sin nombre'}
-              </p>
+              <p className="font-medium">{targetUser.farmName || 'Sin nombre'}</p>
               <p className="text-sm text-gray-600">{targetUser.email}</p>
             </div>
             <div className="text-right">
@@ -116,9 +109,7 @@ const UserImpersonationSelector: React.FC<UserImpersonationSelectorProps> = ({
       </div>
 
       {filteredUsers.length === 0 && (
-        <p className="text-center text-gray-500 py-4">
-          No se encontraron usuarios
-        </p>
+        <p className="text-center text-gray-500 py-4">No se encontraron usuarios</p>
       )}
     </div>
   )

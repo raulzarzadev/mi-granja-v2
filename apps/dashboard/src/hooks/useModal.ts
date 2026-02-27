@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 
 export interface UseModalReturn {
   isOpen: boolean
@@ -18,7 +18,7 @@ export interface UseModalReturn {
  */
 export const useModal = ({
   initialState = false,
-  title = 'Modal'
+  title = 'Modal',
 }: {
   initialState?: boolean
   title?: string
@@ -43,6 +43,6 @@ export const useModal = ({
     closeModal,
     toggleModal,
     onClose: closeModal, // Alias for consistency with other hooks
-    title // Optional title
+    title, // Optional title
   }
 }

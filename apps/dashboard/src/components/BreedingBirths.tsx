@@ -1,10 +1,6 @@
 import { BreedingRecord } from '@/types/breedings'
 
-export const BreedingBirths = ({
-  breedingRecord
-}: {
-  breedingRecord: BreedingRecord
-}) => {
+export const BreedingBirths = ({ breedingRecord }: { breedingRecord: BreedingRecord }) => {
   const nextBirthInfo = getNextBreedingBirth({ breeding: breedingRecord })
   console.log({ nextBirthInfo })
   return null
@@ -51,11 +47,7 @@ export const BreedingBirths = ({
   // )
 }
 
-export const getNextBreedingBirth = ({
-  breeding
-}: {
-  breeding: BreedingRecord
-}) => {
+export const getNextBreedingBirth = ({ breeding }: { breeding: BreedingRecord }) => {
   if (!breeding || !breeding.breedingDate) return null
 
   const breedingDate = new Date(breeding.breedingDate)
@@ -66,7 +58,7 @@ export const getNextBreedingBirth = ({
 
   // solo regresa si hay un ´embarazo confirmado pero no tiene parto
   const pendingBirths = females.filter(
-    (female) => !female.actualBirthDate && female.pregnancyConfirmedDate
+    (female) => !female.actualBirthDate && female.pregnancyConfirmedDate,
   )
 
   if (pendingBirths.length === 0) return null

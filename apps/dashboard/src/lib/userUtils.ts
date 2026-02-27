@@ -10,7 +10,7 @@ import { User } from '@/types'
  */
 const ADMIN_EMAILS = [
   'admin@migranja.com',
-  'zarza@admin.com'
+  'zarza@admin.com',
   // Agregar más emails de admin según sea necesario
 ]
 
@@ -35,10 +35,7 @@ export const isUserAdmin = (user: User | null): boolean => {
  * @param role - Rol a verificar
  * @returns true si el usuario tiene el rol
  */
-export const userHasRole = (
-  user: User | null,
-  role: 'admin' | 'farmer' | 'vet'
-): boolean => {
+export const userHasRole = (user: User | null, role: 'admin' | 'farmer' | 'vet'): boolean => {
   if (!user) return false
   return user.roles?.includes(role) ?? false
 }
@@ -50,20 +47,4 @@ export const userHasRole = (
  */
 export const assignUserRoles = (user: User): User => {
   return user
-  const roles: ('admin' | 'farmer' | 'vet')[] = []
-
-  // Asignar admin si está en la lista
-  if (ADMIN_EMAILS.includes(user.email.toLowerCase())) {
-    roles.push('admin')
-  }
-
-  // Por defecto, todos los usuarios son farmers
-  roles.push('farmer')
-
-  // En el futuro se puede agregar lógica para vet u otros roles
-
-  return {
-    ...user,
-    roles
-  }
 }

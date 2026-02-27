@@ -1,18 +1,18 @@
-import { db } from '@/lib/firebase'
-import { User } from '@/types'
 import {
   collection,
   deleteDoc,
   doc,
   getDoc,
   getDocs,
-  query,
   QueryConstraint,
+  query,
   serverTimestamp,
   setDoc,
-  updateDoc
+  updateDoc,
 } from 'firebase/firestore'
 import { useState } from 'react'
+import { db } from '@/lib/firebase'
+import { User } from '@/types'
 
 export const useUsersCRUD = () => {
   const [loading, setIsLoading] = useState(false)
@@ -28,8 +28,7 @@ export const useUsersCRUD = () => {
       console.log('User deleted:', userId)
     } catch (error) {
       console.error('Error deleting user:', error)
-      const errorMessage =
-        error instanceof Error ? error.message : 'Error al eliminar el usuario'
+      const errorMessage = error instanceof Error ? error.message : 'Error al eliminar el usuario'
       setError(errorMessage)
       throw error
     } finally {
@@ -51,8 +50,7 @@ export const useUsersCRUD = () => {
       }
     } catch (error) {
       console.error('Error fetching user:', error)
-      const errorMessage =
-        error instanceof Error ? error.message : 'Error al obtener el usuario'
+      const errorMessage = error instanceof Error ? error.message : 'Error al obtener el usuario'
       setError(errorMessage)
       throw error
     } finally {
@@ -70,12 +68,11 @@ export const useUsersCRUD = () => {
 
       return querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       })) as User[]
     } catch (error) {
       console.error('Error finding users:', error)
-      const errorMessage =
-        error instanceof Error ? error.message : 'Error al buscar usuarios'
+      const errorMessage = error instanceof Error ? error.message : 'Error al buscar usuarios'
       setError(errorMessage)
 
       throw error
@@ -94,10 +91,7 @@ export const useUsersCRUD = () => {
       console.log('User updated:', userId)
     } catch (error) {
       console.error('Error updating user:', error)
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Error al actualizar el usuario'
+      const errorMessage = error instanceof Error ? error.message : 'Error al actualizar el usuario'
       setError(errorMessage)
       throw error
     } finally {
@@ -128,8 +122,7 @@ export const useUsersCRUD = () => {
       console.log('User created:', data.id)
     } catch (error) {
       console.error('Error creating user:', error)
-      const errorMessage =
-        error instanceof Error ? error.message : 'Error al crear el usuario'
+      const errorMessage = error instanceof Error ? error.message : 'Error al crear el usuario'
       setError(errorMessage)
       throw error
     } finally {
@@ -144,6 +137,6 @@ export const useUsersCRUD = () => {
     update,
     create,
     loading,
-    error
+    error,
   }
 }

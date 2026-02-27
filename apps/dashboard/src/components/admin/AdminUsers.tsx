@@ -1,12 +1,12 @@
 'use client'
 
-import React, { useState } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import React, { useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAdminUsers } from '@/hooks/admin/useAdminUsers'
-import AdminUserActions from './AdminUserActions'
 import { User } from '@/types'
+import AdminUserActions from './AdminUserActions'
 
 export default function AdminUsers() {
   const { users, isLoading, error } = useAdminUsers()
@@ -32,16 +32,10 @@ export default function AdminUsers() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Gestión de Usuarios
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Administra los usuarios y sus permisos
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">Gestión de Usuarios</h1>
+          <p className="text-gray-600 mt-1">Administra los usuarios y sus permisos</p>
         </div>
-        <div className="text-sm text-gray-500">
-          Total: {users.length} usuarios
-        </div>
+        <div className="text-sm text-gray-500">Total: {users.length} usuarios</div>
       </div>
 
       <div className="bg-white shadow rounded-lg overflow-hidden">
@@ -70,9 +64,7 @@ export default function AdminUsers() {
               <tr key={user.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {user.email}
-                    </div>
+                    <div className="text-sm font-medium text-gray-900">{user.email}</div>
                     <div className="text-sm text-gray-500">ID: {user.id}</div>
                   </div>
                 </td>
@@ -88,8 +80,8 @@ export default function AdminUsers() {
                           role === 'admin'
                             ? 'bg-red-100 text-red-800'
                             : role === 'vet'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-green-100 text-green-800'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-green-100 text-green-800'
                         }`}
                       >
                         {role === 'admin' && '👑'}
@@ -119,10 +111,7 @@ export default function AdminUsers() {
 
       {/* Modal de acciones de usuario */}
       {selectedUser && (
-        <AdminUserActions
-          user={selectedUser}
-          onClose={() => setSelectedUser(null)}
-        />
+        <AdminUserActions user={selectedUser} onClose={() => setSelectedUser(null)} />
       )}
     </div>
   )

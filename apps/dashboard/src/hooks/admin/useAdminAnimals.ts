@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { collection, getDocs, query, where } from 'firebase/firestore'
+import { useEffect, useState } from 'react'
+import { animalAge } from '@/lib/animal-utils'
 import { db } from '@/lib/firebase'
 import { Animal, AnimalStatus } from '@/types/animals'
-import { animalAge } from '@/lib/animal-utils'
 
 interface UseAdminAnimalsReturn {
   animals: Animal[]
@@ -42,7 +42,7 @@ export const useAdminAnimals = (): UseAdminAnimalsReturn => {
       soldInfo: data.soldInfo,
       lostInfo: data.lostInfo,
       createdAt: data.createdAt?.toDate() || new Date(),
-      updatedAt: data.updatedAt?.toDate() || new Date()
+      updatedAt: data.updatedAt?.toDate() || new Date(),
     }
   }
 
@@ -80,9 +80,7 @@ export const useAdminAnimals = (): UseAdminAnimalsReturn => {
       setAnimals(list)
     } catch (err) {
       console.error('Error fetching animals by status:', err)
-      setError(
-        err instanceof Error ? err.message : 'Error al cargar por estado'
-      )
+      setError(err instanceof Error ? err.message : 'Error al cargar por estado')
     } finally {
       setIsLoading(false)
     }
@@ -97,6 +95,6 @@ export const useAdminAnimals = (): UseAdminAnimalsReturn => {
     isLoading,
     error,
     refreshAnimals: fetchAnimals,
-    fetchByStatus
+    fetchByStatus,
   }
 }

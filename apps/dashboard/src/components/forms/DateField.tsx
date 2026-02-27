@@ -7,7 +7,7 @@ import {
   FieldPath,
   FieldValues,
   RegisterOptions,
-  useFormContext
+  useFormContext,
 } from 'react-hook-form'
 import DateTimeInput from '../inputs/DateTimeInput'
 
@@ -16,13 +16,9 @@ type DateFieldBaseProps = {
   helperText?: string
   type?: 'date' | 'datetime'
   onDateChange?: (date: Date | null) => void
-} & Pick<
-  React.ComponentProps<typeof DateTimeInput>,
-  'required' | 'disabled' | 'className'
->
+} & Pick<React.ComponentProps<typeof DateTimeInput>, 'required' | 'disabled' | 'className'>
 
-export interface DateFieldProps<TFieldValues extends FieldValues>
-  extends DateFieldBaseProps {
+export interface DateFieldProps<TFieldValues extends FieldValues> extends DateFieldBaseProps {
   name: FieldPath<TFieldValues>
   rules?: RegisterOptions<TFieldValues, FieldPath<TFieldValues>>
 }
@@ -45,7 +41,7 @@ export function DateField<TFieldValues extends FieldValues>({
       rules={rules}
       render={({
         field,
-        fieldState
+        fieldState,
       }: {
         field: ControllerRenderProps<TFieldValues, FieldPath<TFieldValues>>
         fieldState: { error?: { message?: string } }
@@ -53,10 +49,7 @@ export function DateField<TFieldValues extends FieldValues>({
         return (
           <div className="space-y-1">
             {label ? (
-              <label
-                htmlFor={name}
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor={name} className="block text-sm font-medium text-gray-700">
                 {label}
               </label>
             ) : null}
@@ -69,13 +62,9 @@ export function DateField<TFieldValues extends FieldValues>({
                 onDateChange?.(date)
               }}
             />
-            {helperText ? (
-              <p className="text-xs text-gray-500">{helperText}</p>
-            ) : null}
+            {helperText ? <p className="text-xs text-gray-500">{helperText}</p> : null}
             {fieldState.error?.message ? (
-              <p className="text-xs text-red-600">
-                {String(fieldState.error.message)}
-              </p>
+              <p className="text-xs text-red-600">{String(fieldState.error.message)}</p>
             ) : null}
           </div>
         )

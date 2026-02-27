@@ -1,12 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit'
 import '@testing-library/jest-dom'
-import {
-  authReducer,
-  setUser,
-  setLoading,
-  setError,
-  logout
-} from '@/features/auth/authSlice'
+import { authReducer, logout, setError, setLoading, setUser } from '@/features/auth/authSlice'
 import { User } from '@/types'
 
 interface RootState {
@@ -25,7 +19,7 @@ describe('Auth Store', () => {
   beforeEach(() => {
     store = configureStore({
       reducer: {
-        auth: authReducer
+        auth: authReducer,
       },
       middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
@@ -35,9 +29,9 @@ describe('Auth Store', () => {
             // Ignore these field paths in all actions
             ignoredActionsPaths: ['payload.createdAt'],
             // Ignore these paths in the state
-            ignoredPaths: ['auth.user.createdAt']
-          }
-        })
+            ignoredPaths: ['auth.user.createdAt'],
+          },
+        }),
     })
   })
 
@@ -45,8 +39,8 @@ describe('Auth Store', () => {
     const state = store.getState().auth
 
     // Verificar estado inicial usando comparaciones básicas
-    if (state.user !== null) {
-      throw new Error('Initial user should be null')
+    if (state.user !== undefined) {
+      throw new Error('Initial user should be undefined')
     }
 
     if (state.isLoading !== false) {
@@ -72,7 +66,7 @@ describe('Auth Store', () => {
       email: 'test@test.com',
       farmName: 'Test Farm',
       roles: ['farmer'],
-      createdAt: new Date()
+      createdAt: new Date(),
     }
 
     store.dispatch(setUser(user))
@@ -135,7 +129,7 @@ describe('Auth Store', () => {
       email: 'test@test.com',
       farmName: 'Test Farm',
       roles: ['farmer'],
-      createdAt: new Date()
+      createdAt: new Date(),
     }
     store.dispatch(setUser(user))
 
@@ -168,7 +162,7 @@ describe('Auth Store', () => {
       email: 'test@test.com',
       farmName: 'Test Farm',
       roles: ['farmer'],
-      createdAt: new Date()
+      createdAt: new Date(),
     }
     store.dispatch(setUser(user))
 
@@ -211,8 +205,8 @@ describe('Auth Store', () => {
     if (state.isLoading !== false) {
       throw new Error('isLoading should be false after error')
     }
-    if (state.user !== null) {
-      throw new Error('user should be null')
+    if (state.user !== undefined) {
+      throw new Error('user should be undefined')
     }
   })
 })

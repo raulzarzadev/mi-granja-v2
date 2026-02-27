@@ -24,10 +24,7 @@ export default function AdminHeader() {
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                 👑 Admin
               </span>
-              <button
-                onClick={logout}
-                className="text-gray-400 hover:text-gray-600 text-sm"
-              >
+              <button onClick={logout} className="text-gray-400 hover:text-gray-600 text-sm">
                 Cerrar Sesión
               </button>
             </div>

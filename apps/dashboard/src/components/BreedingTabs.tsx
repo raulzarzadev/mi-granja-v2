@@ -1,14 +1,14 @@
 import React, { useMemo, useState } from 'react'
-import Tabs from '@/components/Tabs'
-import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
-import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { BreedingRecord } from '@/types/breedings'
-import ModalBirthForm from '@/components/ModalBirthForm'
-import ModalEditBreeding from '@/components/ModalEditBreeding'
-import ModalConfirmPregnancy from '@/components/ModalConfirmPregnancy'
-import BreedingCard from '@/components/BreedingCard'
 import BirthsWindowSummary from '@/components/BirthsWindowSummary'
+import BreedingCard from '@/components/BreedingCard'
+import ModalBirthForm from '@/components/ModalBirthForm'
 import ModalBreedingForm from '@/components/ModalBreedingForm'
+import ModalConfirmPregnancy from '@/components/ModalConfirmPregnancy'
+import ModalEditBreeding from '@/components/ModalEditBreeding'
+import Tabs from '@/components/Tabs'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
+import { BreedingRecord } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 
 // Nuevo componente que segmenta la reproducción en 3 tabs: Embarazos, Partos, Montas
@@ -18,33 +18,30 @@ const BreedingTabs: React.FC = () => {
     updateBreedingRecord,
     deleteBreedingRecord,
     getBirthsWindow,
-    getBirthsWindowSummary
+    getBirthsWindowSummary,
   } = useBreedingCRUD()
 
   const { animals, wean, create } = useAnimalCRUD()
-  const [editingRecord, setEditingRecord] =
-    React.useState<BreedingRecord | null>(null)
-  const [birthRecord, setBirthRecord] = React.useState<BreedingRecord | null>(
-    null
-  )
+  const [editingRecord, setEditingRecord] = React.useState<BreedingRecord | null>(null)
+  const [birthRecord, setBirthRecord] = React.useState<BreedingRecord | null>(null)
   const [birthFemaleId, setBirthFemaleId] = React.useState<string | null>(null)
-  const [confirmPregnancyRecord, setConfirmPregnancyRecord] =
-    React.useState<BreedingRecord | null>(null)
+  const [confirmPregnancyRecord, setConfirmPregnancyRecord] = React.useState<BreedingRecord | null>(
+    null,
+  )
 
   const [selectedAnimal, setSelectedAnimal] = useState<null | string>(null)
 
-  const handleOpenAddBirth: BreedingActionHandlers['onAddBirth'] = (
-    record,
-    femaleId
-  ) => {
+  const handleOpenAddBirth: BreedingActionHandlers['onAddBirth'] = (record, femaleId) => {
     setBirthRecord(record)
     setBirthFemaleId(femaleId)
   }
-  const handleOpenConfirmPregnancy: BreedingActionHandlers['onConfirmPregnancy'] =
-    (props, femaleId) => {
-      setConfirmPregnancyRecord(props)
-      setSelectedAnimal(femaleId)
-    }
+  const handleOpenConfirmPregnancy: BreedingActionHandlers['onConfirmPregnancy'] = (
+    props,
+    femaleId,
+  ) => {
+    setConfirmPregnancyRecord(props)
+    setSelectedAnimal(femaleId)
+  }
 
   // Lista plana de hembras embarazadas (cada hembra como item)
   const pregnantFemales = useMemo(
@@ -55,10 +52,10 @@ const BreedingTabs: React.FC = () => {
           .map((info) => ({
             record,
             info,
-            animal: animals.find((a) => a.id === info.femaleId)
-          }))
+            animal: animals.find((a) => a.id === info.femaleId),
+          })),
       ),
-    [breedingRecords, animals]
+    [breedingRecords, animals],
   )
   const birthsWindow = getBirthsWindow(14)
   const birthsSummary = getBirthsWindowSummary(14)
@@ -70,14 +67,12 @@ const BreedingTabs: React.FC = () => {
     const msDay = 86400000
     return breedingRecords.flatMap((record) =>
       record.femaleBreedingInfo
-        .filter(
-          (f) => f.actualBirthDate && f.offspring && f.offspring.length > 0
-        )
+        .filter((f) => f.actualBirthDate && f.offspring && f.offspring.length > 0)
         .map((f) => ({ record, info: f }))
         .filter(({ info }) => {
           const d = (info.actualBirthDate as Date).getTime()
           return now - d <= daysCutoff * msDay
-        })
+        }),
     )
   }, [breedingRecords])
 
@@ -107,41 +102,33 @@ const BreedingTabs: React.FC = () => {
     return {
       needPregnancyConfirmation: needPregnancyConfirmation.sort(sortDesc),
       needBirthConfirmation: needBirthConfirmation.sort(sortDesc),
-      finished: finished.sort(sortDesc)
+      finished: finished.sort(sortDesc),
     }
   }, [breedingRecords])
 
-  const handleRemoveFromBreeding = async (
-    record: BreedingRecord,
-    animalId: string
-  ) => {
+  const handleRemoveFromBreeding = async (record: BreedingRecord, animalId: string) => {
     if (record.maleId === animalId) {
       await deleteBreedingRecord(record.id)
     } else {
-      const updatedFemaleInfo = record.femaleBreedingInfo.filter(
-        (i) => i.femaleId !== animalId
-      )
+      const updatedFemaleInfo = record.femaleBreedingInfo.filter((i) => i.femaleId !== animalId)
       if (updatedFemaleInfo.length === 0) {
         await deleteBreedingRecord(record.id)
       } else {
         await updateBreedingRecord(record.id, {
-          femaleBreedingInfo: updatedFemaleInfo
+          femaleBreedingInfo: updatedFemaleInfo,
         })
       }
     }
   }
 
-  const handleUnconfirmPregnancy = async (
-    record: BreedingRecord,
-    femaleId: string
-  ) => {
+  const handleUnconfirmPregnancy = async (record: BreedingRecord, femaleId: string) => {
     const updatedFemaleInfo = record.femaleBreedingInfo.map((info) =>
       info.femaleId === femaleId
         ? { ...info, pregnancyConfirmedDate: null, expectedBirthDate: null }
-        : info
+        : info,
     )
     await updateBreedingRecord(record.id, {
-      femaleBreedingInfo: updatedFemaleInfo
+      femaleBreedingInfo: updatedFemaleInfo,
     })
   }
 
@@ -152,19 +139,13 @@ const BreedingTabs: React.FC = () => {
       content: (
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-lg font-semibold mb-4">
-              Embarazos Confirmados
-            </h3>
+            <h3 className="text-lg font-semibold mb-4">Embarazos Confirmados</h3>
             {pregnantFemales.length === 0 ? (
-              <p className="text-sm text-gray-500">
-                No hay embarazos confirmados.
-              </p>
+              <p className="text-sm text-gray-500">No hay embarazos confirmados.</p>
             ) : (
               <ul className="divide-y">
                 {pregnantFemales.map(({ record, info, animal }) => {
-                  const expected = info.expectedBirthDate
-                    ? new Date(info.expectedBirthDate)
-                    : null
+                  const expected = info.expectedBirthDate ? new Date(info.expectedBirthDate) : null
                   const daysLeft = expected
                     ? Math.round((expected.getTime() - Date.now()) / 86400000)
                     : null
@@ -179,10 +160,10 @@ const BreedingTabs: React.FC = () => {
                             {animal?.type === 'oveja'
                               ? '🐑'
                               : animal?.type === 'cabra'
-                              ? '🐐'
-                              : animal?.type?.includes('vaca')
-                              ? '🐄'
-                              : '🐾'}
+                                ? '🐐'
+                                : animal?.type?.includes('vaca')
+                                  ? '🐄'
+                                  : '🐾'}
                           </span>
                           <span className="font-medium">
                             {animal?.animalNumber || info.femaleId}
@@ -194,8 +175,8 @@ const BreedingTabs: React.FC = () => {
                                 ? daysLeft === 0
                                   ? 'Hoy'
                                   : daysLeft > 0
-                                  ? `En ${daysLeft}d`
-                                  : `Hace ${Math.abs(daysLeft)}d`
+                                    ? `En ${daysLeft}d`
+                                    : `Hace ${Math.abs(daysLeft)}d`
                                 : '—'}
                               )
                             </span>
@@ -209,12 +190,7 @@ const BreedingTabs: React.FC = () => {
                         <div className="text-xs text-gray-500 mt-1 truncate">
                           Monta: {record.id}{' '}
                           {record.breedingDate && (
-                            <>
-                              ·{' '}
-                              {new Date(
-                                record.breedingDate
-                              ).toLocaleDateString()}
-                            </>
+                            <>· {new Date(record.breedingDate).toLocaleDateString()}</>
                           )}
                         </div>
                       </div>
@@ -236,9 +212,7 @@ const BreedingTabs: React.FC = () => {
                         </button>
                         <button
                           className="text-xs bg-red-50 hover:bg-red-100 text-red-700 px-3 py-1 rounded"
-                          onClick={() =>
-                            handleUnconfirmPregnancy(record, info.femaleId)
-                          }
+                          onClick={() => handleUnconfirmPregnancy(record, info.femaleId)}
                         >
                           Desconfirmar
                         </button>
@@ -250,7 +224,7 @@ const BreedingTabs: React.FC = () => {
             )}
           </div>
         </div>
-      )
+      ),
     },
     {
       label: '🐣 Partos',
@@ -258,9 +232,7 @@ const BreedingTabs: React.FC = () => {
       content: (
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-lg font-semibold mb-4">
-              Resumen Próximos / Atrasados
-            </h3>
+            <h3 className="text-lg font-semibold mb-4">Resumen Próximos / Atrasados</h3>
             <BirthsWindowSummary
               pastDue={birthsWindow.pastDue}
               upcoming={birthsWindow.upcoming}
@@ -271,33 +243,24 @@ const BreedingTabs: React.FC = () => {
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-lg font-semibold mb-4">Últimos Nacimientos</h3>
             {recentBirths.length === 0 ? (
-              <p className="text-sm text-gray-500">
-                Sin nacimientos recientes.
-              </p>
+              <p className="text-sm text-gray-500">Sin nacimientos recientes.</p>
             ) : (
               <ul className="divide-y text-sm">
                 {recentBirths.map(({ record, info }, idx) => {
                   const date = info.actualBirthDate as Date
-                  const ageDays = Math.floor(
-                    (Date.now() - date.getTime()) / 86400000
-                  )
+                  const ageDays = Math.floor((Date.now() - date.getTime()) / 86400000)
                   const ageLabel =
                     ageDays < 7
                       ? `${ageDays} días`
                       : ageDays < 30
-                      ? `${Math.floor(ageDays / 7)} sem`
-                      : `${Math.floor(ageDays / 30)} mes(es)`
+                        ? `${Math.floor(ageDays / 7)} sem`
+                        : `${Math.floor(ageDays / 30)} mes(es)`
                   const offspringList = info.offspring || []
                   return (
-                    <li
-                      key={record.id + idx}
-                      className="py-2 flex flex-col gap-2"
-                    >
+                    <li key={record.id + idx} className="py-2 flex flex-col gap-2">
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="font-medium">
-                            Hembra {info.femaleId}
-                          </span>{' '}
+                          <span className="font-medium">Hembra {info.femaleId}</span>{' '}
                           <span className="text-gray-500">
                             · {date.toLocaleDateString()} · {ageLabel}
                           </span>
@@ -314,9 +277,7 @@ const BreedingTabs: React.FC = () => {
                       {offspringList.length > 0 && (
                         <div className="flex flex-wrap gap-2 pl-2">
                           {offspringList.map((offspringId) => {
-                            const a = animals.find(
-                              (an) => an.id === offspringId
-                            )
+                            const a = animals.find((an) => an.id === offspringId)
                             if (!a) return null
                             const isWeaned = a.isWeaned
                             return (
@@ -328,9 +289,7 @@ const BreedingTabs: React.FC = () => {
                                     : 'bg-yellow-50 border-yellow-200'
                                 }`}
                               >
-                                <span className="font-medium">
-                                  {a.animalNumber}
-                                </span>
+                                <span className="font-medium">{a.animalNumber}</span>
                                 <span className="text-[10px] text-gray-500">
                                   {a.gender === 'macho' ? 'M' : 'H'}
                                 </span>
@@ -340,7 +299,7 @@ const BreedingTabs: React.FC = () => {
                                       className="text-[10px] bg-white border border-green-300 text-green-700 px-2 py-0.5 rounded hover:bg-green-100"
                                       onClick={() =>
                                         wean(offspringId, {
-                                          stageDecision: 'engorda'
+                                          stageDecision: 'engorda',
                                         })
                                       }
                                     >
@@ -350,7 +309,7 @@ const BreedingTabs: React.FC = () => {
                                       className="text-[10px] bg-white border border-blue-300 text-blue-700 px-2 py-0.5 rounded hover:bg-blue-100"
                                       onClick={() =>
                                         wean(offspringId, {
-                                          stageDecision: 'reproductor'
+                                          stageDecision: 'reproductor',
                                         })
                                       }
                                     >
@@ -375,7 +334,7 @@ const BreedingTabs: React.FC = () => {
             )}
           </div>
         </div>
-      )
+      ),
     },
     {
       label: '📑 Montas',
@@ -454,9 +413,7 @@ const BreedingTabs: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold mb-3">Montas Finalizadas</h3>
             {orderedBreedings.finished.length === 0 ? (
-              <p className="text-sm text-gray-500">
-                No hay montas finalizadas.
-              </p>
+              <p className="text-sm text-gray-500">No hay montas finalizadas.</p>
             ) : (
               <details className="group">
                 <summary className="cursor-pointer text-sm text-gray-700 hover:text-gray-900 flex items-center gap-2">
@@ -482,8 +439,8 @@ const BreedingTabs: React.FC = () => {
             )}
           </div>
         </div>
-      )
-    }
+      ),
+    },
   ]
 
   return (
@@ -513,19 +470,9 @@ const BreedingTabs: React.FC = () => {
             if (!mother) throw new Error('Madre no encontrada')
 
             // Fecha/hora
-            const [y, m, d] = form.birthDate
-              .split('-')
-              .map((n) => parseInt(n, 10))
-            const [hh, mm] = form.birthTime
-              .split(':')
-              .map((n) => parseInt(n, 10))
-            const actualDate = new Date(
-              y,
-              (m || 1) - 1,
-              d || 1,
-              hh || 0,
-              mm || 0
-            )
+            const [y, m, d] = form.birthDate.split('-').map((n) => parseInt(n, 10))
+            const [hh, mm] = form.birthTime.split(':').map((n) => parseInt(n, 10))
+            const actualDate = new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0)
 
             // Crear crías
             const offspringIds: string[] = []
@@ -535,11 +482,11 @@ const BreedingTabs: React.FC = () => {
                   ? off.weight === ''
                     ? null
                     : parseFloat(off.weight)
-                  : off.weight ?? null
+                  : (off.weight ?? null)
               const notesParts = [
                 off.color ? `Color: ${off.color}` : null,
                 off.status ? `Estado: ${off.status}` : null,
-                off.healthIssues ? `Salud: ${off.healthIssues}` : null
+                off.healthIssues ? `Salud: ${off.healthIssues}` : null,
               ].filter(Boolean)
 
               const createdId = await create({
@@ -551,7 +498,7 @@ const BreedingTabs: React.FC = () => {
                 gender: off.gender,
                 motherId: mother.id,
                 fatherId: birthRecord.maleId,
-                notes: notesParts.length ? notesParts.join(' · ') : undefined
+                notes: notesParts.length ? notesParts.join(' · ') : undefined,
               })
               if (createdId) offspringIds.push(createdId)
             }
@@ -562,12 +509,12 @@ const BreedingTabs: React.FC = () => {
                 ? {
                     ...fi,
                     actualBirthDate: actualDate,
-                    offspring: [...(fi.offspring || []), ...offspringIds]
+                    offspring: [...(fi.offspring || []), ...offspringIds],
                   }
-                : fi
+                : fi,
             )
             await updateBreedingRecord(birthRecord.id, {
-              femaleBreedingInfo: updatedFemaleInfo
+              femaleBreedingInfo: updatedFemaleInfo,
             })
 
             // Cerrar modal

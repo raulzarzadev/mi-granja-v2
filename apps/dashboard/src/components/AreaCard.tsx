@@ -1,8 +1,8 @@
 'use client'
 
 import React from 'react'
-import { FarmArea, FARM_AREA_TYPES } from '@/types/farm'
 import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
+import { FARM_AREA_TYPES, FarmArea } from '@/types/farm'
 
 interface AreaCardProps {
   area: FarmArea
@@ -35,9 +35,7 @@ const AreaCard: React.FC<AreaCardProps> = ({ area }) => {
           <span className="text-2xl">{areaType?.icon || '📍'}</span>
           <div>
             <h4 className="text-lg font-semibold text-gray-900">{area.name}</h4>
-            <p className="text-sm text-gray-500">
-              {areaType?.label || area.type}
-            </p>
+            <p className="text-sm text-gray-500">{areaType?.label || area.type}</p>
           </div>
         </div>
 
@@ -54,17 +52,13 @@ const AreaCard: React.FC<AreaCardProps> = ({ area }) => {
       </div>
 
       {area.description && (
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-          {area.description}
-        </p>
+        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{area.description}</p>
       )}
 
       <div className="flex items-center justify-between text-sm text-gray-500">
         <div className="flex items-center gap-4">
           {area.capacity && (
-            <span className="flex items-center gap-1">
-              📊 Capacidad: {area.capacity}
-            </span>
+            <span className="flex items-center gap-1">📊 Capacidad: {area.capacity}</span>
           )}
         </div>
 

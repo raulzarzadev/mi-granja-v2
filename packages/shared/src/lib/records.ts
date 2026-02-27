@@ -5,7 +5,7 @@ const clinicalCategories: ReadonlyArray<RecordCategory> = [
   'illness',
   'injury',
   'treatment',
-  'surgery'
+  'surgery',
 ]
 
 export type RecordPayload = Omit<
@@ -18,7 +18,7 @@ export function buildRecordFromForm(form: RecordFormState): RecordPayload {
     type: form.type,
     category: form.category,
     title: form.title.trim(),
-    date: parseLocalDate(form.date)
+    date: parseLocalDate(form.date),
   }
 
   if (form.description?.trim()) base.description = form.description.trim()
@@ -26,11 +26,9 @@ export function buildRecordFromForm(form: RecordFormState): RecordPayload {
   if (form.type === 'health') {
     const isClinical = clinicalCategories.includes(form.category as any)
     if (isClinical) {
-      if (form.severity)
-        base.severity = form.severity as NonNullable<AnimalRecord['severity']>
+      if (form.severity) base.severity = form.severity as NonNullable<AnimalRecord['severity']>
       if (form.isResolved) base.isResolved = true
-      if (form.resolvedDate)
-        base.resolvedDate = parseLocalDate(form.resolvedDate)
+      if (form.resolvedDate) base.resolvedDate = parseLocalDate(form.resolvedDate)
       if (form.treatment?.trim()) base.treatment = form.treatment.trim()
     }
 

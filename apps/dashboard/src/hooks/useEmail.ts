@@ -46,25 +46,23 @@ export const useEmail = () => {
         ...(emailData.tags && {
           tags: emailData.tags.map((tag) => ({
             name: sanitizeTagValue(tag.name),
-            value: sanitizeTagValue(tag.value)
-          }))
-        })
+            value: sanitizeTagValue(tag.value),
+          })),
+        }),
       }
 
       const response = await fetch('/api/send', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(sanitizedEmailData)
+        body: JSON.stringify(sanitizedEmailData),
       })
 
       const result: EmailResponse = await response.json()
 
       if (!response.ok) {
-        throw new Error(
-          result.error || `HTTP error! status: ${response.status}`
-        )
+        throw new Error(result.error || `HTTP error! status: ${response.status}`)
       }
 
       if (!result.success) {
@@ -73,8 +71,7 @@ export const useEmail = () => {
 
       return result
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Error desconocido'
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
       setError(errorMessage)
       throw new Error(errorMessage)
     } finally {
@@ -85,7 +82,7 @@ export const useEmail = () => {
   // Función para enviar email de bienvenida (parámetros nombrados)
   const sendWelcomeEmail = async ({
     userEmail,
-    userName
+    userName,
   }: {
     userEmail: string
     userName?: string
@@ -105,9 +102,7 @@ export const useEmail = () => {
             <li>Gestionar áreas y colaboradores</li>
             <li>Recibir recordatorios importantes</li>
           </ul>
-          <a href="${
-            process.env.NEXT_PUBLIC_APP_URL || 'https://migranja.app'
-          }/dashboard" 
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://migranja.app'}/dashboard" 
              style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px;">
             Ir al Dashboard
           </a>
@@ -128,15 +123,13 @@ Ahora puedes:
 - Gestionar áreas y colaboradores
 - Recibir recordatorios importantes
 
-Visita tu dashboard: ${
-        process.env.NEXT_PUBLIC_APP_URL || 'https://migranja.app'
-      }/dashboard
+Visita tu dashboard: ${process.env.NEXT_PUBLIC_APP_URL || 'https://migranja.app'}/dashboard
 
 Si tienes alguna pregunta, no dudes en contactarnos.`,
       tags: [
         { name: 'type', value: 'welcome' },
-        { name: 'category', value: 'onboarding' }
-      ]
+        { name: 'category', value: 'onboarding' },
+      ],
     })
   }
 
@@ -145,7 +138,7 @@ Si tienes alguna pregunta, no dudes en contactarnos.`,
     userEmail,
     reminderType,
     reminderText,
-    userName
+    userName,
   }: {
     userEmail: string
     reminderType: string
@@ -163,9 +156,7 @@ Si tienes alguna pregunta, no dudes en contactarnos.`,
             <h3 style="margin: 0; color: #dc2626;">${reminderType}</h3>
             <p style="margin: 8px 0 0 0;">${reminderText}</p>
           </div>
-          <a href="${
-            process.env.NEXT_PUBLIC_APP_URL || 'https://migranja.app'
-          }/dashboard" 
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://migranja.app'}/dashboard" 
              style="background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
             Ver en Dashboard
           </a>
@@ -177,13 +168,11 @@ Hola${userName ? ` ${userName}` : ''},
 
 ${reminderText}
 
-Visita tu dashboard: ${
-        process.env.NEXT_PUBLIC_APP_URL || 'https://migranja.app'
-      }/dashboard`,
+Visita tu dashboard: ${process.env.NEXT_PUBLIC_APP_URL || 'https://migranja.app'}/dashboard`,
       tags: [
         { name: 'type', value: 'reminder' },
-        { name: 'category', value: sanitizeTagValue(reminderType) }
-      ]
+        { name: 'category', value: sanitizeTagValue(reminderType) },
+      ],
     })
   }
 
@@ -204,6 +193,6 @@ Visita tu dashboard: ${
     sendReminderEmail,
     checkService,
     isLoading,
-    error
+    error,
   }
 }

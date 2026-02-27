@@ -1,30 +1,28 @@
 'use client'
 
+import { toDate } from 'date-fns'
+import React, { useMemo } from 'react'
+import { Controller, ControllerRenderProps } from 'react-hook-form'
+import { z } from 'zod'
+import { useZodForm } from '@/hooks/useZodForm'
 import {
   Animal,
+  AnimalStage,
+  AnimalType,
   animal_icon,
   animal_statuses,
   animals_genders,
   animals_stages,
   animals_types,
-  AnimalStage,
-  AnimalType,
-  breeding_animal_status
+  breeding_animal_status,
 } from '@/types/animals'
-import { toDate } from 'date-fns'
-import React, { useMemo } from 'react'
-import { z } from 'zod'
 import { Form } from './forms/Form'
-import { TextField } from './forms/TextField'
 import { SelectField } from './forms/SelectField'
-import { useZodForm } from '@/hooks/useZodForm'
-import { Controller, ControllerRenderProps } from 'react-hook-form'
+import { TextField } from './forms/TextField'
 import DateTimeInput from './inputs/DateTimeInput'
 
 interface AnimalFormProps {
-  onSubmit: (
-    animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
-  ) => void
+  onSubmit: (animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>) => void
   onCancel: () => void
   initialData?: Partial<Animal>
   isLoading?: boolean
@@ -39,10 +37,10 @@ const schema = z
   .object({
     animalNumber: z.string().trim().min(1, 'El ID del animal es requerido'),
     type: z.enum(animals_types, {
-      required_error: 'Selecciona un tipo de animal'
+      required_error: 'Selecciona un tipo de animal',
     }),
     stage: z.enum(animals_stages, {
-      required_error: 'Selecciona una etapa'
+      required_error: 'Selecciona una etapa',
     }),
     gender: z.enum(animals_genders),
     weight: z
@@ -52,8 +50,8 @@ const schema = z
         (value: string | undefined) =>
           !value || (!Number.isNaN(Number(value)) && Number(value) > 0),
         {
-          message: 'El peso debe ser un número válido mayor a 0'
-        }
+          message: 'El peso debe ser un número válido mayor a 0',
+        },
       ),
     age: z
       .string()
@@ -62,8 +60,8 @@ const schema = z
         (value: string | undefined) =>
           !value || (!Number.isNaN(Number(value)) && Number(value) >= 0),
         {
-          message: 'La edad debe ser un número válido mayor o igual a 0'
-        }
+          message: 'La edad debe ser un número válido mayor o igual a 0',
+        },
       ),
     breed: z.string().optional(),
     birthDate: z.date().nullable().optional(),
@@ -74,15 +72,13 @@ const schema = z
         (value: string | undefined) =>
           !value || (!Number.isNaN(Number(value)) && Number(value) > 0),
         {
-          message: 'Debe ser un número válido mayor a 0 (o vacío)'
-        }
+          message: 'Debe ser un número válido mayor a 0 (o vacío)',
+        },
       ),
     motherId: z.string().optional(),
     fatherId: z.string().optional(),
     notes: z.string().optional(),
-    status: z
-      .enum([...animal_statuses, ...breeding_animal_status] as const)
-      .default('activo')
+    status: z.enum([...animal_statuses, ...breeding_animal_status] as const).default('activo'),
   })
   .superRefine((data, ctx) => {
     if (data.birthDate) {
@@ -91,7 +87,7 @@ const schema = z
         ctx.addIssue({
           path: ['birthDate'],
           code: z.ZodIssueCode.custom,
-          message: 'La fecha no puede ser en el futuro'
+          message: 'La fecha no puede ser en el futuro',
         })
       }
     }
@@ -104,7 +100,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
   onCancel,
   initialData,
   isLoading = false,
-  existingAnimals = []
+  existingAnimals = [],
 }) => {
   const defaultValues = useMemo<FormSchema>(() => {
     return {
@@ -115,13 +111,13 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       weight:
         typeof initialData?.weight === 'number'
           ? initialData.weight.toString()
-          : initialData?.weight?.toString() ?? '',
+          : (initialData?.weight?.toString() ?? ''),
       age:
         typeof initialData?.age === 'number'
           ? initialData.age.toString()
           : initialData?.age !== undefined && initialData?.age !== null
-          ? String(initialData.age)
-          : '',
+            ? String(initialData.age)
+            : '',
       breed: initialData?.breed ?? '',
       birthDate: initialData?.birthDate ? toDate(initialData.birthDate) : null,
       customWeaningDays:
@@ -131,14 +127,14 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       motherId: initialData?.motherId ?? '',
       fatherId: initialData?.fatherId ?? '',
       notes: initialData?.notes ?? '',
-      status: initialData?.status ?? 'activo'
+      status: initialData?.status ?? 'activo',
     }
   }, [initialData])
 
   const form = useZodForm({
     schema,
     defaultValues,
-    mode: 'onBlur'
+    mode: 'onBlur',
   })
 
   const handleSubmit = (values: FormSchema) => {
@@ -153,15 +149,12 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
     if (isDuplicate) {
       form.setError('animalNumber', {
         type: 'validate',
-        message: `Ya existe un animal con el número "${trimmedAnimalNumber}"`
+        message: `Ya existe un animal con el número "${trimmedAnimalNumber}"`,
       })
       return
     }
 
-    const transformed: Omit<
-      Animal,
-      'id' | 'farmerId' | 'createdAt' | 'updatedAt'
-    > = {
+    const transformed: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'> = {
       animalNumber: trimmedAnimalNumber,
       type: values.type,
       stage: values.stage,
@@ -171,30 +164,26 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       ...(values.weight ? { weight: Number(values.weight) } : {}),
       ...(values.age ? { age: Number(values.age) } : {}),
       ...(values.birthDate ? { birthDate: values.birthDate } : {}),
-      ...(values.customWeaningDays
-        ? { customWeaningDays: Number(values.customWeaningDays) }
-        : {}),
+      ...(values.customWeaningDays ? { customWeaningDays: Number(values.customWeaningDays) } : {}),
       ...(values.motherId?.trim() ? { motherId: values.motherId.trim() } : {}),
       ...(values.fatherId?.trim() ? { fatherId: values.fatherId.trim() } : {}),
-      ...(values.notes?.trim() ? { notes: values.notes.trim() } : {})
+      ...(values.notes?.trim() ? { notes: values.notes.trim() } : {}),
     }
 
     onSubmit(transformed)
   }
 
-  const animalTypeOptions: { value: AnimalType; label: string }[] =
-    animals_types.map((type) => ({
-      value: type,
-      label: `${animal_icon[type]} ${
-        type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')
-      }`
-    }))
+  const animalTypeOptions: { value: AnimalType; label: string }[] = animals_types.map((type) => ({
+    value: type,
+    label: `${animal_icon[type]} ${type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')}`,
+  }))
 
-  const animalStagesOptions: { value: AnimalStage; label: string }[] =
-    animals_stages.map((stage) => ({
+  const animalStagesOptions: { value: AnimalStage; label: string }[] = animals_stages.map(
+    (stage) => ({
       value: stage,
-      label: stage.charAt(0).toUpperCase() + stage.slice(1).replace('_', ' ')
-    }))
+      label: stage.charAt(0).toUpperCase() + stage.slice(1).replace('_', ' '),
+    }),
+  )
   return (
     <Form form={form} onSubmit={handleSubmit} className="space-y-4">
       <TextField
@@ -209,7 +198,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
         label="Tipo de Animal *"
         options={animalTypeOptions.map((type) => ({
           value: type.value,
-          label: type.label
+          label: type.label,
         }))}
         disabled={isLoading}
       />
@@ -227,7 +216,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
         label="Etapa *"
         options={animalStagesOptions.map((stage) => ({
           value: stage.value,
-          label: stage.label
+          label: stage.label,
         }))}
         disabled={isLoading}
       />
@@ -237,13 +226,10 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       <SelectField
         name="status"
         label="Estado *"
-        options={[...animal_statuses, ...breeding_animal_status].map(
-          (status) => ({
-            value: status,
-            label:
-              status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')
-          })
-        )}
+        options={[...animal_statuses, ...breeding_animal_status].map((status) => ({
+          value: status,
+          label: status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' '),
+        }))}
         disabled={isLoading}
       />
 
@@ -254,7 +240,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
         label="Género *"
         options={animals_genders.map((gender) => ({
           value: gender,
-          label: gender.charAt(0).toUpperCase() + gender.slice(1)
+          label: gender.charAt(0).toUpperCase() + gender.slice(1),
         }))}
         disabled={isLoading}
       />
@@ -285,7 +271,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
         name="birthDate"
         render={({
           field,
-          fieldState
+          fieldState,
         }: {
           field: ControllerRenderProps<FormSchema, 'birthDate'>
           fieldState: { error?: { message?: string } }
@@ -329,18 +315,8 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <TextField
-          name="motherId"
-          label="ID Madre"
-          placeholder="Opcional"
-          disabled={isLoading}
-        />
-        <TextField
-          name="fatherId"
-          label="ID Padre"
-          placeholder="Opcional"
-          disabled={isLoading}
-        />
+        <TextField name="motherId" label="ID Madre" placeholder="Opcional" disabled={isLoading} />
+        <TextField name="fatherId" label="ID Padre" placeholder="Opcional" disabled={isLoading} />
       </div>
 
       <TextField
@@ -366,11 +342,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
           className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
           disabled={isLoading}
         >
-          {isLoading
-            ? 'Guardando...'
-            : initialData
-            ? 'Actualizar'
-            : 'Registrar'}
+          {isLoading ? 'Guardando...' : initialData ? 'Actualizar' : 'Registrar'}
         </button>
       </div>
     </Form>

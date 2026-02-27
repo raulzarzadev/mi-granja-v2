@@ -1,24 +1,24 @@
 import {
-  FaPlus,
-  FaEdit,
-  FaTrash,
-  FaEye,
-  FaSearch,
-  FaCog,
-  FaHome,
-  FaUser,
   FaBell,
-  FaQuestionCircle,
-  FaSignOutAlt,
-  FaMale,
-  FaFemale,
+  FaCalendarAlt,
   FaCalendarCheck,
   FaCalendarDay,
-  FaCalendarAlt,
-  FaEllipsisV,
   FaCheckCircle,
+  FaCog,
+  FaCommentDots,
+  FaEdit,
+  FaEllipsisV,
+  FaEye,
+  FaFemale,
+  FaHome,
+  FaMale,
+  FaPlus,
+  FaQuestionCircle,
+  FaSearch,
+  FaSignOutAlt,
   FaStickyNote,
-  FaCommentDots
+  FaTrash,
+  FaUser,
 } from 'react-icons/fa'
 import { IoMdCloseCircleOutline } from 'react-icons/io'
 import { IoBedSharp } from 'react-icons/io5'
@@ -57,7 +57,7 @@ export const icons = {
   check_circle: FaCheckCircle,
   babyBottle: TbBabyBottle,
   notes: FaStickyNote,
-  comments: FaCommentDots
+  comments: FaCommentDots,
 } as const
 export type IconName = keyof typeof icons
 // https://react-icons.github.io/react-icons/
@@ -77,10 +77,5 @@ export const Icon = ({ icon, className = '', size }: IconProps) => {
     return <span className={`${sizeClass} ${className}`}>{IconComponent}</span>
   }
 
-  return (
-    <IconComponent
-      className={`${sizeClass} ${className}`}
-      aria-label={`${icon} icon`}
-    />
-  )
+  return <IconComponent className={`${sizeClass} ${className}`} aria-label={`${icon} icon`} />
 }

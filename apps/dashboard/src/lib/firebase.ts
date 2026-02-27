@@ -1,1 +1,1 @@
-export { auth, db, default } from '@mi-granja/shared/lib/firebase'
+export { auth, db, default, storage } from '@mi-granja/shared/lib/firebase'

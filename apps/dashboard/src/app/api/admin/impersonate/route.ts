@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { isUserAdmin } from '@/lib/userUtils'
 import { doc, getDoc } from 'firebase/firestore'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebase'
+import { isUserAdmin } from '@/lib/userUtils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
         id: 'temp',
         email: adminEmail,
         roles: [],
-        createdAt: new Date()
+        createdAt: new Date(),
       })
     ) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
@@ -27,25 +27,19 @@ export async function POST(request: NextRequest) {
     const { targetUserId } = await request.json()
 
     if (!targetUserId) {
-      return NextResponse.json(
-        { error: 'ID de usuario requerido' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'ID de usuario requerido' }, { status: 400 })
     }
 
     // Obtener el usuario objetivo
     const targetUserDoc = await getDoc(doc(db, 'users', targetUserId))
 
     if (!targetUserDoc.exists()) {
-      return NextResponse.json(
-        { error: 'Usuario no encontrado' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
     }
 
     const targetUser = {
       id: targetUserDoc.id,
-      ...targetUserDoc.data()
+      ...targetUserDoc.data(),
     }
 
     // Generar token de suplantación (simplificado)
@@ -54,13 +48,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       user: targetUser,
-      token: impersonationToken
+      token: impersonationToken,
     })
   } catch (error) {
     console.error('Error al suplantar usuario:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }

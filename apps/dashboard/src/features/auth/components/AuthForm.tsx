@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useAuth } from '@/hooks/useAuth'
 import BrandLogo from '@/components/BrandLogo'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { useAuth } from '@/hooks/useAuth'
 
 /**
  * Componente de login y registro
@@ -12,7 +12,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 const AuthForm: React.FC = () => {
   // Solo necesitamos el email ahora; se eliminan contraseña y registro
   const [formData, setFormData] = useState({
-    email: ''
+    email: '',
   })
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const {
@@ -22,21 +22,21 @@ const AuthForm: React.FC = () => {
     isLoading,
     error,
     emailLinkSent,
-    emailForLink
+    emailForLink,
   } = useAuth()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }))
 
     // Limpiar error del campo de validación
     if (formErrors[name]) {
       setFormErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: '',
       }))
     }
 
@@ -49,8 +49,7 @@ const AuthForm: React.FC = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
     if (!formData.email.trim()) newErrors.email = 'El email es requerido'
-    else if (!/\S+@\S+\.\S+/.test(formData.email))
-      newErrors.email = 'El email no es válido'
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'El email no es válido'
     setFormErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -101,10 +100,7 @@ const AuthForm: React.FC = () => {
           <div className="space-y-4">
             {/* Email */}
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Correo electrónico
               </label>
               <input
@@ -121,9 +117,7 @@ const AuthForm: React.FC = () => {
                 placeholder="tu@email.com"
                 disabled={isLoading}
               />
-              {formErrors.email && (
-                <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>
-              )}
+              {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
             </div>
 
             {/* Se eliminaron campos de contraseña y registro */}
@@ -145,9 +139,7 @@ const AuthForm: React.FC = () => {
                     </svg>
                   </div>
                 </div>
-                <h4 className="font-bold text-xl mb-3 text-blue-800">
-                  📧 ¡Revisa tu email ahora!
-                </h4>
+                <h4 className="font-bold text-xl mb-3 text-blue-800">📧 ¡Revisa tu email ahora!</h4>
                 <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-3 mb-4">
                   <p className="text-sm font-semibold text-yellow-800 mb-2">
                     Te hemos enviado un enlace de autenticación a:
@@ -158,24 +150,19 @@ const AuthForm: React.FC = () => {
                 </div>
                 <div className="bg-green-100 border border-green-300 rounded-lg p-3">
                   <p className="text-sm font-semibold text-green-800">
-                    ✨ Haz clic en el enlace del email y automáticamente
-                    regresarás aquí
+                    ✨ Haz clic en el enlace del email y automáticamente regresarás aquí
                   </p>
-                  <p className="text-xs text-green-600 mt-1">
-                    No cierres esta ventana
-                  </p>
+                  <p className="text-xs text-green-600 mt-1">No cierres esta ventana</p>
                 </div>
 
                 {/* Mostrar advertencia si hay error pero aún se muestra el email enviado */}
                 {error && (
                   <div className="bg-orange-100 border border-orange-300 rounded-lg p-3 mt-3">
-                    <p className="text-sm font-semibold text-orange-800 mb-1">
-                      ⚠️ Nota importante:
-                    </p>
+                    <p className="text-sm font-semibold text-orange-800 mb-1">⚠️ Nota importante:</p>
                     <p className="text-xs text-orange-700">
-                      Hubo un problema técnico, pero es posible que el email se
-                      haya enviado. Revisa tu bandeja de entrada y spam. Si no
-                      recibes nada en unos minutos, puedes reenviar el enlace.
+                      Hubo un problema técnico, pero es posible que el email se haya enviado. Revisa
+                      tu bandeja de entrada y spam. Si no recibes nada en unos minutos, puedes
+                      reenviar el enlace.
                     </p>
                   </div>
                 )}

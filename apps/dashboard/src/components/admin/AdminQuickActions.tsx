@@ -2,50 +2,42 @@
 
 import React from 'react'
 
-type AdminSection =
-  | 'overview'
-  | 'users'
-  | 'animals'
-  | 'breedings'
-  | 'reminders'
-  | 'activities'
+type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities'
 
 interface AdminQuickActionsProps {
   onSectionChange?: (section: AdminSection) => void
 }
 
-export default function AdminQuickActions({
-  onSectionChange
-}: AdminQuickActionsProps) {
+export default function AdminQuickActions({ onSectionChange }: AdminQuickActionsProps) {
   const actions = [
     {
       title: 'Ver Todos los Usuarios',
       description: 'Gestionar usuarios y permisos',
       icon: '👥',
       color: 'bg-blue-500 hover:bg-blue-600',
-      action: 'users'
+      action: 'users',
     },
     {
       title: 'Revisar Animales',
       description: 'Ver todos los animales del sistema',
       icon: '🐄',
       color: 'bg-green-500 hover:bg-green-600',
-      action: 'animals'
+      action: 'animals',
     },
     {
       title: 'Recordatorios Pendientes',
       description: 'Ver recordatorios activos',
       icon: '⏰',
       color: 'bg-yellow-500 hover:bg-yellow-600',
-      action: 'reminders'
+      action: 'reminders',
     },
     {
       title: 'Actividades del Sistema',
       description: 'Ver log de actividades',
       icon: '📝',
       color: 'bg-purple-500 hover:bg-purple-600',
-      action: 'activities'
-    }
+      action: 'activities',
+    },
   ]
 
   const handleAction = (action: string) => {
@@ -56,9 +48,7 @@ export default function AdminQuickActions({
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">
-        Acciones Rápidas
-      </h3>
+      <h3 className="text-lg font-medium text-gray-900 mb-4">Acciones Rápidas</h3>
 
       <div className="space-y-3">
         {actions.map((action, index) => (

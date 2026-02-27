@@ -1,7 +1,7 @@
 'use client'
 
+import { deleteDoc, doc, Timestamp, updateDoc } from 'firebase/firestore'
 import { useState } from 'react'
-import { doc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { FarmArea } from '@/types/farm'
 import { useFarmCRUD } from './useFarmCRUD'
@@ -14,7 +14,7 @@ export const useFarmAreasCRUD = () => {
 
   const createArea = async (
     farmId: string,
-    areaData: Omit<FarmArea, 'id' | 'farmId' | 'createdAt' | 'updatedAt'>
+    areaData: Omit<FarmArea, 'id' | 'farmId' | 'createdAt' | 'updatedAt'>,
   ) => {
     if (!farmId) throw new Error('ID de granja requerido')
 
@@ -25,7 +25,7 @@ export const useFarmAreasCRUD = () => {
       farmId,
       id: crypto.randomUUID(),
       createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     }
 
     const farmAreas = currentFarm?.areas || []
@@ -44,13 +44,13 @@ export const useFarmAreasCRUD = () => {
 
   const updateArea = async (
     areaId: string,
-    updates: Partial<Omit<FarmArea, 'id' | 'farmId' | 'createdAt'>>
+    updates: Partial<Omit<FarmArea, 'id' | 'farmId' | 'createdAt'>>,
   ) => {
     try {
       const areaRef = doc(db, 'farmAreas', areaId)
       const updateData = {
         ...updates,
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       }
 
       await updateDoc(areaRef, updateData)
@@ -58,11 +58,9 @@ export const useFarmAreasCRUD = () => {
       setAreas((prev) =>
         prev
           .map((area) =>
-            area.id === areaId
-              ? { ...area, ...updates, updatedAt: new Date() }
-              : area
+            area.id === areaId ? { ...area, ...updates, updatedAt: new Date() } : area,
           )
-          .sort((a, b) => a.name.localeCompare(b.name))
+          .sort((a, b) => a.name.localeCompare(b.name)),
       )
     } catch (error) {
       console.error('Error updating farm area:', error)
@@ -88,15 +86,14 @@ export const useFarmAreasCRUD = () => {
   }
 
   const getActiveAreas = () => areas.filter((area) => area.isActive)
-  const getAreasByType = (type: FarmArea['type']) =>
-    areas.filter((area) => area.type === type)
+  const getAreasByType = (type: FarmArea['type']) => areas.filter((area) => area.type === type)
 
   const getAreaStats = () => {
     const stats = {
       total: areas.length,
       active: areas.filter((a) => a.isActive).length,
       inactive: areas.filter((a) => !a.isActive).length,
-      byType: {} as Record<string, number>
+      byType: {} as Record<string, number>,
     }
 
     areas.forEach((area) => {
@@ -116,6 +113,6 @@ export const useFarmAreasCRUD = () => {
     toggleAreaStatus,
     getActiveAreas,
     getAreasByType,
-    getAreaStats
+    getAreaStats,
   }
 }

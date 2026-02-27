@@ -1,11 +1,11 @@
 'use client'
 
-import React from 'react'
-import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { addDays, differenceInCalendarDays, format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { animals_types_labels } from '@/types/animals'
+import React from 'react'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { getWeaningDays } from '@/lib/animalBreedingConfig'
+import { animals_types_labels } from '@/types/animals'
 
 const WeaningRemindersCard: React.FC = () => {
   const { animals, wean } = useAnimalCRUD()
@@ -30,7 +30,7 @@ const WeaningRemindersCard: React.FC = () => {
 
   const handleWean = async (
     animalId: string,
-    options?: { stageDecision?: 'engorda' | 'reproductor' }
+    options?: { stageDecision?: 'engorda' | 'reproductor' },
   ) => {
     try {
       await wean(animalId, options)
@@ -50,9 +50,7 @@ const WeaningRemindersCard: React.FC = () => {
     <div className="bg-white rounded-lg shadow-md p-4 space-y-3">
       <div className="flex items-center gap-2">
         <span className="text-2xl">🍼</span>
-        <h3 className="text-lg font-semibold text-gray-900">
-          Destete pendiente/próximo
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-900">Destete pendiente/próximo</h3>
         <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
           {dueSoon.length}
         </span>
@@ -61,15 +59,11 @@ const WeaningRemindersCard: React.FC = () => {
       <div className="space-y-2 max-h-64 overflow-y-auto">
         {dueSoon.length === 0 && (
           <div className="p-3 rounded-lg border bg-gray-50 text-gray-600 text-sm">
-            No hay destetes vencidos o próximos en los próximos{' '}
-            {UPCOMING_WINDOW_DAYS} días.
+            No hay destetes vencidos o próximos en los próximos {UPCOMING_WINDOW_DAYS} días.
           </div>
         )}
         {dueSoon.map(({ animal, dueDate, daysUntil }) => (
-          <div
-            key={animal.id}
-            className={`p-3 rounded-lg border ${urgencyColor(daysUntil)}`}
-          >
+          <div key={animal.id} className={`p-3 rounded-lg border ${urgencyColor(daysUntil)}`}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
@@ -96,24 +90,19 @@ const WeaningRemindersCard: React.FC = () => {
                     </div>
                   )}
                   <div>
-                    Fecha objetivo:{' '}
-                    {format(new Date(dueDate), 'dd/MM/yyyy', { locale: es })}
+                    Fecha objetivo: {format(new Date(dueDate), 'dd/MM/yyyy', { locale: es })}
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() =>
-                    handleWean(animal.id, { stageDecision: 'engorda' })
-                  }
+                  onClick={() => handleWean(animal.id, { stageDecision: 'engorda' })}
                   className="shrink-0 inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-green-600 text-white hover:bg-green-700"
                 >
                   Destetar→Engorda
                 </button>
                 <button
-                  onClick={() =>
-                    handleWean(animal.id, { stageDecision: 'reproductor' })
-                  }
+                  onClick={() => handleWean(animal.id, { stageDecision: 'reproductor' })}
                   className="shrink-0 inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-blue-600 text-white hover:bg-blue-700"
                 >
                   Destetar→Repro

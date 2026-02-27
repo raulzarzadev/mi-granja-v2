@@ -1,10 +1,10 @@
 'use client'
 
-import React from 'react'
-import { useAdminBreedings } from '@/hooks/admin/useAdminBreedings'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import React from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { useAdminBreedings } from '@/hooks/admin/useAdminBreedings'
 
 export default function AdminBreedingsComplete() {
   const { breedings, isLoading, error } = useAdminBreedings()
@@ -29,49 +29,33 @@ export default function AdminBreedingsComplete() {
   const totalPregnancies = breedings.reduce((total, breeding) => {
     return (
       total +
-      (breeding.femaleBreedingInfo?.filter(
-        (info) => info.pregnancyConfirmedDate
-      ).length || 0)
+      (breeding.femaleBreedingInfo?.filter((info) => info.pregnancyConfirmedDate).length || 0)
     )
   }, 0)
 
   const totalBirths = breedings.reduce((total, breeding) => {
-    return (
-      total +
-      (breeding.femaleBreedingInfo?.filter((info) => info.actualBirthDate)
-        .length || 0)
-    )
+    return total + (breeding.femaleBreedingInfo?.filter((info) => info.actualBirthDate).length || 0)
   }, 0)
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Gestión de Reproducciones
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Vista general de las reproducciones en el sistema
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">Gestión de Reproducciones</h1>
+          <p className="text-gray-600 mt-1">Vista general de las reproducciones en el sistema</p>
         </div>
-        <div className="text-sm text-gray-500">
-          Total: {breedings.length} reproducciones
-        </div>
+        <div className="text-sm text-gray-500">Total: {breedings.length} reproducciones</div>
       </div>
 
       {/* Estadísticas rápidas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="text-sm text-gray-600">Total Reproducciones</div>
-          <div className="text-2xl font-bold text-gray-900">
-            {breedings.length}
-          </div>
+          <div className="text-2xl font-bold text-gray-900">{breedings.length}</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="text-sm text-gray-600">Embarazos Confirmados</div>
-          <div className="text-2xl font-bold text-pink-600">
-            {totalPregnancies}
-          </div>
+          <div className="text-2xl font-bold text-pink-600">{totalPregnancies}</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="text-sm text-gray-600">Nacimientos</div>
@@ -80,10 +64,7 @@ export default function AdminBreedingsComplete() {
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="text-sm text-gray-600">Tasa de Éxito</div>
           <div className="text-2xl font-bold text-blue-600">
-            {breedings.length > 0
-              ? Math.round((totalBirths / breedings.length) * 100)
-              : 0}
-            %
+            {breedings.length > 0 ? Math.round((totalBirths / breedings.length) * 100) : 0}%
           </div>
         </div>
       </div>
@@ -177,9 +158,7 @@ export default function AdminBreedingsComplete() {
 
         {breedings.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-gray-500">
-              No se encontraron reproducciones registradas
-            </p>
+            <p className="text-gray-500">No se encontraron reproducciones registradas</p>
           </div>
         )}
       </div>

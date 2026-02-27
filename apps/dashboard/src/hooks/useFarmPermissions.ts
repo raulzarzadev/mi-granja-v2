@@ -19,15 +19,15 @@ export const useFarmPermissions = () => {
         { module: 'animals', actions: ['create', 'read', 'update', 'delete'] },
         {
           module: 'reminders',
-          actions: ['create', 'read', 'update', 'delete']
+          actions: ['create', 'read', 'update', 'delete'],
         },
         { module: 'breeding', actions: ['create', 'read', 'update', 'delete'] },
         { module: 'areas', actions: ['create', 'read', 'update', 'delete'] },
         {
           module: 'collaborators',
-          actions: ['create', 'read', 'update', 'delete']
+          actions: ['create', 'read', 'update', 'delete'],
         },
-        { module: 'reports', actions: ['create', 'read', 'update', 'delete'] }
+        { module: 'reports', actions: ['create', 'read', 'update', 'delete'] },
       ]
     }
 
@@ -35,26 +35,17 @@ export const useFarmPermissions = () => {
     return me?.permissions || []
   }, [collaborators, currentFarm, user])
 
-  const has = (
-    module: FarmPermission['module'],
-    action: FarmPermission['actions'][number]
-  ) => {
-    return myPerms.some(
-      (p) => p.module === module && p.actions.includes(action)
-    )
+  const has = (module: FarmPermission['module'], action: FarmPermission['actions'][number]) => {
+    return myPerms.some((p) => p.module === module && p.actions.includes(action))
   }
 
   return {
     has,
     canReadAnimals: has('animals', 'read'),
     canManageAnimals:
-      has('animals', 'create') ||
-      has('animals', 'update') ||
-      has('animals', 'delete'),
+      has('animals', 'create') || has('animals', 'update') || has('animals', 'delete'),
     canReadReminders: has('reminders', 'read'),
     canManageReminders:
-      has('reminders', 'create') ||
-      has('reminders', 'update') ||
-      has('reminders', 'delete')
+      has('reminders', 'create') || has('reminders', 'update') || has('reminders', 'delete'),
   }
 }

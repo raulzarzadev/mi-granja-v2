@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { collection, getDocs } from 'firebase/firestore'
+import { useEffect, useState } from 'react'
 import { db } from '@/lib/firebase'
 import { Reminder } from '@/types'
 
@@ -38,7 +38,7 @@ export const useAdminReminders = (): UseAdminRemindersReturn => {
           priority: data.priority || 'medium',
           type: data.type || 'other',
           createdAt: data.createdAt?.toDate() || new Date(),
-          updatedAt: data.updatedAt?.toDate() || new Date()
+          updatedAt: data.updatedAt?.toDate() || new Date(),
         })
       })
 
@@ -48,9 +48,7 @@ export const useAdminReminders = (): UseAdminRemindersReturn => {
       setReminders(remindersData)
     } catch (err) {
       console.error('Error fetching reminders:', err)
-      setError(
-        err instanceof Error ? err.message : 'Error al cargar recordatorios'
-      )
+      setError(err instanceof Error ? err.message : 'Error al cargar recordatorios')
     } finally {
       setIsLoading(false)
     }
@@ -64,6 +62,6 @@ export const useAdminReminders = (): UseAdminRemindersReturn => {
     reminders,
     isLoading,
     error,
-    refreshReminders: fetchReminders
+    refreshReminders: fetchReminders,
   }
 }

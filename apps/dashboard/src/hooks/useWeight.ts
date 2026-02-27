@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react'
-import { useSelector } from 'react-redux'
 import {
-  collection,
   addDoc,
-  updateDoc,
+  collection,
   deleteDoc,
   doc,
-  query,
-  where,
-  orderBy,
   onSnapshot,
-  Timestamp
+  orderBy,
+  query,
+  Timestamp,
+  updateDoc,
+  where,
 } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
+import { db } from '@/lib/firebase'
 import { WeightRecord } from '@/types'
 
 export const useWeight = () => {
@@ -33,7 +33,7 @@ export const useWeight = () => {
     const q = query(
       collection(db, 'weightRecords'),
       where('farmerId', '==', user.id),
-      orderBy('date', 'desc')
+      orderBy('date', 'desc'),
     )
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -45,7 +45,7 @@ export const useWeight = () => {
           animalNumber: data.animalNumber,
           weight: data.weight,
           date: data.date.toDate(),
-          notes: data.notes || ''
+          notes: data.notes || '',
         })
       })
       setWeightRecords(records)
@@ -66,7 +66,7 @@ export const useWeight = () => {
         animalNumber: data.animalNumber,
         weight: data.weight,
         date: Timestamp.fromDate(new Date(data.date)),
-        notes: data.notes || ''
+        notes: data.notes || '',
       }
 
       await addDoc(collection(db, 'weightRecords'), docData)
@@ -79,10 +79,7 @@ export const useWeight = () => {
   }
 
   // Actualizar registro de peso
-  const updateWeightRecord = async (
-    id: string,
-    updates: Partial<Omit<WeightRecord, 'id'>>
-  ) => {
+  const updateWeightRecord = async (id: string, updates: Partial<Omit<WeightRecord, 'id'>>) => {
     setIsSubmitting(true)
     try {
       const docRef = doc(db, 'weightRecords', id)
@@ -118,9 +115,7 @@ export const useWeight = () => {
 
   // Obtener registros por animal
   const getRecordsByAnimal = (animalNumber: string) => {
-    return weightRecords.filter(
-      (record) => record.animalNumber === animalNumber
-    )
+    return weightRecords.filter((record) => record.animalNumber === animalNumber)
   }
 
   // Obtener último peso de un animal
@@ -130,11 +125,7 @@ export const useWeight = () => {
   }
 
   // Obtener ganancia de peso entre dos fechas
-  const getWeightGain = (
-    animalNumber: string,
-    fromDate: Date,
-    toDate: Date
-  ) => {
+  const getWeightGain = (animalNumber: string, fromDate: Date, toDate: Date) => {
     const animalRecords = getRecordsByAnimal(animalNumber)
     const recordsInRange = animalRecords.filter((record) => {
       const recordDate = new Date(record.date)
@@ -144,9 +135,7 @@ export const useWeight = () => {
     if (recordsInRange.length < 2) return null
 
     // Ordenar por fecha ascendente
-    recordsInRange.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    )
+    recordsInRange.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
     const firstWeight = recordsInRange[0].weight
     const lastWeight = recordsInRange[recordsInRange.length - 1].weight
@@ -158,8 +147,8 @@ export const useWeight = () => {
       days: Math.ceil(
         (new Date(recordsInRange[recordsInRange.length - 1].date).getTime() -
           new Date(recordsInRange[0].date).getTime()) /
-          (1000 * 60 * 60 * 24)
-      )
+          (1000 * 60 * 60 * 24),
+      ),
     }
   }
 
@@ -169,15 +158,12 @@ export const useWeight = () => {
     cutoffDate.setDate(cutoffDate.getDate() - days)
 
     const recentRecords = getRecordsByAnimal(animalNumber).filter(
-      (record) => new Date(record.date) >= cutoffDate
+      (record) => new Date(record.date) >= cutoffDate,
     )
 
     if (recentRecords.length === 0) return null
 
-    const totalWeight = recentRecords.reduce(
-      (sum, record) => sum + record.weight,
-      0
-    )
+    const totalWeight = recentRecords.reduce((sum, record) => sum + record.weight, 0)
     return totalWeight / recentRecords.length
   }
 
@@ -191,6 +177,6 @@ export const useWeight = () => {
     getRecordsByAnimal,
     getLatestWeight,
     getWeightGain,
-    getAverageWeight
+    getAverageWeight,
   }
 }

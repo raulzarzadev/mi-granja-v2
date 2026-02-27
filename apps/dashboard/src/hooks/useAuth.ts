@@ -1,30 +1,30 @@
 'use client'
 
+import {
+  createUserWithEmailAndPassword,
+  isSignInWithEmailLink,
+  sendSignInLinkToEmail,
+  signInWithEmailAndPassword,
+  signInWithEmailLink,
+  signOut,
+} from 'firebase/auth'
+import { doc, setDoc } from 'firebase/firestore'
 import { useDispatch, useSelector } from 'react-redux'
 import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  sendSignInLinkToEmail,
-  isSignInWithEmailLink,
-  signInWithEmailLink
-} from 'firebase/auth'
-import { setDoc, doc } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase'
-import {
-  setLoading,
-  setError,
-  logout,
-  clearError,
-  setEmailLinkSent,
   clearEmailLinkState,
+  clearError,
+  clearImpersonation,
+  logout,
+  setEmailLinkSent,
+  setError,
   setImpersonating,
-  clearImpersonation
+  setLoading,
 } from '@/features/auth/authSlice'
-import { User } from '@/types'
-import { assignUserRoles } from '@/lib/userUtils'
-import { RootState } from '@/features/store'
 import { serializeObj } from '@/features/libs/serializeObj'
+import { RootState } from '@/features/store'
+import { auth, db } from '@/lib/firebase'
+import { assignUserRoles } from '@/lib/userUtils'
+import { User } from '@/types'
 
 /**
  * Hook personalizado para el manejo de autenticación
@@ -40,7 +40,7 @@ export const useAuth = () => {
     emailForLink,
     impersonatingUser,
     impersonationToken,
-    originalUser
+    originalUser,
   } = useSelector((state: RootState) => state.auth)
 
   // Listener de autenticación - Ya no es necesario aquí porque está en AuthInitializer
@@ -53,8 +53,7 @@ export const useAuth = () => {
       await signInWithEmailAndPassword(auth, email, password)
       // El AuthInitializer se encargará de setUser y setLoading(false) cuando detecte el cambio de auth
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Error al iniciar sesión'
+      const errorMessage = error instanceof Error ? error.message : 'Error al iniciar sesión'
       dispatch(setError(errorMessage))
       dispatch(setLoading(false))
       throw error
@@ -62,18 +61,10 @@ export const useAuth = () => {
   }
 
   // Registrar nuevo usuario
-  const register = async (
-    email: string,
-    password: string,
-    farmName?: string
-  ) => {
+  const register = async (email: string, password: string, farmName?: string) => {
     try {
       dispatch(setLoading(true))
-      const { user: firebaseUser } = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      )
+      const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password)
 
       // Crear el objeto usuario para asignar roles
       const user: User = {
@@ -81,7 +72,7 @@ export const useAuth = () => {
         email: firebaseUser.email!,
         farmName: farmName || '',
         roles: [], // Se asignarán automáticamente
-        createdAt: new Date()
+        createdAt: new Date(),
       }
 
       // Asignar roles automáticamente
@@ -92,13 +83,12 @@ export const useAuth = () => {
         email: firebaseUser.email,
         farmName: farmName || '',
         roles: userWithRoles.roles,
-        createdAt: new Date()
+        createdAt: new Date(),
       })
 
       // El AuthInitializer se encargará de setUser y setLoading(false) cuando detecte el cambio de auth
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Error al registrar usuario'
+      const errorMessage = error instanceof Error ? error.message : 'Error al registrar usuario'
       dispatch(setError(errorMessage))
       dispatch(setLoading(false))
       throw error
@@ -111,8 +101,7 @@ export const useAuth = () => {
       await signOut(auth)
       dispatch(logout())
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Error al cerrar sesión'
+      const errorMessage = error instanceof Error ? error.message : 'Error al cerrar sesión'
       dispatch(setError(errorMessage))
       throw error
     }
@@ -121,10 +110,9 @@ export const useAuth = () => {
   // Configuración para envío de enlaces de autenticación
   const actionCodeSettings = {
     url:
-      (typeof window !== 'undefined'
-        ? window.location.origin
-        : 'http://localhost:3000') + '/auth/complete',
-    handleCodeInApp: true
+      (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000') +
+      '/auth/complete',
+    handleCodeInApp: true,
   }
 
   // Enviar enlace de autenticación por email
@@ -148,10 +136,7 @@ export const useAuth = () => {
 
         // Verificar inmediatamente que se guardó
         const savedEmail = window.localStorage.getItem('emailForSignIn')
-        console.log(
-          'Verification - Email retrieved from localStorage:',
-          savedEmail
-        )
+        console.log('Verification - Email retrieved from localStorage:', savedEmail)
 
         if (savedEmail !== email) {
           console.error('Failed to save email to localStorage!')
@@ -163,9 +148,7 @@ export const useAuth = () => {
     } catch (error: unknown) {
       console.error('Error sending email link:', error)
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Error al enviar enlace de autenticación'
+        error instanceof Error ? error.message : 'Error al enviar enlace de autenticación'
 
       // Mantener emailLinkSent como true incluso si hay error
       // Solo marcar el error y quitar loading
@@ -193,10 +176,7 @@ export const useAuth = () => {
       }
 
       // Si es un nuevo usuario, crear documento en Firestore
-      if (
-        result.user.metadata.creationTime ===
-        result.user.metadata.lastSignInTime
-      ) {
+      if (result.user.metadata.creationTime === result.user.metadata.lastSignInTime) {
         console.log('New user detected, creating Firestore document')
 
         // Crear el objeto usuario para asignar roles
@@ -204,7 +184,7 @@ export const useAuth = () => {
           id: result.user.uid,
           email: result.user.email!,
           roles: [], // Se asignarán automáticamente
-          createdAt: new Date()
+          createdAt: new Date(),
         }
 
         // Asignar roles automáticamente
@@ -213,7 +193,7 @@ export const useAuth = () => {
         await setDoc(doc(db, 'users', result.user.uid), {
           email: result.user.email,
           roles: userWithRoles.roles,
-          createdAt: new Date()
+          createdAt: new Date(),
         })
 
         console.log('User document created successfully')
@@ -226,9 +206,7 @@ export const useAuth = () => {
     } catch (error: unknown) {
       console.error('Error completing email link sign in:', error)
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Error al completar autenticación'
+        error instanceof Error ? error.message : 'Error al completar autenticación'
       dispatch(setError(errorMessage))
       dispatch(setLoading(false))
       throw error
@@ -267,15 +245,10 @@ export const useAuth = () => {
     clearError: clearAuthError,
     clearEmailLink,
     // Funciones de impersonación
-    getCurrentToken: () =>
-      impersonationToken || localStorage.getItem('token') || '',
+    getCurrentToken: () => impersonationToken || localStorage.getItem('token') || '',
     getCurrentUser: () => impersonatingUser || user,
     isImpersonating: !!impersonatingUser,
-    startImpersonation: (
-      originalUser: User,
-      targetUser: User,
-      token: string
-    ) => {
+    startImpersonation: (originalUser: User, targetUser: User, token: string) => {
       // Guardar el usuario admin original en localStorage para tracking
       localStorage.setItem('originalAdminUser', JSON.stringify(originalUser))
       localStorage.setItem('impersonationToken', token)
@@ -284,8 +257,8 @@ export const useAuth = () => {
         setImpersonating({
           originalUser: serializeObj(originalUser),
           impersonatedUser: serializeObj(targetUser),
-          impersonationToken: token
-        })
+          impersonationToken: token,
+        }),
       )
     },
     stopImpersonation: () => {
@@ -294,6 +267,6 @@ export const useAuth = () => {
       localStorage.removeItem('impersonationToken')
 
       dispatch(clearImpersonation())
-    }
+    },
   }
 }

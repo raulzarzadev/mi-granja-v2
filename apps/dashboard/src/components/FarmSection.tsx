@@ -1,21 +1,21 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useFarmMembers } from '@/hooks/useFarmMembers'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import { FARM_AREA_TYPES, FarmInvitation } from '@/types/farm'
+import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import { useFarmMembers } from '@/hooks/useFarmMembers'
+import { useMyInvitations } from '@/hooks/useMyInvitations'
+import { formatDate, toDate } from '@/lib/dates'
+import { FarmCollaborator } from '@/types/collaborators'
+import { FARM_AREA_TYPES, FarmInvitation } from '@/types/farm'
+import AreaCard from './AreaCard'
+import CollaboratorCard from './CollaboratorCard'
 // import ModalCreateFarm from './ModalCreateFarm'
 import ModalCreateArea from './ModalCreateArea'
 import ModalCreateFarm from './ModalCreateFarm'
-import AreaCard from './AreaCard'
-import ModalInviteCollaborator from './ModalInviteCollaborator'
 import ModalEditCollaborator from './ModalEditCollaborator'
-import CollaboratorCard from './CollaboratorCard'
-import { formatDate, toDate } from '@/lib/dates'
-import { useMyInvitations } from '@/hooks/useMyInvitations'
-import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
-import { FarmCollaborator } from '@/types/collaborators'
+import ModalInviteCollaborator from './ModalInviteCollaborator'
 
 /**
  * Sección principal de gestión de granja
@@ -27,7 +27,7 @@ const FarmSection: React.FC = () => {
     currentFarm,
     isLoading: farmsLoading,
     switchFarm,
-    loadAndSwitchFarm
+    loadAndSwitchFarm,
   } = useFarmCRUD()
 
   const { areas, isLoading: areasLoading, getAreaStats } = useFarmAreasCRUD()
@@ -40,14 +40,13 @@ const FarmSection: React.FC = () => {
     revokeInvitation,
     deleteInvitation,
     updateCollaborator,
-    hasPermissions
+    hasPermissions,
   } = useFarmMembers(currentFarm?.id)
 
   const activeColaborators = collaborators.filter((c) => c.isActive)
 
   // Estado para el modal de edición
-  const [editingCollaborator, setEditingCollaborator] =
-    useState<FarmCollaborator | null>(null)
+  const [editingCollaborator, setEditingCollaborator] = useState<FarmCollaborator | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   // Usuario actual
@@ -55,9 +54,9 @@ const FarmSection: React.FC = () => {
   const canRevokeInvitations = hasPermissions('collaborators', 'update')
   const canDeleteInvitations = hasPermissions('collaborators', 'delete')
 
-  const [activeSubTab, setActiveSubTab] = useState<
-    'overview' | 'areas' | 'collaborators'
-  >('overview')
+  const [activeSubTab, setActiveSubTab] = useState<'overview' | 'areas' | 'collaborators'>(
+    'overview',
+  )
 
   const areaStats = getAreaStats()
   const collaboratorStats = getCollaboratorStats()
@@ -69,11 +68,7 @@ const FarmSection: React.FC = () => {
 
   const { resendInvitation } = useFarmMembers(currentFarm?.id)
 
-  const handleResendInvitation = async ({
-    invitation
-  }: {
-    invitation: FarmInvitation
-  }) => {
+  const handleResendInvitation = async ({ invitation }: { invitation: FarmInvitation }) => {
     // Lógica para reenviar la invitación
     await resendInvitation({ invitationId: invitation.id })
   }
@@ -81,9 +76,7 @@ const FarmSection: React.FC = () => {
     return (
       <div className="flex justify-center items-center py-12">
         <LoadingSpinner />
-        <span className="ml-3 text-gray-600">
-          Cargando información de la granja...
-        </span>
+        <span className="ml-3 text-gray-600">Cargando información de la granja...</span>
       </div>
     )
   }
@@ -93,22 +86,15 @@ const FarmSection: React.FC = () => {
     return (
       <div className="space-y-6">
         <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            Invitaciones
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Invitaciones</h2>
           {myInv.isLoading ? (
             <div className="flex items-center">
               <LoadingSpinner />
-              <span className="ml-3 text-gray-600">
-                Cargando invitaciones...
-              </span>
+              <span className="ml-3 text-gray-600">Cargando invitaciones...</span>
             </div>
-          ) : myInv.getPending().length === 0 &&
-            myInv.getAccepted().length === 0 ? (
+          ) : myInv.getPending().length === 0 && myInv.getAccepted().length === 0 ? (
             <div className="space-y-4">
-              <p className="text-gray-600 text-sm">
-                No tienes invitaciones por ahora.
-              </p>
+              <p className="text-gray-600 text-sm">No tienes invitaciones por ahora.</p>
               <div className="flex justify-center">
                 <ModalCreateFarm />
               </div>
@@ -119,9 +105,7 @@ const FarmSection: React.FC = () => {
               {myInv.getAccepted().map((inv) => (
                 <div key={inv.id} className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-900 truncate">
-                      {inv.email}
-                    </span>
+                    <span className="font-medium text-gray-900 truncate">{inv.email}</span>
                     <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
                       Aceptada
                     </span>
@@ -131,8 +115,7 @@ const FarmSection: React.FC = () => {
                   </p>
                   {inv.farmName && (
                     <p className="text-xs text-gray-500 mb-1">
-                      Granja:{' '}
-                      <span className="font-medium">{inv.farmName}</span>
+                      Granja: <span className="font-medium">{inv.farmName}</span>
                     </p>
                   )}
                   <p className="text-sm text-gray-600">Rol: {inv.role}</p>
@@ -155,14 +138,9 @@ const FarmSection: React.FC = () => {
               ))}
               {/* Pendientes: links para aceptar/rechazar */}
               {myInv.getPending().map((inv) => (
-                <div
-                  key={inv.id}
-                  className="border rounded-lg p-4 bg-orange-50 border-orange-200"
-                >
+                <div key={inv.id} className="border rounded-lg p-4 bg-orange-50 border-orange-200">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-900 truncate">
-                      {inv.email}
-                    </span>
+                    <span className="font-medium text-gray-900 truncate">{inv.email}</span>
                     <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full">
                       Pendiente
                     </span>
@@ -172,8 +150,7 @@ const FarmSection: React.FC = () => {
                   </p>
                   {inv.farmName && (
                     <p className="text-xs text-gray-500 mb-1">
-                      Granja:{' '}
-                      <span className="font-medium">{inv.farmName}</span>
+                      Granja: <span className="font-medium">{inv.farmName}</span>
                     </p>
                   )}
                   <p className="text-sm text-gray-600">Rol: {inv.role}</p>
@@ -202,9 +179,7 @@ const FarmSection: React.FC = () => {
               ))}
               {/* CTA crear granja propia */}
               <div className="border rounded-lg p-4 flex flex-col items-center justify-center">
-                <p className="text-sm text-gray-600 mb-3">
-                  ¿Quieres crear tu propia granja?
-                </p>
+                <p className="text-sm text-gray-600 mb-3">¿Quieres crear tu propia granja?</p>
                 <ModalCreateFarm />
               </div>
             </div>
@@ -221,17 +196,14 @@ const FarmSection: React.FC = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                {currentFarm.name}
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-900">{currentFarm.name}</h2>
               {currentFarm.description && (
                 <p className="text-gray-600 mt-1">{currentFarm.description}</p>
               )}
               {currentFarm.location?.city && (
                 <p className="text-sm text-gray-500 mt-1">
                   📍 {currentFarm.location.city}
-                  {currentFarm.location.state &&
-                    `, ${currentFarm.location.state}`}
+                  {currentFarm.location.state && `, ${currentFarm.location.state}`}
                 </p>
               )}
             </div>
@@ -305,12 +277,8 @@ const FarmSection: React.FC = () => {
                 <span className="text-2xl">🏗️</span>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">
-                  Áreas Totales
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {areaStats.total}
-                </p>
+                <p className="text-sm font-medium text-gray-500">Áreas Totales</p>
+                <p className="text-2xl font-bold text-gray-900">{areaStats.total}</p>
                 <p className="text-xs text-gray-500">
                   {areaStats.active} activas, {areaStats.inactive} inactivas
                 </p>
@@ -324,12 +292,8 @@ const FarmSection: React.FC = () => {
                 <span className="text-2xl">👥</span>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">
-                  Colaboradores
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {collaboratorStats.total}
-                </p>
+                <p className="text-sm font-medium text-gray-500">Colaboradores</p>
+                <p className="text-2xl font-bold text-gray-900">{collaboratorStats.total}</p>
                 {collaboratorStats.pending > 0 && (
                   <p className="text-xs text-orange-600">
                     {collaboratorStats.pending} invitaciones pendientes
@@ -351,12 +315,8 @@ const FarmSection: React.FC = () => {
                       <span className="text-2xl">{typeInfo?.icon || '📍'}</span>
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-500">
-                        {typeInfo?.label || type}
-                      </p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {count}
-                      </p>
+                      <p className="text-sm font-medium text-gray-500">{typeInfo?.label || type}</p>
+                      <p className="text-2xl font-bold text-gray-900">{count}</p>
                     </div>
                   </div>
                 </div>
@@ -369,9 +329,7 @@ const FarmSection: React.FC = () => {
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">
-                Áreas de la Granja
-              </h3>
+              <h3 className="text-xl font-semibold text-gray-900">Áreas de la Granja</h3>
               <ModalCreateArea />
             </div>
 
@@ -383,12 +341,8 @@ const FarmSection: React.FC = () => {
             ) : areas.length === 0 ? (
               <div className="text-center py-8">
                 <span className="text-4xl mb-4 block">🏗️</span>
-                <h4 className="text-lg font-medium text-gray-900 mb-2">
-                  No hay áreas creadas
-                </h4>
-                <p className="text-gray-600 mb-4">
-                  Crea áreas para organizar mejor tu granja
-                </p>
+                <h4 className="text-lg font-medium text-gray-900 mb-2">No hay áreas creadas</h4>
+                <p className="text-gray-600 mb-4">Crea áreas para organizar mejor tu granja</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -405,9 +359,7 @@ const FarmSection: React.FC = () => {
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">
-                Equipo de Trabajo
-              </h3>
+              <h3 className="text-xl font-semibold text-gray-900">Equipo de Trabajo</h3>
               <ModalInviteCollaborator />
             </div>
 
@@ -419,9 +371,7 @@ const FarmSection: React.FC = () => {
             ) : collaborators.length === 0 && invitations.length === 0 ? (
               <div className="text-center py-8">
                 <span className="text-4xl mb-4 block">👥</span>
-                <h4 className="text-lg font-medium text-gray-900 mb-2">
-                  Trabaja en equipo
-                </h4>
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Trabaja en equipo</h4>
                 <p className="text-gray-600 mb-4">
                   Invita colaboradores para gestionar la granja juntos
                 </p>
@@ -441,16 +391,12 @@ const FarmSection: React.FC = () => {
                           className="border border-orange-200 bg-orange-50 rounded-lg p-4"
                         >
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-gray-900">
-                              {invitation.email}
-                            </span>
+                            <span className="font-medium text-gray-900">{invitation.email}</span>
                             <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
                               Pendiente
                             </span>
                           </div>
-                          <p className="text-sm text-gray-600 mb-2">
-                            Rol: {invitation.role}
-                          </p>
+                          <p className="text-sm text-gray-600 mb-2">Rol: {invitation.role}</p>
                           <p className="text-xs text-gray-500">
                             Expira: {formatDate(toDate(invitation.expiresAt))}
                           </p>
@@ -459,14 +405,10 @@ const FarmSection: React.FC = () => {
                               className="text-xs px-3 py-1 rounded-md border border-blue-300 text-blue-700 hover:bg-blue-50"
                               title="Reenviar invitación"
                               onClick={async () => {
-                                if (
-                                  confirm(
-                                    `¿Reenviar invitación a ${invitation.email}?`
-                                  )
-                                ) {
+                                if (confirm(`¿Reenviar invitación a ${invitation.email}?`)) {
                                   try {
                                     handleResendInvitation({
-                                      invitation
+                                      invitation,
                                     })
                                   } catch (e) {
                                     console.error(e)
@@ -504,7 +446,7 @@ const FarmSection: React.FC = () => {
                                   if (
                                     !canRevokeInvitations ||
                                     !confirm(
-                                      `¿Revocar la invitación a ${invitation.email}? No podrá usarse más.`
+                                      `¿Revocar la invitación a ${invitation.email}? No podrá usarse más.`,
                                     )
                                   )
                                     return
@@ -524,7 +466,7 @@ const FarmSection: React.FC = () => {
                                 onClick={async () => {
                                   if (
                                     confirm(
-                                      `¿Eliminar definitivamente la invitación a ${invitation.email}? Esta acción no se puede deshacer.`
+                                      `¿Eliminar definitivamente la invitación a ${invitation.email}? Esta acción no se puede deshacer.`,
                                     )
                                   ) {
                                     try {
@@ -563,12 +505,12 @@ const FarmSection: React.FC = () => {
                           onRevoke={async (id) => {
                             if (
                               confirm(
-                                '¿Revocar acceso de este colaborador? Podrás reactivarlo más adelante.'
+                                '¿Revocar acceso de este colaborador? Podrás reactivarlo más adelante.',
                               )
                             ) {
                               try {
                                 await updateCollaborator(id, {
-                                  isActive: false
+                                  isActive: false,
                                 })
                               } catch (e) {
                                 console.error(e)
@@ -587,7 +529,7 @@ const FarmSection: React.FC = () => {
                               ? async (id) => {
                                   if (
                                     confirm(
-                                      '¿Eliminar definitivamente este colaborador? Esto borrará la invitación / registro asociado.'
+                                      '¿Eliminar definitivamente este colaborador? Esto borrará la invitación / registro asociado.',
                                     )
                                   ) {
                                     try {

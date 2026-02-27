@@ -1,16 +1,16 @@
 'use client'
 
 import React from 'react'
+import EmailTestComponent from '@/components/EmailTestComponent'
 import {
-  ExampleSimpleModal,
   ExampleConfirmModal,
   ExampleFormModal,
   ExampleFullModal,
-  ExampleModalBreedingForm,
   ExampleModalAnimalForm,
-  ExampleModalReminderForm
+  ExampleModalBreedingForm,
+  ExampleModalReminderForm,
+  ExampleSimpleModal,
 } from '@/components/examples/ModalExamples'
-import EmailTestComponent from '@/components/EmailTestComponent'
 
 /**
  * Página de demostración de componentes UI
@@ -22,12 +22,10 @@ export default function UIShowcasePage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            🎨 Showcase de Componentes UI
-          </h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">🎨 Showcase de Componentes UI</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Demostración interactiva de todos los componentes, modales y
-            formularios disponibles en la aplicación Mi Granja.
+            Demostración interactiva de todos los componentes, modales y formularios disponibles en
+            la aplicación Mi Granja.
           </p>
         </div>
 
@@ -46,42 +44,28 @@ export default function UIShowcasePage() {
               {/* Modal Simple */}
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <h3 className="font-medium text-gray-900 mb-2">Modal Simple</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Modal básico con título y contenido
-                </p>
+                <p className="text-sm text-gray-600 mb-4">Modal básico con título y contenido</p>
                 <ExampleSimpleModal />
               </div>
 
               {/* Modal de Confirmación */}
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-2">
-                  Modal de Confirmación
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Para acciones destructivas
-                </p>
+                <h3 className="font-medium text-gray-900 mb-2">Modal de Confirmación</h3>
+                <p className="text-sm text-gray-600 mb-4">Para acciones destructivas</p>
                 <ExampleConfirmModal />
               </div>
 
               {/* Modal de Formulario */}
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-2">
-                  Modal con Formulario
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Formulario completo en modal
-                </p>
+                <h3 className="font-medium text-gray-900 mb-2">Modal con Formulario</h3>
+                <p className="text-sm text-gray-600 mb-4">Formulario completo en modal</p>
                 <ExampleFormModal />
               </div>
 
               {/* Modal Pantalla Completa */}
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-2">
-                  Modal Completo
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Ocupa toda la pantalla
-                </p>
+                <h3 className="font-medium text-gray-900 mb-2">Modal Completo</h3>
+                <p className="text-sm text-gray-600 mb-4">Ocupa toda la pantalla</p>
                 <ExampleFullModal />
               </div>
             </div>
@@ -104,9 +88,7 @@ export default function UIShowcasePage() {
                 <div className="flex items-center mb-4">
                   <span className="text-2xl mr-3">🐄💕</span>
                   <div>
-                    <h3 className="font-medium text-gray-900">
-                      Modal de Monta/Reproducción
-                    </h3>
+                    <h3 className="font-medium text-gray-900">Modal de Monta/Reproducción</h3>
                     <p className="text-sm text-gray-600">
                       Registra montas entre animales reproductores
                     </p>
@@ -114,9 +96,7 @@ export default function UIShowcasePage() {
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-md mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">
-                    Características:
-                  </h4>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Características:</h4>
                   <ul className="text-xs text-gray-600 space-y-1">
                     <li>• Selección de hembra y macho</li>
                     <li>• Fecha de monta y parto esperado</li>
@@ -133,9 +113,7 @@ export default function UIShowcasePage() {
                 <div className="flex items-center mb-4">
                   <span className="text-2xl mr-3">🐄📝</span>
                   <div>
-                    <h3 className="font-medium text-gray-900">
-                      Modal de Animales
-                    </h3>
+                    <h3 className="font-medium text-gray-900">Modal de Animales</h3>
                     <p className="text-sm text-gray-600">
                       Registra y edita información de animales
                     </p>
@@ -143,9 +121,7 @@ export default function UIShowcasePage() {
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-md mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">
-                    Características:
-                  </h4>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Características:</h4>
                   <ul className="text-xs text-gray-600 space-y-1">
                     <li>• ID único del animal</li>
                     <li>• Tipo y etapa de vida</li>
@@ -174,9 +150,7 @@ export default function UIShowcasePage() {
                 <div className="flex items-center mb-4">
                   <span className="text-2xl mr-3">⏰📝</span>
                   <div>
-                    <h3 className="font-medium text-gray-900">
-                      Modal de Recordatorios
-                    </h3>
+                    <h3 className="font-medium text-gray-900">Modal de Recordatorios</h3>
                     <p className="text-sm text-gray-600">
                       Crea y gestiona recordatorios para la granja
                     </p>
@@ -184,9 +158,7 @@ export default function UIShowcasePage() {
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-md mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">
-                    Características:
-                  </h4>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Características:</h4>
                   <ul className="text-xs text-gray-600 space-y-1">
                     <li>• Recordatorios por animal o generales</li>
                     <li>• Tipos: médico, reproducción, alimentación, etc.</li>
@@ -207,9 +179,7 @@ export default function UIShowcasePage() {
                 <div className="flex items-center mb-4">
                   <span className="text-2xl mr-3">📊</span>
                   <div>
-                    <h3 className="font-medium text-gray-900">
-                      Modal de Reportes
-                    </h3>
+                    <h3 className="font-medium text-gray-900">Modal de Reportes</h3>
                     <p className="text-sm text-gray-600">Próximamente...</p>
                   </div>
                 </div>
@@ -229,9 +199,7 @@ export default function UIShowcasePage() {
                 <div className="flex items-center mb-4">
                   <span className="text-2xl mr-3">🥛</span>
                   <div>
-                    <h3 className="font-medium text-gray-900">
-                      Modal de Producción
-                    </h3>
+                    <h3 className="font-medium text-gray-900">Modal de Producción</h3>
                     <p className="text-sm text-gray-600">Próximamente...</p>
                   </div>
                 </div>
@@ -258,18 +226,16 @@ export default function UIShowcasePage() {
                   </h3>
                   <div className="space-y-3 text-sm text-gray-600">
                     <div className="bg-blue-50 p-3 rounded-md">
-                      <strong className="text-blue-800">Modal Base:</strong>{' '}
-                      Componente reutilizable con animaciones y accesibilidad
+                      <strong className="text-blue-800">Modal Base:</strong> Componente reutilizable
+                      con animaciones y accesibilidad
                     </div>
                     <div className="bg-green-50 p-3 rounded-md">
-                      <strong className="text-green-800">useModal Hook:</strong>{' '}
-                      Estado y funciones para controlar modales
+                      <strong className="text-green-800">useModal Hook:</strong> Estado y funciones
+                      para controlar modales
                     </div>
                     <div className="bg-purple-50 p-3 rounded-md">
-                      <strong className="text-purple-800">
-                        Form Wrappers:
-                      </strong>{' '}
-                      Combinan modal + formulario + trigger
+                      <strong className="text-purple-800">Form Wrappers:</strong> Combinan modal +
+                      formulario + trigger
                     </div>
                   </div>
                 </div>
@@ -318,9 +284,8 @@ export default function UIShowcasePage() {
                 🚀 Sistema de Modales Completo
               </h3>
               <p className="text-gray-600 mb-4">
-                Todos los modales están construidos con el mismo patrón base,
-                garantizando consistencia y mantenibilidad en toda la
-                aplicación.
+                Todos los modales están construidos con el mismo patrón base, garantizando
+                consistencia y mantenibilidad en toda la aplicación.
               </p>
               <div className="flex justify-center items-center space-x-4 text-sm text-gray-500">
                 <span>React 18</span>

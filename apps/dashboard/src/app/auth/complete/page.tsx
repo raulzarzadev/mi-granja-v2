@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/hooks/useAuth'
+import React, { useEffect, useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { useAuth } from '@/hooks/useAuth'
 
 /**
  * Página para completar la autenticación por enlace de email
@@ -11,9 +11,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 export default function CompleteAuthPage() {
   const router = useRouter()
   const { completeEmailLinkSignIn, isEmailLinkSignIn } = useAuth()
-  const [status, setStatus] = useState<
-    'loading' | 'error' | 'success' | 'needEmail'
-  >('loading')
+  const [status, setStatus] = useState<'loading' | 'error' | 'success' | 'needEmail'>('loading')
   const [errorMessage, setErrorMessage] = useState('')
   const [emailInput, setEmailInput] = useState('')
   const [hasAttemptedAuth, setHasAttemptedAuth] = useState(false)
@@ -37,7 +35,7 @@ export default function CompleteAuthPage() {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : 'Error al completar la autenticación con el email proporcionado'
+          : 'Error al completar la autenticación con el email proporcionado',
       )
     }
   }
@@ -56,9 +54,7 @@ export default function CompleteAuthPage() {
         if (!isEmailLinkSignIn(url)) {
           console.log('Invalid email link')
           setStatus('error')
-          setErrorMessage(
-            'El enlace de autenticación no es válido o ha expirado.'
-          )
+          setErrorMessage('El enlace de autenticación no es válido o ha expirado.')
           return
         }
 
@@ -80,9 +76,7 @@ export default function CompleteAuthPage() {
 
         // Como último recurso, intentar extraer el email del hash de la URL
         if (!email) {
-          const hashParams = new URLSearchParams(
-            window.location.hash.substring(1)
-          )
+          const hashParams = new URLSearchParams(window.location.hash.substring(1))
           email = hashParams.get('email')
           console.log('Email from hash params:', email)
           console.log('All hash params:', Array.from(hashParams.entries()))
@@ -109,9 +103,7 @@ export default function CompleteAuthPage() {
         console.error('Error completing email link sign in:', error)
         setStatus('error')
         setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : 'Error al completar la autenticación'
+          error instanceof Error ? error.message : 'Error al completar la autenticación',
         )
       }
     }
@@ -126,16 +118,12 @@ export default function CompleteAuthPage() {
           <div className="flex justify-center mb-6">
             <span className="text-6xl">🐄</span>
           </div>
-          <h2 className="text-3xl font-extrabold text-gray-900 mb-4">
-            Mi Granja
-          </h2>
+          <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Mi Granja</h2>
 
           {status === 'loading' && (
             <div className="space-y-4">
               <LoadingSpinner text="Completando autenticación..." />
-              <p className="text-gray-600">
-                Verificando tu enlace de autenticación
-              </p>
+              <p className="text-gray-600">Verificando tu enlace de autenticación</p>
             </div>
           )}
 
@@ -158,9 +146,7 @@ export default function CompleteAuthPage() {
                   </svg>
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900">
-                ¡Autenticación exitosa!
-              </h3>
+              <h3 className="text-xl font-semibold text-gray-900">¡Autenticación exitosa!</h3>
               <p className="text-gray-600">Redirigiendo a tu dashboard...</p>
             </div>
           )}
@@ -184,19 +170,14 @@ export default function CompleteAuthPage() {
                   </svg>
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900">
-                Confirma tu email
-              </h3>
+              <h3 className="text-xl font-semibold text-gray-900">Confirma tu email</h3>
               <p className="text-gray-600 text-sm">
-                No pudimos recuperar automáticamente tu dirección de email. Por
-                favor confírmala para completar la autenticación.
+                No pudimos recuperar automáticamente tu dirección de email. Por favor confírmala
+                para completar la autenticación.
               </p>
               <form onSubmit={handleManualEmailSubmit} className="space-y-4">
                 <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-gray-700"
-                  >
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                     Correo electrónico
                   </label>
                   <input
@@ -254,8 +235,8 @@ export default function CompleteAuthPage() {
                   Volver al login
                 </button>
                 <p className="text-xs text-gray-500">
-                  Si continúas teniendo problemas, solicita un nuevo enlace de
-                  autenticación desde la página de login
+                  Si continúas teniendo problemas, solicita un nuevo enlace de autenticación desde
+                  la página de login
                 </p>
               </div>
             </div>

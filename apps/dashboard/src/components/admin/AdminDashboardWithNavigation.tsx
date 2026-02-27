@@ -1,22 +1,16 @@
 'use client'
 
 import React, { useState } from 'react'
-import AdminHeader from './AdminHeader'
-import AdminSidebar from './AdminSidebar'
-import AdminOverview from './AdminOverview'
-import AdminUsers from './AdminUsers'
+import AdminActivities from './AdminActivities'
 import AdminAnimals from './AdminAnimals'
 import AdminBreedings from './AdminBreedings'
+import AdminHeader from './AdminHeader'
+import AdminOverview from './AdminOverview'
 import AdminReminders from './AdminReminders'
-import AdminActivities from './AdminActivities'
+import AdminSidebar from './AdminSidebar'
+import AdminUsers from './AdminUsers'
 
-type AdminSection =
-  | 'overview'
-  | 'users'
-  | 'animals'
-  | 'breedings'
-  | 'reminders'
-  | 'activities'
+type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities'
 
 export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState<AdminSection>('overview')
@@ -44,10 +38,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gray-50">
       <AdminHeader />
       <div className="flex">
-        <AdminSidebar
-          activeSection={activeSection}
-          onSectionChange={setActiveSection}
-        />
+        <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
         <main className="flex-1 p-6">{renderSection()}</main>
       </div>
     </div>

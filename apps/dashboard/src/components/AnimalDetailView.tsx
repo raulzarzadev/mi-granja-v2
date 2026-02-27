@@ -1,24 +1,24 @@
 'use client'
 
 import React from 'react'
-import { BreedingRecord } from '@/types/breedings'
-import {
-  Animal,
-  animal_icon,
-  AnimalType,
-  animal_status_colors,
-  animal_status_labels
-} from '@/types/animals'
-import { MilkProduction, WeightRecord } from '@/types'
-import { formatDate } from '@/lib/dates'
-import { AnimalDetailRow } from './AnimalCard'
-import ModalEditAnimal from './ModalEditAnimal'
-import ButtonConfirm from './buttons/ButtonConfirm'
+import AnimalRecordsSection from '@/components/AnimalRecordsSection'
+import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
-import Tabs from '@/components/Tabs'
-import AnimalRecordsSection from '@/components/AnimalRecordsSection'
 import { animalAge } from '@/lib/animal-utils'
+import { formatDate } from '@/lib/dates'
+import { MilkProduction, WeightRecord } from '@/types'
+import {
+  Animal,
+  AnimalType,
+  animal_icon,
+  animal_status_colors,
+  animal_status_labels,
+} from '@/types/animals'
+import { BreedingRecord } from '@/types/breedings'
+import { AnimalDetailRow } from './AnimalCard'
+import ButtonConfirm from './buttons/ButtonConfirm'
+import ModalEditAnimal from './ModalEditAnimal'
 
 interface AnimalDetailViewProps {
   animal: Animal
@@ -33,7 +33,7 @@ interface AnimalDetailViewProps {
 const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
   animal,
   weightRecords = [],
-  milkRecords = []
+  milkRecords = [],
 }) => {
   const { animals: allAnimals } = useAnimalCRUD()
   const { breedingRecords: allBreedingRecords } = useBreedingCRUD()
@@ -42,9 +42,8 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
 
   const breedingRecords = allBreedingRecords.filter(
     (record) =>
-      record.femaleBreedingInfo?.find(
-        (female) => female.femaleId === animal.id
-      ) || record.maleId === animal.id
+      record.femaleBreedingInfo?.find((female) => female.femaleId === animal.id) ||
+      record.maleId === animal.id,
   )
 
   const getMother = () => {
@@ -58,9 +57,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
   }
 
   const getOffspring = () => {
-    return allAnimals.filter(
-      (a) => a.motherId === animal.id || a.fatherId === animal.id
-    )
+    return allAnimals.filter((a) => a.motherId === animal.id || a.fatherId === animal.id)
   }
 
   const getAnimalIcon = (type: AnimalType) => {
@@ -75,38 +72,24 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
           {/* Información básica */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Datos Básicos
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900">Datos Básicos</h3>
               <div className="space-y-2">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Edad
-                  </label>
-                  <p className="text-gray-900">
-                    {animalAge(animal, { format: 'long' })}
-                  </p>
+                  <label className="text-sm font-medium text-gray-500">Edad</label>
+                  <p className="text-gray-900">{animalAge(animal, { format: 'long' })}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Raza
-                  </label>
+                  <label className="text-sm font-medium text-gray-500">Raza</label>
                   <p className="text-gray-900">{animal.breed || ''}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Fecha de Nacimiento
-                  </label>
+                  <label className="text-sm font-medium text-gray-500">Fecha de Nacimiento</label>
                   <p className="text-gray-900">
-                    {animal.birthDate
-                      ? formatDate(animal.birthDate)
-                      : 'No registrado'}
+                    {animal.birthDate ? formatDate(animal.birthDate) : 'No registrado'}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Peso Actual
-                  </label>
+                  <label className="text-sm font-medium text-gray-500">Peso Actual</label>
                   <p className="text-gray-900">
                     {animal.weight ? `${animal.weight} kg` : 'No registrado'}
                   </p>
@@ -115,30 +98,18 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Genealogía
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900">Genealogía</h3>
               <div className="space-y-2">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Madre
-                  </label>
-                  <p className="text-gray-900">
-                    {getMother()?.animalNumber || 'No registrado'}
-                  </p>
+                  <label className="text-sm font-medium text-gray-500">Madre</label>
+                  <p className="text-gray-900">{getMother()?.animalNumber || 'No registrado'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Padre
-                  </label>
-                  <p className="text-gray-900">
-                    {getFather()?.animalNumber || 'No registrado'}
-                  </p>
+                  <label className="text-sm font-medium text-gray-500">Padre</label>
+                  <p className="text-gray-900">{getFather()?.animalNumber || 'No registrado'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Descendencia
-                  </label>
+                  <label className="text-sm font-medium text-gray-500">Descendencia</label>
                   <div className="text-gray-900">
                     {getOffspring().length === 0 ? (
                       'Sin descendencia registrada'
@@ -155,9 +126,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                               className="flex items-center gap-2 text-sm bg-gray-50 rounded px-2 py-1"
                             >
                               <span>{getAnimalIcon(offspring.type)}</span>
-                              <span className="font-medium">
-                                {offspring.animalNumber}
-                              </span>
+                              <span className="font-medium">{offspring.animalNumber}</span>
                               <span className="text-gray-500">
                                 ({offspring.gender === 'macho' ? '♂' : '♀'})
                               </span>
@@ -180,9 +149,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
           {/* Notas */}
           {animal.notes && (
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                Notas
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Notas</h3>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-gray-700">{animal.notes}</p>
               </div>
@@ -197,21 +164,18 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                 {formatDate(animal.createdAt, 'dd MMM yy')}
               </div>
               <div>
-                <span className="font-medium">Actualizado:</span>{' '}
-                {formatDate(animal.updatedAt)}
+                <span className="font-medium">Actualizado:</span> {formatDate(animal.updatedAt)}
               </div>
             </div>
           </div>
         </div>
-      )
+      ),
     },
     {
       label: '🐣 Reproducción',
       content: (
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Historial Reproductivo
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Historial Reproductivo</h3>
           {breedingRecords.length === 0 ? (
             <div className="text-center py-8">
               <span className="text-4xl mb-4 block">🐣</span>
@@ -223,10 +187,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                 <div key={record.id} className="bg-gray-50 rounded-lg p-4">
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-sm font-medium text-gray-900">
-                      Monta del{' '}
-                      {record.breedingDate
-                        ? formatDate(record.breedingDate)
-                        : ''}
+                      Monta del {record.breedingDate ? formatDate(record.breedingDate) : ''}
                     </span>
                   </div>
                 </div>
@@ -234,15 +195,13 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
             </div>
           )}
         </div>
-      )
+      ),
     },
     {
       label: '⚖️ Peso',
       content: (
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Historial de Peso
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Historial de Peso</h3>
           {weightRecords.length === 0 ? (
             <div className="text-center py-8">
               <span className="text-4xl mb-4 block">⚖️</span>
@@ -253,36 +212,26 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
               {weightRecords.map((record) => (
                 <div key={record.id} className="bg-gray-50 rounded-lg p-4">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-900">
-                      {record.weight} kg
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {formatDate(record.date)}
-                    </span>
+                    <span className="font-medium text-gray-900">{record.weight} kg</span>
+                    <span className="text-sm text-gray-500">{formatDate(record.date)}</span>
                   </div>
-                  {record.notes && (
-                    <p className="text-sm text-gray-600 mt-2">{record.notes}</p>
-                  )}
+                  {record.notes && <p className="text-sm text-gray-600 mt-2">{record.notes}</p>}
                 </div>
               ))}
             </div>
           )}
         </div>
-      )
+      ),
     },
     {
       label: '🥛 Leche',
       content: (
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Producción de Leche
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Producción de Leche</h3>
           {animal.stage !== 'lechera' ? (
             <div className="text-center py-8">
               <span className="text-4xl mb-4 block">🥛</span>
-              <p className="text-gray-500">
-                Este animal no está en etapa de producción lechera
-              </p>
+              <p className="text-gray-500">Este animal no está en etapa de producción lechera</p>
             </div>
           ) : milkRecords.length === 0 ? (
             <div className="text-center py-8">
@@ -294,30 +243,23 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
               {milkRecords.map((record) => (
                 <div key={record.id} className="bg-gray-50 rounded-lg p-4">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-gray-900">
-                      {record.totalAmount} L
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {formatDate(record.date)}
-                    </span>
+                    <span className="font-medium text-gray-900">{record.totalAmount} L</span>
+                    <span className="text-sm text-gray-500">{formatDate(record.date)}</span>
                   </div>
                   <div className="text-sm text-gray-600">
-                    Mañana: {record.morningAmount}L | Tarde:{' '}
-                    {record.eveningAmount}L
+                    Mañana: {record.morningAmount}L | Tarde: {record.eveningAmount}L
                   </div>
-                  {record.notes && (
-                    <p className="text-sm text-gray-600 mt-2">{record.notes}</p>
-                  )}
+                  {record.notes && <p className="text-sm text-gray-600 mt-2">{record.notes}</p>}
                 </div>
               ))}
             </div>
           )}
         </div>
-      )
+      ),
     },
     {
       label: '📋 Registros',
-      content: <AnimalRecordsSection animal={animal} />
+      content: <AnimalRecordsSection animal={animal} />,
     },
     {
       label: '⚙️ Configuración',
@@ -331,7 +273,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
               onClick={() =>
                 markStatus(animal.id, {
                   status: 'vendido',
-                  statusNotes: 'Marcado desde configuración'
+                  statusNotes: 'Marcado desde configuración',
                 })
               }
             >
@@ -342,7 +284,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
               onClick={() =>
                 markStatus(animal.id, {
                   status: 'muerto',
-                  statusNotes: 'Marcado desde configuración'
+                  statusNotes: 'Marcado desde configuración',
                 })
               }
             >
@@ -362,7 +304,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                   markStatus(animal.id, {
                     status: 'perdido',
                     statusNotes: 'Marcado desde configuración',
-                    lostInfo: { lostAt: new Date() }
+                    lostInfo: { lostAt: new Date() },
                   })
                 }
               >
@@ -379,13 +321,13 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                 color: 'error',
                 variant: 'ghost',
                 icon: 'delete',
-                size: 'sm'
+                size: 'sm',
               }}
             />
           </div>
         </div>
-      )
-    }
+      ),
+    },
   ]
 
   return (

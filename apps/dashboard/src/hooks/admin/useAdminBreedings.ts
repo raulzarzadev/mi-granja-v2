@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { collection, getDocs } from 'firebase/firestore'
+import { useEffect, useState } from 'react'
+import { toLocalDateStart } from '@/lib/dates'
 import { db } from '@/lib/firebase'
 import { BreedingRecord } from '@/types/breedings'
-import { toLocalDateStart } from '@/lib/dates'
 
 interface UseAdminBreedingsReturn {
   breedings: BreedingRecord[]
@@ -55,10 +55,10 @@ export const useAdminBreedings = (): UseAdminBreedingsReturn => {
                 actualBirthDate: info.actualBirthDate
                   ? toLocalDateStart(info.actualBirthDate.toDate())
                   : undefined,
-                offspring: info.offspring || []
-              })
+                offspring: info.offspring || [],
+              }),
             ) || [],
-          notes: data.notes || ''
+          notes: data.notes || '',
         })
       })
 
@@ -72,9 +72,7 @@ export const useAdminBreedings = (): UseAdminBreedingsReturn => {
       setBreedings(breedingsData)
     } catch (err) {
       console.error('Error fetching breedings:', err)
-      setError(
-        err instanceof Error ? err.message : 'Error al cargar reproducciones'
-      )
+      setError(err instanceof Error ? err.message : 'Error al cargar reproducciones')
     } finally {
       setIsLoading(false)
     }
@@ -88,6 +86,6 @@ export const useAdminBreedings = (): UseAdminBreedingsReturn => {
     breedings,
     isLoading,
     error,
-    refreshBreedings: fetchBreedings
+    refreshBreedings: fetchBreedings,
   }
 }

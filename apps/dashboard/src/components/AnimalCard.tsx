@@ -1,16 +1,16 @@
 'use client'
 
+import React from 'react'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import {
   Animal,
   animal_icon,
   animal_stage_icons,
-  gender_icon,
+  animal_status_colors,
   animal_status_labels,
-  animal_status_colors
+  gender_icon,
 } from '@/types/animals'
-import React from 'react'
 import AdminActionIndicator from './AdminActionIndicator'
-import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { BadgeAnimalStatus } from './Badges/BadgeAnimalStatus'
 import { WeanedAnimal } from './WeanedAnimal'
 
@@ -80,9 +80,7 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
       <WeanedAnimal animal={animal} />
       {animal.notes && (
         <div className="mt-3 p-2 bg-gray-50 rounded text-sm text-gray-700">
-          {animal.notes.length > 60
-            ? `${animal.notes.substring(0, 60)}...`
-            : animal.notes}
+          {animal.notes.length > 60 ? `${animal.notes.substring(0, 60)}...` : animal.notes}
         </div>
       )}
       {/* Indicador de acción de admin */}
@@ -104,12 +102,9 @@ export const AnimalDetailRow: React.FC<{
     <div className="w-full flex flex-col space-y-1">
       <div className="flex justify-end"></div>
       <div className="flex items-center justify-between ">
-        <span className="font-bold text-xl text-nowrap p-0.5">
-          #{animal.animalNumber}
-        </span>
+        <span className="font-bold text-xl text-nowrap p-0.5">#{animal.animalNumber}</span>
         <div className="text-xs text-gray-500">
-          {animal.type || 'Sin nombre'} {animal?.breed || ''} {animal.gender}{' '}
-          {animal.stage}
+          {animal.type || 'Sin nombre'} {animal?.breed || ''} {animal.gender} {animal.stage}
         </div>
         <div className="flex items-center space-x-3">
           <div>

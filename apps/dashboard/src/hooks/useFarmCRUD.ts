@@ -1,46 +1,47 @@
 'use client'
-import { useSelector, useDispatch } from 'react-redux'
-import { RootState, AppDispatch } from '@/features/store'
 import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
   addDoc,
-  updateDoc,
-  deleteDoc,
-  arrayUnion,
   arrayRemove,
-  Timestamp
+  arrayUnion,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  query,
+  Timestamp,
+  updateDoc,
+  where,
 } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
-import { Farm, FarmArea } from '@/types/farm'
+import { useDispatch, useSelector } from 'react-redux'
 import {
-  setLoading,
-  setError,
-  setFarms,
-  setMyFarms,
-  setInvitationFarms,
+  addAreaToFarm,
+  addCollaboratorToFarm,
   addFarm,
-  updateFarm as updateFarmState,
+  removeAreaFromFarm,
+  removeCollaboratorFromFarm,
   removeFarm,
   setCurrentFarm,
-  addAreaToFarm,
+  setError,
+  setFarms,
+  setInvitationFarms,
+  setLoading,
+  setMyFarms,
   updateAreaInFarm,
-  removeAreaFromFarm,
-  addCollaboratorToFarm,
   updateCollaboratorInFarm,
-  removeCollaboratorFromFarm
+  updateFarm as updateFarmState,
 } from '@/features/farm/farmSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
+import { AppDispatch, RootState } from '@/features/store'
+import { db } from '@/lib/firebase'
 import { FarmCollaborator } from '@/types/collaborators'
+import { Farm, FarmArea } from '@/types/farm'
 
 export const useFarmCRUD = () => {
   const dispatch = useDispatch<AppDispatch>()
   const { user } = useSelector((state: RootState) => state.auth)
-  const { farms, currentFarm, isLoading, error, myFarms, invitationFarms } =
-    useSelector((state: RootState) => state.farm)
+  const { farms, currentFarm, isLoading, error, myFarms, invitationFarms } = useSelector(
+    (state: RootState) => state.farm,
+  )
   // Cargar granjas del usuario
   const loadUserFarms = async () => {
     if (!user) {
@@ -54,10 +55,7 @@ export const useFarmCRUD = () => {
 
     try {
       // 1) Granjas donde es propietario
-      const ownerQuery = query(
-        collection(db, 'farms'),
-        where('ownerId', '==', user.id)
-      )
+      const ownerQuery = query(collection(db, 'farms'), where('ownerId', '==', user.id))
       const ownerSnapshot = await getDocs(ownerQuery)
       const ownerFarms = ownerSnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -65,17 +63,17 @@ export const useFarmCRUD = () => {
         areas: doc.data().areas || [],
         collaborators: doc.data().collaborators || [],
         createdAt: doc.data().createdAt?.toDate() || new Date(),
-        updatedAt: doc.data().updatedAt?.toDate() || new Date()
+        updatedAt: doc.data().updatedAt?.toDate() || new Date(),
       })) as Farm[]
       // 2) Invitaciones (aceptadas o pendientes) para el email del usuario
       const invitationsQuery = query(
         collection(db, 'farmInvitations'),
-        where('email', '==', user.email)
+        where('email', '==', user.email),
       )
       const invitationsSnap = await getDocs(invitationsQuery)
       const invitations = invitationsSnap.docs.map((d) => ({
         id: d.id,
-        ...(d.data() as any)
+        ...(d.data() as any),
       })) as any[]
 
       // Solo podemos leer farms de invitaciones aceptadas; las pendientes/revoked no tienen permiso de lectura
@@ -84,8 +82,8 @@ export const useFarmCRUD = () => {
           invitations
             .filter((d) => d.status === 'accepted')
             .map((d) => d.farmId)
-            .filter(Boolean)
-        )
+            .filter(Boolean),
+        ),
       ) as string[]
 
       let memberFarms: Farm[] = []
@@ -96,10 +94,7 @@ export const useFarmCRUD = () => {
         }
         const batchResults = await Promise.all(
           batches.map(async (ids) => {
-            const qFarms = query(
-              collection(db, 'farms'),
-              where('__name__', 'in', ids as any)
-            )
+            const qFarms = query(collection(db, 'farms'), where('__name__', 'in', ids as any))
             const snap = await getDocs(qFarms)
             return snap.docs.map((doc) => ({
               id: doc.id,
@@ -107,9 +102,9 @@ export const useFarmCRUD = () => {
               areas: doc.data().areas || [],
               collaborators: doc.data().collaborators || [],
               createdAt: doc.data().createdAt?.toDate() || new Date(),
-              updatedAt: doc.data().updatedAt?.toDate() || new Date()
+              updatedAt: doc.data().updatedAt?.toDate() || new Date(),
             })) as Farm[]
-          })
+          }),
         )
         memberFarms = batchResults.flat()
       }
@@ -118,8 +113,7 @@ export const useFarmCRUD = () => {
       const invitationByFarm = new Map<string, any[]>()
       invitations.forEach((inv) => {
         if (!inv.farmId) return
-        if (!invitationByFarm.has(inv.farmId))
-          invitationByFarm.set(inv.farmId, [])
+        if (!invitationByFarm.has(inv.farmId)) invitationByFarm.set(inv.farmId, [])
         invitationByFarm.get(inv.farmId)!.push(inv)
       })
 
@@ -133,8 +127,8 @@ export const useFarmCRUD = () => {
             invitationMeta: {
               invitationId: chosen.id,
               status: chosen.status,
-              role: chosen.role
-            }
+              role: chosen.role,
+            },
           }
         }
         return f
@@ -142,7 +136,9 @@ export const useFarmCRUD = () => {
 
       // 3) Unificar y deduplicar por id
       const byId = new Map<string, Farm>()
-      ;[...memberFarms, ...ownerFarms].forEach((f) => byId.set(f.id, f))
+      for (const f of [...memberFarms, ...ownerFarms]) {
+        byId.set(f.id, f)
+      }
       const allFarms = Array.from(byId.values())
       dispatch(serializeObj(setMyFarms(ownerFarms)))
       dispatch(serializeObj(setInvitationFarms(memberFarms)))
@@ -171,10 +167,7 @@ export const useFarmCRUD = () => {
 
   // Crear nueva granja
   const createFarm = async (
-    farmData: Omit<
-      Farm,
-      'id' | 'ownerId' | 'areas' | 'collaborators' | 'createdAt' | 'updatedAt'
-    >
+    farmData: Omit<Farm, 'id' | 'ownerId' | 'areas' | 'collaborators' | 'createdAt' | 'updatedAt'>,
   ) => {
     if (!user) throw new Error('Usuario no autenticado')
 
@@ -186,7 +179,7 @@ export const useFarmCRUD = () => {
       collaboratorsIds: [],
       collaboratorsEmails: [],
       createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     }
 
     try {
@@ -200,7 +193,7 @@ export const useFarmCRUD = () => {
         // Los siguientes arrays no forman parte del tipo Farm actual, pero existen en Firestore para reglas.
         // Se mantienen fuera del tipo para no romper UI; son usados solo por reglas.
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       }
 
       dispatch(serializeObj(addFarm(createdFarm)))
@@ -215,13 +208,13 @@ export const useFarmCRUD = () => {
   // Actualizar granja
   const updateFarm = async (
     farmId: string,
-    updates: Partial<Omit<Farm, 'id' | 'ownerId' | 'createdAt'>>
+    updates: Partial<Omit<Farm, 'id' | 'ownerId' | 'createdAt'>>,
   ) => {
     try {
       const farmRef = doc(db, 'farms', farmId)
       const updateData = {
         ...updates,
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       }
 
       await updateDoc(farmRef, updateData)
@@ -229,9 +222,9 @@ export const useFarmCRUD = () => {
         serializeObj(
           updateFarmState({
             id: farmId,
-            updates: { ...updates, updatedAt: new Date() }
-          })
-        )
+            updates: { ...updates, updatedAt: new Date() },
+          }),
+        ),
       )
     } catch (error) {
       console.error('Error updating farm:', error)
@@ -280,8 +273,8 @@ export const useFarmCRUD = () => {
         query(
           collection(db, 'farms'),
           where('__name__', '==', farmId),
-          where('ownerId', '==', user.id)
-        )
+          where('ownerId', '==', user.id),
+        ),
       )
       let hasAccess = !ownerCheck.empty
       if (!hasAccess) {
@@ -291,20 +284,16 @@ export const useFarmCRUD = () => {
             collection(db, 'farmInvitations'),
             where('farmId', '==', farmId),
             where('userId', '==', user.id),
-            where('status', '==', 'accepted')
-          )
+            where('status', '==', 'accepted'),
+          ),
         )
         hasAccess = !invSnap.empty
         if (!hasAccess) {
-          throw new Error(
-            'Debes aceptar la invitación antes de acceder a esta granja'
-          )
+          throw new Error('Debes aceptar la invitación antes de acceder a esta granja')
         }
       }
 
-      const farmDoc = await getDocs(
-        query(collection(db, 'farms'), where('__name__', '==', farmId))
-      )
+      const farmDoc = await getDocs(query(collection(db, 'farms'), where('__name__', '==', farmId)))
       if (farmDoc.empty) throw new Error('Granja no encontrada')
       const d = farmDoc.docs[0]
       const farm = {
@@ -313,7 +302,7 @@ export const useFarmCRUD = () => {
         areas: d.data().areas || [],
         collaborators: d.data().collaborators || [],
         createdAt: d.data().createdAt?.toDate() || new Date(),
-        updatedAt: d.data().updatedAt?.toDate() || new Date()
+        updatedAt: d.data().updatedAt?.toDate() || new Date(),
       } as Farm
 
       // Añadir y seleccionar
@@ -331,21 +320,21 @@ export const useFarmCRUD = () => {
   // Crear nueva área
   const createArea = async (
     farmId: string,
-    areaData: Omit<FarmArea, 'id' | 'farmId' | 'createdAt' | 'updatedAt'>
+    areaData: Omit<FarmArea, 'id' | 'farmId' | 'createdAt' | 'updatedAt'>,
   ) => {
     const newArea: FarmArea = {
       id: `area_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       farmId,
       ...areaData,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     }
 
     try {
       const farmRef = doc(db, 'farms', farmId)
       await updateDoc(farmRef, {
         areas: arrayUnion(newArea),
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       })
 
       dispatch(serializeObj(addAreaToFarm({ farmId, area: newArea })))
@@ -358,11 +347,7 @@ export const useFarmCRUD = () => {
   }
 
   // Actualizar área
-  const updateArea = async (
-    farmId: string,
-    areaId: string,
-    updates: Partial<FarmArea>
-  ) => {
+  const updateArea = async (farmId: string, areaId: string, updates: Partial<FarmArea>) => {
     try {
       const farm = farms.find((f) => f.id === farmId)
       if (!farm) throw new Error('Granja no encontrada')
@@ -374,21 +359,21 @@ export const useFarmCRUD = () => {
       updatedAreas[areaIndex] = {
         ...updatedAreas[areaIndex],
         ...updates,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       }
 
       const farmRef = doc(db, 'farms', farmId)
       await updateDoc(farmRef, {
         areas: updatedAreas,
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       })
 
       dispatch(
         updateAreaInFarm({
           farmId,
           areaId,
-          updates: { ...updates, updatedAt: new Date() }
-        })
+          updates: { ...updates, updatedAt: new Date() },
+        }),
       )
     } catch (error) {
       console.error('Error updating area:', error)
@@ -410,7 +395,7 @@ export const useFarmCRUD = () => {
       const farmRef = doc(db, 'farms', farmId)
       await updateDoc(farmRef, {
         areas: arrayRemove(areaToRemove),
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       })
 
       dispatch(removeAreaFromFarm({ farmId, areaId }))
@@ -426,26 +411,21 @@ export const useFarmCRUD = () => {
   // Agregar colaborador
   const addCollaborator = async (
     farmId: string,
-    collaboratorData: Omit<
-      FarmCollaborator,
-      'id' | 'farmId' | 'createdAt' | 'updatedAt'
-    >
+    collaboratorData: Omit<FarmCollaborator, 'id' | 'farmId' | 'createdAt' | 'updatedAt'>,
   ) => {
     const newCollaborator: FarmCollaborator = {
-      id: `collaborator_${Date.now()}_${Math.random()
-        .toString(36)
-        .substr(2, 9)}`,
+      id: `collaborator_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       farmId,
       ...collaboratorData,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     }
 
     try {
       const farmRef = doc(db, 'farms', farmId)
       await updateDoc(farmRef, {
         collaborators: arrayUnion(newCollaborator),
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       })
 
       dispatch(addCollaboratorToFarm({ farmId, collaborator: newCollaborator }))
@@ -461,37 +441,34 @@ export const useFarmCRUD = () => {
   const updateCollaborator = async (
     farmId: string,
     collaboratorId: string,
-    updates: Partial<FarmCollaborator>
+    updates: Partial<FarmCollaborator>,
   ) => {
     try {
       const farm = farms.find((f) => f.id === farmId)
-      if (!farm?.collaborators)
-        throw new Error('Granja o colaboradores no encontrados')
+      if (!farm?.collaborators) throw new Error('Granja o colaboradores no encontrados')
 
-      const collaboratorIndex = farm.collaborators.findIndex(
-        (c) => c.id === collaboratorId
-      )
+      const collaboratorIndex = farm.collaborators.findIndex((c) => c.id === collaboratorId)
       if (collaboratorIndex === -1) throw new Error('Colaborador no encontrado')
 
       const updatedCollaborators = [...farm.collaborators]
       updatedCollaborators[collaboratorIndex] = {
         ...updatedCollaborators[collaboratorIndex],
         ...updates,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       }
 
       const farmRef = doc(db, 'farms', farmId)
       await updateDoc(farmRef, {
         collaborators: updatedCollaborators,
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       })
 
       dispatch(
         updateCollaboratorInFarm({
           farmId,
           collaboratorId,
-          updates: { ...updates, updatedAt: new Date() }
-        })
+          updates: { ...updates, updatedAt: new Date() },
+        }),
       )
     } catch (error) {
       console.error('Error updating collaborator:', error)
@@ -504,18 +481,15 @@ export const useFarmCRUD = () => {
   const removeCollaborator = async (farmId: string, collaboratorId: string) => {
     try {
       const farm = farms.find((f) => f.id === farmId)
-      if (!farm?.collaborators)
-        throw new Error('Granja o colaboradores no encontrados')
+      if (!farm?.collaborators) throw new Error('Granja o colaboradores no encontrados')
 
-      const collaboratorToRemove = farm.collaborators.find(
-        (c) => c.id === collaboratorId
-      )
+      const collaboratorToRemove = farm.collaborators.find((c) => c.id === collaboratorId)
       if (!collaboratorToRemove) throw new Error('Colaborador no encontrado')
 
       const farmRef = doc(db, 'farms', farmId)
       await updateDoc(farmRef, {
         collaborators: arrayRemove(collaboratorToRemove),
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       })
 
       dispatch(removeCollaboratorFromFarm({ farmId, collaboratorId }))
@@ -535,7 +509,7 @@ export const useFarmCRUD = () => {
       total: farmAreas.length,
       active: farmAreas.filter((a) => a.isActive).length,
       inactive: farmAreas.filter((a) => !a.isActive).length,
-      byType: {} as Record<string, number>
+      byType: {} as Record<string, number>,
     }
 
     farmAreas.forEach((area) => {
@@ -555,12 +529,11 @@ export const useFarmCRUD = () => {
     const stats = {
       total: activeCollaborators.length,
       active: activeCollaborators.length,
-      byRole: {} as Record<string, number>
+      byRole: {} as Record<string, number>,
     }
 
     activeCollaborators.forEach((collaborator) => {
-      stats.byRole[collaborator.role] =
-        (stats.byRole[collaborator.role] || 0) + 1
+      stats.byRole[collaborator.role] = (stats.byRole[collaborator.role] || 0) + 1
     })
 
     return stats
@@ -596,6 +569,6 @@ export const useFarmCRUD = () => {
 
     // Utilidades
     getAreaStats,
-    getCollaboratorStats
+    getCollaboratorStats,
   }
 }

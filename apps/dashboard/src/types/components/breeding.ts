@@ -9,6 +9,6 @@ export type BreedingActionHandlers = {
   onAddBirth?: (record: BreedingRecord, femaleId: string) => void
   onAddComment?: (
     record: BreedingRecord,
-    comment: NewCommentInput
+    comment: NewCommentInput,
   ) => Promise<Comment | void> | Comment | void
 }

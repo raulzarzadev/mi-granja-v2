@@ -9,10 +9,10 @@
 
 import React from 'react'
 import { Modal } from '@/components/Modal'
-import { useModal } from '@/hooks/useModal'
-import ModalBreedingForm from '@/components/ModalBreedingForm'
 import ModalAnimalForm from '@/components/ModalAnimalForm'
+import ModalBreedingForm from '@/components/ModalBreedingForm'
 import ModalReminderForm from '@/components/ModalReminderForm'
+import { useModal } from '@/hooks/useModal'
 
 // Ejemplo 1: Modal simple con hook
 export const ExampleSimpleModal = () => {
@@ -27,12 +27,7 @@ export const ExampleSimpleModal = () => {
         Abrir Modal Simple
       </button>
 
-      <Modal
-        isOpen={isOpen}
-        onClose={closeModal}
-        title="Modal Simple"
-        size="md"
-      >
+      <Modal isOpen={isOpen} onClose={closeModal} title="Modal Simple" size="md">
         <div className="p-6">
           <p className="text-gray-600 mb-4">
             Este es un ejemplo de modal simple con título y contenido básico.
@@ -77,8 +72,7 @@ export const ExampleConfirmModal = () => {
       >
         <div className="p-6">
           <p className="text-gray-600 mb-6">
-            ¿Estás seguro de que quieres eliminar este elemento? Esta acción no
-            se puede deshacer.
+            ¿Estás seguro de que quieres eliminar este elemento? Esta acción no se puede deshacer.
           </p>
           <div className="flex gap-3 justify-end">
             <button
@@ -120,18 +114,11 @@ export const ExampleFormModal = () => {
         Nuevo Usuario
       </button>
 
-      <Modal
-        isOpen={isOpen}
-        onClose={closeModal}
-        title="Crear Nuevo Usuario"
-        size="lg"
-      >
+      <Modal isOpen={isOpen} onClose={closeModal} title="Crear Nuevo Usuario" size="lg">
         <form onSubmit={handleSubmit}>
           <div className="p-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
               <input
                 type="text"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -139,9 +126,7 @@ export const ExampleFormModal = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
                 type="email"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -192,12 +177,10 @@ export const ExampleFullModal = () => {
       >
         <div className="p-8 h-full flex items-center justify-center">
           <div className="text-center">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Modal de Tamaño Completo
-            </h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Modal de Tamaño Completo</h3>
             <p className="text-gray-600 mb-6">
-              Este modal ocupa casi toda la pantalla y es útil para vistas
-              detalladas o formularios complejos.
+              Este modal ocupa casi toda la pantalla y es útil para vistas detalladas o formularios
+              complejos.
             </p>
             <button
               onClick={closeModal}
@@ -236,7 +219,7 @@ export const ExampleModalAnimalForm = () => {
           gender: 'hembra',
           birthDate: new Date('2021-01-15'),
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         }}
       />
     </div>

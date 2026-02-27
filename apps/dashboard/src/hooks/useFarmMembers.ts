@@ -1,31 +1,31 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import {
+  addDoc,
+  arrayRemove,
+  arrayUnion,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  onSnapshot,
+  query,
+  Timestamp,
+  updateDoc,
+  where,
+} from 'firebase/firestore'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  addDoc,
-  doc,
-  updateDoc,
-  deleteDoc,
-  Timestamp,
-  onSnapshot,
-  arrayUnion,
-  arrayRemove
-} from 'firebase/firestore'
+import { useEmail } from '@/hooks/useEmail'
+import { toDate } from '@/lib/dates'
 import { db } from '@/lib/firebase'
-import { FarmInvitation, FarmPermission } from '@/types/farm'
 import {
   collaborator_roles_label,
   DEFAULT_PERMISSIONS,
-  FarmCollaborator
+  FarmCollaborator,
 } from '@/types/collaborators'
-import { toDate } from '@/lib/dates'
-import { useEmail } from '@/hooks/useEmail'
+import { FarmInvitation, FarmPermission } from '@/types/farm'
 
 /**
  * Hook unificado: miembros de la granja basados exclusivamente en farmInvitations
@@ -46,10 +46,7 @@ export const useFarmMembers = (farmId?: string) => {
       return
     }
     try {
-      const qInv = query(
-        collection(db, 'farmInvitations'),
-        where('farmId', '==', farmId)
-      )
+      const qInv = query(collection(db, 'farmInvitations'), where('farmId', '==', farmId))
       const snap = await getDocs(qInv)
       const data = snap.docs.map((d) => {
         const v = d.data() as any
@@ -59,7 +56,7 @@ export const useFarmMembers = (farmId?: string) => {
           expiresAt: toDate(v.expiresAt),
           createdAt: toDate(v.createdAt),
           updatedAt: toDate(v.updatedAt),
-          acceptedAt: v.acceptedAt ? toDate(v.acceptedAt) : undefined
+          acceptedAt: v.acceptedAt ? toDate(v.acceptedAt) : undefined,
         } as FarmInvitation
       })
       setInvitations(data)
@@ -77,10 +74,7 @@ export const useFarmMembers = (farmId?: string) => {
     }
     setIsLoading(true)
     setError(null)
-    const qInv = query(
-      collection(db, 'farmInvitations'),
-      where('farmId', '==', farmId)
-    )
+    const qInv = query(collection(db, 'farmInvitations'), where('farmId', '==', farmId))
     const unsub = onSnapshot(
       qInv,
       (snap) => {
@@ -92,7 +86,7 @@ export const useFarmMembers = (farmId?: string) => {
             expiresAt: toDate(v.expiresAt),
             createdAt: toDate(v.createdAt),
             updatedAt: toDate(v.updatedAt),
-            acceptedAt: v.acceptedAt ? toDate(v.acceptedAt) : undefined
+            acceptedAt: v.acceptedAt ? toDate(v.acceptedAt) : undefined,
           } as FarmInvitation
         })
         setInvitations(data)
@@ -102,7 +96,7 @@ export const useFarmMembers = (farmId?: string) => {
         console.error('Error realtime farm members', err)
         setError('Error en tiempo real')
         setIsLoading(false)
-      }
+      },
     )
     return () => unsub()
   }, [farmId])
@@ -115,9 +109,7 @@ export const useFarmMembers = (farmId?: string) => {
       // los permisos funcionen correctamente.
       const resolvedUserId =
         (i as any).userId ||
-        (i.status === 'accepted' && user?.email && user.email === i.email
-          ? user.id
-          : i.email)
+        (i.status === 'accepted' && user?.email && user.email === i.email ? user.id : i.email)
 
       return {
         id: i.id,
@@ -140,8 +132,8 @@ export const useFarmMembers = (farmId?: string) => {
           invitedBy: i.invitedBy,
           invitedByEmail: (i as any).invitedByEmail,
           invitedAt: i.createdAt,
-          acceptedAt: (i as any).acceptedAt
-        }
+          acceptedAt: (i as any).acceptedAt,
+        },
       }
     })
   }, [invitations, user])
@@ -155,14 +147,14 @@ export const useFarmMembers = (farmId?: string) => {
         { module: 'breeding', actions: ['create', 'read', 'update', 'delete'] },
         {
           module: 'reminders',
-          actions: ['create', 'read', 'update', 'delete']
+          actions: ['create', 'read', 'update', 'delete'],
         },
         { module: 'areas', actions: ['create', 'read', 'update', 'delete'] },
         {
           module: 'collaborators',
-          actions: ['create', 'read', 'update', 'delete']
+          actions: ['create', 'read', 'update', 'delete'],
         },
-        { module: 'reports', actions: ['create', 'read', 'update', 'delete'] }
+        { module: 'reports', actions: ['create', 'read', 'update', 'delete'] },
       ] as FarmPermission[]
     }
     const me = collaborators.find((c) => c.userId === user.id && c.isActive)
@@ -173,9 +165,7 @@ export const useFarmMembers = (farmId?: string) => {
   const hasPermissions = useCallback(
     (
       module: FarmPermission['module'],
-      required:
-        | FarmPermission['actions'][number]
-        | FarmPermission['actions'][number][]
+      required: FarmPermission['actions'][number] | FarmPermission['actions'][number][],
     ) => {
       // Owner siempre true
       if (currentFarm && user && currentFarm.ownerId === user.id) return true
@@ -186,12 +176,10 @@ export const useFarmMembers = (farmId?: string) => {
 
       const requiredArr = Array.isArray(required) ? required : [required]
       return requiredArr.every((act) =>
-        myEffectivePermissions.some(
-          (p) => p.module === module && p.actions.includes(act)
-        )
+        myEffectivePermissions.some((p) => p.module === module && p.actions.includes(act)),
       )
     },
-    [currentFarm, user, collaborators, myEffectivePermissions]
+    [currentFarm, user, collaborators, myEffectivePermissions],
   )
 
   const pendingInvitations = invitations.filter((i) => i.status === 'pending')
@@ -201,7 +189,7 @@ export const useFarmMembers = (farmId?: string) => {
   const inviteCollaborator = async (
     email: string,
     role: FarmCollaborator['role'],
-    invitedBy: string
+    invitedBy: string,
   ) => {
     if (!farmId) throw new Error('ID de granja requerido')
 
@@ -215,12 +203,10 @@ export const useFarmMembers = (farmId?: string) => {
       permissions: DEFAULT_PERMISSIONS[role],
       invitedBy,
       status: 'pending',
-      token: `${farmId}_${Date.now()}_${Math.random()
-        .toString(36)
-        .slice(2, 10)}`,
+      token: `${farmId}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
       expiresAt: Timestamp.fromDate(expiresAt),
       createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     }
     const ref = await addDoc(collection(db, 'farmInvitations'), docData)
     const created = {
@@ -228,7 +214,7 @@ export const useFarmMembers = (farmId?: string) => {
       ...docData,
       expiresAt,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     } as any
     setInvitations((prev) => [...prev, created])
     await sendInvitationEmail({
@@ -236,7 +222,7 @@ export const useFarmMembers = (farmId?: string) => {
       role: docData.role,
       expiresAt: toDate(docData.expiresAt),
       farmId: docData.farmId,
-      email: docData.email
+      email: docData.email,
     })
     return created
   }
@@ -249,7 +235,7 @@ export const useFarmMembers = (farmId?: string) => {
       status: 'accepted',
       userId,
       acceptedAt: now,
-      updatedAt: now
+      updatedAt: now,
     })
     // Añadir a arrays de la granja para validación por reglas
     try {
@@ -258,9 +244,7 @@ export const useFarmMembers = (farmId?: string) => {
         const farmRef = doc(db, 'farms', inv.farmId)
         await updateDoc(farmRef, {
           collaboratorsIds: arrayUnion(userId),
-          ...(inv.email
-            ? { collaboratorsEmails: arrayUnion(inv.email.toLowerCase()) }
-            : {})
+          ...(inv.email ? { collaboratorsEmails: arrayUnion(inv.email.toLowerCase()) } : {}),
         })
       }
     } catch (e) {
@@ -274,10 +258,10 @@ export const useFarmMembers = (farmId?: string) => {
               status: 'accepted',
               userId,
               acceptedAt: new Date(),
-              updatedAt: new Date()
+              updatedAt: new Date(),
             }
-          : i
-      )
+          : i,
+      ),
     )
   }
 
@@ -287,10 +271,8 @@ export const useFarmMembers = (farmId?: string) => {
     await updateDoc(ref, { status: 'rejected', updatedAt: Timestamp.now() })
     setInvitations((prev) =>
       prev.map((i) =>
-        i.id === invitationId
-          ? { ...i, status: 'rejected', updatedAt: new Date() }
-          : i
-      )
+        i.id === invitationId ? { ...i, status: 'rejected', updatedAt: new Date() } : i,
+      ),
     )
   }
 
@@ -309,9 +291,7 @@ export const useFarmMembers = (farmId?: string) => {
         const farmRef = doc(db, 'farms', inv.farmId)
         await updateDoc(farmRef, {
           collaboratorsIds: arrayRemove((inv as any).userId),
-          ...(inv.email
-            ? { collaboratorsEmails: arrayRemove(inv.email.toLowerCase()) }
-            : {})
+          ...(inv.email ? { collaboratorsEmails: arrayRemove(inv.email.toLowerCase()) } : {}),
         })
       }
     } catch (e) {
@@ -319,10 +299,8 @@ export const useFarmMembers = (farmId?: string) => {
     }
     setInvitations((prev) =>
       prev.map((i) =>
-        i.id === invitationId
-          ? { ...i, status: 'revoked', updatedAt: new Date() }
-          : i
-      )
+        i.id === invitationId ? { ...i, status: 'revoked', updatedAt: new Date() } : i,
+      ),
     )
   }
 
@@ -339,16 +317,11 @@ export const useFarmMembers = (farmId?: string) => {
         const farmRef = doc(db, 'farms', inv.farmId)
         await updateDoc(farmRef, {
           collaboratorsIds: arrayRemove((inv as any).userId),
-          ...(inv.email
-            ? { collaboratorsEmails: arrayRemove(inv.email.toLowerCase()) }
-            : {})
+          ...(inv.email ? { collaboratorsEmails: arrayRemove(inv.email.toLowerCase()) } : {}),
         })
       }
     } catch (e) {
-      console.warn(
-        'No se pudo limpiar arrays de farm al eliminar invitación:',
-        e
-      )
+      console.warn('No se pudo limpiar arrays de farm al eliminar invitación:', e)
     }
     await deleteDoc(doc(db, 'farmInvitations', invitationId))
     setInvitations((prev) => prev.filter((i) => i.id !== invitationId))
@@ -361,7 +334,7 @@ export const useFarmMembers = (farmId?: string) => {
       role: FarmCollaborator['role']
       isActive: boolean
       notes: string | null
-    }>
+    }>,
   ) => {
     const inv = invitations.find((i) => i.id === invitationId)
     if (!inv) throw new Error('Invitación no encontrada')
@@ -386,37 +359,26 @@ export const useFarmMembers = (farmId?: string) => {
           // Activado -> accepted
           await updateDoc(farmRef, {
             ...(userId ? { collaboratorsIds: arrayUnion(userId) } : {}),
-            ...(email ? { collaboratorsEmails: arrayUnion(email) } : {})
+            ...(email ? { collaboratorsEmails: arrayUnion(email) } : {}),
           })
         } else {
           // Desactivado -> revoked
           await updateDoc(farmRef, {
             ...(userId ? { collaboratorsIds: arrayRemove(userId) } : {}),
-            ...(email ? { collaboratorsEmails: arrayRemove(email) } : {})
+            ...(email ? { collaboratorsEmails: arrayRemove(email) } : {}),
           })
         }
       }
     } catch (e) {
-      console.warn(
-        'No se pudo sincronizar arrays de farm tras update colaborador:',
-        e
-      )
+      console.warn('No se pudo sincronizar arrays de farm tras update colaborador:', e)
     }
 
     setInvitations((prev) =>
-      prev.map((i) =>
-        i.id === invitationId
-          ? { ...i, ...updateData, updatedAt: new Date() }
-          : i
-      )
+      prev.map((i) => (i.id === invitationId ? { ...i, ...updateData, updatedAt: new Date() } : i)),
     )
   }
 
-  const resendInvitation = async ({
-    invitationId
-  }: {
-    invitationId: string
-  }) => {
+  const resendInvitation = async ({ invitationId }: { invitationId: string }) => {
     const inv = invitations.find((i) => i.id === invitationId)
     if (!inv) throw new Error('Invitación no encontrada')
     if (inv.status !== 'pending') {
@@ -427,22 +389,25 @@ export const useFarmMembers = (farmId?: string) => {
       role: inv.role,
       expiresAt: toDate(inv.expiresAt),
       farmId: inv.farmId,
-      email: inv.email
+      email: inv.email,
     })
   }
 
   const getCollaboratorStats = () => {
     const active = collaborators
     const pending = pendingInvitations
-    const byRole = active.reduce((acc, c) => {
-      acc[c.role] = (acc[c.role] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
+    const byRole = active.reduce(
+      (acc, c) => {
+        acc[c.role] = (acc[c.role] || 0) + 1
+        return acc
+      },
+      {} as Record<string, number>,
+    )
 
     return {
       total: active.length,
       pending: pending.length,
-      byRole
+      byRole,
     }
   }
 
@@ -451,7 +416,7 @@ export const useFarmMembers = (farmId?: string) => {
     role,
     expiresAt,
     farmId,
-    email
+    email,
   }: {
     token: string
     role: FarmCollaborator['role']
@@ -463,14 +428,12 @@ export const useFarmMembers = (farmId?: string) => {
     try {
       const appUrl =
         process.env.NEXT_PUBLIC_APP_URL ||
-        (typeof window !== 'undefined'
-          ? window.location.origin
-          : 'http://localhost:3000')
+        (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
       const acceptUrl = `${appUrl}/invitations/confirm?token=${encodeURIComponent(
-        token
+        token,
       )}&action=accept`
       const rejectUrl = `${appUrl}/invitations/confirm?token=${encodeURIComponent(
-        token
+        token,
       )}&action=reject`
 
       await sendEmail({
@@ -497,8 +460,8 @@ export const useFarmMembers = (farmId?: string) => {
         }. Acepta: ${acceptUrl} | Rechaza: ${rejectUrl}`,
         tags: [
           { name: 'type', value: 'invitation' },
-          { name: 'farm_id', value: farmId }
-        ]
+          { name: 'farm_id', value: farmId },
+        ],
       })
     } catch (e) {
       console.warn('Fallo al enviar email de invitación (continuando):', e)
@@ -524,6 +487,6 @@ export const useFarmMembers = (farmId?: string) => {
 
     // Utilidades
     getCollaboratorStats,
-    refresh: load
+    refresh: load,
   }
 }

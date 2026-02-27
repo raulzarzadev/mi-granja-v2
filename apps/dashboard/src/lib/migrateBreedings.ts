@@ -7,7 +7,7 @@ export const migrateBreedings = async () => {
   const query = await getDocs(collection(db, COLLECTION_NAME))
   const breedings = query.docs.map((doc) => ({
     id: doc.id,
-    ...doc.data()
+    ...doc.data(),
   }))
 
   console.log(' breedings', breedings)

@@ -5,32 +5,30 @@ import { Providers } from './providers'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
-  subsets: ['latin']
+  subsets: ['latin'],
 })
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
-  subsets: ['latin']
+  subsets: ['latin'],
 })
 
 export const metadata: Metadata = {
   title: 'Mi Granja - Gestión de Ganado',
   description: 'Aplicación para gestionar tu ganado de manera eficiente',
   icons: {
-    icon: [{ url: '/logo/logo-migranja-verde.svg', type: 'image/svg+xml' }]
-  }
+    icon: [{ url: '/logo/logo-migranja-verde.svg', type: 'image/svg+xml' }],
+  },
 }
 
 export default function RootLayout({
-  children
+  children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
     <html lang="es">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}>
         <Providers>{children}</Providers>
       </body>
     </html>

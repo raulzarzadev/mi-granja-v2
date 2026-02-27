@@ -1,17 +1,17 @@
 'use client'
 
 import React from 'react'
-import { Modal } from './Modal'
-import BreedingForm from './BreedingForm'
-import { BreedingRecord } from '@/types/breedings'
 import { Animal } from '@/types/animals'
+import { BreedingRecord } from '@/types/breedings'
+import BreedingForm from './BreedingForm'
+import { Modal } from './Modal'
 
 interface ModalEditBreedingProps {
   animals: Animal[]
   record: BreedingRecord | null
   onSubmit: (
     id: string,
-    data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
+    data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>,
   ) => Promise<void>
   onClose: () => void
   isLoading?: boolean
@@ -25,10 +25,10 @@ const ModalEditBreeding: React.FC<ModalEditBreedingProps> = ({
   record,
   onSubmit,
   onClose,
-  isLoading = false
+  isLoading = false,
 }) => {
   const handleSubmit = async (
-    data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
+    data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>,
   ) => {
     if (!record) return
 

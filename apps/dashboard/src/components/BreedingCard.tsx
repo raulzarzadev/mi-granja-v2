@@ -1,19 +1,18 @@
 'use client'
 
 import React, { useEffect } from 'react'
-
+import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
-import { Icon } from './Icon/icon'
-import { BreedingRecord } from '@/types/breedings'
+import catchError from '@/lib/catchError'
 import { formatDate, fromNow } from '@/lib/dates'
 import { Animal, AnimalBreedingStatus } from '@/types/animals'
-import ModalBreedingAnimalDetails from './ModalBreedingAnimalDetails'
+import { BreedingRecord } from '@/types/breedings'
+import { NewCommentInput } from '@/types/comment'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 import { BadgeAnimalStatus } from './Badges/BadgeAnimalStatus'
-import { NewCommentInput } from '@/types/comment'
 import { Comments } from './comments/modal-comments'
-import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
-import catchError from '@/lib/catchError'
+import { Icon } from './Icon/icon'
+import ModalBreedingAnimalDetails from './ModalBreedingAnimalDetails'
 
 interface BreedingCardProps extends BreedingActionHandlers {
   record: BreedingRecord
@@ -34,7 +33,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   onConfirmPregnancy,
   onUnconfirmPregnancy,
   onRemoveFromBreeding,
-  onDeleteBirth
+  onDeleteBirth,
 }) => {
   const { onAddComment, handleUpdateCommentUrgency } = useBreedingCRUD()
   // Manejar múltiples hembras
@@ -44,15 +43,13 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   const handleDelete = () => {
     if (
       window.confirm(
-        '¿Estás seguro de que quieres eliminar este registro de monta? Esta acción no se puede deshacer.'
+        '¿Estás seguro de que quieres eliminar este registro de monta? Esta acción no se puede deshacer.',
       )
     ) {
       onDelete?.(record)
     }
   }
-  const [recordComments, setRecordComments] = React.useState(
-    record.comments || []
-  )
+  const [recordComments, setRecordComments] = React.useState(record.comments || [])
 
   useEffect(() => {
     setRecordComments(record.comments || [])
@@ -69,20 +66,18 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   const getFemaleStatuses = () => {
     //TODO: los estados son , Monta en proceso, no. de partos, no. de embarazos confirmados,
     // algo asi Monta en proceso. Partos:2 Embarazos:3 Pendientes: 1
-    const births = record.femaleBreedingInfo.filter(
-      (info) => info.actualBirthDate
-    ).length
+    const births = record.femaleBreedingInfo.filter((info) => info.actualBirthDate).length
     const pregnancies = record.femaleBreedingInfo.filter(
-      (info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate
+      (info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate,
     ).length
     const pending = record.femaleBreedingInfo.filter(
-      (info) => !info.pregnancyConfirmedDate && !info.actualBirthDate
+      (info) => !info.pregnancyConfirmedDate && !info.actualBirthDate,
     ).length
 
     return {
       births,
       pregnancies,
-      pending
+      pending,
     }
   }
 
@@ -117,16 +112,12 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
 
         // si hay embarazo confirmado, calcular desde esa fecha
         if (info.pregnancyConfirmedDate) {
-          const res = calculateExpectedBirthDate(
-            info.pregnancyConfirmedDate,
-            typeForCalc
-          )
+          const res = calculateExpectedBirthDate(info.pregnancyConfirmedDate, typeForCalc)
           return res
         }
 
         // si no hay confirmación, opcionalmente usar la fecha de monta
-        if (record.breedingDate)
-          return calculateExpectedBirthDate(record.breedingDate, typeForCalc)
+        if (record.breedingDate) return calculateExpectedBirthDate(record.breedingDate, typeForCalc)
 
         return null
       }
@@ -138,13 +129,11 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         pregnancyConfirmedDate: info.pregnancyConfirmedDate || null,
         expectedBirthDate: expected,
         actualBirthDate: info.actualBirthDate || null,
-        status
+        status,
       }
     }) || []
 
-  const offspring = record.femaleBreedingInfo
-    .map((info) => info.offspring || [])
-    .flat()
+  const offspring = record.femaleBreedingInfo.flatMap((info) => info.offspring || [])
 
   // Orden de hembras:
   // 1) En monta (pendiente de confirmación)
@@ -177,7 +166,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       switch (ga) {
         case 0: // monta: por número de animal asc para estabilidad
           return getAnimalNumber(a).localeCompare(getAnimalNumber(b), 'es', {
-            numeric: true
+            numeric: true,
           })
         case 1: // embarazada vencida: más vencida primero (fecha más antigua)
           if (a.expectedBirthDate && b.expectedBirthDate) {
@@ -226,9 +215,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                   className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2"
                   onClick={(event) => {
                     onEdit?.(record)
-                    event.currentTarget
-                      .closest('details')
-                      ?.removeAttribute('open')
+                    event.currentTarget.closest('details')?.removeAttribute('open')
                   }}
                 >
                   <Icon icon="edit" className="w-4 h-4 text-gray-500" />
@@ -243,9 +230,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                   className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2 text-red-600"
                   onClick={(event) => {
                     handleDelete()
-                    event.currentTarget
-                      .closest('details')
-                      ?.removeAttribute('open')
+                    event.currentTarget.closest('details')?.removeAttribute('open')
                   }}
                 >
                   <Icon icon="delete" className="w-4 h-4" />
@@ -287,9 +272,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       </div>
       <div className="flex items-center justify-between mb-3">
         <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-            femaleStatuses
-          )}`}
+          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(femaleStatuses)}`}
         >
           {femaleStatuses.births > 0 && (
             <span className="text-green-600">
@@ -336,9 +319,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
               triggerComponent={
                 <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md hover:bg-gray-100 cursor-pointer transition-colors">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-800">
-                      {male.animalNumber}
-                    </span>
+                    <span className="font-medium text-gray-800">{male.animalNumber}</span>
                     <span className="text-xs px-2 py-1 bg-gray-200 rounded-full text-gray-600">
                       {male.type}
                     </span>
@@ -361,16 +342,11 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
           </span>
           <span className="font-medium">
             Hembras
-            <span className="text-sm ">
-              ({femalesBreedingInfo.length || 0})
-            </span>
-            :
+            <span className="text-sm ">({femalesBreedingInfo.length || 0})</span>:
           </span>
         </div>
         {femalesBreedingInfo.length === 0 && (
-          <p className="text-sm text-gray-500 mb-2">
-            No hay hembras involucradas
-          </p>
+          <p className="text-sm text-gray-500 mb-2">No hay hembras involucradas</p>
         )}
         <div className="ml-6 mb-2 space-y-2 max-h-60 overflow-y-scroll pr-2 female-list">
           {sortedFemales.map((femaleAnimal) => {
@@ -403,19 +379,16 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                         {femaleAnimal.status === 'embarazada' && (
                           <div className="flex items-center gap-2">
                             <div className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                              <span className="text-xs font-medium text-blue-800">
-                                Parto{' '}
-                              </span>
+                              <span className="text-xs font-medium text-blue-800">Parto </span>
                               {fromNow(femaleAnimal.expectedBirthDate)}
                             </div>
                           </div>
                         )}
-                        {femaleAnimal.status === 'parida' &&
-                          femaleAnimal.actualBirthDate && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
-                              Parto: {formatDate(femaleAnimal.actualBirthDate)}
-                            </span>
-                          )}
+                        {femaleAnimal.status === 'parida' && femaleAnimal.actualBirthDate && (
+                          <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+                            Parto: {formatDate(femaleAnimal.actualBirthDate)}
+                          </span>
+                        )}
                       </div>
                       <Icon icon="view" className="w-4 h-4 text-gray-400" />
                     </div>
@@ -426,10 +399,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
               <AnimalNotFound
                 animalId={femaleAnimal.animalId || ''}
                 onDelete={async () => {
-                  return onRemoveFromBreeding?.(
-                    record,
-                    femaleAnimal.animalId || ''
-                  )
+                  return onRemoveFromBreeding?.(record, femaleAnimal.animalId || '')
                 }}
               />
             )
@@ -450,19 +420,12 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
 
           {/* Mostrar resumen por hembra que ya parió */}
           {record.femaleBreedingInfo
-            .filter(
-              (info) =>
-                info.actualBirthDate &&
-                info.offspring &&
-                info.offspring.length > 0
-            )
+            .filter((info) => info.actualBirthDate && info.offspring && info.offspring.length > 0)
             .map((info) => {
               const femaleAnimal = animals.find((a) => a.id === info.femaleId)
               return (
                 <div key={info.femaleId} className="text-xs text-gray-600 mb-1">
-                  <span className=" font-bold">
-                    {femaleAnimal?.animalNumber || 'Desconocido'}
-                  </span>{' '}
+                  <span className=" font-bold">{femaleAnimal?.animalNumber || 'Desconocido'}</span>{' '}
                   parió {info.offspring?.length || 0} cría
                   {(info.offspring?.length || 0) !== 1 ? 's' : ''}
                   {info.actualBirthDate && (
@@ -493,25 +456,20 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
 
 export const AnimalNotFound = ({
   animalId,
-  onDelete
+  onDelete,
 }: {
   animalId?: string
   onDelete?: () => void | Promise<void>
 }) => {
   return (
     <>
-      <div
-        key={animalId}
-        className="p-2 bg-gray-50 rounded-md flex justify-between items-center"
-      >
+      <div key={animalId} className="p-2 bg-gray-50 rounded-md flex justify-between items-center">
         <span className="text-gray-500">Animal no encontrado</span>
         {onDelete && (
           <button
             onClick={() =>
               (
-                document.getElementById(
-                  `confirm-delete-${animalId}`
-                ) as HTMLDialogElement | null
+                document.getElementById(`confirm-delete-${animalId}`) as HTMLDialogElement | null
               )?.showModal()
             }
             aria-label="Eliminar"
@@ -528,18 +486,11 @@ export const AnimalNotFound = ({
           id={`confirm-delete-${animalId}`}
           className="rounded-lg p-0 backdrop:bg-black/40 max-w-sm w-[90%]"
         >
-          <form
-            method="dialog"
-            className="p-4 space-y-4"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <h2 className="text-sm font-semibold text-gray-800">
-              Confirmar eliminación
-            </h2>
+          <form method="dialog" className="p-4 space-y-4" onSubmit={(e) => e.preventDefault()}>
+            <h2 className="text-sm font-semibold text-gray-800">Confirmar eliminación</h2>
             <p className="text-xs text-gray-600">
-              ¿Seguro que deseas eliminar esta referencia a la hembra (ID:{' '}
-              {animalId}) del registro de monta? Esta acción no se puede
-              deshacer.
+              ¿Seguro que deseas eliminar esta referencia a la hembra (ID: {animalId}) del registro
+              de monta? Esta acción no se puede deshacer.
             </p>
             <div className="flex justify-end gap-2 pt-2">
               <button
@@ -547,7 +498,7 @@ export const AnimalNotFound = ({
                 onClick={() =>
                   (
                     document.getElementById(
-                      `confirm-delete-${animalId}`
+                      `confirm-delete-${animalId}`,
                     ) as HTMLDialogElement | null
                   )?.close()
                 }
@@ -561,7 +512,7 @@ export const AnimalNotFound = ({
                   await onDelete?.()
                   ;(
                     document.getElementById(
-                      `confirm-delete-${animalId}`
+                      `confirm-delete-${animalId}`,
                     ) as HTMLDialogElement | null
                   )?.close()
                 }}

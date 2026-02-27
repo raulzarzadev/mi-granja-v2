@@ -1,11 +1,11 @@
 'use client'
 
 import React from 'react'
-import { Animal } from '@/types/animals'
-import { Modal } from '@/components/Modal'
-import { useModal } from '@/hooks/useModal'
 import AnimalForm from '@/components/AnimalForm'
+import { Modal } from '@/components/Modal'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useModal } from '@/hooks/useModal'
+import { Animal } from '@/types/animals'
 
 interface ModalAnimalFormProps {
   initialData?: Animal
@@ -17,15 +17,12 @@ interface ModalAnimalFormProps {
  * Modal que contiene el formulario de animales
  * Incluye botón trigger y manejo del modal
  */
-const ModalAnimalForm: React.FC<ModalAnimalFormProps> = ({
-  initialData,
-  mode = 'create'
-}) => {
+const ModalAnimalForm: React.FC<ModalAnimalFormProps> = ({ initialData, mode = 'create' }) => {
   const { create: createAnimal, isLoading, animals } = useAnimalCRUD()
   const { isOpen, openModal, closeModal } = useModal()
 
   const handleCreateAnimal = async (
-    animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
+    animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>,
   ) => {
     try {
       await createAnimal(animalData)

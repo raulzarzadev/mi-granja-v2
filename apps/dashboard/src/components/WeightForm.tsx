@@ -20,13 +20,13 @@ const WeightForm: React.FC<WeightFormProps> = ({
   animals = [],
   onSubmit,
   onCancel,
-  isLoading = false
+  isLoading = false,
 }) => {
   const [formData, setFormData] = useState({
     animalNumber: animalNumber || '',
     weight: '',
     date: new Date().toISOString().split('T')[0],
-    notes: ''
+    notes: '',
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,9 +37,7 @@ const WeightForm: React.FC<WeightFormProps> = ({
     }
 
     // Encontrar el animal seleccionado para obtener su animalNumber
-    const selectedAnimal = animals?.find(
-      (animal) => animal.id === formData.animalNumber
-    )
+    const selectedAnimal = animals?.find((animal) => animal.id === formData.animalNumber)
     if (!selectedAnimal) {
       console.error('Animal no encontrado')
       return
@@ -50,7 +48,7 @@ const WeightForm: React.FC<WeightFormProps> = ({
         animalNumber: selectedAnimal.animalNumber, // Usar el animalNumber del usuario, no el ID de Firestore
         weight: parseFloat(formData.weight),
         date: new Date(formData.date),
-        notes: formData.notes
+        notes: formData.notes,
       })
     } catch (error) {
       console.error('Error registrando peso:', error, formData)
@@ -58,14 +56,12 @@ const WeightForm: React.FC<WeightFormProps> = ({
   }
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }))
   }
 
@@ -73,9 +69,7 @@ const WeightForm: React.FC<WeightFormProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-md w-full">
         <div className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Registrar Peso
-          </h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Registrar Peso</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Animal (solo mostrar si no está preseleccionado) */}
@@ -107,10 +101,7 @@ const WeightForm: React.FC<WeightFormProps> = ({
 
             {/* Peso */}
             <div>
-              <label
-                htmlFor="weight"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-1">
                 Peso (kg) *
               </label>
               <input
@@ -134,7 +125,7 @@ const WeightForm: React.FC<WeightFormProps> = ({
                 onChange={(date) => {
                   setFormData((prev) => ({
                     ...prev,
-                    date: date ? date.toISOString().split('T')[0] : ''
+                    date: date ? date.toISOString().split('T')[0] : '',
                   }))
                 }}
                 label="Fecha"
@@ -145,10 +136,7 @@ const WeightForm: React.FC<WeightFormProps> = ({
 
             {/* Notas */}
             <div>
-              <label
-                htmlFor="notes"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
                 Notas
               </label>
               <textarea
@@ -173,9 +161,7 @@ const WeightForm: React.FC<WeightFormProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={
-                  isLoading || !formData.animalNumber || !formData.weight
-                }
+                disabled={isLoading || !formData.animalNumber || !formData.weight}
                 className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
               >
                 {isLoading ? 'Registrando...' : 'Registrar Peso'}

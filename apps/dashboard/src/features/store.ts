@@ -2,8 +2,8 @@ import { configureStore } from '@reduxjs/toolkit'
 import { animalsReducer } from './animals/animalsSlice'
 import { authReducer } from './auth/authSlice'
 import { breedingReducer } from './breeding/breedingSlice'
-import { remindersReducer } from './reminders/remindersSlice'
 import { farmReducer } from './farm/farmSlice'
+import { remindersReducer } from './reminders/remindersSlice'
 
 export const store = configureStore({
   reducer: {
@@ -11,16 +11,16 @@ export const store = configureStore({
     animals: animalsReducer,
     breeding: breedingReducer,
     reminders: remindersReducer,
-    farm: farmReducer
+    farm: farmReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         // Deshabilitar verificación de serializabilidad ya que usamos serializeObj
         ignoredActions: [],
-        ignoredPaths: []
-      }
-    })
+        ignoredPaths: [],
+      },
+    }),
 })
 
 export type RootState = ReturnType<typeof store.getState>

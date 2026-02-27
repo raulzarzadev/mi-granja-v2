@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Modal } from './Modal'
+import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useModal } from '@/hooks/useModal'
 import { Farm } from '@/types/farm'
-import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import { Modal } from './Modal'
 
 /**
  * Modal para crear una nueva granja
@@ -23,7 +23,7 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
   open,
   onClose,
   showTrigger = true,
-  onCreated
+  onCreated,
 }) => {
   const modal = useModal()
   // Resolver modo controlado vs. no controlado
@@ -39,8 +39,8 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
       address: '',
       city: '',
       state: '',
-      country: 'México'
-    }
+      country: 'México',
+    },
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,17 +52,16 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
 
     setIsLoading(true)
     try {
-      const farmData: Omit<Farm, 'id' | 'ownerId' | 'createdAt' | 'updatedAt'> =
-        {
-          name: formData.name.trim(),
-          description: formData.description.trim() || '',
-          location: {
-            address: formData.location.address.trim() || '',
-            city: formData.location.city.trim() || '',
-            state: formData.location.state.trim() || '',
-            country: formData.location.country.trim() || ''
-          }
-        }
+      const farmData: Omit<Farm, 'id' | 'ownerId' | 'createdAt' | 'updatedAt'> = {
+        name: formData.name.trim(),
+        description: formData.description.trim() || '',
+        location: {
+          address: formData.location.address.trim() || '',
+          city: formData.location.city.trim() || '',
+          state: formData.location.state.trim() || '',
+          country: formData.location.country.trim() || '',
+        },
+      }
 
       const created = await createFarm(farmData)
       // Notificar a quien controla (si aplica)
@@ -76,8 +75,8 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
           address: '',
           city: '',
           state: '',
-          country: 'México'
-        }
+          country: 'México',
+        },
       })
 
       closeModal()
@@ -95,13 +94,13 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
         ...prev,
         location: {
           ...prev.location,
-          [locationField]: value
-        }
+          [locationField]: value,
+        },
       }))
     } else {
       setFormData((prev) => ({
         ...prev,
-        [field]: value
+        [field]: value,
       }))
     }
   }
@@ -118,19 +117,11 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
         </button>
       )}
 
-      <Modal
-        isOpen={isOpen}
-        onClose={closeModal}
-        title="Crear Nueva Granja"
-        size="lg"
-      >
+      <Modal isOpen={isOpen} onClose={closeModal} title="Crear Nueva Granja" size="lg">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Nombre de la granja */}
           <div>
-            <label
-              htmlFor="farmName"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
+            <label htmlFor="farmName" className="block text-sm font-medium text-gray-700 mb-2">
               Nombre de la Granja *
             </label>
             <input
@@ -164,24 +155,17 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
 
           {/* Ubicación */}
           <div className="space-y-4">
-            <h3 className="text-md font-medium text-gray-900">
-              Ubicación (Opcional)
-            </h3>
+            <h3 className="text-md font-medium text-gray-900">Ubicación (Opcional)</h3>
 
             <div>
-              <label
-                htmlFor="farmAddress"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label htmlFor="farmAddress" className="block text-sm font-medium text-gray-700 mb-1">
                 Dirección
               </label>
               <input
                 id="farmAddress"
                 type="text"
                 value={formData.location.address}
-                onChange={(e) =>
-                  handleChange('location.address', e.target.value)
-                }
+                onChange={(e) => handleChange('location.address', e.target.value)}
                 placeholder="Dirección completa"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
@@ -189,38 +173,28 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label
-                  htmlFor="farmCity"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="farmCity" className="block text-sm font-medium text-gray-700 mb-1">
                   Ciudad
                 </label>
                 <input
                   id="farmCity"
                   type="text"
                   value={formData.location.city}
-                  onChange={(e) =>
-                    handleChange('location.city', e.target.value)
-                  }
+                  onChange={(e) => handleChange('location.city', e.target.value)}
                   placeholder="Ciudad"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="farmState"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="farmState" className="block text-sm font-medium text-gray-700 mb-1">
                   Estado
                 </label>
                 <input
                   id="farmState"
                   type="text"
                   value={formData.location.state}
-                  onChange={(e) =>
-                    handleChange('location.state', e.target.value)
-                  }
+                  onChange={(e) => handleChange('location.state', e.target.value)}
                   placeholder="Estado"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />

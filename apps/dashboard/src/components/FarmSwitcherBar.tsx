@@ -1,37 +1,29 @@
 'use client'
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
-import { useFarmCRUD } from '@/hooks/useFarmCRUD'
-import { Farm } from '@/types/farm'
-import {
-  collaborator_roles_label,
-  FarmCollaborator
-} from '@/types/collaborators'
-import ModalCreateFarm from './ModalCreateFarm'
-import ModalEditFarm from './ModalEditFarm'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
-import { useMyInvitations } from '@/hooks/useMyInvitations'
+import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
+import { useMyInvitations } from '@/hooks/useMyInvitations'
+import { collaborator_roles_label, FarmCollaborator } from '@/types/collaborators'
+import { Farm } from '@/types/farm'
+import ModalCreateFarm from './ModalCreateFarm'
+import ModalEditFarm from './ModalEditFarm'
 
 const FarmSwitcherBar: React.FC = () => {
-  const { currentFarm, switchFarm, loadUserFarms, myFarms, invitationFarms } =
-    useFarmCRUD()
+  const { currentFarm, switchFarm, loadUserFarms, myFarms, invitationFarms } = useFarmCRUD()
 
   const myInv = useMyInvitations()
   const { acceptInvitation } = useFarmMembers(undefined)
 
   const { user } = useSelector((s: RootState) => s.auth)
-  const [selectedInvitationId, setSelectedInvitationId] = useState<
-    string | null
-  >(null)
+  const [selectedInvitationId, setSelectedInvitationId] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
 
   const pendingInvs = myInv.getPending()
-  const [acceptedRole, setAcceptedRole] = useState<
-    FarmCollaborator['role'] | null
-  >(null)
+  const [acceptedRole, setAcceptedRole] = useState<FarmCollaborator['role'] | null>(null)
 
   useEffect(() => {
     if (currentFarm && user && currentFarm.ownerId !== user.id) {
@@ -58,7 +50,7 @@ const FarmSwitcherBar: React.FC = () => {
       }
       switchFarm(val)
     },
-    [switchFarm]
+    [switchFarm],
   )
 
   const selectValue = useMemo(() => {
@@ -97,9 +89,7 @@ const FarmSwitcherBar: React.FC = () => {
                     <option key={farm.id} value={value}>
                       {pending ? '⏳' : '✅'} {farm.name}
                       {farm.invitationMeta?.role &&
-                        ' (' +
-                          collaborator_roles_label[farm.invitationMeta.role] +
-                          ')'}{' '}
+                        ' (' + collaborator_roles_label[farm.invitationMeta.role] + ')'}{' '}
                       {pending && '— pendiente'}
                     </option>
                   )
@@ -120,23 +110,18 @@ const FarmSwitcherBar: React.FC = () => {
           )}
           {currentFarm && acceptedRole && user?.id !== currentFarm.ownerId && (
             <span className="px-2 py-1 text-[10px] uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-200 rounded">
-              Invitado como:{' '}
-              {collaborator_roles_label[acceptedRole] || acceptedRole}
+              Invitado como: {collaborator_roles_label[acceptedRole] || acceptedRole}
             </span>
           )}
         </div>
 
         {selectedInvitationId && (
           <div className="flex items-center flex-wrap gap-2 text-xs bg-orange-50 border border-orange-200 px-3 py-2 rounded-md">
-            <span className="text-orange-700 font-medium">
-              Invitación pendiente
-            </span>
+            <span className="text-orange-700 font-medium">Invitación pendiente</span>
             <button
               className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
               onClick={async () => {
-                const inv = pendingInvs.find(
-                  (i) => i.id === selectedInvitationId
-                )
+                const inv = pendingInvs.find((i) => i.id === selectedInvitationId)
                 if (!inv || !user?.id) return
                 try {
                   await acceptInvitation(inv.id, user.id)
@@ -155,9 +140,7 @@ const FarmSwitcherBar: React.FC = () => {
             <button
               className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
               onClick={async () => {
-                const inv = pendingInvs.find(
-                  (i) => i.id === selectedInvitationId
-                )
+                const inv = pendingInvs.find((i) => i.id === selectedInvitationId)
                 if (!inv) return
                 try {
                   await myInv.rejectInvitation(inv.id)

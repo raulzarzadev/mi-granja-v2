@@ -1,20 +1,20 @@
-import React from 'react'
-import { renderHook } from '@testing-library/react'
-import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
-import { useAuth } from '@/hooks/useAuth'
+import { renderHook } from '@testing-library/react'
+import React from 'react'
+import { Provider } from 'react-redux'
 import { authReducer } from '@/features/auth/authSlice'
+import { useAuth } from '@/hooks/useAuth'
 
 // Mock Firebase
 jest.mock('@/lib/firebase', () => ({
   auth: global.mockAuth,
-  db: global.mockFirestore
+  db: global.mockFirestore,
 }))
 
 const createMockStore = (initialState = {}) => {
   return configureStore({
     reducer: {
-      auth: authReducer
+      auth: authReducer,
     },
     preloadedState: {
       auth: {
@@ -23,9 +23,9 @@ const createMockStore = (initialState = {}) => {
         error: null,
         emailLinkSent: false,
         emailForLink: null,
-        ...initialState
-      }
-    }
+        ...initialState,
+      },
+    },
   })
 }
 
@@ -40,7 +40,7 @@ const createWrapper = (store = createMockStore()) => {
 describe('useAuth', () => {
   it('should provide auth context functions', () => {
     const { result } = renderHook(() => useAuth(), {
-      wrapper: createWrapper()
+      wrapper: createWrapper(),
     })
 
     // Verificar que el hook retorna un objeto
@@ -64,7 +64,7 @@ describe('useAuth', () => {
 
   it('should have initial state', () => {
     const { result } = renderHook(() => useAuth(), {
-      wrapper: createWrapper()
+      wrapper: createWrapper(),
     })
 
     // Verificar estado inicial

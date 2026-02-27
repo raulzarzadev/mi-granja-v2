@@ -1,22 +1,22 @@
 'use client'
 
-import React, { Suspense, useEffect, useState } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import LoadingSpinner from '@/components/LoadingSpinner'
-import { useAuth } from '@/hooks/useAuth'
 import {
+  arrayUnion,
   collection,
+  doc,
   getDocs,
   query,
-  where,
-  doc,
-  updateDoc,
   Timestamp,
-  arrayUnion
+  updateDoc,
+  where,
 } from 'firebase/firestore'
+import { useRouter, useSearchParams } from 'next/navigation'
+import React, { Suspense, useEffect, useState } from 'react'
+import LoadingSpinner from '@/components/LoadingSpinner'
+import { useAuth } from '@/hooks/useAuth'
+import { toDate } from '@/lib/dates'
 import { db } from '@/lib/firebase'
 import type { FarmInvitation } from '@/types/farm'
-import { toDate } from '@/lib/dates'
 
 function InvitationConfirmInner() {
   const params = useSearchParams()
@@ -34,10 +34,7 @@ function InvitationConfirmInner() {
         if (!token) throw new Error('Token inválido')
 
         // Buscar invitación por token
-        const q = query(
-          collection(db, 'farmInvitations'),
-          where('token', '==', token)
-        )
+        const q = query(collection(db, 'farmInvitations'), where('token', '==', token))
         const snap = await getDocs(q)
         if (snap.empty) throw new Error('Invitación no encontrada o inválida')
         const docRef = snap.docs[0]
@@ -70,7 +67,7 @@ function InvitationConfirmInner() {
           await updateDoc(doc(db, 'farmInvitations', docRef.id), {
             status: 'rejected',
             updatedAt: Timestamp.now(),
-            rejectedAt: Timestamp.now()
+            rejectedAt: Timestamp.now(),
           })
           setStatus('done')
           return
@@ -80,7 +77,7 @@ function InvitationConfirmInner() {
         if (!user?.id) {
           setStatus('error')
           setErrorMessage(
-            'Debes iniciar sesión para aceptar la invitación. Inicia sesión y vuelve a abrir este enlace.'
+            'Debes iniciar sesión para aceptar la invitación. Inicia sesión y vuelve a abrir este enlace.',
           )
           return
         }
@@ -91,7 +88,7 @@ function InvitationConfirmInner() {
         if (invitedEmail && userEmail && invitedEmail !== userEmail) {
           setStatus('error')
           setErrorMessage(
-            `Esta invitación fue enviada a ${invitedEmail}. Inicia sesión con ese correo para aceptarla.`
+            `Esta invitación fue enviada a ${invitedEmail}. Inicia sesión con ese correo para aceptarla.`,
           )
           return
         }
@@ -104,16 +101,14 @@ function InvitationConfirmInner() {
           status: 'accepted',
           userId: user.id,
           updatedAt: Timestamp.now(),
-          acceptedAt: Timestamp.now()
+          acceptedAt: Timestamp.now(),
         })
 
         // Añadir a arrays de la granja para validar acceso por reglas desde el cliente
         try {
           await updateDoc(doc(db, 'farms', data.farmId), {
             collaboratorsIds: arrayUnion(user.id),
-            ...(data.email
-              ? { collaboratorsEmails: arrayUnion(data.email.toLowerCase()) }
-              : {})
+            ...(data.email ? { collaboratorsEmails: arrayUnion(data.email.toLowerCase()) } : {}),
           })
         } catch (e) {
           console.warn('No se pudo actualizar arrays de farm tras aceptar:', e)
@@ -133,9 +128,7 @@ function InvitationConfirmInner() {
       } catch (e) {
         console.error(e)
         setStatus('error')
-        setErrorMessage(
-          e instanceof Error ? e.message : 'No se pudo procesar la invitación'
-        )
+        setErrorMessage(e instanceof Error ? e.message : 'No se pudo procesar la invitación')
       }
     }
 
@@ -148,9 +141,7 @@ function InvitationConfirmInner() {
         <div className="mb-4">
           <span className="text-5xl">✉️</span>
         </div>
-        <h1 className="text-xl font-semibold mb-4">
-          Confirmación de invitación
-        </h1>
+        <h1 className="text-xl font-semibold mb-4">Confirmación de invitación</h1>
 
         {status === 'loading' && (
           <div className="space-y-3">
@@ -179,8 +170,7 @@ function InvitationConfirmInner() {
               </div>
             </div>
             <p className="text-gray-700">
-              ¡Listo! La invitación fue{' '}
-              {action === 'reject' ? 'rechazada' : 'aceptada'}.
+              ¡Listo! La invitación fue {action === 'reject' ? 'rechazada' : 'aceptada'}.
             </p>
             <button
               onClick={() => router.push('/')}
@@ -233,9 +223,7 @@ export default function InvitationConfirmPage() {
             <div className="mb-4">
               <span className="text-5xl">✉️</span>
             </div>
-            <h1 className="text-xl font-semibold mb-4">
-              Confirmación de invitación
-            </h1>
+            <h1 className="text-xl font-semibold mb-4">Confirmación de invitación</h1>
             <div className="space-y-3">
               <LoadingSpinner />
               <p className="text-gray-600">Cargando…</p>

@@ -44,3 +44,7 @@ next-env.d.ts
 
 # nyc coverage
 .nyc_output/
+
+# firebase emulators
+.firebase-data/
+.firebase/

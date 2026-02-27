@@ -1,15 +1,15 @@
 'use client'
 
 import React from 'react'
+import { Modal } from '@/components/Modal'
+import { useModal } from '@/hooks/useModal'
+import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
+import { formatDate } from '@/lib/dates'
 import { Animal, AnimalBreedingStatus } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
-import { Modal } from '@/components/Modal'
-import { useModal } from '@/hooks/useModal'
-import { Icon } from './Icon/icon'
-import { formatDate } from '@/lib/dates'
-import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { BadgeAnimalStatus } from './Badges/BadgeAnimalStatus'
+import { Icon } from './Icon/icon'
 
 interface ModalBreedingAnimalDetailsProps extends BreedingActionHandlers {
   animal: Animal
@@ -34,7 +34,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
   onUnconfirmPregnancy,
   onRemoveFromBreeding,
   onDeleteBirth,
-  onAddBirth
+  onAddBirth,
 }) => {
   const { isOpen, openModal, closeModal } = useModal()
 
@@ -53,10 +53,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
     if (femaleInfo?.actualBirthDate) return null
 
     if (femaleInfo?.pregnancyConfirmedDate) {
-      return calculateExpectedBirthDate(
-        femaleInfo.pregnancyConfirmedDate,
-        animalsType
-      )
+      return calculateExpectedBirthDate(femaleInfo.pregnancyConfirmedDate, animalsType)
     }
 
     if (record.breedingDate) {
@@ -89,17 +86,13 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={closeModal}
-        title={`${animalType === 'male' ? 'Macho' : 'Hembra'}: ${
-          animal.animalNumber
-        }`}
+        title={`${animalType === 'male' ? 'Macho' : 'Hembra'}: ${animal.animalNumber}`}
         size="md"
       >
         <div className="space-y-4">
           {/* Información básica del animal */}
           <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-semibold mb-3">
-              Información del Animal
-            </h3>
+            <h3 className="text-lg font-semibold mb-3">Información del Animal</h3>
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-600">Tipo:</span>
@@ -119,9 +112,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
               <div className="flex justify-between">
                 <span className="text-gray-600">Fecha de monta:</span>
                 <span className="font-medium">
-                  {record.breedingDate
-                    ? formatDate(record.breedingDate)
-                    : 'No disponible'}
+                  {record.breedingDate ? formatDate(record.breedingDate) : 'No disponible'}
                 </span>
               </div>
 
@@ -132,36 +123,27 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                     <BadgeAnimalStatus status={status} />
                   </div>
 
-                  {status === 'embarazada' &&
-                    femaleInfo?.pregnancyConfirmedDate && (
-                      <>
+                  {status === 'embarazada' && femaleInfo?.pregnancyConfirmedDate && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Embarazo confirmado:</span>
+                        <span className="font-medium">
+                          {formatDate(femaleInfo.pregnancyConfirmedDate)}
+                        </span>
+                      </div>
+                      {expectedBirthDate() && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">
-                            Embarazo confirmado:
-                          </span>
-                          <span className="font-medium">
-                            {formatDate(femaleInfo.pregnancyConfirmedDate)}
-                          </span>
+                          <span className="text-gray-600">Parto esperado:</span>
+                          <span className="font-medium">{formatDate(expectedBirthDate()!)}</span>
                         </div>
-                        {expectedBirthDate() && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">
-                              Parto esperado:
-                            </span>
-                            <span className="font-medium">
-                              {formatDate(expectedBirthDate()!)}
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    )}
+                      )}
+                    </>
+                  )}
 
                   {status === 'parida' && femaleInfo?.actualBirthDate && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Fecha de parto:</span>
-                      <span className="font-medium">
-                        {formatDate(femaleInfo.actualBirthDate)}
-                      </span>
+                      <span className="font-medium">{formatDate(femaleInfo.actualBirthDate)}</span>
                     </div>
                   )}
                 </>
@@ -180,9 +162,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {femaleInfo.offspring.map((offspringId) => {
-                    const offspring = animals.find(
-                      (animal) => animal.id === offspringId
-                    )
+                    const offspring = animals.find((animal) => animal.id === offspringId)
                     return (
                       <span
                         key={offspringId}
@@ -203,11 +183,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
               {/* Acciones para macho */}
               {animalType === 'male' && (
                 <button
-                  onClick={() =>
-                    handleAction(() =>
-                      onRemoveFromBreeding?.(record, animal.id)
-                    )
-                  }
+                  onClick={() => handleAction(() => onRemoveFromBreeding?.(record, animal.id))}
                   className="w-full px-4 py-2 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-md flex items-center justify-center gap-2 transition-colors"
                 >
                   <Icon icon="delete" className="w-4 h-4" />
@@ -219,22 +195,14 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
               {animalType === 'female' && status === 'monta' && (
                 <>
                   <button
-                    onClick={() =>
-                      handleAction(() =>
-                        onConfirmPregnancy?.(record, animal.id)
-                      )
-                    }
+                    onClick={() => handleAction(() => onConfirmPregnancy?.(record, animal.id))}
                     className="w-full px-4 py-2 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md flex items-center justify-center gap-2 transition-colors"
                   >
                     <Icon icon="pregnant" className="w-4 h-4" />
                     Confirmar embarazo
                   </button>
                   <button
-                    onClick={() =>
-                      handleAction(() =>
-                        onRemoveFromBreeding?.(record, animal.id)
-                      )
-                    }
+                    onClick={() => handleAction(() => onRemoveFromBreeding?.(record, animal.id))}
                     className="w-full px-4 py-2 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-md flex items-center justify-center gap-2 transition-colors"
                   >
                     <Icon icon="delete" className="w-4 h-4" />
@@ -247,31 +215,21 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
               {animalType === 'female' && status === 'embarazada' && (
                 <>
                   <button
-                    onClick={() =>
-                      handleAction(() => onAddBirth?.(record, animal.id))
-                    }
+                    onClick={() => handleAction(() => onAddBirth?.(record, animal.id))}
                     className="w-full px-4 py-2 text-sm text-green-600 bg-green-50 hover:bg-green-100 rounded-md flex items-center justify-center gap-2 transition-colors"
                   >
                     <Icon icon="baby" className="w-4 h-4" />
                     Registrar parto
                   </button>
                   <button
-                    onClick={() =>
-                      handleAction(() =>
-                        onUnconfirmPregnancy?.(record, animal.id)
-                      )
-                    }
+                    onClick={() => handleAction(() => onUnconfirmPregnancy?.(record, animal.id))}
                     className="w-full px-4 py-2 text-sm text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-md flex items-center justify-center gap-2 transition-colors"
                   >
                     <Icon icon="bed" className="w-4 h-4" />
                     Desconfirmar embarazo
                   </button>
                   <button
-                    onClick={() =>
-                      handleAction(() =>
-                        onRemoveFromBreeding?.(record, animal.id)
-                      )
-                    }
+                    onClick={() => handleAction(() => onRemoveFromBreeding?.(record, animal.id))}
                     className="w-full px-4 py-2 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-md flex items-center justify-center gap-2 transition-colors"
                   >
                     <Icon icon="delete" className="w-4 h-4" />
@@ -285,9 +243,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                 <button
                   onClick={() => {
                     if (
-                      confirm(
-                        '¿Estás seguro? Se borrarán todos los datos de las crías asociadas.'
-                      )
+                      confirm('¿Estás seguro? Se borrarán todos los datos de las crías asociadas.')
                     ) {
                       handleAction(() => onDeleteBirth?.(record, animal.id))
                     }

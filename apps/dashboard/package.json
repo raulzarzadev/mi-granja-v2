@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "biome check .",
+    "format": "biome format --write .",
     "type-check": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -14,7 +15,8 @@
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
     "test:e2e": "cypress run",
-    "test:e2e:dev": "cypress open"
+    "test:e2e:dev": "cypress open",
+    "dev:emulator": "NEXT_PUBLIC_USE_EMULATOR=true next dev --turbopack"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -37,7 +39,6 @@
   },
   "devDependencies": {
     "@cypress/code-coverage": "^3.14.4",
-    "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -47,8 +48,6 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "cypress": "^14.4.1",
-    "eslint": "^9",
-    "eslint-config-next": "15.3.3",
     "jest": "^30.0.0",
     "jest-environment-jsdom": "^30.0.0",
     "tailwindcss": "^4",

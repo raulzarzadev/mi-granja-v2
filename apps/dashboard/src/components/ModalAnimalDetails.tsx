@@ -1,9 +1,9 @@
 'use client'
 
 import React from 'react'
-import { Animal } from '@/types/animals'
 import { Modal } from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
+import { Animal } from '@/types/animals'
 import AnimalDetailView from './AnimalDetailView'
 
 interface ModalAnimalDetailsProps {
@@ -15,10 +15,7 @@ interface ModalAnimalDetailsProps {
  * Modal que contiene el formulario de animales
  * Incluye botón trigger y manejo del modal
  */
-const ModalAnimalDetails: React.FC<ModalAnimalDetailsProps> = ({
-  animal,
-  triggerComponent
-}) => {
+const ModalAnimalDetails: React.FC<ModalAnimalDetailsProps> = ({ animal, triggerComponent }) => {
   const { isOpen, openModal, closeModal } = useModal()
 
   return (
@@ -35,17 +32,10 @@ const ModalAnimalDetails: React.FC<ModalAnimalDetailsProps> = ({
           Información
         </button>
       )}
-      <Modal
-        isOpen={isOpen}
-        onClose={closeModal}
-        title={'Detalles del Animal'}
-        size="lg"
-      >
+      <Modal isOpen={isOpen} onClose={closeModal} title={'Detalles del Animal'} size="lg">
         {animal && <AnimalDetailView animal={animal} />}
         {!animal && (
-          <div className="text-center text-gray-500">
-            No se encontró información del animal.
-          </div>
+          <div className="text-center text-gray-500">No se encontró información del animal.</div>
         )}
       </Modal>
     </>

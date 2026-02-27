@@ -1,7 +1,7 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@mi-granja/shared"],
-};
+  transpilePackages: ['@mi-granja/shared'],
+}
 
-export default nextConfig;
+export default nextConfig

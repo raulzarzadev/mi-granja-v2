@@ -6,9 +6,7 @@ declare global {
   var mockRouter: unknown
 }
 
-export {}
-
-// Simple test to prevent "no test" error  
+// Simple test to prevent "no test" error
 describe('Setup types', () => {
   it('should have global declarations', () => {
     // Just a placeholder test

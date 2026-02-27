@@ -1,12 +1,11 @@
 'use client'
 
-import React from 'react'
-import { isUserAdmin } from '@/lib/userUtils'
 import { redirect } from 'next/navigation'
-import LoadingSpinner from '@/components/LoadingSpinner'
+import React from 'react'
 import AdminDashboardWithNavigation from '@/components/admin/AdminDashboardWithNavigation'
-
+import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
+import { isUserAdmin } from '@/lib/userUtils'
 
 export default function AdminPage() {
   const { user } = useAuth()

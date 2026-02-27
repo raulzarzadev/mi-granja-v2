@@ -4,7 +4,12 @@
       "Bash(git:*)",
       "mcp__claude_ai_Notion__notion-search",
       "mcp__claude_ai_Notion__notion-fetch",
-      "Bash(pnpm:*)"
+      "Bash(pnpm:*)",
+      "Bash(npx jest:*)",
+      "WebSearch",
+      "Bash(npx biome:*)",
+      "Bash(lsof:*)",
+      "Bash(kill:*)"
     ]
   }
 }

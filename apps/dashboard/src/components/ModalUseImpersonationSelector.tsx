@@ -1,7 +1,7 @@
 import { useModal } from '@/hooks/useModal'
+import Button from './buttons/Button'
 import { Modal } from './Modal'
 import UserImpersonationSelector from './UserImpersonationSelector'
-import Button from './buttons/Button'
 
 export const ModalUseImpersonationSelector = () => {
   const modal = useModal({ title: 'Seleccionar usuario para suplantar' })

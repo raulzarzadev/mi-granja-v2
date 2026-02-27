@@ -82,7 +82,7 @@ export function deserializeObj<T>(obj: T): T {
     typeof (obj as { fromMillis: unknown }).fromMillis === 'function'
   ) {
     return (obj as { fromMillis: (millis: number) => Timestamp }).fromMillis(
-      obj as unknown as number
+      obj as unknown as number,
     ) as unknown as T
   }
 

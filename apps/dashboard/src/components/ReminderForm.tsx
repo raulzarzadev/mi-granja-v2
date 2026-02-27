@@ -31,7 +31,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
   onSubmit,
   onCancel,
   isLoading = false,
-  initialData
+  initialData,
 }) => {
   const [formData, setFormData] = useState({
     animalNumber: initialData?.animalNumber || '',
@@ -42,7 +42,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
       : new Date().toISOString().split('T')[0],
     priority: initialData?.priority || ('medium' as const),
     type: initialData?.type || ('other' as const),
-    completed: initialData?.completed || false
+    completed: initialData?.completed || false,
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,11 +54,9 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
 
     try {
       // Si hay un animal seleccionado, obtener su animalNumber
-      let finalAnimalNumber: string | undefined = undefined
+      let finalAnimalNumber: string | undefined
       if (formData.animalNumber && animals) {
-        const selectedAnimal = animals.find(
-          (animal) => animal.id === formData.animalNumber
-        )
+        const selectedAnimal = animals.find((animal) => animal.id === formData.animalNumber)
         finalAnimalNumber = selectedAnimal?.animalNumber
       }
 
@@ -69,7 +67,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
         dueDate: new Date(formData.dueDate),
         priority: formData.priority,
         type: formData.type,
-        completed: formData.completed
+        completed: formData.completed,
       })
     } catch (error) {
       console.error('Error creando recordatorio:', error)
@@ -77,9 +75,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
   }
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const { name, value, type } = e.target
 
@@ -87,12 +83,12 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
       const checkbox = e.target as HTMLInputElement
       setFormData((prev) => ({
         ...prev,
-        [name]: checkbox.checked
+        [name]: checkbox.checked,
       }))
     } else {
       setFormData((prev) => ({
         ...prev,
-        [name]: value
+        [name]: value,
       }))
     }
   }
@@ -101,10 +97,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Título */}
       <div>
-        <label
-          htmlFor="title"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
+        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
           Título *
         </label>
         <input
@@ -121,10 +114,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
 
       {/* Animal (opcional) */}
       <div>
-        <label
-          htmlFor="animalNumber"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
+        <label htmlFor="animalNumber" className="block text-sm font-medium text-gray-700 mb-1">
           Animal (opcional)
         </label>
         <select
@@ -145,10 +135,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
 
       {/* Tipo */}
       <div>
-        <label
-          htmlFor="type"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
+        <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
           Tipo
         </label>
         <select
@@ -168,10 +155,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
 
       {/* Prioridad */}
       <div>
-        <label
-          htmlFor="priority"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
+        <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
           Prioridad
         </label>
         <select
@@ -194,7 +178,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
           onChange={(date) => {
             setFormData((prev) => ({
               ...prev,
-              dueDate: date ? date.toISOString().split('T')[0] : ''
+              dueDate: date ? date.toISOString().split('T')[0] : '',
             }))
           }}
           label="Fecha límite"
@@ -205,10 +189,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
 
       {/* Descripción */}
       <div>
-        <label
-          htmlFor="description"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
           Descripción
         </label>
         <textarea
@@ -233,10 +214,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
             onChange={handleChange}
             className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
           />
-          <label
-            htmlFor="completed"
-            className="ml-2 block text-sm text-gray-700"
-          >
+          <label htmlFor="completed" className="ml-2 block text-sm text-gray-700">
             Completado
           </label>
         </div>
@@ -261,8 +239,8 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
               ? 'Actualizando...'
               : 'Creando...'
             : initialData
-            ? 'Actualizar'
-            : 'Crear Recordatorio'}
+              ? 'Actualizar'
+              : 'Crear Recordatorio'}
         </button>
       </div>
     </form>

@@ -19,7 +19,7 @@ const DateTimeInput: React.FC<DateTimeInputProps> = ({
   label,
   required = false,
   disabled = false,
-  className = ''
+  className = '',
 }) => {
   // Extraer valores actuales o usar valores por defecto
   const currentDate = value || new Date()
@@ -35,14 +35,14 @@ const DateTimeInput: React.FC<DateTimeInputProps> = ({
     newMonth: number,
     newYear: number,
     newHour?: number,
-    newMinute?: number
+    newMinute?: number,
   ) => {
     const newDate = new Date(
       newYear,
       newMonth - 1, // mes en Date es 0-based
       newDay,
       newHour ?? 0,
-      newMinute ?? 0
+      newMinute ?? 0,
     )
     onChange(newDate)
   }
@@ -61,7 +61,7 @@ const DateTimeInput: React.FC<DateTimeInputProps> = ({
     { value: 9, label: 'Septiembre' },
     { value: 10, label: 'Octubre' },
     { value: 11, label: 'Noviembre' },
-    { value: 12, label: 'Diciembre' }
+    { value: 12, label: 'Diciembre' },
   ]
   const currentYear = new Date().getFullYear()
   const years = Array.from({ length: 26 }, (_, i) => currentYear - 20 + i)
@@ -83,9 +83,7 @@ const DateTimeInput: React.FC<DateTimeInputProps> = ({
         {/* Día */}
         <select
           value={day}
-          onChange={(e) =>
-            updateDate(Number(e.target.value), month, year, hour, minute)
-          }
+          onChange={(e) => updateDate(Number(e.target.value), month, year, hour, minute)}
           disabled={disabled}
           className={selectClass}
         >
@@ -99,9 +97,7 @@ const DateTimeInput: React.FC<DateTimeInputProps> = ({
         {/* Mes */}
         <select
           value={month}
-          onChange={(e) =>
-            updateDate(day, Number(e.target.value), year, hour, minute)
-          }
+          onChange={(e) => updateDate(day, Number(e.target.value), year, hour, minute)}
           disabled={disabled}
           className={selectClass}
         >
@@ -115,9 +111,7 @@ const DateTimeInput: React.FC<DateTimeInputProps> = ({
         {/* Año */}
         <select
           value={year}
-          onChange={(e) =>
-            updateDate(day, month, Number(e.target.value), hour, minute)
-          }
+          onChange={(e) => updateDate(day, month, Number(e.target.value), hour, minute)}
           disabled={disabled}
           className={selectClass}
         >
@@ -133,9 +127,7 @@ const DateTimeInput: React.FC<DateTimeInputProps> = ({
           <>
             <select
               value={hour}
-              onChange={(e) =>
-                updateDate(day, month, year, Number(e.target.value), minute)
-              }
+              onChange={(e) => updateDate(day, month, year, Number(e.target.value), minute)}
               disabled={disabled}
               className={selectClass}
             >
@@ -148,9 +140,7 @@ const DateTimeInput: React.FC<DateTimeInputProps> = ({
 
             <select
               value={minute}
-              onChange={(e) =>
-                updateDate(day, month, year, hour, Number(e.target.value))
-              }
+              onChange={(e) => updateDate(day, month, year, hour, Number(e.target.value))}
               disabled={disabled}
               className={selectClass}
             >

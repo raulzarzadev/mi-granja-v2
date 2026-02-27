@@ -1,21 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import ModalAnimalForm from '@/components/ModalAnimalForm'
+import { setAnimals } from '@/features/animals/animalsSlice'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import {
-  animal_status_labels,
+  Animal,
+  AnimalBreedingStatus,
   AnimalGender,
-  animals_genders_labels,
-  animals_stages_labels,
-  animals_types_labels,
   AnimalStage,
   AnimalStatus,
   AnimalType,
-  Animal,
-  AnimalBreedingStatus,
-  breeding_animal_status_labels
+  animal_status_labels,
+  animals_genders_labels,
+  animals_stages_labels,
+  animals_types_labels,
+  breeding_animal_status_labels,
 } from '@/types/animals'
-import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
-import { setAnimals } from '@/features/animals/animalsSlice'
 
 // Interfaz para los filtros de animales
 export interface AnimalFilters {
@@ -34,7 +34,7 @@ export const initialAnimalFilters: AnimalFilters = {
   stage: '',
   gender: '',
   breedingStatus: '',
-  search: ''
+  search: '',
 }
 
 // Hook personalizado para manejar filtros de animales
@@ -45,23 +45,17 @@ export const useAnimalFilters = () => {
   const [statusAnimals, setStatusAnimals] = useState<Animal[]>([])
 
   // Función para determinar el estado de cría de un animal
-  const getAnimalBreedingStatus = (
-    animal: Animal
-  ): AnimalBreedingStatus | 'libre' => {
+  const getAnimalBreedingStatus = (animal: Animal): AnimalBreedingStatus | 'libre' => {
     if (animal.gender !== 'hembra') return 'libre' // Solo hembras pueden estar en estos estados
 
     // Buscar en registros de cría activos para esta hembra
     const activeBreeding = breedingRecords.find((breeding) =>
-      breeding.femaleBreedingInfo.some(
-        (femaleInfo) => femaleInfo.femaleId === animal.id
-      )
+      breeding.femaleBreedingInfo.some((femaleInfo) => femaleInfo.femaleId === animal.id),
     )
 
     if (!activeBreeding) return 'libre'
 
-    const femaleInfo = activeBreeding.femaleBreedingInfo.find(
-      (info) => info.femaleId === animal.id
-    )
+    const femaleInfo = activeBreeding.femaleBreedingInfo.find((info) => info.femaleId === animal.id)
     if (!femaleInfo) return 'libre'
 
     // Determinar estado basado en fechas
@@ -111,13 +105,7 @@ export const useAnimalFilters = () => {
 
   // Función para formatear etiquetas de estado
   const formatStatLabel = (
-    key:
-      | AnimalStage
-      | AnimalType
-      | AnimalGender
-      | AnimalStatus
-      | AnimalBreedingStatus
-      | 'libre'
+    key: AnimalStage | AnimalType | AnimalGender | AnimalStatus | AnimalBreedingStatus | 'libre',
   ) => {
     const labels: Record<string, string> = {
       ...animals_types_labels,
@@ -125,7 +113,7 @@ export const useAnimalFilters = () => {
       ...animals_genders_labels,
       ...animal_status_labels,
       ...breeding_animal_status_labels,
-      libre: 'Libre'
+      libre: 'Libre',
     }
     return labels[key] || key
   }
@@ -136,7 +124,7 @@ export const useAnimalFilters = () => {
     filteredAnimals,
     animals,
     statusAnimals,
-    formatStatLabel
+    formatStatLabel,
   }
 }
 
@@ -146,10 +134,7 @@ interface AnimalsFiltersProps {
   setFilters: React.Dispatch<React.SetStateAction<AnimalFilters>>
 }
 
-export const AnimalsFilters = ({
-  filters,
-  setFilters
-}: AnimalsFiltersProps) => {
+export const AnimalsFilters = ({ filters, setFilters }: AnimalsFiltersProps) => {
   return (
     <div className="bg-white rounded-lg shadow mb-6">
       <div className="p-6">
@@ -161,10 +146,7 @@ export const AnimalsFilters = ({
         {/* Filtros */}
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-5 gap-4">
           <div>
-            <label
-              htmlFor="statusFilter"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700 mb-1">
               Estado
             </label>
             <select
@@ -184,10 +166,7 @@ export const AnimalsFilters = ({
             </select>
           </div>
           <div>
-            <label
-              htmlFor="typeFilter"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="typeFilter" className="block text-sm font-medium text-gray-700 mb-1">
               Tipo
             </label>
             <select
@@ -196,7 +175,7 @@ export const AnimalsFilters = ({
               onChange={(e) =>
                 setFilters((prev) => ({
                   ...prev,
-                  type: e.target.value as AnimalType | ''
+                  type: e.target.value as AnimalType | '',
                 }))
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -210,10 +189,7 @@ export const AnimalsFilters = ({
             </select>
           </div>
           <div>
-            <label
-              htmlFor="stageFilter"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="stageFilter" className="block text-sm font-medium text-gray-700 mb-1">
               Etapa
             </label>
             <select
@@ -222,7 +198,7 @@ export const AnimalsFilters = ({
               onChange={(e) =>
                 setFilters((prev) => ({
                   ...prev,
-                  stage: e.target.value as AnimalStage | ''
+                  stage: e.target.value as AnimalStage | '',
                 }))
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -236,10 +212,7 @@ export const AnimalsFilters = ({
             </select>
           </div>
           <div>
-            <label
-              htmlFor="genderFilter"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="genderFilter" className="block text-sm font-medium text-gray-700 mb-1">
               Género
             </label>
             <select
@@ -248,7 +221,7 @@ export const AnimalsFilters = ({
               onChange={(e) =>
                 setFilters((prev) => ({
                   ...prev,
-                  gender: e.target.value as AnimalGender | ''
+                  gender: e.target.value as AnimalGender | '',
                 }))
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -274,32 +247,24 @@ export const AnimalsFilters = ({
               onChange={(e) =>
                 setFilters((prev) => ({
                   ...prev,
-                  breedingStatus: e.target.value as
-                    | AnimalBreedingStatus
-                    | 'libre'
-                    | ''
+                  breedingStatus: e.target.value as AnimalBreedingStatus | 'libre' | '',
                 }))
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               <option value="">Todos</option>
               <option value="libre">Libre</option>
-              {Object.entries(breeding_animal_status_labels).map(
-                ([key, value]) => (
-                  <option key={key} value={key}>
-                    {value}
-                  </option>
-                )
-              )}
+              {Object.entries(breeding_animal_status_labels).map(([key, value]) => (
+                <option key={key} value={key}>
+                  {value}
+                </option>
+              ))}
             </select>
           </div>
         </div>
         {/* Buscar */}
         <div>
-          <label
-            htmlFor="searchFilter"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+          <label htmlFor="searchFilter" className="block text-sm font-medium text-gray-700 mb-1">
             Buscar
           </label>
           <input
@@ -310,7 +275,7 @@ export const AnimalsFilters = ({
             onChange={(e) =>
               setFilters((prev) => ({
                 ...prev,
-                search: e.target.value
+                search: e.target.value,
               }))
             }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"

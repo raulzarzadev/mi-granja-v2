@@ -1,4 +1,4 @@
-import { format, parse, isValid, startOfDay, endOfDay } from 'date-fns'
+import { endOfDay, format, isValid, parse, startOfDay } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Timestamp } from 'firebase/firestore'
 
@@ -12,9 +12,7 @@ import { Timestamp } from 'firebase/firestore'
 /**
  * Convierte cualquier input de fecha a Date, manejando zona horaria local
  */
-export function toSafeDate(
-  input: string | number | Date | Timestamp | null | undefined
-): Date {
+export function toSafeDate(input: string | number | Date | Timestamp | null | undefined): Date {
   if (!input) return new Date()
 
   if (input instanceof Date) return input
@@ -58,7 +56,7 @@ export function parseLocalDateString(dateStr: string): Date {
  * Convierte Date a string yyyy-MM-dd en zona horaria local
  */
 export function toLocalDateString(
-  date: Date | string | number | Timestamp | null | undefined
+  date: Date | string | number | Timestamp | null | undefined,
 ): string {
   const safeDate = toSafeDate(date)
   const year = safeDate.getFullYear()
@@ -71,7 +69,7 @@ export function toLocalDateString(
  * Convierte Date a string yyyy-MM-ddTHH:mm en zona horaria local
  */
 export function toLocalDateTimeString(
-  date: Date | string | number | Timestamp | null | undefined
+  date: Date | string | number | Timestamp | null | undefined,
 ): string {
   const safeDate = toSafeDate(date)
   const year = safeDate.getFullYear()
@@ -88,7 +86,7 @@ export function toLocalDateTimeString(
  * Formatea fecha para mostrar al usuario (dd/MM/yyyy)
  */
 export function formatDateDisplay(
-  date: Date | string | number | Timestamp | null | undefined
+  date: Date | string | number | Timestamp | null | undefined,
 ): string {
   const safeDate = toSafeDate(date)
   return format(safeDate, 'dd/MM/yyyy', { locale: es })
@@ -98,7 +96,7 @@ export function formatDateDisplay(
  * Formatea fecha y hora para mostrar al usuario (dd/MM/yyyy HH:mm)
  */
 export function formatDateTimeDisplay(
-  date: Date | string | number | Timestamp | null | undefined
+  date: Date | string | number | Timestamp | null | undefined,
 ): string {
   const safeDate = toSafeDate(date)
   return format(safeDate, 'dd/MM/yyyy HH:mm', { locale: es })
@@ -108,13 +106,11 @@ export function formatDateTimeDisplay(
  * Formatea fecha relativa (Hoy, Ayer, etc.)
  */
 export function formatRelativeDate(
-  date: Date | string | number | Timestamp | null | undefined
+  date: Date | string | number | Timestamp | null | undefined,
 ): string {
   const safeDate = toSafeDate(date)
   const today = new Date()
-  const diffDays = Math.floor(
-    (today.getTime() - safeDate.getTime()) / (1000 * 60 * 60 * 24)
-  )
+  const diffDays = Math.floor((today.getTime() - safeDate.getTime()) / (1000 * 60 * 60 * 24))
 
   if (diffDays === 0) return 'Hoy'
   if (diffDays === 1) return 'Ayer'
@@ -144,18 +140,14 @@ export function getNowString(): string {
 /**
  * Normaliza fecha al inicio del día (00:00:00.000)
  */
-export function toStartOfDay(
-  date: Date | string | number | Timestamp | null | undefined
-): Date {
+export function toStartOfDay(date: Date | string | number | Timestamp | null | undefined): Date {
   return startOfDay(toSafeDate(date))
 }
 
 /**
  * Normaliza fecha al final del día (23:59:59.999)
  */
-export function toEndOfDay(
-  date: Date | string | number | Timestamp | null | undefined
-): Date {
+export function toEndOfDay(date: Date | string | number | Timestamp | null | undefined): Date {
   return endOfDay(toSafeDate(date))
 }
 
@@ -163,7 +155,7 @@ export function toEndOfDay(
  * Calcula edad en años desde una fecha de nacimiento
  */
 export function calculateAge(
-  birthDate: Date | string | number | Timestamp | null | undefined
+  birthDate: Date | string | number | Timestamp | null | undefined,
 ): number {
   const birth = toSafeDate(birthDate)
   const today = new Date()
@@ -181,7 +173,7 @@ export function calculateAge(
  * Calcula edad en meses desde una fecha de nacimiento
  */
 export function calculateAgeInMonths(
-  birthDate: Date | string | number | Timestamp | null | undefined
+  birthDate: Date | string | number | Timestamp | null | undefined,
 ): number {
   const birth = toSafeDate(birthDate)
   const today = new Date()
@@ -201,7 +193,7 @@ export function calculateAgeInMonths(
  */
 export function daysDifference(
   date1: Date | string | number | Timestamp | null | undefined,
-  date2: Date | string | number | Timestamp | null | undefined
+  date2: Date | string | number | Timestamp | null | undefined,
 ): number {
   const d1 = toStartOfDay(date1)
   const d2 = toStartOfDay(date2)
@@ -213,7 +205,7 @@ export function daysDifference(
  */
 export function addDays(
   date: Date | string | number | Timestamp | null | undefined,
-  days: number
+  days: number,
 ): Date {
   const safeDate = toSafeDate(date)
   const result = new Date(safeDate)
@@ -226,7 +218,7 @@ export function addDays(
  */
 export function subtractDays(
   date: Date | string | number | Timestamp | null | undefined,
-  days: number
+  days: number,
 ): Date {
   return addDays(date, -days)
 }
@@ -234,27 +226,21 @@ export function subtractDays(
 /**
  * Verifica si una fecha está en el pasado
  */
-export function isPast(
-  date: Date | string | number | Timestamp | null | undefined
-): boolean {
+export function isPast(date: Date | string | number | Timestamp | null | undefined): boolean {
   return toStartOfDay(date).getTime() < toStartOfDay(new Date()).getTime()
 }
 
 /**
  * Verifica si una fecha es hoy
  */
-export function isToday(
-  date: Date | string | number | Timestamp | null | undefined
-): boolean {
+export function isToday(date: Date | string | number | Timestamp | null | undefined): boolean {
   return toStartOfDay(date).getTime() === toStartOfDay(new Date()).getTime()
 }
 
 /**
  * Verifica si una fecha es mañana
  */
-export function isTomorrow(
-  date: Date | string | number | Timestamp | null | undefined
-): boolean {
+export function isTomorrow(date: Date | string | number | Timestamp | null | undefined): boolean {
   const tomorrow = addDays(new Date(), 1)
   return toStartOfDay(date).getTime() === toStartOfDay(tomorrow).getTime()
 }

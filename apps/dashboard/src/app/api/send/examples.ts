@@ -8,7 +8,7 @@ const basicEmail = {
   to: ['usuario@ejemplo.com'],
   subject: 'Bienvenido a Mi Granja',
   html: '<h1>¡Hola!</h1><p>Bienvenido a nuestra plataforma.</p>',
-  text: 'Hola! Bienvenido a nuestra plataforma.'
+  text: 'Hola! Bienvenido a nuestra plataforma.',
 }
 
 // Ejemplo 2: Email con múltiples destinatarios y opciones avanzadas
@@ -31,8 +31,8 @@ const advancedEmail = {
   text: 'Recordatorio: No olvides revisar tus animales hoy. Visita: https://migranja.app/dashboard',
   tags: [
     { name: 'category', value: 'reminder' },
-    { name: 'priority', value: 'high' }
-  ]
+    { name: 'priority', value: 'high' },
+  ],
 }
 
 // Función de ejemplo para usar la API desde el frontend
@@ -41,9 +41,9 @@ async function sendEmail(emailData: any) {
     const response = await fetch('/api/send', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(emailData)
+      body: JSON.stringify(emailData),
     })
 
     const result = await response.json()
@@ -98,8 +98,8 @@ const farmEmail = {
     { name: 'category', value: 'vaccination' },
     { name: 'animal_type', value: 'cattle' },
     { name: 'priority', value: 'high' },
-    { name: 'farm_area', value: 'north' }
-  ]
+    { name: 'farm_area', value: 'north' },
+  ],
 }
 
 export { basicEmail, advancedEmail, farmEmail, sendEmail }

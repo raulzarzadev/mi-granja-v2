@@ -27,12 +27,7 @@ const DateTimeInputTest: React.FC = () => {
 
       <div>
         <h3 className="font-semibold">Modo date:</h3>
-        <DateTimeInput
-          type="date"
-          value={dateValue}
-          onChange={setDateValue}
-          label="Solo fecha"
-        />
+        <DateTimeInput type="date" value={dateValue} onChange={setDateValue} label="Solo fecha" />
       </div>
 
       <button

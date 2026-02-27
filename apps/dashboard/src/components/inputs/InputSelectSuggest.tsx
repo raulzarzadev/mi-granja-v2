@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import ButtonClose from '../buttons/ButtonClose'
 
 export interface SelectSuggestOption<T = string> {
@@ -20,14 +20,8 @@ export interface InputSelectSuggestProps<T = string> {
   disabled?: boolean
   label?: string
   showRemoveButton?: boolean
-  renderOption?: (
-    option: SelectSuggestOption<T>,
-    isSelected: boolean
-  ) => React.ReactNode
-  filterFunction?: (
-    option: SelectSuggestOption<T>,
-    searchValue: string
-  ) => boolean
+  renderOption?: (option: SelectSuggestOption<T>, isSelected: boolean) => React.ReactNode
+  filterFunction?: (option: SelectSuggestOption<T>, searchValue: string) => boolean
   id?: string
   className?: string
 }
@@ -49,7 +43,7 @@ export function InputSelectSuggest<T = string>({
   renderOption,
   filterFunction,
   id = 'select-suggest',
-  className = ''
+  className = '',
 }: InputSelectSuggestProps<T>) {
   const [searchValue, setSearchValue] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
@@ -67,7 +61,7 @@ export function InputSelectSuggest<T = string>({
     if (selectedIndex >= 0 && dropdownItemRefs.current[selectedIndex]) {
       dropdownItemRefs.current[selectedIndex]?.scrollIntoView({
         block: 'nearest',
-        behavior: 'smooth'
+        behavior: 'smooth',
       })
     }
   }, [selectedIndex])
@@ -97,9 +91,7 @@ export function InputSelectSuggest<T = string>({
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       setShowDropdown(true)
-      setSelectedIndex((prev) =>
-        prev < filteredOptions.length - 1 ? prev + 1 : prev
-      )
+      setSelectedIndex((prev) => (prev < filteredOptions.length - 1 ? prev + 1 : prev))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1))
@@ -111,10 +103,7 @@ export function InputSelectSuggest<T = string>({
         if (!selectedIds.includes(selectedOption.id)) {
           handleSelect(selectedOption.id)
         }
-      } else if (
-        filteredOptions.length === 1 &&
-        !selectedIds.includes(filteredOptions[0].id)
-      ) {
+      } else if (filteredOptions.length === 1 && !selectedIds.includes(filteredOptions[0].id)) {
         handleSelect(filteredOptions[0].id)
       }
     } else if (e.key === 'Escape') {
@@ -130,9 +119,7 @@ export function InputSelectSuggest<T = string>({
     isSelectingRef.current = true
     onSelect(optionId)
     setSearchValue('')
-    const currentIndex = getFilteredOptions().findIndex(
-      (opt) => opt.id === optionId
-    )
+    const currentIndex = getFilteredOptions().findIndex((opt) => opt.id === optionId)
     setSelectedIndex(currentIndex)
 
     // Pequeño delay para asegurar que la selección se complete
@@ -141,16 +128,11 @@ export function InputSelectSuggest<T = string>({
     }, 100)
   }
 
-  const defaultRenderOption = (
-    option: SelectSuggestOption<T>,
-    _isSelected: boolean
-  ) => (
+  const defaultRenderOption = (option: SelectSuggestOption<T>, _isSelected: boolean) => (
     <>
       <div className="font-semibold text-gray-900">{option.label}</div>
       {option.secondaryLabel && (
-        <div className="text-sm text-gray-600 font-medium">
-          ({option.secondaryLabel})
-        </div>
+        <div className="text-sm text-gray-600 font-medium">({option.secondaryLabel})</div>
       )}
     </>
   )
@@ -158,10 +140,7 @@ export function InputSelectSuggest<T = string>({
   return (
     <div ref={containerRef} className={`relative ${className}`}>
       {label && (
-        <label
-          htmlFor={id}
-          className="block text-sm font-medium text-gray-700 mb-2"
-        >
+        <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-2">
           {label}
         </label>
       )}
@@ -173,9 +152,7 @@ export function InputSelectSuggest<T = string>({
         aria-expanded={showDropdown}
         aria-autocomplete="list"
         aria-controls={`${id}-dropdown`}
-        aria-activedescendant={
-          selectedIndex >= 0 ? `${id}-option-${selectedIndex}` : undefined
-        }
+        aria-activedescendant={selectedIndex >= 0 ? `${id}-option-${selectedIndex}` : undefined}
         value={searchValue}
         onChange={handleSearch}
         onKeyDown={handleKeyDown}
@@ -224,9 +201,7 @@ export function InputSelectSuggest<T = string>({
           </div>
 
           {getFilteredOptions().length === 0 ? (
-            <div className="px-3 py-2 text-gray-600 text-sm font-medium">
-              {emptyMessage}
-            </div>
+            <div className="px-3 py-2 text-gray-600 text-sm font-medium">{emptyMessage}</div>
           ) : (
             getFilteredOptions().map((option, index) => {
               const isSelected = selectedIds.includes(option.id)
@@ -240,11 +215,7 @@ export function InputSelectSuggest<T = string>({
                   role="option"
                   aria-selected={selectedIndex === index}
                   className={`flex items-center px-3 py-2 cursor-pointer w-full
-                    ${
-                      selectedIndex === index
-                        ? 'bg-blue-100 ring-2 ring-blue-400'
-                        : ''
-                    }
+                    ${selectedIndex === index ? 'bg-blue-100 ring-2 ring-blue-400' : ''}
                     ${
                       isSelected ? 'bg-green-50' : 'hover:bg-gray-100'
                     } border-b border-gray-100 last:border-b-0`}

@@ -7,7 +7,7 @@ describe('Complete Application Flow', () => {
     const testUser = {
       email: 'newuser@test.com',
       password: 'password123',
-      farmName: 'Test Farm'
+      farmName: 'Test Farm',
     }
 
     it('should complete full registration flow', () => {
@@ -27,10 +27,10 @@ describe('Complete Application Flow', () => {
         body: {
           user: {
             uid: 'new-user-123',
-            email: testUser.email
+            email: testUser.email,
           },
-          success: true
-        }
+          success: true,
+        },
       }).as('registerUser')
 
       // Submit registration
@@ -55,10 +55,10 @@ describe('Complete Application Flow', () => {
         body: {
           user: {
             uid: 'existing-user-123',
-            email: testUser.email
+            email: testUser.email,
           },
-          success: true
-        }
+          success: true,
+        },
       }).as('loginUser')
 
       // Submit login
@@ -83,7 +83,7 @@ describe('Complete Application Flow', () => {
       // Mock successful email link sending
       cy.intercept('POST', '**/auth/emaillink', {
         statusCode: 200,
-        body: { success: true }
+        body: { success: true },
       }).as('sendEmailLink')
 
       cy.get('button[type="submit"]').contains('Enviar enlace').click()
@@ -103,10 +103,10 @@ describe('Complete Application Flow', () => {
         body: {
           user: {
             uid: 'emaillink-user-123',
-            email: testEmail
+            email: testEmail,
           },
-          success: true
-        }
+          success: true,
+        },
       }).as('completeEmailLink')
 
       // Visit completion page (simulate email link click)
@@ -133,7 +133,7 @@ describe('Complete Application Flow', () => {
       // Mock authenticated state
       cy.mockAuthState({
         uid: 'authenticated-user',
-        email: 'auth@test.com'
+        email: 'auth@test.com',
       })
 
       // Visit protected route
@@ -150,7 +150,7 @@ describe('Complete Application Flow', () => {
 
       // Mock network error
       cy.intercept('POST', '**/auth/**', {
-        forceNetworkError: true
+        forceNetworkError: true,
       }).as('networkError')
 
       cy.get('input[name="email"]').type('test@test.com')
@@ -167,7 +167,7 @@ describe('Complete Application Flow', () => {
       // Mock auth error
       cy.intercept('POST', '**/auth/**', {
         statusCode: 401,
-        body: { error: 'Invalid credentials' }
+        body: { error: 'Invalid credentials' },
       }).as('authError')
 
       cy.get('input[name="email"]').type('test@test.com')
@@ -184,7 +184,7 @@ describe('Complete Application Flow', () => {
       // Mock server error
       cy.intercept('POST', '**/auth/**', {
         statusCode: 500,
-        body: { error: 'Internal server error' }
+        body: { error: 'Internal server error' },
       }).as('serverError')
 
       cy.get('input[name="email"]').type('test@test.com')
@@ -244,7 +244,7 @@ describe('Complete Application Flow', () => {
           win.performance.measure('pageLoad', 'start', 'end')
           const measure = win.performance.getEntriesByName('pageLoad')[0]
           expect(measure.duration).to.be.lessThan(3000) // 3 seconds
-        }
+        },
       })
     })
 

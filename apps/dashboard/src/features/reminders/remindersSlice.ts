@@ -13,7 +13,7 @@ const initialState: RemindersState = {
   reminders: [],
   isLoading: false,
   error: null,
-  selectedReminder: null
+  selectedReminder: null,
 }
 
 const remindersSlice = createSlice({
@@ -31,25 +31,16 @@ const remindersSlice = createSlice({
       state.reminders.push(serializeObj(action.payload))
     },
     updateReminder: (state, action: PayloadAction<Reminder>) => {
-      const index = state.reminders.findIndex(
-        (reminder) => reminder.id === action.payload.id
-      )
+      const index = state.reminders.findIndex((reminder) => reminder.id === action.payload.id)
       if (index !== -1) {
         state.reminders[index] = serializeObj(action.payload)
       }
     },
     removeReminder: (state, action: PayloadAction<string>) => {
-      state.reminders = state.reminders.filter(
-        (reminder) => reminder.id !== action.payload
-      )
+      state.reminders = state.reminders.filter((reminder) => reminder.id !== action.payload)
     },
-    markReminderCompleted: (
-      state,
-      action: PayloadAction<{ id: string; completed: boolean }>
-    ) => {
-      const index = state.reminders.findIndex(
-        (reminder) => reminder.id === action.payload.id
-      )
+    markReminderCompleted: (state, action: PayloadAction<{ id: string; completed: boolean }>) => {
+      const index = state.reminders.findIndex((reminder) => reminder.id === action.payload.id)
       if (index !== -1) {
         state.reminders[index].completed = action.payload.completed
         // También serializar la fecha de actualización si se agrega
@@ -57,9 +48,7 @@ const remindersSlice = createSlice({
       }
     },
     setSelectedReminder: (state, action: PayloadAction<Reminder | null>) => {
-      state.selectedReminder = action.payload
-        ? serializeObj(action.payload)
-        : null
+      state.selectedReminder = action.payload ? serializeObj(action.payload) : null
     },
     setError: (state, action: PayloadAction<string>) => {
       state.error = action.payload
@@ -67,8 +56,8 @@ const remindersSlice = createSlice({
     },
     clearError: (state) => {
       state.error = null
-    }
-  }
+    },
+  },
 })
 
 export const {
@@ -80,7 +69,7 @@ export const {
   markReminderCompleted,
   setSelectedReminder,
   setError,
-  clearError
+  clearError,
 } = remindersSlice.actions
 
 export const remindersReducer = remindersSlice.reducer

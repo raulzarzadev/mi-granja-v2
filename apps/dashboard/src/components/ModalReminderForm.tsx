@@ -1,12 +1,12 @@
 'use client'
 
 import React from 'react'
-import { Reminder } from '@/types'
 import { Modal } from '@/components/Modal'
-import { useModal } from '@/hooks/useModal'
 import ReminderForm from '@/components/ReminderForm'
-import { useReminders } from '@/hooks/useReminders'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useModal } from '@/hooks/useModal'
+import { useReminders } from '@/hooks/useReminders'
+import { Reminder } from '@/types'
 
 interface ModalReminderFormProps {
   initialData?: Partial<Reminder>
@@ -16,15 +16,13 @@ interface ModalReminderFormProps {
  * Modal que contiene el formulario de recordatorio
  * Incluye botón trigger y manejo del modal
  */
-const ModalReminderForm: React.FC<ModalReminderFormProps> = ({
-  initialData
-}) => {
+const ModalReminderForm: React.FC<ModalReminderFormProps> = ({ initialData }) => {
   const { animals } = useAnimalCRUD()
   const { createReminder } = useReminders()
   const { isOpen, openModal, closeModal } = useModal()
 
   const handleSubmit = async (
-    data: Omit<Reminder, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
+    data: Omit<Reminder, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>,
   ) => {
     await createReminder(data)
     closeModal()

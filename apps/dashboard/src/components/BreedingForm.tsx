@@ -1,26 +1,26 @@
 'use client'
 
+import { toDate } from 'date-fns'
 import React, { useEffect, useMemo } from 'react'
-import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
-import { BreedingRecord } from '@/types/breedings'
-import { Animal } from '@/types/animals'
+import { z } from 'zod'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
-import ButtonClose from './buttons/ButtonClose'
-import { SelectSuggestOption } from './inputs/InputSelectSuggest'
-import { Form } from './forms/Form'
-import { TextField } from './forms/TextField'
-import { SelectField } from './forms/SelectField'
-import { DateField } from './forms/DateField'
-import { SuggestField } from './forms/SuggestField'
 import { useZodForm } from '@/hooks/useZodForm'
-import { z } from 'zod'
-import { toDate } from 'date-fns'
+import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
+import { Animal } from '@/types/animals'
+import { BreedingRecord } from '@/types/breedings'
+import ButtonClose from './buttons/ButtonClose'
+import { DateField } from './forms/DateField'
+import { Form } from './forms/Form'
+import { SelectField } from './forms/SelectField'
+import { SuggestField } from './forms/SuggestField'
+import { TextField } from './forms/TextField'
+import { SelectSuggestOption } from './inputs/InputSelectSuggest'
 
 interface BreedingFormProps {
   animals: Animal[]
   onSubmit: (
-    data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>
+    data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>,
   ) => Promise<void>
   onCancel: () => void
   isLoading?: boolean
@@ -32,20 +32,18 @@ const femaleBreedingInfoSchema = z.object({
   pregnancyConfirmedDate: z.date().nullable().optional(),
   expectedBirthDate: z.date().nullable().optional(),
   actualBirthDate: z.date().nullable().optional(),
-  offspring: z.array(z.string()).default([])
+  offspring: z.array(z.string()).default([]),
 })
 
 const schema = z.object({
   breedingId: z.string().trim().min(1, 'El ID de monta es requerido'),
   breedingDate: z.date({
-    required_error: 'La fecha de monta es obligatoria'
+    required_error: 'La fecha de monta es obligatoria',
   }),
   maleId: z.string().trim().min(1, 'Selecciona un macho reproductor'),
-  femaleIds: z
-    .array(z.string().min(1))
-    .min(1, 'Selecciona al menos una hembra'),
+  femaleIds: z.array(z.string().min(1)).min(1, 'Selecciona al menos una hembra'),
   femaleBreedingInfo: z.array(femaleBreedingInfoSchema).default([]),
-  notes: z.string().optional()
+  notes: z.string().optional(),
 })
 
 type FormSchema = z.infer<typeof schema>
@@ -60,7 +58,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   onSubmit,
   onCancel,
   isLoading = false,
-  initialData
+  initialData,
 }) => {
   const { remove } = useAnimalCRUD()
   const { breedingRecords } = useBreedingCRUD()
@@ -72,31 +70,25 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         pregnancyConfirmedDate: info.pregnancyConfirmedDate
           ? toDate(info.pregnancyConfirmedDate)
           : null,
-        expectedBirthDate: info.expectedBirthDate
-          ? toDate(info.expectedBirthDate)
-          : null,
-        actualBirthDate: info.actualBirthDate
-          ? toDate(info.actualBirthDate)
-          : null,
-        offspring: info.offspring ?? []
+        expectedBirthDate: info.expectedBirthDate ? toDate(info.expectedBirthDate) : null,
+        actualBirthDate: info.actualBirthDate ? toDate(info.actualBirthDate) : null,
+        offspring: info.offspring ?? [],
       })) ?? []
 
     return {
       breedingId: initialData?.breedingId ?? '',
-      breedingDate: initialData?.breedingDate
-        ? toDate(initialData.breedingDate)
-        : new Date(),
+      breedingDate: initialData?.breedingDate ? toDate(initialData.breedingDate) : new Date(),
       maleId: initialData?.maleId ?? '',
       femaleIds: normalizedFemaleInfo.map((info) => info.femaleId),
       femaleBreedingInfo: normalizedFemaleInfo,
-      notes: initialData?.notes ?? ''
+      notes: initialData?.notes ?? '',
     }
   }, [initialData])
 
   const form = useZodForm({
     schema,
     defaultValues,
-    mode: 'onBlur'
+    mode: 'onBlur',
   })
 
   const femaleIds = form.watch('femaleIds') ?? []
@@ -119,7 +111,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         (animal.status ?? 'activo') === 'activo' &&
         animal.gender === 'hembra' &&
         animal.type === selectedMale.type &&
-        (animal.stage === 'reproductor' || animal.stage === 'lechera')
+        (animal.stage === 'reproductor' || animal.stage === 'lechera'),
     )
   }, [animals, selectedMale])
 
@@ -129,7 +121,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     }
     if (breedingDate && !breedingIdValue) {
       form.setValue('breedingId', generateBreedingId(breedingDate), {
-        shouldDirty: false
+        shouldDirty: false,
       })
     }
   }, [breedingDate, breedingIdValue, form, initialData])
@@ -166,7 +158,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         pregnancyConfirmedDate: null,
         expectedBirthDate: null,
         actualBirthDate: null,
-        offspring: []
+        offspring: [],
       }
     })
 
@@ -185,28 +177,28 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         (animal) =>
           (animal.status ?? 'activo') === 'activo' &&
           animal.gender === 'macho' &&
-          animal.stage === 'reproductor'
+          animal.stage === 'reproductor',
       ),
-    [animals]
+    [animals],
   )
 
   const maleOptions = useMemo(
     () =>
       males.map((animal) => ({
         value: animal.id,
-        label: `${animal.animalNumber} - ${animal.type}`
+        label: `${animal.animalNumber} - ${animal.type}`,
       })),
-    [males]
+    [males],
   )
 
   const getFemaleBreedingId = React.useCallback(
     (femaleId: string): string | null => {
       const record = breedingRecords.find((r) =>
-        r.femaleBreedingInfo?.some((info) => info.femaleId === femaleId)
+        r.femaleBreedingInfo?.some((info) => info.femaleId === femaleId),
       )
       return record?.breedingId ?? null
     },
-    [breedingRecords]
+    [breedingRecords],
   )
 
   const femaleOptions = useMemo<SelectSuggestOption<Animal>[]>(() => {
@@ -220,16 +212,14 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         id: animal.id,
         label: animal.animalNumber,
         secondaryLabel: brId ? `Monta: ${brId}` : '',
-        data: animal
+        data: animal,
       }
     })
   }, [filteredFemales, getFemaleBreedingId, selectedMale])
 
   const selectedFemales = useMemo(() => {
     return femaleBreedingInfo
-      .map(
-        (info) => animals.find((animal) => animal.id === info.femaleId) || null
-      )
+      .map((info) => animals.find((animal) => animal.id === info.femaleId) || null)
       .filter((animal): animal is Animal => Boolean(animal))
   }, [animals, femaleBreedingInfo])
 
@@ -252,8 +242,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     }
 
     const isDuplicate = breedingRecords.some(
-      (record) =>
-        record.breedingId === breedingId.trim() && record.id !== initialData?.id
+      (record) => record.breedingId === breedingId.trim() && record.id !== initialData?.id,
     )
 
     if (isDuplicate) {
@@ -266,7 +255,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   const handleFemaleBreedingChange = async (
     femaleId: string,
     field: string,
-    value: string | boolean | Date | null
+    value: string | boolean | Date | null,
   ) => {
     const currentInfos = form.getValues('femaleBreedingInfo') ?? []
     const index = currentInfos.findIndex((info) => info.femaleId === femaleId)
@@ -284,14 +273,14 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         updatedInfo[index] = {
           ...current,
           pregnancyConfirmedDate: now,
-          expectedBirthDate: calculateExpectedBirthDate(now, animalType)
+          expectedBirthDate: calculateExpectedBirthDate(now, animalType),
         }
       } else {
         updatedInfo[index] = {
           ...current,
           pregnancyConfirmedDate: null,
           expectedBirthDate: null,
-          actualBirthDate: null
+          actualBirthDate: null,
         }
       }
     } else if (field === 'pregnancyConfirmedDate') {
@@ -299,22 +288,20 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         updatedInfo[index] = {
           ...current,
           pregnancyConfirmedDate: value,
-          expectedBirthDate: calculateExpectedBirthDate(value, animalType)
+          expectedBirthDate: calculateExpectedBirthDate(value, animalType),
         }
       }
     } else if (field === 'actualBirthDate') {
       if (value instanceof Date) {
         updatedInfo[index] = {
           ...current,
-          actualBirthDate: value
+          actualBirthDate: value,
         }
       } else if (!value) {
         const offspring = current.offspring ?? []
         if (offspring.length > 0) {
           try {
-            await Promise.all(
-              offspring.map((offspringId) => remove(offspringId))
-            )
+            await Promise.all(offspring.map((offspringId) => remove(offspringId)))
           } catch (error) {
             console.error('Error removing offspring:', error)
           }
@@ -322,13 +309,13 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         updatedInfo[index] = {
           ...current,
           actualBirthDate: null,
-          offspring: []
+          offspring: [],
         }
       }
     } else {
       updatedInfo[index] = {
         ...current,
-        [field]: value
+        [field]: value,
       }
     }
 
@@ -346,19 +333,16 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     if (breedingIdError) {
       form.setError('breedingId', {
         type: 'validate',
-        message: breedingIdError
+        message: breedingIdError,
       })
       return
     }
 
-    const normalizedFemaleInfo = (values.femaleBreedingInfo ?? []).filter(
-      (info) => values.femaleIds.includes(info.femaleId)
+    const normalizedFemaleInfo = (values.femaleBreedingInfo ?? []).filter((info) =>
+      values.femaleIds.includes(info.femaleId),
     )
 
-    const payload: Omit<
-      BreedingRecord,
-      'id' | 'farmerId' | 'createdAt' | 'updatedAt'
-    > = {
+    const payload: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'> = {
       breedingId: trimmedBreedingId || generateBreedingId(values.breedingDate),
       maleId: values.maleId,
       breedingDate: values.breedingDate,
@@ -367,9 +351,9 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         pregnancyConfirmedDate: info.pregnancyConfirmedDate ?? null,
         expectedBirthDate: info.expectedBirthDate ?? null,
         actualBirthDate: info.actualBirthDate ?? null,
-        offspring: info.offspring ?? []
+        offspring: info.offspring ?? [],
       })),
-      notes: values.notes?.trim() || undefined
+      notes: values.notes?.trim() || undefined,
     }
 
     await onSubmit(payload)
@@ -379,12 +363,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
   return (
     <Form form={form} onSubmit={onSubmitForm} className="space-y-4">
-      <TextField
-        name="breedingId"
-        label="ID de Monta"
-        placeholder="Ej: 10-10-25-01"
-        required
-      />
+      <TextField name="breedingId" label="ID de Monta" placeholder="Ej: 10-10-25-01" required />
 
       {selectedMale ? (
         <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
@@ -394,17 +373,11 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             {selectedMale.type === 'vaca' && '🐄'}
             {selectedMale.type === 'cerdo' && '🐷'}
           </span>
-          {selectedMale.type.charAt(0).toUpperCase() +
-            selectedMale.type.slice(1).replace('_', ' ')}
+          {selectedMale.type.charAt(0).toUpperCase() + selectedMale.type.slice(1).replace('_', ' ')}
         </div>
       ) : null}
 
-      <DateField
-        name="breedingDate"
-        label="Fecha de Monta"
-        type="date"
-        required
-      />
+      <DateField name="breedingDate" label="Fecha de Monta" type="date" required />
 
       {!selectedMale ? (
         <p className="text-sm text-gray-600 font-medium">
@@ -426,9 +399,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
       </SelectField>
 
       {males.length === 0 ? (
-        <p className="text-sm text-gray-600 font-medium">
-          No hay machos reproductores disponibles
-        </p>
+        <p className="text-sm text-gray-600 font-medium">No hay machos reproductores disponibles</p>
       ) : null}
 
       {selectedMale ? (
@@ -447,9 +418,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             disabled={!selectedMale || isLoading || isSubmitting}
             filterFunction={(option, searchValue) =>
               option.label.toLowerCase().includes(searchValue.toLowerCase()) ||
-              (option.data?.type || '')
-                .toLowerCase()
-                .includes(searchValue.toLowerCase())
+              (option.data?.type || '').toLowerCase().includes(searchValue.toLowerCase())
             }
             onRemoveOption={(option) => handleRemoveFemale(option.id)}
             onAddOption={(_option) => {
@@ -477,8 +446,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                         })()}
                       </span>
                     ))}
-                    . Puedes ignorar y continuar, o hacerlo manualmente más
-                    tarde.
+                    . Puedes ignorar y continuar, o hacerlo manualmente más tarde.
                   </span>
                 </div>
               ) : null}
@@ -489,9 +457,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
               <div className="space-y-3 bg-gray-50 rounded-md">
                 {femaleBreedingInfo.map((info, index) => {
-                  const animal = animals.find(
-                    (item) => item.id === info.femaleId
-                  )
+                  const animal = animals.find((item) => item.id === info.femaleId)
                   if (!animal) {
                     return null
                   }
@@ -499,10 +465,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                   const femaleBreedingId = getFemaleBreedingId(animal.id)
 
                   return (
-                    <div
-                      key={animal.id}
-                      className="bg-white p-3 rounded border"
-                    >
+                    <div key={animal.id} className="bg-white p-3 rounded border">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium text-gray-900 flex items-center gap-2">
                           {animal.animalNumber} - {animal.type}
@@ -517,11 +480,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                             <button
                               type="button"
                               onClick={() =>
-                                handleFemaleBreedingChange(
-                                  animal.id,
-                                  'pregnancyConfirmed',
-                                  true
-                                )
+                                handleFemaleBreedingChange(animal.id, 'pregnancyConfirmed', true)
                               }
                               className="px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors"
                             >
@@ -531,11 +490,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                             <button
                               type="button"
                               onClick={() =>
-                                handleFemaleBreedingChange(
-                                  animal.id,
-                                  'pregnancyConfirmed',
-                                  false
-                                )
+                                handleFemaleBreedingChange(animal.id, 'pregnancyConfirmed', false)
                               }
                               className="text-xs text-red-600 hover:text-red-800 underline"
                             >
@@ -558,25 +513,21 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <DateField
-                              name={
-                                `femaleBreedingInfo.${index}.pregnancyConfirmedDate` as const
-                              }
+                              name={`femaleBreedingInfo.${index}.pregnancyConfirmedDate` as const}
                               label="Fecha de confirmación"
                               type="date"
                               onDateChange={(date) =>
                                 handleFemaleBreedingChange(
                                   animal.id,
                                   'pregnancyConfirmedDate',
-                                  date
+                                  date,
                                 )
                               }
                               required
                             />
                             {info.expectedBirthDate ? (
                               <DateField
-                                name={
-                                  `femaleBreedingInfo.${index}.expectedBirthDate` as const
-                                }
+                                name={`femaleBreedingInfo.${index}.expectedBirthDate` as const}
                                 label="Fecha de parto esperado"
                                 type="date"
                                 disabled
@@ -596,7 +547,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                               <span>Descendencia:</span>
                               {info.offspring.map((offspringId) => {
                                 const offspring = animals.find(
-                                  (animalItem) => animalItem.id === offspringId
+                                  (animalItem) => animalItem.id === offspringId,
                                 )
                                 return offspring ? (
                                   <span
@@ -651,14 +602,14 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
               ? 'Actualizando...'
               : 'Registrando...'
             : !maleId
-            ? 'Selecciona un macho'
-            : femaleIds.length === 0
-            ? 'Selecciona hembras'
-            : errors.breedingId
-            ? 'ID duplicado'
-            : initialData
-            ? 'Actualizar Monta'
-            : 'Registrar Monta'}
+              ? 'Selecciona un macho'
+              : femaleIds.length === 0
+                ? 'Selecciona hembras'
+                : errors.breedingId
+                  ? 'ID duplicado'
+                  : initialData
+                    ? 'Actualizar Monta'
+                    : 'Registrar Monta'}
         </button>
       </div>
     </Form>

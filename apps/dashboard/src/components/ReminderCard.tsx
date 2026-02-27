@@ -19,13 +19,13 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
   animals = [],
   onEdit,
   onComplete,
-  onDelete
+  onDelete,
 }) => {
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('es-ES', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric'
+      year: 'numeric',
     }).format(new Date(date))
   }
 
@@ -36,9 +36,7 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
     if (diffDays < 0) {
-      return `Vencido hace ${Math.abs(diffDays)} día${
-        Math.abs(diffDays) !== 1 ? 's' : ''
-      }`
+      return `Vencido hace ${Math.abs(diffDays)} día${Math.abs(diffDays) !== 1 ? 's' : ''}`
     } else if (diffDays === 0) {
       return 'Vence hoy'
     } else if (diffDays === 1) {
@@ -97,9 +95,7 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
     : null
 
   return (
-    <div
-      className={`rounded-lg border-2 p-4 transition-all hover:shadow-md ${getStatusColor()}`}
-    >
+    <div className={`rounded-lg border-2 p-4 transition-all hover:shadow-md ${getStatusColor()}`}>
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -107,9 +103,7 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
           <div>
             <h3
               className={`font-medium ${
-                reminder.completed
-                  ? 'line-through text-gray-500'
-                  : 'text-gray-900'
+                reminder.completed ? 'line-through text-gray-500' : 'text-gray-900'
               }`}
             >
               {reminder.title}
@@ -123,29 +117,21 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor()}`}
-          >
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor()}`}>
             {reminder.priority === 'high'
               ? 'Alta'
               : reminder.priority === 'medium'
-              ? 'Media'
-              : 'Baja'}
+                ? 'Media'
+                : 'Baja'}
           </span>
 
-          {reminder.completed && (
-            <span className="text-green-500 text-sm">✓</span>
-          )}
+          {reminder.completed && <span className="text-green-500 text-sm">✓</span>}
         </div>
       </div>
 
       {/* Descripción */}
       {reminder.description && (
-        <p
-          className={`text-sm mb-3 ${
-            reminder.completed ? 'text-gray-400' : 'text-gray-600'
-          }`}
-        >
+        <p className={`text-sm mb-3 ${reminder.completed ? 'text-gray-400' : 'text-gray-600'}`}>
           {reminder.description}
         </p>
       )}
@@ -154,9 +140,7 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm">
           <span className="text-gray-500">Fecha: </span>
-          <span
-            className={reminder.completed ? 'text-gray-400' : 'font-medium'}
-          >
+          <span className={reminder.completed ? 'text-gray-400' : 'font-medium'}>
             {formatDate(reminder.dueDate)}
           </span>
         </div>
@@ -166,10 +150,9 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
             className={`text-sm font-medium ${
               reminder.dueDate < new Date()
                 ? 'text-red-600'
-                : getTimeUntilDue().includes('hoy') ||
-                  getTimeUntilDue().includes('mañana')
-                ? 'text-yellow-600'
-                : 'text-gray-600'
+                : getTimeUntilDue().includes('hoy') || getTimeUntilDue().includes('mañana')
+                  ? 'text-yellow-600'
+                  : 'text-gray-600'
             }`}
           >
             {getTimeUntilDue()}

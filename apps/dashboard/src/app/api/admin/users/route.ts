@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { isUserAdmin } from '@/lib/userUtils'
 import { collection, getDocs, query, where } from 'firebase/firestore'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebase'
+import { isUserAdmin } from '@/lib/userUtils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,31 +26,25 @@ export async function GET(request: NextRequest) {
         id: 'temp',
         email: adminEmail,
         roles: [],
-        createdAt: new Date()
+        createdAt: new Date(),
       })
     ) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
 
     // Obtener todos los usuarios excepto el admin actual
-    const usersQuery = query(
-      collection(db, 'users'),
-      where('email', '!=', adminEmail)
-    )
+    const usersQuery = query(collection(db, 'users'), where('email', '!=', adminEmail))
 
     const querySnapshot = await getDocs(usersQuery)
     const users = querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-      isActive: true // Por ahora todos los usuarios están activos
+      isActive: true, // Por ahora todos los usuarios están activos
     }))
 
     return NextResponse.json({ users })
   } catch (error) {
     console.error('Error al obtener usuarios:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }

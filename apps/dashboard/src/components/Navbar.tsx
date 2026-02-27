@@ -1,14 +1,14 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import React, { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { useAuth } from '@/hooks/useAuth'
+import BrandLogo from '@/components/BrandLogo'
 import { RootState } from '@/features/store'
+import { useAuth } from '@/hooks/useAuth'
 import { isUserAdmin } from '@/lib/userUtils'
 import { Modal } from './Modal'
 import UserImpersonationSelector from './UserImpersonationSelector'
-import BrandLogo from '@/components/BrandLogo'
 
 /**
  * Componente de navegación principal
@@ -17,7 +17,7 @@ import BrandLogo from '@/components/BrandLogo'
  */
 const Navbar: React.FC = () => {
   const { user, isLoading, impersonatingUser, originalUser } = useSelector(
-    (state: RootState) => state.auth
+    (state: RootState) => state.auth,
   )
   const { logout, stopImpersonation } = useAuth()
   const [showUserSelector, setShowUserSelector] = useState(false)
@@ -80,12 +80,8 @@ const Navbar: React.FC = () => {
             {/* Badge de impersonación (desktop) */}
             {impersonatingUser && originalUser && (
               <div className="hidden md:flex items-center gap-2 bg-yellow-500/90 text-black px-2 py-1 rounded text-[11px] font-medium shadow-sm">
-                <span>
-                  🎭 {impersonatingUser.farmName || impersonatingUser.email}
-                </span>
-                <span className="opacity-70">
-                  (Admin: {originalUser.email})
-                </span>
+                <span>🎭 {impersonatingUser.farmName || impersonatingUser.email}</span>
+                <span className="opacity-70">(Admin: {originalUser.email})</span>
                 <button
                   onClick={stopImpersonation}
                   className="ml-1 text-xs font-bold hover:text-red-700"
@@ -102,9 +98,7 @@ const Navbar: React.FC = () => {
             {/* Impersonación (mobile) */}
             {impersonatingUser && originalUser && (
               <div className="md:hidden flex items-center gap-1 bg-yellow-500 text-black px-2 py-1 rounded text-[10px] font-medium">
-                <span>
-                  🎭 {impersonatingUser.farmName || impersonatingUser.email}
-                </span>
+                <span>🎭 {impersonatingUser.farmName || impersonatingUser.email}</span>
                 <button
                   onClick={stopImpersonation}
                   className="ml-1 text-[10px] font-bold hover:text-red-700"
@@ -159,9 +153,7 @@ const Navbar: React.FC = () => {
                     </span>
                   </div>
                   <svg
-                    className={`h-4 w-4 transition-transform ${
-                      menuOpen ? 'rotate-180' : ''
-                    }`}
+                    className={`h-4 w-4 transition-transform ${menuOpen ? 'rotate-180' : ''}`}
                     viewBox="0 0 20 20"
                     fill="currentColor"
                     aria-hidden="true"
@@ -179,13 +171,9 @@ const Navbar: React.FC = () => {
                     role="menu"
                   >
                     <div className="px-4 py-3 text-sm">
-                      <p className="font-medium text-gray-900 truncate">
-                        {user.email}
-                      </p>
+                      <p className="font-medium text-gray-900 truncate">{user.email}</p>
                       {user.farmName && (
-                        <p className="text-gray-500 truncate text-xs">
-                          {user.farmName}
-                        </p>
+                        <p className="text-gray-500 truncate text-xs">{user.farmName}</p>
                       )}
                       {impersonatingUser && originalUser && (
                         <p className="mt-1 text-xs font-medium text-yellow-700 bg-yellow-100 rounded px-1 py-0.5">
@@ -261,9 +249,7 @@ const Navbar: React.FC = () => {
           title="Seleccionar usuario para suplantar"
           size="md"
         >
-          <UserImpersonationSelector
-            onClose={() => setShowUserSelector(false)}
-          />
+          <UserImpersonationSelector onClose={() => setShowUserSelector(false)} />
         </Modal>
       </div>
     </nav>

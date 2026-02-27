@@ -26,14 +26,14 @@ interface DataWithAdminAction {
  */
 export const createAdminActionMetadata = (
   adminUser: User,
-  reason?: string
+  reason?: string,
 ): AdminActionMetadata => {
   return {
     performedByAdmin: true,
     adminEmail: adminUser.email,
     adminId: adminUser.id,
     originalTimestamp: new Date(),
-    impersonationReason: reason
+    impersonationReason: reason,
   }
 }
 
@@ -47,11 +47,11 @@ export const createAdminActionMetadata = (
 export const addAdminMetadata = <T extends Record<string, unknown>>(
   data: T,
   adminUser: User,
-  reason?: string
+  reason?: string,
 ): T & { adminAction: AdminActionMetadata } => {
   return {
     ...data,
-    adminAction: createAdminActionMetadata(adminUser, reason)
+    adminAction: createAdminActionMetadata(adminUser, reason),
   }
 }
 
@@ -69,9 +69,7 @@ export const isAdminAction = (data: DataWithAdminAction): boolean => {
  * @param data - Datos con metadata de admin
  * @returns Información del admin o null
  */
-export const getAdminInfo = (
-  data: DataWithAdminAction
-): AdminActionMetadata | null => {
+export const getAdminInfo = (data: DataWithAdminAction): AdminActionMetadata | null => {
   return data?.adminAction || null
 }
 
@@ -107,7 +105,7 @@ export const useAdminActions = () => {
 
   const wrapWithAdminMetadata = <T extends Record<string, unknown>>(
     data: T,
-    reason?: string
+    reason?: string,
   ): T | (T & { adminAction: AdminActionMetadata }) => {
     if (!isImpersonating()) {
       return data
@@ -129,6 +127,6 @@ export const useAdminActions = () => {
     addAdminMetadata,
     isAdminAction,
     getAdminInfo,
-    formatAdminActionMessage
+    formatAdminActionMessage,
   }
 }

@@ -1,18 +1,18 @@
 'use client'
 
-import React from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import React from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { useAdminAnimals } from '@/hooks/admin/useAdminAnimals'
 import {
+  AnimalStatus,
   animal_icon,
   animal_stage_labels,
-  gender_icon,
-  animal_status_labels,
   animal_status_colors,
-  AnimalStatus
+  animal_status_labels,
+  gender_icon,
 } from '@/types/animals'
-import { useAdminAnimals } from '@/hooks/admin/useAdminAnimals'
 
 export default function AdminAnimals() {
   const { animals, isLoading, error, fetchByStatus } = useAdminAnimals()
@@ -35,30 +35,27 @@ export default function AdminAnimals() {
   }
 
   // Agrupar animales por granjero
-  const animalsByFarmer = animals.reduce((acc, animal) => {
-    if (!acc[animal.farmerId]) {
-      acc[animal.farmerId] = []
-    }
-    acc[animal.farmerId].push(animal)
-    return acc
-  }, {} as Record<string, typeof animals>)
+  const animalsByFarmer = animals.reduce(
+    (acc, animal) => {
+      if (!acc[animal.farmerId]) {
+        acc[animal.farmerId] = []
+      }
+      acc[animal.farmerId].push(animal)
+      return acc
+    },
+    {} as Record<string, typeof animals>,
+  )
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Gestión de Animales
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Vista general de todos los animales en el sistema
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">Gestión de Animales</h1>
+          <p className="text-gray-600 mt-1">Vista general de todos los animales en el sistema</p>
         </div>
         <div className="flex items-center gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Estado
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
             <select
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
               value={status}
@@ -75,9 +72,7 @@ export default function AdminAnimals() {
               ))}
             </select>
           </div>
-          <div className="text-sm text-gray-500">
-            Total: {animals.length} animales
-          </div>
+          <div className="text-sm text-gray-500">Total: {animals.length} animales</div>
         </div>
       </div>
 
@@ -135,9 +130,7 @@ export default function AdminAnimals() {
               <tr key={animal.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <span className="text-2xl mr-3">
-                      {animal_icon[animal.type]}
-                    </span>
+                    <span className="text-2xl mr-3">{animal_icon[animal.type]}</span>
                     <div>
                       <div className="text-sm font-medium text-gray-900">
                         #{animal.animalNumber}
@@ -149,12 +142,8 @@ export default function AdminAnimals() {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900 capitalize">
-                    {animal.type}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {animal_stage_labels[animal.stage]}
-                  </div>
+                  <div className="text-sm text-gray-900 capitalize">{animal.type}</div>
+                  <div className="text-sm text-gray-500">{animal_stage_labels[animal.stage]}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {animal.farmerId}

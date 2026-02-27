@@ -1,20 +1,14 @@
 'use client'
 
 import React, { forwardRef, MutableRefObject } from 'react'
-import {
-  FieldPath,
-  FieldValues,
-  RegisterOptions,
-  useFormContext
-} from 'react-hook-form'
+import { FieldPath, FieldValues, RegisterOptions, useFormContext } from 'react-hook-form'
 
 interface Option {
   label: string
   value: string | number
 }
 
-interface SelectFieldBaseProps
-  extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'name'> {
+interface SelectFieldBaseProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'name'> {
   label?: string
   helperText?: string
   options: Option[]
@@ -28,15 +22,8 @@ interface SelectFieldProps<TFieldValues extends FieldValues>
 }
 
 function SelectFieldComponent<TFieldValues extends FieldValues>(
-  {
-    name,
-    label,
-    helperText,
-    options,
-    rules,
-    ...selectProps
-  }: SelectFieldProps<TFieldValues>,
-  ref: React.ForwardedRef<HTMLSelectElement>
+  { name, label, helperText, options, rules, ...selectProps }: SelectFieldProps<TFieldValues>,
+  ref: React.ForwardedRef<HTMLSelectElement>,
 ) {
   const { register, getFieldState, formState } = useFormContext<TFieldValues>()
 
@@ -46,9 +33,7 @@ function SelectFieldComponent<TFieldValues extends FieldValues>(
   const baseClassName = `w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
     error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
   }`
-  const finalClassName = className
-    ? `${baseClassName} ${className}`.trim()
-    : baseClassName
+  const finalClassName = className ? `${baseClassName} ${className}`.trim() : baseClassName
 
   const handleRef = (element: HTMLSelectElement | null) => {
     registerRef(element)
@@ -62,10 +47,7 @@ function SelectFieldComponent<TFieldValues extends FieldValues>(
   return (
     <div className="space-y-1">
       {label ? (
-        <label
-          htmlFor={name}
-          className="block text-sm font-medium text-gray-700"
-        >
+        <label htmlFor={name} className="block text-sm font-medium text-gray-700">
           {label}
         </label>
       ) : null}
@@ -84,20 +66,16 @@ function SelectFieldComponent<TFieldValues extends FieldValues>(
           </option>
         ))}
       </select>
-      {helperText ? (
-        <p className="text-xs text-gray-500">{helperText}</p>
-      ) : null}
-      {error?.message ? (
-        <p className="text-xs text-red-600">{String(error.message)}</p>
-      ) : null}
+      {helperText ? <p className="text-xs text-gray-500">{helperText}</p> : null}
+      {error?.message ? <p className="text-xs text-red-600">{String(error.message)}</p> : null}
     </div>
   )
 }
 
 const SelectField = forwardRef(SelectFieldComponent) as <
-  TFieldValues extends FieldValues = FieldValues
+  TFieldValues extends FieldValues = FieldValues,
 >(
-  props: SelectFieldProps<TFieldValues> & { ref?: React.Ref<HTMLSelectElement> }
+  props: SelectFieldProps<TFieldValues> & { ref?: React.Ref<HTMLSelectElement> },
 ) => ReturnType<typeof SelectFieldComponent>
 
 export { SelectField }

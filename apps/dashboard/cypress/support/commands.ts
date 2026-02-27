@@ -24,11 +24,7 @@ declare global {
        * Custom command to register a new user
        * @example cy.register('user@example.com', 'password', 'Farm Name')
        */
-      register(
-        email: string,
-        password: string,
-        farmName?: string
-      ): Chainable<void>
+      register(email: string, password: string, farmName?: string): Chainable<void>
 
       /**
        * Custom command to logout
@@ -60,20 +56,17 @@ Cypress.Commands.add('login', (email: string, password: string) => {
 })
 
 // Register command
-Cypress.Commands.add(
-  'register',
-  (email: string, password: string, farmName?: string) => {
-    cy.visit('/auth')
-    cy.contains('¿No tienes cuenta? Regístrate').click()
-    cy.get('input[name="email"]').type(email)
-    cy.get('input[name="password"]').type(password)
-    cy.get('input[name="confirmPassword"]').type(password)
-    if (farmName) {
-      cy.get('input[name="farmName"]').type(farmName)
-    }
-    cy.get('button[type="submit"]').contains('Registrarse').click()
+Cypress.Commands.add('register', (email: string, password: string, farmName?: string) => {
+  cy.visit('/auth')
+  cy.contains('¿No tienes cuenta? Regístrate').click()
+  cy.get('input[name="email"]').type(email)
+  cy.get('input[name="password"]').type(password)
+  cy.get('input[name="confirmPassword"]').type(password)
+  if (farmName) {
+    cy.get('input[name="farmName"]').type(farmName)
   }
-)
+  cy.get('button[type="submit"]').contains('Registrarse').click()
+})
 
 // Logout command
 Cypress.Commands.add('logout', () => {

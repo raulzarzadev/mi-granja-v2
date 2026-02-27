@@ -88,7 +88,7 @@ export const animals_genders = ['macho', 'hembra'] as const
 export type AnimalGender = (typeof animals_genders)[number]
 export const gender_icon: Record<AnimalGender, string> = {
   macho: '🚹',
-  hembra: '🚺'
+  hembra: '🚺',
 }
 
 export const animals_types = [
@@ -102,7 +102,7 @@ export const animals_types = [
   'perro',
   'gato',
   'equino',
-  'otro'
+  'otro',
 ] as const
 
 export const animals_types_labels: Record<AnimalType, string> = {
@@ -116,27 +116,21 @@ export const animals_types_labels: Record<AnimalType, string> = {
   perro: 'Perro',
   gato: 'Gato',
   equino: 'Equino',
-  otro: 'Otro'
+  otro: 'Otro',
 }
 
-export const animals_stages = [
-  'cria',
-  'engorda',
-  'lechera',
-  'reproductor',
-  'descarte'
-] as const
+export const animals_stages = ['cria', 'engorda', 'lechera', 'reproductor', 'descarte'] as const
 export const animals_stages_labels: Record<AnimalStage, string> = {
   cria: 'Cría',
   engorda: 'Engorda',
   lechera: 'Lechera',
   reproductor: 'Reproductor',
-  descarte: 'Descarte'
+  descarte: 'Descarte',
 }
 
 export const animals_genders_labels: Record<AnimalGender, string> = {
   macho: 'Macho',
-  hembra: 'Hembra'
+  hembra: 'Hembra',
 }
 
 export type AnimalType = (typeof animals_types)[number]
@@ -144,13 +138,10 @@ export type AnimalStage = (typeof animals_stages)[number]
 
 export const breeding_animal_status = ['monta', 'embarazada', 'parida'] as const
 export type AnimalBreedingStatus = (typeof breeding_animal_status)[number]
-export const breeding_animal_status_labels: Record<
-  AnimalBreedingStatus,
-  string
-> = {
+export const breeding_animal_status_labels: Record<AnimalBreedingStatus, string> = {
   monta: 'En monta',
   embarazada: 'Embarazada',
-  parida: 'Parida'
+  parida: 'Parida',
 }
 
 export const animal_statuses = [
@@ -158,7 +149,7 @@ export const animal_statuses = [
   'activo',
   'muerto',
   'vendido',
-  'perdido'
+  'perdido',
 ] as const
 
 export type AnimalStatus = (typeof animal_statuses)[number]
@@ -174,7 +165,7 @@ export const animal_icon: Record<AnimalType, string> = {
   perro: '🐶',
   gato: '🐱',
   equino: '🐴',
-  otro: '🐾'
+  otro: '🐾',
 }
 
 // ===== SISTEMA UNIFICADO DE REGISTROS =====
@@ -192,13 +183,13 @@ export const record_categories = [
   'supplement',
   'surgery',
   'observation',
-  'other'
+  'other',
 ] as const
 export type RecordCategory = (typeof record_categories)[number]
 
 export const record_type_labels: Record<RecordType, string> = {
   note: 'Nota',
-  health: 'Salud'
+  health: 'Salud',
 }
 
 export const record_category_labels: Record<RecordCategory, string> = {
@@ -211,7 +202,7 @@ export const record_category_labels: Record<RecordCategory, string> = {
   supplement: 'Suplemento',
   surgery: 'Cirugía',
   observation: 'Observación',
-  other: 'Otro'
+  other: 'Otro',
 }
 
 export const record_category_icons: Record<RecordCategory, string> = {
@@ -224,7 +215,7 @@ export const record_category_icons: Record<RecordCategory, string> = {
   supplement: '🧪',
   surgery: '🏥',
   observation: '👁️',
-  other: '📋'
+  other: '📋',
 }
 
 export const record_category_colors: Record<RecordCategory, string> = {
@@ -237,7 +228,7 @@ export const record_category_colors: Record<RecordCategory, string> = {
   supplement: 'bg-indigo-100 text-indigo-800',
   surgery: 'bg-red-100 text-red-800',
   observation: 'bg-yellow-100 text-yellow-800',
-  other: 'bg-gray-100 text-gray-800'
+  other: 'bg-gray-100 text-gray-800',
 }
 
 export const record_severities = ['low', 'medium', 'high', 'critical'] as const
@@ -247,14 +238,14 @@ export const record_severity_labels: Record<RecordSeverity, string> = {
   low: 'Leve',
   medium: 'Moderada',
   high: 'Alta',
-  critical: 'Crítica'
+  critical: 'Crítica',
 }
 
 export const record_severity_colors: Record<RecordSeverity, string> = {
   low: 'bg-green-100 text-green-800',
   medium: 'bg-yellow-100 text-yellow-800',
   high: 'bg-orange-100 text-orange-800',
-  critical: 'bg-red-100 text-red-800'
+  critical: 'bg-red-100 text-red-800',
 }
 
 export const animal_stage_colors: Record<AnimalStage, string> = {
@@ -262,7 +253,7 @@ export const animal_stage_colors: Record<AnimalStage, string> = {
   engorda: 'bg-orange-100 text-orange-800',
   lechera: 'bg-purple-100 text-purple-800',
   reproductor: 'bg-green-100 text-green-800',
-  descarte: 'bg-red-100 text-red-800'
+  descarte: 'bg-red-100 text-red-800',
 }
 
 export const animal_stage_labels: Record<AnimalStage, string> = {
@@ -270,26 +261,26 @@ export const animal_stage_labels: Record<AnimalStage, string> = {
   engorda: 'Engorda',
   lechera: 'Lechera',
   reproductor: 'Reproductor',
-  descarte: 'Descarte'
+  descarte: 'Descarte',
 }
 export const animal_stage_icons: Record<AnimalStage, string> = {
   cria: '👶',
   engorda: '🍖',
   lechera: '🥛',
   reproductor: '❤️',
-  descarte: '🚫'
+  descarte: '🚫',
 }
 
 export const animal_status_labels: Record<AnimalStatus, string> = {
   activo: 'Activo',
   muerto: 'Muerto',
   vendido: 'Vendido',
-  perdido: 'Perdido'
+  perdido: 'Perdido',
 }
 
 export const animal_status_colors: Record<AnimalStatus, string> = {
   activo: 'bg-green-100 text-green-800',
   muerto: 'bg-gray-200 text-gray-700',
   vendido: 'bg-yellow-100 text-yellow-800',
-  perdido: 'bg-red-100 text-red-800'
+  perdido: 'bg-red-100 text-red-800',
 }

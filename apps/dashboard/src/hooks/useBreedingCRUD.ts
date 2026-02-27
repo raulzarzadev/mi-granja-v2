@@ -1,26 +1,25 @@
-import { useState, useRef } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 import {
-  collection,
   addDoc,
-  updateDoc,
+  collection,
   deleteDoc,
   doc,
-  Timestamp,
-  where,
-  query,
+  onSnapshot,
   orderBy,
-  onSnapshot
+  query,
+  Timestamp,
+  updateDoc,
+  where,
 } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
-import { RootState } from '@/features/store'
+import { useRef, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { setBreedingRecords } from '@/features/breeding/breedingSlice'
 import { deserializeObj, serializeObj } from '@/features/libs/serializeObj'
-import { getBreedingUpcomingBirths } from './libs/breeding-helpers'
-import { BreedingRecord } from '@/types/breedings'
+import { RootState } from '@/features/store'
 import { toDate, toLocalDateStart } from '@/lib/dates'
-import { NewCommentInput } from '@/types/comment'
-import { Comment } from '@/types/comment'
+import { db } from '@/lib/firebase'
+import { BreedingRecord } from '@/types/breedings'
+import { Comment, NewCommentInput } from '@/types/comment'
+import { getBreedingUpcomingBirths } from './libs/breeding-helpers'
 
 export const useBreedingCRUD = () => {
   const dispatch = useDispatch()
@@ -52,10 +51,7 @@ export const useBreedingCRUD = () => {
 
   // Crear registro de monta
   const createBreedingRecord = async (
-    data: Omit<
-      BreedingRecord,
-      'id' | 'farmerId' | 'createdAt' | 'updatedAt' | 'breedingId'
-    >
+    data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt' | 'breedingId'>,
   ) => {
     if (!user) throw new Error('Usuario no autenticado')
     if (!currentFarm?.id) throw new Error('Selecciona una granja primero')
@@ -63,9 +59,7 @@ export const useBreedingCRUD = () => {
     setIsSubmitting(true)
     try {
       const now = Timestamp.now()
-      const breedingDate = data.breedingDate
-        ? new Date(data.breedingDate)
-        : new Date()
+      const breedingDate = data.breedingDate ? new Date(data.breedingDate) : new Date()
       const breedingId = generateBreedingId(breedingDate)
 
       const docData = {
@@ -81,25 +75,19 @@ export const useBreedingCRUD = () => {
           data.femaleBreedingInfo?.map((info) => ({
             ...info,
             pregnancyConfirmedDate: info.pregnancyConfirmedDate
-              ? Timestamp.fromDate(
-                  toLocalDateStart(new Date(info.pregnancyConfirmedDate))
-                )
+              ? Timestamp.fromDate(toLocalDateStart(new Date(info.pregnancyConfirmedDate)))
               : null,
             expectedBirthDate: info.expectedBirthDate
-              ? Timestamp.fromDate(
-                  toLocalDateStart(new Date(info.expectedBirthDate))
-                )
+              ? Timestamp.fromDate(toLocalDateStart(new Date(info.expectedBirthDate)))
               : null,
             actualBirthDate: info.actualBirthDate
-              ? Timestamp.fromDate(
-                  toLocalDateStart(new Date(info.actualBirthDate))
-                )
-              : null
+              ? Timestamp.fromDate(toLocalDateStart(new Date(info.actualBirthDate)))
+              : null,
           })) || [],
 
         notes: data.notes || '',
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       }
 
       await addDoc(collection(db, 'breedingRecords'), docData)
@@ -114,18 +102,17 @@ export const useBreedingCRUD = () => {
   // Actualizar registro de reproducción
   const updateBreedingRecord = async (
     id: string,
-    updates: Partial<Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt'>>
+    updates: Partial<Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt'>>,
   ) => {
     setIsSubmitting(true)
     try {
       const docRef = doc(db, 'breedingRecords', id)
 
       const updateData: Record<string, unknown> = {
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       }
 
-      const hasProp = <K extends keyof typeof updates>(key: K) =>
-        Object.prototype.hasOwnProperty.call(updates, key)
+      const hasProp = <K extends keyof typeof updates>(key: K) => Object.hasOwn(updates, key)
 
       if (hasProp('breedingId')) {
         updateData.breedingId = updates.breedingId ?? null
@@ -146,26 +133,18 @@ export const useBreedingCRUD = () => {
       }
 
       if (hasProp('femaleBreedingInfo') && updates.femaleBreedingInfo) {
-        updateData.femaleBreedingInfo = updates.femaleBreedingInfo.map(
-          (info) => ({
-            ...info,
-            pregnancyConfirmedDate: info.pregnancyConfirmedDate
-              ? Timestamp.fromDate(
-                  toLocalDateStart(new Date(info.pregnancyConfirmedDate))
-                )
-              : null,
-            expectedBirthDate: info.expectedBirthDate
-              ? Timestamp.fromDate(
-                  toLocalDateStart(new Date(info.expectedBirthDate))
-                )
-              : null,
-            actualBirthDate: info.actualBirthDate
-              ? Timestamp.fromDate(
-                  toLocalDateStart(new Date(info.actualBirthDate))
-                )
-              : null
-          })
-        )
+        updateData.femaleBreedingInfo = updates.femaleBreedingInfo.map((info) => ({
+          ...info,
+          pregnancyConfirmedDate: info.pregnancyConfirmedDate
+            ? Timestamp.fromDate(toLocalDateStart(new Date(info.pregnancyConfirmedDate)))
+            : null,
+          expectedBirthDate: info.expectedBirthDate
+            ? Timestamp.fromDate(toLocalDateStart(new Date(info.expectedBirthDate)))
+            : null,
+          actualBirthDate: info.actualBirthDate
+            ? Timestamp.fromDate(toLocalDateStart(new Date(info.actualBirthDate)))
+            : null,
+        }))
       }
 
       if (hasProp('comments')) {
@@ -173,7 +152,7 @@ export const useBreedingCRUD = () => {
           ...comment,
           createdAt: comment.createdAt
             ? Timestamp.fromDate(new Date(comment.createdAt))
-            : Timestamp.now()
+            : Timestamp.now(),
         })
 
         updateData.comments = updates.comments?.map(commentToFirestore) ?? []
@@ -187,12 +166,12 @@ export const useBreedingCRUD = () => {
                 ? {
                     ...record,
                     ...updates,
-                    updatedAt: new Date() // Update the modification date
+                    updatedAt: new Date(), // Update the modification date
                   }
-                : record
-            )
-          )
-        )
+                : record,
+            ),
+          ),
+        ),
       )
 
       await updateDoc(docRef, updateData)
@@ -210,9 +189,7 @@ export const useBreedingCRUD = () => {
     try {
       await deleteDoc(doc(db, 'breedingRecords', id))
       dispatch(
-        setBreedingRecords(
-          serializeObj(breedingRecords.filter((record) => record.id !== id))
-        )
+        setBreedingRecords(serializeObj(breedingRecords.filter((record) => record.id !== id))),
       )
     } catch (error) {
       console.error('Error deleting breeding record:', error)
@@ -227,7 +204,7 @@ export const useBreedingCRUD = () => {
     return breedingRecords.filter(
       (record) =>
         record.femaleBreedingInfo?.some((info) => info.femaleId === animalId) ||
-        record.maleId === animalId
+        record.maleId === animalId,
     )
   }
 
@@ -235,8 +212,8 @@ export const useBreedingCRUD = () => {
   const getActivePregnancies = () => {
     return breedingRecords.filter((record) =>
       record.femaleBreedingInfo?.some(
-        (info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate
-      )
+        (info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate,
+      ),
     )
   }
 
@@ -254,9 +231,9 @@ export const useBreedingCRUD = () => {
       (total, record) =>
         total +
         (record.femaleBreedingInfo?.filter(
-          (info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate
+          (info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate,
         ).length || 0),
-      0
+      0,
     )
     const upcomingBirths = getUpcomingBirths().length
 
@@ -265,32 +242,26 @@ export const useBreedingCRUD = () => {
         total +
         (record.femaleBreedingInfo?.reduce(
           (femaleTotal, info) => femaleTotal + (info.offspring?.length || 0),
-          0
+          0,
         ) || 0),
-      0
+      0,
     )
 
     return {
       totalBreedings: breedingRecords.length,
       activePregnancies,
       upcomingBirths,
-      totalOffspring
+      totalOffspring,
     }
   }
 
   // ============== Births Window (past due / upcoming) ==============
   // Cache simple por "days" + firma de datos para evitar recálculos pesados
   const windowsCache = useRef<
-    Map<
-      number,
-      { signature: string; value: ReturnType<typeof buildBirthsWindow> }
-    >
+    Map<number, { signature: string; value: ReturnType<typeof buildBirthsWindow> }>
   >(new Map())
   const summariesCache = useRef<
-    Map<
-      number,
-      { signature: string; value: ReturnType<typeof buildBirthsWindowSummary> }
-    >
+    Map<number, { signature: string; value: ReturnType<typeof buildBirthsWindowSummary> }>
   >(new Map())
 
   interface FemaleInfoLite {
@@ -310,23 +281,18 @@ export const useBreedingCRUD = () => {
             .map((f) =>
               [
                 f.femaleId,
-                f.expectedBirthDate
-                  ? toDate(f.expectedBirthDate)?.getTime()
-                  : 0,
+                f.expectedBirthDate ? toDate(f.expectedBirthDate)?.getTime() : 0,
                 f.actualBirthDate ? toDate(f.actualBirthDate)?.getTime() : 0,
-                f.pregnancyConfirmedDate
-                  ? toDate(f.pregnancyConfirmedDate)?.getTime()
-                  : 0
-              ].join(':')
+                f.pregnancyConfirmedDate ? toDate(f.pregnancyConfirmedDate)?.getTime() : 0,
+              ].join(':'),
             )
-            .join('|')
-        ].join('#')
+            .join('|'),
+        ].join('#'),
       )
       .join(';')
   }
 
-  const normalizeDate = (d: Date) =>
-    new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  const normalizeDate = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
 
   const buildBirthsWindow = (days: number) => {
     const now = normalizeDate(new Date())
@@ -346,9 +312,7 @@ export const useBreedingCRUD = () => {
       record.femaleBreedingInfo.forEach((info) => {
         if (!info.expectedBirthDate || info.actualBirthDate) return
         const expected = normalizeDate(new Date(info.expectedBirthDate))
-        const diffDays = Math.round(
-          (expected.getTime() - now.getTime()) / msDay
-        )
+        const diffDays = Math.round((expected.getTime() - now.getTime()) / msDay)
         if (diffDays < 0 && Math.abs(diffDays) <= days) {
           pastDue.push({ record, info, daysDiff: diffDays })
         } else if (diffDays >= 0 && diffDays <= days) {
@@ -364,13 +328,11 @@ export const useBreedingCRUD = () => {
     return { pastDue, upcoming, days }
   }
 
-  const buildBirthsWindowSummary = (
-    window: ReturnType<typeof buildBirthsWindow>
-  ) => {
+  const buildBirthsWindowSummary = (window: ReturnType<typeof buildBirthsWindow>) => {
     return {
       pastDueCount: window.pastDue.length,
       upcomingCount: window.upcoming.length,
-      windowDays: window.days
+      windowDays: window.days,
     }
   }
 
@@ -399,7 +361,7 @@ export const useBreedingCRUD = () => {
     const q = query(
       collection(db, 'breedingRecords'),
       ...constraints,
-      orderBy('breedingDate', 'desc')
+      orderBy('breedingDate', 'desc'),
     )
 
     onSnapshot(q, (snapshot) => {
@@ -430,13 +392,13 @@ export const useBreedingCRUD = () => {
                   : undefined,
                 actualBirthDate: info.actualBirthDate
                   ? toLocalDateStart(info.actualBirthDate.toDate())
-                  : undefined
-              })
+                  : undefined,
+              }),
             ) || [],
           notes: data.notes || '',
           createdAt: data.createdAt.toDate(),
           updatedAt: data.updatedAt.toDate(),
-          ...data
+          ...data,
         })
       })
       dispatch(setBreedingRecords(serializeObj(records)))
@@ -454,7 +416,7 @@ export const useBreedingCRUD = () => {
       content: comment.content,
       urgency: comment.urgency || 'none',
       createdAt: new Date(),
-      createdBy: user.id
+      createdBy: user.id,
     }
 
     const updatedComments = [newComment, ...(record.comments || [])]
@@ -465,13 +427,13 @@ export const useBreedingCRUD = () => {
   const handleUpdateCommentUrgency = async (
     breedingId: string,
     commentId: string,
-    newLevel: NewCommentInput['urgency']
+    newLevel: NewCommentInput['urgency'],
   ) => {
     const record = breedingRecords.find((b) => b.id === breedingId)
     if (!record) throw new Error('Registro de monta no encontrado')
 
     const updatedComments = record.comments?.map((comment) =>
-      comment.id === commentId ? { ...comment, urgency: newLevel } : comment
+      comment.id === commentId ? { ...comment, urgency: newLevel } : comment,
     )
 
     await updateBreedingRecord(breedingId, { comments: updatedComments })
@@ -479,9 +441,9 @@ export const useBreedingCRUD = () => {
     setBreedingRecords(
       serializeObj(
         breedingRecords.map((r) =>
-          r.id === breedingId ? { ...r, comments: updatedComments || [] } : r
-        )
-      )
+          r.id === breedingId ? { ...r, comments: updatedComments || [] } : r,
+        ),
+      ),
     )
   }
 
@@ -500,6 +462,6 @@ export const useBreedingCRUD = () => {
     getBirthsWindowSummary,
     getStats,
     onAddComment,
-    handleUpdateCommentUrgency
+    handleUpdateCommentUrgency,
   }
 }

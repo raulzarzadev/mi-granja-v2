@@ -74,17 +74,17 @@ export const FARM_AREA_TYPES = [
   { value: 'feeding', label: 'Alimentación', icon: '🌾' },
   { value: 'storage', label: 'Almacén', icon: '📦' },
   { value: 'medical', label: 'Área Médica', icon: '🏥' },
-  { value: 'other', label: 'Otro', icon: '📍' }
+  { value: 'other', label: 'Otro', icon: '📍' },
 ] as const
 
 // Re-exports de colaboradores migrados
 export {
   COLLABORATOR_ROLES,
   collaborator_roles,
-  collaborator_roles_label,
   collaborator_roles_description,
+  collaborator_roles_label,
   DEFAULT_PERMISSIONS,
-  getDefaultPermissionsByRole
+  getDefaultPermissionsByRole,
 } from './collaborators'
 
 /**

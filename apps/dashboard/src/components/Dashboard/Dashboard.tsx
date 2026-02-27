@@ -2,22 +2,22 @@
 
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
-import { RootState } from '@/features/store'
-import Navbar from '@/components/Navbar'
-import FarmSwitcherBar from '@/components/FarmSwitcherBar'
 import AnimalCard from '@/components/AnimalCard'
 import BreedingTabs from '@/components/BreedingTabs'
-import ReminderCard from '@/components/ReminderCard'
 import FarmSection from '@/components/FarmSection'
-import { useReminders } from '@/hooks/useReminders'
-import ModalAnimalDetails from '../ModalAnimalDetails'
-import ModalBulkHealthAction from '../ModalBulkHealthAction'
-import HealthRemindersCard from '../HealthRemindersCard'
-import WeaningRemindersCard from '../WeaningRemindersCard'
-import RecordsTab from '../RecordsTab'
+import FarmSwitcherBar from '@/components/FarmSwitcherBar'
+import Navbar from '@/components/Navbar'
+import ReminderCard from '@/components/ReminderCard'
 import Tabs from '@/components/Tabs'
+import { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import { useReminders } from '@/hooks/useReminders'
+import HealthRemindersCard from '../HealthRemindersCard'
+import ModalAnimalDetails from '../ModalAnimalDetails'
+import ModalBulkHealthAction from '../ModalBulkHealthAction'
+import RecordsTab from '../RecordsTab'
+import WeaningRemindersCard from '../WeaningRemindersCard'
 import { AnimalsFilters, useAnimalFilters } from './Animals/animals-filters'
 
 /**
@@ -30,8 +30,7 @@ const Dashboard: React.FC = () => {
   const { isLoading: isLoadingAnimals } = useAnimalCRUD()
 
   // Usar el hook personalizado para filtros de animales
-  const { filters, setFilters, filteredAnimals, animals, formatStatLabel } =
-    useAnimalFilters()
+  const { filters, setFilters, filteredAnimals, animals, formatStatLabel } = useAnimalFilters()
 
   const {
     reminders,
@@ -40,7 +39,7 @@ const Dashboard: React.FC = () => {
     deleteReminder,
     getOverdueReminders,
     getTodayReminders,
-    getUpcomingReminders
+    getUpcomingReminders,
   } = useReminders()
 
   // Estado para selección múltiple y aplicaciones masivas
@@ -51,9 +50,7 @@ const Dashboard: React.FC = () => {
   // Funciones para selección múltiple
   const toggleAnimalSelection = (animalId: string) => {
     setSelectedAnimals((prev) =>
-      prev.includes(animalId)
-        ? prev.filter((id) => id !== animalId)
-        : [...prev, animalId]
+      prev.includes(animalId) ? prev.filter((id) => id !== animalId) : [...prev, animalId],
     )
   }
 
@@ -68,9 +65,7 @@ const Dashboard: React.FC = () => {
   }
 
   const getSelectedAnimalsData = () => {
-    return filteredAnimals.filter((animal) =>
-      selectedAnimals.includes(animal.id)
-    )
+    return filteredAnimals.filter((animal) => selectedAnimals.includes(animal.id))
   }
 
   if (!user) {
@@ -88,22 +83,16 @@ const Dashboard: React.FC = () => {
           <div className="bg-white rounded-lg shadow mb-4">
             <div className="px-6 py-3 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">
-                  Resultados:
-                </span>
+                <span className="text-sm font-medium text-gray-700">Resultados:</span>
                 <span className="text-sm font-bold text-gray-900">
-                  {filteredAnimals.length}{' '}
-                  {filteredAnimals.length === 1 ? 'animal' : 'animales'}
+                  {filteredAnimals.length} {filteredAnimals.length === 1 ? 'animal' : 'animales'}
                   {filters.status !== 'activo' ||
                   filters.type ||
                   filters.stage ||
                   filters.gender ||
                   filters.breedingStatus ||
                   filters.search ? (
-                    <span className="text-gray-500 font-normal">
-                      {' '}
-                      filtrados
-                    </span>
+                    <span className="text-gray-500 font-normal"> filtrados</span>
                   ) : (
                     <span className="text-gray-500 font-normal"> en total</span>
                   )}
@@ -204,9 +193,7 @@ const Dashboard: React.FC = () => {
               {isLoadingAnimals ? (
                 <div className="flex justify-center items-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-                  <span className="ml-3 text-gray-600">
-                    Cargando animales...
-                  </span>
+                  <span className="ml-3 text-gray-600">Cargando animales...</span>
                 </div>
               ) : filteredAnimals.length === 0 ? (
                 <div className="text-center py-12">
@@ -263,11 +250,11 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </>
-      )
+      ),
     },
     {
       label: '🐣 Reproducción',
-      content: <BreedingTabs />
+      content: <BreedingTabs />,
     },
 
     {
@@ -284,9 +271,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-500">Hoy</p>
-                  <p className="text-xl font-bold text-blue-600">
-                    {getTodayReminders().length}
-                  </p>
+                  <p className="text-xl font-bold text-blue-600">{getTodayReminders().length}</p>
                 </div>
               </div>
             </div>
@@ -312,9 +297,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-500">Vencidos</p>
-                  <p className="text-xl font-bold text-red-600">
-                    {getOverdueReminders().length}
-                  </p>
+                  <p className="text-xl font-bold text-red-600">{getOverdueReminders().length}</p>
                 </div>
               </div>
             </div>
@@ -326,9 +309,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-500">Total</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {reminders.length}
-                  </p>
+                  <p className="text-xl font-bold text-gray-900">{reminders.length}</p>
                 </div>
               </div>
             </div>
@@ -350,9 +331,7 @@ const Dashboard: React.FC = () => {
             {remindersLoading ? (
               <div className="flex justify-center items-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-                <span className="ml-3 text-gray-600">
-                  Cargando recordatorios...
-                </span>
+                <span className="ml-3 text-gray-600">Cargando recordatorios...</span>
               </div>
             ) : reminders.length === 0 ? (
               <div className="text-center py-12">
@@ -384,16 +363,16 @@ const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
-      )
+      ),
     },
     {
       label: '📋 Registros',
-      content: <RecordsTab />
+      content: <RecordsTab />,
     },
     {
       label: '🚜 Granja',
-      content: <FarmSection />
-    }
+      content: <FarmSection />,
+    },
   ]
 
   return (
@@ -403,11 +382,7 @@ const Dashboard: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Si no hay granjas, priorizar creación/selección */}
-        {farms.length === 0 ? (
-          <FarmSection />
-        ) : (
-          <Tabs tabs={tabs} tabsId="dashboard-main" />
-        )}
+        {farms.length === 0 ? <FarmSection /> : <Tabs tabs={tabs} tabsId="dashboard-main" />}
       </div>
 
       {/* Modal de aplicación masiva de eventos de salud */}

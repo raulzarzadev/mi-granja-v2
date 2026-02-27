@@ -1,9 +1,9 @@
 'use client'
 
-import React from 'react'
-import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import React from 'react'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { record_category_icons } from '@/types/animals'
 
 const HealthRemindersCard: React.FC = () => {
@@ -16,17 +16,13 @@ const HealthRemindersCard: React.FC = () => {
   // Separar por urgencia
   const overdue = upcoming.filter((item) => item.daysUntilDue < 0)
   const today = upcoming.filter((item) => item.daysUntilDue === 0)
-  const thisWeek = upcoming.filter(
-    (item) => item.daysUntilDue > 0 && item.daysUntilDue <= 7
-  )
+  const thisWeek = upcoming.filter((item) => item.daysUntilDue > 0 && item.daysUntilDue <= 7)
   const thisMonth = upcoming.filter((item) => item.daysUntilDue > 7)
 
   const getUrgencyColor = (daysUntilDue: number) => {
     if (daysUntilDue < 0) return 'bg-red-50 border-red-200 text-red-800'
-    if (daysUntilDue === 0)
-      return 'bg-orange-50 border-orange-200 text-orange-800'
-    if (daysUntilDue <= 7)
-      return 'bg-yellow-50 border-yellow-200 text-yellow-800'
+    if (daysUntilDue === 0) return 'bg-orange-50 border-orange-200 text-orange-800'
+    if (daysUntilDue <= 7) return 'bg-yellow-50 border-yellow-200 text-yellow-800'
     return 'bg-blue-50 border-blue-200 text-blue-800'
   }
 
@@ -41,9 +37,7 @@ const HealthRemindersCard: React.FC = () => {
     <div className="bg-white rounded-lg shadow-md p-4 space-y-3">
       <div className="flex items-center gap-2">
         <span className="text-2xl">💉</span>
-        <h3 className="text-lg font-semibold text-gray-900">
-          Recordatorios de Salud
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-900">Recordatorios de Salud</h3>
         <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
           {upcoming.length}
         </span>
@@ -75,7 +69,7 @@ const HealthRemindersCard: React.FC = () => {
                     <div>
                       Fecha:{' '}
                       {format(new Date(record.nextDueDate), 'dd/MM/yyyy', {
-                        locale: es
+                        locale: es,
                       })}
                     </div>
                   )}
@@ -110,7 +104,7 @@ const HealthRemindersCard: React.FC = () => {
                     <div>
                       Fecha:{' '}
                       {format(new Date(record.nextDueDate), 'dd/MM/yyyy', {
-                        locale: es
+                        locale: es,
                       })}
                     </div>
                   )}
@@ -145,7 +139,7 @@ const HealthRemindersCard: React.FC = () => {
                     <div>
                       Fecha:{' '}
                       {format(new Date(record.nextDueDate), 'dd/MM/yyyy', {
-                        locale: es
+                        locale: es,
                       })}
                     </div>
                   )}
@@ -180,7 +174,7 @@ const HealthRemindersCard: React.FC = () => {
                     <div>
                       Fecha:{' '}
                       {format(new Date(record.nextDueDate), 'dd/MM/yyyy', {
-                        locale: es
+                        locale: es,
                       })}
                     </div>
                   )}

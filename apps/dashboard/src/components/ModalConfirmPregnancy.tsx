@@ -1,11 +1,11 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Modal } from './Modal'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
-import { BreedingRecord } from '@/types/breedings'
 import { Animal } from '@/types/animals'
+import { BreedingRecord } from '@/types/breedings'
 import { InputDate } from './inputs/input-date'
+import { Modal } from './Modal'
 
 interface ModalConfirmPregnancyProps {
   isOpen: boolean
@@ -27,7 +27,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
   animals,
   onSubmit,
   isLoading = false,
-  selectedAnimal
+  selectedAnimal,
 }) => {
   // Obtener hembras que aún no tienen embarazo confirmado
   const unconfirmedFemales =
@@ -40,15 +40,13 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
       .filter(Boolean) || []
 
   const [selectedFemales, setSelectedFemales] = useState<string[]>([])
-  const [confirmationDate, setConfirmationDate] = useState(
-    new Date().toISOString().split('T')[0]
-  )
+  const [confirmationDate, setConfirmationDate] = useState(new Date().toISOString().split('T')[0])
 
   const handleFemaleToggle = (animalNumber: string) => {
     setSelectedFemales((prev) =>
       prev.includes(animalNumber)
         ? prev.filter((id) => id !== animalNumber)
-        : [...prev, animalNumber]
+        : [...prev, animalNumber],
     )
   }
 
@@ -63,27 +61,25 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
     const confirmDate = new Date(confirmationDate)
 
     // Actualizar femaleBreedingInfo con las confirmaciones
-    const updatedFemaleBreedingInfo = breedingRecord.femaleBreedingInfo.map(
-      (info) => {
-        if (selectedFemales.includes(info.femaleId)) {
-          const animal = animals.find((a) => a.id === info.femaleId)
-          const expectedBirthDate = animal
-            ? calculateExpectedBirthDate(confirmDate, animal.type)
-            : undefined
+    const updatedFemaleBreedingInfo = breedingRecord.femaleBreedingInfo.map((info) => {
+      if (selectedFemales.includes(info.femaleId)) {
+        const animal = animals.find((a) => a.id === info.femaleId)
+        const expectedBirthDate = animal
+          ? calculateExpectedBirthDate(confirmDate, animal.type)
+          : undefined
 
-          return {
-            ...info,
-            pregnancyConfirmedDate: confirmDate,
-            expectedBirthDate
-          }
+        return {
+          ...info,
+          pregnancyConfirmedDate: confirmDate,
+          expectedBirthDate,
         }
-        return info
       }
-    )
+      return info
+    })
 
     const updatedRecord: BreedingRecord = {
       ...breedingRecord,
-      femaleBreedingInfo: updatedFemaleBreedingInfo
+      femaleBreedingInfo: updatedFemaleBreedingInfo,
     }
 
     try {
@@ -129,11 +125,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
             <InputDate
               label="Fecha de confirmación"
               value={new Date()}
-              onChange={(date) =>
-                setConfirmationDate(
-                  date ? date.toISOString().split('T')[0] : ''
-                )
-              }
+              onChange={(date) => setConfirmationDate(date ? date.toISOString().split('T')[0] : '')}
               mode="date"
               helperText={'Esta fecha se usará para calcular el parto esperado'}
             />
@@ -147,10 +139,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
                 {unconfirmedFemales.map((animal) => {
                   const isSelected = selectedFemales.includes(animal?.id || '')
                   const expectedBirth = animal
-                    ? calculateExpectedBirthDate(
-                        new Date(confirmationDate),
-                        animal.type
-                      )
+                    ? calculateExpectedBirthDate(new Date(confirmationDate), animal.type)
                     : null
 
                   return (
@@ -168,15 +157,11 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
                           <input
                             type="checkbox"
                             checked={isSelected}
-                            onChange={() =>
-                              handleFemaleToggle(animal?.id || '')
-                            }
+                            onChange={() => handleFemaleToggle(animal?.id || '')}
                             className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                           />
                           <div>
-                            <div className="font-medium text-gray-900">
-                              {animal?.animalNumber}
-                            </div>
+                            <div className="font-medium text-gray-900">{animal?.animalNumber}</div>
                             <div className="text-sm text-gray-600">
                               {animal?.type} - {animal?.stage}
                             </div>
@@ -209,8 +194,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
                     {selectedFemales.length !== 1 ? 's' : ''}
                   </div>
                   <div className="text-xs mt-1">
-                    Se calculará automáticamente la fecha de parto esperada para
-                    cada hembra
+                    Se calculará automáticamente la fecha de parto esperada para cada hembra
                   </div>
                 </div>
               </div>
@@ -233,10 +217,10 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
                 {isLoading
                   ? 'Confirmando...'
                   : selectedFemales.length === 0
-                  ? 'Selecciona hembras'
-                  : `Confirmar ${selectedFemales.length} embarazo${
-                      selectedFemales.length !== 1 ? 's' : ''
-                    }`}
+                    ? 'Selecciona hembras'
+                    : `Confirmar ${selectedFemales.length} embarazo${
+                        selectedFemales.length !== 1 ? 's' : ''
+                      }`}
               </button>
             </div>
           </>

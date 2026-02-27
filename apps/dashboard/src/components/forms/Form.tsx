@@ -1,12 +1,7 @@
 'use client'
 
-import {
-  FormProvider,
-  UseFormReturn,
-  FieldValues,
-  SubmitHandler
-} from 'react-hook-form'
 import React from 'react'
+import { FieldValues, FormProvider, SubmitHandler, UseFormReturn } from 'react-hook-form'
 
 interface FormProps<TFieldValues extends FieldValues = FieldValues>
   extends Omit<React.FormHTMLAttributes<HTMLFormElement>, 'onSubmit'> {
@@ -25,10 +20,7 @@ export function Form<TFieldValues extends FieldValues = FieldValues>({
 }: FormProps<TFieldValues>) {
   return (
     <FormProvider {...form}>
-      <form
-        onSubmit={onSubmit ? form.handleSubmit(onSubmit) : undefined}
-        {...rest}
-      >
+      <form onSubmit={onSubmit ? form.handleSubmit(onSubmit) : undefined} {...rest}>
         {children}
       </form>
     </FormProvider>

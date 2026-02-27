@@ -1,14 +1,14 @@
 'use client'
 
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import React from 'react'
 import {
   AnimalRecord,
   record_category_colors,
   record_category_icons,
-  record_category_labels
+  record_category_labels,
 } from '@/types/animals'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 
 export interface RecordRowProps {
   rec: AnimalRecord
@@ -18,18 +18,10 @@ export interface RecordRowProps {
   onReopen?: (id: string) => void
 }
 
-const RecordRow: React.FC<RecordRowProps> = ({
-  rec,
-  onEdit,
-  onDelete,
-  onResolve,
-  onReopen
-}) => {
+const RecordRow: React.FC<RecordRowProps> = ({ rec, onEdit, onDelete, onResolve, onReopen }) => {
   const isClinicalHealth =
     rec.type === 'health' &&
-    (['illness', 'injury', 'treatment', 'surgery'] as const).includes(
-      rec.category as any
-    )
+    (['illness', 'injury', 'treatment', 'surgery'] as const).includes(rec.category as any)
 
   return (
     <div className="border border-gray-200 rounded-lg p-3 bg-white">
@@ -41,8 +33,7 @@ const RecordRow: React.FC<RecordRowProps> = ({
                 record_category_colors[rec.category]
               }`}
             >
-              {record_category_icons[rec.category]}{' '}
-              {record_category_labels[rec.category]}
+              {record_category_icons[rec.category]} {record_category_labels[rec.category]}
             </span>
             <span className="font-medium">{rec.title}</span>
           </div>
@@ -53,7 +44,7 @@ const RecordRow: React.FC<RecordRowProps> = ({
                 <span className="ml-2 text-xs text-yellow-700">
                   ⏰ Próximo:{' '}
                   {format(new Date(rec.nextDueDate), 'dd/MM/yyyy', {
-                    locale: es
+                    locale: es,
                   })}
                 </span>
               )}
@@ -71,7 +62,7 @@ const RecordRow: React.FC<RecordRowProps> = ({
               <div className="text-xs text-green-700">
                 Resuelto:{' '}
                 {format(new Date(rec.resolvedDate), 'dd/MM/yyyy', {
-                  locale: es
+                  locale: es,
                 })}
               </div>
             )}

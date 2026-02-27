@@ -1,7 +1,7 @@
 import { AnimalBreedingStatus, AnimalStatus } from '@/types/animals'
 
 export const BadgeAnimalStatus = ({
-  status
+  status,
 }: {
   status?: AnimalStatus | AnimalBreedingStatus | ''
 }) => {
@@ -43,10 +43,6 @@ export const BadgeAnimalStatus = ({
   }
 
   return (
-    <span
-      className={`inline-block px-2 py-1 text-xs font-medium rounded ${bgColor}`}
-    >
-      {text}
-    </span>
+    <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${bgColor}`}>{text}</span>
   )
 }

@@ -8,8 +8,8 @@ global.fetch = jest.fn(() =>
     text: () => Promise.resolve(''),
     status: 200,
     statusText: 'OK',
-    headers: new Map()
-  })
+    headers: new Map(),
+  }),
 )
 
 // Polyfill for Headers if not available
@@ -57,13 +57,22 @@ const mockAuth = {
   signOut: jest.fn(),
   sendSignInLinkToEmail: jest.fn(),
   isSignInWithEmailLink: jest.fn(),
-  signInWithEmailLink: jest.fn()
+  signInWithEmailLink: jest.fn(),
 }
 
 const mockFirestore = {
   doc: jest.fn(),
   getDoc: jest.fn(),
-  setDoc: jest.fn()
+  setDoc: jest.fn(),
+  collection: jest.fn(),
+  addDoc: jest.fn(),
+  updateDoc: jest.fn(),
+  deleteDoc: jest.fn(),
+  query: jest.fn(),
+  where: jest.fn(),
+  orderBy: jest.fn(),
+  onSnapshot: jest.fn(() => jest.fn()),
+  getDocs: jest.fn(() => Promise.resolve({ docs: [], empty: true, size: 0, forEach: jest.fn() })),
 }
 
 // Mock Next.js router
@@ -74,7 +83,7 @@ const mockRouter = {
   back: jest.fn(),
   pathname: '/',
   query: {},
-  asPath: '/'
+  asPath: '/',
 }
 
 // Make mocks globally available
@@ -84,30 +93,71 @@ global.mockRouter = mockRouter
 
 jest.mock('firebase/auth', () => ({
   getAuth: () => global.mockAuth,
-  signInWithEmailAndPassword: (...args) =>
-    global.mockAuth.signInWithEmailAndPassword(...args),
+  connectAuthEmulator: jest.fn(),
+  signInWithEmailAndPassword: (...args) => global.mockAuth.signInWithEmailAndPassword(...args),
   createUserWithEmailAndPassword: (...args) =>
     global.mockAuth.createUserWithEmailAndPassword(...args),
   signOut: (...args) => global.mockAuth.signOut(...args),
   onAuthStateChanged: (...args) => global.mockAuth.onAuthStateChanged(...args),
-  sendSignInLinkToEmail: (...args) =>
-    global.mockAuth.sendSignInLinkToEmail(...args),
-  isSignInWithEmailLink: (...args) =>
-    global.mockAuth.isSignInWithEmailLink(...args),
-  signInWithEmailLink: (...args) => global.mockAuth.signInWithEmailLink(...args)
+  sendSignInLinkToEmail: (...args) => global.mockAuth.sendSignInLinkToEmail(...args),
+  isSignInWithEmailLink: (...args) => global.mockAuth.isSignInWithEmailLink(...args),
+  signInWithEmailLink: (...args) => global.mockAuth.signInWithEmailLink(...args),
 }))
 
 jest.mock('firebase/firestore', () => ({
   getFirestore: () => mockFirestore,
+  connectFirestoreEmulator: jest.fn(),
   doc: (...args) => mockFirestore.doc(...args),
   getDoc: (...args) => mockFirestore.getDoc(...args),
-  setDoc: (...args) => mockFirestore.setDoc(...args)
+  setDoc: (...args) => mockFirestore.setDoc(...args),
+  collection: (...args) => mockFirestore.collection(...args),
+  addDoc: (...args) => mockFirestore.addDoc(...args),
+  updateDoc: (...args) => mockFirestore.updateDoc(...args),
+  deleteDoc: (...args) => mockFirestore.deleteDoc(...args),
+  query: (...args) => mockFirestore.query(...args),
+  where: (...args) => mockFirestore.where(...args),
+  orderBy: (...args) => mockFirestore.orderBy(...args),
+  onSnapshot: (...args) => mockFirestore.onSnapshot(...args),
+  getDocs: (...args) => mockFirestore.getDocs(...args),
+  Timestamp: {
+    now: () => ({
+      seconds: Math.floor(Date.now() / 1000),
+      nanoseconds: 0,
+      toDate: () => new Date(),
+      toMillis: () => Date.now(),
+    }),
+    fromDate: (date) => ({
+      seconds: Math.floor(date.getTime() / 1000),
+      nanoseconds: 0,
+      toDate: () => date,
+      toMillis: () => date.getTime(),
+    }),
+    fromMillis: (millis) => ({
+      seconds: Math.floor(millis / 1000),
+      nanoseconds: 0,
+      toDate: () => new Date(millis),
+      toMillis: () => millis,
+    }),
+  },
+  arrayUnion: (...args) => ({ type: 'arrayUnion', values: args }),
+  arrayRemove: (...args) => ({ type: 'arrayRemove', values: args }),
+}))
+
+jest.mock('firebase/storage', () => ({
+  getStorage: () => ({}),
+  connectStorageEmulator: jest.fn(),
+}))
+
+jest.mock('firebase/app', () => ({
+  initializeApp: jest.fn(() => ({})),
+  getApps: jest.fn(() => [{}]),
+  getApp: jest.fn(() => ({})),
 }))
 
 jest.mock('next/navigation', () => ({
   useRouter: () => mockRouter,
   usePathname: () => mockRouter.pathname,
-  useSearchParams: () => new URLSearchParams()
+  useSearchParams: () => new URLSearchParams(),
 }))
 
 // Mock localStorage
@@ -115,7 +165,7 @@ const localStorageMock = {
   getItem: jest.fn(),
   setItem: jest.fn(),
   removeItem: jest.fn(),
-  clear: jest.fn()
+  clear: jest.fn(),
 }
 global.localStorage = localStorageMock
 
@@ -129,7 +179,7 @@ if (typeof global !== 'undefined' && !global.location) {
     hash: '',
     assign: jest.fn(),
     replace: jest.fn(),
-    reload: jest.fn()
+    reload: jest.fn(),
   }
 }
 
@@ -155,9 +205,9 @@ beforeEach(() => {
       email: 'test@test.com',
       metadata: {
         creationTime: '2023-01-01T00:00:00.000Z',
-        lastSignInTime: '2023-01-01T00:00:00.000Z'
-      }
-    }
+        lastSignInTime: '2023-01-01T00:00:00.000Z',
+      },
+    },
   })
 
   // Reset localStorage
