@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
-// Inicializar Resend
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Inicialización lazy para evitar error durante el build
+let resend: Resend | null = null
+function getResend() {
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY)
+  }
+  return resend
+}
 
 interface EmailRequest {
   to: string | string[]
@@ -97,7 +103,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Enviar el email usando Resend
-    const data = await resend.emails.send(withOptional)
+    const data = await getResend().emails.send(withOptional)
 
     return NextResponse.json(
       {
