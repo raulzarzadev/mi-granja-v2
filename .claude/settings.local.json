@@ -11,7 +11,14 @@
       "Bash(lsof:*)",
       "Bash(kill:*)",
       "Bash(ls:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(claude mcp:*)",
+      "mcp__vercel__list_teams",
+      "mcp__vercel__list_projects",
+      "mcp__vercel__get_project",
+      "Bash(vercel:*)",
+      "Bash(npx vercel:*)",
+      "mcp__vercel__search_vercel_documentation"
     ]
   }
 }
