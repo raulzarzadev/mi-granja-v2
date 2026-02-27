@@ -116,7 +116,7 @@ async function seedAnimals() {
       stage: 'reproductor',
       birthDate: Timestamp.fromDate(new Date('2023-03-15')),
       weight: 65,
-      status: 'active',
+      status: 'activo',
       farmId: FARM_ID,
       areaId: 'area-1',
       createdAt: now,
@@ -132,7 +132,7 @@ async function seedAnimals() {
       stage: 'reproductor',
       birthDate: Timestamp.fromDate(new Date('2022-11-20')),
       weight: 85,
-      status: 'active',
+      status: 'activo',
       farmId: FARM_ID,
       areaId: 'area-1',
       createdAt: now,
@@ -148,7 +148,7 @@ async function seedAnimals() {
       stage: 'cría',
       birthDate: Timestamp.fromDate(new Date('2025-08-10')),
       weight: 15,
-      status: 'active',
+      status: 'activo',
       farmId: FARM_ID,
       parentId: 'animal-001',
       areaId: 'area-1',
@@ -165,7 +165,7 @@ async function seedAnimals() {
       stage: 'reproductor',
       birthDate: Timestamp.fromDate(new Date('2021-06-01')),
       weight: 450,
-      status: 'active',
+      status: 'activo',
       farmId: FARM_ID,
       areaId: 'area-2',
       createdAt: now,
@@ -181,7 +181,7 @@ async function seedAnimals() {
       stage: 'reproductor',
       birthDate: Timestamp.fromDate(new Date('2020-09-15')),
       weight: 650,
-      status: 'active',
+      status: 'activo',
       farmId: FARM_ID,
       areaId: 'area-2',
       createdAt: now,
@@ -197,7 +197,7 @@ async function seedAnimals() {
       stage: 'reproductor',
       birthDate: Timestamp.fromDate(new Date('2024-01-20')),
       weight: 120,
-      status: 'active',
+      status: 'activo',
       farmId: FARM_ID,
       areaId: 'area-2',
       createdAt: now,
@@ -213,7 +213,7 @@ async function seedAnimals() {
       stage: 'adulto',
       birthDate: Timestamp.fromDate(new Date('2024-05-10')),
       weight: 3,
-      status: 'active',
+      status: 'activo',
       farmId: FARM_ID,
       areaId: 'area-2',
       createdAt: now,
@@ -229,7 +229,7 @@ async function seedAnimals() {
       stage: 'reproductor',
       birthDate: Timestamp.fromDate(new Date('2023-07-25')),
       weight: 70,
-      status: 'active',
+      status: 'activo',
       farmId: FARM_ID,
       areaId: 'area-1',
       createdAt: now,
@@ -245,7 +245,7 @@ async function seedAnimals() {
       stage: 'adulto',
       birthDate: Timestamp.fromDate(new Date('2019-04-12')),
       weight: 500,
-      status: 'active',
+      status: 'activo',
       farmId: FARM_ID,
       areaId: 'area-1',
       createdAt: now,
@@ -261,7 +261,7 @@ async function seedAnimals() {
       stage: 'reproductor',
       birthDate: Timestamp.fromDate(new Date('2023-05-08')),
       weight: 55,
-      status: 'active',
+      status: 'activo',
       farmId: FARM_ID,
       areaId: 'area-1',
       createdAt: now,
@@ -270,7 +270,7 @@ async function seedAnimals() {
   ]
 
   for (const animal of animals) {
-    await db.collection('farms').doc(FARM_ID).collection('animals').doc(animal.id).set(animal)
+    await db.collection('animals').doc(animal.id).set(animal)
   }
   console.log(`  ✓ ${animals.length} animales`)
 }
@@ -301,7 +301,7 @@ async function seedBreedings() {
         },
       ],
       startDate: Timestamp.fromDate(new Date('2025-06-01')),
-      status: 'active',
+      status: 'activo',
       farmId: FARM_ID,
       createdAt: Timestamp.now(),
       createdBy: ADMIN_UID,
@@ -322,7 +322,7 @@ async function seedBreedings() {
         },
       ],
       startDate: Timestamp.fromDate(new Date('2025-08-10')),
-      status: 'active',
+      status: 'activo',
       farmId: FARM_ID,
       createdAt: Timestamp.now(),
       createdBy: ADMIN_UID,
@@ -330,12 +330,7 @@ async function seedBreedings() {
   ]
 
   for (const breeding of breedings) {
-    await db
-      .collection('farms')
-      .doc(FARM_ID)
-      .collection('breedingRecords')
-      .doc(breeding.id)
-      .set(breeding)
+    await db.collection('breedingRecords').doc(breeding.id).set(breeding)
   }
   console.log(`  ✓ ${breedings.length} registros de reproducción`)
 }
@@ -413,7 +408,7 @@ async function seedReminders() {
   ]
 
   for (const reminder of reminders) {
-    await db.collection('farms').doc(FARM_ID).collection('reminders').doc(reminder.id).set(reminder)
+    await db.collection('reminders').doc(reminder.id).set(reminder)
   }
   console.log(`  ✓ ${reminders.length} recordatorios`)
 }
@@ -455,7 +450,7 @@ async function seedWeightRecords() {
   ]
 
   for (const record of records) {
-    await db.collection('farms').doc(FARM_ID).collection('weightRecords').doc(record.id).set(record)
+    await db.collection('weightRecords').doc(record.id).set(record)
   }
   console.log(`  ✓ ${records.length} registros de peso`)
 }
@@ -474,12 +469,7 @@ async function seedInvitations() {
     createdAt: Timestamp.now(),
   }
 
-  await db
-    .collection('farms')
-    .doc(FARM_ID)
-    .collection('farmInvitations')
-    .doc(invitation.id)
-    .set(invitation)
+  await db.collection('farmInvitations').doc(invitation.id).set(invitation)
   console.log('  ✓ 1 invitación pendiente')
 }
 
