@@ -259,13 +259,17 @@ export const AnimalsFilters = ({
             </button>
           )}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-5 ">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             <select
               value={filters.status}
               onChange={(e) =>
                 setFilters((prev) => ({ ...prev, status: e.target.value as AnimalStatus }))
               }
-              className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                filters.status !== 'activo'
+                  ? 'border-green-500 bg-green-50 text-green-800'
+                  : 'border-gray-300'
+              }`}
             >
               {Object.entries(animal_status_labels).map(([key, label]) => (
                 <option key={key} value={key}>
@@ -279,7 +283,11 @@ export const AnimalsFilters = ({
               onChange={(e) =>
                 setFilters((prev) => ({ ...prev, type: e.target.value as AnimalType | '' }))
               }
-              className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                filters.type !== ''
+                  ? 'border-green-500 bg-green-50 text-green-800'
+                  : 'border-gray-300'
+              }`}
             >
               <option value="">Tipo: Todos</option>
               {availableTypes.map((key) => (
@@ -294,7 +302,11 @@ export const AnimalsFilters = ({
               onChange={(e) =>
                 setFilters((prev) => ({ ...prev, stage: e.target.value as AnimalStage | '' }))
               }
-              className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                filters.stage !== ''
+                  ? 'border-green-500 bg-green-50 text-green-800'
+                  : 'border-gray-300'
+              }`}
             >
               <option value="">Etapa: Todas</option>
               {availableStages.map((key) => (
@@ -309,7 +321,11 @@ export const AnimalsFilters = ({
               onChange={(e) =>
                 setFilters((prev) => ({ ...prev, gender: e.target.value as AnimalGender | '' }))
               }
-              className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                filters.gender !== ''
+                  ? 'border-green-500 bg-green-50 text-green-800'
+                  : 'border-gray-300'
+              }`}
             >
               <option value="">Genero: Todos</option>
               {availableGenders.map((key) => (
@@ -327,7 +343,11 @@ export const AnimalsFilters = ({
                   breedingStatus: e.target.value as AnimalBreedingStatus | 'libre' | '',
                 }))
               }
-              className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                filters.breedingStatus !== ''
+                  ? 'border-green-500 bg-green-50 text-green-800'
+                  : 'border-gray-300'
+              }`}
             >
               <option value="">Cria: Todos</option>
               <option value="libre">Libre</option>
