@@ -36,8 +36,12 @@ describe('dates (legacy)', () => {
       expect(result).toBeInstanceOf(Date)
     })
 
-    it('should throw for null/undefined', () => {
-      expect(() => toDate(null as any)).toThrow()
+    it('should return current date for null/undefined', () => {
+      const before = Date.now()
+      const result = toDate(null as any)
+      expect(result).toBeInstanceOf(Date)
+      expect(result.getTime()).toBeGreaterThanOrEqual(before)
+      expect(result.getTime()).toBeLessThanOrEqual(Date.now())
     })
   })
 

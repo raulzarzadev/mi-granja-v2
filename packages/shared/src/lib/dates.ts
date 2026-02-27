@@ -8,9 +8,9 @@ export const formatDate = (date: Date | null | undefined, stringFormat = 'dd/MM/
   return format(validDate, stringFormat, { locale: es })
 }
 
-export const toDate = (date: string | number | string | Timestamp | Date) => {
+export const toDate = (date: string | number | string | Timestamp | Date | null | undefined) => {
   if (!date) {
-    throw new Error('Date cannot be null or undefined')
+    return new Date()
   }
   if (date instanceof Date) return date
   if (typeof date === 'string' || typeof date === 'number') {

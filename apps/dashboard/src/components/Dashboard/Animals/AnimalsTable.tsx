@@ -97,9 +97,12 @@ const AnimalsTable = ({
       let cmp = 0
 
       switch (sortField) {
-        case 'animalNumber':
-          cmp = (a.animalNumber || '').localeCompare(b.animalNumber || '', 'es', { numeric: true })
+        case 'animalNumber': {
+          const idA = a.animalNumber || (a as any).earring || ''
+          const idB = b.animalNumber || (b as any).earring || ''
+          cmp = idA.localeCompare(idB, 'es', { numeric: true })
           break
+        }
         case 'type':
           cmp = (animals_types_labels[a.type] || '').localeCompare(
             animals_types_labels[b.type] || '',
@@ -256,7 +259,7 @@ const AnimalsTable = ({
                     </td>
                   )}
                   <td className="px-2 py-1.5 text-sm font-medium text-gray-900 whitespace-nowrap">
-                    {animal.animalNumber || '—'}
+                    {animal.animalNumber || (animal as any).earring || '—'}
                   </td>
                   <td className="px-2 py-1.5 text-sm text-gray-700 whitespace-nowrap">
                     {animals_types_labels[animal.type]}
