@@ -213,96 +213,269 @@ export function useBackup() {
       const errors: string[] = []
 
       try {
-        const collections = [
-          { name: 'animals', data: data.animals || [], filterFields: ['farmId'] },
-          { name: 'breedingRecords', data: data.breedingRecords || [], filterFields: ['farmId'] },
-          { name: 'reminders', data: data.reminders || [], filterFields: ['farmerId', 'farmId'] },
-          { name: 'weightRecords', data: data.weightRecords || [], filterFields: ['farmerId'] },
-          // farmInvitations se omiten en replace por seguridad
-          ...(mode === 'merge'
-            ? [{ name: 'farmInvitations', data: data.farmInvitations || [], filterFields: ['farmId'] }]
-            : []),
-        ]
-
-        const totalSteps = collections.length + 1 // +1 para farm doc
-        let currentStep = 0
-
-        // 1. Restaurar farm doc (siempre merge, nunca se borra)
-        setProgress({
-          phase: 'restore',
-          percent: 5,
-          message: 'Restaurando datos de la granja...',
-        })
+        // --- Paso 1: Restaurar farm doc (siempre merge, nunca se borra) ---
+        setProgress({ phase: 'restore', percent: 5, message: 'Restaurando datos de la granja...' })
 
         if (data.farm && typeof data.farm === 'object') {
           try {
             const farmDeserialized = deserializeFromBackup('farm', data.farm)
-            // No sobreescribir id, ownerId
-            const { id: _id, ownerId: _ownerId, ...farmFields } = farmDeserialized
+            const {
+              id: _id,
+              ownerId: _ownerId,
+              collaborators: _collaborators,
+              collaboratorsIds: _collaboratorsIds,
+              collaboratorsEmails: _collaboratorsEmails,
+              ...farmFields
+            } = farmDeserialized
             await setDoc(doc(db, 'farms', currentFarm.id), farmFields, { merge: true })
           } catch (e) {
             errors.push(`Error restaurando granja: ${e instanceof Error ? e.message : 'error'}`)
           }
         }
-        currentStep++
 
-        // 2. Restaurar cada colección
-        for (const col of collections) {
-          const pct = Math.round(((currentStep + 1) / totalSteps) * 100)
+        // --- Paso 2: En modo replace, borrar docs existentes ---
+        if (mode === 'replace') {
+          setProgress({ phase: 'restore', percent: 10, message: 'Eliminando datos existentes...' })
+          const deletions: [string, string[], string][] = [
+            ['animals', ['farmId'], 'animales'],
+            ['breedingRecords', ['farmId'], 'registros reproductivos'],
+            ['reminders', ['farmerId', 'farmId'], 'recordatorios'],
+            ['weightRecords', ['farmerId'], 'registros de peso'],
+          ]
+          for (const [colName, filterFields, label] of deletions) {
+            try {
+              await deleteCollectionDocs(colName, filterFields, user.id, currentFarm.id)
+            } catch (e) {
+              errors.push(`Error borrando ${label}: ${e instanceof Error ? e.message : 'error'}`)
+            }
+          }
+        }
+
+        // --- Paso 3: Generar nuevos IDs para animales y construir mapa oldId → newId ---
+        setProgress({ phase: 'restore', percent: 20, message: 'Preparando animales...' })
+        const animalIdMap = new Map<string, string>()
+        const backupAnimals = (data.animals || []) as Record<string, unknown>[]
+
+        for (const animal of backupAnimals) {
+          const oldId = animal.id as string
+          if (oldId) {
+            const newRef = doc(collection(db, 'animals'))
+            animalIdMap.set(oldId, newRef.id)
+          }
+        }
+
+        // Helper: remapear un ID de animal usando el mapa
+        function remapAnimalId(id: unknown): unknown {
+          if (typeof id === 'string' && animalIdMap.has(id)) {
+            return animalIdMap.get(id)
+          }
+          return id
+        }
+
+        // Helper: asignar ownership de la granja/usuario actual
+        function assignOwnership(docData: Record<string, unknown>): Record<string, unknown> {
+          const result = { ...docData }
+          if ('farmId' in result) result.farmId = currentFarm!.id
+          if ('farmerId' in result) result.farmerId = user!.id
+          return result
+        }
+
+        // --- Paso 4: Escribir animales con nuevos IDs y referencias remapeadas ---
+        setProgress({
+          phase: 'restore',
+          percent: 30,
+          message: `Restaurando animales (${backupAnimals.length})...`,
+        })
+
+        try {
+          let written = 0
+          for (let i = 0; i < backupAnimals.length; i += 500) {
+            const batch = writeBatch(db)
+            const chunk = backupAnimals.slice(i, i + 500)
+
+            for (const rawDoc of chunk) {
+              const deserialized = deserializeFromBackup('animals', { ...rawDoc })
+              const oldId = deserialized.id as string
+              delete deserialized.id
+
+              const remapped = assignOwnership(deserialized)
+
+              // Remapear referencias parentales
+              if (remapped.motherId) remapped.motherId = remapAnimalId(remapped.motherId)
+              if (remapped.fatherId) remapped.fatherId = remapAnimalId(remapped.fatherId)
+
+              const newId = animalIdMap.get(oldId)
+              if (newId) {
+                batch.set(doc(db, 'animals', newId), remapped)
+                written++
+              }
+            }
+
+            await batch.commit()
+          }
+          counts.animals = written
+        } catch (e) {
+          errors.push(`Error restaurando animales: ${e instanceof Error ? e.message : 'error'}`)
+        }
+
+        // --- Paso 5: Escribir breeding records con referencias remapeadas ---
+        const backupBreedings = (data.breedingRecords || []) as Record<string, unknown>[]
+        setProgress({
+          phase: 'restore',
+          percent: 50,
+          message: `Restaurando registros reproductivos (${backupBreedings.length})...`,
+        })
+
+        try {
+          let written = 0
+          for (let i = 0; i < backupBreedings.length; i += 500) {
+            const batch = writeBatch(db)
+            const chunk = backupBreedings.slice(i, i + 500)
+
+            for (const rawDoc of chunk) {
+              const deserialized = deserializeFromBackup('breedingRecords', { ...rawDoc })
+              delete deserialized.id
+
+              const remapped = assignOwnership(deserialized)
+
+              // Remapear maleId
+              if (remapped.maleId) remapped.maleId = remapAnimalId(remapped.maleId)
+
+              // Remapear femaleBreedingInfo
+              if (Array.isArray(remapped.femaleBreedingInfo)) {
+                remapped.femaleBreedingInfo = (
+                  remapped.femaleBreedingInfo as Record<string, unknown>[]
+                ).map((info) => {
+                  const remappedInfo = { ...info }
+                  if (remappedInfo.femaleId) {
+                    remappedInfo.femaleId = remapAnimalId(remappedInfo.femaleId)
+                  }
+                  if (Array.isArray(remappedInfo.offspring)) {
+                    remappedInfo.offspring = (remappedInfo.offspring as string[]).map(
+                      (id) => remapAnimalId(id) as string,
+                    )
+                  }
+                  return remappedInfo
+                })
+              }
+
+              const newRef = doc(collection(db, 'breedingRecords'))
+              batch.set(newRef, remapped)
+              written++
+            }
+
+            await batch.commit()
+          }
+          counts.breedingRecords = written
+        } catch (e) {
+          errors.push(
+            `Error restaurando registros reproductivos: ${e instanceof Error ? e.message : 'error'}`,
+          )
+        }
+
+        // --- Paso 6: Escribir reminders (animalNumber se mantiene, no es un doc ID) ---
+        const backupReminders = (data.reminders || []) as Record<string, unknown>[]
+        setProgress({
+          phase: 'restore',
+          percent: 70,
+          message: `Restaurando recordatorios (${backupReminders.length})...`,
+        })
+
+        try {
+          let written = 0
+          for (let i = 0; i < backupReminders.length; i += 500) {
+            const batch = writeBatch(db)
+            const chunk = backupReminders.slice(i, i + 500)
+
+            for (const rawDoc of chunk) {
+              const deserialized = deserializeFromBackup('reminders', { ...rawDoc })
+              delete deserialized.id
+              const remapped = assignOwnership(deserialized)
+
+              const newRef = doc(collection(db, 'reminders'))
+              batch.set(newRef, remapped)
+              written++
+            }
+
+            await batch.commit()
+          }
+          counts.reminders = written
+        } catch (e) {
+          errors.push(
+            `Error restaurando recordatorios: ${e instanceof Error ? e.message : 'error'}`,
+          )
+        }
+
+        // --- Paso 7: Escribir weight records ---
+        const backupWeights = (data.weightRecords || []) as Record<string, unknown>[]
+        setProgress({
+          phase: 'restore',
+          percent: 85,
+          message: `Restaurando registros de peso (${backupWeights.length})...`,
+        })
+
+        try {
+          let written = 0
+          for (let i = 0; i < backupWeights.length; i += 500) {
+            const batch = writeBatch(db)
+            const chunk = backupWeights.slice(i, i + 500)
+
+            for (const rawDoc of chunk) {
+              const deserialized = deserializeFromBackup('weightRecords', { ...rawDoc })
+              delete deserialized.id
+              const remapped = assignOwnership(deserialized)
+
+              const newRef = doc(collection(db, 'weightRecords'))
+              batch.set(newRef, remapped)
+              written++
+            }
+
+            await batch.commit()
+          }
+          counts.weightRecords = written
+        } catch (e) {
+          errors.push(
+            `Error restaurando registros de peso: ${e instanceof Error ? e.message : 'error'}`,
+          )
+        }
+
+        // --- Paso 8: Farm invitations (solo en merge) ---
+        if (mode === 'merge' && data.farmInvitations?.length) {
           setProgress({
             phase: 'restore',
-            percent: Math.min(pct, 95),
-            message: `Restaurando ${col.name} (${col.data.length} docs)...`,
+            percent: 93,
+            message: `Restaurando invitaciones (${data.farmInvitations.length})...`,
           })
 
           try {
-            // En modo replace, borrar docs existentes primero
-            if (mode === 'replace') {
-              await deleteCollectionDocs(col.name, col.filterFields, user.id, currentFarm.id)
-            }
-
-            // Escribir docs del backup en batches de 500
             let written = 0
-            const docs = col.data as Record<string, unknown>[]
+            const backupInvitations = data.farmInvitations as Record<string, unknown>[]
 
-            for (let i = 0; i < docs.length; i += 500) {
+            for (let i = 0; i < backupInvitations.length; i += 500) {
               const batch = writeBatch(db)
-              const chunk = docs.slice(i, i + 500)
+              const chunk = backupInvitations.slice(i, i + 500)
 
-              for (const docData of chunk) {
-                const deserialized = deserializeFromBackup(col.name, { ...docData })
-                const docId = deserialized.id as string
+              for (const rawDoc of chunk) {
+                const deserialized = deserializeFromBackup('farmInvitations', { ...rawDoc })
                 delete deserialized.id
+                const remapped = assignOwnership(deserialized)
 
-                if (docId) {
-                  const ref = doc(db, col.name, docId)
-                  if (mode === 'merge') {
-                    batch.set(ref, deserialized, { merge: true })
-                  } else {
-                    batch.set(ref, deserialized)
-                  }
-                  written++
-                }
+                const newRef = doc(collection(db, 'farmInvitations'))
+                batch.set(newRef, remapped)
+                written++
               }
 
               await batch.commit()
             }
-
-            counts[col.name] = written
+            counts.farmInvitations = written
           } catch (e) {
             errors.push(
-              `Error restaurando ${col.name}: ${e instanceof Error ? e.message : 'error'}`,
+              `Error restaurando invitaciones: ${e instanceof Error ? e.message : 'error'}`,
             )
           }
-
-          currentStep++
         }
 
-        setProgress({
-          phase: 'restore',
-          percent: 100,
-          message: 'Restauración completada',
-        })
+        setProgress({ phase: 'restore', percent: 100, message: 'Restauración completada' })
 
         return {
           success: errors.length === 0,

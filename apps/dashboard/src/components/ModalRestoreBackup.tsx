@@ -10,7 +10,7 @@ interface Props {
   onClose: () => void
 }
 
-type Step = 'upload' | 'preview' | 'mode' | 'progress' | 'result'
+type Step = 'upload' | 'preview' | 'mode' | 'confirm' | 'progress' | 'result'
 
 const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
   const { parseBackupFile, restoreBackup, isRestoring, progress } = useBackup()
@@ -20,6 +20,7 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
   const [backupData, setBackupData] = useState<BackupFile | null>(null)
   const [mode, setMode] = useState<'merge' | 'replace'>('merge')
   const [replaceConfirmed, setReplaceConfirmed] = useState(false)
+  const [finalConfirmed, setFinalConfirmed] = useState(false)
   const [result, setResult] = useState<RestoreResult | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -30,13 +31,14 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
     setBackupData(null)
     setMode('merge')
     setReplaceConfirmed(false)
+    setFinalConfirmed(false)
     setResult(null)
     setFileError(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
 
   const handleClose = () => {
-    if (isRestoring) return // No cerrar durante restauración
+    if (isRestoring) return
     reset()
     onClose()
   }
@@ -52,7 +54,6 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
       return
     }
 
-    // Límite de 50MB
     if (file.size > 50 * 1024 * 1024) {
       setFileError('El archivo es demasiado grande (máximo 50MB)')
       return
@@ -74,7 +75,6 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
 
   const handleRestore = async () => {
     if (!backupData) return
-
     setStep('progress')
     const restoreResult = await restoreBackup(backupData, mode)
     setResult(restoreResult)
@@ -91,7 +91,6 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
       closeOnEscape={!isRestoring}
     >
       <div className="space-y-6">
-        {/* Indicador de pasos */}
         <StepIndicator currentStep={step} />
 
         {/* Paso 1: Subir archivo */}
@@ -141,7 +140,7 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
           </div>
         )}
 
-        {/* Paso 2: Preview */}
+        {/* Paso 2: Vista previa */}
         {step === 'preview' && validation?.preview && (
           <div className="space-y-4">
             <PreviewTable meta={validation.preview} />
@@ -205,8 +204,8 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
                   <div>
                     <p className="font-medium text-gray-900">Combinar</p>
                     <p className="text-sm text-gray-600 mt-1">
-                      Los datos del respaldo se agregan a los existentes. Si un documento ya existe,
-                      se actualizan sus campos sin borrar datos que no estén en el respaldo.
+                      Los datos del respaldo se agregan como documentos nuevos a tu granja actual.
+                      Los datos existentes no se modifican ni se borran.
                     </p>
                   </div>
                 </div>
@@ -232,9 +231,8 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
                   <div>
                     <p className="font-medium text-gray-900">Reemplazar</p>
                     <p className="text-sm text-gray-600 mt-1">
-                      Se borran todos los datos existentes y se reemplazan con los del respaldo.
-                      La granja nunca se borra (solo se actualizan sus campos).
-                      Las invitaciones no se afectan.
+                      Se borran todos los animales, registros y recordatorios existentes
+                      y se reemplazan con los del respaldo. La granja y las invitaciones no se borran.
                     </p>
                   </div>
                 </div>
@@ -267,28 +265,103 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
                 Volver
               </button>
               <button
-                onClick={handleRestore}
+                onClick={() => {
+                  setFinalConfirmed(false)
+                  setStep('confirm')
+                }}
                 disabled={mode === 'replace' && !replaceConfirmed}
                 className={`px-4 py-2 text-sm rounded-lg text-white ${
                   mode === 'replace' && !replaceConfirmed
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                Revisar antes de ejecutar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Paso 4: Confirmación final — detalle de lo que se hará */}
+        {step === 'confirm' && backupData && (
+          <div className="space-y-4">
+            <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
+              <p className="text-sm font-semibold text-amber-900 mb-1">
+                ⚠️ Revisa cuidadosamente antes de continuar
+              </p>
+              <p className="text-xs text-amber-800">
+                Esta funcionalidad está en prueba. Verifica que la información sea correcta.
+              </p>
+            </div>
+
+            {/* Resumen de acciones */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <p className="text-sm font-medium text-gray-900">
+                {mode === 'replace'
+                  ? 'Se borrarán los datos actuales y se importará lo siguiente:'
+                  : 'Se agregarán los siguientes datos nuevos a tu granja:'}
+              </p>
+
+              {mode === 'replace' && (
+                <div className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-800">
+                  Primero se eliminarán todos los animales, registros reproductivos,
+                  recordatorios y registros de peso existentes en esta granja.
+                </div>
+              )}
+            </div>
+
+            {/* Lista de animales que se crearán */}
+            <ConfirmAnimalsTable animals={backupData.animals || []} />
+
+            {/* Otros conteos */}
+            <ConfirmOtherCollections data={backupData} mode={mode} />
+
+            {/* Checkbox final */}
+            <div className="bg-gray-100 border border-gray-300 rounded-lg p-4">
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={finalConfirmed}
+                  onChange={(e) => setFinalConfirmed(e.target.checked)}
+                  className="mt-1"
+                />
+                <span className="text-sm text-gray-800">
+                  He revisado los datos y confirmo que quiero
+                  {mode === 'replace'
+                    ? ' reemplazar todos los datos de mi granja con este respaldo.'
+                    : ' agregar estos datos a mi granja.'}
+                </span>
+              </label>
+            </div>
+
+            <div className="flex justify-between">
+              <button
+                onClick={() => setStep('mode')}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Volver
+              </button>
+              <button
+                onClick={handleRestore}
+                disabled={!finalConfirmed}
+                className={`px-4 py-2 text-sm rounded-lg text-white ${
+                  !finalConfirmed
                     ? 'bg-gray-400 cursor-not-allowed'
                     : mode === 'replace'
                       ? 'bg-red-600 hover:bg-red-700'
                       : 'bg-blue-600 hover:bg-blue-700'
                 }`}
               >
-                {mode === 'merge' ? 'Combinar datos' : 'Reemplazar datos'}
+                {mode === 'replace' ? 'Reemplazar datos ahora' : 'Importar datos ahora'}
               </button>
             </div>
           </div>
         )}
 
-        {/* Paso 4: Progreso */}
-        {step === 'progress' && (
-          <ProgressView progress={progress} />
-        )}
+        {/* Paso 5: Progreso */}
+        {step === 'progress' && <ProgressView progress={progress} />}
 
-        {/* Paso 5: Resultado */}
+        {/* Paso 6: Resultado */}
         {step === 'result' && result && (
           <div className="space-y-4">
             {result.success ? (
@@ -306,7 +379,7 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
             )}
 
             <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">Documentos escritos:</p>
+              <p className="text-sm font-medium text-gray-700 mb-2">Documentos creados:</p>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 {Object.entries(result.counts).map(([col, count]) => (
                   <div key={col} className="flex justify-between">
@@ -349,17 +422,18 @@ const STEP_LABELS: Record<Step, string> = {
   upload: 'Archivo',
   preview: 'Vista previa',
   mode: 'Modo',
+  confirm: 'Verificar',
   progress: 'Progreso',
   result: 'Resultado',
 }
 
-const STEPS: Step[] = ['upload', 'preview', 'mode', 'progress', 'result']
+const STEPS: Step[] = ['upload', 'preview', 'mode', 'confirm', 'progress', 'result']
 
 function StepIndicator({ currentStep }: { currentStep: Step }) {
   const currentIdx = STEPS.indexOf(currentStep)
 
   return (
-    <div className="flex items-center justify-center gap-1 text-xs">
+    <div className="flex items-center justify-center gap-1 text-xs flex-wrap">
       {STEPS.map((s, i) => (
         <React.Fragment key={s}>
           <span
@@ -386,6 +460,23 @@ const COLLECTION_LABELS: Record<string, string> = {
   reminders: 'Recordatorios',
   weightRecords: 'Registros de peso',
   farmInvitations: 'Invitaciones',
+}
+
+const ANIMAL_TYPE_LABELS: Record<string, string> = {
+  oveja: 'Oveja',
+  vaca: 'Vaca',
+  cabra: 'Cabra',
+  cerdo: 'Cerdo',
+  gallina: 'Gallina',
+  perro: 'Perro',
+  gato: 'Gato',
+  equino: 'Equino',
+  otro: 'Otro',
+}
+
+const GENDER_LABELS: Record<string, string> = {
+  macho: 'M',
+  hembra: 'H',
 }
 
 function PreviewTable({ meta }: { meta: BackupMeta }) {
@@ -419,6 +510,135 @@ function PreviewTable({ meta }: { meta: BackupMeta }) {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+function ConfirmAnimalsTable({ animals }: { animals: Record<string, unknown>[] }) {
+  if (animals.length === 0) {
+    return (
+      <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-500">
+        No hay animales en este respaldo.
+      </div>
+    )
+  }
+
+  const MAX_PREVIEW = 20
+  const shown = animals.slice(0, MAX_PREVIEW)
+  const remaining = animals.length - MAX_PREVIEW
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium text-gray-900">
+        Animales a crear ({animals.length}):
+      </p>
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto max-h-64 overflow-y-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 sticky top-0">
+              <tr>
+                <th className="text-left px-3 py-2 text-gray-600 font-medium">Arete</th>
+                <th className="text-left px-3 py-2 text-gray-600 font-medium">Tipo</th>
+                <th className="text-left px-3 py-2 text-gray-600 font-medium">Raza</th>
+                <th className="text-left px-3 py-2 text-gray-600 font-medium">Sexo</th>
+                <th className="text-left px-3 py-2 text-gray-600 font-medium">Estado</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {shown.map((animal, i) => (
+                <tr key={i} className="hover:bg-gray-50">
+                  <td className="px-3 py-1.5 font-mono text-xs">
+                    {(animal.animalNumber as string) || '-'}
+                  </td>
+                  <td className="px-3 py-1.5">
+                    {ANIMAL_TYPE_LABELS[(animal.type as string) || ''] || (animal.type as string) || '-'}
+                  </td>
+                  <td className="px-3 py-1.5 text-gray-600">
+                    {(animal.breed as string) || '-'}
+                  </td>
+                  <td className="px-3 py-1.5">
+                    {GENDER_LABELS[(animal.gender as string) || ''] || (animal.gender as string) || '-'}
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <span
+                      className={`text-xs px-1.5 py-0.5 rounded-full ${
+                        (animal.status as string) === 'activo' || !animal.status
+                          ? 'bg-green-100 text-green-800'
+                          : (animal.status as string) === 'muerto'
+                            ? 'bg-gray-100 text-gray-600'
+                            : 'bg-yellow-100 text-yellow-800'
+                      }`}
+                    >
+                      {(animal.status as string) || 'activo'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {remaining > 0 && (
+          <div className="bg-gray-50 px-3 py-2 text-xs text-gray-500 border-t">
+            ... y {remaining} animales más
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ConfirmOtherCollections({
+  data,
+  mode,
+}: {
+  data: BackupFile
+  mode: 'merge' | 'replace'
+}) {
+  const items = [
+    {
+      label: 'Registros reproductivos',
+      count: data.breedingRecords?.length || 0,
+      detail: 'Se crearán como registros nuevos con referencias actualizadas a los nuevos animales.',
+    },
+    {
+      label: 'Recordatorios',
+      count: data.reminders?.length || 0,
+      detail: 'Se crearán nuevos recordatorios asociados a tu usuario y granja actual.',
+    },
+    {
+      label: 'Registros de peso',
+      count: data.weightRecords?.length || 0,
+      detail: 'Se crearán como registros nuevos.',
+    },
+  ]
+
+  const hasData = items.some((it) => it.count > 0)
+  if (!hasData) return null
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium text-gray-900">Otros datos a importar:</p>
+      <div className="space-y-2">
+        {items
+          .filter((it) => it.count > 0)
+          .map((it) => (
+            <div key={it.label} className="bg-gray-50 rounded-lg p-3 flex items-start gap-3">
+              <span className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                {it.count}x
+              </span>
+              <div>
+                <p className="text-sm font-medium text-gray-800">{it.label}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{it.detail}</p>
+              </div>
+            </div>
+          ))}
+      </div>
+      {mode === 'merge' && (
+        <p className="text-xs text-gray-500">
+          Todos los datos se crean como documentos nuevos. Los datos existentes en tu granja no se
+          modifican.
+        </p>
+      )}
     </div>
   )
 }

@@ -20,6 +20,21 @@ const BackupSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Disclaimer */}
+      <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex items-start gap-3">
+        <span className="text-2xl flex-shrink-0">⚠️</span>
+        <div>
+          <p className="text-sm font-semibold text-amber-900">
+            Funcionalidad en prueba
+          </p>
+          <p className="text-sm text-amber-800 mt-1">
+            La restauración de respaldos es una función experimental. Úsala con precaución.
+            Te recomendamos descargar un respaldo de tus datos actuales antes de importar
+            cualquier archivo. Los cambios realizados por una restauración no se pueden deshacer.
+          </p>
+        </div>
+      </div>
+
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-xl font-semibold text-gray-900 mb-2">Respaldo y Restauración</h3>
         <p className="text-sm text-gray-600 mb-6">
