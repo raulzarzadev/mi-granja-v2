@@ -1,8 +1,8 @@
 'use client'
 
 import {
+  Timestamp,
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -237,20 +237,63 @@ export function useBackup() {
 
         // --- Paso 2: En modo replace, borrar docs existentes ---
         if (mode === 'replace') {
-          setProgress({ phase: 'restore', percent: 10, message: 'Eliminando datos existentes...' })
           const deletions: [string, string[], string][] = [
             ['animals', ['farmId'], 'animales'],
             ['breedingRecords', ['farmId'], 'registros reproductivos'],
             ['reminders', ['farmerId', 'farmId'], 'recordatorios'],
             ['weightRecords', ['farmerId'], 'registros de peso'],
           ]
-          for (const [colName, filterFields, label] of deletions) {
-            try {
-              await deleteCollectionDocs(colName, filterFields, user.id, currentFarm.id)
-            } catch (e) {
-              errors.push(`Error borrando ${label}: ${e instanceof Error ? e.message : 'error'}`)
-            }
-          }
+
+          // Consultar todas las colecciones en paralelo
+          setProgress({ phase: 'restore', percent: 8, message: 'Consultando datos existentes...' })
+          const deleteSnapshots = await Promise.all(
+            deletions.map(async ([colName, filterFields, label]) => {
+              try {
+                const constraints = []
+                if (filterFields.includes('farmerId'))
+                  constraints.push(where('farmerId', '==', user.id))
+                if (filterFields.includes('farmId'))
+                  constraints.push(where('farmId', '==', currentFarm!.id))
+                const q = query(collection(db, colName), ...constraints)
+                const snapshot = await getDocs(q)
+                return { colName, label, docs: snapshot.docs, error: null }
+              } catch (e) {
+                return {
+                  colName,
+                  label,
+                  docs: [],
+                  error: `Error consultando ${label}: ${e instanceof Error ? e.message : 'error'}`,
+                }
+              }
+            }),
+          )
+
+          // Borrar en paralelo por colección, con progreso por cada una
+          const totalToDelete = deleteSnapshots.reduce((sum, s) => sum + s.docs.length, 0)
+          let deleted = 0
+          await Promise.all(
+            deleteSnapshots.map(async ({ label, docs: snapDocs, error }) => {
+              if (error) {
+                errors.push(error)
+                return
+              }
+              for (let i = 0; i < snapDocs.length; i += 500) {
+                const batch = writeBatch(db)
+                const chunk = snapDocs.slice(i, i + 500)
+                for (const docSnap of chunk) {
+                  batch.delete(docSnap.ref)
+                }
+                await batch.commit()
+                deleted += chunk.length
+                const deletePercent = totalToDelete > 0 ? (deleted / totalToDelete) * 100 : 100
+                setProgress({
+                  phase: 'restore',
+                  percent: 8 + Math.round(deletePercent * 0.12),
+                  message: `Eliminando ${label}... (${deleted}/${totalToDelete})`,
+                })
+              }
+            }),
+          )
         }
 
         // --- Paso 3: Generar nuevos IDs para animales y construir mapa oldId → newId ---
@@ -283,15 +326,14 @@ export function useBackup() {
         }
 
         // --- Paso 4: Escribir animales con nuevos IDs y referencias remapeadas ---
-        setProgress({
-          phase: 'restore',
-          percent: 30,
-          message: `Restaurando animales (${backupAnimals.length})...`,
-        })
-
         try {
           let written = 0
           for (let i = 0; i < backupAnimals.length; i += 500) {
+            setProgress({
+              phase: 'restore',
+              percent: 30 + Math.round((i / Math.max(backupAnimals.length, 1)) * 15),
+              message: `Restaurando animales (${written}/${backupAnimals.length})...`,
+            })
             const batch = writeBatch(db)
             const chunk = backupAnimals.slice(i, i + 500)
 
@@ -322,15 +364,15 @@ export function useBackup() {
 
         // --- Paso 5: Escribir breeding records con referencias remapeadas ---
         const backupBreedings = (data.breedingRecords || []) as Record<string, unknown>[]
-        setProgress({
-          phase: 'restore',
-          percent: 50,
-          message: `Restaurando registros reproductivos (${backupBreedings.length})...`,
-        })
 
         try {
           let written = 0
           for (let i = 0; i < backupBreedings.length; i += 500) {
+            setProgress({
+              phase: 'restore',
+              percent: 50 + Math.round((i / Math.max(backupBreedings.length, 1)) * 15),
+              message: `Restaurando registros reproductivos (${written}/${backupBreedings.length})...`,
+            })
             const batch = writeBatch(db)
             const chunk = backupBreedings.slice(i, i + 500)
 
@@ -377,15 +419,15 @@ export function useBackup() {
 
         // --- Paso 6: Escribir reminders (animalNumber se mantiene, no es un doc ID) ---
         const backupReminders = (data.reminders || []) as Record<string, unknown>[]
-        setProgress({
-          phase: 'restore',
-          percent: 70,
-          message: `Restaurando recordatorios (${backupReminders.length})...`,
-        })
 
         try {
           let written = 0
           for (let i = 0; i < backupReminders.length; i += 500) {
+            setProgress({
+              phase: 'restore',
+              percent: 70 + Math.round((i / Math.max(backupReminders.length, 1)) * 10),
+              message: `Restaurando recordatorios (${written}/${backupReminders.length})...`,
+            })
             const batch = writeBatch(db)
             const chunk = backupReminders.slice(i, i + 500)
 
@@ -410,15 +452,15 @@ export function useBackup() {
 
         // --- Paso 7: Escribir weight records ---
         const backupWeights = (data.weightRecords || []) as Record<string, unknown>[]
-        setProgress({
-          phase: 'restore',
-          percent: 85,
-          message: `Restaurando registros de peso (${backupWeights.length})...`,
-        })
 
         try {
           let written = 0
           for (let i = 0; i < backupWeights.length; i += 500) {
+            setProgress({
+              phase: 'restore',
+              percent: 83 + Math.round((i / Math.max(backupWeights.length, 1)) * 7),
+              message: `Restaurando registros de peso (${written}/${backupWeights.length})...`,
+            })
             const batch = writeBatch(db)
             const chunk = backupWeights.slice(i, i + 500)
 
@@ -441,8 +483,8 @@ export function useBackup() {
           )
         }
 
-        // --- Paso 8: Farm invitations (solo en merge) ---
-        if (mode === 'merge' && data.farmInvitations?.length) {
+        // --- Paso 8: Farm invitations — siempre se restauran como pendientes ---
+        if (data.farmInvitations?.length) {
           setProgress({
             phase: 'restore',
             percent: 93,
@@ -452,6 +494,8 @@ export function useBackup() {
           try {
             let written = 0
             const backupInvitations = data.farmInvitations as Record<string, unknown>[]
+            const now = new Date()
+            const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
             for (let i = 0; i < backupInvitations.length; i += 500) {
               const batch = writeBatch(db)
@@ -460,10 +504,23 @@ export function useBackup() {
               for (const rawDoc of chunk) {
                 const deserialized = deserializeFromBackup('farmInvitations', { ...rawDoc })
                 delete deserialized.id
-                const remapped = assignOwnership(deserialized)
+
+                // Resetear a estado pendiente — invitados deben volver a aceptar
+                deserialized.status = 'pending'
+                deserialized.farmId = currentFarm!.id
+                deserialized.invitedBy = user!.id
+                deserialized.token = `${currentFarm!.id}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+                deserialized.expiresAt = Timestamp.fromDate(expiresAt)
+                deserialized.createdAt = Timestamp.now()
+                deserialized.updatedAt = Timestamp.now()
+
+                // Eliminar campos de aceptación previa
+                delete deserialized.userId
+                delete deserialized.acceptedAt
+                delete deserialized.rejectedAt
 
                 const newRef = doc(collection(db, 'farmInvitations'))
-                batch.set(newRef, remapped)
+                batch.set(newRef, deserialized)
                 written++
               }
 
@@ -501,34 +558,3 @@ export function useBackup() {
   }
 }
 
-/**
- * Borra todos los docs de una colección filtrados por farmerId/farmId
- */
-async function deleteCollectionDocs(
-  collectionName: string,
-  filterFields: string[],
-  userId: string,
-  farmId: string,
-) {
-  const constraints = []
-  if (filterFields.includes('farmerId')) {
-    constraints.push(where('farmerId', '==', userId))
-  }
-  if (filterFields.includes('farmId')) {
-    constraints.push(where('farmId', '==', farmId))
-  }
-
-  const q = query(collection(db, collectionName), ...constraints)
-  const snapshot = await getDocs(q)
-
-  // Borrar en batches de 500
-  const docs = snapshot.docs
-  for (let i = 0; i < docs.length; i += 500) {
-    const batch = writeBatch(db)
-    const chunk = docs.slice(i, i + 500)
-    for (const docSnap of chunk) {
-      batch.delete(docSnap.ref)
-    }
-    await batch.commit()
-  }
-}
