@@ -16,6 +16,7 @@ import ModalCreateArea from './ModalCreateArea'
 import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditCollaborator from './ModalEditCollaborator'
 import ModalInviteCollaborator from './ModalInviteCollaborator'
+import BackupSection from './BackupSection'
 
 /**
  * Sección principal de gestión de granja
@@ -54,9 +55,9 @@ const FarmSection: React.FC = () => {
   const canRevokeInvitations = hasPermissions('collaborators', 'update')
   const canDeleteInvitations = hasPermissions('collaborators', 'delete')
 
-  const [activeSubTab, setActiveSubTab] = useState<'overview' | 'areas' | 'collaborators'>(
-    'overview',
-  )
+  const [activeSubTab, setActiveSubTab] = useState<
+    'overview' | 'areas' | 'collaborators' | 'backups'
+  >('overview')
 
   const areaStats = getAreaStats()
   const collaboratorStats = getCollaboratorStats()
@@ -246,6 +247,16 @@ const FarmSection: React.FC = () => {
                   {collaboratorStats.pending}
                 </span>
               )}
+            </button>
+            <button
+              onClick={() => setActiveSubTab('backups')}
+              className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
+                activeSubTab === 'backups'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              💾 Respaldos
             </button>
           </div>
         </div>
@@ -535,6 +546,8 @@ const FarmSection: React.FC = () => {
           </div>
         </div>
       )}
+
+      {activeSubTab === 'backups' && <BackupSection />}
 
       {/* Modal de edición de colaborador */}
       <ModalEditCollaborator
