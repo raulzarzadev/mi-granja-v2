@@ -1,6 +1,6 @@
-import { execSync } from 'child_process'
-import { existsSync, readFileSync } from 'fs'
-import { join } from 'path'
+import { execSync } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 const LANDING_DIR = join(__dirname, '..')
 
@@ -31,6 +31,6 @@ describe('Landing Astro build smoke test', () => {
 
   it('should contain link to dashboard', () => {
     const html = readFileSync(join(LANDING_DIR, 'dist', 'index.html'), 'utf-8')
-    expect(html).toContain('dashboard.migranja.app')
+    expect(html).toContain('panel.migranja.app')
   })
 })
