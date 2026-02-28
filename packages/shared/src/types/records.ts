@@ -14,4 +14,6 @@ export type RecordFormState = {
   batch: string
   veterinarian: string
   cost: string
+  createReminder: boolean
+  reminderDate: string // yyyy-MM-dd | ''
 }

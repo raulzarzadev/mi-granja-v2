@@ -18,7 +18,8 @@
       "mcp__vercel__get_project",
       "Bash(vercel:*)",
       "Bash(npx vercel:*)",
-      "mcp__vercel__search_vercel_documentation"
+      "mcp__vercel__search_vercel_documentation",
+      "Bash(grep:*)"
     ]
   }
 }

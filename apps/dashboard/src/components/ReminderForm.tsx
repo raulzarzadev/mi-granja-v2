@@ -19,22 +19,33 @@ interface ReminderFormProps {
   animals?: Array<{ id: string; animalNumber: string; type: string }>
   onSubmit: (data: Omit<Reminder, 'id' | 'createdAt'>) => Promise<void>
   onCancel: () => void
+  onSuccess?: () => void
   isLoading?: boolean
   initialData?: Partial<Reminder>
 }
 
 /**
- * Formulario para crear recordatorios
+ * Formulario para crear/editar recordatorios
  */
 const ReminderForm: React.FC<ReminderFormProps> = ({
   animals = [],
   onSubmit,
   onCancel,
+  onSuccess,
   isLoading = false,
   initialData,
 }) => {
+  const isEditing = !!initialData
+
+  // En edicion: resolver animal ID desde animalNumber
+  const resolveInitialAnimalIds = (): string[] => {
+    if (!initialData?.animalNumber) return []
+    const found = animals.find((a) => a.animalNumber === initialData.animalNumber)
+    return found ? [found.id] : []
+  }
+
+  const [selectedAnimalIds, setSelectedAnimalIds] = useState<string[]>(resolveInitialAnimalIds)
   const [formData, setFormData] = useState({
-    animalNumber: initialData?.animalNumber || '',
     title: initialData?.title || '',
     description: initialData?.description || '',
     dueDate: initialData?.dueDate
@@ -45,32 +56,54 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
     completed: initialData?.completed || false,
   })
 
+  const handleAddAnimal = (animalId: string) => {
+    if (animalId && !selectedAnimalIds.includes(animalId)) {
+      if (isEditing) {
+        // En edicion solo un animal
+        setSelectedAnimalIds([animalId])
+      } else {
+        setSelectedAnimalIds((prev) => [...prev, animalId])
+      }
+    }
+  }
+
+  const handleRemoveAnimal = (animalId: string) => {
+    setSelectedAnimalIds((prev) => prev.filter((id) => id !== animalId))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.title || !formData.dueDate) {
-      return
-    }
+    if (!formData.title || !formData.dueDate) return
 
     try {
-      // Si hay un animal seleccionado, obtener su animalNumber
-      let finalAnimalNumber: string | undefined
-      if (formData.animalNumber && animals) {
-        const selectedAnimal = animals.find((animal) => animal.id === formData.animalNumber)
-        finalAnimalNumber = selectedAnimal?.animalNumber
-      }
-
-      await onSubmit({
-        animalNumber: finalAnimalNumber,
+      const base = {
         title: formData.title,
         description: formData.description,
         dueDate: new Date(formData.dueDate),
         priority: formData.priority,
         type: formData.type,
         completed: formData.completed,
-      })
+      }
+
+      if (selectedAnimalIds.length === 0) {
+        // Sin animal asociado
+        await onSubmit({ ...base, animalNumber: undefined })
+      } else if (isEditing) {
+        // Edicion: un solo animal
+        const animal = animals.find((a) => a.id === selectedAnimalIds[0])
+        await onSubmit({ ...base, animalNumber: animal?.animalNumber })
+      } else {
+        // Crear: un recordatorio por animal
+        for (const animalId of selectedAnimalIds) {
+          const animal = animals.find((a) => a.id === animalId)
+          await onSubmit({ ...base, animalNumber: animal?.animalNumber })
+        }
+      }
+
+      onSuccess?.()
     } catch (error) {
-      console.error('Error creando recordatorio:', error)
+      console.error('Error guardando recordatorio:', error)
     }
   }
 
@@ -81,24 +114,21 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
 
     if (type === 'checkbox') {
       const checkbox = e.target as HTMLInputElement
-      setFormData((prev) => ({
-        ...prev,
-        [name]: checkbox.checked,
-      }))
+      setFormData((prev) => ({ ...prev, [name]: checkbox.checked }))
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }))
+      setFormData((prev) => ({ ...prev, [name]: value }))
     }
   }
 
+  const selectedAnimals = animals.filter((a) => selectedAnimalIds.includes(a.id))
+  const availableAnimals = animals.filter((a) => !selectedAnimalIds.includes(a.id))
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Título */}
+      {/* Titulo */}
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-          Título *
+          Titulo *
         </label>
         <input
           type="text"
@@ -107,68 +137,94 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
           value={formData.title}
           onChange={handleChange}
           required
-          placeholder="Ej: Vacunación, Revisión médica..."
+          placeholder="Ej: Vacunacion, Revision medica..."
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
         />
       </div>
 
-      {/* Animal (opcional) */}
+      {/* Selector de animales */}
       <div>
-        <label htmlFor="animalNumber" className="block text-sm font-medium text-gray-700 mb-1">
-          Animal (opcional)
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {isEditing ? 'Animal (opcional)' : 'Animales (opcional)'}
         </label>
         <select
-          id="animalNumber"
-          name="animalNumber"
-          value={formData.animalNumber}
-          onChange={handleChange}
+          value=""
+          onChange={(e) => handleAddAnimal(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
         >
-          <option value="">General (todos los animales)</option>
-          {animals.map((animal) => (
+          <option value="">
+            {selectedAnimalIds.length === 0
+              ? 'General (todos los animales)'
+              : 'Agregar animal...'}
+          </option>
+          {availableAnimals.map((animal) => (
             <option key={animal.id} value={animal.id}>
-              {animal.animalNumber} - {animal.type}
+              #{animal.animalNumber} - {animal.type}
             </option>
           ))}
         </select>
+
+        {/* Chips de animales seleccionados */}
+        {selectedAnimals.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {selectedAnimals.map((animal) => (
+              <span
+                key={animal.id}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800 border border-green-200"
+              >
+                #{animal.animalNumber}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveAnimal(animal.id)}
+                  className="ml-0.5 text-green-500 hover:text-green-800 font-bold leading-none"
+                  title="Quitar animal"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Tipo */}
-      <div>
-        <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-          Tipo
-        </label>
-        <select
-          id="type"
-          name="type"
-          value={formData.type}
-          onChange={handleChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
-          <option value="medical">🏥 Médico</option>
-          <option value="breeding">🐣 Reproducción</option>
-          <option value="feeding">🌾 Alimentación</option>
-          <option value="weight">⚖️ Peso</option>
-          <option value="other">📝 Otro</option>
-        </select>
-      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {/* Tipo */}
+        <div>
+          <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
+            Tipo
+          </label>
+          <select
+            id="type"
+            name="type"
+            value={formData.type}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            <option value="medical">🏥 Medico</option>
+            <option value="breeding">🐣 Reproduccion</option>
+            <option value="feeding">🌾 Alimentacion</option>
+            <option value="weight">⚖️ Peso</option>
+            <option value="other">📝 Otro</option>
+          </select>
+        </div>
 
-      {/* Prioridad */}
-      <div>
-        <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
-          Prioridad
-        </label>
-        <select
-          id="priority"
-          name="priority"
-          value={formData.priority}
-          onChange={handleChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
-          <option value="low">🟢 Baja</option>
-          <option value="medium">🟡 Media</option>
-          <option value="high">🔴 Alta</option>
-        </select>
+        {/* Prioridad */}
+        <div>
+          <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
+            Prioridad
+          </label>
+          <select
+            id="priority"
+            name="priority"
+            value={formData.priority}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            <option value="low">Baja</option>
+            <option value="medium">Media</option>
+            <option value="high">Alta</option>
+          </select>
+        </div>
       </div>
 
       {/* Fecha */}
@@ -181,16 +237,16 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
               dueDate: date ? date.toISOString().split('T')[0] : '',
             }))
           }}
-          label="Fecha límite"
+          label="Fecha limite"
           type="date"
           required
         />
       </div>
 
-      {/* Descripción */}
+      {/* Descripcion */}
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-          Descripción
+          Descripcion
         </label>
         <textarea
           id="description"
@@ -203,8 +259,8 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
         />
       </div>
 
-      {/* Completado (solo si es edición) */}
-      {initialData && (
+      {/* Completado (solo si es edicion) */}
+      {isEditing && (
         <div className="flex items-center">
           <input
             type="checkbox"
@@ -235,12 +291,14 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
           className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
         >
           {isLoading
-            ? initialData
+            ? isEditing
               ? 'Actualizando...'
               : 'Creando...'
-            : initialData
+            : isEditing
               ? 'Actualizar'
-              : 'Crear Recordatorio'}
+              : selectedAnimalIds.length > 1
+                ? `Crear ${selectedAnimalIds.length} Recordatorios`
+                : 'Crear Recordatorio'}
         </button>
       </div>
     </form>

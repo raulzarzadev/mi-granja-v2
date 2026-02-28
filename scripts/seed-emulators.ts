@@ -109,6 +109,7 @@ async function seedAnimals() {
     {
       id: 'animal-001',
       name: 'Borrego Luna',
+      animalNumber: 'OV-001',
       earring: 'OV-001',
       type: 'oveja',
       gender: 'hembra',
@@ -125,6 +126,7 @@ async function seedAnimals() {
     {
       id: 'animal-002',
       name: 'Borrego Trueno',
+      animalNumber: 'OV-002',
       earring: 'OV-002',
       type: 'oveja',
       gender: 'macho',
@@ -141,6 +143,7 @@ async function seedAnimals() {
     {
       id: 'animal-003',
       name: 'Corderita Estrella',
+      animalNumber: 'OV-003',
       earring: 'OV-003',
       type: 'oveja',
       gender: 'hembra',
@@ -158,6 +161,7 @@ async function seedAnimals() {
     {
       id: 'animal-004',
       name: 'Vaca Margarita',
+      animalNumber: 'VA-001',
       earring: 'VA-001',
       type: 'vaca',
       gender: 'hembra',
@@ -174,6 +178,7 @@ async function seedAnimals() {
     {
       id: 'animal-005',
       name: 'Toro Rayo',
+      animalNumber: 'VA-002',
       earring: 'VA-002',
       type: 'vaca',
       gender: 'macho',
@@ -190,6 +195,7 @@ async function seedAnimals() {
     {
       id: 'animal-006',
       name: 'Cerda Rosa',
+      animalNumber: 'CE-001',
       earring: 'CE-001',
       type: 'cerdo',
       gender: 'hembra',
@@ -206,6 +212,7 @@ async function seedAnimals() {
     {
       id: 'animal-007',
       name: 'Gallina Pepita',
+      animalNumber: 'GA-001',
       earring: 'GA-001',
       type: 'gallina',
       gender: 'hembra',
@@ -222,6 +229,7 @@ async function seedAnimals() {
     {
       id: 'animal-008',
       name: 'Chivo Pancho',
+      animalNumber: 'CA-001',
       earring: 'CA-001',
       type: 'cabra',
       gender: 'macho',
@@ -238,6 +246,7 @@ async function seedAnimals() {
     {
       id: 'animal-009',
       name: 'Yegua Canela',
+      animalNumber: 'EQ-001',
       earring: 'EQ-001',
       type: 'equino',
       gender: 'hembra',
@@ -254,6 +263,7 @@ async function seedAnimals() {
     {
       id: 'animal-010',
       name: 'Borrega Nube',
+      animalNumber: 'OV-004',
       earring: 'OV-004',
       type: 'oveja',
       gender: 'hembra',

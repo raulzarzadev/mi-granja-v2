@@ -4,6 +4,8 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useMemo, useState } from 'react'
+import ModalCreateRecord from '@/components/ModalCreateRecord'
+import ModalRecordDetail from '@/components/ModalRecordDetail'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import {
   AnimalRecord,
@@ -15,6 +17,15 @@ import {
   record_type_labels,
   record_types,
 } from '@/types/animals'
+
+type URecord = AnimalRecord & { animalId: string; animalNumber: string }
+
+type TableRow =
+  | (URecord & { __isGrouped?: false })
+  | (URecord & {
+      __isGrouped: true
+      __animals: Array<{ id: string; number: string }>
+    })
 
 const RecordsTab: React.FC = () => {
   const { animals } = useAnimalCRUD()
@@ -34,6 +45,8 @@ const RecordsTab: React.FC = () => {
   })
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [sortApp, setSortApp] = useState<'none' | 'bulkFirst' | 'singleFirst'>('none')
+  const [detailRecord, setDetailRecord] = useState<TableRow | null>(null)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   // Helpers: leer/escribir filtros en la URL
   const readFiltersFromURL = (): typeof filters => {
@@ -92,8 +105,6 @@ const RecordsTab: React.FC = () => {
   }, [filters, pathname, router, searchParams])
 
   // Consolidar todos los registros de todos los animales
-  type URecord = AnimalRecord & { animalId: string; animalNumber: string }
-
   const allRecords = useMemo(() => {
     const records: Array<URecord> = []
 
@@ -208,13 +219,6 @@ const RecordsTab: React.FC = () => {
   }, [allRecords, filters])
 
   // Agrupar eventos masivos: una fila por evento con lista de animales
-  type TableRow =
-    | (URecord & { __isGrouped?: false })
-    | (URecord & {
-        __isGrouped: true
-        __animals: Array<{ id: string; number: string }>
-      })
-
   const groupedRows: TableRow[] = useMemo(() => {
     const nonBulk: URecord[] = []
     const map = new Map<string, { rep: URecord; animals: Array<{ id: string; number: string }> }>()
@@ -300,10 +304,18 @@ const RecordsTab: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">📋 Registros ({groupedRows.length})</h2>
-        <button onClick={resetFilters} className="text-sm text-blue-600 hover:text-blue-800">
-          Limpiar filtros
-        </button>
+        <h2 className="text-xl font-semibold text-gray-900">Registros ({groupedRows.length})</h2>
+        <div className="flex items-center gap-3">
+          <button onClick={resetFilters} className="text-sm text-blue-600 hover:text-blue-800">
+            Limpiar filtros
+          </button>
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+          >
+            + Nuevo Registro
+          </button>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -517,7 +529,8 @@ const RecordsTab: React.FC = () => {
                 {displayedRows.map((record) => (
                   <tr
                     key={`${record.id}-${record.__isGrouped ? 'g' : record.animalId}`}
-                    className="hover:bg-gray-50"
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => setDetailRecord(record)}
                   >
                     <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900">
                       {format(new Date(record.date), 'dd/MM/yyyy', {
@@ -629,6 +642,21 @@ const RecordsTab: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Modal de detalle de registro */}
+      <ModalRecordDetail
+        isOpen={!!detailRecord}
+        onClose={() => setDetailRecord(null)}
+        record={detailRecord}
+        animals={animals}
+      />
+
+      {/* Modal de crear registro */}
+      <ModalCreateRecord
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        animals={animals}
+      />
     </div>
   )
 }

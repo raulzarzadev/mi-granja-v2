@@ -14,29 +14,31 @@ export type RecordPayload = Omit<
 >
 
 export function buildRecordFromForm(form: RecordFormState): RecordPayload {
+  const { createReminder: _createReminder, reminderDate: _reminderDate, ...fields } = form
+
   const base: Partial<RecordPayload> = {
-    type: form.type,
-    category: form.category,
-    title: form.title.trim(),
-    date: parseLocalDate(form.date),
+    type: fields.type,
+    category: fields.category,
+    title: fields.title.trim(),
+    date: parseLocalDate(fields.date),
   }
 
-  if (form.description?.trim()) base.description = form.description.trim()
+  if (fields.description?.trim()) base.description = fields.description.trim()
 
-  if (form.type === 'health') {
-    const isClinical = clinicalCategories.includes(form.category as any)
+  if (fields.type === 'health') {
+    const isClinical = clinicalCategories.includes(fields.category as any)
     if (isClinical) {
-      if (form.severity) base.severity = form.severity as NonNullable<AnimalRecord['severity']>
-      if (form.isResolved) base.isResolved = true
-      if (form.resolvedDate) base.resolvedDate = parseLocalDate(form.resolvedDate)
-      if (form.treatment?.trim()) base.treatment = form.treatment.trim()
+      if (fields.severity) base.severity = fields.severity as NonNullable<AnimalRecord['severity']>
+      if (fields.isResolved) base.isResolved = true
+      if (fields.resolvedDate) base.resolvedDate = parseLocalDate(fields.resolvedDate)
+      if (fields.treatment?.trim()) base.treatment = fields.treatment.trim()
     }
 
-    if (form.nextDueDate) base.nextDueDate = parseLocalDate(form.nextDueDate)
-    if (form.batch?.trim()) base.batch = form.batch.trim()
-    if (form.veterinarian?.trim()) base.veterinarian = form.veterinarian.trim()
-    if (form.cost) {
-      const n = parseFloat(form.cost)
+    if (fields.nextDueDate) base.nextDueDate = parseLocalDate(fields.nextDueDate)
+    if (fields.batch?.trim()) base.batch = fields.batch.trim()
+    if (fields.veterinarian?.trim()) base.veterinarian = fields.veterinarian.trim()
+    if (fields.cost) {
+      const n = parseFloat(fields.cost)
       if (!isNaN(n)) base.cost = n
     }
   }

@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { Modal } from '@/components/Modal'
 import RecordForm, { RecordFormState } from '@/components/RecordForm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useReminders } from '@/hooks/useReminders'
 import { buildRecordFromForm, getTodayLocalDateString } from '@/lib/records'
 import { Animal } from '@/types/animals'
 
@@ -12,6 +13,7 @@ interface ModalBulkHealthActionProps {
   onClose: () => void
   selectedAnimals: Animal[]
   onSuccess?: () => void
+  onRemoveAnimal?: (animalId: string) => void
 }
 
 const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
@@ -19,8 +21,10 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
   onClose,
   selectedAnimals,
   onSuccess,
+  onRemoveAnimal,
 }) => {
   const { addBulkRecord } = useAnimalCRUD()
+  const { createReminder } = useReminders()
 
   const [formData, setFormData] = useState<RecordFormState>({
     type: 'health',
@@ -36,6 +40,8 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
     batch: '',
     veterinarian: '',
     cost: '',
+    createReminder: false,
+    reminderDate: '',
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -55,6 +61,8 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
       batch: '',
       veterinarian: '',
       cost: '',
+      createReminder: false,
+      reminderDate: '',
     })
   }
 
@@ -85,6 +93,19 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
       const animalIds = selectedAnimals.map((animal) => animal.id)
       await addBulkRecord(animalIds, recordData)
 
+      if (formData.createReminder && formData.reminderDate) {
+        const [y, m, d] = formData.reminderDate.split('-').map(Number)
+        await createReminder({
+          title: `Recordatorio: ${formData.title}`,
+          description: formData.description || '',
+          dueDate: new Date(y, m - 1, d),
+          completed: false,
+          priority: 'medium',
+          type: formData.type === 'health' ? 'medical' : 'other',
+          animalNumber: selectedAnimals[0]?.animalNumber || '',
+        })
+      }
+
       onSuccess?.()
       handleClose()
     } catch (error) {
@@ -110,11 +131,23 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
           <h4 className="font-medium text-blue-900 mb-2">
             📊 Animales Seleccionados: {selectedAnimals.length}
           </h4>
-          <div className="text-sm text-blue-700 max-h-20 overflow-y-auto">
-            {selectedAnimals.map((animal, index) => (
-              <span key={animal.id}>
-                {animal.animalNumber || `Sin número`}
-                {index < selectedAnimals.length - 1 && ', '}
+          <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+            {selectedAnimals.map((animal) => (
+              <span
+                key={animal.id}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800 border border-blue-200"
+              >
+                #{animal.animalNumber || 'Sin número'}
+                {onRemoveAnimal && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveAnimal(animal.id)}
+                    className="ml-0.5 text-blue-500 hover:text-blue-800 font-bold leading-none"
+                    title="Quitar animal"
+                  >
+                    ×
+                  </button>
+                )}
               </span>
             ))}
           </div>

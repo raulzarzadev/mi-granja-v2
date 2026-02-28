@@ -182,7 +182,9 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
 
         {onDelete && (
           <button
-            onClick={() => onDelete(reminder)}
+            onClick={() => {
+              if (confirm('¿Eliminar este recordatorio?')) onDelete(reminder)
+            }}
             className="px-3 py-1 border border-red-300 text-red-700 rounded text-sm hover:bg-red-50 transition-colors"
           >
             Eliminar
