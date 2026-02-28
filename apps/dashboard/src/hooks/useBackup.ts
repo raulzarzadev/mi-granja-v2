@@ -309,10 +309,19 @@ export function useBackup() {
           }
         }
 
+        console.log(`[Restore] animalIdMap: ${animalIdMap.size} animales mapeados`)
+        if (animalIdMap.size > 0) {
+          const [sampleOld, sampleNew] = animalIdMap.entries().next().value as [string, string]
+          console.log(`[Restore] Ejemplo: ${sampleOld} → ${sampleNew}`)
+        }
+
         // Helper: remapear un ID de animal usando el mapa
         function remapAnimalId(id: unknown): unknown {
           if (typeof id === 'string' && animalIdMap.has(id)) {
             return animalIdMap.get(id)
+          }
+          if (typeof id === 'string' && id.length > 0) {
+            console.warn(`[Restore] ID de animal no encontrado en mapa: ${id}`)
           }
           return id
         }
@@ -378,12 +387,17 @@ export function useBackup() {
 
             for (const rawDoc of chunk) {
               const deserialized = deserializeFromBackup('breedingRecords', { ...rawDoc })
+              const breedingOldId = deserialized.id
               delete deserialized.id
 
               const remapped = assignOwnership(deserialized)
 
               // Remapear maleId
+              const oldMaleId = remapped.maleId
               if (remapped.maleId) remapped.maleId = remapAnimalId(remapped.maleId)
+              if (written === 0) {
+                console.log(`[Restore] Breeding #1 (${breedingOldId}): maleId ${oldMaleId} → ${remapped.maleId}`)
+              }
 
               // Remapear femaleBreedingInfo
               if (Array.isArray(remapped.femaleBreedingInfo)) {
