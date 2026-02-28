@@ -50,11 +50,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       ) : (
         <div className="space-y-2">
           {sortedRecords.map((rec) => (
-            <RecordRow
-              key={rec.id}
-              rec={rec}
-              onClick={() => openDetail(rec)}
-            />
+            <RecordRow key={rec.id} rec={rec} onClick={() => openDetail(rec)} />
           ))}
         </div>
       )}

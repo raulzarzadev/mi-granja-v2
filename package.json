@@ -17,7 +17,8 @@
     "emulators": "cd firebase && firebase emulators:start --import=data --export-on-exit=data",
     "emulators:start": "cd firebase && firebase emulators:start",
     "emulators:kill": "lsof -ti :9099 -ti :8080 -ti :9199 -ti :4000 -ti :4400 -ti :4500 | xargs kill 2>/dev/null; echo '✅ Emuladores detenidos'",
-    "seed": "npx tsx scripts/seed-emulators.ts"
+    "seed": "npx tsx scripts/seed-emulators.ts",
+    "check": "bash scripts/check.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",

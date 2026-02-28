@@ -153,9 +153,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
         >
           <option value="">
-            {selectedAnimalIds.length === 0
-              ? 'General (todos los animales)'
-              : 'Agregar animal...'}
+            {selectedAnimalIds.length === 0 ? 'General (todos los animales)' : 'Agregar animal...'}
           </option>
           {availableAnimals.map((animal) => (
             <option key={animal.id} value={animal.id}>

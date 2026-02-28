@@ -51,9 +51,7 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
     if (user) {
       loadUserFarms()
     }
-
   }, [user])
-
 
   //* ==================================== FARM ANIMALS INITIALIZER
   const { getFarmAnimals } = useAnimalCRUD()

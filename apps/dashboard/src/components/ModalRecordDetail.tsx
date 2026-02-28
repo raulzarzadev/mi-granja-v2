@@ -68,13 +68,9 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
       date: format(new Date(record.date), 'yyyy-MM-dd'),
       severity: (record.severity as any) || '',
       isResolved: !!record.isResolved,
-      resolvedDate: record.resolvedDate
-        ? format(new Date(record.resolvedDate), 'yyyy-MM-dd')
-        : '',
+      resolvedDate: record.resolvedDate ? format(new Date(record.resolvedDate), 'yyyy-MM-dd') : '',
       treatment: record.treatment || '',
-      nextDueDate: record.nextDueDate
-        ? format(new Date(record.nextDueDate), 'yyyy-MM-dd')
-        : '',
+      nextDueDate: record.nextDueDate ? format(new Date(record.nextDueDate), 'yyyy-MM-dd') : '',
       batch: record.batch || '',
       veterinarian: record.veterinarian || '',
       cost: record.cost?.toString() || '',
@@ -94,9 +90,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
     try {
       const data = buildRecordFromForm(form)
       if (isGrouped && record.__isGrouped) {
-        await Promise.all(
-          record.__animals.map((a) => updateRecord(a.id, record.id, data)),
-        )
+        await Promise.all(record.__animals.map((a) => updateRecord(a.id, record.id, data)))
       } else {
         await updateRecord(record.animalId, record.id, data)
       }
@@ -128,9 +122,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
     setIsSubmitting(true)
     try {
       if (isGrouped && record.__isGrouped) {
-        await Promise.all(
-          record.__animals.map((a) => removeRecord(a.id, record.id)),
-        )
+        await Promise.all(record.__animals.map((a) => removeRecord(a.id, record.id)))
       } else {
         await removeRecord(record.animalId, record.id)
       }
@@ -147,9 +139,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
     setIsSubmitting(true)
     try {
       if (isGrouped && record.__isGrouped) {
-        await Promise.all(
-          record.__animals.map((a) => resolveRecord(a.id, record.id)),
-        )
+        await Promise.all(record.__animals.map((a) => resolveRecord(a.id, record.id)))
       } else {
         await resolveRecord(record.animalId, record.id)
       }
@@ -165,9 +155,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
     setIsSubmitting(true)
     try {
       if (isGrouped && record.__isGrouped) {
-        await Promise.all(
-          record.__animals.map((a) => reopenRecord(a.id, record.id)),
-        )
+        await Promise.all(record.__animals.map((a) => reopenRecord(a.id, record.id)))
       } else {
         await reopenRecord(record.animalId, record.id)
       }
@@ -199,9 +187,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
             >
               {record_category_icons[record.category]} {record_category_labels[record.category]}
             </span>
-            <span className="text-sm text-gray-500">
-              {record_type_labels[record.type]}
-            </span>
+            <span className="text-sm text-gray-500">{record_type_labels[record.type]}</span>
             {isGrouped && (
               <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                 Masivo
@@ -215,8 +201,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
           {/* Campos en grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div>
-              <span className="font-medium text-gray-600">Fecha:</span>{' '}
-              {formatDate(record.date)}
+              <span className="font-medium text-gray-600">Fecha:</span> {formatDate(record.date)}
             </div>
 
             {/* Animal(es) */}
@@ -269,8 +254,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
 
             {record.treatment && (
               <div className="sm:col-span-2">
-                <span className="font-medium text-gray-600">Tratamiento:</span>{' '}
-                {record.treatment}
+                <span className="font-medium text-gray-600">Tratamiento:</span> {record.treatment}
               </div>
             )}
 
@@ -311,8 +295,8 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
               Editar
             </button>
 
-            {isClinical && (
-              record.isResolved ? (
+            {isClinical &&
+              (record.isResolved ? (
                 <button
                   onClick={handleReopen}
                   disabled={isSubmitting}
@@ -328,8 +312,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
                 >
                   Resolver
                 </button>
-              )
-            )}
+              ))}
 
             <button
               onClick={handleDelete}

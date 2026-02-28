@@ -87,7 +87,7 @@ export function serializeForBackup<T>(obj: T): T {
     'toDate' in obj &&
     typeof (obj as { toDate: unknown }).toDate === 'function'
   ) {
-    return ((obj as { toDate: () => Date }).toDate().toISOString()) as unknown as T
+    return (obj as { toDate: () => Date }).toDate().toISOString() as unknown as T
   }
 
   if (obj instanceof Date) {
@@ -195,7 +195,12 @@ export function validateBackupFile(data: unknown, currentFarmId: string): Valida
   const warnings: string[] = []
 
   if (!data || typeof data !== 'object') {
-    return { valid: false, errors: ['El archivo no contiene un objeto JSON válido'], warnings, preview: null }
+    return {
+      valid: false,
+      errors: ['El archivo no contiene un objeto JSON válido'],
+      warnings,
+      preview: null,
+    }
   }
 
   const backup = data as Record<string, unknown>
@@ -238,7 +243,7 @@ export function validateBackupFile(data: unknown, currentFarmId: string): Valida
   if (meta.farmId && meta.farmId !== currentFarmId) {
     warnings.push(
       `Este respaldo es de otra granja (${meta.farmName || meta.farmId}). ` +
-      'Los datos se importarán a tu granja actual.',
+        'Los datos se importarán a tu granja actual.',
     )
   }
 

@@ -204,11 +204,7 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
         )}
 
         {/* Form */}
-        <RecordForm
-          value={formData}
-          onChange={setFormData}
-          mode={isBulk ? 'bulk' : 'single'}
-        />
+        <RecordForm value={formData} onChange={setFormData} mode={isBulk ? 'bulk' : 'single'} />
 
         {/* Total cost for bulk health records */}
         {isBulk && formData.type === 'health' && formData.cost && (

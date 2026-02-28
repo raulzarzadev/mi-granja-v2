@@ -350,9 +350,7 @@ const Dashboard: React.FC = () => {
           {/* Lista de recordatorios manuales */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Recordatorios personalizados
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900">Recordatorios personalizados</h3>
               <button
                 onClick={() => {
                   setEditingReminder(null)
@@ -382,7 +380,8 @@ const Dashboard: React.FC = () => {
                     onClick={() => setShowCompletedReminders(true)}
                     className="text-sm text-blue-600 hover:text-blue-800 underline"
                   >
-                    Ver {completedReminders.length} completado{completedReminders.length !== 1 ? 's' : ''}
+                    Ver {completedReminders.length} completado
+                    {completedReminders.length !== 1 ? 's' : ''}
                   </button>
                 )}
               </div>
@@ -416,9 +415,15 @@ const Dashboard: React.FC = () => {
                         viewBox="0 0 24 24"
                         stroke="currentColor"
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
                       </svg>
-                      {showCompletedReminders ? 'Ocultar' : 'Ver'} completados ({completedReminders.length})
+                      {showCompletedReminders ? 'Ocultar' : 'Ver'} completados (
+                      {completedReminders.length})
                     </button>
                     {showCompletedReminders && (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">

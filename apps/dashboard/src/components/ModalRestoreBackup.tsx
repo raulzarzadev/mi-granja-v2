@@ -231,8 +231,8 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
                   <div>
                     <p className="font-medium text-gray-900">Reemplazar</p>
                     <p className="text-sm text-gray-600 mt-1">
-                      Se borran todos los animales, registros y recordatorios existentes
-                      y se reemplazan con los del respaldo. La granja y las invitaciones no se borran.
+                      Se borran todos los animales, registros y recordatorios existentes y se
+                      reemplazan con los del respaldo. La granja y las invitaciones no se borran.
                     </p>
                   </div>
                 </div>
@@ -250,8 +250,8 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
                   />
                   <span className="text-sm text-red-800">
                     Entiendo que esta acción borrará todos los datos existentes de animales,
-                    registros reproductivos, recordatorios y registros de peso de esta granja.
-                    Esta acción no se puede deshacer.
+                    registros reproductivos, recordatorios y registros de peso de esta granja. Esta
+                    acción no se puede deshacer.
                   </span>
                 </label>
               </div>
@@ -304,8 +304,8 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
 
               {mode === 'replace' && (
                 <div className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-800">
-                  Primero se eliminarán todos los animales, registros reproductivos,
-                  recordatorios y registros de peso existentes en esta granja.
+                  Primero se eliminarán todos los animales, registros reproductivos, recordatorios y
+                  registros de peso existentes en esta granja.
                 </div>
               )}
             </div>
@@ -529,9 +529,7 @@ function ConfirmAnimalsTable({ animals }: { animals: Record<string, unknown>[] }
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium text-gray-900">
-        Animales a crear ({animals.length}):
-      </p>
+      <p className="text-sm font-medium text-gray-900">Animales a crear ({animals.length}):</p>
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto max-h-64 overflow-y-auto">
           <table className="w-full text-sm">
@@ -551,13 +549,15 @@ function ConfirmAnimalsTable({ animals }: { animals: Record<string, unknown>[] }
                     {(animal.animalNumber as string) || '-'}
                   </td>
                   <td className="px-3 py-1.5">
-                    {ANIMAL_TYPE_LABELS[(animal.type as string) || ''] || (animal.type as string) || '-'}
+                    {ANIMAL_TYPE_LABELS[(animal.type as string) || ''] ||
+                      (animal.type as string) ||
+                      '-'}
                   </td>
-                  <td className="px-3 py-1.5 text-gray-600">
-                    {(animal.breed as string) || '-'}
-                  </td>
+                  <td className="px-3 py-1.5 text-gray-600">{(animal.breed as string) || '-'}</td>
                   <td className="px-3 py-1.5">
-                    {GENDER_LABELS[(animal.gender as string) || ''] || (animal.gender as string) || '-'}
+                    {GENDER_LABELS[(animal.gender as string) || ''] ||
+                      (animal.gender as string) ||
+                      '-'}
                   </td>
                   <td className="px-3 py-1.5">
                     <span
@@ -587,18 +587,13 @@ function ConfirmAnimalsTable({ animals }: { animals: Record<string, unknown>[] }
   )
 }
 
-function ConfirmOtherCollections({
-  data,
-  mode,
-}: {
-  data: BackupFile
-  mode: 'merge' | 'replace'
-}) {
+function ConfirmOtherCollections({ data, mode }: { data: BackupFile; mode: 'merge' | 'replace' }) {
   const items = [
     {
       label: 'Registros reproductivos',
       count: data.breedingRecords?.length || 0,
-      detail: 'Se crearán como registros nuevos con referencias actualizadas a los nuevos animales.',
+      detail:
+        'Se crearán como registros nuevos con referencias actualizadas a los nuevos animales.',
     },
     {
       label: 'Recordatorios',

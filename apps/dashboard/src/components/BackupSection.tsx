@@ -24,13 +24,11 @@ const BackupSection: React.FC = () => {
       <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex items-start gap-3">
         <span className="text-2xl flex-shrink-0">⚠️</span>
         <div>
-          <p className="text-sm font-semibold text-amber-900">
-            Funcionalidad en prueba
-          </p>
+          <p className="text-sm font-semibold text-amber-900">Funcionalidad en prueba</p>
           <p className="text-sm text-amber-800 mt-1">
-            La restauración de respaldos es una función experimental. Úsala con precaución.
-            Te recomendamos descargar un respaldo de tus datos actuales antes de importar
-            cualquier archivo. Los cambios realizados por una restauración no se pueden deshacer.
+            La restauración de respaldos es una función experimental. Úsala con precaución. Te
+            recomendamos descargar un respaldo de tus datos actuales antes de importar cualquier
+            archivo. Los cambios realizados por una restauración no se pueden deshacer.
           </p>
         </div>
       </div>
@@ -60,9 +58,7 @@ const BackupSection: React.FC = () => {
               onClick={handleExport}
               disabled={isExporting}
               className={`w-full py-2.5 px-4 text-sm font-medium rounded-lg text-white transition-colors ${
-                isExporting
-                  ? 'bg-blue-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
+                isExporting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
               }`}
             >
               {isExporting ? (
@@ -75,9 +71,7 @@ const BackupSection: React.FC = () => {
               )}
             </button>
 
-            {exportError && (
-              <p className="text-sm text-red-600">{exportError}</p>
-            )}
+            {exportError && <p className="text-sm text-red-600">{exportError}</p>}
           </div>
 
           {/* Tarjeta Restaurar */}

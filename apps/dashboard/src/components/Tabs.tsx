@@ -128,7 +128,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persist
         id={`tab-panel-${activeTab}`}
         role="tabpanel"
         aria-labelledby={`tab-${activeTab}`}
-       // className="mt-4"
+        // className="mt-4"
       >
         {tabs[activeTab]?.content}
       </div>

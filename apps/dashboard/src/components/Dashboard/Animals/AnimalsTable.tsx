@@ -15,7 +15,15 @@ import {
   gender_icon,
 } from '@/types/animals'
 
-type SortField = 'animalNumber' | 'type' | 'breed' | 'gender' | 'stage' | 'age' | 'weight' | 'status'
+type SortField =
+  | 'animalNumber'
+  | 'type'
+  | 'breed'
+  | 'gender'
+  | 'stage'
+  | 'age'
+  | 'weight'
+  | 'status'
 type SortDirection = 'asc' | 'desc'
 
 interface AnimalsTableProps {
@@ -125,8 +133,10 @@ const AnimalsTable = ({
           cmp = animalAge(a, { format: 'months' }) - animalAge(b, { format: 'months' })
           break
         case 'weight': {
-          const wa = typeof a.weight === 'number' ? a.weight : Number.parseFloat(String(a.weight || '0'))
-          const wb = typeof b.weight === 'number' ? b.weight : Number.parseFloat(String(b.weight || '0'))
+          const wa =
+            typeof a.weight === 'number' ? a.weight : Number.parseFloat(String(a.weight || '0'))
+          const wb =
+            typeof b.weight === 'number' ? b.weight : Number.parseFloat(String(b.weight || '0'))
           cmp = (wa || 0) - (wb || 0)
           break
         }

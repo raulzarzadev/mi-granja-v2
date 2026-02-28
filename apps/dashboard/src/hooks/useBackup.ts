@@ -191,7 +191,9 @@ export function useBackup() {
       } catch (e) {
         return {
           valid: false,
-          errors: [`Error al leer el archivo: ${e instanceof Error ? e.message : 'formato inválido'}`],
+          errors: [
+            `Error al leer el archivo: ${e instanceof Error ? e.message : 'formato inválido'}`,
+          ],
           warnings: [],
           preview: null,
         }
