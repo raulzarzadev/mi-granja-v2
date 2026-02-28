@@ -228,7 +228,15 @@ export const ExampleModalAnimalForm = () => {
 
 // Ejemplo 7: Modal de Recordatorio (Reminder)
 export const ExampleModalReminderForm = () => {
-  return <ModalReminderForm />
+  const { isOpen, openModal, closeModal } = useModal()
+  return (
+    <>
+      <button onClick={openModal} className="px-4 py-2 bg-green-600 text-white rounded-md">
+        Nuevo Recordatorio
+      </button>
+      <ModalReminderForm isOpen={isOpen} onClose={closeModal} />
+    </>
+  )
 }
 
 /**
