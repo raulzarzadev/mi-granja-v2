@@ -1,0 +1,45 @@
+---
+const navLinks = [
+  { label: 'Funcionalidades', href: '#funcionalidades' },
+  { label: 'Especies', href: '#especies' },
+  { label: 'Beneficios', href: '#beneficios' },
+  { label: 'Preguntas', href: '#faq' },
+]
+---
+
+<header class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="flex h-16 items-center justify-between">
+      <a href="/" class="flex items-center gap-2" aria-label="Mi Granja - Inicio">
+        <svg class="h-8 w-8" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="6" fill="#16a34a"/>
+          <text x="16" y="23" text-anchor="middle" font-size="20" font-family="system-ui, sans-serif" font-weight="bold" fill="white">MG</text>
+        </svg>
+        <span class="text-xl font-bold text-green-800">Mi Granja</span>
+      </a>
+
+      <nav class="hidden md:flex items-center gap-8" aria-label="Navegación principal">
+        {navLinks.map((link) => (
+          <a href={link.href} class="text-sm font-medium text-gray-600 hover:text-green-700 transition-colors">
+            {link.label}
+          </a>
+        ))}
+      </nav>
+
+      <div class="flex items-center gap-3">
+        <a
+          href="https://panel.migranja.app/auth"
+          class="text-sm font-medium text-gray-600 hover:text-green-700 transition-colors"
+        >
+          Iniciar Sesion
+        </a>
+        <a
+          href="https://panel.migranja.app/auth"
+          class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors"
+        >
+          Registrarse Gratis
+        </a>
+      </div>
+    </div>
+  </div>
+</header>

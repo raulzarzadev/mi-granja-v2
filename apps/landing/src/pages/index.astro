@@ -1,22 +1,29 @@
 ---
 import Layout from '../layouts/Layout.astro'
+import Header from '../components/Header.astro'
+import Hero from '../components/Hero.astro'
+import Features from '../components/Features.astro'
+import AnimalTypes from '../components/AnimalTypes.astro'
+import HowItWorks from '../components/HowItWorks.astro'
+import Benefits from '../components/Benefits.astro'
+import FAQ from '../components/FAQ.astro'
+import CTA from '../components/CTA.astro'
+import Footer from '../components/Footer.astro'
 ---
 
 <Layout
-  title="Mi Granja - Gestión inteligente para tu granja"
-  description="Plataforma de gestión ganadera: controla animales, reproducción, salud y colaboradores desde cualquier dispositivo."
+  title="Mi Granja - Software de Gestion Ganadera Gratuito | Control de Animales y Reproduccion"
+  description="Software ganadero gratuito en espanol. Gestiona animales, reproduccion, salud, colaboradores y recordatorios desde cualquier dispositivo. Para vacas, ovejas, cabras, cerdos y mas."
 >
-  <main class="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-green-50 to-white px-4">
-    <h1 class="text-5xl font-bold text-green-800 mb-4">Mi Granja</h1>
-    <p class="text-xl text-gray-600 mb-8 text-center max-w-lg">
-      Gestión inteligente para tu granja. Controla animales, reproducción,
-      salud y colaboradores desde cualquier dispositivo.
-    </p>
-    <a
-      href="https://dashboard.migranja.app"
-      class="rounded-lg bg-green-600 px-8 py-3 text-lg font-semibold text-white hover:bg-green-700 transition-colors"
-    >
-      Ir al Dashboard
-    </a>
+  <Header />
+  <main>
+    <Hero />
+    <Features />
+    <AnimalTypes />
+    <HowItWorks />
+    <Benefits />
+    <FAQ />
+    <CTA />
   </main>
+  <Footer />
 </Layout>

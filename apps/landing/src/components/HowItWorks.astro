@@ -1,0 +1,47 @@
+---
+const steps = [
+  {
+    number: '1',
+    title: 'Crea tu cuenta',
+    description:
+      'Registrate gratis en segundos. Sin tarjeta de credito, sin compromisos. Crea tu primera granja y empieza a trabajar de inmediato.',
+  },
+  {
+    number: '2',
+    title: 'Registra tus animales',
+    description:
+      'Agrega tus animales con sus datos: tipo, raza, peso, genealogia. Usa la vista en tarjetas o tabla para organizarlos como prefieras.',
+  },
+  {
+    number: '3',
+    title: 'Gestiona y colabora',
+    description:
+      'Lleva el control de reproduccion, salud y recordatorios. Invita a tu equipo con roles y permisos personalizados.',
+  },
+]
+---
+
+<section class="py-20 sm:py-28 bg-white">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-2xl text-center">
+      <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+        Comienza en minutos
+      </h2>
+      <p class="mt-4 text-lg text-gray-600">
+        Tres pasos simples para digitalizar la gestion de tu granja.
+      </p>
+    </div>
+
+    <div class="mx-auto mt-16 grid max-w-4xl gap-8 sm:grid-cols-3">
+      {steps.map((step) => (
+        <div class="relative text-center">
+          <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-2xl font-bold text-white shadow-lg shadow-green-600/20">
+            {step.number}
+          </div>
+          <h3 class="mt-5 text-lg font-semibold text-gray-900">{step.title}</h3>
+          <p class="mt-2 text-sm leading-relaxed text-gray-600">{step.description}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

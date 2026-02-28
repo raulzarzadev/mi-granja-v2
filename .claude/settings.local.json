@@ -19,7 +19,8 @@
       "Bash(vercel:*)",
       "Bash(npx vercel:*)",
       "mcp__vercel__search_vercel_documentation",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(xargs:*)"
     ]
   }
 }

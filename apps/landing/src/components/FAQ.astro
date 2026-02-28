@@ -1,0 +1,94 @@
+---
+const faqs = [
+  {
+    question: 'Es realmente gratuito Mi Granja?',
+    answer:
+      'Si, Mi Granja es completamente gratuito. Todas las funcionalidades estan disponibles sin costo: registro de animales, control de reproduccion, historial de salud, gestion de colaboradores, recordatorios y respaldos.',
+  },
+  {
+    question: 'Que tipos de animales puedo registrar?',
+    answer:
+      'Mi Granja soporta 9 tipos de animales: vacas, ovejas, cabras, cerdos, gallinas, equinos, perros, gatos y una categoria personalizable. Cada especie tiene periodos de gestacion y destete preconfigurados.',
+  },
+  {
+    question: 'Puedo usar Mi Granja desde mi celular?',
+    answer:
+      'Si, Mi Granja es una aplicacion web responsiva que funciona perfectamente en celulares, tablets y computadoras. No necesitas descargar ninguna app, solo abre tu navegador.',
+  },
+  {
+    question: 'Como funciona la gestion de colaboradores?',
+    answer:
+      'Puedes invitar a miembros de tu equipo por correo electronico y asignarles uno de 5 roles: administrador, gerente, cuidador, veterinario u observador. Cada rol tiene permisos especificos que controlan que puede ver y hacer cada persona.',
+  },
+  {
+    question: 'Mis datos estan seguros?',
+    answer:
+      'Tus datos estan protegidos con Firebase de Google, con cifrado en transito y en reposo. Ademas, puedes exportar un respaldo completo de tu granja en cualquier momento y restaurarlo cuando lo necesites.',
+  },
+  {
+    question: 'Puedo administrar varias granjas?',
+    answer:
+      'Si, puedes crear y administrar multiples granjas desde una sola cuenta. Tambien puedes ser invitado como colaborador en granjas de otros usuarios.',
+  },
+  {
+    question: 'Como funciona el control de reproduccion?',
+    answer:
+      'Registras las montas con el macho y las hembras involucradas. El sistema calcula automaticamente la fecha esperada de parto segun la especie. Puedes confirmar gestaciones, registrar partos y dar seguimiento a cada cria.',
+  },
+  {
+    question: 'Necesito internet para usar Mi Granja?',
+    answer:
+      'Si, necesitas conexion a internet para acceder a Mi Granja ya que los datos se sincronizan en tiempo real con la nube. Esto asegura que todos los colaboradores vean la informacion actualizada.',
+  },
+]
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((faq) => ({
+    '@type': 'Question',
+    name: faq.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: faq.answer,
+    },
+  })),
+}
+---
+
+<section id="faq" class="py-20 sm:py-28 bg-white">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-2xl text-center">
+      <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+        Preguntas frecuentes
+      </h2>
+      <p class="mt-4 text-lg text-gray-600">
+        Resuelve tus dudas sobre el software de gestion ganadera Mi Granja.
+      </p>
+    </div>
+
+    <div class="mx-auto mt-14 max-w-3xl divide-y divide-gray-200">
+      {faqs.map((faq) => (
+        <details class="group py-5">
+          <summary class="flex cursor-pointer items-center justify-between text-left">
+            <h3 class="text-base font-medium text-gray-900 group-open:text-green-700 transition-colors pr-4">
+              {faq.question}
+            </h3>
+            <svg
+              class="h-5 w-5 shrink-0 text-gray-400 group-open:rotate-180 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </summary>
+          <p class="mt-3 text-sm leading-relaxed text-gray-600">{faq.answer}</p>
+        </details>
+      ))}
+    </div>
+  </div>
+
+  <!-- FAQ Schema -->
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+</section>

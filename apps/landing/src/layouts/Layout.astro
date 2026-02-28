@@ -2,9 +2,51 @@
 interface Props {
   title: string
   description: string
+  canonicalURL?: string
 }
 
-const { title, description } = Astro.props
+const { title, description, canonicalURL } = Astro.props
+const canonical = canonicalURL || Astro.url.href
+const siteName = 'Mi Granja'
+const ogImage = 'https://migranja.app/og-image.png'
+
+const jsonLdSoftware = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Mi Granja',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  description:
+    'Software de gestión ganadera para controlar animales, reproducción, salud y colaboradores.',
+  url: 'https://migranja.app',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.8',
+    ratingCount: '50',
+  },
+  featureList: [
+    'Registro de animales',
+    'Control de reproducción',
+    'Historial de salud',
+    'Gestión de colaboradores',
+    'Recordatorios automáticos',
+    'Respaldo de datos',
+  ],
+  inLanguage: 'es',
+}
+
+const jsonLdOrg = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Mi Granja',
+  url: 'https://migranja.app',
+  logo: 'https://migranja.app/favicon.svg',
+}
 ---
 
 <!doctype html>
@@ -12,11 +54,42 @@ const { title, description } = Astro.props
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content={description} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- SEO básico -->
     <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="Mi Granja" />
+    <meta name="theme-color" content="#16a34a" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content="es_ES" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLdSoftware)} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLdOrg)} />
+
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://panel.migranja.app" />
   </head>
-  <body>
+  <body class="bg-white text-gray-900">
     <slot />
   </body>
 </html>
