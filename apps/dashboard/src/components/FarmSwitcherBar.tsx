@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
+import { useBilling } from '@/hooks/useBilling'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 import { useMyInvitations } from '@/hooks/useMyInvitations'
@@ -16,8 +17,10 @@ const FarmSwitcherBar: React.FC = () => {
 
   const myInv = useMyInvitations()
   const { acceptInvitation } = useFarmMembers(undefined)
+  const { requestUpgrade, usage } = useBilling()
 
   const { user } = useSelector((s: RootState) => s.auth)
+  const billingPlanType = useSelector((s: RootState) => s.billing.planType)
   const [selectedInvitationId, setSelectedInvitationId] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -112,6 +115,27 @@ const FarmSwitcherBar: React.FC = () => {
             <span className="px-2 py-1 text-[10px] uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-200 rounded">
               Invitado como: {collaborator_roles_label[acceptedRole] || acceptedRole}
             </span>
+          )}
+          {usage && (() => {
+            const exceeds = usage.farmCount > usage.limits.maxFarms || usage.collaboratorCount > usage.limits.maxCollaboratorsPerFarm
+            return (
+              <span className={`px-2 py-1 text-[11px] font-medium border rounded ${
+                exceeds
+                  ? 'bg-red-50 text-red-700 border-red-200'
+                  : 'bg-gray-50 text-gray-600 border-gray-200'
+              }`}>
+                {usage.farmCount}/{usage.limits.maxFarms} granjas · {usage.collaboratorCount}/{usage.limits.maxCollaboratorsPerFarm} colab.
+              </span>
+            )
+          })()}
+          {billingPlanType === 'free' && (
+            <button
+              onClick={() => requestUpgrade('manual')}
+              className="px-3 py-2 text-xs font-semibold bg-gradient-to-r from-green-600 to-green-700 text-white rounded-md hover:from-green-700 hover:to-green-800 flex items-center gap-1.5 shadow-sm transition-all"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+              Mejorar Plan
+            </button>
           )}
         </div>
 

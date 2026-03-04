@@ -10,6 +10,8 @@ import { formatDate, toDate } from '@/lib/dates'
 import { FarmCollaborator } from '@/types/collaborators'
 import { FARM_AREA_TYPES, FarmInvitation } from '@/types/farm'
 import AreaCard from './AreaCard'
+import BillingSection from './billing/BillingSection'
+import MigrationBanner from './billing/MigrationBanner'
 import CollaboratorCard from './CollaboratorCard'
 import FarmSwitcherBar from './FarmSwitcherBar'
 import ModalCreateArea from './ModalCreateArea'
@@ -56,7 +58,7 @@ const FarmSection: React.FC = () => {
   const canDeleteInvitations = hasPermissions('collaborators', 'delete')
 
   const [activeSubTab, setActiveSubTab] = useState<
-    'overview' | 'areas' | 'collaborators' | 'backups'
+    'overview' | 'areas' | 'collaborators' | 'backups' | 'billing'
   >('overview')
 
   const areaStats = getAreaStats()
@@ -192,6 +194,9 @@ const FarmSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Banner de migración para usuarios con granjas extra sin plan */}
+      <MigrationBanner />
+
       {/* Selector de granja + invitaciones */}
       <FarmSwitcherBar />
 
@@ -257,6 +262,16 @@ const FarmSection: React.FC = () => {
               }`}
             >
               💾 Respaldos
+            </button>
+            <button
+              onClick={() => setActiveSubTab('billing')}
+              className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
+                activeSubTab === 'billing'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              💳 Facturacion
             </button>
           </div>
         </div>
@@ -548,6 +563,8 @@ const FarmSection: React.FC = () => {
       )}
 
       {activeSubTab === 'backups' && <BackupSection />}
+
+      {activeSubTab === 'billing' && <BillingSection />}
 
       {/* Modal de edición de colaborador */}
       <ModalEditCollaborator

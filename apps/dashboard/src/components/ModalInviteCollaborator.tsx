@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
+import { useBilling } from '@/hooks/useBilling'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 import { useModal } from '@/hooks/useModal'
@@ -16,6 +17,7 @@ const ModalInviteCollaborator: React.FC = () => {
   const { isOpen, openModal, closeModal } = useModal()
   const { user } = useSelector((state: RootState) => state.auth)
   const { currentFarm } = useFarmCRUD()
+  const { canInviteCollaborator, requestUpgrade } = useBilling()
   const { inviteCollaborator } = useFarmMembers(currentFarm?.id)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -63,7 +65,13 @@ const ModalInviteCollaborator: React.FC = () => {
   return (
     <>
       <button
-        onClick={openModal}
+        onClick={() => {
+          if (!canInviteCollaborator()) {
+            requestUpgrade('collaborator_limit')
+            return
+          }
+          openModal()
+        }}
         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
       >
         <span>✉️</span>

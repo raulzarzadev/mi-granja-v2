@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useBilling } from '@/hooks/useBilling'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useModal } from '@/hooks/useModal'
 import { Farm } from '@/types/farm'
@@ -31,6 +32,7 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
   const openModal = modal.openModal
   const closeModal = onClose ?? modal.closeModal
   const { createFarm } = useFarmCRUD()
+  const { canCreateFarm, requestUpgrade } = useBilling()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -109,7 +111,13 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
     <>
       {showTrigger && (
         <button
-          onClick={openModal}
+          onClick={() => {
+            if (!canCreateFarm()) {
+              requestUpgrade('farm_limit')
+              return
+            }
+            openModal()
+          }}
           className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors"
         >
           <span>🚜</span>

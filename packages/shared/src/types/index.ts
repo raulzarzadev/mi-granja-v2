@@ -6,6 +6,11 @@ export interface User {
   roles: ('admin' | 'farmer' | 'vet')[]
   currentFarmId?: string // ID de la granja actualmente seleccionada
   createdAt: Date
+
+  // Campos de billing (desnormalizados desde subscriptions collection)
+  stripeCustomerId?: string
+  subscriptionStatus?: import('./billing').SubscriptionStatus
+  planType?: import('./billing').PlanType
 }
 
 export interface WeightRecord {

@@ -2,7 +2,7 @@
 
 import React from 'react'
 
-type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities'
+type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities' | 'billing'
 
 interface AdminQuickActionsProps {
   onSectionChange?: (section: AdminSection) => void

@@ -34,6 +34,8 @@ export const useAdminUsers = (): UseAdminUsersReturn => {
           farmName: data.farmName || '',
           roles: data.roles || ['farmer'],
           createdAt: data.createdAt?.toDate() || new Date(),
+          planType: data.planType,
+          subscriptionStatus: data.subscriptionStatus,
         })
       })
 

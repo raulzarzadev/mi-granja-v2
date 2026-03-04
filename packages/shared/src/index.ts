@@ -22,4 +22,5 @@ export type {
   User,
   WeightRecord,
 } from './types/index'
+export * from './types/billing'
 export * from './types/records'

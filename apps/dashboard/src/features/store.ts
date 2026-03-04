@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { animalsReducer } from './animals/animalsSlice'
 import { authReducer } from './auth/authSlice'
+import { billingReducer } from './billing/billingSlice'
 import { breedingReducer } from './breeding/breedingSlice'
 import { farmReducer } from './farm/farmSlice'
 import { remindersReducer } from './reminders/remindersSlice'
@@ -9,6 +10,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     animals: animalsReducer,
+    billing: billingReducer,
     breeding: breedingReducer,
     reminders: remindersReducer,
     farm: farmReducer,

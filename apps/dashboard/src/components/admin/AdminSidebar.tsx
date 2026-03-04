@@ -2,7 +2,7 @@
 
 import React from 'react'
 
-type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities'
+type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities' | 'billing'
 
 interface AdminSidebarProps {
   activeSection: AdminSection
@@ -16,6 +16,7 @@ const menuItems = [
   { id: 'breedings', label: 'Reproducciones', icon: '💕' },
   { id: 'reminders', label: 'Recordatorios', icon: '⏰' },
   { id: 'activities', label: 'Actividades', icon: '📝' },
+  { id: 'billing', label: 'Facturación', icon: '💳' },
 ] as const
 
 export default function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarProps) {

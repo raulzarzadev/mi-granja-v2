@@ -5,7 +5,7 @@ import AdminQuickActions from './AdminQuickActions'
 import AdminRecentActivity from './AdminRecentActivity'
 import AdminStatsCards from './AdminStatsCards'
 
-type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities'
+type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities' | 'billing'
 
 interface AdminOverviewProps {
   onSectionChange?: (section: AdminSection) => void

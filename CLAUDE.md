@@ -112,6 +112,58 @@ Admins can impersonate users via `/api/admin/impersonate`. All impersonated acti
 - Email service uses Resend via `/api/send` route
 - When adding new shared types or utilities, add them to `packages/shared/` and create re-export proxies in the dashboard if needed
 
+## Business Model & Roadmap
+
+### Freemium Model
+
+MiGranja operates under a **Freemium** pricing model:
+
+- **Free plan**: 1 user, 1 farm, full feature access
+- **Paid plan**: $250 MXN/month per additional farm, $250 MXN/month per additional collaborator
+- Example: 3 farms + 2 collaborators = $1,000 MXN/month
+- Annual plan with discount (% TBD)
+
+### Payment Integrations (planned)
+
+| Platform     | Purpose                                         |
+|-------------|--------------------------------------------------|
+| **Stripe**       | Primary — cards, recurring subscriptions         |
+| **Conekta**      | Mexico — OXXO cash, SPEI bank transfers          |
+| **MercadoPago**  | Broad LATAM coverage                             |
+
+### Billing Rules
+
+- Monthly recurring subscription via Stripe
+- Charges based on active farms and collaborators at end of month
+- 3-day grace period on payment failure
+- Suspend access to extra farms/collaborators after non-payment
+- Webhook-driven activation/deactivation of farms and users
+
+### Pending Features (from Notion board)
+
+| Feature           | Status       | Notes                                              |
+|-------------------|--------------|----------------------------------------------------|
+| Stripe integration | Not started  | Checkout, portal, webhooks in dashboard API        |
+| Upgrade flow UI    | Not started  | In-app flow to add farms/collaborators             |
+| Annual plan discount | Not started | Define % and implement in billing                |
+| Conekta (OXXO)    | Not started  | Evaluate for cash payment support in Mexico        |
+| MercadoPago        | Not started  | LATAM expansion                                    |
+| Lost animal status | Not started  | New animal status type                             |
+| Collaborators UX   | Not started  | Own logic/flow for adding collaborators            |
+| BackOffice         | Not started  | Admin panel for platform management                |
+| SEO measurement    | Not started  | Analytics and SEO for landing page                 |
+| Landing pricing section | Not started | Update landing to show freemium tiers         |
+
+### Data Model Changes Needed for Billing
+
+The current Firestore model (`Farm`, `User`, `FarmCollaborator`) has **no billing fields**. Future work must add:
+- Subscription status and plan tier to `Farm` or a new `subscriptions` collection
+- Usage limits enforcement (farm count, collaborator count) in hooks
+- A `billingSlice` in Redux for subscription state
+- API routes: `/api/billing/checkout`, `/api/billing/webhook`, `/api/billing/portal`
+
 ## Environment Variables
 
 Required in `apps/dashboard/.env.local`: `NEXT_PUBLIC_FIREBASE_CONFIG`, `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`, `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`
+
+Future env vars for billing: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `CONEKTA_API_KEY` (when integrated)

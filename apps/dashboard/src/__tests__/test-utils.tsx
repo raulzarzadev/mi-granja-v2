@@ -4,6 +4,7 @@ import React from 'react'
 import { Provider } from 'react-redux'
 import { animalsReducer } from '@/features/animals/animalsSlice'
 import { authReducer } from '@/features/auth/authSlice'
+import { billingReducer } from '@/features/billing/billingSlice'
 import { breedingReducer } from '@/features/breeding/breedingSlice'
 import { farmReducer } from '@/features/farm/farmSlice'
 import { remindersReducer } from '@/features/reminders/remindersSlice'
@@ -24,6 +25,7 @@ export const createMockStore = (initialAuthState = {}) => {
     reducer: {
       auth: authReducer,
       animals: animalsReducer,
+      billing: billingReducer,
       breeding: breedingReducer,
       reminders: remindersReducer,
       farm: farmReducer,
