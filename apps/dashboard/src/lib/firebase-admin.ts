@@ -20,6 +20,12 @@ function getProjectId(): string {
   return 'mi-granja-dev'
 }
 
+// Setear variables de emulador lo antes posible (antes de que cualquier SDK las lea)
+if (isEmulatorMode()) {
+  process.env.FIREBASE_AUTH_EMULATOR_HOST ??= 'localhost:9099'
+  process.env.FIRESTORE_EMULATOR_HOST ??= 'localhost:8080'
+}
+
 function getAdminApp(): App {
   if (adminApp) return adminApp
 
@@ -29,10 +35,6 @@ function getAdminApp(): App {
   }
 
   if (isEmulatorMode()) {
-    // Deben setearse ANTES de inicializar la app
-    process.env.FIREBASE_AUTH_EMULATOR_HOST ??= 'localhost:9099'
-    process.env.FIRESTORE_EMULATOR_HOST ??= 'localhost:8080'
-
     const projectId = getProjectId()
     console.log(`🔧 Firebase Admin conectando a emuladores (project: ${projectId})`)
     adminApp = initializeApp({ projectId })

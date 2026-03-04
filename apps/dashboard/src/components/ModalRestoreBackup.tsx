@@ -121,6 +121,21 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
               </label>
             </div>
 
+            <details className="text-sm border border-gray-200 rounded-lg">
+              <summary className="cursor-pointer px-4 py-2 text-gray-600 hover:text-gray-800 font-medium select-none">
+                Ver formato requerido del archivo
+              </summary>
+              <div className="px-4 pb-3 pt-1">
+                <p className="text-xs text-gray-500 mb-2">
+                  El archivo debe ser .json con esta estructura. Las fechas en formato ISO 8601
+                  (ej: 2026-03-04T12:00:00.000Z).
+                </p>
+                <pre className="bg-gray-50 border border-gray-200 text-[11px] leading-relaxed p-3 rounded-lg overflow-auto max-h-72 text-gray-700">
+                  {BACKUP_SCHEMA_JSON}
+                </pre>
+              </div>
+            </details>
+
             {fileError && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                 <p className="text-sm text-red-700">{fileError}</p>
@@ -655,5 +670,111 @@ function ProgressView({ progress }: { progress: BackupProgress }) {
     </div>
   )
 }
+
+const BACKUP_SCHEMA_JSON = `{
+  "_meta": {
+    "version": 1,
+    "exportDate": "ISO 8601",
+    "farmId": "string",
+    "farmName": "string",
+    "exportedBy": "string (userId)",
+    "counts": {
+      "animals": 0,
+      "breedingRecords": 0,
+      "reminders": 0,
+      "weightRecords": 0,
+      "farmInvitations": 0
+    }
+  },
+  "_types": {
+    "animal": {
+      "id": "string",
+      "farmerId": "string (ID del usuario)",
+      "farmId": "string (ID de la granja)",
+      "animalNumber": "string (arete/identificador)",
+      "type": "oveja | vaca | cabra | cerdo | gallina | perro | gato | equino | otro",
+      "gender": "macho | hembra",
+      "breed": "string (raza, opcional)",
+      "stage": "cria | engorda | lechera | reproductor | descarte",
+      "status": "activo | muerto | vendido | perdido",
+      "birthDate": "ISO 8601 (opcional)",
+      "weight": "number en kg (opcional)",
+      "motherId": "string ID animal madre (opcional)",
+      "fatherId": "string ID animal padre (opcional)",
+      "notes": "string (opcional)",
+      "isWeaned": "true | false (opcional)",
+      "weanedAt": "ISO 8601 (opcional)",
+      "soldInfo": "{ date, buyer?, price? } (si vendido)",
+      "lostInfo": "{ lostAt, foundAt? } (si perdido)",
+      "records": "[{ id, type, category, title, date, ... }] (opcional)",
+      "createdAt": "ISO 8601",
+      "updatedAt": "ISO 8601"
+    },
+    "breedingRecord": {
+      "id": "string",
+      "farmerId": "string",
+      "farmId": "string",
+      "maleId": "string (ID del animal macho)",
+      "breedingDate": "ISO 8601 | null",
+      "femaleBreedingInfo": "[{
+        femaleId, pregnancyConfirmedDate?,
+        expectedBirthDate?, actualBirthDate?,
+        offspring?: string[]
+      }]",
+      "notes": "string (opcional)",
+      "comments": "[{ id, content, urgency?, createdAt? }] (opcional)",
+      "createdAt": "ISO 8601",
+      "updatedAt": "ISO 8601"
+    },
+    "reminder": {
+      "id": "string",
+      "farmerId": "string",
+      "farmId": "string",
+      "animalNumber": "string arete (opcional)",
+      "title": "string",
+      "description": "string",
+      "dueDate": "ISO 8601",
+      "completed": "true | false",
+      "priority": "low | medium | high",
+      "type": "medical | breeding | feeding | weight | other",
+      "createdAt": "ISO 8601",
+      "updatedAt": "ISO 8601"
+    },
+    "weightRecord": {
+      "id": "string",
+      "animalNumber": "string (arete)",
+      "weight": "number (kg)",
+      "date": "ISO 8601",
+      "notes": "string (opcional)"
+    },
+    "farmInvitation": {
+      "id": "string",
+      "farmId": "string",
+      "email": "string",
+      "role": "admin | manager | caretaker | veterinarian | viewer",
+      "permissions": "[{ module, actions[] }]",
+      "invitedBy": "string",
+      "status": "pending | accepted | rejected | expired | revoked",
+      "expiresAt": "ISO 8601",
+      "createdAt": "ISO 8601",
+      "updatedAt": "ISO 8601"
+    },
+    "farm": {
+      "id": "string",
+      "name": "string",
+      "description": "string (opcional)",
+      "ownerId": "string",
+      "location": "{ address?, city?, state?, country?, coordinates?: { lat, lng } } (opcional)",
+      "createdAt": "ISO 8601",
+      "updatedAt": "ISO 8601"
+    }
+  },
+  "farm": { },
+  "animals": [ ],
+  "breedingRecords": [ ],
+  "reminders": [ ],
+  "weightRecords": [ ],
+  "farmInvitations": [ ]
+}`
 
 export default ModalRestoreBackup

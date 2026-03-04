@@ -78,8 +78,8 @@ export function useBilling() {
         method: 'POST',
         body: JSON.stringify({
           ...params,
-          successUrl: `${appUrl}/billing?success=true`,
-          cancelUrl: `${appUrl}/billing?canceled=true`,
+          successUrl: `${appUrl}/?billing=success`,
+          cancelUrl: `${appUrl}/?billing=canceled`,
         }),
       })
       // Redirigir a Stripe Checkout
@@ -94,7 +94,7 @@ export function useBilling() {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
     const data = await billingFetch('/portal', {
       method: 'POST',
-      body: JSON.stringify({ returnUrl: `${appUrl}/billing` }),
+      body: JSON.stringify({ returnUrl: `${appUrl}/` }),
     })
     if (data.url) {
       window.location.href = data.url

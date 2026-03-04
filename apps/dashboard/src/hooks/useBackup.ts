@@ -16,6 +16,7 @@ import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import { db } from '@/lib/firebase'
 import {
+  BACKUP_TYPE_DESCRIPTIONS,
   BackupFile,
   deserializeFromBackup,
   serializeForBackup,
@@ -143,6 +144,7 @@ export function useBackup() {
             farmInvitations: farmInvitations.length,
           },
         },
+        _types: BACKUP_TYPE_DESCRIPTIONS,
         farm: serializeForBackup(farmData),
         animals: serializeForBackup(animals),
         breedingRecords: serializeForBackup(breedingRecords),

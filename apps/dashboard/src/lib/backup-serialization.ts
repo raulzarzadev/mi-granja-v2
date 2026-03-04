@@ -167,12 +167,108 @@ export interface BackupMeta {
 
 export interface BackupFile {
   _meta: BackupMeta
+  _types?: Record<string, unknown>
   farm: Record<string, unknown>
   animals: Record<string, unknown>[]
   breedingRecords: Record<string, unknown>[]
   reminders: Record<string, unknown>[]
   weightRecords: Record<string, unknown>[]
   farmInvitations: Record<string, unknown>[]
+}
+
+/**
+ * Descripción de los tipos de cada colección del respaldo.
+ * Se incluye en el JSON exportado para que usuarios o sistemas externos
+ * conozcan la estructura esperada al importar datos.
+ */
+export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
+  animal: {
+    id: 'string',
+    farmerId: 'string (ID del usuario dueño)',
+    farmId: 'string (ID de la granja)',
+    animalNumber: 'string (identificador único asignado por el granjero)',
+    type: "'oveja' | 'vaca' | 'cabra' | 'cerdo' | 'gallina' | 'perro' | 'gato' | 'equino' | 'otro'",
+    breed: 'string | undefined (raza)',
+    stage: "'cria' | 'engorda' | 'lechera' | 'reproductor' | 'descarte'",
+    gender: "'macho' | 'hembra'",
+    weight: 'number | string | null',
+    age: 'number | null',
+    birthDate: 'string (ISO 8601) | undefined',
+    motherId: 'string | undefined (ID del animal madre)',
+    fatherId: 'string | undefined (ID del animal padre)',
+    status: "'activo' | 'muerto' | 'vendido' | 'perdido' (default: activo)",
+    statusAt: 'string (ISO 8601) | undefined',
+    statusNotes: 'string | undefined',
+    notes: 'string | undefined',
+    isWeaned: 'boolean | undefined',
+    weanedAt: 'string (ISO 8601) | undefined',
+    weaningNotes: 'string | undefined',
+    soldInfo: '{ date: ISO 8601, buyer?: string, price?: number | string } | undefined',
+    lostInfo: '{ lostAt: ISO 8601, foundAt?: ISO 8601 } | undefined',
+    records:
+      '[ { id, type, category, title, description?, date, severity?, isResolved?, resolvedDate?, treatment?, nextDueDate?, batch?, veterinarian?, cost?, notes?, createdAt, createdBy, updatedAt? } ] | undefined',
+    createdAt: 'string (ISO 8601)',
+    updatedAt: 'string (ISO 8601)',
+  },
+  breedingRecord: {
+    id: 'string',
+    breedingId: 'string | undefined (ID legible, ej: "10-10-25-01")',
+    farmerId: 'string (ID del usuario)',
+    farmId: 'string (ID de la granja)',
+    maleId: 'string (ID del animal macho)',
+    breedingDate: 'string (ISO 8601) | null',
+    femaleBreedingInfo:
+      '[ { femaleId: string, pregnancyConfirmedDate?: ISO 8601, expectedBirthDate?: ISO 8601, actualBirthDate?: ISO 8601, offspring?: string[] } ]',
+    notes: 'string | undefined',
+    comments:
+      '[ { id: string, content: string, urgency?: "none"|"low"|"medium"|"high", createdAt?: ISO 8601, createdBy?: string } ] | undefined',
+    createdAt: 'string (ISO 8601)',
+    updatedAt: 'string (ISO 8601)',
+  },
+  reminder: {
+    id: 'string',
+    farmerId: 'string (ID del usuario)',
+    farmId: 'string (ID de la granja)',
+    animalNumber: 'string | undefined (arete del animal)',
+    title: 'string',
+    description: 'string',
+    dueDate: 'string (ISO 8601)',
+    completed: 'boolean',
+    priority: "'low' | 'medium' | 'high'",
+    type: "'medical' | 'breeding' | 'feeding' | 'weight' | 'other'",
+    createdAt: 'string (ISO 8601)',
+    updatedAt: 'string (ISO 8601)',
+  },
+  weightRecord: {
+    id: 'string',
+    animalNumber: 'string (arete del animal)',
+    weight: 'number (kg)',
+    date: 'string (ISO 8601)',
+    notes: 'string | undefined',
+  },
+  farmInvitation: {
+    id: 'string',
+    farmId: 'string (ID de la granja)',
+    email: 'string',
+    role: "'admin' | 'manager' | 'caretaker' | 'veterinarian' | 'viewer'",
+    permissions:
+      "[ { module: 'animals'|'breeding'|'reminders'|'areas'|'collaborators'|'reports'|'invitations', actions: ('create'|'read'|'update'|'delete')[] } ]",
+    invitedBy: 'string (ID del usuario)',
+    status: "'pending' | 'accepted' | 'rejected' | 'expired' | 'revoked'",
+    expiresAt: 'string (ISO 8601)',
+    createdAt: 'string (ISO 8601)',
+    updatedAt: 'string (ISO 8601)',
+  },
+  farm: {
+    id: 'string',
+    name: 'string',
+    description: 'string | undefined',
+    ownerId: 'string (ID del usuario dueño)',
+    location:
+      '{ address?: string, city?: string, state?: string, country?: string, coordinates?: { lat: number, lng: number } } | undefined',
+    createdAt: 'string (ISO 8601)',
+    updatedAt: 'string (ISO 8601)',
+  },
 }
 
 export interface ValidationResult {

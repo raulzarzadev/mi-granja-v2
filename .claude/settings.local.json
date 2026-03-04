@@ -23,7 +23,8 @@
       "Bash(xargs:*)",
       "Bash(npx tsc:*)",
       "Bash(stripe:*)",
-      "Bash(chmod +x:*)"
+      "Bash(chmod +x:*)",
+      "Bash(npx tsx:*)"
     ]
   }
 }

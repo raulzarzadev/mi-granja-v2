@@ -35,6 +35,15 @@ export async function POST(request: NextRequest) {
     const userData = userDoc.data()
     let customerId = userData?.stripeCustomerId as string | undefined
 
+    // Validar que el customer exista en Stripe (puede ser de otra cuenta)
+    if (customerId) {
+      try {
+        await stripe.customers.retrieve(customerId)
+      } catch {
+        customerId = undefined
+      }
+    }
+
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: auth.email,
@@ -66,7 +75,7 @@ export async function POST(request: NextRequest) {
       customer: customerId,
       mode: 'subscription',
       line_items: lineItems,
-      success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${successUrl}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancelUrl,
       metadata: {
         firebaseUserId: auth.uid,
@@ -82,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: session.url })
   } catch (error) {
-    console.error('Error creando sesión de checkout:', error)
+    console.error('Error creando sesión de checkout:', error instanceof Error ? error.message : error, error instanceof Error ? error.stack : '')
     return NextResponse.json(
       { error: 'Error al crear sesión de pago' },
       { status: 500 },

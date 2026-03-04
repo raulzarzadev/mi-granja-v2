@@ -68,8 +68,8 @@ function QuantitySelector({
 const ModalUpgrade: React.FC = () => {
   const { showUpgradeModal, upgradeReason, dismissUpgrade, createCheckoutSession } = useBilling()
   const [interval, setInterval] = useState<BillingInterval>('month')
-  const [extraFarms, setExtraFarms] = useState(1)
-  const [extraCollaborators, setExtraCollaborators] = useState(0)
+  const [extraFarms, setExtraFarms] = useState(0)
+  const [extraCollaborators, setExtraCollaborators] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
 
   const farmPrice = interval === 'year' ? BILLING_PRICES.farmAnnual : BILLING_PRICES.farmMonthly
@@ -95,17 +95,13 @@ const ModalUpgrade: React.FC = () => {
     }
   }
 
-  // Reset al abrir con contexto
-  const initialFarms = upgradeReason === 'farm_limit' ? 1 : 0
-  const initialCollabs = upgradeReason === 'collaborator_limit' ? 1 : 0
-
   // Reset cantidades cuando cambia la razón (nuevo open)
   React.useEffect(() => {
     if (showUpgradeModal) {
-      setExtraFarms(initialFarms || 1)
-      setExtraCollaborators(initialCollabs)
+      setExtraFarms(upgradeReason === 'farm_limit' ? 1 : 0)
+      setExtraCollaborators(upgradeReason === 'collaborator_limit' ? 1 : 1)
     }
-  }, [showUpgradeModal])
+  }, [showUpgradeModal, upgradeReason])
 
   return (
     <Modal
