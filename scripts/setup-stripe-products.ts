@@ -112,13 +112,15 @@ async function main() {
   console.log('\n' + '='.repeat(60))
   console.log('Pega esto en apps/dashboard/.env.local:')
   console.log('='.repeat(60))
-  console.log(`
+  console.log(
+    `
 # Stripe Price IDs (test mode — MXN)
 STRIPE_FARM_PRICE_ID=${farmMonthlyPrice.id}
 STRIPE_COLLABORATOR_PRICE_ID=${collabMonthlyPrice.id}
 STRIPE_FARM_ANNUAL_PRICE_ID=${farmAnnualPrice.id}
 STRIPE_COLLABORATOR_ANNUAL_PRICE_ID=${collabAnnualPrice.id}
-`.trim())
+`.trim(),
+  )
   console.log('='.repeat(60))
 }
 

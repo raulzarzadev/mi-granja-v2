@@ -30,9 +30,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error obteniendo suscripcion:', error)
-    return NextResponse.json(
-      { error: 'Error al obtener datos de suscripcion' },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: 'Error al obtener datos de suscripcion' }, { status: 500 })
   }
 }

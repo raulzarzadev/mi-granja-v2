@@ -214,7 +214,10 @@ const FarmSection: React.FC = () => {
               .map(([type, count]) => {
                 const typeInfo = FARM_AREA_TYPES.find((t) => t.value === type)
                 return (
-                  <div key={type} className="bg-white rounded-lg shadow p-4 flex items-center gap-3">
+                  <div
+                    key={type}
+                    className="bg-white rounded-lg shadow p-4 flex items-center gap-3"
+                  >
                     <span className="text-2xl">{typeInfo?.icon || '📍'}</span>
                     <div>
                       <p className="text-sm font-medium text-gray-500">{typeInfo?.label || type}</p>
@@ -434,9 +437,7 @@ const FarmSection: React.FC = () => {
       <MigrationBanner />
       <FarmSwitcherBar />
 
-      {currentFarm && (
-        <Tabs tabs={farmTabs} tabsId="farm-tabs" />
-      )}
+      {currentFarm && <Tabs tabs={farmTabs} tabsId="farm-tabs" />}
 
       <ModalEditCollaborator
         isOpen={isEditModalOpen}

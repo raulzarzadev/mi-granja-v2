@@ -398,7 +398,9 @@ export function useBackup() {
               const oldMaleId = remapped.maleId
               if (remapped.maleId) remapped.maleId = remapAnimalId(remapped.maleId)
               if (written === 0) {
-                console.log(`[Restore] Breeding #1 (${breedingOldId}): maleId ${oldMaleId} → ${remapped.maleId}`)
+                console.log(
+                  `[Restore] Breeding #1 (${breedingOldId}): maleId ${oldMaleId} → ${remapped.maleId}`,
+                )
               }
 
               // Remapear femaleBreedingInfo
@@ -590,4 +592,3 @@ export function useBackup() {
     progress,
   }
 }
-

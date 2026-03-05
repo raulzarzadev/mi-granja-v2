@@ -10,9 +10,7 @@ async function verifyAdmin(request: NextRequest) {
   const firestore = getAdminFirestore()
   const userDoc = await firestore.doc(`users/${auth.uid}`).get()
   const userData = userDoc.data()
-  const isAdmin =
-    userData?.roles?.includes('admin') ||
-    auth.email === 'zarza@migranja.app'
+  const isAdmin = userData?.roles?.includes('admin') || auth.email === 'zarza@migranja.app'
 
   if (!isAdmin) {
     return { error: NextResponse.json({ error: 'Acceso denegado' }, { status: 403 }) }
@@ -22,10 +20,7 @@ async function verifyAdmin(request: NextRequest) {
 }
 
 async function getUserCounts(firestore: FirebaseFirestore.Firestore, userId: string) {
-  const farmsSnap = await firestore
-    .collection('farms')
-    .where('ownerId', '==', userId)
-    .get()
+  const farmsSnap = await firestore.collection('farms').where('ownerId', '==', userId).get()
   const actualFarmCount = farmsSnap.size
 
   let actualCollaboratorCount = 0
@@ -67,10 +62,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error en admin billing:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }
 
@@ -88,19 +80,13 @@ export async function POST(request: NextRequest) {
     }
 
     if (!userId || places === undefined) {
-      return NextResponse.json(
-        { error: 'userId y places son requeridos' },
-        { status: 400 },
-      )
+      return NextResponse.json({ error: 'userId y places son requeridos' }, { status: 400 })
     }
 
     // Verificar que el usuario existe
     const userDoc = await firestore.doc(`users/${userId}`).get()
     if (!userDoc.exists) {
-      return NextResponse.json(
-        { error: 'Usuario no encontrado' },
-        { status: 404 },
-      )
+      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
     }
 
     const now = new Date().toISOString()
@@ -140,9 +126,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error asignando lugares:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }

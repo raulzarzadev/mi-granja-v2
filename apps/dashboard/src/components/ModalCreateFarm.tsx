@@ -113,7 +113,9 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
         <button
           onClick={() => {
             if (!canCreateFarm()) {
-              alert('Has alcanzado el limite de granjas. Contacta al administrador para obtener mas lugares.')
+              alert(
+                'Has alcanzado el limite de granjas. Contacta al administrador para obtener mas lugares.',
+              )
               return
             }
             openModal()

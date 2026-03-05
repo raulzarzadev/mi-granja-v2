@@ -82,7 +82,9 @@ const ModalInviteCollaborator: React.FC<ModalInviteCollaboratorProps> = ({
         <button
           onClick={() => {
             if (!canInviteCollaborator()) {
-              alert('Has alcanzado el limite de colaboradores. Contacta al administrador para obtener mas lugares.')
+              alert(
+                'Has alcanzado el limite de colaboradores. Contacta al administrador para obtener mas lugares.',
+              )
               return
             }
             openModal()

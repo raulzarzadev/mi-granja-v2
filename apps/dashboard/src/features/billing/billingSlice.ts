@@ -55,12 +55,7 @@ const billingSlice = createSlice({
   },
 })
 
-export const {
-  setLoading,
-  setError,
-  setSubscription,
-  setUsage,
-  clearBilling,
-} = billingSlice.actions
+export const { setLoading, setError, setSubscription, setUsage, clearBilling } =
+  billingSlice.actions
 
 export const billingReducer = billingSlice.reducer

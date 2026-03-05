@@ -58,15 +58,18 @@ const FarmSwitcherBar: React.FC = () => {
     return [...owned, ...invited]
   }, [myFarms, invitationFarms])
 
-  const handleFarmSelect = useCallback((farm: Farm & { _type: string }) => {
-    if (farm._type === 'invited' && farm.invitationMeta?.status === 'pending') {
-      setSelectedInvitationId(farm.invitationMeta!.invitationId)
-    } else {
-      switchFarm(farm.id)
-      setSelectedInvitationId(null)
-    }
-    setDropdownOpen(false)
-  }, [switchFarm])
+  const handleFarmSelect = useCallback(
+    (farm: Farm & { _type: string }) => {
+      if (farm._type === 'invited' && farm.invitationMeta?.status === 'pending') {
+        setSelectedInvitationId(farm.invitationMeta!.invitationId)
+      } else {
+        switchFarm(farm.id)
+        setSelectedInvitationId(null)
+      }
+      setDropdownOpen(false)
+    },
+    [switchFarm],
+  )
 
   const availablePlaces = usage ? usage.totalPlaces - usage.usedPlaces : 0
   const isPro = billingPlanType === 'pro'
@@ -86,7 +89,11 @@ const FarmSwitcherBar: React.FC = () => {
                 : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
             }`}
           >
-            <FarmAvatar name={currentFarm?.name || 'G'} photoURL={currentFarm?.photoURL} size="sm" />
+            <FarmAvatar
+              name={currentFarm?.name || 'G'}
+              photoURL={currentFarm?.photoURL}
+              size="sm"
+            />
             <span className="font-medium text-gray-900 truncate max-w-[180px]">
               {currentFarm?.name || 'Seleccionar granja'}
             </span>
@@ -95,7 +102,11 @@ const FarmSwitcherBar: React.FC = () => {
               viewBox="0 0 20 20"
               fill="currentColor"
             >
-              <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z"
+                clipRule="evenodd"
+              />
             </svg>
           </button>
 
@@ -103,7 +114,9 @@ const FarmSwitcherBar: React.FC = () => {
             <div className="absolute top-full left-0 mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1 max-h-80 overflow-y-auto">
               {myFarms?.length > 0 && (
                 <>
-                  <p className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Mis Granjas</p>
+                  <p className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
+                    Mis Granjas
+                  </p>
                   {myFarms.map((farm: Farm) => (
                     <button
                       key={farm.id}
@@ -113,8 +126,16 @@ const FarmSwitcherBar: React.FC = () => {
                       }`}
                     >
                       {currentFarm?.id === farm.id ? (
-                        <svg className="h-4 w-4 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        <svg
+                          className="h-4 w-4 text-green-600 flex-shrink-0"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       ) : (
                         <span className="w-4" />
@@ -128,7 +149,9 @@ const FarmSwitcherBar: React.FC = () => {
               {invitationFarms?.length > 0 && (
                 <>
                   <div className="border-t border-gray-100 my-1" />
-                  <p className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Invitaciones</p>
+                  <p className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
+                    Invitaciones
+                  </p>
                   {invitationFarms.map((farm: Farm) => {
                     const pending = farm.invitationMeta?.status === 'pending'
                     const isSelected = !pending && currentFarm?.id === farm.id
@@ -141,8 +164,16 @@ const FarmSwitcherBar: React.FC = () => {
                         }`}
                       >
                         {isSelected ? (
-                          <svg className="h-4 w-4 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          <svg
+                            className="h-4 w-4 text-green-600 flex-shrink-0"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
                           </svg>
                         ) : (
                           <span className="w-4" />
@@ -170,7 +201,9 @@ const FarmSwitcherBar: React.FC = () => {
                 onClick={() => {
                   setDropdownOpen(false)
                   if (!canCreateFarm()) {
-                    alert('Has alcanzado el limite de granjas. Contacta al administrador para obtener mas lugares.')
+                    alert(
+                      'Has alcanzado el limite de granjas. Contacta al administrador para obtener mas lugares.',
+                    )
                     return
                   }
                   setShowCreateModal(true)
@@ -178,7 +211,12 @@ const FarmSwitcherBar: React.FC = () => {
                 className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-green-700 hover:bg-green-50 transition-colors"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 4v16m8-8H4"
+                  />
                 </svg>
                 <span>Nueva granja</span>
               </button>
@@ -194,7 +232,12 @@ const FarmSwitcherBar: React.FC = () => {
             title="Editar granja"
           >
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+              />
             </svg>
           </button>
         )}
@@ -208,16 +251,20 @@ const FarmSwitcherBar: React.FC = () => {
 
         {/* Badge de plan y lugares - empujado a la derecha */}
         {usage && (
-          <span className={`ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border ${
-            usage.usedPlaces > usage.totalPlaces
-              ? 'bg-red-50 text-red-700 border-red-200'
-              : isPro
-                ? 'bg-green-50 text-green-700 border-green-200'
-                : 'bg-gray-50 text-gray-500 border-gray-200'
-          }`}>
+          <span
+            className={`ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border ${
+              usage.usedPlaces > usage.totalPlaces
+                ? 'bg-red-50 text-red-700 border-red-200'
+                : isPro
+                  ? 'bg-green-50 text-green-700 border-green-200'
+                  : 'bg-gray-50 text-gray-500 border-gray-200'
+            }`}
+          >
             <span className="font-semibold">{isPro ? 'Pro' : 'Free'}</span>
             <span className="opacity-30">|</span>
-            <span>{availablePlaces} {availablePlaces === 1 ? 'lugar disponible' : 'lugares disponibles'}</span>
+            <span>
+              {availablePlaces} {availablePlaces === 1 ? 'lugar disponible' : 'lugares disponibles'}
+            </span>
           </span>
         )}
       </div>

@@ -32,8 +32,6 @@ export async function verifyBillingAuth(
 }
 
 /** Type guard para verificar si la respuesta es un error */
-export function isAuthError(
-  result: AuthenticatedUser | NextResponse,
-): result is NextResponse {
+export function isAuthError(result: AuthenticatedUser | NextResponse): result is NextResponse {
   return result instanceof NextResponse
 }

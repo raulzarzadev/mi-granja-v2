@@ -110,11 +110,7 @@ const RemindersTab: React.FC = () => {
     {
       label: '🔔 Proximos',
       badgeCount: getUpcomingReminders().length,
-      content: (
-        <div className="space-y-4">
-          {renderReminderGrid(getUpcomingReminders())}
-        </div>
-      ),
+      content: <div className="space-y-4">{renderReminderGrid(getUpcomingReminders())}</div>,
     },
     {
       label: '📋 Todos',
@@ -156,9 +152,7 @@ const RemindersTab: React.FC = () => {
                 {showCompleted ? 'Ocultar' : 'Ver'} completados ({completedReminders.length})
               </button>
               {showCompleted && (
-                <div className="mt-4">
-                  {renderReminderGrid(completedReminders, false)}
-                </div>
+                <div className="mt-4">{renderReminderGrid(completedReminders, false)}</div>
               )}
             </div>
           )}

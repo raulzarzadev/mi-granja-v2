@@ -30,12 +30,16 @@ const ProfileSection: React.FC = () => {
               <p className="text-gray-900">{user.farmName || 'Sin nombre'}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">Correo electronico</label>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                Correo electronico
+              </label>
               <p className="text-gray-900">{user.email}</p>
             </div>
             {user.createdAt && (
               <div>
-                <label className="block text-sm font-medium text-gray-500 mb-1">Fecha de registro</label>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Fecha de registro
+                </label>
                 <p className="text-gray-900">
                   {new Date(
                     typeof user.createdAt === 'string'
@@ -62,9 +66,7 @@ const ProfileSection: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900">Mi Plan</h3>
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  isFreePlan
-                    ? 'bg-gray-100 text-gray-700'
-                    : 'bg-green-100 text-green-700'
+                  isFreePlan ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700'
                 }`}
               >
                 {isFreePlan ? 'Gratuito' : 'Pro'}
@@ -92,7 +94,9 @@ const ProfileSection: React.FC = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Disponibles</span>
-                  <span className="font-medium text-green-600">{(usage?.totalPlaces ?? 0) - (usage?.usedPlaces ?? 0)}</span>
+                  <span className="font-medium text-green-600">
+                    {(usage?.totalPlaces ?? 0) - (usage?.usedPlaces ?? 0)}
+                  </span>
                 </div>
               </div>
             )}
@@ -111,7 +115,8 @@ const ProfileSection: React.FC = () => {
                   <p className="text-xs text-gray-400 mt-1">1 incluida gratis</p>
                   {usage.farmCount > 1 && (
                     <p className="text-xs text-gray-500 mt-1">
-                      {usage.farmCount - 1} {usage.farmCount - 1 === 1 ? 'lugar usado' : 'lugares usados'}
+                      {usage.farmCount - 1}{' '}
+                      {usage.farmCount - 1 === 1 ? 'lugar usado' : 'lugares usados'}
                     </p>
                   )}
                 </div>
@@ -123,7 +128,8 @@ const ProfileSection: React.FC = () => {
                   <p className="text-3xl font-bold text-blue-700">{usage.collaboratorCount}</p>
                   {usage.collaboratorCount > 0 && (
                     <p className="text-xs text-gray-500 mt-1">
-                      {usage.collaboratorCount} {usage.collaboratorCount === 1 ? 'lugar usado' : 'lugares usados'}
+                      {usage.collaboratorCount}{' '}
+                      {usage.collaboratorCount === 1 ? 'lugar usado' : 'lugares usados'}
                     </p>
                   )}
                 </div>
@@ -145,14 +151,10 @@ const ProfileSection: React.FC = () => {
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center gap-4">
           <div className="h-14 w-14 rounded-full bg-gradient-to-br from-green-300 to-green-500 flex items-center justify-center text-green-900 text-xl font-bold shadow-inner">
-            {user.farmName?.charAt(0)?.toUpperCase() ||
-              user.email?.charAt(0)?.toUpperCase() ||
-              'U'}
+            {user.farmName?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || 'U'}
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
-              {user.farmName || user.email}
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-900">{user.farmName || user.email}</h2>
             <p className="text-sm text-gray-500">{user.email}</p>
           </div>
         </div>

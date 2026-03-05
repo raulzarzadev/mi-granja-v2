@@ -582,9 +582,7 @@ function ConfirmAnimalsTable({ animals }: { animals: Record<string, unknown>[] }
                   <td className="px-3 py-1.5 font-mono text-xs">
                     {(animal.animalNumber as string) || '-'}
                   </td>
-                  <td className="px-3 py-1.5 text-gray-600">
-                    {(animal.name as string) || '-'}
-                  </td>
+                  <td className="px-3 py-1.5 text-gray-600">{(animal.name as string) || '-'}</td>
                   <td className="px-3 py-1.5">
                     {ANIMAL_TYPE_LABELS[(animal.type as string) || ''] ||
                       (animal.type as string) ||

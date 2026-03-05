@@ -25,7 +25,7 @@ const MigrationBanner: React.FC = () => {
 
   if (!needsPlaces) return null
 
-  const extraPlaces = (usage.farmCount - 1) + usage.collaboratorCount
+  const extraPlaces = usage.farmCount - 1 + usage.collaboratorCount
 
   return (
     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
@@ -33,7 +33,8 @@ const MigrationBanner: React.FC = () => {
         <span className="text-2xl flex-shrink-0">&#x26A0;&#xFE0F;</span>
         <div className="flex-1">
           <h4 className="text-sm font-semibold text-yellow-800">
-            Necesitas {extraPlaces} {extraPlaces === 1 ? 'lugar' : 'lugares'} para mantener tu uso actual
+            Necesitas {extraPlaces} {extraPlaces === 1 ? 'lugar' : 'lugares'} para mantener tu uso
+            actual
           </h4>
           <p className="text-sm text-yellow-700 mt-1">
             Tienes {usage.farmCount} {usage.farmCount === 1 ? 'granja' : 'granjas'}

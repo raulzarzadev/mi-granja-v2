@@ -11,10 +11,7 @@ export async function GET(request: NextRequest) {
     const firestore = getAdminFirestore()
 
     // Contar granjas del usuario (como dueno)
-    const farmsSnap = await firestore
-      .collection('farms')
-      .where('ownerId', '==', auth.uid)
-      .get()
+    const farmsSnap = await firestore.collection('farms').where('ownerId', '==', auth.uid).get()
     const farmCount = farmsSnap.size
 
     // Contar colaboradores activos en todas las granjas del usuario
@@ -40,9 +37,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(usage)
   } catch (error) {
     console.error('Error obteniendo uso:', error)
-    return NextResponse.json(
-      { error: 'Error al obtener datos de uso' },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: 'Error al obtener datos de uso' }, { status: 500 })
   }
 }

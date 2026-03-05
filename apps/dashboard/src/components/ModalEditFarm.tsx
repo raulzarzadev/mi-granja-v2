@@ -119,11 +119,10 @@ const ModalEditFarm: React.FC<ModalEditFarmProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Avatar de la granja */}
           <div className="flex items-center gap-4">
-            <FarmAvatar
-              name={formData.name || 'G'}
-              size="lg"
-            />
-            <p className="text-xs text-gray-500">El avatar se genera con las iniciales del nombre</p>
+            <FarmAvatar name={formData.name || 'G'} size="lg" />
+            <p className="text-xs text-gray-500">
+              El avatar se genera con las iniciales del nombre
+            </p>
           </div>
 
           <div>

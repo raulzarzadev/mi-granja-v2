@@ -271,7 +271,6 @@ const Navbar: React.FC = () => {
         >
           <UserImpersonationSelector onClose={() => setShowUserSelector(false)} />
         </Modal>
-
       </div>
     </nav>
   )

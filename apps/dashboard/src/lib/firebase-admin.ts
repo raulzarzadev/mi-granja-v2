@@ -6,8 +6,7 @@ let adminApp: App | null = null
 
 function isEmulatorMode(): boolean {
   return (
-    process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' ||
-    !!process.env.FIREBASE_AUTH_EMULATOR_HOST
+    process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' || !!process.env.FIREBASE_AUTH_EMULATOR_HOST
   )
 }
 

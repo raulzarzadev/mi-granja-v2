@@ -46,10 +46,7 @@ async function main() {
       }
 
       // Contar granjas propias
-      const farmsSnap = await db
-        .collection('farms')
-        .where('ownerId', '==', userId)
-        .get()
+      const farmsSnap = await db.collection('farms').where('ownerId', '==', userId).get()
       const farmCount = farmsSnap.size
 
       // Contar colaboradores activos
