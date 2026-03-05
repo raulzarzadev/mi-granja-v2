@@ -187,11 +187,12 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     farmerId: 'string (ID del usuario dueño)',
     farmId: 'string (ID de la granja)',
     animalNumber: 'string (identificador único asignado por el granjero)',
+    name: 'string | undefined (nombre opcional del animal)',
     type: "'oveja' | 'vaca' | 'cabra' | 'cerdo' | 'gallina' | 'perro' | 'gato' | 'equino' | 'otro'",
     breed: 'string | undefined (raza)',
     stage: "'cria' | 'engorda' | 'lechera' | 'reproductor' | 'descarte'",
     gender: "'macho' | 'hembra'",
-    weight: 'number | string | null',
+    weight: 'number | string | null (en gramos)',
     age: 'number | null',
     birthDate: 'string (ISO 8601) | undefined',
     motherId: 'string | undefined (ID del animal madre)',
@@ -202,8 +203,10 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     notes: 'string | undefined',
     isWeaned: 'boolean | undefined',
     weanedAt: 'string (ISO 8601) | undefined',
-    weaningNotes: 'string | undefined',
-    soldInfo: '{ date: ISO 8601, buyer?: string, price?: number | string } | undefined',
+    weightRecords:
+      '[{ date: ISO 8601, weight: number (gramos), age?: number (meses), notes?: string }] | undefined',
+    soldInfo:
+      '{ date: ISO 8601, buyer?: string, weight?: number (gramos), price?: number (centavos) } | undefined',
     lostInfo: '{ lostAt: ISO 8601, foundAt?: ISO 8601 } | undefined',
     records:
       '[ { id, type, category, title, description?, date, severity?, isResolved?, resolvedDate?, treatment?, nextDueDate?, batch?, veterinarian?, cost?, notes?, createdAt, createdBy, updatedAt? } ] | undefined',
@@ -242,7 +245,7 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
   weightRecord: {
     id: 'string',
     animalNumber: 'string (arete del animal)',
-    weight: 'number (kg)',
+    weight: 'number (en gramos)',
     date: 'string (ISO 8601)',
     notes: 'string | undefined',
   },

@@ -154,7 +154,7 @@ export const useAnimalCRUD = () => {
       // isWeaned: true,
       weanedAt: opts?.weanDate || new Date(),
     }
-    if (opts?.notes) updateData.weaningNotes = opts?.notes
+    if (opts?.notes) updateData.notes = opts?.notes
     if (opts?.stageDecision) {
       const nextStage = stageMap[opts.stageDecision]
       if (nextStage) updateData.stage = nextStage

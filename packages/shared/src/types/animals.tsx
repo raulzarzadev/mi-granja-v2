@@ -22,7 +22,7 @@ export interface AnimalRecord {
 
   // Campos comunes
   veterinarian?: string
-  cost?: number
+  cost?: number // centavos
   notes?: string
 
   // Para aplicación masiva (eventos de salud)
@@ -35,16 +35,24 @@ export interface AnimalRecord {
   updatedAt?: Date
 }
 
+export interface AnimalWeightEntry {
+  date: Date
+  weight: number // gramos
+  age?: number // meses al momento del pesaje
+  notes?: string
+}
+
 export interface Animal {
   id: string
   farmerId: string
   farmId?: string
   animalNumber: string // ID único del animal (asignado por el granjero)
+  name?: string // Nombre opcional del animal
   type: AnimalType
   breed?: string // Raza del animal
   stage: AnimalStage
 
-  weight?: number | string | null
+  weight?: number | string | null // peso en gramos
   age?: number | null
   birthDate?: Date
   gender: AnimalGender
@@ -53,6 +61,8 @@ export interface Animal {
   notes?: string
   createdAt: Date
   updatedAt: Date
+  // Historial de pesajes del animal
+  weightRecords?: AnimalWeightEntry[]
   // Sistema unificado de registros
   records?: AnimalRecord[]
   // Estado general del animal
@@ -62,7 +72,8 @@ export interface Animal {
   soldInfo?: {
     date: Date
     buyer?: string
-    price?: number | string
+    weight?: number // gramos
+    price?: number // centavos
   }
   lostInfo?: {
     lostAt: Date
@@ -71,7 +82,6 @@ export interface Animal {
   // Estado de destete
   isWeaned?: boolean
   weanedAt?: Date
-  weaningNotes?: string
   // Override opcional para días de destete recomendados
   customWeaningDays?: number
   // Metadata de admin para rastrear acciones administrativas

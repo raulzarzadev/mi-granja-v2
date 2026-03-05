@@ -419,6 +419,23 @@ export function useBackup() {
                 })
               }
 
+              // Generar breedingId si no viene en el respaldo
+              if (!remapped.breedingId) {
+                const bd = remapped.breedingDate
+                let dateObj: Date | null = null
+                if (bd && typeof bd === 'object' && 'toDate' in bd) {
+                  dateObj = (bd as { toDate: () => Date }).toDate()
+                } else if (bd instanceof Date) {
+                  dateObj = bd
+                }
+                if (dateObj) {
+                  const dd = dateObj.getDate().toString().padStart(2, '0')
+                  const mm = (dateObj.getMonth() + 1).toString().padStart(2, '0')
+                  const yy = dateObj.getFullYear().toString().slice(-2)
+                  remapped.breedingId = `${dd}-${mm}-${yy}-${String(written + 1).padStart(2, '0')}`
+                }
+              }
+
               const newRef = doc(collection(db, 'breedingRecords'))
               batch.set(newRef, remapped)
               written++

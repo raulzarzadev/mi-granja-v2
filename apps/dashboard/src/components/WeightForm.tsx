@@ -102,7 +102,7 @@ const WeightForm: React.FC<WeightFormProps> = ({
             {/* Peso */}
             <div>
               <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-1">
-                Peso (kg) *
+                Peso (gramos) *
               </label>
               <input
                 type="number"
@@ -110,7 +110,7 @@ const WeightForm: React.FC<WeightFormProps> = ({
                 name="weight"
                 value={formData.weight}
                 onChange={handleChange}
-                step="0.1"
+                step="1"
                 min="0"
                 required
                 placeholder="0.0"

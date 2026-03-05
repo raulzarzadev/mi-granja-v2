@@ -23,6 +23,7 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
   const [finalConfirmed, setFinalConfirmed] = useState(false)
   const [result, setResult] = useState<RestoreResult | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const reset = useCallback(() => {
@@ -39,6 +40,10 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
 
   const handleClose = () => {
     if (isRestoring) return
+    if (result?.success) {
+      window.location.reload()
+      return
+    }
     reset()
     onClose()
   }
@@ -126,10 +131,23 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
                 Ver formato requerido del archivo
               </summary>
               <div className="px-4 pb-3 pt-1">
-                <p className="text-xs text-gray-500 mb-2">
-                  El archivo debe ser .json con esta estructura. Las fechas en formato ISO 8601
-                  (ej: 2026-03-04T12:00:00.000Z).
-                </p>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs text-gray-500">
+                    El archivo debe ser .json con esta estructura. Las fechas en formato ISO 8601
+                    (ej: 2026-03-04T12:00:00.000Z).
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(BACKUP_SCHEMA_JSON.trim())
+                      setCopied(true)
+                      setTimeout(() => setCopied(false), 2000)
+                    }}
+                    className="flex-shrink-0 ml-2 px-2 py-1 text-xs text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                  >
+                    {copied ? '✓ Copiado' : 'Copiar'}
+                  </button>
+                </div>
                 <pre className="bg-gray-50 border border-gray-200 text-[11px] leading-relaxed p-3 rounded-lg overflow-auto max-h-72 text-gray-700">
                   {BACKUP_SCHEMA_JSON}
                 </pre>
@@ -551,6 +569,7 @@ function ConfirmAnimalsTable({ animals }: { animals: Record<string, unknown>[] }
             <thead className="bg-gray-50 sticky top-0">
               <tr>
                 <th className="text-left px-3 py-2 text-gray-600 font-medium">Arete</th>
+                <th className="text-left px-3 py-2 text-gray-600 font-medium">Nombre</th>
                 <th className="text-left px-3 py-2 text-gray-600 font-medium">Tipo</th>
                 <th className="text-left px-3 py-2 text-gray-600 font-medium">Raza</th>
                 <th className="text-left px-3 py-2 text-gray-600 font-medium">Sexo</th>
@@ -562,6 +581,9 @@ function ConfirmAnimalsTable({ animals }: { animals: Record<string, unknown>[] }
                 <tr key={i} className="hover:bg-gray-50">
                   <td className="px-3 py-1.5 font-mono text-xs">
                     {(animal.animalNumber as string) || '-'}
+                  </td>
+                  <td className="px-3 py-1.5 text-gray-600">
+                    {(animal.name as string) || '-'}
                   </td>
                   <td className="px-3 py-1.5">
                     {ANIMAL_TYPE_LABELS[(animal.type as string) || ''] ||
@@ -692,19 +714,21 @@ const BACKUP_SCHEMA_JSON = `{
       "farmerId": "string (ID del usuario)",
       "farmId": "string (ID de la granja)",
       "animalNumber": "string (arete/identificador)",
+      "name": "string (nombre opcional)",
       "type": "oveja | vaca | cabra | cerdo | gallina | perro | gato | equino | otro",
       "gender": "macho | hembra",
       "breed": "string (raza, opcional)",
       "stage": "cria | engorda | lechera | reproductor | descarte",
       "status": "activo | muerto | vendido | perdido",
       "birthDate": "ISO 8601 (opcional)",
-      "weight": "number en kg (opcional)",
+      "weight": "number en gramos (opcional)",
       "motherId": "string ID animal madre (opcional)",
       "fatherId": "string ID animal padre (opcional)",
       "notes": "string (opcional)",
       "isWeaned": "true | false (opcional)",
       "weanedAt": "ISO 8601 (opcional)",
-      "soldInfo": "{ date, buyer?, price? } (si vendido)",
+      "weightRecords": "[{ date, weight (gramos), age? (meses), notes? }] (opcional)",
+      "soldInfo": "{ date, buyer?, weight? (gramos), price? (centavos) } (si vendido)",
       "lostInfo": "{ lostAt, foundAt? } (si perdido)",
       "records": "[{ id, type, category, title, date, ... }] (opcional)",
       "createdAt": "ISO 8601",
@@ -743,7 +767,7 @@ const BACKUP_SCHEMA_JSON = `{
     "weightRecord": {
       "id": "string",
       "animalNumber": "string (arete)",
-      "weight": "number (kg)",
+      "weight": "number (en gramos)",
       "date": "ISO 8601",
       "notes": "string (opcional)"
     },

@@ -36,6 +36,7 @@ interface AnimalFormProps {
 const schema = z
   .object({
     animalNumber: z.string().trim().min(1, 'El ID del animal es requerido'),
+    name: z.string().optional(),
     type: z.enum(animals_types, {
       required_error: 'Selecciona un tipo de animal',
     }),
@@ -105,6 +106,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
   const defaultValues = useMemo<FormSchema>(() => {
     return {
       animalNumber: initialData?.animalNumber ?? '',
+      name: initialData?.name ?? '',
       type: initialData?.type ?? animals_types[0],
       stage: initialData?.stage ?? animals_stages[0],
       gender: initialData?.gender ?? animals_genders[0],
@@ -156,6 +158,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
 
     const transformed: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'> = {
       animalNumber: trimmedAnimalNumber,
+      ...(values.name?.trim() ? { name: values.name.trim() } : {}),
       type: values.type,
       stage: values.stage,
       gender: values.gender,
@@ -190,6 +193,13 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
         name="animalNumber"
         label="ID del Animal *"
         placeholder="Ej: A001, OV123"
+        disabled={isLoading}
+      />
+
+      <TextField
+        name="name"
+        label="Nombre"
+        placeholder="Ej: Luna, Manchas (opcional)"
         disabled={isLoading}
       />
 
@@ -249,10 +259,10 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
         <TextField
           name="weight"
           type="number"
-          label="Peso (kg)"
+          label="Peso (gramos)"
           placeholder="0"
           min="0"
-          step="0.1"
+          step="1"
           disabled={isLoading}
         />
 
