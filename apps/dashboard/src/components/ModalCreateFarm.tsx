@@ -32,7 +32,7 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
   const openModal = modal.openModal
   const closeModal = onClose ?? modal.closeModal
   const { createFarm } = useFarmCRUD()
-  const { canCreateFarm, requestUpgrade } = useBilling()
+  const { canCreateFarm } = useBilling()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -113,7 +113,7 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
         <button
           onClick={() => {
             if (!canCreateFarm()) {
-              requestUpgrade('farm_limit')
+              alert('Has alcanzado el limite de granjas. Contacta al administrador para obtener mas lugares.')
               return
             }
             openModal()

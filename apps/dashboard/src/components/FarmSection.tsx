@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import Tabs from '@/components/Tabs'
 import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
@@ -10,7 +11,6 @@ import { formatDate, toDate } from '@/lib/dates'
 import { FarmCollaborator } from '@/types/collaborators'
 import { FARM_AREA_TYPES, FarmInvitation } from '@/types/farm'
 import AreaCard from './AreaCard'
-import BillingSection from './billing/BillingSection'
 import MigrationBanner from './billing/MigrationBanner'
 import CollaboratorCard from './CollaboratorCard'
 import FarmSwitcherBar from './FarmSwitcherBar'
@@ -20,10 +20,6 @@ import ModalEditCollaborator from './ModalEditCollaborator'
 import ModalInviteCollaborator from './ModalInviteCollaborator'
 import BackupSection from './BackupSection'
 
-/**
- * Sección principal de gestión de granja
- * Permite crear granja, gestionar áreas y colaboradores
- */
 const FarmSection: React.FC = () => {
   const {
     farms,
@@ -48,43 +44,31 @@ const FarmSection: React.FC = () => {
 
   const activeColaborators = collaborators.filter((c) => c.isActive)
 
-  // Estado para el modal de edición
   const [editingCollaborator, setEditingCollaborator] = useState<FarmCollaborator | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-
-  // Usuario actual
 
   const canRevokeInvitations = hasPermissions('collaborators', 'update')
   const canDeleteInvitations = hasPermissions('collaborators', 'delete')
 
-  const [activeSubTab, setActiveSubTab] = useState<
-    'overview' | 'areas' | 'collaborators' | 'backups' | 'billing'
-  >('overview')
-
   const areaStats = getAreaStats()
   const collaboratorStats = getCollaboratorStats()
 
-  // Invitaciones del usuario actual para elegir granja si no tiene propias
   const myInv = useMyInvitations()
-
-  // console.log({ myInv })
-
   const { resendInvitation } = useFarmMembers(currentFarm?.id)
 
   const handleResendInvitation = async ({ invitation }: { invitation: FarmInvitation }) => {
-    // Lógica para reenviar la invitación
     await resendInvitation({ invitationId: invitation.id })
   }
+
   if (farmsLoading) {
     return (
       <div className="flex justify-center items-center py-12">
         <LoadingSpinner />
-        <span className="ml-3 text-gray-600">Cargando información de la granja...</span>
+        <span className="ml-3 text-gray-600">Cargando informacion de la granja...</span>
       </div>
     )
   }
 
-  // Si no hay granjas, mostrar formulario para crear la primera
   if (farms.length === 0) {
     return (
       <div className="space-y-6">
@@ -104,7 +88,6 @@ const FarmSection: React.FC = () => {
             </div>
           ) : (
             <div className="grid gap-4">
-              {/* Aceptadas: acceso directo */}
               {myInv.getAccepted().map((inv) => (
                 <div key={inv.id} className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -139,7 +122,6 @@ const FarmSection: React.FC = () => {
                   </div>
                 </div>
               ))}
-              {/* Pendientes: links para aceptar/rechazar */}
               {myInv.getPending().map((inv) => (
                 <div key={inv.id} className="border rounded-lg p-4 bg-orange-50 border-orange-200">
                   <div className="flex items-center justify-between mb-2">
@@ -180,9 +162,8 @@ const FarmSection: React.FC = () => {
                   </div>
                 </div>
               ))}
-              {/* CTA crear granja propia */}
               <div className="border rounded-lg p-4 flex flex-col items-center justify-center">
-                <p className="text-sm text-gray-600 mb-3">¿Quieres crear tu propia granja?</p>
+                <p className="text-sm text-gray-600 mb-3">Quieres crear tu propia granja?</p>
                 <ModalCreateFarm />
               </div>
             </div>
@@ -192,381 +173,271 @@ const FarmSection: React.FC = () => {
     )
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Banner de migración para usuarios con granjas extra sin plan */}
-      <MigrationBanner />
-
-      {/* Selector de granja + invitaciones */}
-      <FarmSwitcherBar />
-
-      {/* Header con información de la granja actual */}
-      {currentFarm && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">{currentFarm.name}</h2>
-            {currentFarm.description && (
-              <p className="text-gray-600 mt-1">{currentFarm.description}</p>
-            )}
-            {currentFarm.location?.city && (
-              <p className="text-sm text-gray-500 mt-1">
-                📍 {currentFarm.location.city}
-                {currentFarm.location.state && `, ${currentFarm.location.state}`}
-              </p>
-            )}
-          </div>
-
-          {/* Navegación de sub-tabs */}
-          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-            <button
-              onClick={() => setActiveSubTab('overview')}
-              className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
-                activeSubTab === 'overview'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              📊 Resumen
-            </button>
-            <button
-              onClick={() => setActiveSubTab('areas')}
-              className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
-                activeSubTab === 'areas'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              🏗️ Áreas ({areaStats.active})
-            </button>
-            <button
-              onClick={() => setActiveSubTab('collaborators')}
-              className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
-                activeSubTab === 'collaborators'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              👥 Equipo ({collaboratorStats.total})
-              {collaboratorStats.pending > 0 && (
-                <span className="ml-1 bg-orange-100 text-orange-800 text-xs px-1.5 py-0.5 rounded-full">
-                  {collaboratorStats.pending}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveSubTab('backups')}
-              className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
-                activeSubTab === 'backups'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              💾 Respaldos
-            </button>
-            <button
-              onClick={() => setActiveSubTab('billing')}
-              className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
-                activeSubTab === 'billing'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              💳 Facturacion
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Contenido según sub-tab activo */}
-      {activeSubTab === 'overview' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Estadísticas generales */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <span className="text-2xl">🏗️</span>
+  const farmTabs = [
+    {
+      label: '📊 Resumen',
+      content: (
+        <div className="space-y-4">
+          {currentFarm?.description && (
+            <p className="text-gray-600 text-sm">{currentFarm.description}</p>
+          )}
+          {currentFarm?.location?.city && (
+            <p className="text-sm text-gray-500">
+              📍 {currentFarm.location.city}
+              {currentFarm.location.state && `, ${currentFarm.location.state}`}
+            </p>
+          )}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-white rounded-lg shadow p-4 flex items-center gap-3">
+              <span className="text-2xl">🏗️</span>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Areas</p>
+                <p className="text-xl font-bold text-gray-900">{areaStats.total}</p>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Áreas Totales</p>
-                <p className="text-2xl font-bold text-gray-900">{areaStats.total}</p>
-                <p className="text-xs text-gray-500">
-                  {areaStats.active} activas, {areaStats.inactive} inactivas
+            </div>
+            <div className="bg-white rounded-lg shadow p-4 flex items-center gap-3">
+              <span className="text-2xl">👥</span>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Equipo</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {collaboratorStats.total}
+                  {collaboratorStats.pending > 0 && (
+                    <span className="text-sm font-normal text-orange-600 ml-1">
+                      +{collaboratorStats.pending}
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <span className="text-2xl">👥</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Colaboradores</p>
-                <p className="text-2xl font-bold text-gray-900">{collaboratorStats.total}</p>
-                {collaboratorStats.pending > 0 && (
-                  <p className="text-xs text-orange-600">
-                    {collaboratorStats.pending} invitaciones pendientes
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Áreas por tipo */}
-          {Object.entries(areaStats.byType)
-            .slice(0, 2)
-            .map(([type, count]) => {
-              const typeInfo = FARM_AREA_TYPES.find((t) => t.value === type)
-              return (
-                <div key={type} className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <span className="text-2xl">{typeInfo?.icon || '📍'}</span>
-                    </div>
-                    <div className="ml-4">
+            {Object.entries(areaStats.byType)
+              .slice(0, 2)
+              .map(([type, count]) => {
+                const typeInfo = FARM_AREA_TYPES.find((t) => t.value === type)
+                return (
+                  <div key={type} className="bg-white rounded-lg shadow p-4 flex items-center gap-3">
+                    <span className="text-2xl">{typeInfo?.icon || '📍'}</span>
+                    <div>
                       <p className="text-sm font-medium text-gray-500">{typeInfo?.label || type}</p>
-                      <p className="text-2xl font-bold text-gray-900">{count}</p>
+                      <p className="text-xl font-bold text-gray-900">{count}</p>
                     </div>
                   </div>
-                </div>
-              )
-            })}
-        </div>
-      )}
-
-      {activeSubTab === 'areas' && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Áreas de la Granja</h3>
-              <ModalCreateArea />
-            </div>
-
-            {areasLoading ? (
-              <div className="flex justify-center items-center py-8">
-                <LoadingSpinner />
-                <span className="ml-3 text-gray-600">Cargando áreas...</span>
-              </div>
-            ) : areas.length === 0 ? (
-              <div className="text-center py-8">
-                <span className="text-4xl mb-4 block">🏗️</span>
-                <h4 className="text-lg font-medium text-gray-900 mb-2">No hay áreas creadas</h4>
-                <p className="text-gray-600 mb-4">Crea áreas para organizar mejor tu granja</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {areas.map((area) => (
-                  <AreaCard key={area.id} area={area} />
-                ))}
-              </div>
-            )}
+                )
+              })}
           </div>
         </div>
-      )}
-
-      {activeSubTab === 'collaborators' && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Equipo de Trabajo</h3>
-              <ModalInviteCollaborator />
+      ),
+    },
+    {
+      label: '🏗️ Areas',
+      badgeCount: areaStats.active,
+      content: (
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Areas de la Granja</h3>
+            <ModalCreateArea />
+          </div>
+          {areasLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <LoadingSpinner />
+              <span className="ml-3 text-gray-600">Cargando areas...</span>
             </div>
-
-            {collaboratorsLoading ? (
-              <div className="flex justify-center items-center py-8">
-                <LoadingSpinner />
-                <span className="ml-3 text-gray-600">Cargando equipo...</span>
-              </div>
-            ) : collaborators.length === 0 && invitations.length === 0 ? (
-              <div className="text-center py-8">
-                <span className="text-4xl mb-4 block">👥</span>
-                <h4 className="text-lg font-medium text-gray-900 mb-2">Trabaja en equipo</h4>
-                <p className="text-gray-600 mb-4">
-                  Invita colaboradores para gestionar la granja juntos
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Invitaciones pendientes */}
-                {invitations.length > 0 && (
-                  <div>
-                    <h4 className="text-md font-medium text-gray-900 mb-3">
-                      Invitaciones Pendientes ({invitations.length})
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {invitations.map((invitation) => (
-                        <div
-                          key={invitation.id}
-                          className="border border-orange-200 bg-orange-50 rounded-lg p-4"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-gray-900">{invitation.email}</span>
-                            <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
-                              Pendiente
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600 mb-2">Rol: {invitation.role}</p>
-                          <p className="text-xs text-gray-500">
-                            Expira: {formatDate(toDate(invitation.expiresAt))}
-                          </p>
-                          <div className="mt-3 flex gap-2">
+          ) : areas.length === 0 ? (
+            <div className="text-center py-6">
+              <span className="text-3xl mb-2 block">🏗️</span>
+              <p className="text-gray-600 text-sm">Crea areas para organizar mejor tu granja</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {areas.map((area) => (
+                <AreaCard key={area.id} area={area} />
+              ))}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      label: '👥 Equipo',
+      badgeCount: collaboratorStats.pending,
+      content: (
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Equipo de Trabajo</h3>
+            <ModalInviteCollaborator />
+          </div>
+          {collaboratorsLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <LoadingSpinner />
+              <span className="ml-3 text-gray-600">Cargando equipo...</span>
+            </div>
+          ) : collaborators.length === 0 && invitations.length === 0 ? (
+            <div className="text-center py-6">
+              <span className="text-3xl mb-2 block">👥</span>
+              <p className="text-gray-600 text-sm">
+                Invita colaboradores para gestionar la granja juntos
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {invitations.length > 0 && (
+                <div>
+                  <h4 className="text-md font-medium text-gray-900 mb-3">
+                    Invitaciones Pendientes ({invitations.length})
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {invitations.map((invitation) => (
+                      <div
+                        key={invitation.id}
+                        className="border border-orange-200 bg-orange-50 rounded-lg p-4"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-gray-900">{invitation.email}</span>
+                          <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
+                            Pendiente
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">Rol: {invitation.role}</p>
+                        <p className="text-xs text-gray-500">
+                          Expira: {formatDate(toDate(invitation.expiresAt))}
+                        </p>
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            className="text-xs px-3 py-1 rounded-md border border-blue-300 text-blue-700 hover:bg-blue-50"
+                            onClick={async () => {
+                              if (confirm(`Reenviar invitacion a ${invitation.email}?`)) {
+                                try {
+                                  handleResendInvitation({ invitation })
+                                } catch (e) {
+                                  console.error(e)
+                                }
+                              }
+                            }}
+                          >
+                            Reenviar
+                          </button>
+                          {canRevokeInvitations && (
                             <button
-                              className="text-xs px-3 py-1 rounded-md border border-blue-300 text-blue-700 hover:bg-blue-50"
-                              title="Reenviar invitación"
+                              className="text-xs px-3 py-1 rounded-md border border-amber-300 text-amber-800 hover:bg-amber-50"
                               onClick={async () => {
-                                if (confirm(`¿Reenviar invitación a ${invitation.email}?`)) {
-                                  try {
-                                    handleResendInvitation({
-                                      invitation,
-                                    })
-                                  } catch (e) {
-                                    console.error(e)
-                                  }
+                                if (
+                                  !confirm(
+                                    `Revocar la invitacion a ${invitation.email}? No podra usarse mas.`,
+                                  )
+                                )
+                                  return
+                                try {
+                                  await revokeInvitation(invitation.id)
+                                } catch (e) {
+                                  console.error(e)
                                 }
                               }}
                             >
-                              Reenviar
+                              Revocar
                             </button>
-
-                            {/* <button
-                              className="text-xs px-3 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100"
-                              title="Marcar como rechazada (si el invitado la declina)"
+                          )}
+                          {canDeleteInvitations && (
+                            <button
+                              className="text-xs px-3 py-1 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
                               onClick={async () => {
                                 if (
                                   confirm(
-                                    `¿Marcar como rechazada la invitación a ${invitation.email}?`
+                                    `Eliminar definitivamente la invitacion a ${invitation.email}? Esta accion no se puede deshacer.`,
                                   )
                                 ) {
                                   try {
-                                    await cancelInvitation(invitation.id)
+                                    await deleteInvitation(invitation.id)
                                   } catch (e) {
                                     console.error(e)
                                   }
                                 }
                               }}
                             >
-                              Cancelar
-                            </button> */}
-
-                            {canRevokeInvitations && (
-                              <button
-                                className="text-xs px-3 py-1 rounded-md border border-amber-300 text-amber-800 hover:bg-amber-50"
-                                onClick={async () => {
-                                  if (
-                                    !canRevokeInvitations ||
-                                    !confirm(
-                                      `¿Revocar la invitación a ${invitation.email}? No podrá usarse más.`,
-                                    )
-                                  )
-                                    return
-                                  try {
-                                    await revokeInvitation(invitation.id)
-                                  } catch (e) {
-                                    console.error(e)
-                                  }
-                                }}
-                              >
-                                Revocar
-                              </button>
-                            )}
-                            {canDeleteInvitations && (
-                              <button
-                                className="text-xs px-3 py-1 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
-                                onClick={async () => {
-                                  if (
-                                    confirm(
-                                      `¿Eliminar definitivamente la invitación a ${invitation.email}? Esta acción no se puede deshacer.`,
-                                    )
-                                  ) {
-                                    try {
-                                      await deleteInvitation(invitation.id)
-                                    } catch (e) {
-                                      console.error(e)
-                                    }
-                                  }
-                                }}
-                              >
-                                Eliminar
-                              </button>
-                            )}
-                          </div>
+                              Eliminar
+                            </button>
+                          )}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Colaboradores activos */}
-                {activeColaborators.length > 0 && (
-                  <div>
-                    <h4 className="text-md font-medium text-gray-900 mb-3">
-                      Colaboradores Activos ({activeColaborators.length})
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {activeColaborators.map((collaborator) => (
-                        <CollaboratorCard
-                          key={collaborator.id}
-                          collaborator={collaborator}
-                          onEdit={(collab) => {
-                            setEditingCollaborator(collab)
-                            setIsEditModalOpen(true)
-                          }}
-                          onRevoke={async (id) => {
-                            if (
-                              confirm(
-                                '¿Revocar acceso de este colaborador? Podrás reactivarlo más adelante.',
-                              )
-                            ) {
-                              try {
-                                await updateCollaborator(id, {
-                                  isActive: false,
-                                })
-                              } catch (e) {
-                                console.error(e)
-                              }
-                            }
-                          }}
-                          onReactivate={async (id) => {
+              {activeColaborators.length > 0 && (
+                <div>
+                  <h4 className="text-md font-medium text-gray-900 mb-3">
+                    Colaboradores Activos ({activeColaborators.length})
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {activeColaborators.map((collaborator) => (
+                      <CollaboratorCard
+                        key={collaborator.id}
+                        collaborator={collaborator}
+                        onEdit={(collab) => {
+                          setEditingCollaborator(collab)
+                          setIsEditModalOpen(true)
+                        }}
+                        onRevoke={async (id) => {
+                          if (
+                            confirm(
+                              'Revocar acceso de este colaborador? Podras reactivarlo mas adelante.',
+                            )
+                          ) {
                             try {
-                              await updateCollaborator(id, { isActive: true })
+                              await updateCollaborator(id, { isActive: false })
                             } catch (e) {
                               console.error(e)
                             }
-                          }}
-                          onDelete={
-                            canDeleteInvitations
-                              ? async (id) => {
-                                  if (
-                                    confirm(
-                                      '¿Eliminar definitivamente este colaborador? Esto borrará la invitación / registro asociado.',
-                                    )
-                                  ) {
-                                    try {
-                                      await deleteInvitation(id)
-                                    } catch (e) {
-                                      console.error(e)
-                                    }
+                          }
+                        }}
+                        onReactivate={async (id) => {
+                          try {
+                            await updateCollaborator(id, { isActive: true })
+                          } catch (e) {
+                            console.error(e)
+                          }
+                        }}
+                        onDelete={
+                          canDeleteInvitations
+                            ? async (id) => {
+                                if (
+                                  confirm(
+                                    'Eliminar definitivamente este colaborador? Esto borrara la invitacion / registro asociado.',
+                                  )
+                                ) {
+                                  try {
+                                    await deleteInvitation(id)
+                                  } catch (e) {
+                                    console.error(e)
                                   }
                                 }
-                              : undefined
-                          }
-                        />
-                      ))}
-                    </div>
+                              }
+                            : undefined
+                        }
+                      />
+                    ))}
                   </div>
-                )}
-              </div>
-            )}
-          </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
+      ),
+    },
+    {
+      label: '💾 Respaldos',
+      content: <BackupSection />,
+    },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <MigrationBanner />
+      <FarmSwitcherBar />
+
+      {currentFarm && (
+        <Tabs tabs={farmTabs} tabsId="farm-tabs" />
       )}
 
-      {activeSubTab === 'backups' && <BackupSection />}
-
-      {activeSubTab === 'billing' && <BillingSection />}
-
-      {/* Modal de edición de colaborador */}
       <ModalEditCollaborator
         isOpen={isEditModalOpen}
         onClose={() => {

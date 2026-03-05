@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
     const firestore = getAdminFirestore()
 
-    // Obtener suscripción
+    // Obtener suscripcion de Firestore
     const subDoc = await firestore.doc(`subscriptions/${auth.uid}`).get()
 
     if (!subDoc.exists) {
@@ -23,29 +23,15 @@ export async function GET(request: NextRequest) {
 
     const subscription = { id: subDoc.id, ...subDoc.data() } as BillingSubscription
 
-    // Obtener facturas recientes
-    const invoicesSnap = await firestore
-      .collection('invoices')
-      .where('userId', '==', auth.uid)
-      .orderBy('createdAt', 'desc')
-      .limit(10)
-      .get()
-
-    const invoices = invoicesSnap.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }))
-
     return NextResponse.json({
       subscription,
-      invoices,
       planType: subscription.planType,
       status: subscription.status,
     })
   } catch (error) {
-    console.error('Error obteniendo suscripción:', error)
+    console.error('Error obteniendo suscripcion:', error)
     return NextResponse.json(
-      { error: 'Error al obtener datos de suscripción' },
+      { error: 'Error al obtener datos de suscripcion' },
       { status: 500 },
     )
   }

@@ -11,7 +11,6 @@ import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { BreedingRecord } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 
-// Nuevo componente que segmenta la reproducción en 3 tabs: Embarazos, Partos, Montas
 const BreedingTabs: React.FC = () => {
   const {
     breedingRecords,
@@ -43,7 +42,7 @@ const BreedingTabs: React.FC = () => {
     setSelectedAnimal(femaleId)
   }
 
-  // Lista plana de hembras embarazadas (cada hembra como item)
+  // Lista plana de hembras embarazadas
   const pregnantFemales = useMemo(
     () =>
       breedingRecords.flatMap((record) =>
@@ -60,9 +59,9 @@ const BreedingTabs: React.FC = () => {
   const birthsWindow = getBirthsWindow(14)
   const birthsSummary = getBirthsWindowSummary(14)
 
-  // Partos recientes: registros con actualBirthDate recientes
+  // Partos recientes
   const recentBirths = useMemo(() => {
-    const daysCutoff = 120 // ~4 meses
+    const daysCutoff = 120
     const now = Date.now()
     const msDay = 86400000
     return breedingRecords.flatMap((record) =>
@@ -76,11 +75,11 @@ const BreedingTabs: React.FC = () => {
     )
   }, [breedingRecords])
 
-  // Ordenar montas: activas primero
+  // Ordenar montas
   const orderedBreedings = useMemo(() => {
-    const needPregnancyConfirmation: BreedingRecord[] = [] // hay hembras sin pregnancyConfirmedDate ni actualBirthDate
-    const needBirthConfirmation: BreedingRecord[] = [] // hay hembras con pregnancyConfirmedDate pero sin actualBirthDate
-    const finished: BreedingRecord[] = [] // todas las hembras tienen actualBirthDate o se marcarán luego si añadimos estado fallido
+    const needPregnancyConfirmation: BreedingRecord[] = []
+    const needBirthConfirmation: BreedingRecord[] = []
+    const finished: BreedingRecord[] = []
 
     breedingRecords.forEach((r) => {
       let hasPendingPregnancyConfirm = false
@@ -232,7 +231,7 @@ const BreedingTabs: React.FC = () => {
       content: (
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-lg font-semibold mb-4">Resumen Próximos / Atrasados</h3>
+            <h3 className="text-lg font-semibold mb-4">Proximos / Atrasados</h3>
             <BirthsWindowSummary
               pastDue={birthsWindow.pastDue}
               upcoming={birthsWindow.upcoming}
@@ -240,18 +239,16 @@ const BreedingTabs: React.FC = () => {
               onSelectRecord={(r) => setEditingRecord(r)}
             />
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-lg font-semibold mb-4">Últimos Nacimientos</h3>
-            {recentBirths.length === 0 ? (
-              <p className="text-sm text-gray-500">Sin nacimientos recientes.</p>
-            ) : (
+          {recentBirths.length > 0 && (
+            <div className="bg-white rounded-lg shadow p-4">
+              <h3 className="text-lg font-semibold mb-4">Ultimos Nacimientos</h3>
               <ul className="divide-y text-sm">
                 {recentBirths.map(({ record, info }, idx) => {
                   const date = info.actualBirthDate as Date
                   const ageDays = Math.floor((Date.now() - date.getTime()) / 86400000)
                   const ageLabel =
                     ageDays < 7
-                      ? `${ageDays} días`
+                      ? `${ageDays} dias`
                       : ageDays < 30
                         ? `${Math.floor(ageDays / 7)} sem`
                         : `${Math.floor(ageDays / 30)} mes(es)`
@@ -319,7 +316,7 @@ const BreedingTabs: React.FC = () => {
                                 )}
                                 {isWeaned && (
                                   <span className="text-[10px] text-green-700 flex items-center gap-1">
-                                    ✅ Destetado
+                                    Destetado
                                   </span>
                                 )}
                               </div>
@@ -331,8 +328,8 @@ const BreedingTabs: React.FC = () => {
                   )
                 })}
               </ul>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       ),
     },
@@ -417,7 +414,7 @@ const BreedingTabs: React.FC = () => {
             ) : (
               <details className="group">
                 <summary className="cursor-pointer text-sm text-gray-700 hover:text-gray-900 flex items-center gap-2">
-                  Ver más ({orderedBreedings.finished.length})
+                  Ver mas ({orderedBreedings.finished.length})
                 </summary>
                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {orderedBreedings.finished.map((r) => (
@@ -463,18 +460,15 @@ const BreedingTabs: React.FC = () => {
         animals={animals}
         selectedFemaleId={birthFemaleId || undefined}
         onSubmit={async (form) => {
-          // Crear crías y actualizar registro de monta
           try {
             if (!birthRecord) return
             const mother = animals.find((a) => a.id === form.animalId)
             if (!mother) throw new Error('Madre no encontrada')
 
-            // Fecha/hora
             const [y, m, d] = form.birthDate.split('-').map((n) => parseInt(n, 10))
             const [hh, mm] = form.birthTime.split(':').map((n) => parseInt(n, 10))
             const actualDate = new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0)
 
-            // Crear crías
             const offspringIds: string[] = []
             for (const off of form.offspring) {
               const weightVal =
@@ -503,7 +497,6 @@ const BreedingTabs: React.FC = () => {
               if (createdId) offspringIds.push(createdId)
             }
 
-            // Actualizar femaleBreedingInfo del registro
             const updatedFemaleInfo = birthRecord.femaleBreedingInfo.map((fi) =>
               fi.femaleId === form.animalId
                 ? {
@@ -517,7 +510,6 @@ const BreedingTabs: React.FC = () => {
               femaleBreedingInfo: updatedFemaleInfo,
             })
 
-            // Cerrar modal
             setBirthRecord(null)
             setBirthFemaleId(null)
           } catch (e) {

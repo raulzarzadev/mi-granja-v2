@@ -5,8 +5,12 @@ import { useEffect, useState } from 'react'
 import { db } from '@/lib/firebase'
 import { User } from '@/types'
 
+export interface AdminUser extends User {
+  places: number
+}
+
 interface UseAdminUsersReturn {
-  users: User[]
+  users: AdminUser[]
   isLoading: boolean
   error: string | null
   updateUserRoles: (userId: string, newRoles: string[]) => Promise<void>
@@ -14,7 +18,7 @@ interface UseAdminUsersReturn {
 }
 
 export const useAdminUsers = (): UseAdminUsersReturn => {
-  const [users, setUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<AdminUser[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -23,8 +27,20 @@ export const useAdminUsers = (): UseAdminUsersReturn => {
       setIsLoading(true)
       setError(null)
 
-      const usersSnapshot = await getDocs(collection(db, 'users'))
-      const usersData: User[] = []
+      const [usersSnapshot, subsSnapshot] = await Promise.all([
+        getDocs(collection(db, 'users')),
+        getDocs(collection(db, 'subscriptions')),
+      ])
+
+      // Mapear suscripciones por userId
+      const subsMap = new Map<string, number>()
+      subsSnapshot.forEach((doc) => {
+        const data = doc.data()
+        const userId = data.userId ?? doc.id
+        subsMap.set(userId, data.places ?? 0)
+      })
+
+      const usersData: AdminUser[] = []
 
       usersSnapshot.forEach((doc) => {
         const data = doc.data()
@@ -36,6 +52,7 @@ export const useAdminUsers = (): UseAdminUsersReturn => {
           createdAt: data.createdAt?.toDate() || new Date(),
           planType: data.planType,
           subscriptionStatus: data.subscriptionStatus,
+          places: subsMap.get(doc.id) ?? 0,
         })
       })
 
@@ -55,7 +72,6 @@ export const useAdminUsers = (): UseAdminUsersReturn => {
         updatedAt: new Date(),
       })
 
-      // Actualizar el estado local
       setUsers((prev) =>
         prev.map((user) =>
           user.id === userId

@@ -9,9 +9,8 @@ import AdminOverview from './AdminOverview'
 import AdminReminders from './AdminReminders'
 import AdminSidebar from './AdminSidebar'
 import AdminUsers from './AdminUsers'
-import AdminBilling from './AdminBilling'
 
-type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities' | 'billing'
+type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities'
 
 export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState<AdminSection>('overview')
@@ -30,8 +29,6 @@ export default function AdminDashboard() {
         return <AdminReminders />
       case 'activities':
         return <AdminActivities />
-      case 'billing':
-        return <AdminBilling />
       default:
         return <AdminOverview onSectionChange={setActiveSection} />
     }

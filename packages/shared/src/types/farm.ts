@@ -5,6 +5,7 @@ export interface Farm {
   id: string
   name: string
   description?: string
+  photoURL?: string
   ownerId: string
   location?: {
     address?: string

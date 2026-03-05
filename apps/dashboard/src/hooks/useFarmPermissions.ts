@@ -13,8 +13,8 @@ export const useFarmPermissions = () => {
   const billingStatus = useSelector((s: RootState) => s.billing.status)
   const { collaborators } = useFarmMembers(currentFarm?.id)
 
-  // Cuando la suscripción está suspendida, solo la primera granja propia tiene acceso completo
-  const isSuspended = billingStatus === 'suspended'
+  // Cuando no hay suscripcion activa, solo la primera granja propia tiene acceso completo
+  const isSuspended = false // Ya no hay estado 'suspended' — admin maneja lugares
   const isExtraFarm = useMemo(() => {
     if (!isSuspended || !currentFarm || !user) return false
     // La primera granja propia (por orden de creación) mantiene acceso completo

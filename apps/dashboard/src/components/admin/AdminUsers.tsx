@@ -2,26 +2,91 @@
 
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import { useAdminUsers } from '@/hooks/admin/useAdminUsers'
+import { useAdminUsers, type AdminUser } from '@/hooks/admin/useAdminUsers'
 import { auth } from '@/lib/firebase'
-import { calculateMonthlyTotal, formatMXN, type PlanType } from '@/types/billing'
-import { User } from '@/types'
 import AdminUserActions from './AdminUserActions'
 
-interface PlanForm {
-  planType: PlanType
-  farmQuantity: number
-  collaboratorQuantity: number
+interface UserPlanData {
+  places: number
+  planType: string
+  actualFarmCount: number
+  actualCollaboratorCount: number
+  usedPlaces: number
 }
 
 export default function AdminUsers() {
   const { users, isLoading, error, refreshUsers } = useAdminUsers()
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [planUser, setPlanUser] = useState<User | null>(null)
-  const [planForm, setPlanForm] = useState<PlanForm>({ planType: 'pro', farmQuantity: 0, collaboratorQuantity: 0 })
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null)
+  const [planUser, setPlanUser] = useState<AdminUser | null>(null)
+  const [planData, setPlanData] = useState<UserPlanData | null>(null)
+  const [placesInput, setPlacesInput] = useState(0)
   const [isSavingPlan, setIsSavingPlan] = useState(false)
+  const [isLoadingPlan, setIsLoadingPlan] = useState(false)
+
+  const loadPlanData = useCallback(async (userId: string) => {
+    setIsLoadingPlan(true)
+    try {
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) return
+
+      const res = await fetch(`/api/admin/billing?userId=${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      if (res.ok) {
+        const data: UserPlanData = await res.json()
+        setPlanData(data)
+        setPlacesInput(data.places)
+      }
+    } catch (err) {
+      console.error('Error cargando plan:', err)
+    } finally {
+      setIsLoadingPlan(false)
+    }
+  }, [])
+
+  const openPlanModal = useCallback((user: AdminUser) => {
+    setPlanUser(user)
+    setPlanData(null)
+    setPlacesInput(0)
+    loadPlanData(user.id)
+  }, [loadPlanData])
+
+  const handleSavePlan = async () => {
+    if (!planUser) return
+    setIsSavingPlan(true)
+    try {
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) return
+
+      const res = await fetch('/api/admin/billing', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId: planUser.id,
+          places: placesInput,
+        }),
+      })
+
+      if (res.ok) {
+        setPlanUser(null)
+        await refreshUsers()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Error al guardar')
+      }
+    } catch (err) {
+      console.error('Error guardando plan:', err)
+      alert('Error al guardar el plan')
+    } finally {
+      setIsSavingPlan(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -43,7 +108,7 @@ export default function AdminUsers() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestión de Usuarios</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Gestion de Usuarios</h1>
           <p className="text-gray-600 mt-1">Administra los usuarios y sus permisos</p>
         </div>
         <div className="text-sm text-gray-500">Total: {users.length} usuarios</div>
@@ -64,6 +129,9 @@ export default function AdminUsers() {
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Plan
+              </th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Lugares
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Fecha de Registro
@@ -98,9 +166,9 @@ export default function AdminUsers() {
                               : 'bg-green-100 text-green-800'
                         }`}
                       >
-                        {role === 'admin' && '👑'}
-                        {role === 'vet' && '🩺'}
-                        {role === 'farmer' && '🌾'}
+                        {role === 'admin' && '\uD83D\uDC51'}
+                        {role === 'vet' && '\uD83E\uDE7A'}
+                        {role === 'farmer' && '\uD83C\uDF3E'}
                         {role}
                       </span>
                     ))}
@@ -110,8 +178,15 @@ export default function AdminUsers() {
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                     user.planType === 'pro' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                   }`}>
-                    {user.planType || 'free'}
+                    {user.planType === 'pro' ? 'Pro' : 'Free'}
                   </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
+                  {user.places > 0 ? (
+                    <span className="font-medium text-gray-900">{user.places}</span>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {format(user.createdAt, 'PP', { locale: es })}
@@ -124,17 +199,10 @@ export default function AdminUsers() {
                     Gestionar
                   </button>
                   <button
-                    onClick={() => {
-                      setPlanUser(user)
-                      setPlanForm({
-                        planType: user.planType || 'pro',
-                        farmQuantity: 0,
-                        collaboratorQuantity: 0,
-                      })
-                    }}
+                    onClick={() => openPlanModal(user)}
                     className="text-green-600 hover:text-green-900"
                   >
-                    Asignar Plan
+                    Gestionar Plan
                   </button>
                 </td>
               </tr>
@@ -148,79 +216,72 @@ export default function AdminUsers() {
         <AdminUserActions user={selectedUser} onClose={() => setSelectedUser(null)} />
       )}
 
-      {/* Modal de asignación de plan */}
+      {/* Modal de gestion de plan */}
       {planUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Asignar Plan</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Gestionar Plan</h3>
             <p className="text-sm text-gray-500 mb-4">{planUser.email}</p>
-            <p className="text-xs text-gray-400 mb-4">
-              Plan actual: <span className="font-medium">{planUser.planType || 'free'}</span>
-            </p>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de plan</label>
-                <select
-                  value={planForm.planType}
-                  onChange={(e) => setPlanForm((f) => ({
-                    ...f,
-                    planType: e.target.value as PlanType,
-                    farmQuantity: e.target.value === 'free' ? 0 : f.farmQuantity,
-                    collaboratorQuantity: e.target.value === 'free' ? 0 : f.collaboratorQuantity,
-                  }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                >
-                  <option value="free">Free</option>
-                  <option value="pro">Pro</option>
-                </select>
+            {isLoadingPlan ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner />
               </div>
-
-              {planForm.planType === 'pro' && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Granjas adicionales
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={planForm.farmQuantity}
-                      onChange={(e) => setPlanForm((f) => ({ ...f, farmQuantity: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Total granjas permitidas: {planForm.farmQuantity + 1} (1 incluida + {planForm.farmQuantity} adicionales)
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Colaboradores
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={planForm.collaboratorQuantity}
-                      onChange={(e) => setPlanForm((f) => ({ ...f, collaboratorQuantity: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                    />
-                  </div>
-
-                  <div className="bg-gray-50 rounded-md p-3">
-                    <p className="text-sm text-gray-700">
-                      Monto mensual estimado:{' '}
-                      <span className="font-bold text-green-700">
-                        {formatMXN(calculateMonthlyTotal(planForm.farmQuantity, planForm.collaboratorQuantity))}
+            ) : (
+              <div className="space-y-4">
+                {/* Uso actual */}
+                {planData && (
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Uso actual</p>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Granjas:</span>
+                        <span className="font-medium text-gray-900">{planData.actualFarmCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Colaboradores:</span>
+                        <span className="font-medium text-gray-900">{planData.actualCollaboratorCount}</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
+                      <span className="text-gray-500">Lugares en uso:</span>
+                      <span className={`font-bold ${planData.usedPlaces > planData.places ? 'text-red-600' : 'text-gray-900'}`}>
+                        {planData.usedPlaces} de {planData.places}
                       </span>
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Asignacion manual — se registra con $0 MXN
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      1 granja incluida gratis. Cada granja extra o colaborador usa 1 lugar.
                     </p>
                   </div>
-                </>
-              )}
-            </div>
+                )}
+
+                {/* Asignar lugares */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Lugares asignados
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={placesInput}
+                    onChange={(e) => setPlacesInput(parseInt(e.target.value) || 0)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {placesInput === 0
+                      ? 'Plan Free: 1 granja, sin colaboradores'
+                      : `Plan Pro: el usuario puede usar ${placesInput} ${placesInput === 1 ? 'lugar' : 'lugares'} para granjas extra o colaboradores`}
+                  </p>
+                </div>
+
+                {/* Preview */}
+                <div className={`rounded-md p-3 ${placesInput > 0 ? 'bg-green-50' : 'bg-gray-50'}`}>
+                  <p className={`text-sm font-medium ${placesInput > 0 ? 'text-green-800' : 'text-gray-600'}`}>
+                    {placesInput > 0 ? `Pro — ${placesInput} ${placesInput === 1 ? 'lugar' : 'lugares'}` : 'Free — sin lugares extra'}
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-end gap-3 mt-6">
               <button
@@ -231,44 +292,11 @@ export default function AdminUsers() {
                 Cancelar
               </button>
               <button
-                onClick={async () => {
-                  setIsSavingPlan(true)
-                  try {
-                    const token = await auth.currentUser?.getIdToken()
-                    if (!token) return
-
-                    const res = await fetch('/api/admin/billing', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                      },
-                      body: JSON.stringify({
-                        userId: planUser.id,
-                        planType: planForm.planType,
-                        farmQuantity: planForm.farmQuantity,
-                        collaboratorQuantity: planForm.collaboratorQuantity,
-                      }),
-                    })
-
-                    if (res.ok) {
-                      setPlanUser(null)
-                      await refreshUsers()
-                    } else {
-                      const data = await res.json()
-                      alert(data.error || 'Error al asignar plan')
-                    }
-                  } catch (err) {
-                    console.error('Error asignando plan:', err)
-                    alert('Error al asignar el plan')
-                  } finally {
-                    setIsSavingPlan(false)
-                  }
-                }}
-                disabled={isSavingPlan}
+                onClick={handleSavePlan}
+                disabled={isSavingPlan || isLoadingPlan}
                 className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
               >
-                {isSavingPlan ? 'Guardando...' : 'Asignar Plan'}
+                {isSavingPlan ? 'Guardando...' : 'Guardar'}
               </button>
             </div>
           </div>

@@ -6,9 +6,7 @@ import { useSelector } from 'react-redux'
 import BrandLogo from '@/components/BrandLogo'
 import { RootState } from '@/features/store'
 import { useAuth } from '@/hooks/useAuth'
-import { useBilling } from '@/hooks/useBilling'
 import { isUserAdmin } from '@/lib/userUtils'
-import ModalUpgrade from './billing/ModalUpgrade'
 import { Modal } from './Modal'
 import UserImpersonationSelector from './UserImpersonationSelector'
 
@@ -23,7 +21,6 @@ const Navbar: React.FC = () => {
   )
   const billingPlanType = useSelector((s: RootState) => s.billing.planType)
   const { logout, stopImpersonation } = useAuth()
-  const { requestUpgrade } = useBilling()
   const [showUserSelector, setShowUserSelector] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
@@ -123,17 +120,6 @@ const Navbar: React.FC = () => {
               </Link>
             )}
 
-            {/* Botón Mejorar Plan visible en la barra */}
-            {user && billingPlanType === 'free' && (
-              <button
-                onClick={() => requestUpgrade('manual')}
-                className="hidden sm:inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-md text-xs font-semibold border border-white/30 transition-colors"
-              >
-                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
-                Mejorar Plan
-              </button>
-            )}
-
             {/* Botón abrir modal impersonación (solo admins, fuera del menú para rápido acceso) */}
             {user && isUserAdmin(user) && !impersonatingUser && (
               <button
@@ -191,15 +177,9 @@ const Navbar: React.FC = () => {
                         <p className="text-gray-500 truncate text-xs">{user.farmName}</p>
                       )}
                       {billingPlanType === 'free' ? (
-                        <button
-                          onClick={() => {
-                            setMenuOpen(false)
-                            requestUpgrade('manual')
-                          }}
-                          className="inline-flex items-center gap-1 mt-1 text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
-                        >
-                          Plan Gratis — Mejorar
-                        </button>
+                        <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-600">
+                          Plan Gratis
+                        </span>
                       ) : (
                         <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700">
                           Plan Pro
@@ -212,6 +192,16 @@ const Navbar: React.FC = () => {
                       )}
                     </div>
                     <div className="py-1" role="none">
+                      <button
+                        className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700"
+                        role="menuitem"
+                        onClick={() => {
+                          setMenuOpen(false)
+                          window.location.href = '/?dashboard-main=perfil'
+                        }}
+                      >
+                        👤 Mi Perfil
+                      </button>
                       <Link
                         href="/"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700"
@@ -282,8 +272,6 @@ const Navbar: React.FC = () => {
           <UserImpersonationSelector onClose={() => setShowUserSelector(false)} />
         </Modal>
 
-        {/* Modal Upgrade (billing) */}
-        <ModalUpgrade />
       </div>
     </nav>
   )

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import { useBilling } from '@/hooks/useBilling'
@@ -9,6 +9,7 @@ import { useFarmMembers } from '@/hooks/useFarmMembers'
 import { useMyInvitations } from '@/hooks/useMyInvitations'
 import { collaborator_roles_label, FarmCollaborator } from '@/types/collaborators'
 import { Farm } from '@/types/farm'
+import FarmAvatar from './FarmAvatar'
 import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditFarm from './ModalEditFarm'
 
@@ -17,13 +18,15 @@ const FarmSwitcherBar: React.FC = () => {
 
   const myInv = useMyInvitations()
   const { acceptInvitation } = useFarmMembers(undefined)
-  const { requestUpgrade, usage } = useBilling()
+  const { usage, canCreateFarm } = useBilling()
 
   const { user } = useSelector((s: RootState) => s.auth)
   const billingPlanType = useSelector((s: RootState) => s.billing.planType)
   const [selectedInvitationId, setSelectedInvitationId] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const pendingInvs = myInv.getPending()
   const [acceptedRole, setAcceptedRole] = useState<FarmCollaborator['role'] | null>(null)
@@ -37,176 +40,256 @@ const FarmSwitcherBar: React.FC = () => {
     } else {
       setAcceptedRole((prev) => (prev === null ? prev : null))
     }
-    // Dependencias reducidas para evitar bucles por referencias nuevas en cada render
   }, [currentFarm?.id, user?.id])
 
-  const handleSelectChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const val = e.target.value
-      if (val === '__create__') {
-        setShowCreateModal(true)
-        return
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
       }
-      if (val.startsWith('inv_pending_')) {
-        setSelectedInvitationId(val.replace('inv_pending_', ''))
-        return
-      }
-      switchFarm(val)
-    },
-    [switchFarm],
-  )
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
-  const selectValue = useMemo(() => {
-    if (selectedInvitationId) return 'inv_pending_' + selectedInvitationId
-    return currentFarm?.id || ''
-  }, [selectedInvitationId, currentFarm])
+  const allFarms = useMemo(() => {
+    const owned = (myFarms || []).map((f: Farm) => ({ ...f, _type: 'owned' as const }))
+    const invited = (invitationFarms || []).map((f: Farm) => ({ ...f, _type: 'invited' as const }))
+    return [...owned, ...invited]
+  }, [myFarms, invitationFarms])
 
-  if ((myFarms?.length || 0) + (invitationFarms?.length || 0) === 0) return null
+  const handleFarmSelect = useCallback((farm: Farm & { _type: string }) => {
+    if (farm._type === 'invited' && farm.invitationMeta?.status === 'pending') {
+      setSelectedInvitationId(farm.invitationMeta!.invitationId)
+    } else {
+      switchFarm(farm.id)
+      setSelectedInvitationId(null)
+    }
+    setDropdownOpen(false)
+  }, [switchFarm])
+
+  const availablePlaces = usage ? usage.totalPlaces - usage.usedPlaces : 0
+  const isPro = billingPlanType === 'pro'
+
+  if (allFarms.length === 0) return null
+
   return (
-    <div className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div className="flex items-center gap-3 flex-wrap">
-          <select
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white min-w-[260px]"
-            value={selectValue}
-            onChange={handleSelectChange}
-            aria-label="Seleccionar granja o invitación"
+    <div>
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Farm switcher dropdown */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setDropdownOpen((p) => !p)}
+            className={`flex items-center gap-2 pl-1.5 pr-2 py-1 rounded-lg text-sm transition-colors border ${
+              dropdownOpen
+                ? 'border-green-400 bg-green-50 ring-1 ring-green-200'
+                : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+            }`}
           >
-            {myFarms?.length > 0 && (
-              <optgroup label="Mis Granjas">
-                {myFarms.map((farm: Farm) => (
-                  <option key={farm.id} value={farm.id}>
-                    {farm.name}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {invitationFarms?.length > 0 && (
-              <optgroup label="Invitaciones y Accesos">
-                {invitationFarms.map((farm: Farm) => {
-                  const pending = farm.invitationMeta?.status === 'pending'
-                  const value = pending
-                    ? 'inv_pending_' + farm.invitationMeta!.invitationId
-                    : farm.id
-                  return (
-                    <option key={farm.id} value={value}>
-                      {pending ? '⏳' : '✅'} {farm.name}
-                      {farm.invitationMeta?.role &&
-                        ' (' + collaborator_roles_label[farm.invitationMeta.role] + ')'}{' '}
-                      {pending && '— pendiente'}
-                    </option>
-                  )
-                })}
-              </optgroup>
-            )}
-            {/* Eliminado optgroup duplicado de pendientes; ya se listan en Invitaciones y Accesos */}
-
-            <option value="__create__">➕ Crear nueva granja</option>
-          </select>
-          {currentFarm && user?.id === currentFarm.ownerId && (
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="px-3 py-2 text-xs bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center gap-1"
-            >
-              ✏️ Editar
-            </button>
-          )}
-          {currentFarm && acceptedRole && user?.id !== currentFarm.ownerId && (
-            <span className="px-2 py-1 text-[10px] uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-200 rounded">
-              Invitado como: {collaborator_roles_label[acceptedRole] || acceptedRole}
+            <FarmAvatar name={currentFarm?.name || 'G'} photoURL={currentFarm?.photoURL} size="sm" />
+            <span className="font-medium text-gray-900 truncate max-w-[180px]">
+              {currentFarm?.name || 'Seleccionar granja'}
             </span>
-          )}
-          {usage && (() => {
-            const exceeds = usage.farmCount > usage.limits.maxFarms || usage.collaboratorCount > usage.limits.maxCollaboratorsPerFarm
-            return (
-              <span className={`px-2 py-1 text-[11px] font-medium border rounded ${
-                exceeds
-                  ? 'bg-red-50 text-red-700 border-red-200'
-                  : 'bg-gray-50 text-gray-600 border-gray-200'
-              }`}>
-                {usage.farmCount}/{usage.limits.maxFarms} granjas · {usage.collaboratorCount}/{usage.limits.maxCollaboratorsPerFarm} colab.
-              </span>
-            )
-          })()}
-          {billingPlanType === 'free' && (
-            <button
-              onClick={() => requestUpgrade('manual')}
-              className="px-3 py-2 text-xs font-semibold bg-gradient-to-r from-green-600 to-green-700 text-white rounded-md hover:from-green-700 hover:to-green-800 flex items-center gap-1.5 shadow-sm transition-all"
+            <svg
+              className={`h-4 w-4 text-gray-400 transition-transform flex-shrink-0 ${dropdownOpen ? 'rotate-180' : ''}`}
+              viewBox="0 0 20 20"
+              fill="currentColor"
             >
-              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
-              Mejorar Plan
-            </button>
+              <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" clipRule="evenodd" />
+            </svg>
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute top-full left-0 mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1 max-h-80 overflow-y-auto">
+              {myFarms?.length > 0 && (
+                <>
+                  <p className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Mis Granjas</p>
+                  {myFarms.map((farm: Farm) => (
+                    <button
+                      key={farm.id}
+                      onClick={() => handleFarmSelect({ ...farm, _type: 'owned' })}
+                      className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors ${
+                        currentFarm?.id === farm.id ? 'bg-green-50 text-green-700' : 'text-gray-700'
+                      }`}
+                    >
+                      {currentFarm?.id === farm.id ? (
+                        <svg className="h-4 w-4 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <span className="w-4" />
+                      )}
+                      <span className="truncate">{farm.name}</span>
+                    </button>
+                  ))}
+                </>
+              )}
+
+              {invitationFarms?.length > 0 && (
+                <>
+                  <div className="border-t border-gray-100 my-1" />
+                  <p className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Invitaciones</p>
+                  {invitationFarms.map((farm: Farm) => {
+                    const pending = farm.invitationMeta?.status === 'pending'
+                    const isSelected = !pending && currentFarm?.id === farm.id
+                    return (
+                      <button
+                        key={farm.id}
+                        onClick={() => handleFarmSelect({ ...farm, _type: 'invited' })}
+                        className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors ${
+                          isSelected ? 'bg-green-50 text-green-700' : 'text-gray-700'
+                        }`}
+                      >
+                        {isSelected ? (
+                          <svg className="h-4 w-4 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        ) : (
+                          <span className="w-4" />
+                        )}
+                        <span className="truncate">{farm.name}</span>
+                        {farm.invitationMeta?.role && (
+                          <span className="text-xs text-gray-400">
+                            {collaborator_roles_label[farm.invitationMeta.role]}
+                          </span>
+                        )}
+                        {pending && (
+                          <span className="ml-auto text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-600 rounded font-medium">
+                            Pendiente
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </>
+              )}
+
+              {/* Nueva granja - dentro del dropdown */}
+              <div className="border-t border-gray-100 my-1" />
+              <button
+                onClick={() => {
+                  setDropdownOpen(false)
+                  if (!canCreateFarm()) {
+                    alert('Has alcanzado el limite de granjas. Contacta al administrador para obtener mas lugares.')
+                    return
+                  }
+                  setShowCreateModal(true)
+                }}
+                className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-green-700 hover:bg-green-50 transition-colors"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Nueva granja</span>
+              </button>
+            </div>
           )}
         </div>
 
-        {selectedInvitationId && (
-          <div className="flex items-center flex-wrap gap-2 text-xs bg-orange-50 border border-orange-200 px-3 py-2 rounded-md">
-            <span className="text-orange-700 font-medium">Invitación pendiente</span>
-            <button
-              className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-              onClick={async () => {
-                const inv = pendingInvs.find((i) => i.id === selectedInvitationId)
-                if (!inv || !user?.id) return
-                try {
-                  await acceptInvitation(inv.id, user.id)
-                  setSelectedInvitationId(null)
-                  await loadUserFarms()
-                  switchFarm(inv.farmId)
-                  myInv.refresh()
-                } catch (e) {
-                  console.error(e)
-                  alert('No se pudo aceptar la invitación')
-                }
-              }}
-            >
-              Aceptar
-            </button>
-            <button
-              className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-              onClick={async () => {
-                const inv = pendingInvs.find((i) => i.id === selectedInvitationId)
-                if (!inv) return
-                try {
-                  await myInv.rejectInvitation(inv.id)
-                  setSelectedInvitationId(null)
-                  await loadUserFarms()
-                } catch (e) {
-                  console.error(e)
-                  alert('No se pudo rechazar la invitación')
-                }
-              }}
-            >
-              Rechazar
-            </button>
-            <button
-              className="px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-              onClick={() => setSelectedInvitationId(null)}
-            >
-              Cerrar
-            </button>
-          </div>
+        {/* Editar granja (icon) */}
+        {currentFarm && user?.id === currentFarm.ownerId && (
+          <button
+            onClick={() => setShowEditModal(true)}
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+            title="Editar granja"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          </button>
         )}
 
-        {/* Mostrar CTA para crear otra granja cuando ya existe al menos una */}
-        <ModalCreateFarm
-          open={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          showTrigger={false}
-          onCreated={(farm) => {
-            setShowCreateModal(false)
-            switchFarm(farm.id)
-          }}
-        />
-        <ModalEditFarm
-          open={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          showTrigger={false}
-          farm={currentFarm || (undefined as any)}
-          onUpdated={() => {
-            setShowEditModal(false)
-          }}
-        />
+        {/* Rol de invitado */}
+        {currentFarm && acceptedRole && user?.id !== currentFarm.ownerId && (
+          <span className="px-2 py-0.5 text-[10px] uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-200 rounded">
+            {collaborator_roles_label[acceptedRole] || acceptedRole}
+          </span>
+        )}
+
+        {/* Badge de plan y lugares - empujado a la derecha */}
+        {usage && (
+          <span className={`ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border ${
+            usage.usedPlaces > usage.totalPlaces
+              ? 'bg-red-50 text-red-700 border-red-200'
+              : isPro
+                ? 'bg-green-50 text-green-700 border-green-200'
+                : 'bg-gray-50 text-gray-500 border-gray-200'
+          }`}>
+            <span className="font-semibold">{isPro ? 'Pro' : 'Free'}</span>
+            <span className="opacity-30">|</span>
+            <span>{availablePlaces} {availablePlaces === 1 ? 'lugar disponible' : 'lugares disponibles'}</span>
+          </span>
+        )}
       </div>
+
+      {/* Banner de invitacion pendiente */}
+      {selectedInvitationId && (
+        <div className="flex items-center flex-wrap gap-2 text-xs bg-orange-50 border border-orange-200 px-3 py-2 rounded-md mt-3">
+          <span className="text-orange-700 font-medium">Invitacion pendiente</span>
+          <button
+            className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
+            onClick={async () => {
+              const inv = pendingInvs.find((i) => i.id === selectedInvitationId)
+              if (!inv || !user?.id) return
+              try {
+                await acceptInvitation(inv.id, user.id)
+                setSelectedInvitationId(null)
+                await loadUserFarms()
+                switchFarm(inv.farmId)
+                myInv.refresh()
+              } catch (e) {
+                console.error(e)
+                alert('No se pudo aceptar la invitacion')
+              }
+            }}
+          >
+            Aceptar
+          </button>
+          <button
+            className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+            onClick={async () => {
+              const inv = pendingInvs.find((i) => i.id === selectedInvitationId)
+              if (!inv) return
+              try {
+                await myInv.rejectInvitation(inv.id)
+                setSelectedInvitationId(null)
+                await loadUserFarms()
+              } catch (e) {
+                console.error(e)
+                alert('No se pudo rechazar la invitacion')
+              }
+            }}
+          >
+            Rechazar
+          </button>
+          <button
+            className="px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-xs"
+            onClick={() => setSelectedInvitationId(null)}
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
+
+      {/* Modals */}
+      <ModalCreateFarm
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        showTrigger={false}
+        onCreated={(farm) => {
+          setShowCreateModal(false)
+          switchFarm(farm.id)
+        }}
+      />
+      <ModalEditFarm
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        showTrigger={false}
+        farm={currentFarm || (undefined as any)}
+        onUpdated={() => {
+          setShowEditModal(false)
+        }}
+      />
     </div>
   )
 }

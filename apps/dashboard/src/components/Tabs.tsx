@@ -1,4 +1,7 @@
-import React, { KeyboardEvent, ReactNode, useEffect, useState } from 'react'
+'use client'
+
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import React, { KeyboardEvent, ReactNode, useCallback, useMemo } from 'react'
 
 type Tab = {
   label: string
@@ -9,61 +12,58 @@ type Tab = {
 type TabsProps = {
   tabs: Tab[]
   initialActiveTab?: number
-  /** Identificador único para persistir el estado. Si no se proporciona, se genera automáticamente */
+  /** Identificador unico usado como parametro en la URL (ej. ?tab=animales) */
   tabsId?: string
-  /** Si debe persistir el estado en localStorage (por defecto true) */
+  /** Si debe persistir el estado (por defecto true) */
   persistState?: boolean
 }
 
+/** Genera un slug a partir del label del tab, quitando emojis */
+const slugify = (label: string): string =>
+  label
+    .replace(/\p{Emoji_Presentation}/gu, '')
+    .replace(/\p{Emoji}\uFE0F?/gu, '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+
 const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persistState = true }) => {
-  // Generar un ID único si no se proporciona
-  const finalTabsId = tabsId || `tabs-${Math.random().toString(36).substr(2, 9)}`
-  const storageKey = `tabs-state-${finalTabsId}`
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
-  // Función para obtener el estado inicial desde localStorage
-  const getInitialActiveTab = (): number => {
-    if (!persistState || typeof window === 'undefined') {
-      return initialActiveTab
-    }
+  const paramKey = tabsId || 'tab'
 
-    try {
-      const savedState = localStorage.getItem(storageKey)
-      if (savedState !== null) {
-        const savedIndex = parseInt(savedState, 10)
-        // Validar que el índice guardado sea válido
-        if (savedIndex >= 0 && savedIndex < tabs.length) {
-          return savedIndex
-        }
-      }
-    } catch (error) {
-      console.warn('Error reading tabs state from localStorage:', error)
+  // Pre-compute slugs
+  const slugs = useMemo(
+    () => tabs.map((tab, i) => slugify(tab.label) || String(i)),
+    [tabs.map((t) => t.label).join(',')],
+  )
+
+  // Resolve active tab from URL, then fallback to initialActiveTab
+  const activeTab = useMemo(() => {
+    if (typeof window === 'undefined') return initialActiveTab
+
+    const paramValue = searchParams.get(paramKey)
+    if (paramValue) {
+      const idx = slugs.indexOf(paramValue)
+      if (idx >= 0) return idx
     }
 
     return initialActiveTab
-  }
+  }, [searchParams, paramKey, slugs, initialActiveTab])
 
-  const [activeTab, setActiveTab] = useState(getInitialActiveTab)
+  const changeActiveTab = useCallback(
+    (newIndex: number) => {
+      if (!persistState) return
 
-  // Función para cambiar tab y guardar en localStorage
-  const changeActiveTab = (newIndex: number) => {
-    setActiveTab(newIndex)
-
-    if (persistState && typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(storageKey, newIndex.toString())
-      } catch (error) {
-        console.warn('Error saving tabs state to localStorage:', error)
-      }
-    }
-  }
-
-  // Actualizar el estado cuando cambien los tabs o la prop initialActiveTab
-  useEffect(() => {
-    const newInitialTab = getInitialActiveTab()
-    if (newInitialTab !== activeTab) {
-      setActiveTab(newInitialTab)
-    }
-  }, [tabs.length, initialActiveTab])
+      const params = new URLSearchParams(searchParams.toString())
+      params.set(paramKey, slugs[newIndex])
+      router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    },
+    [searchParams, paramKey, slugs, pathname, router, persistState],
+  )
 
   const handleKey = (e: KeyboardEvent<HTMLDivElement>) => {
     if (['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) {
@@ -79,7 +79,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persist
 
   return (
     <div>
-      {/* Navegación de tabs */}
+      {/* Navegacion de tabs */}
       <div
         role="tablist"
         aria-label="Secciones"
@@ -90,11 +90,11 @@ const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persist
           const isActive = index === activeTab
           return (
             <button
-              key={index}
+              key={slugs[index]}
               role="tab"
               aria-selected={isActive}
-              aria-controls={`tab-panel-${index}`}
-              id={`tab-${index}`}
+              aria-controls={`tab-panel-${slugs[index]}`}
+              id={`tab-${slugs[index]}`}
               onClick={() => changeActiveTab(index)}
               className={`group relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium outline-none transition-all border ${
                 isActive
@@ -121,14 +121,11 @@ const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persist
           )
         })}
       </div>
-      {/* Línea decorativa (opcional) */}
-      <div className="h-px bg-linear-to-r from-transparent via-gray-200 to-transparent mt-2" />
       {/* Contenido */}
       <div
-        id={`tab-panel-${activeTab}`}
+        id={`tab-panel-${slugs[activeTab]}`}
         role="tabpanel"
-        aria-labelledby={`tab-${activeTab}`}
-        // className="mt-4"
+        aria-labelledby={`tab-${slugs[activeTab]}`}
       >
         {tabs[activeTab]?.content}
       </div>

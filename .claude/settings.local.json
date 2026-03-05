@@ -24,7 +24,8 @@
       "Bash(npx tsc:*)",
       "Bash(stripe:*)",
       "Bash(chmod +x:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(npx skills:*)"
     ]
   }
 }

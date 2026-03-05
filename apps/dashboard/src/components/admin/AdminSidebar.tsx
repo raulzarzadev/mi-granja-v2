@@ -2,7 +2,7 @@
 
 import React from 'react'
 
-type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities' | 'billing'
+type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities'
 
 interface AdminSidebarProps {
   activeSection: AdminSection
@@ -10,13 +10,12 @@ interface AdminSidebarProps {
 }
 
 const menuItems = [
-  { id: 'overview', label: 'Resumen General', icon: '📊' },
-  { id: 'users', label: 'Usuarios', icon: '👥' },
-  { id: 'animals', label: 'Animales', icon: '🐄' },
-  { id: 'breedings', label: 'Reproducciones', icon: '💕' },
-  { id: 'reminders', label: 'Recordatorios', icon: '⏰' },
-  { id: 'activities', label: 'Actividades', icon: '📝' },
-  { id: 'billing', label: 'Facturación', icon: '💳' },
+  { id: 'overview', label: 'Resumen General', icon: '\uD83D\uDCCA' },
+  { id: 'users', label: 'Usuarios', icon: '\uD83D\uDC65' },
+  { id: 'animals', label: 'Animales', icon: '\uD83D\uDC04' },
+  { id: 'breedings', label: 'Reproducciones', icon: '\uD83D\uDC95' },
+  { id: 'reminders', label: 'Recordatorios', icon: '\u23F0' },
+  { id: 'activities', label: 'Actividades', icon: '\uD83D\uDCDD' },
 ] as const
 
 export default function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarProps) {
@@ -25,7 +24,7 @@ export default function AdminSidebar({ activeSection, onSectionChange }: AdminSi
       <nav className="mt-8">
         <div className="px-4">
           <h2 className="text-xs uppercase font-semibold text-gray-500 tracking-wider">
-            Navegación
+            Navegacion
           </h2>
         </div>
         <div className="mt-4 space-y-1">

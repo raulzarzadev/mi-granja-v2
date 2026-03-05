@@ -8,7 +8,6 @@ export interface User {
   createdAt: Date
 
   // Campos de billing (desnormalizados desde subscriptions collection)
-  stripeCustomerId?: string
   subscriptionStatus?: import('./billing').SubscriptionStatus
   planType?: import('./billing').PlanType
 }

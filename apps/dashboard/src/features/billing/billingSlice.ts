@@ -1,36 +1,27 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import type {
-  BillingInvoice,
   BillingSubscription,
   BillingUsage,
   PlanType,
   SubscriptionStatus,
 } from '@/types/billing'
 
-export type UpgradeReason = 'farm_limit' | 'collaborator_limit' | 'manual'
-
 interface BillingState {
   subscription: BillingSubscription | null
   usage: BillingUsage | null
-  invoices: BillingInvoice[]
   planType: PlanType
   status: SubscriptionStatus
   isLoading: boolean
   error: string | null
-  showUpgradeModal: boolean
-  upgradeReason: UpgradeReason | null
 }
 
 const initialState: BillingState = {
   subscription: null,
   usage: null,
-  invoices: [],
   planType: 'free',
   status: 'none',
   isLoading: false,
   error: null,
-  showUpgradeModal: false,
-  upgradeReason: null,
 }
 
 const billingSlice = createSlice({
@@ -60,20 +51,6 @@ const billingSlice = createSlice({
       state.usage = action.payload
     },
 
-    setInvoices: (state, action: PayloadAction<BillingInvoice[]>) => {
-      state.invoices = action.payload
-    },
-
-    showUpgrade: (state, action: PayloadAction<UpgradeReason>) => {
-      state.showUpgradeModal = true
-      state.upgradeReason = action.payload
-    },
-
-    hideUpgrade: (state) => {
-      state.showUpgradeModal = false
-      state.upgradeReason = null
-    },
-
     clearBilling: () => initialState,
   },
 })
@@ -83,9 +60,6 @@ export const {
   setError,
   setSubscription,
   setUsage,
-  setInvoices,
-  showUpgrade,
-  hideUpgrade,
   clearBilling,
 } = billingSlice.actions
 

@@ -6,19 +6,17 @@ import AnimalCard from '@/components/AnimalCard'
 import BreedingTabs from '@/components/BreedingTabs'
 import FarmSection from '@/components/FarmSection'
 import Navbar from '@/components/Navbar'
-import ReminderCard from '@/components/ReminderCard'
+import ProfileSection from '@/components/ProfileSection'
+import RemindersTab from '@/components/RemindersTab'
+import FarmAvatar from '@/components/FarmAvatar'
 import Tabs from '@/components/Tabs'
 import { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useReminders } from '@/hooks/useReminders'
-import { Reminder } from '@/types'
-import ModalReminderForm from '../ModalReminderForm'
-import HealthRemindersCard from '../HealthRemindersCard'
 import ModalAnimalDetails from '../ModalAnimalDetails'
 import ModalBulkHealthAction from '../ModalBulkHealthAction'
 import RecordsTab from '../RecordsTab'
-import WeaningRemindersCard from '../WeaningRemindersCard'
 import AnimalsTable from './Animals/AnimalsTable'
 import { AnimalsFilters, useAnimalFilters } from './Animals/animals-filters'
 
@@ -44,29 +42,13 @@ const Dashboard: React.FC = () => {
     availableGenders,
   } = useAnimalFilters()
 
-  const {
-    reminders,
-    isLoading: remindersLoading,
-    markAsCompleted,
-    deleteReminder,
-    getOverdueReminders,
-    getTodayReminders,
-    getUpcomingReminders,
-  } = useReminders()
+  const { getOverdueReminders } = useReminders()
 
-  // Estado para selección múltiple y aplicaciones masivas
+  // Estado para seleccion multiple y aplicaciones masivas
   const [selectedAnimals, setSelectedAnimals] = useState<string[]>([])
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [isBulkHealthModalOpen, setIsBulkHealthModalOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
-
-  // Estado para recordatorios
-  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false)
-  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null)
-  const [showCompletedReminders, setShowCompletedReminders] = useState(false)
-
-  const pendingReminders = reminders.filter((r) => !r.completed)
-  const completedReminders = reminders.filter((r) => r.completed)
 
   // Funciones para selección múltiple
   const toggleAnimalSelection = (animalId: string) => {
@@ -284,179 +266,7 @@ const Dashboard: React.FC = () => {
     {
       label: '📆 Recordatorios',
       badgeCount: getOverdueReminders().length,
-      content: (
-        <div className="space-y-6">
-          {/* Estadísticas de recordatorios */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <span className="text-2xl">⏰</span>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-500">Hoy</p>
-                  <p className="text-xl font-bold text-blue-600">{getTodayReminders().length}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <span className="text-2xl">🔔</span>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-500">Próximos</p>
-                  <p className="text-xl font-bold text-yellow-600">
-                    {getUpcomingReminders().length}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <span className="text-2xl">⚠️</span>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-500">Vencidos</p>
-                  <p className="text-xl font-bold text-red-600">{getOverdueReminders().length}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <span className="text-2xl">📋</span>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-500">Total</p>
-                  <p className="text-xl font-bold text-gray-900">{reminders.length}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Recordatorios automáticos */}
-          <div className="grid grid-cols-1 md:grid-cols-2  gap-4">
-            {/* Recordatorios de salud */}
-            <HealthRemindersCard />
-            {/* Recordatorios de destete */}
-            <WeaningRemindersCard />
-          </div>
-
-          {/* Lista de recordatorios manuales */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Recordatorios personalizados</h3>
-              <button
-                onClick={() => {
-                  setEditingReminder(null)
-                  setIsReminderModalOpen(true)
-                }}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
-              >
-                Nuevo Recordatorio
-              </button>
-            </div>
-            {remindersLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-                <span className="ml-3 text-gray-600">Cargando recordatorios...</span>
-              </div>
-            ) : pendingReminders.length === 0 && !showCompletedReminders ? (
-              <div className="text-center py-12">
-                <span className="text-6xl mb-4 block">📋</span>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No tienes recordatorios pendientes
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Crea recordatorios para no olvidar tareas importantes
-                </p>
-                {completedReminders.length > 0 && (
-                  <button
-                    onClick={() => setShowCompletedReminders(true)}
-                    className="text-sm text-blue-600 hover:text-blue-800 underline"
-                  >
-                    Ver {completedReminders.length} completado
-                    {completedReminders.length !== 1 ? 's' : ''}
-                  </button>
-                )}
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {pendingReminders.map((reminder) => (
-                    <ReminderCard
-                      key={reminder.id}
-                      reminder={reminder}
-                      animals={animals}
-                      onComplete={(r) => markAsCompleted(r.id)}
-                      onEdit={(r) => {
-                        setEditingReminder(r)
-                        setIsReminderModalOpen(true)
-                      }}
-                      onDelete={(r) => deleteReminder(r.id)}
-                    />
-                  ))}
-                </div>
-
-                {completedReminders.length > 0 && (
-                  <div className="mt-4 pt-4 border-t">
-                    <button
-                      onClick={() => setShowCompletedReminders((v) => !v)}
-                      className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-                    >
-                      <svg
-                        className={`w-4 h-4 transition-transform ${showCompletedReminders ? 'rotate-180' : ''}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                      {showCompletedReminders ? 'Ocultar' : 'Ver'} completados (
-                      {completedReminders.length})
-                    </button>
-                    {showCompletedReminders && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                        {completedReminders.map((reminder) => (
-                          <ReminderCard
-                            key={reminder.id}
-                            reminder={reminder}
-                            animals={animals}
-                            onEdit={(r) => {
-                              setEditingReminder(r)
-                              setIsReminderModalOpen(true)
-                            }}
-                            onDelete={(r) => deleteReminder(r.id)}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          <ModalReminderForm
-            isOpen={isReminderModalOpen}
-            onClose={() => {
-              setIsReminderModalOpen(false)
-              setEditingReminder(null)
-            }}
-            editingReminder={editingReminder}
-          />
-        </div>
-      ),
+      content: <RemindersTab />,
     },
     {
       label: '📋 Registros',
@@ -466,6 +276,10 @@ const Dashboard: React.FC = () => {
       label: '🚜 Granja',
       content: <FarmSection />,
     },
+    {
+      label: '👤 Perfil',
+      content: <ProfileSection />,
+    },
   ]
 
   return (
@@ -473,12 +287,15 @@ const Dashboard: React.FC = () => {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-        {/* Título de la granja siempre visible */}
+        {/* Titulo de la granja siempre visible */}
         {currentFarm && (
-          <h1 className="text-lg font-semibold text-gray-900 mb-2">{currentFarm.name}</h1>
+          <div className="flex items-center gap-3 mb-3">
+            <FarmAvatar name={currentFarm.name} photoURL={currentFarm.photoURL} size="md" />
+            <h1 className="text-lg font-semibold text-gray-900">{currentFarm.name}</h1>
+          </div>
         )}
 
-        {/* Si no hay granjas, priorizar creación/selección */}
+        {/* Si no hay granjas, priorizar creacion/seleccion */}
         {farms.length === 0 ? <FarmSection /> : <Tabs tabs={tabs} tabsId="dashboard-main" />}
       </div>
 

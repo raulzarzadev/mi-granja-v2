@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAuthError, verifyBillingAuth } from '@/lib/billing-auth'
 import { getAdminFirestore } from '@/lib/firebase-admin'
-import { computeActualLimits, type PlanType } from '@/types/billing'
+import { computeUsedPlaces } from '@/types/billing'
 
 async function verifyAdmin(request: NextRequest) {
   const auth = await verifyBillingAuth(request)
@@ -38,97 +38,32 @@ async function getUserCounts(firestore: FirebaseFirestore.Firestore, userId: str
   return { actualFarmCount, actualCollaboratorCount }
 }
 
+/** GET /api/admin/billing — datos de un usuario especifico */
 export async function GET(request: NextRequest) {
   try {
     const result = await verifyAdmin(request)
     if ('error' in result) return result.error
     const { firestore } = result
 
-    // Obtener todas las suscripciones
-    const subsSnap = await firestore.collection('subscriptions').get()
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
 
-    let activeSubscriptions = 0
-    let pastDueSubscriptions = 0
-    let canceledSubscriptions = 0
-    let mrr = 0
-
-    const subscriptions = []
-    const usersWithSub = new Set<string>()
-
-    for (const doc of subsSnap.docs) {
-      const data = doc.data()
-      const userId = data.userId ?? doc.id
-
-      usersWithSub.add(userId)
-
-      if (data.status === 'active') {
-        activeSubscriptions++
-        mrr += data.monthlyAmount ?? 0
-      } else if (data.status === 'past_due') {
-        pastDueSubscriptions++
-      } else if (data.status === 'canceled' || data.status === 'suspended') {
-        canceledSubscriptions++
-      }
-
-      // Obtener email del usuario
-      const subUserDoc = await firestore.doc(`users/${userId}`).get()
-      const subUserData = subUserDoc.data()
-
-      // Contar granjas y colaboradores reales
-      const counts = await getUserCounts(firestore, userId)
-      const limits = computeActualLimits(data.planType ?? 'free', {
-        farmQuantity: data.farmQuantity ?? 0,
-        collaboratorQuantity: data.collaboratorQuantity ?? 0,
-      })
-
-      subscriptions.push({
-        userId,
-        email: subUserData?.email ?? '?',
-        planType: data.planType ?? 'free',
-        status: data.status ?? 'none',
-        monthlyAmount: data.monthlyAmount ?? 0,
-        farmQuantity: data.farmQuantity ?? 0,
-        collaboratorQuantity: data.collaboratorQuantity ?? 0,
-        actualFarmCount: counts.actualFarmCount,
-        actualCollaboratorCount: counts.actualCollaboratorCount,
-        maxFarms: limits.maxFarms,
-        maxCollaborators: limits.maxCollaboratorsPerFarm,
-      })
+    if (!userId) {
+      return NextResponse.json({ error: 'userId requerido' }, { status: 400 })
     }
 
-    // Incluir usuarios sin suscripción (plan free)
-    const usersSnap = await firestore.collection('users').get()
-    for (const userDoc of usersSnap.docs) {
-      if (usersWithSub.has(userDoc.id)) continue
-
-      const userData = userDoc.data()
-      const counts = await getUserCounts(firestore, userDoc.id)
-      const limits = computeActualLimits('free', null)
-
-      subscriptions.push({
-        userId: userDoc.id,
-        email: userData?.email ?? '?',
-        planType: 'free',
-        status: 'none',
-        monthlyAmount: 0,
-        farmQuantity: 0,
-        collaboratorQuantity: 0,
-        actualFarmCount: counts.actualFarmCount,
-        actualCollaboratorCount: counts.actualCollaboratorCount,
-        maxFarms: limits.maxFarms,
-        maxCollaborators: limits.maxCollaboratorsPerFarm,
-      })
-    }
+    const subDoc = await firestore.doc(`subscriptions/${userId}`).get()
+    const subData = subDoc.exists ? subDoc.data() : null
+    const places = subData?.places ?? 0
+    const counts = await getUserCounts(firestore, userId)
+    const usedPlaces = computeUsedPlaces(counts.actualFarmCount, counts.actualCollaboratorCount)
 
     return NextResponse.json({
-      stats: {
-        totalSubscriptions: subsSnap.size,
-        activeSubscriptions,
-        pastDueSubscriptions,
-        canceledSubscriptions,
-        mrr,
-      },
-      subscriptions,
+      places,
+      planType: subData?.planType ?? 'free',
+      actualFarmCount: counts.actualFarmCount,
+      actualCollaboratorCount: counts.actualCollaboratorCount,
+      usedPlaces,
     })
   } catch (error) {
     console.error('Error en admin billing:', error)
@@ -139,6 +74,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/** POST /api/admin/billing — asignar lugares a un usuario */
 export async function POST(request: NextRequest) {
   try {
     const result = await verifyAdmin(request)
@@ -146,16 +82,14 @@ export async function POST(request: NextRequest) {
     const { firestore } = result
 
     const body = await request.json()
-    const { userId, planType, farmQuantity, collaboratorQuantity } = body as {
+    const { userId, places } = body as {
       userId: string
-      planType: PlanType
-      farmQuantity: number
-      collaboratorQuantity: number
+      places: number
     }
 
-    if (!userId || !planType) {
+    if (!userId || places === undefined) {
       return NextResponse.json(
-        { error: 'userId y planType son requeridos' },
+        { error: 'userId y places son requeridos' },
         { status: 400 },
       )
     }
@@ -170,36 +104,28 @@ export async function POST(request: NextRequest) {
     }
 
     const now = new Date().toISOString()
+    const planType = places > 0 ? 'pro' : 'free'
+    const status = places > 0 ? 'active' : 'none'
 
-    if (planType === 'pro') {
-      // Crear o actualizar suscripción manual
+    if (places > 0) {
       await firestore.doc(`subscriptions/${userId}`).set(
         {
           userId,
           planType: 'pro',
           status: 'active',
-          provider: 'manual',
-          interval: 'month',
-          farmQuantity: farmQuantity ?? 0,
-          collaboratorQuantity: collaboratorQuantity ?? 0,
-          monthlyAmount: 0, // Asignación manual sin cobro
-          cancelAtPeriodEnd: false,
+          places,
           updatedAt: now,
           createdAt: now,
         },
         { merge: true },
       )
     } else {
-      // Plan free: eliminar o marcar como none
       const subDoc = await firestore.doc(`subscriptions/${userId}`).get()
       if (subDoc.exists) {
         await firestore.doc(`subscriptions/${userId}`).update({
           planType: 'free',
           status: 'none',
-          farmQuantity: 0,
-          collaboratorQuantity: 0,
-          monthlyAmount: 0,
-          provider: 'manual',
+          places: 0,
           updatedAt: now,
         })
       }
@@ -208,12 +134,12 @@ export async function POST(request: NextRequest) {
     // Denormalizar en el documento del usuario
     await firestore.doc(`users/${userId}`).update({
       planType,
-      subscriptionStatus: planType === 'pro' ? 'active' : 'none',
+      subscriptionStatus: status,
     })
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error asignando plan:', error)
+    console.error('Error asignando lugares:', error)
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 },

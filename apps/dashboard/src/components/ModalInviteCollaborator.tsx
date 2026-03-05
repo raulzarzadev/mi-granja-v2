@@ -13,11 +13,25 @@ import { Modal } from './Modal'
 /**
  * Modal para invitar colaboradores a la granja
  */
-const ModalInviteCollaborator: React.FC = () => {
-  const { isOpen, openModal, closeModal } = useModal()
+type ModalInviteCollaboratorProps = {
+  open?: boolean
+  onClose?: () => void
+  showTrigger?: boolean
+}
+
+const ModalInviteCollaborator: React.FC<ModalInviteCollaboratorProps> = ({
+  open: externalOpen,
+  onClose: externalOnClose,
+  showTrigger = true,
+}) => {
+  const modal = useModal()
+  const isControlled = externalOpen !== undefined
+  const isOpen = isControlled ? externalOpen : modal.isOpen
+  const openModal = isControlled ? () => {} : modal.openModal
+  const closeModal = isControlled ? (externalOnClose ?? (() => {})) : modal.closeModal
   const { user } = useSelector((state: RootState) => state.auth)
   const { currentFarm } = useFarmCRUD()
-  const { canInviteCollaborator, requestUpgrade } = useBilling()
+  const { canInviteCollaborator } = useBilling()
   const { inviteCollaborator } = useFarmMembers(currentFarm?.id)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -64,19 +78,21 @@ const ModalInviteCollaborator: React.FC = () => {
 
   return (
     <>
-      <button
-        onClick={() => {
-          if (!canInviteCollaborator()) {
-            requestUpgrade('collaborator_limit')
-            return
-          }
-          openModal()
-        }}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
-      >
-        <span>✉️</span>
-        Invitar Colaborador
-      </button>
+      {showTrigger && (
+        <button
+          onClick={() => {
+            if (!canInviteCollaborator()) {
+              alert('Has alcanzado el limite de colaboradores. Contacta al administrador para obtener mas lugares.')
+              return
+            }
+            openModal()
+          }}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+        >
+          <span>✉️</span>
+          Invitar Colaborador
+        </button>
+      )}
 
       <Modal isOpen={isOpen} onClose={closeModal} title="Invitar Colaborador" size="md">
         <form onSubmit={handleSubmit} className="space-y-4">

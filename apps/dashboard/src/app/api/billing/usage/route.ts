@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAuthError, verifyBillingAuth } from '@/lib/billing-auth'
 import { getAdminFirestore } from '@/lib/firebase-admin'
-import { computeActualLimits, type BillingUsage } from '@/types/billing'
+import { computeUsedPlaces, type BillingUsage } from '@/types/billing'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
     const firestore = getAdminFirestore()
 
-    // Contar granjas del usuario (como dueño)
+    // Contar granjas del usuario (como dueno)
     const farmsSnap = await firestore
       .collection('farms')
       .where('ownerId', '==', auth.uid)
@@ -25,19 +25,16 @@ export async function GET(request: NextRequest) {
       collaboratorCount += collabs.filter((c) => c.isActive !== false).length
     }
 
-    // Determinar límites basados en plan y cantidades reales de la suscripción
+    // Obtener lugares asignados
     const subDoc = await firestore.doc(`subscriptions/${auth.uid}`).get()
     const subData = subDoc.exists ? subDoc.data() : null
-    const planType = subData?.planType ?? 'free'
-    const limits = computeActualLimits(planType, subData ? {
-      farmQuantity: subData.farmQuantity ?? 0,
-      collaboratorQuantity: subData.collaboratorQuantity ?? 0,
-    } : null)
+    const totalPlaces = subData?.places ?? 0
 
     const usage: BillingUsage = {
       farmCount,
       collaboratorCount,
-      limits,
+      totalPlaces,
+      usedPlaces: computeUsedPlaces(farmCount, collaboratorCount),
     }
 
     return NextResponse.json(usage)
