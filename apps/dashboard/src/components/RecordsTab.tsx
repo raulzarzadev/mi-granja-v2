@@ -62,8 +62,15 @@ const RecordsTab: React.FC = () => {
     }
   }
 
+  // Claves propias de filtros de registros
+  const filterKeys = ['animalId', 'type', 'category', 'from', 'to', 'q', 'app'] as const
+
   const buildQueryFromFilters = (f: typeof filters) => {
-    const q = new URLSearchParams()
+    // Preservar params existentes que no son de filtros (ej. dashboard-main, farm-tabs, etc.)
+    const q = new URLSearchParams(window.location.search)
+    // Limpiar solo las claves de filtros
+    for (const k of filterKeys) q.delete(k)
+    // Setear filtros activos
     if (f.animalId) q.set('animalId', f.animalId)
     if (f.type) q.set('type', f.type)
     if (f.category) q.set('category', f.category)
@@ -96,13 +103,14 @@ const RecordsTab: React.FC = () => {
   useEffect(() => {
     const q = buildQueryFromFilters(filters)
     const next = q.toString()
-    const curr = searchParams.toString()
-    if (next === curr) return
     const t = setTimeout(() => {
-      router.replace(next ? `${pathname}?${next}` : pathname)
+      const url = next ? `${pathname}?${next}` : pathname
+      if (url !== `${window.location.pathname}${window.location.search}`) {
+        window.history.replaceState({}, '', url)
+      }
     }, 250)
     return () => clearTimeout(t)
-  }, [filters, pathname, router, searchParams])
+  }, [filters, pathname])
 
   // Consolidar todos los registros de todos los animales
   const allRecords = useMemo(() => {

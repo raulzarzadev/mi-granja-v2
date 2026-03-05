@@ -16,7 +16,9 @@ const sizeClasses = {
 } as const
 
 const FarmAvatar: React.FC<FarmAvatarProps> = ({ name, photoURL, size = 'md', className = '' }) => {
-  const initial = name?.charAt(0)?.toUpperCase() || 'G'
+  const firstChar = name?.charAt(0)?.toUpperCase() || 'G'
+  const lastChar = name && name.length > 1 ? name.charAt(name.length - 1).toUpperCase() : ''
+  const initials = `${firstChar}${lastChar}`
 
   if (photoURL) {
     return (
@@ -32,7 +34,7 @@ const FarmAvatar: React.FC<FarmAvatarProps> = ({ name, photoURL, size = 'md', cl
     <div
       className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-bold border-2 border-green-200 ${className}`}
     >
-      {initial}
+      {initials}
     </div>
   )
 }

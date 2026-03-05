@@ -1,7 +1,6 @@
 'use client'
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import React, { KeyboardEvent, ReactNode, useCallback, useMemo } from 'react'
+import React, { KeyboardEvent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 
 type Tab = {
   label: string
@@ -12,7 +11,7 @@ type Tab = {
 type TabsProps = {
   tabs: Tab[]
   initialActiveTab?: number
-  /** Identificador unico usado como parametro en la URL (ej. ?tab=animales) */
+  /** Identificador unico usado como parametro en la URL (ej. ?dashboard-main=animales) */
   tabsId?: string
   /** Si debe persistir el estado (por defecto true) */
   persistState?: boolean
@@ -28,41 +27,57 @@ const slugify = (label: string): string =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
 
-const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persistState = true }) => {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
+/** Lee un parametro de la URL actual */
+const getParam = (key: string): string | null => {
+  if (typeof window === 'undefined') return null
+  return new URLSearchParams(window.location.search).get(key)
+}
 
+/** Actualiza un parametro en la URL sin recargar la pagina */
+const setParam = (key: string, value: string) => {
+  const params = new URLSearchParams(window.location.search)
+  params.set(key, value)
+  const url = `${window.location.pathname}?${params.toString()}`
+  window.history.pushState({}, '', url)
+}
+
+const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persistState = true }) => {
   const paramKey = tabsId || 'tab'
 
-  // Pre-compute slugs
   const slugs = useMemo(
     () => tabs.map((tab, i) => slugify(tab.label) || String(i)),
     [tabs.map((t) => t.label).join(',')],
   )
 
-  // Resolve active tab from URL, then fallback to initialActiveTab
-  const activeTab = useMemo(() => {
+  const resolveTab = useCallback((): number => {
     if (typeof window === 'undefined') return initialActiveTab
-
-    const paramValue = searchParams.get(paramKey)
+    const paramValue = getParam(paramKey)
     if (paramValue) {
       const idx = slugs.indexOf(paramValue)
       if (idx >= 0) return idx
     }
-
     return initialActiveTab
-  }, [searchParams, paramKey, slugs, initialActiveTab])
+  }, [paramKey, slugs, initialActiveTab])
+
+  const [activeTab, setActiveTab] = useState(resolveTab)
+
+  // Sync con URL al montar y al navegar back/forward
+  useEffect(() => {
+    setActiveTab(resolveTab())
+
+    const onPopState = () => setActiveTab(resolveTab())
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [resolveTab])
 
   const changeActiveTab = useCallback(
     (newIndex: number) => {
-      if (!persistState) return
-
-      const params = new URLSearchParams(searchParams.toString())
-      params.set(paramKey, slugs[newIndex])
-      router.push(`${pathname}?${params.toString()}`, { scroll: false })
+      setActiveTab(newIndex)
+      if (persistState) {
+        setParam(paramKey, slugs[newIndex])
+      }
     },
-    [searchParams, paramKey, slugs, pathname, router, persistState],
+    [paramKey, slugs, persistState],
   )
 
   const handleKey = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -79,7 +94,6 @@ const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persist
 
   return (
     <div>
-      {/* Navegacion de tabs */}
       <div
         role="tablist"
         aria-label="Secciones"
@@ -121,7 +135,6 @@ const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persist
           )
         })}
       </div>
-      {/* Contenido */}
       <div
         id={`tab-panel-${slugs[activeTab]}`}
         role="tabpanel"

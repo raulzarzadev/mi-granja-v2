@@ -1,12 +1,10 @@
 'use client'
 
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useModal } from '@/hooks/useModal'
-import { storage } from '@/lib/firebase'
 import { Farm } from '@/types/farm'
 import FarmAvatar from './FarmAvatar'
 import { Modal } from './Modal'
@@ -36,9 +34,6 @@ const ModalEditFarm: React.FC<ModalEditFarmProps> = ({
   const { updateFarm } = useFarmCRUD()
   const { user } = useSelector((s: RootState) => s.auth)
   const [isLoading, setIsLoading] = useState(false)
-  const [photoFile, setPhotoFile] = useState<File | null>(null)
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -62,8 +57,6 @@ const ModalEditFarm: React.FC<ModalEditFarmProps> = ({
           country: farm.location?.country || 'Mexico',
         },
       })
-      setPhotoPreview(farm.photoURL || null)
-      setPhotoFile(null)
     }
   }, [farm])
 
@@ -79,31 +72,6 @@ const ModalEditFarm: React.FC<ModalEditFarmProps> = ({
     }
   }
 
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert('La imagen no puede pesar mas de 5 MB')
-      return
-    }
-
-    setPhotoFile(file)
-    const reader = new FileReader()
-    reader.onload = () => setPhotoPreview(reader.result as string)
-    reader.readAsDataURL(file)
-  }
-
-  const uploadPhoto = async (farmId: string): Promise<string | undefined> => {
-    if (!photoFile) return undefined
-
-    const ext = photoFile.name.split('.').pop() || 'jpg'
-    const path = `farms/${farmId}/photo.${ext}`
-    const storageRef = ref(storage, path)
-    await uploadBytes(storageRef, photoFile)
-    return getDownloadURL(storageRef)
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!farm?.id) return
@@ -116,11 +84,6 @@ const ModalEditFarm: React.FC<ModalEditFarmProps> = ({
 
     setIsLoading(true)
     try {
-      let photoURL: string | undefined
-      if (photoFile) {
-        photoURL = await uploadPhoto(farm.id)
-      }
-
       const updates: Partial<Farm> = {
         name: formData.name.trim(),
         description: formData.description.trim() || '',
@@ -130,7 +93,6 @@ const ModalEditFarm: React.FC<ModalEditFarmProps> = ({
           state: formData.location.state.trim() || '',
           country: formData.location.country.trim() || '',
         },
-        ...(photoURL ? { photoURL } : {}),
       }
       await updateFarm(farm.id, updates)
       onUpdated?.(updates)
@@ -155,30 +117,13 @@ const ModalEditFarm: React.FC<ModalEditFarmProps> = ({
       )}
       <Modal isOpen={isOpen} onClose={closeModal} title="Editar Granja" size="lg">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Foto de la granja */}
+          {/* Avatar de la granja */}
           <div className="flex items-center gap-4">
             <FarmAvatar
               name={formData.name || 'G'}
-              photoURL={photoPreview || undefined}
               size="lg"
             />
-            <div>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="text-sm font-medium text-green-700 hover:text-green-800 underline underline-offset-2"
-              >
-                {photoPreview ? 'Cambiar foto' : 'Agregar foto'}
-              </button>
-              <p className="text-xs text-gray-500 mt-0.5">JPG o PNG, max 5 MB</p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handlePhotoSelect}
-                className="hidden"
-              />
-            </div>
+            <p className="text-xs text-gray-500">El avatar se genera con las iniciales del nombre</p>
           </div>
 
           <div>
