@@ -97,8 +97,13 @@ export interface Animal {
 export const animals_genders = ['macho', 'hembra'] as const
 export type AnimalGender = (typeof animals_genders)[number]
 export const gender_icon: Record<AnimalGender, string> = {
-  macho: '🚹',
-  hembra: '🚺',
+  macho: '♂',
+  hembra: '♀',
+}
+
+export const gender_colors: Record<AnimalGender, string> = {
+  macho: 'text-blue-600',
+  hembra: 'text-pink-500',
 }
 
 export const animals_types = [

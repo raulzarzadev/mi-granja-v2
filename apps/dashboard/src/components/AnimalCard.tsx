@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { formatWeight } from '@/lib/animal-utils'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import {
   Animal,
@@ -8,6 +9,7 @@ import {
   animal_stage_icons,
   animal_status_colors,
   animal_status_labels,
+  gender_colors,
   gender_icon,
 } from '@/types/animals'
 import AdminActionIndicator from './AdminActionIndicator'
@@ -68,10 +70,10 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
           </div>
         )}
 
-        {animal.weight && (
+        {formatWeight(animal.weight) && (
           <div>
             <span className="text-gray-500">Peso:</span>
-            <span className="ml-1 font-medium">{animal.weight} kg</span>
+            <span className="ml-1 font-medium">{formatWeight(animal.weight)} kg</span>
           </div>
         )}
       </div>
@@ -102,7 +104,10 @@ export const AnimalDetailRow: React.FC<{
     <div className="w-full flex flex-col space-y-1">
       <div className="flex justify-end"></div>
       <div className="flex items-center justify-between ">
-        <span className="font-bold text-xl text-nowrap p-0.5">#{animal.animalNumber}</span>
+        <span className="font-bold text-xl text-nowrap p-0.5">
+          #{animal.animalNumber}
+          {animal.name && <span className="ml-1 text-sm font-medium text-gray-500">{animal.name}</span>}
+        </span>
         <div className="text-xs text-gray-500">
           {animal.type || 'Sin nombre'} {animal?.breed || ''} {animal.gender} {animal.stage}
         </div>
@@ -110,7 +115,7 @@ export const AnimalDetailRow: React.FC<{
           <div>
             {animal_icon[animal.type]}
             {animal_stage_icons[animal.stage]}
-            {gender_icon[animal.gender]}
+            <span className={`font-bold ${gender_colors[animal.gender]}`}>{gender_icon[animal.gender]}</span>
           </div>
         </div>
         <BadgeAnimalStatus status={animal.status || 'activo'} />

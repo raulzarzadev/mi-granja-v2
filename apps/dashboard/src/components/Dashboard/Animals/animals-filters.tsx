@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import ModalAnimalForm from '@/components/ModalAnimalForm'
 import { setAnimals } from '@/features/animals/animalsSlice'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -21,6 +21,7 @@ import {
 export interface AnimalFilters {
   status: AnimalStatus
   type: AnimalType | ''
+  breed: string
   stage: AnimalStage | ''
   gender: AnimalGender | ''
   breedingStatus: AnimalBreedingStatus | 'libre' | '' // Nuevo filtro para estado de cría
@@ -31,6 +32,7 @@ export interface AnimalFilters {
 export const initialAnimalFilters: AnimalFilters = {
   status: 'activo',
   type: 'oveja',
+  breed: '',
   stage: '',
   gender: '',
   breedingStatus: '',
@@ -39,10 +41,12 @@ export const initialAnimalFilters: AnimalFilters = {
 
 // Hook personalizado para manejar filtros de animales
 export const useAnimalFilters = () => {
-  const { animals, animalsFiltered, getFarmAnimals } = useAnimalCRUD()
+  const { animals, animalsFiltered, getFarmAnimals, searchExact } = useAnimalCRUD()
   const { breedingRecords } = useBreedingCRUD()
   const [filters, setFilters] = useState<AnimalFilters>(initialAnimalFilters)
   const [statusAnimals, setStatusAnimals] = useState<Animal[]>([])
+  const [searchResults, setSearchResults] = useState<Animal[]>([])
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Función para determinar el estado de cría de un animal
   const getAnimalBreedingStatus = (animal: Animal): AnimalBreedingStatus | 'libre' => {
@@ -88,6 +92,26 @@ export const useAnimalFilters = () => {
     }
   }, [filters.status, getFarmAnimals])
 
+  // Busqueda exacta en Firestore (debounced) — trae animales de cualquier status
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+
+    const term = filters.search.trim()
+    if (!term) {
+      setSearchResults([])
+      return
+    }
+
+    searchTimerRef.current = setTimeout(async () => {
+      const results = await searchExact(term)
+      setSearchResults(results)
+    }, 400)
+
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    }
+  }, [filters.search, searchExact])
+
   // Obtener animales filtrados (incluye filtro de estado de cría)
   const filteredAnimals = (() => {
     let result = animalsFiltered(filters)
@@ -98,6 +122,15 @@ export const useAnimalFilters = () => {
         const breedingStatus = getAnimalBreedingStatus(animal)
         return breedingStatus === filters.breedingStatus
       })
+    }
+
+    // Prepend resultados exactos de Firestore que no estan ya en la lista
+    if (searchResults.length > 0) {
+      const existingIds = new Set(result.map((a) => a.id))
+      const extraAnimals = searchResults.filter((a) => !existingIds.has(a.id))
+      if (extraAnimals.length > 0) {
+        result = [...extraAnimals, ...result]
+      }
     }
 
     return result
@@ -120,6 +153,7 @@ export const useAnimalFilters = () => {
 
   // Opciones disponibles basadas en los animales reales de la granja
   const availableTypes = [...new Set(animals.map((a) => a.type))].sort()
+  const availableBreeds = [...new Set(animals.map((a) => a.breed).filter(Boolean))].sort() as string[]
   const availableStages = [...new Set(animals.map((a) => a.stage))].sort()
   const availableGenders = [...new Set(animals.map((a) => a.gender))].sort()
 
@@ -127,6 +161,7 @@ export const useAnimalFilters = () => {
   const activeFilterCount = [
     filters.status !== 'activo',
     filters.type !== '',
+    filters.breed !== '',
     filters.stage !== '',
     filters.gender !== '',
     filters.breedingStatus !== '',
@@ -141,6 +176,7 @@ export const useAnimalFilters = () => {
     formatStatLabel,
     activeFilterCount,
     availableTypes,
+    availableBreeds,
     availableStages,
     availableGenders,
   }
@@ -153,6 +189,7 @@ interface AnimalsFiltersProps {
   filteredCount: number
   activeFilterCount: number
   availableTypes: string[]
+  availableBreeds: string[]
   availableStages: string[]
   availableGenders: string[]
   formatStatLabel: (
@@ -181,6 +218,7 @@ export const AnimalsFilters = ({
   filteredCount,
   activeFilterCount,
   availableTypes,
+  availableBreeds,
   availableStages,
   availableGenders,
   formatStatLabel,
@@ -190,6 +228,7 @@ export const AnimalsFilters = ({
   const hasActiveFilters =
     filters.status !== 'activo' ||
     filters.type !== '' ||
+    filters.breed !== '' ||
     filters.stage !== '' ||
     filters.gender !== '' ||
     filters.breedingStatus !== '' ||
@@ -201,11 +240,39 @@ export const AnimalsFilters = ({
       <div className="px-4 py-3 flex items-center gap-2">
         <input
           type="text"
-          placeholder="Buscar por ID o notas..."
+          placeholder="Buscar por numero, nombre o notas..."
           value={filters.search}
           onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
           className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
         />
+
+        {/* Botón limpiar filtros */}
+        {activeFilterCount > 0 && (
+          <button
+            onClick={() =>
+              setFilters({
+                status: 'activo',
+                type: '',
+                breed: '',
+                stage: '',
+                gender: '',
+                breedingStatus: '',
+                search: '',
+              })
+            }
+            className="p-2 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 transition-colors"
+            title="Borrar filtros"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-5 h-5 text-red-500"
+            >
+              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+            </svg>
+          </button>
+        )}
 
         {/* Botón filtro */}
         <button
@@ -239,6 +306,7 @@ export const AnimalsFilters = ({
                   setFilters({
                     status: 'activo',
                     type: '',
+                    breed: '',
                     stage: '',
                     gender: '',
                     breedingStatus: '',
@@ -259,7 +327,7 @@ export const AnimalsFilters = ({
               </button>
             )}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
             <select
               value={filters.status}
               onChange={(e) =>
@@ -293,6 +361,25 @@ export const AnimalsFilters = ({
               {availableTypes.map((key) => (
                 <option key={key} value={key}>
                   {animals_types_labels[key as AnimalType] || key}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={filters.breed}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, breed: e.target.value }))
+              }
+              className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                filters.breed !== ''
+                  ? 'border-green-500 bg-green-50 text-green-800'
+                  : 'border-gray-300'
+              }`}
+            >
+              <option value="">Raza: Todas</option>
+              {availableBreeds.map((breed) => (
+                <option key={breed} value={breed}>
+                  {breed}
                 </option>
               ))}
             </select>
@@ -374,6 +461,11 @@ export const AnimalsFilters = ({
               {filters.status !== 'activo' && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                   {formatStatLabel(filters.status)}
+                </span>
+              )}
+              {filters.breed && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                  {filters.breed}
                 </span>
               )}
               {filters.stage && (

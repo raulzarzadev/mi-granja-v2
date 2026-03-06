@@ -3,6 +3,7 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import React from 'react'
+import { formatWeight } from '@/lib/animal-utils'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAdminAnimals } from '@/hooks/admin/useAdminAnimals'
 import {
@@ -11,6 +12,7 @@ import {
   animal_stage_labels,
   animal_status_colors,
   animal_status_labels,
+  gender_colors,
   gender_icon,
 } from '@/types/animals'
 
@@ -136,7 +138,7 @@ export default function AdminAnimals() {
                         #{animal.animalNumber}
                       </div>
                       <div className="text-sm text-gray-500 flex items-center">
-                        {gender_icon[animal.gender]} {animal.gender}
+                        <span className={`font-bold ${gender_colors[animal.gender]}`}>{gender_icon[animal.gender]}</span> {animal.gender}
                       </div>
                     </div>
                   </div>
@@ -149,7 +151,7 @@ export default function AdminAnimals() {
                   {animal.farmerId}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {animal.weight ? `${animal.weight} kg` : 'No registrado'}
+                  {formatWeight(animal.weight) ? `${formatWeight(animal.weight)} kg` : 'No registrado'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {format(animal.createdAt, 'PP', { locale: es })}

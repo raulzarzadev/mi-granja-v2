@@ -38,10 +38,10 @@ const Dashboard: React.FC = () => {
     formatStatLabel,
     activeFilterCount,
     availableTypes,
+    availableBreeds,
     availableStages,
     availableGenders,
   } = useAnimalFilters()
-
   const { getOverdueReminders } = useReminders()
 
   // Estado para seleccion multiple y aplicaciones masivas
@@ -87,6 +87,7 @@ const Dashboard: React.FC = () => {
             filteredCount={filteredAnimals.length}
             activeFilterCount={activeFilterCount}
             availableTypes={availableTypes}
+            availableBreeds={availableBreeds}
             availableStages={availableStages}
             availableGenders={availableGenders}
             formatStatLabel={formatStatLabel}

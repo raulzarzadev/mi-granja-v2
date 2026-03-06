@@ -2,10 +2,11 @@
 
 import React from 'react'
 import AnimalRecordsSection from '@/components/AnimalRecordsSection'
+import AnimalTag from '@/components/AnimalTag'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
-import { animalAge } from '@/lib/animal-utils'
+import { animalAge, formatWeight } from '@/lib/animal-utils'
 import { formatDate } from '@/lib/dates'
 import { MilkProduction, WeightRecord } from '@/types'
 import {
@@ -48,16 +49,19 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
 
   const getMother = () => {
     if (!animal.motherId) return null
-    return allAnimals.find((a) => a.id === animal.motherId)
+    return allAnimals.find((a) => a.id === animal.motherId || a.animalNumber === animal.motherId)
   }
 
   const getFather = () => {
     if (!animal.fatherId) return null
-    return allAnimals.find((a) => a.id === animal.fatherId)
+    return allAnimals.find((a) => a.id === animal.fatherId || a.animalNumber === animal.fatherId)
   }
 
   const getOffspring = () => {
-    return allAnimals.filter((a) => a.motherId === animal.id || a.fatherId === animal.id)
+    return allAnimals.filter(
+      (a) => a.motherId === animal.id || a.fatherId === animal.id ||
+             a.motherId === animal.animalNumber || a.fatherId === animal.animalNumber,
+    )
   }
 
   const getAnimalIcon = (type: AnimalType) => {
@@ -76,7 +80,19 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
               <div className="space-y-2">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Edad</label>
-                  <p className="text-gray-900">{animalAge(animal, { format: 'long' })}</p>
+                  {animal.status === 'muerto' && animal.statusAt ? (
+                    <p className="text-gray-900">
+                      {animalAge(animal, { format: 'long', endDate: new Date(animal.statusAt as any) })}
+                      <span className="ml-1" title="Edad al morir">💀</span>
+                    </p>
+                  ) : animal.status === 'vendido' && animal.statusAt ? (
+                    <p className="text-gray-900">
+                      {animalAge(animal, { format: 'long', endDate: new Date(animal.statusAt as any) })}
+                      <span className="ml-1 text-xs text-gray-400">(al vender)</span>
+                    </p>
+                  ) : (
+                    <p className="text-gray-900">{animalAge(animal, { format: 'long' })}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Raza</label>
@@ -91,7 +107,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                 <div>
                   <label className="text-sm font-medium text-gray-500">Peso Actual</label>
                   <p className="text-gray-900">
-                    {animal.weight ? `${animal.weight} kg` : 'No registrado'}
+                    {formatWeight(animal.weight) ? `${formatWeight(animal.weight)} kg` : 'No registrado'}
                   </p>
                 </div>
               </div>
@@ -119,23 +135,9 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                           {getOffspring().length} animal
                           {getOffspring().length !== 1 ? 'es' : ''}:
                         </p>
-                        <div className="space-y-2">
+                        <div className="flex flex-wrap gap-1.5">
                           {getOffspring().map((offspring) => (
-                            <div
-                              key={offspring.id}
-                              className="flex items-center gap-2 text-sm bg-gray-50 rounded px-2 py-1"
-                            >
-                              <span>{getAnimalIcon(offspring.type)}</span>
-                              <span className="font-medium">{offspring.animalNumber}</span>
-                              <span className="text-gray-500">
-                                ({offspring.gender === 'macho' ? '♂' : '♀'})
-                              </span>
-                              <span className="text-gray-400 text-xs">
-                                {offspring.birthDate
-                                  ? formatDate(offspring.birthDate)
-                                  : 'Sin fecha'}
-                              </span>
-                            </div>
+                            <AnimalTag key={offspring.id} animal={offspring} showAge />
                           ))}
                         </div>
                       </div>
@@ -212,7 +214,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
               {weightRecords.map((record) => (
                 <div key={record.id} className="bg-gray-50 rounded-lg p-4">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-900">{record.weight} kg</span>
+                    <span className="font-medium text-gray-900">{formatWeight(record.weight) ?? record.weight} kg</span>
                     <span className="text-sm text-gray-500">{formatDate(record.date)}</span>
                   </div>
                   {record.notes && <p className="text-sm text-gray-600 mt-2">{record.notes}</p>}
@@ -336,18 +338,6 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
       <div className="bg-green-600 text-white p-2 mb-2">
         <div className="flex items-center justify-between">
           <AnimalDetailRow animal={animal} />
-          {/* Estado */}
-          {animal.status && (
-            <div className="ml-2">
-              <span
-                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                  animal_status_colors[animal.status || 'activo']
-                }`}
-              >
-                {animal_status_labels[animal.status || 'activo']}
-              </span>
-            </div>
-          )}
         </div>
       </div>
 
