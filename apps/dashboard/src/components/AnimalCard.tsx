@@ -3,16 +3,9 @@
 import React from 'react'
 import { formatWeight } from '@/lib/animal-utils'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import {
-  Animal,
-  animal_icon,
-  animal_stage_icons,
-  animal_status_colors,
-  animal_status_labels,
-  gender_colors,
-  gender_icon,
-} from '@/types/animals'
+import { Animal } from '@/types/animals'
 import AdminActionIndicator from './AdminActionIndicator'
+import AnimalBadges from './AnimalBadges'
 import { BadgeAnimalStatus } from './Badges/BadgeAnimalStatus'
 import { WeanedAnimal } from './WeanedAnimal'
 
@@ -39,44 +32,25 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
       onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
     >
       <AnimalDetailRow animal={animal} />
-      {/* Badge de estado si no está activo */}
-      {animal.status && animal.status !== 'activo' && (
-        <div className="mt-2 flex items-center justify-between">
-          <span
-            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-              animal_status_colors[animal.status]
-            }`}
+      {animal.status === 'perdido' && (
+        <div className="mt-2 flex justify-end">
+          <button
+            className="text-xs text-green-700 hover:text-green-900 underline"
+            onClick={(e) => {
+              e.stopPropagation()
+              markFound(animal.id)
+            }}
           >
-            {animal_status_labels[animal.status]}
-          </span>
-          {animal.status === 'perdido' && (
-            <button
-              className="text-xs text-green-700 hover:text-green-900 underline"
-              onClick={(e) => {
-                e.stopPropagation()
-                markFound(animal.id)
-              }}
-            >
-              Marcar como encontrado
-            </button>
-          )}
+            Marcar como encontrado
+          </button>
         </div>
       )}
-      <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
-        {animal.age && (
-          <div>
-            <span className="text-gray-500">Edad:</span>
-            <span className="ml-1 font-medium">{animal.age} meses</span>
-          </div>
-        )}
-
-        {formatWeight(animal.weight) && (
-          <div>
-            <span className="text-gray-500">Peso:</span>
-            <span className="ml-1 font-medium">{formatWeight(animal.weight)} kg</span>
-          </div>
-        )}
-      </div>
+      {formatWeight(animal.weight) && (
+        <div className="mt-3 text-sm">
+          <span className="text-gray-500">Peso:</span>
+          <span className="ml-1 font-medium">{formatWeight(animal.weight)} kg</span>
+        </div>
+      )}
       {/* Destete objetivo */}
 
       <WeanedAnimal animal={animal} />
@@ -101,25 +75,13 @@ export const AnimalDetailRow: React.FC<{
   }
 
   return (
-    <div className="w-full flex flex-col space-y-1">
-      <div className="flex justify-end"></div>
-      <div className="flex items-center justify-between ">
-        <span className="font-bold text-xl text-nowrap p-0.5">
-          #{animal.animalNumber}
-          {animal.name && <span className="ml-1 text-sm font-medium text-gray-500">{animal.name}</span>}
-        </span>
-        <div className="text-xs text-gray-500">
-          {animal.type || 'Sin nombre'} {animal?.breed || ''} {animal.gender} {animal.stage}
-        </div>
-        <div className="flex items-center space-x-3">
-          <div>
-            {animal_icon[animal.type]}
-            {animal_stage_icons[animal.stage]}
-            <span className={`font-bold ${gender_colors[animal.gender]}`}>{gender_icon[animal.gender]}</span>
-          </div>
-        </div>
-        <BadgeAnimalStatus status={animal.status || 'activo'} />
-      </div>
+    <div className="w-full flex items-center justify-between gap-2">
+      <span className="font-bold text-xl text-nowrap p-0.5">
+        #{animal.animalNumber}
+        {animal.name && <span className="ml-1 text-sm font-medium text-gray-500">{animal.name}</span>}
+      </span>
+      <AnimalBadges animal={animal} />
+      <BadgeAnimalStatus status={animal.status || 'activo'} />
     </div>
   )
 }

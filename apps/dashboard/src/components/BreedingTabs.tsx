@@ -239,7 +239,11 @@ const BreedingTabs: React.FC = () => {
               pastDue={birthsWindow.pastDue}
               upcoming={birthsWindow.upcoming}
               days={birthsSummary.windowDays}
-              onSelectRecord={(r) => setEditingRecord(r)}
+              animals={animals}
+              onSelectRecord={(r, femaleId) => {
+                setBirthRecord(r)
+                setBirthFemaleId(femaleId)
+              }}
             />
           </div>
           {recentBirths.length > 0 && (
@@ -260,7 +264,7 @@ const BreedingTabs: React.FC = () => {
                     <li key={record.id + idx} className="py-2 flex flex-col gap-2">
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="font-medium">Hembra {info.femaleId}</span>{' '}
+                          <span className="font-medium">Hembra {animals.find((a) => a.id === info.femaleId)?.animalNumber || info.femaleId}</span>{' '}
                           <span className="text-gray-500">
                             · {date.toLocaleDateString()} · {ageLabel}
                           </span>

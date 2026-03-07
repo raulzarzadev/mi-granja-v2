@@ -73,14 +73,28 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
       return
     }
 
-    // Validar que todas las crías tengan ID único
+    // Validar que todas las crías tengan ID
     const hasEmptyIds = formData.offspring.some((o) => !o.animalNumber.trim())
     if (hasEmptyIds) {
-      alert('Todas las crías deben tener un ID único')
+      alert('Todas las crías deben tener un número de identificación')
       return
     }
 
-    console.log({ formData })
+    // Validar que no haya duplicados entre las crías del formulario
+    const offspringNumbers = formData.offspring.map((o) => o.animalNumber.trim())
+    const duplicatesInForm = offspringNumbers.filter((n, i) => offspringNumbers.indexOf(n) !== i)
+    if (duplicatesInForm.length > 0) {
+      alert(`Hay números duplicados entre las crías: ${duplicatesInForm.join(', ')}`)
+      return
+    }
+
+    // Validar que los números no existan ya en la granja
+    const existingNumbers = animals.map((a) => a.animalNumber)
+    const conflicting = offspringNumbers.filter((n) => existingNumbers.includes(n))
+    if (conflicting.length > 0) {
+      alert(`Los siguientes números ya existen en la granja: ${conflicting.join(', ')}`)
+      return
+    }
 
     try {
       await onSubmit(formData)
@@ -133,35 +147,55 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Registrar Parto">
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Selección o muestra fija de hembra */}
+        {/* Selección o muestra fija de hembra + padre */}
         {selectedFemaleId ? (
-          <div className="p-4 border border-green-300 rounded-md bg-green-50 flex items-center gap-3">
-            {(() => {
-              const female = pregnantFemales.find((f: any) => f?.id === selectedFemaleId)
-              if (!female) {
-                return (
-                  <span className="text-sm text-red-600">
-                    Hembra seleccionada no encontrada en la monta.
-                  </span>
+          <div className="space-y-2">
+            <div className="p-3 border border-green-300 rounded-md bg-green-50 flex items-center gap-3">
+              {(() => {
+                const female = animals.find((a) => a.id === selectedFemaleId)
+                const breedingInfo = breedingRecord?.femaleBreedingInfo?.find(
+                  (f) => f.femaleId === selectedFemaleId,
                 )
-              }
+                if (!female) {
+                  return (
+                    <span className="text-sm text-red-600">
+                      Hembra seleccionada no encontrada.
+                    </span>
+                  )
+                }
+                return (
+                  <>
+                    <span className="text-2xl">{animal_icon[female.type]}</span>
+                    <div>
+                      <div className="text-sm font-semibold leading-tight">
+                        Madre: {female.animalNumber}
+                      </div>
+                      <div className="text-xs text-gray-700">
+                        {female.type} • Parto esperado:{' '}
+                        {breedingInfo?.expectedBirthDate
+                          ? new Date(breedingInfo.expectedBirthDate).toLocaleDateString('es-ES')
+                          : 'No definido'}
+                      </div>
+                    </div>
+                  </>
+                )
+              })()}
+            </div>
+            {(() => {
+              const male = animals.find((a) => a.id === breedingRecord?.maleId)
+              if (!male) return null
               return (
-                <>
-                  <span className="text-2xl">{animal_icon[female?.type]}</span>
+                <div className="p-3 border border-blue-300 rounded-md bg-blue-50 flex items-center gap-3">
+                  <span className="text-2xl">{animal_icon[male.type]}</span>
                   <div>
-                    <div className="text-lg font-semibold leading-tight">
-                      {female?.animalNumber}
+                    <div className="text-sm font-semibold leading-tight">
+                      Padre: {male.animalNumber}
                     </div>
                     <div className="text-xs text-gray-700">
-                      {female?.type} • Parto esperado:{' '}
-                      {female?.breedingInfo?.expectedBirthDate
-                        ? new Date(female.breedingInfo.expectedBirthDate).toLocaleDateString(
-                            'es-ES',
-                          )
-                        : 'No definido'}
+                      {male.type} {male.breed ? `• ${male.breed}` : ''}
                     </div>
                   </div>
-                </>
+                </div>
               )
             })()}
           </div>
@@ -295,16 +329,36 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                         <label className="block text-xs font-medium text-gray-600 mb-1">
                           ID único *
                         </label>
-                        <input
-                          type="text"
-                          value={offspring.animalNumber}
-                          onChange={(e) =>
-                            handleOffspringChange(index, 'animalNumber', e.target.value)
-                          }
-                          placeholder="Ej: OV-001"
-                          required
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
-                        />
+                        {(() => {
+                          const trimmed = offspring.animalNumber.trim()
+                          const isDuplicateInFarm = trimmed && animals.some((a) => a.animalNumber === trimmed)
+                          const isDuplicateInForm = trimmed && formData.offspring.filter((o) => o.animalNumber.trim() === trimmed).length > 1
+                          const hasError = isDuplicateInFarm || isDuplicateInForm
+                          return (
+                            <>
+                              <input
+                                type="text"
+                                value={offspring.animalNumber}
+                                onChange={(e) =>
+                                  handleOffspringChange(index, 'animalNumber', e.target.value)
+                                }
+                                placeholder="Ej: OV-001"
+                                required
+                                className={`w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 ${
+                                  hasError
+                                    ? 'border-red-400 focus:ring-red-500'
+                                    : 'border-gray-300 focus:ring-green-500'
+                                }`}
+                              />
+                              {isDuplicateInFarm && (
+                                <p className="text-xs text-red-600 mt-0.5">Este número ya existe en la granja</p>
+                              )}
+                              {isDuplicateInForm && !isDuplicateInFarm && (
+                                <p className="text-xs text-red-600 mt-0.5">Número duplicado entre crías</p>
+                              )}
+                            </>
+                          )
+                        })()}
                       </div>
 
                       {/* Género */}
