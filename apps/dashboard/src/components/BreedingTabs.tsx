@@ -510,6 +510,7 @@ const BreedingTabs: React.FC = () => {
         animals={animals}
         record={editingRecord}
         onSubmit={(id, data) => updateBreedingRecord(id, data)}
+        onDelete={(id) => deleteBreedingRecord(id)}
         onClose={() => setEditingRecord(null)}
         isLoading={false}
       />
