@@ -18,7 +18,43 @@ export const viewport: Viewport = {
   themeColor: '#16a34a',
 }
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dashboard.migranja.app'
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'Mi Granja',
+  url: appUrl,
+  description:
+    'Aplicación para gestionar tu ganado de manera eficiente. Registra animales, montas, recordatorios y colaboradores.',
+  applicationCategory: 'BusinessApplication',
+  applicationSubCategory: 'Farm Management',
+  operatingSystem: 'Web',
+  inLanguage: 'es',
+  image: `${appUrl}/icons/icon-512x512.png`,
+  offers: [
+    {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'MXN',
+      description: 'Plan gratuito: 1 granja, 1 usuario',
+    },
+    {
+      '@type': 'Offer',
+      price: '250',
+      priceCurrency: 'MXN',
+      description: 'Lugar adicional (granja o colaborador): $250 MXN/mes',
+    },
+  ],
+  creator: {
+    '@type': 'Organization',
+    name: 'Mi Granja',
+    url: 'https://migranja.app',
+  },
+}
+
 export const metadata: Metadata = {
+  metadataBase: new URL(appUrl),
   title: {
     default: 'Mi Granja - Gestión de Ganado',
     template: '%s | Mi Granja',
@@ -30,14 +66,10 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'es_MX',
     siteName: 'Mi Granja',
-    title: 'Mi Granja - Gestión de Ganado',
-    description: 'Aplicación para gestionar tu ganado de manera eficiente',
     images: [{ url: '/icons/icon-512x512.png', width: 512, height: 512, alt: 'Mi Granja' }],
   },
   twitter: {
     card: 'summary',
-    title: 'Mi Granja - Gestión de Ganado',
-    description: 'Aplicación para gestionar tu ganado de manera eficiente',
     images: ['/icons/icon-512x512.png'],
   },
   appleWebApp: {
@@ -59,6 +91,10 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <ServiceWorkerRegistrar />
         <Providers>{children}</Providers>
       </body>

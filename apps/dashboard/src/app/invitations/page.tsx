@@ -4,6 +4,10 @@ import Link from 'next/link'
 export const metadata: Metadata = {
   title: 'Invitaciones',
   description: 'Gestiona tus invitaciones pendientes o aceptadas en Mi Granja.',
+  openGraph: {
+    title: 'Invitaciones | Mi Granja',
+    description: 'Gestiona tus invitaciones pendientes o aceptadas en Mi Granja.',
+  },
 }
 
 export default function InvitationsPage() {
