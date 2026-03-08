@@ -25,7 +25,9 @@
       "Bash(stripe:*)",
       "Bash(chmod +x:*)",
       "Bash(npx tsx:*)",
-      "Bash(npx skills:*)"
+      "Bash(npx skills:*)",
+      "Bash(sips:*)",
+      "Bash(mkdir:*)"
     ]
   }
 }
