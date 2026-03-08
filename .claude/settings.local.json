@@ -27,7 +27,8 @@
       "Bash(npx tsx:*)",
       "Bash(npx skills:*)",
       "Bash(sips:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(echo ===== $page =====:*)"
     ]
   }
 }

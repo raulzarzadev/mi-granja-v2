@@ -50,3 +50,5 @@ next-env.d.ts
 firebase/data/
 firebase-export-*
 *-debug.log
+
+.claude/settings.local.json
