@@ -1,6 +1,8 @@
 const CACHE_NAME = 'mi-granja-v1'
+const OFFLINE_URL = '/offline'
 const PRECACHE_URLS = [
   '/',
+  OFFLINE_URL,
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
@@ -76,7 +78,7 @@ self.addEventListener('fetch', (event) => {
           }
           return response
         })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
+        .catch(() => caches.match(request).then((cached) => cached || caches.match(OFFLINE_URL)))
     )
   }
 })

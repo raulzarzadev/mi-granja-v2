@@ -19,9 +19,27 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'Mi Granja - Gestión de Ganado',
+  title: {
+    default: 'Mi Granja - Gestión de Ganado',
+    template: '%s | Mi Granja',
+  },
   description: 'Aplicación para gestionar tu ganado de manera eficiente',
   manifest: '/manifest.json',
+  robots: { index: false, follow: false },
+  openGraph: {
+    type: 'website',
+    locale: 'es_MX',
+    siteName: 'Mi Granja',
+    title: 'Mi Granja - Gestión de Ganado',
+    description: 'Aplicación para gestionar tu ganado de manera eficiente',
+    images: [{ url: '/icons/icon-512x512.png', width: 512, height: 512, alt: 'Mi Granja' }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Mi Granja - Gestión de Ganado',
+    description: 'Aplicación para gestionar tu ganado de manera eficiente',
+    images: ['/icons/icon-512x512.png'],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

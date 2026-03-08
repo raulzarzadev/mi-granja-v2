@@ -1,0 +1,13 @@
+# Mi Granja Dashboard - Private app, no indexing
+User-agent: *
+Disallow: /
+
+# Block AI crawlers explicitly
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
