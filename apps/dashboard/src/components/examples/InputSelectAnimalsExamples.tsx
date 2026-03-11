@@ -206,6 +206,21 @@ export function ExampleWithOmit() {
   )
 }
 
+/** Ejemplo con muchos seleccionados (overflow + "ver") */
+export function ExampleManySelected() {
+  const [ids, setIds] = useState<string[]>(mockAnimals.map((a) => a.id))
+
+  return (
+    <InputSelectAnimals
+      animals={mockAnimals}
+      selectedIds={ids}
+      onAdd={(id) => setIds((prev) => [...prev, id])}
+      onRemove={(id) => setIds((prev) => prev.filter((i) => i !== id))}
+      label="Muchos seleccionados"
+    />
+  )
+}
+
 /** Ejemplo deshabilitado */
 export function ExampleDisabled() {
   return (

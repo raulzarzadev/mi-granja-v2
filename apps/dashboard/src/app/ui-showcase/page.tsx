@@ -6,6 +6,7 @@ import {
   ExampleDisabled,
   ExampleFiltered,
   ExampleFixedIds,
+  ExampleManySelected,
   ExampleMultiSelect,
   ExampleSingleSelect,
   ExampleWithOmit,
@@ -133,6 +134,15 @@ export default function UIShowcasePage() {
                   Muestra seleccionados en el dropdown con boton Omitir y datos de monta
                 </p>
                 <ExampleWithOmit />
+              </div>
+
+              {/* Muchos seleccionados */}
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-1">Muchos seleccionados</h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  Max 2 filas de chips, luego "+N mas" con boton "ver"
+                </p>
+                <ExampleManySelected />
               </div>
 
               {/* Deshabilitado */}

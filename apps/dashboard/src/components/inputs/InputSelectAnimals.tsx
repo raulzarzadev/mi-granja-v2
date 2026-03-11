@@ -53,8 +53,10 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [highlightIndex, setHighlightIndex] = useState(-1)
+  const [chipsExpanded, setChipsExpanded] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const chipsRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   const selectedAnimals = useMemo(
@@ -159,15 +161,67 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     </>
   )
 
+  // Calcular cuantos chips caben en ~2 filas
+  const [visibleChipCount, setVisibleChipCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!chipsRef.current || chipsExpanded || selectedAnimals.length === 0) {
+      setVisibleChipCount(null)
+      return
+    }
+    const container = chipsRef.current
+    const chips = Array.from(container.children).filter(
+      (el) => !(el as HTMLElement).dataset.overflow,
+    )
+    if (chips.length === 0) {
+      setVisibleChipCount(null)
+      return
+    }
+
+    // Medir: buscar el primer chip que empieza en la 3ra fila
+    const firstTop = (chips[0] as HTMLElement).offsetTop
+    let rowStarts = [firstTop]
+    let cutoff = chips.length
+
+    for (let i = 1; i < chips.length; i++) {
+      const top = (chips[i] as HTMLElement).offsetTop
+      if (top !== rowStarts[rowStarts.length - 1]) {
+        rowStarts.push(top)
+        if (rowStarts.length > 2) {
+          cutoff = i
+          break
+        }
+      }
+    }
+
+    setVisibleChipCount(rowStarts.length > 2 ? cutoff : null)
+  }, [selectedAnimals, chipsExpanded])
+
+  const hiddenCount =
+    visibleChipCount !== null && !chipsExpanded
+      ? selectedAnimals.length - visibleChipCount
+      : 0
+
   return (
     <div ref={containerRef}>
+      {/* Label con contador */}
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {label}
+          {selectedAnimals.length > 0 && (
+            <span className="text-gray-400 font-normal ml-1">({selectedAnimals.length})</span>
+          )}
+        </label>
       )}
 
-      {/* Chips de seleccionados + contador */}
+      {/* Chips de seleccionados — max 2 filas con "ver" */}
       {selectedAnimals.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 mb-2">
+        <div
+          ref={chipsRef}
+          className={`flex flex-wrap items-center gap-1.5 mb-2 ${
+            !chipsExpanded && visibleChipCount !== null ? 'max-h-[4.5rem] overflow-hidden' : ''
+          }`}
+        >
           {selectedAnimals.map((a) => (
             <span
               key={a.id}
@@ -190,10 +244,29 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
               )}
             </span>
           ))}
-          <span className="text-xs text-gray-400">
-            {selectedAnimals.length} animal{selectedAnimals.length !== 1 ? 'es' : ''}
-          </span>
         </div>
+      )}
+      {/* Overflow indicator */}
+      {hiddenCount > 0 && (
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-xs text-gray-400">+{hiddenCount} mas</span>
+          <button
+            type="button"
+            onClick={() => setChipsExpanded(true)}
+            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+          >
+            ver
+          </button>
+        </div>
+      )}
+      {chipsExpanded && selectedAnimals.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setChipsExpanded(false)}
+          className="text-xs text-blue-600 hover:text-blue-800 font-medium mb-2"
+        >
+          ocultar
+        </button>
       )}
 
       {/* Input de busqueda */}
