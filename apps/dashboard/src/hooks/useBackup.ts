@@ -9,6 +9,7 @@ import {
   getDocs,
   query,
   setDoc,
+  updateDoc,
   where,
   writeBatch,
 } from 'firebase/firestore'
@@ -169,6 +170,19 @@ export function useBackup() {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
+
+      // Registrar exportación en Firestore
+      try {
+        await updateDoc(doc(db, 'farms', currentFarm.id), {
+          exportedBackups: arrayUnion({
+            createdAt: Timestamp.now(),
+            fileName: filename,
+            counts: backup._meta.counts,
+          }),
+        })
+      } catch (e) {
+        console.warn('No se pudo registrar la exportación en el historial:', e)
+      }
 
       setProgress({ phase: 'export', percent: 100, message: 'Respaldo descargado' })
     } finally {
