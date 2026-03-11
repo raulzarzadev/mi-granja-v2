@@ -143,14 +143,14 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   const defaultRenderOption = (animal: Animal) => (
     <>
       <AnimalBadges animal={animal} />
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 truncate">
         <span className="font-semibold text-sm text-gray-900">#{animal.animalNumber}</span>
         {animal.name && <span className="text-sm text-gray-500 ml-1.5">{animal.name}</span>}
         {secondaryLabel?.(animal) && (
           <span className="text-xs text-gray-400 ml-1.5">({secondaryLabel(animal)})</span>
         )}
       </div>
-      <div className="text-xs text-gray-400 flex-shrink-0">
+      <div className="text-xs text-gray-400 flex-shrink-0 whitespace-nowrap">
         {animal.breed && <span>{animal.breed}</span>}
         {animal.birthDate && (
           <span className="ml-1">{animalAge(animal, { format: 'short' })}</span>
@@ -165,13 +165,13 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
         <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       )}
 
-      {/* Chips de seleccionados — linea unica con scroll */}
+      {/* Chips de seleccionados + contador */}
       {selectedAnimals.length > 0 && (
-        <div className="flex gap-1.5 mb-2 overflow-x-auto scrollbar-none">
+        <div className="flex flex-wrap items-center gap-1.5 mb-2">
           {selectedAnimals.map((a) => (
             <span
               key={a.id}
-              className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs bg-green-50 text-green-800 border border-green-200 flex-shrink-0 whitespace-nowrap"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-50 text-green-800 border border-green-200"
             >
               <span>{animal_icon[a.type] || '\uD83D\uDC3E'}</span>
               <span className={a.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}>
@@ -190,6 +190,9 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
               )}
             </span>
           ))}
+          <span className="text-xs text-gray-400">
+            {selectedAnimals.length} animal{selectedAnimals.length !== 1 ? 'es' : ''}
+          </span>
         </div>
       )}
 
