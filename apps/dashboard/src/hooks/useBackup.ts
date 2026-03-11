@@ -2,6 +2,7 @@
 
 import {
   Timestamp,
+  arrayUnion,
   collection,
   doc,
   getDoc,
@@ -225,13 +226,26 @@ export function useBackup() {
             const farmDeserialized = deserializeFromBackup('farm', data.farm)
             const {
               id: _id,
+              name: _name,
               ownerId: _ownerId,
               collaborators: _collaborators,
               collaboratorsIds: _collaboratorsIds,
               collaboratorsEmails: _collaboratorsEmails,
               ...farmFields
             } = farmDeserialized
-            await setDoc(doc(db, 'farms', currentFarm.id), farmFields, { merge: true })
+            await setDoc(
+              doc(db, 'farms', currentFarm.id),
+              {
+                ...farmFields,
+                restoredBackups: arrayUnion({
+                  createdAt: Timestamp.now(),
+                  farmId: data._meta.farmId,
+                  farmName: data._meta.farmName,
+                  backupDate: data._meta.exportDate,
+                }),
+              },
+              { merge: true },
+            )
           } catch (e) {
             errors.push(`Error restaurando granja: ${e instanceof Error ? e.message : 'error'}`)
           }
