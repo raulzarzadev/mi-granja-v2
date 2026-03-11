@@ -2,9 +2,8 @@
 
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useMemo, useState } from 'react'
-import ModalCreateRecord from '@/components/ModalCreateRecord'
 import ModalRecordDetail from '@/components/ModalRecordDetail'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import {
@@ -53,6 +52,7 @@ const SortIcon: React.FC<{ active: boolean; dir: SortDir }> = ({ active, dir }) 
 
 const RecordsTab: React.FC = () => {
   const { animals } = useAnimalCRUD()
+  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -70,7 +70,6 @@ const RecordsTab: React.FC = () => {
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [detailRecord, setDetailRecord] = useState<TableRow | null>(null)
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   // ─── URL sync ───
   const filterKeys = ['animalId', 'type', 'category', 'from', 'to', 'q', 'app'] as const
@@ -399,7 +398,7 @@ const RecordsTab: React.FC = () => {
 
           {/* Create button */}
           <button
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => router.push('/registro/nuevo')}
             className="p-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
             title="Nuevo Registro"
           >
@@ -737,11 +736,6 @@ const RecordsTab: React.FC = () => {
         animals={animals}
       />
 
-      <ModalCreateRecord
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        animals={animals}
-      />
     </div>
   )
 }

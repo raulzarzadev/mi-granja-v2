@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useMemo, useState } from 'react'
-import ModalCreateRecord from '@/components/ModalCreateRecord'
+import { useRouter } from 'next/navigation'
 import ModalRecordDetail, { RecordDetailRow } from '@/components/ModalRecordDetail'
 import RecordRow from '@/components/RecordRow'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -29,10 +29,9 @@ const filterTypes: Array<{ value: RecordType | ''; label: string; icon: string }
 ]
 
 const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
+  const router = useRouter()
   const { animals } = useAnimalCRUD()
   const { getRemindersByAnimal, markAnimalCompleted } = useReminders()
-
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [detailRecord, setDetailRecord] = useState<RecordDetailRow | null>(null)
   const [typeFilter, setTypeFilter] = useState<RecordType | ''>('')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
@@ -140,7 +139,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Registros</h3>
         <button
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={() => router.push(`/registro/nuevo?animalIds=${animal.id}`)}
           className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700"
         >
           + Nuevo registro
@@ -296,14 +295,6 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
           </div>
         </details>
       )}
-
-      {/* Modal crear registro - animal pre-seleccionado */}
-      <ModalCreateRecord
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        animals={animals}
-        preSelectedAnimalIds={[animal.id]}
-      />
 
       {/* Modal detalle de registro */}
       <ModalRecordDetail
