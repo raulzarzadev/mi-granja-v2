@@ -390,6 +390,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
               form.clearErrors('femaleIds')
             }}
             onRemove={(id) => handleRemoveFemale(id)}
+            label="Hembras"
             placeholder={`Buscar hembra ${selectedMale.type} por numero...`}
             disabled={!selectedMale || isLoading || isSubmitting}
             showOmitButton

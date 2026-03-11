@@ -57,7 +57,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const chipsRef = useRef<HTMLDivElement>(null)
-  const itemRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([])
 
   const selectedAnimals = useMemo(
     () =>
@@ -322,12 +322,11 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                   const isFixed = fixedIds.includes(animal.id)
 
                   return (
-                    <button
+                    <div
                       key={animal.id}
                       ref={(el) => {
                         itemRefs.current[index] = el
                       }}
-                      type="button"
                       role="option"
                       aria-selected={isHighlighted}
                       onMouseDown={(e) => {
@@ -339,7 +338,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                         }
                       }}
                       onMouseEnter={() => setHighlightIndex(index)}
-                      className={`w-full px-3 py-2 flex items-center gap-3 transition-colors text-left border-b border-gray-50 last:border-b-0 ${
+                      className={`w-full px-3 py-2 flex items-center gap-3 transition-colors text-left border-b border-gray-50 last:border-b-0 cursor-pointer ${
                         isSelected
                           ? isHighlighted
                             ? 'bg-green-200'
@@ -364,7 +363,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                           title="Omitir animal"
                         />
                       )}
-                    </button>
+                    </div>
                   )
                 })
               ) : (
