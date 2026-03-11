@@ -22,7 +22,7 @@ const BreedingTabs: React.FC = () => {
     getBirthsWindowSummary,
   } = useBreedingCRUD()
 
-  const { animals, wean, create } = useAnimalCRUD()
+  const { animals, wean, create, addRecord } = useAnimalCRUD()
   const [editingRecord, setEditingRecord] = React.useState<BreedingRecord | null>(null)
   const [birthRecord, setBirthRecord] = React.useState<BreedingRecord | null>(null)
   const [birthFemaleId, setBirthFemaleId] = React.useState<string | null>(null)
@@ -572,6 +572,19 @@ const BreedingTabs: React.FC = () => {
             )
             await updateBreedingRecord(birthRecord.id, {
               femaleBreedingInfo: updatedFemaleInfo,
+            })
+
+            // Crear registro tipo 'birth' en la madre
+            const offspringSummary = form.offspring
+              .map((o) => `#${o.animalNumber} (${o.gender}${o.weight ? `, ${o.weight}kg` : ''})`)
+              .join(', ')
+            await addRecord(form.animalId, {
+              type: 'birth',
+              category: 'general',
+              title: `Parto: ${form.totalOffspring} cría${form.totalOffspring > 1 ? 's' : ''}`,
+              description: offspringSummary,
+              date: actualDate,
+              notes: form.notes || undefined,
             })
 
             setBirthRecord(null)

@@ -80,7 +80,7 @@ Re-export proxies in `src/types/` and `src/lib/` forward to `@mi-granja/shared`,
 - **`src/app/`** — Next.js App Router pages and API routes. Root layout wraps everything in `<Providers>` (Redux store + `AuthInitializer`).
 - **`src/features/`** — Redux Toolkit slices organized by domain: `auth`, `animals`, `breeding`, `reminders`, `farm`. Each slice has standard CRUD reducers. `store.ts` combines all slices.
 - **`src/hooks/`** — Custom hooks that bridge Redux state and Firestore. Each domain has a CRUD hook (e.g., `useAnimalCRUD`, `useBreedingCRUD`, `useFarmCRUD`). Hooks dispatch Redux actions and call Firestore directly.
-- **`src/components/`** — UI components. Modal system uses a base `Modal.tsx` + domain-specific wrappers (e.g., `ModalAnimalForm`). Forms use react-hook-form + Zod schemas.
+- **`src/components/`** — UI components. Modal system uses a base `Modal.tsx` + domain-specific wrappers (e.g., `ModalAnimalForm`). Forms use react-hook-form + Zod schemas. **`AnimalSelector`** (`src/components/inputs/AnimalSelector.tsx`) is the unified component for searching and selecting animals — use it everywhere an animal picker is needed (supports `single`/`multi` mode, chips, search dropdown, `fixedIds`, `filterFn`).
 - **`src/lib/`** — Dashboard-specific utilities: `adminActions.ts`, `userUtils.ts`, `migrateBreedings.ts`. Other lib files are re-export proxies from shared.
 
 ### Data flow

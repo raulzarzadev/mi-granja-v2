@@ -42,6 +42,9 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
     cost: '',
     createReminder: false,
     reminderDate: '',
+    reminderTitle: '',
+    weight: '',
+    weightUnit: 'kg',
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -63,6 +66,9 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
       cost: '',
       createReminder: false,
       reminderDate: '',
+      reminderTitle: '',
+      weight: '',
+      weightUnit: 'kg',
     })
   }
 

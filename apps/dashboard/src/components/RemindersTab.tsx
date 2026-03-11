@@ -16,6 +16,7 @@ const RemindersTab: React.FC = () => {
     reminders,
     isLoading,
     markAsCompleted,
+    markAnimalCompleted,
     deleteReminder,
     getOverdueReminders,
     getTodayReminders,
@@ -64,6 +65,11 @@ const RemindersTab: React.FC = () => {
             reminder={reminder}
             animals={animals}
             onComplete={showComplete ? (r) => markAsCompleted(r.id) : undefined}
+            onCompleteAnimal={
+              showComplete
+                ? (r, animalNum, completed) => markAnimalCompleted(r.id, animalNum, completed)
+                : undefined
+            }
             onEdit={editReminder}
             onDelete={(r) => deleteReminder(r.id)}
           />
