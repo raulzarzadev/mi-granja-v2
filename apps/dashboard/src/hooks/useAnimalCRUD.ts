@@ -648,6 +648,72 @@ export const useAnimalCRUD = () => {
     return results
   }, [currentFarm?.id])
 
+  // Agregar entrada de peso al historial del animal
+  const addWeightEntry = async (
+    animalId: string,
+    entry: { date: Date; weight: number; notes?: string },
+  ) => {
+    if (!user?.id) {
+      dispatch(setError('Usuario no autenticado'))
+      return
+    }
+
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal) {
+      dispatch(setError('Animal no encontrado'))
+      return
+    }
+
+    const newEntry = {
+      date: entry.date,
+      weight: entry.weight,
+      ...(entry.notes ? { notes: entry.notes } : {}),
+    }
+
+    const updatedWeightRecords = [...(animal.weightRecords || []), newEntry]
+
+    // También crear un AnimalRecord de tipo 'weight' para que aparezca en la tabla de registros
+    const weightKg = (entry.weight / 1000).toFixed(1)
+    const newRecord = {
+      id: crypto.randomUUID(),
+      type: 'weight' as const,
+      category: 'general' as const,
+      title: `${weightKg} kg`,
+      date: entry.date,
+      createdAt: new Date(),
+      createdBy: user.id,
+      ...(entry.notes ? { notes: entry.notes } : {}),
+    }
+    const updatedRecords = [...(animal.records || []), newRecord]
+
+    await update(animalId, { weightRecords: updatedWeightRecords, records: updatedRecords })
+    console.log('Peso registrado para animal:', animalId, entry.weight, 'g')
+  }
+
+  // Actualizar una entrada de peso existente en weightRecords (match por fecha original)
+  const updateWeightRecord = async (
+    animalId: string,
+    originalDate: Date | string | number,
+    newEntry: { date: Date; weight: number; notes?: string },
+  ) => {
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal) return
+
+    const origTime = new Date(originalDate).getTime()
+    const updatedWeightRecords = (animal.weightRecords || []).map((wr) => {
+      if (new Date(wr.date).getTime() === origTime) {
+        return {
+          date: newEntry.date,
+          weight: newEntry.weight,
+          ...(newEntry.notes ? { notes: newEntry.notes } : {}),
+        }
+      }
+      return wr
+    })
+
+    await update(animalId, { weightRecords: updatedWeightRecords })
+  }
+
   return {
     animals,
     isLoading,
@@ -668,6 +734,8 @@ export const useAnimalCRUD = () => {
     resolveRecord,
     reopenRecord,
     addBulkRecord,
+    addWeightEntry,
+    updateWeightRecord,
     getUpcomingHealthRecords,
     searchExact,
   }

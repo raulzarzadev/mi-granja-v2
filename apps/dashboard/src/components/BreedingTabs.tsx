@@ -1,12 +1,14 @@
+'use client'
+
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import React, { useMemo, useState } from 'react'
 import BirthsWindowSummary from '@/components/BirthsWindowSummary'
 import BreedingCard from '@/components/BreedingCard'
 import BreedingTable from '@/components/BreedingTable'
 import GeneticTree from '@/components/GeneticTree'
 import ModalBirthForm from '@/components/ModalBirthForm'
-import ModalBreedingForm from '@/components/ModalBreedingForm'
 import ModalConfirmPregnancy from '@/components/ModalConfirmPregnancy'
-import ModalEditBreeding from '@/components/ModalEditBreeding'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
@@ -14,6 +16,7 @@ import { BreedingRecord } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 
 const BreedingTabs: React.FC = () => {
+  const router = useRouter()
   const {
     breedingRecords,
     updateBreedingRecord,
@@ -22,8 +25,8 @@ const BreedingTabs: React.FC = () => {
     getBirthsWindowSummary,
   } = useBreedingCRUD()
 
-  const { animals, wean, create } = useAnimalCRUD()
-  const [editingRecord, setEditingRecord] = React.useState<BreedingRecord | null>(null)
+  const { animals, wean, create, addRecord } = useAnimalCRUD()
+  const editRecord = (record: BreedingRecord) => router.push(`/monta/${record.id}/editar`)
   const [birthRecord, setBirthRecord] = React.useState<BreedingRecord | null>(null)
   const [birthFemaleId, setBirthFemaleId] = React.useState<string | null>(null)
   const [confirmPregnancyRecord, setConfirmPregnancyRecord] = React.useState<BreedingRecord | null>(
@@ -199,7 +202,7 @@ const BreedingTabs: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <button
                           className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded"
-                          onClick={() => setEditingRecord(record)}
+                          onClick={() => editRecord(record)}
                         >
                           Ver monta
                         </button>
@@ -272,7 +275,7 @@ const BreedingTabs: React.FC = () => {
                         <div className="flex items-center gap-3">
                           <button
                             className="text-xs text-blue-600 hover:underline"
-                            onClick={() => setEditingRecord(record)}
+                            onClick={() => editRecord(record)}
                           >
                             Ver monta
                           </button>
@@ -380,7 +383,15 @@ const BreedingTabs: React.FC = () => {
                     </svg>
                   </button>
                 </div>
-                <ModalBreedingForm />
+                <Link
+                  href="/monta/nueva"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                    <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+                  </svg>
+                  Registrar Monta
+                </Link>
               </div>
             </div>
 
@@ -392,7 +403,7 @@ const BreedingTabs: React.FC = () => {
                   ...orderedBreedings.finished,
                 ]}
                 animals={animals}
-                onSelect={setEditingRecord}
+                onSelect={editRecord}
                 onDelete={(ids) => {
                   for (const id of ids) {
                     deleteBreedingRecord(id)
@@ -420,7 +431,7 @@ const BreedingTabs: React.FC = () => {
                               key={r.id}
                               record={r}
                               animals={animals}
-                              onEdit={setEditingRecord}
+                              onEdit={editRecord}
                               onAddBirth={handleOpenAddBirth}
                               onConfirmPregnancy={(record, femaleId) => {
                                 handleOpenConfirmPregnancy(record, femaleId)
@@ -448,7 +459,7 @@ const BreedingTabs: React.FC = () => {
                               key={r.id}
                               record={r}
                               animals={animals}
-                              onEdit={setEditingRecord}
+                              onEdit={editRecord}
                               onAddBirth={handleOpenAddBirth}
                               onConfirmPregnancy={setConfirmPregnancyRecord}
                               onUnconfirmPregnancy={handleUnconfirmPregnancy}
@@ -478,7 +489,7 @@ const BreedingTabs: React.FC = () => {
                             key={r.id}
                             record={r}
                             animals={animals}
-                            onEdit={setEditingRecord}
+                            onEdit={editRecord}
                             onAddBirth={handleOpenAddBirth}
                             onConfirmPregnancy={setConfirmPregnancyRecord}
                             onUnconfirmPregnancy={handleUnconfirmPregnancy}
@@ -506,14 +517,6 @@ const BreedingTabs: React.FC = () => {
   return (
     <>
       <Tabs tabs={tabs} tabsId="breeding-tabs" />
-      <ModalEditBreeding
-        animals={animals}
-        record={editingRecord}
-        onSubmit={(id, data) => updateBreedingRecord(id, data)}
-        onDelete={(id) => deleteBreedingRecord(id)}
-        onClose={() => setEditingRecord(null)}
-        isLoading={false}
-      />
       <ModalBirthForm
         isOpen={!!birthRecord}
         onClose={() => {
@@ -572,6 +575,19 @@ const BreedingTabs: React.FC = () => {
             )
             await updateBreedingRecord(birthRecord.id, {
               femaleBreedingInfo: updatedFemaleInfo,
+            })
+
+            // Crear registro tipo 'birth' en la madre
+            const offspringSummary = form.offspring
+              .map((o) => `#${o.animalNumber} (${o.gender}${o.weight ? `, ${o.weight}kg` : ''})`)
+              .join(', ')
+            await addRecord(form.animalId, {
+              type: 'birth',
+              category: 'general',
+              title: `Parto: ${form.totalOffspring} cría${form.totalOffspring > 1 ? 's' : ''}`,
+              description: offspringSummary,
+              date: actualDate,
+              notes: form.notes || undefined,
             })
 
             setBirthRecord(null)

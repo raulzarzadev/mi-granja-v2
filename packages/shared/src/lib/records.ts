@@ -17,7 +17,7 @@ export function buildRecordFromForm(form: RecordFormState): RecordPayload {
   const { createReminder: _createReminder, reminderDate: _reminderDate, ...fields } = form
 
   const base: Partial<RecordPayload> = {
-    type: fields.type,
+    type: fields.type as 'note' | 'health',
     category: fields.category,
     title: fields.title.trim(),
     date: parseLocalDate(fields.date),

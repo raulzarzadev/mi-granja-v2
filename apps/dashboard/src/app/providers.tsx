@@ -8,7 +8,6 @@ import { setUser } from '@/features/auth/authSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { RootState, store } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { useBilling } from '@/hooks/useBilling'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { auth, db } from '@/lib/firebase'
@@ -45,15 +44,6 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
     })
     return unsubscribe
   }, [dispatch])
-
-  //* ==================================== BILLING INITIALIZER
-  const { loadSubscription, loadUsage } = useBilling()
-  useEffect(() => {
-    if (user) {
-      loadSubscription()
-      loadUsage()
-    }
-  }, [user])
 
   //* ==================================== FARM INITIALIZER
   const { loadUserFarms } = useFarmCRUD()

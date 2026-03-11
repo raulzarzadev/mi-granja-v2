@@ -2,7 +2,7 @@
 export interface AnimalRecord {
   id: string
   // Categorización del registro
-  type: 'note' | 'health'
+  type: 'note' | 'health' | 'birth' | 'weight'
   category: RecordCategory
 
   // Información básica (todos los tipos)
@@ -185,7 +185,7 @@ export const animal_icon: Record<AnimalType, string> = {
 
 // ===== SISTEMA UNIFICADO DE REGISTROS =====
 
-export const record_types = ['note', 'health'] as const
+export const record_types = ['note', 'health', 'weight', 'birth'] as const
 export type RecordType = (typeof record_types)[number]
 
 export const record_categories = [
@@ -205,6 +205,15 @@ export type RecordCategory = (typeof record_categories)[number]
 export const record_type_labels: Record<RecordType, string> = {
   note: 'Nota',
   health: 'Salud',
+  weight: 'Peso',
+  birth: 'Parto',
+}
+
+export const record_type_icons: Record<RecordType, string> = {
+  note: '📝',
+  health: '🏥',
+  weight: '⚖️',
+  birth: '🐣',
 }
 
 export const record_category_labels: Record<RecordCategory, string> = {

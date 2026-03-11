@@ -1,7 +1,7 @@
-import { AnimalRecord } from './animals'
+import { AnimalRecord, RecordType } from './animals'
 
 export type RecordFormState = {
-  type: AnimalRecord['type']
+  type: RecordType
   category: AnimalRecord['category']
   title: string
   description: string
@@ -16,4 +16,8 @@ export type RecordFormState = {
   cost: string
   createReminder: boolean
   reminderDate: string // yyyy-MM-dd | ''
+  reminderTitle: string
+  // Campos de peso
+  weight: string // gramos como string para el input
+  weightUnit: 'kg' | 'lb'
 }

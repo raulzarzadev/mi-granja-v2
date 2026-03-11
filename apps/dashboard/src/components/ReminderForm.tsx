@@ -1,11 +1,14 @@
 'use client'
 
 import React, { useState } from 'react'
+import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
+import { Animal } from '@/types/animals'
 import DateTimeInput from './inputs/DateTimeInput'
 
 interface Reminder {
   id: string
   animalNumber?: string
+  animalNumbers?: string[]
   title: string
   description: string
   dueDate: Date
@@ -16,7 +19,7 @@ interface Reminder {
 }
 
 interface ReminderFormProps {
-  animals?: Array<{ id: string; animalNumber: string; type: string }>
+  animals?: Animal[]
   onSubmit: (data: Omit<Reminder, 'id' | 'createdAt'>) => Promise<void>
   onCancel: () => void
   onSuccess?: () => void
@@ -37,11 +40,12 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
 }) => {
   const isEditing = !!initialData
 
-  // En edicion: resolver animal ID desde animalNumber
+  // En edicion: resolver animal IDs desde animalNumbers o legacy animalNumber
   const resolveInitialAnimalIds = (): string[] => {
-    if (!initialData?.animalNumber) return []
-    const found = animals.find((a) => a.animalNumber === initialData.animalNumber)
-    return found ? [found.id] : []
+    const numbers = initialData?.animalNumbers || (initialData?.animalNumber ? [initialData.animalNumber] : [])
+    return numbers
+      .map((num) => animals.find((a) => a.animalNumber === num)?.id)
+      .filter(Boolean) as string[]
   }
 
   const [selectedAnimalIds, setSelectedAnimalIds] = useState<string[]>(resolveInitialAnimalIds)
@@ -58,12 +62,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
 
   const handleAddAnimal = (animalId: string) => {
     if (animalId && !selectedAnimalIds.includes(animalId)) {
-      if (isEditing) {
-        // En edicion solo un animal
-        setSelectedAnimalIds([animalId])
-      } else {
-        setSelectedAnimalIds((prev) => [...prev, animalId])
-      }
+      setSelectedAnimalIds((prev) => [...prev, animalId])
     }
   }
 
@@ -86,20 +85,15 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
         completed: formData.completed,
       }
 
-      if (selectedAnimalIds.length === 0) {
-        // Sin animal asociado
-        await onSubmit({ ...base, animalNumber: undefined })
-      } else if (isEditing) {
-        // Edicion: un solo animal
-        const animal = animals.find((a) => a.id === selectedAnimalIds[0])
-        await onSubmit({ ...base, animalNumber: animal?.animalNumber })
-      } else {
-        // Crear: un recordatorio por animal
-        for (const animalId of selectedAnimalIds) {
-          const animal = animals.find((a) => a.id === animalId)
-          await onSubmit({ ...base, animalNumber: animal?.animalNumber })
-        }
-      }
+      const animalNumbers = selectedAnimalIds
+        .map((id) => animals.find((a) => a.id === id)?.animalNumber)
+        .filter(Boolean) as string[]
+
+      await onSubmit({
+        ...base,
+        animalNumber: animalNumbers[0] || undefined,
+        animalNumbers: animalNumbers.length > 0 ? animalNumbers : undefined,
+      })
 
       onSuccess?.()
     } catch (error) {
@@ -119,9 +113,6 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
       setFormData((prev) => ({ ...prev, [name]: value }))
     }
   }
-
-  const selectedAnimals = animals.filter((a) => selectedAnimalIds.includes(a.id))
-  const availableAnimals = animals.filter((a) => !selectedAnimalIds.includes(a.id))
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -143,47 +134,14 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
       </div>
 
       {/* Selector de animales */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {isEditing ? 'Animal (opcional)' : 'Animales (opcional)'}
-        </label>
-        <select
-          value=""
-          onChange={(e) => handleAddAnimal(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
-          <option value="">
-            {selectedAnimalIds.length === 0 ? 'General (todos los animales)' : 'Agregar animal...'}
-          </option>
-          {availableAnimals.map((animal) => (
-            <option key={animal.id} value={animal.id}>
-              #{animal.animalNumber} - {animal.type}
-            </option>
-          ))}
-        </select>
-
-        {/* Chips de animales seleccionados */}
-        {selectedAnimals.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            {selectedAnimals.map((animal) => (
-              <span
-                key={animal.id}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800 border border-green-200"
-              >
-                #{animal.animalNumber}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveAnimal(animal.id)}
-                  className="ml-0.5 text-green-500 hover:text-green-800 font-bold leading-none"
-                  title="Quitar animal"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
+      <InputSelectAnimals
+        animals={animals}
+        selectedIds={selectedAnimalIds}
+        onAdd={handleAddAnimal}
+        onRemove={handleRemoveAnimal}
+        label={isEditing ? 'Animal (opcional)' : 'Animales (opcional)'}
+        placeholder="Buscar animal..."
+      />
 
       <div className="grid grid-cols-2 gap-3">
         {/* Tipo */}
@@ -295,7 +253,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
             : isEditing
               ? 'Actualizar'
               : selectedAnimalIds.length > 1
-                ? `Crear ${selectedAnimalIds.length} Recordatorios`
+                ? `Crear Recordatorio (${selectedAnimalIds.length} animales)`
                 : 'Crear Recordatorio'}
         </button>
       </div>

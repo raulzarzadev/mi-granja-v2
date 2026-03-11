@@ -3,6 +3,15 @@
 import React from 'react'
 import EmailTestComponent from '@/components/EmailTestComponent'
 import {
+  ExampleDisabled,
+  ExampleFiltered,
+  ExampleFixedIds,
+  ExampleManySelected,
+  ExampleMultiSelect,
+  ExampleSingleSelect,
+  ExampleWithOmit,
+} from '@/components/examples/InputSelectAnimalsExamples'
+import {
   ExampleConfirmModal,
   ExampleFormModal,
   ExampleFullModal,
@@ -67,6 +76,82 @@ export default function UIShowcasePage() {
                 <h3 className="font-medium text-gray-900 mb-2">Modal Completo</h3>
                 <p className="text-sm text-gray-600 mb-4">Ocupa toda la pantalla</p>
                 <ExampleFullModal />
+              </div>
+            </div>
+          </section>
+
+          {/* Seccion: InputSelectAnimals */}
+          <section>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
+              <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
+                Inputs
+              </span>
+              InputSelectAnimals
+            </h2>
+            <p className="text-sm text-gray-600 mb-6">
+              Componente unificado para buscar y seleccionar animales. Soporta modo single/multi,
+              chips con badges, busqueda por numero/nombre/tipo/raza, navegacion por teclado,
+              filtros personalizados, IDs fijos y boton Omitir.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Multi seleccion */}
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-1">Multi seleccion</h3>
+                <p className="text-xs text-gray-500 mb-4">Selecciona varios animales con chips</p>
+                <ExampleMultiSelect />
+              </div>
+
+              {/* Single seleccion */}
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-1">Single seleccion</h3>
+                <p className="text-xs text-gray-500 mb-4">Solo permite un animal a la vez</p>
+                <ExampleSingleSelect />
+              </div>
+
+              {/* IDs fijos */}
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-1">IDs fijos</h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  Animal #001 no se puede quitar (pre-seleccionado fijo)
+                </p>
+                <ExampleFixedIds />
+              </div>
+
+              {/* Filtro por genero */}
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-1">Con filtro</h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  Solo muestra hembras (filterFn)
+                </p>
+                <ExampleFiltered />
+              </div>
+
+              {/* Con Omitir (estilo breeding) */}
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-1">Con Omitir + labels secundarios</h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  Muestra seleccionados en el dropdown con boton Omitir y datos de monta
+                </p>
+                <ExampleWithOmit />
+              </div>
+
+              {/* Muchos seleccionados */}
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-1">Muchos seleccionados</h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  Max 2 filas de chips, luego "+N mas" con boton "ver"
+                </p>
+                <ExampleManySelected />
+              </div>
+
+              {/* Deshabilitado */}
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-1">Deshabilitado</h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  Input deshabilitado, chips visibles pero no interactivos
+                </p>
+                <ExampleDisabled />
               </div>
             </div>
           </section>

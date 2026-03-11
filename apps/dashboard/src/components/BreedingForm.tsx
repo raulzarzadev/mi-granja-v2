@@ -12,10 +12,8 @@ import { BreedingRecord } from '@/types/breedings'
 import ButtonClose from './buttons/ButtonClose'
 import { DateField } from './forms/DateField'
 import { Form } from './forms/Form'
-import { SelectField } from './forms/SelectField'
-import { SuggestField } from './forms/SuggestField'
+import InputSelectAnimals from './inputs/InputSelectAnimals'
 import { TextField } from './forms/TextField'
-import { SelectSuggestOption } from './inputs/InputSelectSuggest'
 
 interface BreedingFormProps {
   animals: Animal[]
@@ -182,15 +180,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     [animals],
   )
 
-  const maleOptions = useMemo(
-    () =>
-      males.map((animal) => ({
-        value: animal.id,
-        label: `${animal.animalNumber} - ${animal.type}`,
-      })),
-    [males],
-  )
-
   const getFemaleBreedingId = React.useCallback(
     (femaleId: string): string | null => {
       const record = breedingRecords.find((r) =>
@@ -200,22 +189,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     },
     [breedingRecords],
   )
-
-  const femaleOptions = useMemo<SelectSuggestOption<Animal>[]>(() => {
-    if (!selectedMale) {
-      return []
-    }
-
-    return filteredFemales.map((animal) => {
-      const brId = getFemaleBreedingId(animal.id)
-      return {
-        id: animal.id,
-        label: animal.animalNumber,
-        secondaryLabel: brId ? `Monta: ${brId}` : '',
-        data: animal,
-      }
-    })
-  }, [filteredFemales, getFemaleBreedingId, selectedMale])
 
   const selectedFemales = useMemo(() => {
     return femaleBreedingInfo
@@ -389,14 +362,19 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         </p>
       ) : null}
 
-      <SelectField
-        name="maleId"
+      <InputSelectAnimals
+        animals={males}
+        selectedIds={maleId ? [maleId] : []}
+        onAdd={(id) => {
+          form.setValue('maleId', id, { shouldDirty: true })
+          form.clearErrors('maleId')
+        }}
+        onRemove={() => form.setValue('maleId', '', { shouldDirty: true })}
+        mode="single"
         label="Macho"
+        placeholder="Buscar macho reproductor..."
         disabled={isLoading || isSubmitting}
-        options={maleOptions}
-      >
-        <option value="">Seleccionar macho</option>
-      </SelectField>
+      />
 
       {males.length === 0 ? (
         <p className="text-sm text-gray-600 font-medium">No hay machos reproductores disponibles</p>
@@ -404,25 +382,21 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
       {selectedMale ? (
         <>
-          <SuggestField
-            name="femaleIds"
-            id="female-select"
-            options={femaleOptions}
-            showRemoveButton
-            placeholder={`Buscar hembra ${selectedMale.type} por número...`}
-            emptyMessage={
-              filteredFemales.length === 0
-                ? `No hay hembras ${selectedMale.type} disponibles`
-                : 'No se encontraron hembras'
-            }
-            disabled={!selectedMale || isLoading || isSubmitting}
-            filterFunction={(option, searchValue) =>
-              option.label.toLowerCase().includes(searchValue.toLowerCase()) ||
-              (option.data?.type || '').toLowerCase().includes(searchValue.toLowerCase())
-            }
-            onRemoveOption={(option) => handleRemoveFemale(option.id)}
-            onAddOption={(_option) => {
+          <InputSelectAnimals
+            animals={filteredFemales}
+            selectedIds={femaleIds}
+            onAdd={(id) => {
+              form.setValue('femaleIds', [...femaleIds, id], { shouldDirty: true })
               form.clearErrors('femaleIds')
+            }}
+            onRemove={(id) => handleRemoveFemale(id)}
+            label="Hembras"
+            placeholder={`Buscar hembra ${selectedMale.type} por numero...`}
+            disabled={!selectedMale || isLoading || isSubmitting}
+            showOmitButton
+            secondaryLabel={(animal) => {
+              const brId = getFemaleBreedingId(animal.id)
+              return brId ? `Monta: ${brId}` : undefined
             }}
           />
 
