@@ -138,7 +138,10 @@ export default function AdminAnimals() {
                         #{animal.animalNumber}
                       </div>
                       <div className="text-sm text-gray-500 flex items-center">
-                        <span className={`font-bold ${gender_colors[animal.gender]}`}>{gender_icon[animal.gender]}</span> {animal.gender}
+                        <span className={`font-bold ${gender_colors[animal.gender]}`}>
+                          {gender_icon[animal.gender]}
+                        </span>{' '}
+                        {animal.gender}
                       </div>
                     </div>
                   </div>
@@ -151,7 +154,9 @@ export default function AdminAnimals() {
                   {animal.farmerId}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatWeight(animal.weight) ? `${formatWeight(animal.weight)} kg` : 'No registrado'}
+                  {formatWeight(animal.weight)
+                    ? `${formatWeight(animal.weight)} kg`
+                    : 'No registrado'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {format(animal.createdAt, 'PP', { locale: es })}

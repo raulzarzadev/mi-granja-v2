@@ -42,7 +42,8 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
   record,
   animals,
 }) => {
-  const { updateRecord, removeRecord, resolveRecord, reopenRecord, updateWeightRecord } = useAnimalCRUD()
+  const { updateRecord, removeRecord, resolveRecord, reopenRecord, updateWeightRecord } =
+    useAnimalCRUD()
   const { createReminder } = useReminders()
   const [mode, setMode] = useState<'view' | 'edit'>('view')
   const [form, setForm] = useState<RecordFormState | null>(null)
@@ -115,9 +116,8 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
 
       if (form.type === 'weight') {
         // Para peso, reconstruir el título desde el valor
-        const weightKg = form.weightUnit === 'kg'
-          ? parseFloat(form.weight)
-          : parseFloat(form.weight) * 0.453592
+        const weightKg =
+          form.weightUnit === 'kg' ? parseFloat(form.weight) : parseFloat(form.weight) * 0.453592
         const title = `${parseFloat(form.weight).toFixed(1)} ${form.weightUnit}`
         data = {
           type: 'weight',

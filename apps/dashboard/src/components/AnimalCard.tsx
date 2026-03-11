@@ -78,7 +78,9 @@ export const AnimalDetailRow: React.FC<{
     <div className="w-full flex items-center justify-between gap-2">
       <span className="font-bold text-xl text-nowrap p-0.5">
         #{animal.animalNumber}
-        {animal.name && <span className="ml-1 text-sm font-medium text-gray-500">{animal.name}</span>}
+        {animal.name && (
+          <span className="ml-1 text-sm font-medium text-gray-500">{animal.name}</span>
+        )}
       </span>
       <AnimalBadges animal={animal} />
       <BadgeAnimalStatus status={animal.status || 'activo'} />

@@ -153,7 +153,9 @@ export const useAnimalFilters = () => {
 
   // Opciones disponibles basadas en los animales reales de la granja
   const availableTypes = [...new Set(animals.map((a) => a.type))].sort()
-  const availableBreeds = [...new Set(animals.map((a) => a.breed).filter(Boolean))].sort() as string[]
+  const availableBreeds = [
+    ...new Set(animals.map((a) => a.breed).filter(Boolean)),
+  ].sort() as string[]
   const availableStages = [...new Set(animals.map((a) => a.stage))].sort()
   const availableGenders = [...new Set(animals.map((a) => a.gender))].sort()
 
@@ -367,9 +369,7 @@ export const AnimalsFilters = ({
 
             <select
               value={filters.breed}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, breed: e.target.value }))
-              }
+              onChange={(e) => setFilters((prev) => ({ ...prev, breed: e.target.value }))}
               className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
                 filters.breed !== ''
                   ? 'border-green-500 bg-green-50 text-green-800'

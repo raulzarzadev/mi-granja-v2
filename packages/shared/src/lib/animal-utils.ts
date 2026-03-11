@@ -17,7 +17,10 @@ import { Animal } from '../types/animals'
 export function animalAge(animal: Animal, options: { format: 'months'; endDate?: Date }): number
 
 // Sobrecarga: cuando format es 'short' o 'long' (o no se especifica), retorna string
-export function animalAge(animal: Animal, options?: { format?: 'short' | 'long'; endDate?: Date }): string
+export function animalAge(
+  animal: Animal,
+  options?: { format?: 'short' | 'long'; endDate?: Date },
+): string
 
 // Implementación real
 export function animalAge(

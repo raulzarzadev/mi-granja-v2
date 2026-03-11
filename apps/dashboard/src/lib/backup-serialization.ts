@@ -241,7 +241,8 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     description: 'string',
     dueDate: 'string (ISO 8601)',
     completed: 'boolean',
-    completionByAnimal: 'Record<string, boolean> | undefined (estado por animal: { animalNumber: true/false })',
+    completionByAnimal:
+      'Record<string, boolean> | undefined (estado por animal: { animalNumber: true/false })',
     priority: "'low' | 'medium' | 'high'",
     type: "'medical' | 'breeding' | 'feeding' | 'weight' | 'other'",
     createdAt: 'string (ISO 8601)',

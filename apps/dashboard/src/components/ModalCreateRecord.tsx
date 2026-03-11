@@ -140,7 +140,7 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
 
         // Validar que todos los animales tengan peso
         const missingWeight = selectedAnimalIds.some((id) => {
-          const val = selectedAnimalIds.length === 1 ? formData.weight : (weightMap[id] || '')
+          const val = selectedAnimalIds.length === 1 ? formData.weight : weightMap[id] || ''
           return !val || parseFloat(val) <= 0
         })
 
@@ -152,7 +152,7 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
 
         for (const animalId of selectedAnimalIds) {
           const rawWeight =
-            selectedAnimalIds.length === 1 ? formData.weight : (weightMap[animalId] || '')
+            selectedAnimalIds.length === 1 ? formData.weight : weightMap[animalId] || ''
           const weightGrams =
             unit === 'kg'
               ? Math.round(parseFloat(rawWeight) * 1000)
@@ -195,7 +195,12 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
           dueDate: new Date(y, m - 1, d),
           completed: false,
           priority: 'medium',
-          type: formData.type === 'health' ? 'medical' : formData.type === 'weight' ? 'weight' : 'other',
+          type:
+            formData.type === 'health'
+              ? 'medical'
+              : formData.type === 'weight'
+                ? 'weight'
+                : 'other',
           animalNumber: animalNumbers[0] || '',
           animalNumbers,
         })
@@ -273,7 +278,11 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
                   type="button"
                   onClick={() => {
                     const newCategory =
-                      t === 'note' ? 'general' : t === 'health' ? healthCategories[0] : formData.category
+                      t === 'note'
+                        ? 'general'
+                        : t === 'health'
+                          ? healthCategories[0]
+                          : formData.category
                     setFormData({ ...formData, type: t, category: newCategory })
                   }}
                   className={`flex-1 flex flex-col items-center gap-1 px-3 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
@@ -476,15 +485,15 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
                   <input
                     type="text"
                     value={formData.reminderTitle}
-                    onChange={(e) =>
-                      setFormData({ ...formData, reminderTitle: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, reminderTitle: e.target.value })}
                     placeholder="Ej: Siguiente pesaje, Vacuna de refuerzo..."
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
                 <DateTimeInput
-                  value={formData.reminderDate ? new Date(formData.reminderDate + 'T12:00:00') : null}
+                  value={
+                    formData.reminderDate ? new Date(formData.reminderDate + 'T12:00:00') : null
+                  }
                   onChange={(date) =>
                     setFormData({
                       ...formData,

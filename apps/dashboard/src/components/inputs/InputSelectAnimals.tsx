@@ -64,7 +64,11 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
       selectedIds
         .map((id) => animals.find((a) => a.id === id))
         .filter(Boolean)
-        .sort((a, b) => (a!.animalNumber || '').localeCompare(b!.animalNumber || '', undefined, { numeric: true })) as Animal[],
+        .sort((a, b) =>
+          (a!.animalNumber || '').localeCompare(b!.animalNumber || '', undefined, {
+            numeric: true,
+          }),
+        ) as Animal[],
     [animals, selectedIds],
   )
 
@@ -158,9 +162,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
       </div>
       <div className="text-xs text-gray-400 flex-shrink-0 whitespace-nowrap">
         {animal.breed && <span>{animal.breed}</span>}
-        {animal.birthDate && (
-          <span className="ml-1">{animalAge(animal, { format: 'short' })}</span>
-        )}
+        {animal.birthDate && <span className="ml-1">{animalAge(animal, { format: 'short' })}</span>}
       </div>
     </>
   )
@@ -202,9 +204,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   }, [selectedAnimals, chipsExpanded])
 
   const hiddenCount =
-    visibleChipCount !== null && !chipsExpanded
-      ? selectedAnimals.length - visibleChipCount
-      : 0
+    visibleChipCount !== null && !chipsExpanded ? selectedAnimals.length - visibleChipCount : 0
 
   return (
     <div ref={containerRef}>
@@ -232,7 +232,9 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
               className="inline-flex items-center gap-1 w-28 px-2 py-1 rounded-full text-xs bg-green-50 text-green-800 border border-green-200"
             >
               <span className="flex-shrink-0">{animal_icon[a.type] || '\uD83D\uDC3E'}</span>
-              <span className={`flex-shrink-0 ${a.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}`}>
+              <span
+                className={`flex-shrink-0 ${a.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}`}
+              >
                 {gender_icon[a.gender]}
               </span>
               <span className="font-medium truncate flex-1">#{a.animalNumber}</span>

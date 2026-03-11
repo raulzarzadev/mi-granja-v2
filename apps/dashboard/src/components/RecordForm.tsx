@@ -147,7 +147,9 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
                 />
                 <select
                   value={value.weightUnit}
-                  onChange={(e) => onChange({ ...value, weightUnit: e.target.value as 'kg' | 'lb' })}
+                  onChange={(e) =>
+                    onChange({ ...value, weightUnit: e.target.value as 'kg' | 'lb' })
+                  }
                   className="w-16 border rounded-lg px-1 py-1.5 text-sm"
                 >
                   <option value="kg">kg</option>
@@ -220,15 +222,17 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
 
         {/* Descripcion / Notas */}
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium">
-            {isWeight ? 'Notas' : 'Descripcion'}
-          </label>
+          <label className="block text-sm font-medium">{isWeight ? 'Notas' : 'Descripcion'}</label>
           <textarea
             value={value.description}
             onChange={(e) => onChange({ ...value, description: e.target.value })}
             className="w-full border rounded-lg px-2 py-1.5 text-sm resize-none field-sizing-content"
             rows={2}
-            placeholder={isWeight ? 'Notas sobre el pesaje...' : 'Describe los detalles para agregar contexto...'}
+            placeholder={
+              isWeight
+                ? 'Notas sobre el pesaje...'
+                : 'Describe los detalles para agregar contexto...'
+            }
           />
         </div>
       </div>

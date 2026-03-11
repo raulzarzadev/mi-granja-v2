@@ -43,9 +43,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
     // Incluir weightRecords legacy que no tengan un record correspondiente en records[]
     if (animal.weightRecords) {
       const existingWeightDates = new Set(
-        records
-          .filter((r) => r.type === 'weight')
-          .map((r) => new Date(r.date).getTime()),
+        records.filter((r) => r.type === 'weight').map((r) => new Date(r.date).getTime()),
       )
       animal.weightRecords.forEach((wr) => {
         const wrTime = new Date(wr.date).getTime()
@@ -112,11 +110,16 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'medical': return '🏥'
-      case 'breeding': return '🐣'
-      case 'feeding': return '🌾'
-      case 'weight': return '⚖️'
-      default: return '📝'
+      case 'medical':
+        return '🏥'
+      case 'breeding':
+        return '🐣'
+      case 'feeding':
+        return '🌾'
+      case 'weight':
+        return '⚖️'
+      default:
+        return '📝'
     }
   }
 
@@ -181,9 +184,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-gray-500">
-                        {formatDate(reminder.dueDate)}
-                      </span>
+                      <span className="text-xs text-gray-500">{formatDate(reminder.dueDate)}</span>
                       <span className={`text-xs font-medium ${timeInfo.color}`}>
                         {timeInfo.text}
                       </span>
@@ -226,7 +227,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
         <div className="flex gap-1.5 flex-wrap">
           {filterTypes.map((ft) => {
             const isActive = typeFilter === ft.value
-            const count = ft.value ? (countByType[ft.value] || 0) : allRecords.length
+            const count = ft.value ? countByType[ft.value] || 0 : allRecords.length
             return (
               <button
                 key={ft.value || 'all'}
@@ -279,7 +280,8 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       {completedReminders.length > 0 && (
         <details className="text-sm">
           <summary className="text-gray-400 cursor-pointer hover:text-gray-600">
-            {completedReminders.length} recordatorio{completedReminders.length !== 1 ? 's' : ''} completado{completedReminders.length !== 1 ? 's' : ''}
+            {completedReminders.length} recordatorio{completedReminders.length !== 1 ? 's' : ''}{' '}
+            completado{completedReminders.length !== 1 ? 's' : ''}
           </summary>
           <div className="mt-2 space-y-1">
             {completedReminders.map((r) => (

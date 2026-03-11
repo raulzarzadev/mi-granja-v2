@@ -39,7 +39,11 @@ const ParentRef: React.FC<{
   onSelect: (animal: Animal) => void
 }> = ({ ref_id, idx, onSelect }) => {
   if (!ref_id) {
-    return <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] text-gray-300 border border-dashed border-gray-200">?</span>
+    return (
+      <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] text-gray-300 border border-dashed border-gray-200">
+        ?
+      </span>
+    )
   }
   const animal = lookup(idx, ref_id)
   if (animal) {
@@ -76,7 +80,10 @@ interface SireFamily {
 }
 
 const buildSireFamilies = (animals: Animal[], idx: AnimalIndex): SireFamily[] => {
-  const sireMap = new Map<string, { father?: Animal; rawFatherId?: string; mateMap: Map<string, MateGroup> }>()
+  const sireMap = new Map<
+    string,
+    { father?: Animal; rawFatherId?: string; mateMap: Map<string, MateGroup> }
+  >()
 
   for (const a of animals) {
     if (!a.fatherId && !a.motherId) continue
@@ -119,9 +126,7 @@ const buildAncestryLevels = (
   idx: AnimalIndex,
   maxGen: number,
 ): { ref: string | undefined; animal?: Animal }[][] => {
-  const levels: { ref: string | undefined; animal?: Animal }[][] = [
-    [{ ref: animal.id, animal }],
-  ]
+  const levels: { ref: string | undefined; animal?: Animal }[][] = [[{ ref: animal.id, animal }]]
 
   for (let gen = 0; gen < maxGen; gen++) {
     const prev = levels[gen]
@@ -144,11 +149,7 @@ const buildAncestryLevels = (
 
 // ── Descendant levels ────────────────────────────────────────────────
 
-const buildDescendantLevels = (
-  animal: Animal,
-  animals: Animal[],
-  maxGen: number,
-): Animal[][] => {
+const buildDescendantLevels = (animal: Animal, animals: Animal[], maxGen: number): Animal[][] => {
   const levels: Animal[][] = [[animal]]
   const seen = new Set<string>([animal.id])
 
@@ -158,8 +159,10 @@ const buildDescendantLevels = (
     for (const parent of prev) {
       const children = animals.filter(
         (a) =>
-          (a.motherId === parent.id || a.fatherId === parent.id ||
-           a.motherId === parent.animalNumber || a.fatherId === parent.animalNumber) &&
+          (a.motherId === parent.id ||
+            a.fatherId === parent.id ||
+            a.motherId === parent.animalNumber ||
+            a.fatherId === parent.animalNumber) &&
           !seen.has(a.id),
       )
       for (const child of children) {
@@ -205,11 +208,20 @@ const SireCard: React.FC<{
             fill="currentColor"
             className={`w-4 h-4 text-blue-400 transition-transform ${open ? 'rotate-90' : ''}`}
           >
-            <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clipRule="evenodd" />
+            <path
+              fillRule="evenodd"
+              d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z"
+              clipRule="evenodd"
+            />
           </svg>
           <span className="text-xs font-medium text-blue-600 uppercase">Macho</span>
           {sire.father ? (
-            <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === 'Enter') e.stopPropagation() }}>
+            <span
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.stopPropagation()
+              }}
+            >
               <AnimalTag animal={sire.father} onClick={() => onAnimalClick(sire.father!)} />
             </span>
           ) : (
@@ -217,7 +229,8 @@ const SireCard: React.FC<{
           )}
         </div>
         <span className="text-xs text-gray-500">
-          {sire.totalOffspring} cria{sire.totalOffspring !== 1 ? 's' : ''} · {sire.mates.length} hembra{sire.mates.length !== 1 ? 's' : ''}
+          {sire.totalOffspring} cria{sire.totalOffspring !== 1 ? 's' : ''} · {sire.mates.length}{' '}
+          hembra{sire.mates.length !== 1 ? 's' : ''}
         </span>
       </button>
 
@@ -340,11 +353,17 @@ const GeneticTree: React.FC<GeneticTreeProps> = ({ animals }) => {
                     onClick={() => handleAnimalClick(entry.animal!)}
                   />
                 ) : entry.ref ? (
-                  <span key={`raw-${ei}`} className="inline-flex items-center px-2 py-1 rounded-md text-[10px] text-gray-400 border border-dashed border-gray-200 bg-gray-50">
+                  <span
+                    key={`raw-${ei}`}
+                    className="inline-flex items-center px-2 py-1 rounded-md text-[10px] text-gray-400 border border-dashed border-gray-200 bg-gray-50"
+                  >
                     #{entry.ref}
                   </span>
                 ) : (
-                  <span key={`unk-${ei}`} className="inline-flex items-center px-2 py-1 rounded-md text-[10px] text-gray-300 border border-dashed border-gray-200">
+                  <span
+                    key={`unk-${ei}`}
+                    className="inline-flex items-center px-2 py-1 rounded-md text-[10px] text-gray-300 border border-dashed border-gray-200"
+                  >
                     ?
                   </span>
                 ),
@@ -367,7 +386,12 @@ const GeneticTree: React.FC<GeneticTreeProps> = ({ animals }) => {
             {li > 0 && <VLine />}
             <div className="flex justify-center items-center gap-3 flex-wrap">
               {level.map((a) => (
-                <AnimalTag key={a.id} animal={a} active={a.id === animal.id} onClick={() => handleAnimalClick(a)} />
+                <AnimalTag
+                  key={a.id}
+                  animal={a}
+                  active={a.id === animal.id}
+                  onClick={() => handleAnimalClick(a)}
+                />
               ))}
             </div>
           </React.Fragment>
@@ -410,9 +434,14 @@ const GeneticTree: React.FC<GeneticTreeProps> = ({ animals }) => {
               <button
                 key={v}
                 type="button"
-                onClick={() => { setView(v); setTreeAnimal(null) }}
+                onClick={() => {
+                  setView(v)
+                  setTreeAnimal(null)
+                }}
                 className={`px-3 py-1.5 transition-colors ${
-                  view === v ? 'bg-green-100 text-green-700 font-medium' : 'text-gray-500 hover:bg-gray-100'
+                  view === v
+                    ? 'bg-green-100 text-green-700 font-medium'
+                    : 'text-gray-500 hover:bg-gray-100'
                 }`}
               >
                 {v === 'families' ? 'Familias' : v === 'ancestors' ? 'Ancestros' : 'Descendientes'}
@@ -441,7 +470,9 @@ const GeneticTree: React.FC<GeneticTreeProps> = ({ animals }) => {
               <details>
                 <summary className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-gray-500 uppercase">Sin genealogia</span>
+                    <span className="text-xs font-medium text-gray-500 uppercase">
+                      Sin genealogia
+                    </span>
                   </div>
                   <span className="text-xs text-gray-400">{filteredOrphans.length} animales</span>
                 </summary>
@@ -487,8 +518,17 @@ const GeneticTree: React.FC<GeneticTreeProps> = ({ animals }) => {
                     onClick={() => setTreeAnimal(null)}
                     className="text-xs text-gray-400 hover:text-gray-600"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                      <path fillRule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clipRule="evenodd" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      className="w-4 h-4"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </button>
                   <AnimalTag animal={treeAnimal} showAge />
@@ -500,45 +540,79 @@ const GeneticTree: React.FC<GeneticTreeProps> = ({ animals }) => {
                     className="text-xs border border-gray-300 rounded px-2 py-1"
                   >
                     {[2, 3, 4, 5].map((n) => (
-                      <option key={n} value={n}>{n} generaciones</option>
+                      <option key={n} value={n}>
+                        {n} generaciones
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
 
               <div className="overflow-x-auto py-4">
-                {view === 'ancestors' ? renderAncestry(treeAnimal, maxGen) : renderDescendants(treeAnimal, maxGen)}
+                {view === 'ancestors'
+                  ? renderAncestry(treeAnimal, maxGen)
+                  : renderDescendants(treeAnimal, maxGen)}
               </div>
 
               {/* Quick links */}
               <div className="border-t pt-3 mt-3 flex items-center gap-4 text-xs text-gray-500 flex-wrap">
-                {treeAnimal.motherId && (() => {
-                  const m = lookup(idx, treeAnimal.motherId)
-                  return m ? (
-                    <span>Madre: <button type="button" className="text-green-600 hover:underline font-medium" onClick={() => setTreeAnimal(m)}>#{m.animalNumber}</button></span>
-                  ) : (
-                    <span>Madre: #{treeAnimal.motherId}</span>
-                  )
-                })()}
-                {treeAnimal.fatherId && (() => {
-                  const f = lookup(idx, treeAnimal.fatherId)
-                  return f ? (
-                    <span>Padre: <button type="button" className="text-green-600 hover:underline font-medium" onClick={() => setTreeAnimal(f)}>#{f.animalNumber}</button></span>
-                  ) : (
-                    <span>Padre: #{treeAnimal.fatherId}</span>
-                  )
-                })()}
+                {treeAnimal.motherId &&
+                  (() => {
+                    const m = lookup(idx, treeAnimal.motherId)
+                    return m ? (
+                      <span>
+                        Madre:{' '}
+                        <button
+                          type="button"
+                          className="text-green-600 hover:underline font-medium"
+                          onClick={() => setTreeAnimal(m)}
+                        >
+                          #{m.animalNumber}
+                        </button>
+                      </span>
+                    ) : (
+                      <span>Madre: #{treeAnimal.motherId}</span>
+                    )
+                  })()}
+                {treeAnimal.fatherId &&
+                  (() => {
+                    const f = lookup(idx, treeAnimal.fatherId)
+                    return f ? (
+                      <span>
+                        Padre:{' '}
+                        <button
+                          type="button"
+                          className="text-green-600 hover:underline font-medium"
+                          onClick={() => setTreeAnimal(f)}
+                        >
+                          #{f.animalNumber}
+                        </button>
+                      </span>
+                    ) : (
+                      <span>Padre: #{treeAnimal.fatherId}</span>
+                    )
+                  })()}
                 {(() => {
                   const kids = animals.filter(
-                    (a) => a.motherId === treeAnimal.id || a.fatherId === treeAnimal.id ||
-                           a.motherId === treeAnimal.animalNumber || a.fatherId === treeAnimal.animalNumber,
+                    (a) =>
+                      a.motherId === treeAnimal.id ||
+                      a.fatherId === treeAnimal.id ||
+                      a.motherId === treeAnimal.animalNumber ||
+                      a.fatherId === treeAnimal.animalNumber,
                   )
                   return kids.length > 0 ? (
                     <span>
-                      {kids.length} cria{kids.length !== 1 ? 's' : ''}: {kids.slice(0, 8).map((k, i) => (
+                      {kids.length} cria{kids.length !== 1 ? 's' : ''}:{' '}
+                      {kids.slice(0, 8).map((k, i) => (
                         <React.Fragment key={k.id}>
                           {i > 0 && ', '}
-                          <button type="button" className="text-green-600 hover:underline font-medium" onClick={() => setTreeAnimal(k)}>#{k.animalNumber}</button>
+                          <button
+                            type="button"
+                            className="text-green-600 hover:underline font-medium"
+                            onClick={() => setTreeAnimal(k)}
+                          >
+                            #{k.animalNumber}
+                          </button>
                         </React.Fragment>
                       ))}
                       {kids.length > 8 && ` +${kids.length - 8}`}

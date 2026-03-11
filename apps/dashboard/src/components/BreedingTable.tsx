@@ -53,17 +53,39 @@ function statusColor(s: ReturnType<typeof getBreedingStatus>) {
 const SortIcon = ({ direction }: { direction: SortDirection | null }) => {
   if (!direction) {
     return (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 text-gray-400">
-        <path fillRule="evenodd" d="M10 3a.75.75 0 0 1 .55.24l3.25 3.5a.75.75 0 1 1-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 0 1-1.1-1.02l3.25-3.5A.75.75 0 0 1 10 3Zm-3.76 9.2a.75.75 0 0 1 1.06.04l2.7 2.908 2.7-2.908a.75.75 0 1 1 1.1 1.02l-3.25 3.5a.75.75 0 0 1-1.1 0l-3.25-3.5a.75.75 0 0 1 .04-1.06Z" clipRule="evenodd" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        className="w-3 h-3 text-gray-400"
+      >
+        <path
+          fillRule="evenodd"
+          d="M10 3a.75.75 0 0 1 .55.24l3.25 3.5a.75.75 0 1 1-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 0 1-1.1-1.02l3.25-3.5A.75.75 0 0 1 10 3Zm-3.76 9.2a.75.75 0 0 1 1.06.04l2.7 2.908 2.7-2.908a.75.75 0 1 1 1.1 1.02l-3.25 3.5a.75.75 0 0 1-1.1 0l-3.25-3.5a.75.75 0 0 1 .04-1.06Z"
+          clipRule="evenodd"
+        />
       </svg>
     )
   }
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 text-green-600">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      className="w-3 h-3 text-green-600"
+    >
       {direction === 'asc' ? (
-        <path fillRule="evenodd" d="M9.47 6.47a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 1 1-1.06 1.06L10 8.06l-3.72 3.72a.75.75 0 0 1-1.06-1.06l4.25-4.25Z" clipRule="evenodd" />
+        <path
+          fillRule="evenodd"
+          d="M9.47 6.47a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 1 1-1.06 1.06L10 8.06l-3.72 3.72a.75.75 0 0 1-1.06-1.06l4.25-4.25Z"
+          clipRule="evenodd"
+        />
       ) : (
-        <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+        <path
+          fillRule="evenodd"
+          d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+          clipRule="evenodd"
+        />
       )}
     </svg>
   )
@@ -137,13 +159,17 @@ const BreedingTable: React.FC<BreedingTableProps> = ({ records, animals, onSelec
       let cmp = 0
       switch (sortField) {
         case 'breedingId':
-          cmp = (a.record.breedingId || '').localeCompare(b.record.breedingId || '', 'es', { numeric: true })
+          cmp = (a.record.breedingId || '').localeCompare(b.record.breedingId || '', 'es', {
+            numeric: true,
+          })
           break
         case 'date':
           cmp = (a.record.breedingDate?.getTime() || 0) - (b.record.breedingDate?.getTime() || 0)
           break
         case 'male':
-          cmp = (a.male?.animalNumber || '').localeCompare(b.male?.animalNumber || '', 'es', { numeric: true })
+          cmp = (a.male?.animalNumber || '').localeCompare(b.male?.animalNumber || '', 'es', {
+            numeric: true,
+          })
           break
         case 'females':
           cmp = a.record.femaleBreedingInfo.length - b.record.femaleBreedingInfo.length
@@ -281,14 +307,18 @@ const BreedingTable: React.FC<BreedingTableProps> = ({ records, animals, onSelec
                   <td className="px-2 py-1.5 text-sm whitespace-nowrap">
                     <span className="font-medium text-gray-900">{male?.animalNumber || '?'}</span>
                     {male && (
-                      <span className="ml-1 text-xs text-gray-500">{animals_types_labels[male.type]}</span>
+                      <span className="ml-1 text-xs text-gray-500">
+                        {animals_types_labels[male.type]}
+                      </span>
                     )}
                   </td>
                   <td className="px-2 py-1.5 text-sm text-center text-gray-700">
                     {record.femaleBreedingInfo.length}
                   </td>
                   <td className="px-2 py-1.5 text-sm whitespace-nowrap">
-                    <span className={`inline-flex px-1.5 py-0.5 rounded-full text-xs font-medium ${statusColor(status)}`}>
+                    <span
+                      className={`inline-flex px-1.5 py-0.5 rounded-full text-xs font-medium ${statusColor(status)}`}
+                    >
                       {statusLabel(status)}
                     </span>
                   </td>

@@ -285,7 +285,9 @@ const AnimalsTable = ({
                     {animal.breed || '—'}
                   </td>
                   <td className="px-1 py-1.5 text-sm text-center whitespace-nowrap">
-                    <span className={`font-bold ${gender_colors[animal.gender]}`}>{gender_icon[animal.gender]}</span>
+                    <span className={`font-bold ${gender_colors[animal.gender]}`}>
+                      {gender_icon[animal.gender]}
+                    </span>
                   </td>
                   <td className="px-2 py-1.5 text-sm whitespace-nowrap">
                     <span

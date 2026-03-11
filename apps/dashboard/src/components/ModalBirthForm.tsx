@@ -158,9 +158,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                 )
                 if (!female) {
                   return (
-                    <span className="text-sm text-red-600">
-                      Hembra seleccionada no encontrada.
-                    </span>
+                    <span className="text-sm text-red-600">Hembra seleccionada no encontrada.</span>
                   )
                 }
                 return (
@@ -331,8 +329,12 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                         </label>
                         {(() => {
                           const trimmed = offspring.animalNumber.trim()
-                          const isDuplicateInFarm = trimmed && animals.some((a) => a.animalNumber === trimmed)
-                          const isDuplicateInForm = trimmed && formData.offspring.filter((o) => o.animalNumber.trim() === trimmed).length > 1
+                          const isDuplicateInFarm =
+                            trimmed && animals.some((a) => a.animalNumber === trimmed)
+                          const isDuplicateInForm =
+                            trimmed &&
+                            formData.offspring.filter((o) => o.animalNumber.trim() === trimmed)
+                              .length > 1
                           const hasError = isDuplicateInFarm || isDuplicateInForm
                           return (
                             <>
@@ -351,10 +353,14 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                                 }`}
                               />
                               {isDuplicateInFarm && (
-                                <p className="text-xs text-red-600 mt-0.5">Este número ya existe en la granja</p>
+                                <p className="text-xs text-red-600 mt-0.5">
+                                  Este número ya existe en la granja
+                                </p>
                               )}
                               {isDuplicateInForm && !isDuplicateInFarm && (
-                                <p className="text-xs text-red-600 mt-0.5">Número duplicado entre crías</p>
+                                <p className="text-xs text-red-600 mt-0.5">
+                                  Número duplicado entre crías
+                                </p>
                               )}
                             </>
                           )

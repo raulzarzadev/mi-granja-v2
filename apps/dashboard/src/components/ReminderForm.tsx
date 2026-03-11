@@ -42,7 +42,8 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
 
   // En edicion: resolver animal IDs desde animalNumbers o legacy animalNumber
   const resolveInitialAnimalIds = (): string[] => {
-    const numbers = initialData?.animalNumbers || (initialData?.animalNumber ? [initialData.animalNumber] : [])
+    const numbers =
+      initialData?.animalNumbers || (initialData?.animalNumber ? [initialData.animalNumber] : [])
     return numbers
       .map((num) => animals.find((a) => a.animalNumber === num)?.id)
       .filter(Boolean) as string[]

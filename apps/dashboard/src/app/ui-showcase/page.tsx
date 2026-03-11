@@ -121,9 +121,7 @@ export default function UIShowcasePage() {
               {/* Filtro por genero */}
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <h3 className="font-medium text-gray-900 mb-1">Con filtro</h3>
-                <p className="text-xs text-gray-500 mb-4">
-                  Solo muestra hembras (filterFn)
-                </p>
+                <p className="text-xs text-gray-500 mb-4">Solo muestra hembras (filterFn)</p>
                 <ExampleFiltered />
               </div>
 
