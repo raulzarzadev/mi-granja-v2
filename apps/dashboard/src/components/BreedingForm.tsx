@@ -13,7 +13,6 @@ import ButtonClose from './buttons/ButtonClose'
 import { DateField } from './forms/DateField'
 import { Form } from './forms/Form'
 import InputSelectAnimals from './inputs/InputSelectAnimals'
-import { SelectField } from './forms/SelectField'
 import { TextField } from './forms/TextField'
 
 interface BreedingFormProps {
@@ -179,15 +178,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
           animal.stage === 'reproductor',
       ),
     [animals],
-  )
-
-  const maleOptions = useMemo(
-    () =>
-      males.map((animal) => ({
-        value: animal.id,
-        label: `${animal.animalNumber} - ${animal.type}`,
-      })),
-    [males],
   )
 
   const getFemaleBreedingId = React.useCallback(
@@ -372,14 +362,19 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         </p>
       ) : null}
 
-      <SelectField
-        name="maleId"
+      <InputSelectAnimals
+        animals={males}
+        selectedIds={maleId ? [maleId] : []}
+        onAdd={(id) => {
+          form.setValue('maleId', id, { shouldDirty: true })
+          form.clearErrors('maleId')
+        }}
+        onRemove={() => form.setValue('maleId', '', { shouldDirty: true })}
+        mode="single"
         label="Macho"
+        placeholder="Buscar macho reproductor..."
         disabled={isLoading || isSubmitting}
-        options={maleOptions}
-      >
-        <option value="">Seleccionar macho</option>
-      </SelectField>
+      />
 
       {males.length === 0 ? (
         <p className="text-sm text-gray-600 font-medium">No hay machos reproductores disponibles</p>
