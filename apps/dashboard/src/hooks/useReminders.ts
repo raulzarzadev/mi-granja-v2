@@ -186,8 +186,7 @@ export const useReminders = () => {
 
     // Verificar si todos los animales están completados
     const allNumbers = reminder.animalNumbers || []
-    const allCompleted =
-      allNumbers.length > 0 && allNumbers.every((num) => completionByAnimal[num])
+    const allCompleted = allNumbers.length > 0 && allNumbers.every((num) => completionByAnimal[num])
 
     await updateReminder(id, {
       completionByAnimal,
@@ -211,8 +210,7 @@ export const useReminders = () => {
   // Obtener recordatorios por animal (busca en animalNumbers array o legacy animalNumber)
   const getRemindersByAnimal = (animalNumber: string) => {
     return reminders.filter(
-      (r) =>
-        r.animalNumbers?.includes(animalNumber) || r.animalNumber === animalNumber,
+      (r) => r.animalNumbers?.includes(animalNumber) || r.animalNumber === animalNumber,
     )
   }
 

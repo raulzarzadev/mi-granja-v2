@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useMemo, useState } from 'react'
-import ModalCreateRecord from '@/components/ModalCreateRecord'
+import { useRouter } from 'next/navigation'
 import ModalRecordDetail, { RecordDetailRow } from '@/components/ModalRecordDetail'
 import RecordRow from '@/components/RecordRow'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -29,10 +29,9 @@ const filterTypes: Array<{ value: RecordType | ''; label: string; icon: string }
 ]
 
 const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
+  const router = useRouter()
   const { animals } = useAnimalCRUD()
   const { getRemindersByAnimal, markAnimalCompleted } = useReminders()
-
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [detailRecord, setDetailRecord] = useState<RecordDetailRow | null>(null)
   const [typeFilter, setTypeFilter] = useState<RecordType | ''>('')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
@@ -44,9 +43,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
     // Incluir weightRecords legacy que no tengan un record correspondiente en records[]
     if (animal.weightRecords) {
       const existingWeightDates = new Set(
-        records
-          .filter((r) => r.type === 'weight')
-          .map((r) => new Date(r.date).getTime()),
+        records.filter((r) => r.type === 'weight').map((r) => new Date(r.date).getTime()),
       )
       animal.weightRecords.forEach((wr) => {
         const wrTime = new Date(wr.date).getTime()
@@ -113,11 +110,16 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'medical': return '🏥'
-      case 'breeding': return '🐣'
-      case 'feeding': return '🌾'
-      case 'weight': return '⚖️'
-      default: return '📝'
+      case 'medical':
+        return '🏥'
+      case 'breeding':
+        return '🐣'
+      case 'feeding':
+        return '🌾'
+      case 'weight':
+        return '⚖️'
+      default:
+        return '📝'
     }
   }
 
@@ -140,7 +142,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Registros</h3>
         <button
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={() => router.push(`/registro/nuevo?animalIds=${animal.id}`)}
           className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700"
         >
           + Nuevo registro
@@ -182,9 +184,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-gray-500">
-                        {formatDate(reminder.dueDate)}
-                      </span>
+                      <span className="text-xs text-gray-500">{formatDate(reminder.dueDate)}</span>
                       <span className={`text-xs font-medium ${timeInfo.color}`}>
                         {timeInfo.text}
                       </span>
@@ -227,7 +227,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
         <div className="flex gap-1.5 flex-wrap">
           {filterTypes.map((ft) => {
             const isActive = typeFilter === ft.value
-            const count = ft.value ? (countByType[ft.value] || 0) : allRecords.length
+            const count = ft.value ? countByType[ft.value] || 0 : allRecords.length
             return (
               <button
                 key={ft.value || 'all'}
@@ -280,7 +280,8 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       {completedReminders.length > 0 && (
         <details className="text-sm">
           <summary className="text-gray-400 cursor-pointer hover:text-gray-600">
-            {completedReminders.length} recordatorio{completedReminders.length !== 1 ? 's' : ''} completado{completedReminders.length !== 1 ? 's' : ''}
+            {completedReminders.length} recordatorio{completedReminders.length !== 1 ? 's' : ''}{' '}
+            completado{completedReminders.length !== 1 ? 's' : ''}
           </summary>
           <div className="mt-2 space-y-1">
             {completedReminders.map((r) => (
@@ -296,14 +297,6 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
           </div>
         </details>
       )}
-
-      {/* Modal crear registro - animal pre-seleccionado */}
-      <ModalCreateRecord
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        animals={animals}
-        preSelectedAnimalIds={[animal.id]}
-      />
 
       {/* Modal detalle de registro */}
       <ModalRecordDetail

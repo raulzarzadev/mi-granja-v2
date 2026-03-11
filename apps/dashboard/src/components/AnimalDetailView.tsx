@@ -25,9 +25,7 @@ interface AnimalDetailViewProps {
 /**
  * Vista detallada de un animal individual
  */
-const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
-  animal,
-}) => {
+const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal }) => {
   const { animals: allAnimals, remove: deleteAnimal, markStatus, markFound } = useAnimalCRUD()
 
   const getMother = () => {
@@ -39,7 +37,6 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
     if (!animal.fatherId) return null
     return allAnimals.find((a) => a.id === animal.fatherId || a.animalNumber === animal.fatherId)
   }
-
 
   const tabs = [
     {
@@ -55,12 +52,20 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                   <label className="text-sm font-medium text-gray-500">Edad</label>
                   {animal.status === 'muerto' && animal.statusAt ? (
                     <p className="text-gray-900">
-                      {animalAge(animal, { format: 'long', endDate: new Date(animal.statusAt as any) })}
-                      <span className="ml-1" title="Edad al morir">💀</span>
+                      {animalAge(animal, {
+                        format: 'long',
+                        endDate: new Date(animal.statusAt as any),
+                      })}
+                      <span className="ml-1" title="Edad al morir">
+                        💀
+                      </span>
                     </p>
                   ) : animal.status === 'vendido' && animal.statusAt ? (
                     <p className="text-gray-900">
-                      {animalAge(animal, { format: 'long', endDate: new Date(animal.statusAt as any) })}
+                      {animalAge(animal, {
+                        format: 'long',
+                        endDate: new Date(animal.statusAt as any),
+                      })}
                       <span className="ml-1 text-xs text-gray-400">(al vender)</span>
                     </p>
                   ) : (
@@ -85,8 +90,9 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                       .filter((r) => r.type === 'weight')
                       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
 
-                    const weightFromEntries = [...(animal.weightRecords || [])]
-                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+                    const weightFromEntries = [...(animal.weightRecords || [])].sort(
+                      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+                    )[0]
 
                     // Elegir el más reciente
                     let lastWeight: { kg: number; date: Date } | null = null
@@ -96,15 +102,29 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                       const eDate = new Date(weightFromEntries.date).getTime()
                       if (rDate >= eDate) {
                         const match = weightFromRecords.title.match(/^([\d.]+)/)
-                        if (match) lastWeight = { kg: parseFloat(match[1]), date: new Date(weightFromRecords.date) }
+                        if (match)
+                          lastWeight = {
+                            kg: parseFloat(match[1]),
+                            date: new Date(weightFromRecords.date),
+                          }
                       } else {
-                        lastWeight = { kg: weightFromEntries.weight / 1000, date: new Date(weightFromEntries.date) }
+                        lastWeight = {
+                          kg: weightFromEntries.weight / 1000,
+                          date: new Date(weightFromEntries.date),
+                        }
                       }
                     } else if (weightFromRecords) {
                       const match = weightFromRecords.title.match(/^([\d.]+)/)
-                      if (match) lastWeight = { kg: parseFloat(match[1]), date: new Date(weightFromRecords.date) }
+                      if (match)
+                        lastWeight = {
+                          kg: parseFloat(match[1]),
+                          date: new Date(weightFromRecords.date),
+                        }
                     } else if (weightFromEntries) {
-                      lastWeight = { kg: weightFromEntries.weight / 1000, date: new Date(weightFromEntries.date) }
+                      lastWeight = {
+                        kg: weightFromEntries.weight / 1000,
+                        date: new Date(weightFromEntries.date),
+                      }
                     }
 
                     if (!lastWeight) {

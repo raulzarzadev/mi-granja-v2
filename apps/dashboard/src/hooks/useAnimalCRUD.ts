@@ -587,66 +587,69 @@ export const useAnimalCRUD = () => {
 
   // Buscar animal en Firestore por coincidencia exacta (animalNumber, name o doc ID)
   // Ignora el status — trae cualquier animal de la granja
-  const searchExact = useCallback(async (term: string): Promise<Animal[]> => {
-    if (!currentFarm?.id || !term.trim()) return []
+  const searchExact = useCallback(
+    async (term: string): Promise<Animal[]> => {
+      if (!currentFarm?.id || !term.trim()) return []
 
-    const trimmed = term.trim()
-    const results: Animal[] = []
-    const seenIds = new Set<string>()
+      const trimmed = term.trim()
+      const results: Animal[] = []
+      const seenIds = new Set<string>()
 
-    // 1. Buscar por doc ID directo
-    try {
-      const docSnap = await getDoc(doc(db, 'animals', trimmed))
-      if (docSnap.exists()) {
-        const data = docSnap.data()
-        if (data.farmId === currentFarm.id) {
-          const animal = serializeObj({ id: docSnap.id, ...data } as Animal)
-          results.push(animal)
-          seenIds.add(animal.id)
+      // 1. Buscar por doc ID directo
+      try {
+        const docSnap = await getDoc(doc(db, 'animals', trimmed))
+        if (docSnap.exists()) {
+          const data = docSnap.data()
+          if (data.farmId === currentFarm.id) {
+            const animal = serializeObj({ id: docSnap.id, ...data } as Animal)
+            results.push(animal)
+            seenIds.add(animal.id)
+          }
         }
+      } catch {
+        // ID invalido, ignorar
       }
-    } catch {
-      // ID invalido, ignorar
-    }
 
-    // 2. Buscar por animalNumber exacto
-    try {
-      const q = query(
-        collection(db, 'animals'),
-        where('farmId', '==', currentFarm.id),
-        where('animalNumber', '==', trimmed),
-      )
-      const snap = await getDocs(q)
-      for (const d of snap.docs) {
-        if (!seenIds.has(d.id)) {
-          results.push(serializeObj({ id: d.id, ...d.data() } as Animal))
-          seenIds.add(d.id)
+      // 2. Buscar por animalNumber exacto
+      try {
+        const q = query(
+          collection(db, 'animals'),
+          where('farmId', '==', currentFarm.id),
+          where('animalNumber', '==', trimmed),
+        )
+        const snap = await getDocs(q)
+        for (const d of snap.docs) {
+          if (!seenIds.has(d.id)) {
+            results.push(serializeObj({ id: d.id, ...d.data() } as Animal))
+            seenIds.add(d.id)
+          }
         }
+      } catch (e) {
+        console.error('searchExact animalNumber error:', e)
       }
-    } catch (e) {
-      console.error('searchExact animalNumber error:', e)
-    }
 
-    // 3. Buscar por name exacto
-    try {
-      const q = query(
-        collection(db, 'animals'),
-        where('farmId', '==', currentFarm.id),
-        where('name', '==', trimmed),
-      )
-      const snap = await getDocs(q)
-      for (const d of snap.docs) {
-        if (!seenIds.has(d.id)) {
-          results.push(serializeObj({ id: d.id, ...d.data() } as Animal))
-          seenIds.add(d.id)
+      // 3. Buscar por name exacto
+      try {
+        const q = query(
+          collection(db, 'animals'),
+          where('farmId', '==', currentFarm.id),
+          where('name', '==', trimmed),
+        )
+        const snap = await getDocs(q)
+        for (const d of snap.docs) {
+          if (!seenIds.has(d.id)) {
+            results.push(serializeObj({ id: d.id, ...d.data() } as Animal))
+            seenIds.add(d.id)
+          }
         }
+      } catch (e) {
+        console.error('searchExact name error:', e)
       }
-    } catch (e) {
-      console.error('searchExact name error:', e)
-    }
 
-    return results
-  }, [currentFarm?.id])
+      return results
+    },
+    [currentFarm?.id],
+  )
 
   // Agregar entrada de peso al historial del animal
   const addWeightEntry = async (

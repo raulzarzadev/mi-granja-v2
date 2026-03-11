@@ -92,7 +92,8 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
   }
 
   // Animales asociados
-  const allNumbers = reminder.animalNumbers || (reminder.animalNumber ? [reminder.animalNumber] : [])
+  const allNumbers =
+    reminder.animalNumbers || (reminder.animalNumber ? [reminder.animalNumber] : [])
   const hasMultipleAnimals = allNumbers.length > 1
   const completionMap = reminder.completionByAnimal || {}
   const completedCount = allNumbers.filter((n) => completionMap[n]).length
@@ -163,17 +164,19 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
 
               {expanded && (
                 <div className="mt-2 space-y-1">
                   {animalInfos.map((info) => (
-                    <div
-                      key={info.number}
-                      className="flex items-center gap-2 text-sm"
-                    >
+                    <div key={info.number} className="flex items-center gap-2 text-sm">
                       {onCompleteAnimal && !reminder.completed ? (
                         <input
                           type="checkbox"
@@ -193,9 +196,7 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
                       >
                         {info.number}
                       </span>
-                      {info.type && (
-                        <span className="text-gray-400 text-xs">{info.type}</span>
-                      )}
+                      {info.type && <span className="text-gray-400 text-xs">{info.type}</span>}
                     </div>
                   ))}
                 </div>

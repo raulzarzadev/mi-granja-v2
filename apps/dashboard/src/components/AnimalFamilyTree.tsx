@@ -210,17 +210,14 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
             className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] bg-gray-50 border border-gray-200 text-gray-600"
             style={{ opacity: 0.75 }}
           >
-            <span className="text-xs">{animal_icon[sib.type] || '🐾'}</span>
-            #{sib.animalNumber}
+            <span className="text-xs">{animal_icon[sib.type] || '🐾'}</span>#{sib.animalNumber}
             <span className={sib.gender === 'macho' ? 'text-blue-400' : 'text-pink-400'}>
               {gender_icon[sib.gender]}
             </span>
           </span>
         ))}
         {total > max && (
-          <span className="text-[11px] text-gray-400 self-center">
-            +{total - max} más
-          </span>
+          <span className="text-[11px] text-gray-400 self-center">+{total - max} más</span>
         )}
       </div>
     </div>
@@ -293,14 +290,16 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
         </div>
       )}
 
-
       {/* Descendencia — solo contadores */}
       {(tree.childrenCount > 0 || tree.grandchildrenCount > 0) && (
         <>
           <VLine />
           <div className="flex gap-3">
             {tree.childrenCount > 0 && (
-              <div className="flex-1 border border-gray-200 rounded-lg p-3 text-center" style={{ opacity: 0.85 }}>
+              <div
+                className="flex-1 border border-gray-200 rounded-lg p-3 text-center"
+                style={{ opacity: 0.85 }}
+              >
                 <div className="text-2xl mb-1">👶</div>
                 <div className="text-lg font-bold text-gray-800">{tree.childrenCount}</div>
                 <div className="text-xs text-gray-500">
@@ -309,7 +308,10 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
               </div>
             )}
             {tree.grandchildrenCount > 0 && (
-              <div className="flex-1 border border-dashed border-gray-200 rounded-lg p-3 text-center" style={{ opacity: 0.6 }}>
+              <div
+                className="flex-1 border border-dashed border-gray-200 rounded-lg p-3 text-center"
+                style={{ opacity: 0.6 }}
+              >
                 <div className="text-xl mb-1">👶</div>
                 <div className="text-lg font-bold text-gray-600">{tree.grandchildrenCount}</div>
                 <div className="text-[11px] text-gray-400">
@@ -322,15 +324,17 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
       )}
 
       {/* Sin familia */}
-      {!hasAncestors && tree.childrenCount === 0 && tree.fullCount === 0 && tree.maternalCount === 0 && tree.paternalCount === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          <div className="text-4xl mb-2">🧬</div>
-          <p>No hay información genealógica</p>
-          <p className="text-xs text-gray-400 mt-1">
-            Asigna madre/padre para ver su árbol
-          </p>
-        </div>
-      )}
+      {!hasAncestors &&
+        tree.childrenCount === 0 &&
+        tree.fullCount === 0 &&
+        tree.maternalCount === 0 &&
+        tree.paternalCount === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            <div className="text-4xl mb-2">🧬</div>
+            <p>No hay información genealógica</p>
+            <p className="text-xs text-gray-400 mt-1">Asigna madre/padre para ver su árbol</p>
+          </div>
+        )}
     </div>
   )
 }

@@ -209,7 +209,10 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
       '{ date: ISO 8601, buyer?: string, weight?: number (gramos), price?: number (centavos) } | undefined',
     lostInfo: '{ lostAt: ISO 8601, foundAt?: ISO 8601 } | undefined',
     records:
-      '[ { id, type, category, title, description?, date, severity?, isResolved?, resolvedDate?, treatment?, nextDueDate?, batch?, veterinarian?, cost?, notes?, createdAt, createdBy, updatedAt? } ] | undefined',
+      '[ { id, type, category, title, description?, date, severity?, isResolved?, resolvedDate?, treatment?, nextDueDate?, batch?, veterinarian?, cost?, notes?, appliedToAnimals?: string[], isBulkApplication?: boolean, createdAt, createdBy, updatedAt? } ] | undefined',
+    customWeaningDays: 'number | undefined (override de días de destete recomendados)',
+    adminAction:
+      '{ performedByAdmin: boolean, adminEmail?: string, adminId?: string, originalTimestamp: ISO 8601, impersonationReason?: string } | undefined',
     createdAt: 'string (ISO 8601)',
     updatedAt: 'string (ISO 8601)',
   },
@@ -232,11 +235,14 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     id: 'string',
     farmerId: 'string (ID del usuario)',
     farmId: 'string (ID de la granja)',
-    animalNumber: 'string | undefined (arete del animal)',
+    animalNumber: 'string | undefined (arete del animal, deprecated)',
+    animalNumbers: 'string[] | undefined (aretes de animales asociados)',
     title: 'string',
     description: 'string',
     dueDate: 'string (ISO 8601)',
     completed: 'boolean',
+    completionByAnimal:
+      'Record<string, boolean> | undefined (estado por animal: { animalNumber: true/false })',
     priority: "'low' | 'medium' | 'high'",
     type: "'medical' | 'breeding' | 'feeding' | 'weight' | 'other'",
     createdAt: 'string (ISO 8601)',

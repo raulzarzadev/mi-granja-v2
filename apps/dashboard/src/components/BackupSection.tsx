@@ -90,9 +90,7 @@ const BackupSection: React.FC = () => {
         type: 'restore',
         date: res.createdAt,
         detail: `Desde: ${res.farmName}`,
-        subDetail: res.backupDate
-          ? `Respaldo del ${formatDate(res.backupDate)}`
-          : undefined,
+        subDetail: res.backupDate ? `Respaldo del ${formatDate(res.backupDate)}` : undefined,
       })
     }
   }

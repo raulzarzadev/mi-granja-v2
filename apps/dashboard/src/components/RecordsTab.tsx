@@ -2,9 +2,8 @@
 
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useMemo, useState } from 'react'
-import ModalCreateRecord from '@/components/ModalCreateRecord'
 import ModalRecordDetail from '@/components/ModalRecordDetail'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import {
@@ -53,6 +52,7 @@ const SortIcon: React.FC<{ active: boolean; dir: SortDir }> = ({ active, dir }) 
 
 const RecordsTab: React.FC = () => {
   const { animals } = useAnimalCRUD()
+  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -70,7 +70,6 @@ const RecordsTab: React.FC = () => {
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [detailRecord, setDetailRecord] = useState<TableRow | null>(null)
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   // ─── URL sync ───
   const filterKeys = ['animalId', 'type', 'category', 'from', 'to', 'q', 'app'] as const
@@ -206,7 +205,14 @@ const RecordsTab: React.FC = () => {
         !!r.isBulkApplication ||
         (Array.isArray(r.appliedToAnimals) && r.appliedToAnimals.length > 0)
       if (looksBulk) {
-        const key = [r.type, r.category, dateKey(r.date), r.title, r.batch || '', r.veterinarian || ''].join('|')
+        const key = [
+          r.type,
+          r.category,
+          dateKey(r.date),
+          r.title,
+          r.batch || '',
+          r.veterinarian || '',
+        ].join('|')
         const entry = map.get(key)
         if (!entry) {
           map.set(key, { rep: r, animals: [{ id: r.animalId, number: r.animalNumber }] })
@@ -321,7 +327,8 @@ const RecordsTab: React.FC = () => {
 
   const getAvailableCategories = () => {
     if (filters.type === 'note') return ['general', 'observation', 'other']
-    if (filters.type === 'health') return record_categories.filter((c) => c !== 'general' && c !== 'observation')
+    if (filters.type === 'health')
+      return record_categories.filter((c) => c !== 'general' && c !== 'observation')
     return record_categories
   }
 
@@ -336,7 +343,9 @@ const RecordsTab: React.FC = () => {
     children,
     className = '',
   }) => (
-    <th className={`px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${className}`}>
+    <th
+      className={`px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${className}`}
+    >
       <button
         type="button"
         onClick={() => toggleSort(k)}
@@ -369,7 +378,12 @@ const RecordsTab: React.FC = () => {
               className="p-2 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 transition-colors"
               title="Borrar filtros"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-red-500">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="w-5 h-5 text-red-500"
+              >
                 <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
               </svg>
             </button>
@@ -385,10 +399,17 @@ const RecordsTab: React.FC = () => {
             }`}
             title="Filtros"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
               className={`w-5 h-5 ${filtersOpen || activeFilterCount > 0 ? 'text-green-600' : 'text-gray-500'}`}
             >
-              <path fillRule="evenodd" d="M2.628 1.601C5.028 1.206 7.49 1 10 1s4.973.206 7.372.601a.75.75 0 0 1 .628.74v2.288a2.25 2.25 0 0 1-.659 1.59l-4.682 4.683a2.25 2.25 0 0 0-.659 1.59v3.037c0 .684-.31 1.33-.844 1.757l-1.937 1.55A.75.75 0 0 1 8 18.25v-5.757a2.25 2.25 0 0 0-.659-1.591L2.659 6.22A2.25 2.25 0 0 1 2 4.629V2.34a.75.75 0 0 1 .628-.74Z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M2.628 1.601C5.028 1.206 7.49 1 10 1s4.973.206 7.372.601a.75.75 0 0 1 .628.74v2.288a2.25 2.25 0 0 1-.659 1.59l-4.682 4.683a2.25 2.25 0 0 0-.659 1.59v3.037c0 .684-.31 1.33-.844 1.757l-1.937 1.55A.75.75 0 0 1 8 18.25v-5.757a2.25 2.25 0 0 0-.659-1.591L2.659 6.22A2.25 2.25 0 0 1 2 4.629V2.34a.75.75 0 0 1 .628-.74Z"
+                clipRule="evenodd"
+              />
             </svg>
             {activeFilterCount > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-green-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
@@ -399,11 +420,16 @@ const RecordsTab: React.FC = () => {
 
           {/* Create button */}
           <button
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => router.push('/registro/nuevo')}
             className="p-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
             title="Nuevo Registro"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-5 h-5"
+            >
               <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
             </svg>
           </button>
@@ -418,7 +444,12 @@ const RecordsTab: React.FC = () => {
                   onClick={resetFilters}
                   className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-3.5 h-3.5"
+                  >
                     <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
                   </svg>
                   Limpiar filtros
@@ -456,7 +487,9 @@ const RecordsTab: React.FC = () => {
                   }))
                 }
                 className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.category ? 'border-green-500 bg-green-50 text-green-800' : 'border-gray-300'
+                  filters.category
+                    ? 'border-green-500 bg-green-50 text-green-800'
+                    : 'border-gray-300'
                 }`}
               >
                 <option value="">Categoria: Todas</option>
@@ -472,7 +505,9 @@ const RecordsTab: React.FC = () => {
                 value={filters.animalId}
                 onChange={(e) => setFilters((prev) => ({ ...prev, animalId: e.target.value }))}
                 className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.animalId ? 'border-green-500 bg-green-50 text-green-800' : 'border-gray-300'
+                  filters.animalId
+                    ? 'border-green-500 bg-green-50 text-green-800'
+                    : 'border-gray-300'
                 }`}
               >
                 <option value="">Animal: Todos</option>
@@ -492,7 +527,9 @@ const RecordsTab: React.FC = () => {
                   }))
                 }
                 className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.application ? 'border-green-500 bg-green-50 text-green-800' : 'border-gray-300'
+                  filters.application
+                    ? 'border-green-500 bg-green-50 text-green-800'
+                    : 'border-gray-300'
                 }`}
               >
                 <option value="">Aplicacion: Todas</option>
@@ -506,7 +543,9 @@ const RecordsTab: React.FC = () => {
                 onChange={(e) => setFilters((prev) => ({ ...prev, dateFrom: e.target.value }))}
                 placeholder="Desde"
                 className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.dateFrom ? 'border-green-500 bg-green-50 text-green-800' : 'border-gray-300'
+                  filters.dateFrom
+                    ? 'border-green-500 bg-green-50 text-green-800'
+                    : 'border-gray-300'
                 }`}
               />
 
@@ -734,12 +773,6 @@ const RecordsTab: React.FC = () => {
         isOpen={!!detailRecord}
         onClose={() => setDetailRecord(null)}
         record={detailRecord}
-        animals={animals}
-      />
-
-      <ModalCreateRecord
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
         animals={animals}
       />
     </div>

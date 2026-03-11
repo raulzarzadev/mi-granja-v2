@@ -1,9 +1,11 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Modal } from '@/components/Modal'
+import { useRouter, useSearchParams } from 'next/navigation'
 import AnimalBadges from '@/components/AnimalBadges'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
+import PageShell from '@/components/PageShell'
+import DateTimeInput from '@/components/inputs/DateTimeInput'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useReminders } from '@/hooks/useReminders'
 import { buildRecordFromForm, getTodayLocalDateString } from '@/lib/records'
@@ -18,14 +20,6 @@ import {
   record_type_labels,
 } from '@/types/animals'
 import { RecordFormState } from '@/types/records'
-import DateTimeInput from './inputs/DateTimeInput'
-
-interface ModalCreateRecordProps {
-  isOpen: boolean
-  onClose: () => void
-  animals: Animal[]
-  preSelectedAnimalIds?: string[]
-}
 
 const STEPS = [
   { label: 'Tipo y Fecha', icon: '📋' },
@@ -59,44 +53,37 @@ const healthCategories: RecordCategory[] = record_categories.filter(
   (c) => c !== 'general' && c !== 'observation',
 ) as RecordCategory[]
 
-// ─── Main Component ─────────────────────────────
-const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
-  isOpen,
-  onClose,
-  animals,
-  preSelectedAnimalIds = [],
-}) => {
-  const { addRecord, addBulkRecord, addWeightEntry } = useAnimalCRUD()
+const clinicalCategories: ReadonlyArray<RecordCategory> = [
+  'illness',
+  'injury',
+  'treatment',
+  'surgery',
+]
+
+export default function NuevoRegistroPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { animals, addRecord, addBulkRecord, addWeightEntry } = useAnimalCRUD()
   const { createReminder } = useReminders()
+
+  const preSelectedAnimalIds = searchParams.get('animalIds')?.split(',').filter(Boolean) || []
 
   const [step, setStep] = useState(0)
   const [selectedAnimalIds, setSelectedAnimalIds] = useState<string[]>([])
   const [formData, setFormData] = useState<RecordFormState>(initialFormData)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  // Peso individual por animal (animalId → peso string)
   const [weightMap, setWeightMap] = useState<Record<string, string>>({})
 
-  // Sync pre-selected animals when modal opens
+  // Sync pre-selected animals on mount
   useEffect(() => {
-    if (isOpen && preSelectedAnimalIds.length > 0) {
+    if (preSelectedAnimalIds.length > 0) {
       setSelectedAnimalIds((prev) => {
         const merged = new Set([...preSelectedAnimalIds, ...prev])
         return Array.from(merged)
       })
     }
-  }, [isOpen, preSelectedAnimalIds])
-
-  const resetForm = () => {
-    setStep(0)
-    setSelectedAnimalIds([])
-    setFormData(initialFormData())
-    setWeightMap({})
-  }
-
-  const handleClose = () => {
-    resetForm()
-    onClose()
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleAddAnimal = (animalId: string) => {
     if (animalId && !selectedAnimalIds.includes(animalId)) {
@@ -110,6 +97,7 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
   }
 
   const isBulk = selectedAnimalIds.length > 1
+  const selectedAnimals = animals.filter((a) => selectedAnimalIds.includes(a.id))
 
   const canAdvance = (s: number) => {
     if (s === 0) return !!formData.date && !!formData.type
@@ -138,7 +126,6 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
         const date = new Date(y, m - 1, d)
         const unit = formData.weightUnit
 
-        // Validar que todos los animales tengan peso
         const missingWeight = selectedAnimalIds.some((id) => {
           const val = selectedAnimalIds.length === 1 ? formData.weight : weightMap[id] || ''
           return !val || parseFloat(val) <= 0
@@ -165,7 +152,6 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
           })
         }
       } else {
-        // Nota o salud — flujo original
         if (!formData.title.trim()) {
           alert('El titulo del registro es requerido')
           setIsSubmitting(false)
@@ -184,7 +170,7 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
         }
       }
 
-      // Recordatorio — un solo documento con todos los animales
+      // Recordatorio
       if (formData.createReminder && formData.reminderDate) {
         const [y, m, d] = formData.reminderDate.split('-').map(Number)
         const animalNumbers = selectedAnimals.map((a) => a.animalNumber).filter(Boolean)
@@ -206,7 +192,7 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
         })
       }
 
-      handleClose()
+      router.back()
     } catch (error) {
       console.error('Error al crear registro:', error)
       alert('Error al crear el registro. Intentalo de nuevo.')
@@ -215,13 +201,11 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
     }
   }
 
-  const selectedAnimals = animals.filter((a) => selectedAnimalIds.includes(a.id))
-
   const availableCategories: RecordCategory[] =
     formData.type === 'note' ? noteCategories : healthCategories
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Nuevo Registro">
+    <PageShell title="Nuevo Registro">
       {/* Step indicator */}
       <div className="flex items-center justify-between mb-6">
         {STEPS.map((s, i) => (
@@ -255,7 +239,6 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
       {/* ─── Step 1: Tipo y Fecha ─── */}
       {step === 0 && (
         <div className="space-y-5">
-          {/* Fecha */}
           <DateTimeInput
             value={formData.date ? new Date(formData.date + 'T12:00:00') : null}
             onChange={(date) =>
@@ -268,7 +251,6 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
             type="date"
           />
 
-          {/* Tipo — checkbox style */}
           <div>
             <label className="block text-sm font-medium mb-2">Tipo de registro</label>
             <div className="flex gap-2">
@@ -298,7 +280,6 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
             </div>
           </div>
 
-          {/* Categoría (solo para nota y salud) */}
           {formData.type !== 'weight' && (
             <div>
               <label className="block text-sm font-medium mb-2">Categoria</label>
@@ -376,7 +357,7 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
             </div>
           )}
 
-          {/* Peso — múltiples animales: peso individual por animal */}
+          {/* Peso — múltiples animales */}
           {formData.type === 'weight' && selectedAnimalIds.length > 1 && (
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -578,25 +559,18 @@ const ModalCreateRecord: React.FC<ModalCreateRecordProps> = ({
         )}
         <button
           type="button"
-          onClick={handleClose}
+          onClick={() => router.back()}
           disabled={isSubmitting}
           className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors text-sm"
         >
           Cancelar
         </button>
       </div>
-    </Modal>
+    </PageShell>
   )
 }
 
 // ─── Health Details Sub-section ─────────────────────────────
-const clinicalCategories: ReadonlyArray<RecordCategory> = [
-  'illness',
-  'injury',
-  'treatment',
-  'surgery',
-]
-
 const HealthDetailsSection: React.FC<{
   value: RecordFormState
   onChange: (next: RecordFormState) => void
@@ -708,5 +682,3 @@ const HealthDetailsSection: React.FC<{
     </div>
   )
 }
-
-export default ModalCreateRecord

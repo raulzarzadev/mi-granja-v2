@@ -80,7 +80,8 @@ const WeaningRemindersCard: React.FC = () => {
 
   const renderListItem = (item: WeaningItem, variant: 'red' | 'yellow') => {
     const borderColor = variant === 'red' ? 'border-red-100' : 'border-yellow-100'
-    const bgColor = variant === 'red' ? 'bg-red-50 hover:bg-red-100' : 'bg-yellow-50 hover:bg-yellow-100'
+    const bgColor =
+      variant === 'red' ? 'bg-red-50 hover:bg-red-100' : 'bg-yellow-50 hover:bg-yellow-100'
     const textColor = variant === 'red' ? 'text-red-700' : 'text-yellow-700'
 
     return (

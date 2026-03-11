@@ -25,7 +25,11 @@ const AnimalBadges: React.FC<{ animal: Animal }> = ({ animal }) => {
       <span className={`font-bold ${gender_colors[animal.gender]}`} title={animal.gender}>
         {gender_icon[animal.gender]}
       </span>
-      {age && <span className="text-xs text-gray-500" title="Edad">{age}</span>}
+      {age && (
+        <span className="text-xs text-gray-500" title="Edad">
+          {age}
+        </span>
+      )}
       <span title={animal.stage}>{animal_stage_icons[animal.stage]}</span>
     </span>
   )
