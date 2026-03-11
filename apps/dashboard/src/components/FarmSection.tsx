@@ -11,6 +11,7 @@ import { formatDate, toDate } from '@/lib/dates'
 import { FarmCollaborator } from '@/types/collaborators'
 import { FARM_AREA_TYPES, FarmInvitation } from '@/types/farm'
 import AreaCard from './AreaCard'
+import BackupSection from './BackupSection'
 import MigrationBanner from './billing/MigrationBanner'
 import CollaboratorCard from './CollaboratorCard'
 import FarmSwitcherBar from './FarmSwitcherBar'
@@ -18,16 +19,9 @@ import ModalCreateArea from './ModalCreateArea'
 import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditCollaborator from './ModalEditCollaborator'
 import ModalInviteCollaborator from './ModalInviteCollaborator'
-import BackupSection from './BackupSection'
 
 const FarmSection: React.FC = () => {
-  const {
-    farms,
-    currentFarm,
-    isLoading: farmsLoading,
-    switchFarm,
-    loadAndSwitchFarm,
-  } = useFarmCRUD()
+  const { farms, currentFarm, isLoading: farmsLoading, loadAndSwitchFarm } = useFarmCRUD()
 
   const { areas, isLoading: areasLoading, getAreaStats } = useFarmAreasCRUD()
 

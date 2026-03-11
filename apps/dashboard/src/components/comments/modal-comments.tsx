@@ -47,7 +47,7 @@ const isUrgent = (urgency?: Urgency) => urgency === 'medium' || urgency === 'hig
 
 interface CommentsProps {
   comments?: Comment[]
-  onAddComment?: (input: NewCommentInput) => Promise<Comment | void> | Comment | void
+  onAddComment?: (input: NewCommentInput) => Promise<Comment | undefined> | Comment | undefined
   title?: string
   handleUrgencyChange: (commentId: string, newLevel: Urgency) => void
   emptyStateText?: string

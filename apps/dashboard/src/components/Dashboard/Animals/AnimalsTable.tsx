@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Modal } from '@/components/Modal'
 import AnimalDetailView from '@/components/AnimalDetailView'
+import { Modal } from '@/components/Modal'
 import { animalAge, formatWeight } from '@/lib/animal-utils'
 import {
   Animal,

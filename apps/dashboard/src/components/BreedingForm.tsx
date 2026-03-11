@@ -12,8 +12,8 @@ import { BreedingRecord } from '@/types/breedings'
 import ButtonClose from './buttons/ButtonClose'
 import { DateField } from './forms/DateField'
 import { Form } from './forms/Form'
-import InputSelectAnimals from './inputs/InputSelectAnimals'
 import { TextField } from './forms/TextField'
+import InputSelectAnimals from './inputs/InputSelectAnimals'
 
 interface BreedingFormProps {
   animals: Animal[]

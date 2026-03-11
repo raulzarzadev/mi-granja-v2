@@ -1,7 +1,6 @@
 'use client'
 
 import {
-  Timestamp,
   arrayUnion,
   collection,
   doc,
@@ -9,6 +8,7 @@ import {
   getDocs,
   query,
   setDoc,
+  Timestamp,
   updateDoc,
   where,
   writeBatch,
@@ -16,15 +16,15 @@ import {
 import { useCallback, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
-import { db } from '@/lib/firebase'
 import {
   BACKUP_TYPE_DESCRIPTIONS,
   BackupFile,
   deserializeFromBackup,
   serializeForBackup,
-  validateBackupFile,
   ValidationResult,
+  validateBackupFile,
 } from '@/lib/backup-serialization'
+import { db } from '@/lib/firebase'
 
 export interface BackupProgress {
   phase: string

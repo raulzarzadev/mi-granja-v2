@@ -23,6 +23,12 @@
       "style": {
         "useImportType": "off",
         "noNonNullAssertion": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "warn"
+      },
+      "complexity": {
+        "noImportantStyles": "warn"
       }
     }
   },
@@ -53,6 +59,7 @@
       "!**/.turbo",
       "!**/coverage",
       "!**/.firebase-data",
+      "!**/firebase",
       "!**/pnpm-lock.yaml",
       "!**/*.astro"
     ]

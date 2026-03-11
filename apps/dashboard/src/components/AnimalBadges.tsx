@@ -1,3 +1,4 @@
+import { differenceInCalendarDays } from 'date-fns'
 import React from 'react'
 import {
   Animal,
@@ -6,7 +7,6 @@ import {
   gender_colors,
   gender_icon,
 } from '@/types/animals'
-import { differenceInCalendarDays } from 'date-fns'
 
 const ageLabel = (animal: Animal) => {
   if (!animal.birthDate) return null

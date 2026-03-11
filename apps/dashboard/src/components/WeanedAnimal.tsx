@@ -35,7 +35,7 @@ export const WeanedAnimal = ({ animal }: WeanedAnimalProps) => {
   // Verificar si el animal necesita destete (edad y estado)
   const needWeaning = animal.stage === 'cria'
   if (!needWeaning) {
-    return <></>
+    return null
   }
 
   if (daysUntilWean < -10) {

@@ -299,7 +299,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
               <select
                 id="totalOffspring"
                 value={formData.totalOffspring}
-                onChange={(e) => handleOffspringCountChange(parseInt(e.target.value))}
+                onChange={(e) => handleOffspringCountChange(parseInt(e.target.value, 10))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (

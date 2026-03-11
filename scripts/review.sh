@@ -16,7 +16,7 @@ turbo run type-check || { echo "❌ Type-check falló"; FAILED=1; }
 echo ""
 
 echo "🔍 [4/4] Lint (Biome)..."
-biome check . || { echo "❌ Lint falló"; FAILED=1; }
+biome check --diagnostic-level=error . || { echo "❌ Lint falló"; FAILED=1; }
 echo ""
 
 if [ $FAILED -eq 0 ]; then

@@ -42,7 +42,7 @@ describe('ID Consistency Integration', () => {
       const prefix = type === 'cabra' ? 'C' : 'V'
       const existing = existingNumbers
         .filter((num) => num.startsWith(prefix))
-        .map((num) => parseInt(num.slice(1)))
+        .map((num) => parseInt(num.slice(1), 10))
         .sort((a, b) => b - a)
 
       const nextNumber = existing.length > 0 ? existing[0] + 1 : 1

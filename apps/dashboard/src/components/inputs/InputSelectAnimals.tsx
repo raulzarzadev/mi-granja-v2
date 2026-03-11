@@ -74,7 +74,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
 
   // Lista unificada: seleccionados (con marca) + disponibles
   const dropdownItems = useMemo(() => {
-    let pool = filterFn ? animals.filter(filterFn) : animals
+    const pool = filterFn ? animals.filter(filterFn) : animals
     if (!query.trim()) {
       return pool.slice(0, 30)
     }
@@ -186,7 +186,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
 
     // Medir: buscar el primer chip que empieza en la 3ra fila
     const firstTop = (chips[0] as HTMLElement).offsetTop
-    let rowStarts = [firstTop]
+    const rowStarts = [firstTop]
     let cutoff = chips.length
 
     for (let i = 1; i < chips.length; i++) {

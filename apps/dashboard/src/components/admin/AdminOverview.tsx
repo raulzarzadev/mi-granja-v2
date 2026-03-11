@@ -1,6 +1,5 @@
 'use client'
 
-import React from 'react'
 import AdminQuickActions from './AdminQuickActions'
 import AdminRecentActivity from './AdminRecentActivity'
 import AdminStatsCards from './AdminStatsCards'

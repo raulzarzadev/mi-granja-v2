@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ModalAnimalForm from '@/components/ModalAnimalForm'
 import { setAnimals } from '@/features/animals/animalsSlice'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'

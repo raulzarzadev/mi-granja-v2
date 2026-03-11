@@ -10,7 +10,7 @@ export const useFarmPermissions = () => {
   const { user } = useSelector((s: RootState) => s.auth)
   const { currentFarm } = useSelector((s: RootState) => s.farm)
   const { myFarms } = useSelector((s: RootState) => s.farm)
-  const billingStatus = useSelector((s: RootState) => s.billing.status)
+  const _billingStatus = useSelector((s: RootState) => s.billing.status)
   const { collaborators } = useFarmMembers(currentFarm?.id)
 
   // Cuando no hay suscripcion activa, solo la primera granja propia tiene acceso completo

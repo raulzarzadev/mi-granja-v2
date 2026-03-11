@@ -2,7 +2,6 @@
 
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import React from 'react'
 import { useAdminStats } from '@/hooks/admin/useAdminStats'
 
 export default function AdminRecentActivity() {

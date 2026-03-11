@@ -10,5 +10,5 @@ export type BreedingActionHandlers = {
   onAddComment?: (
     record: BreedingRecord,
     comment: NewCommentInput,
-  ) => Promise<Comment | void> | Comment | void
+  ) => Promise<Comment | undefined> | Comment | undefined
 }

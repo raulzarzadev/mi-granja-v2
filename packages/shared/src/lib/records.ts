@@ -39,7 +39,7 @@ export function buildRecordFromForm(form: RecordFormState): RecordPayload {
     if (fields.veterinarian?.trim()) base.veterinarian = fields.veterinarian.trim()
     if (fields.cost) {
       const n = parseFloat(fields.cost)
-      if (!isNaN(n)) base.cost = n
+      if (!Number.isNaN(n)) base.cost = n
     }
   }
 

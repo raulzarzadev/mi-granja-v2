@@ -1,7 +1,7 @@
 'use client'
 
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { db } from '@/lib/firebase'
 import { User } from '@/types'
 

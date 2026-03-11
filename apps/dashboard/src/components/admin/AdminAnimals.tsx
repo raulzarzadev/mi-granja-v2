@@ -3,9 +3,9 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import React from 'react'
-import { formatWeight } from '@/lib/animal-utils'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAdminAnimals } from '@/hooks/admin/useAdminAnimals'
+import { formatWeight } from '@/lib/animal-utils'
 import {
   AnimalStatus,
   animal_icon,

@@ -1,18 +1,12 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import React, { useMemo, useState } from 'react'
 import ModalRecordDetail, { RecordDetailRow } from '@/components/ModalRecordDetail'
 import RecordRow from '@/components/RecordRow'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useReminders } from '@/hooks/useReminders'
-import {
-  Animal,
-  AnimalRecord,
-  RecordType,
-  record_type_icons,
-  record_type_labels,
-} from '@/types/animals'
+import { Animal, AnimalRecord, RecordType } from '@/types/animals'
 
 interface Props {
   animal: Animal

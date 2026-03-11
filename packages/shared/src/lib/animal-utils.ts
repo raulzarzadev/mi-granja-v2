@@ -79,8 +79,6 @@ export function animalAge(
       } else {
         return `${days}d`
       }
-
-    case 'long':
     default:
       if (years > 0) {
         const yearText = `${years} año${years !== 1 ? 's' : ''}`

@@ -27,32 +27,32 @@ body {
 
 /* Configuración global para placeholders más visibles */
 ::placeholder {
-  color: rgb(75 85 99) !important; /* gray-600 - más oscuro para mejor visibilidad */
-  opacity: 1 !important; /* Firefox */
+  color: rgb(75 85 99); /* gray-600 - más oscuro para mejor visibilidad */
+  opacity: 1; /* Firefox */
 }
 
 ::-webkit-input-placeholder {
   /* Edge/WebKit */
-  color: rgb(75 85 99) !important;
-  opacity: 1 !important;
+  color: rgb(75 85 99);
+  opacity: 1;
 }
 
 ::-moz-placeholder {
   /* Firefox 19+ */
-  color: rgb(75 85 99) !important;
-  opacity: 1 !important;
+  color: rgb(75 85 99);
+  opacity: 1;
 }
 
 :-ms-input-placeholder {
   /* IE 10+ */
-  color: rgb(75 85 99) !important;
-  opacity: 1 !important;
+  color: rgb(75 85 99);
+  opacity: 1;
 }
 
 :-moz-placeholder {
   /* Firefox 18- */
-  color: rgb(75 85 99) !important;
-  opacity: 1 !important;
+  color: rgb(75 85 99);
+  opacity: 1;
 }
 
 /* Configuración global para opciones placeholder de selects más visibles */
@@ -64,7 +64,7 @@ select {
 select:invalid,
 select[value=""],
 select:not([value]) {
-  color: rgb(75 85 99) !important; /* gray-600 para placeholder */
+  color: rgb(75 85 99); /* gray-600 para placeholder */
 }
 
 /* Opciones placeholder específicas */
@@ -87,35 +87,35 @@ input[type="url"],
 input[type="date"],
 textarea,
 select {
-  color: rgb(17 24 39) !important; /* gray-900 - texto oscuro */
+  color: rgb(17 24 39); /* gray-900 - texto oscuro */
 }
 
 /* Configuración global para mejorar visibilidad de todos los textos */
 .text-gray-500 {
-  color: rgb(75 85 99) !important; /* gray-600 en lugar de gray-500 */
+  color: rgb(75 85 99); /* gray-600 en lugar de gray-500 */
 }
 
 .text-gray-600 {
-  color: rgb(55 65 81) !important; /* gray-700 en lugar de gray-600 */
+  color: rgb(55 65 81); /* gray-700 en lugar de gray-600 */
 }
 
 .text-gray-700 {
-  color: rgb(17 24 39) !important; /* gray-900 en lugar de gray-700 */
+  color: rgb(17 24 39); /* gray-900 en lugar de gray-700 */
 }
 
 .text-gray-800 {
-  color: rgb(17 24 39) !important; /* gray-900 en lugar de gray-800 */
+  color: rgb(17 24 39); /* gray-900 en lugar de gray-800 */
 }
 
 /* Asegurar que los labels sean bien visibles */
 label {
-  color: rgb(17 24 39) !important; /* gray-900 */
-  font-weight: 500 !important;
+  color: rgb(17 24 39); /* gray-900 */
+  font-weight: 500;
 }
 
 /* Mejorar visibilidad de texto en botones */
 button {
-  font-weight: 500 !important;
+  font-weight: 500;
 }
 
 /* Mejorar contraste de texto en divs */
@@ -125,10 +125,10 @@ div {
 
 /* Mejorar visibilidad de texto en spans */
 span {
-  color: inherit !important;
+  color: inherit;
 }
 
 /* Asegurar que el texto de párrafos sea visible */
 p {
-  color: rgb(17 24 39) !important;
+  color: rgb(17 24 39);
 }

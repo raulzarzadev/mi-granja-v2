@@ -5,15 +5,9 @@ import AnimalFamilyTree from '@/components/AnimalFamilyTree'
 import AnimalRecordsSection from '@/components/AnimalRecordsSection'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { animalAge, formatWeight } from '@/lib/animal-utils'
+import { animalAge } from '@/lib/animal-utils'
 import { formatDate } from '@/lib/dates'
-import {
-  Animal,
-  AnimalType,
-  animal_icon,
-  animal_status_colors,
-  animal_status_labels,
-} from '@/types/animals'
+import { Animal } from '@/types/animals'
 import { AnimalDetailRow } from './AnimalCard'
 import ButtonConfirm from './buttons/ButtonConfirm'
 import ModalEditAnimal from './ModalEditAnimal'

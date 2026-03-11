@@ -1,8 +1,8 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import React from 'react'
 import { useSelector } from 'react-redux'
-import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import { RootState } from '@/features/store'
 

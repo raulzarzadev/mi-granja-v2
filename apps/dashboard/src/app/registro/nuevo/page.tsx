@@ -1,16 +1,15 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import React, { useEffect, useState } from 'react'
 import AnimalBadges from '@/components/AnimalBadges'
+import DateTimeInput from '@/components/inputs/DateTimeInput'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
 import PageShell from '@/components/PageShell'
-import DateTimeInput from '@/components/inputs/DateTimeInput'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useReminders } from '@/hooks/useReminders'
 import { buildRecordFromForm, getTodayLocalDateString } from '@/lib/records'
 import {
-  Animal,
   AnimalRecord,
   RecordCategory,
   record_categories,
@@ -240,7 +239,7 @@ export default function NuevoRegistroPage() {
       {step === 0 && (
         <div className="space-y-5">
           <DateTimeInput
-            value={formData.date ? new Date(formData.date + 'T12:00:00') : null}
+            value={formData.date ? new Date(`${formData.date}T12:00:00`) : null}
             onChange={(date) =>
               setFormData({
                 ...formData,
@@ -473,7 +472,7 @@ export default function NuevoRegistroPage() {
                 </div>
                 <DateTimeInput
                   value={
-                    formData.reminderDate ? new Date(formData.reminderDate + 'T12:00:00') : null
+                    formData.reminderDate ? new Date(`${formData.reminderDate}T12:00:00`) : null
                   }
                   onChange={(date) =>
                     setFormData({
@@ -612,7 +611,7 @@ const HealthDetailsSection: React.FC<{
             {value.isResolved && (
               <div>
                 <DateTimeInput
-                  value={value.resolvedDate ? new Date(value.resolvedDate + 'T12:00:00') : null}
+                  value={value.resolvedDate ? new Date(`${value.resolvedDate}T12:00:00`) : null}
                   onChange={(date) =>
                     onChange({
                       ...value,
@@ -637,7 +636,7 @@ const HealthDetailsSection: React.FC<{
         )}
         <div>
           <DateTimeInput
-            value={value.nextDueDate ? new Date(value.nextDueDate + 'T12:00:00') : null}
+            value={value.nextDueDate ? new Date(`${value.nextDueDate}T12:00:00`) : null}
             onChange={(date) =>
               onChange({
                 ...value,

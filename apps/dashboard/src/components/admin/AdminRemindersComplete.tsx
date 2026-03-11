@@ -2,7 +2,6 @@
 
 import { addDays, format, isAfter, isBefore } from 'date-fns'
 import { es } from 'date-fns/locale'
-import React from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAdminReminders } from '@/hooks/admin/useAdminReminders'
 

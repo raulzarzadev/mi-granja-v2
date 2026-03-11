@@ -569,7 +569,7 @@ export const useAnimalCRUD = () => {
             const dueDate = new Date(record.nextDueDate)
             if (dueDate <= cutoffDate) {
               const daysUntilDue = Math.ceil(
-                (dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
+                (dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
               )
               upcoming.push({
                 animal,

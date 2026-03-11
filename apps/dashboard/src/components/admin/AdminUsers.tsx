@@ -2,9 +2,9 @@
 
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import React, { useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import { useAdminUsers, type AdminUser } from '@/hooks/admin/useAdminUsers'
+import { type AdminUser, useAdminUsers } from '@/hooks/admin/useAdminUsers'
 import { auth } from '@/lib/firebase'
 import AdminUserActions from './AdminUserActions'
 
@@ -277,7 +277,7 @@ export default function AdminUsers() {
                     type="number"
                     min={0}
                     value={placesInput}
-                    onChange={(e) => setPlacesInput(parseInt(e.target.value) || 0)}
+                    onChange={(e) => setPlacesInput(parseInt(e.target.value, 10) || 0)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                   />
                   <p className="text-xs text-gray-500 mt-1">

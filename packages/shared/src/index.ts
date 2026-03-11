@@ -9,6 +9,7 @@ export * from './lib/dateUtils'
 export * from './lib/records'
 export * from './lib/serializeObj'
 export * from './types/animals'
+export * from './types/billing'
 export * from './types/breedings'
 export * from './types/collaborators'
 export * from './types/comment'
@@ -22,5 +23,4 @@ export type {
   User,
   WeightRecord,
 } from './types/index'
-export * from './types/billing'
 export * from './types/records'

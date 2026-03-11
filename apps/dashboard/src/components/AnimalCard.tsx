@@ -1,8 +1,8 @@
 'use client'
 
 import React from 'react'
-import { formatWeight } from '@/lib/animal-utils'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { formatWeight } from '@/lib/animal-utils'
 import { Animal } from '@/types/animals'
 import AdminActionIndicator from './AdminActionIndicator'
 import AnimalBadges from './AnimalBadges'

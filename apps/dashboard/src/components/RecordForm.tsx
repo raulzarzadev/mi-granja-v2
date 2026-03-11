@@ -3,12 +3,12 @@
 import React, { useMemo, useState } from 'react'
 import {
   AnimalRecord,
+  RecordType,
   record_categories,
   record_category_icons,
   record_category_labels,
   record_type_icons,
   record_type_labels,
-  RecordType,
 } from '@/types/animals'
 import { RecordFormState } from '@/types/records'
 import DateTimeInput from './inputs/DateTimeInput'
@@ -46,7 +46,7 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
 
   const isClinicalCategory = clinicalCategories.includes(value.category)
   const isWeight = value.type === 'weight'
-  const isBirth = value.type === 'birth'
+  const _isBirth = value.type === 'birth'
   const isNoteOrHealth = value.type === 'note' || value.type === 'health'
 
   // Auto-expand health details if any health field has a value (editing mode)
@@ -131,33 +131,29 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
 
         {/* Peso — solo para tipo weight */}
         {isWeight && (
-          <>
-            <div>
-              <label className="block text-sm font-medium">Peso *</label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={value.weight}
-                  onChange={(e) => onChange({ ...value, weight: e.target.value })}
-                  className="flex-1 border rounded-lg px-2 py-1.5 text-sm"
-                  placeholder="Ej: 32.5"
-                  required
-                />
-                <select
-                  value={value.weightUnit}
-                  onChange={(e) =>
-                    onChange({ ...value, weightUnit: e.target.value as 'kg' | 'lb' })
-                  }
-                  className="w-16 border rounded-lg px-1 py-1.5 text-sm"
-                >
-                  <option value="kg">kg</option>
-                  <option value="lb">lb</option>
-                </select>
-              </div>
+          <div>
+            <label className="block text-sm font-medium">Peso *</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                value={value.weight}
+                onChange={(e) => onChange({ ...value, weight: e.target.value })}
+                className="flex-1 border rounded-lg px-2 py-1.5 text-sm"
+                placeholder="Ej: 32.5"
+                required
+              />
+              <select
+                value={value.weightUnit}
+                onChange={(e) => onChange({ ...value, weightUnit: e.target.value as 'kg' | 'lb' })}
+                className="w-16 border rounded-lg px-1 py-1.5 text-sm"
+              >
+                <option value="kg">kg</option>
+                <option value="lb">lb</option>
+              </select>
             </div>
-          </>
+          </div>
         )}
 
         {/* Titulo — para nota/salud/parto */}

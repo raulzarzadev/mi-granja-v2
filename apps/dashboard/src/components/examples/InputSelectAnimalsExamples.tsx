@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
 import { Animal } from '@/types/animals'
 

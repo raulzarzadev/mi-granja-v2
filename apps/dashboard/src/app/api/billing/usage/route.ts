@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAuthError, verifyBillingAuth } from '@/lib/billing-auth'
 import { getAdminFirestore } from '@/lib/firebase-admin'
-import { computeUsedPlaces, type BillingUsage } from '@/types/billing'
+import { type BillingUsage, computeUsedPlaces } from '@/types/billing'
 
 export async function GET(request: NextRequest) {
   try {

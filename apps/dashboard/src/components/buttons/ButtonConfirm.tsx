@@ -16,7 +16,7 @@ export default function ButtonConfirm({
   closeLabel?: string
   confirmText?: string
   confirmLabel?: string
-  onConfirm?: () => void | Promise<unknown>
+  onConfirm?: () => undefined | Promise<unknown>
   openProps?: ButtonProps
   confirmProps?: ButtonProps
 }) {

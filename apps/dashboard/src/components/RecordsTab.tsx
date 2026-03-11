@@ -12,7 +12,6 @@ import {
   record_category_colors,
   record_category_icons,
   record_category_labels,
-  record_severity_labels,
   record_type_icons,
   record_type_labels,
   record_types,
