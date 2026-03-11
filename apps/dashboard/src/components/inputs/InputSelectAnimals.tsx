@@ -60,7 +60,11 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   const selectedAnimals = useMemo(
-    () => selectedIds.map((id) => animals.find((a) => a.id === id)).filter(Boolean) as Animal[],
+    () =>
+      selectedIds
+        .map((id) => animals.find((a) => a.id === id))
+        .filter(Boolean)
+        .sort((a, b) => (a!.animalNumber || '').localeCompare(b!.animalNumber || '', undefined, { numeric: true })) as Animal[],
     [animals, selectedIds],
   )
 
@@ -225,18 +229,18 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
           {selectedAnimals.map((a) => (
             <span
               key={a.id}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-50 text-green-800 border border-green-200"
+              className="inline-flex items-center gap-1 w-28 px-2 py-1 rounded-full text-xs bg-green-50 text-green-800 border border-green-200"
             >
-              <span>{animal_icon[a.type] || '\uD83D\uDC3E'}</span>
-              <span className={a.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}>
+              <span className="flex-shrink-0">{animal_icon[a.type] || '\uD83D\uDC3E'}</span>
+              <span className={`flex-shrink-0 ${a.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}`}>
                 {gender_icon[a.gender]}
               </span>
-              <span className="font-medium">#{a.animalNumber}</span>
+              <span className="font-medium truncate flex-1">#{a.animalNumber}</span>
               {!fixedIds.includes(a.id) && (
                 <button
                   type="button"
                   onClick={() => onRemove(a.id)}
-                  className="ml-0.5 text-green-500 hover:text-red-500 font-bold leading-none"
+                  className="flex-shrink-0 text-green-500 hover:text-red-500 font-bold leading-none"
                   title="Quitar"
                 >
                   ×
