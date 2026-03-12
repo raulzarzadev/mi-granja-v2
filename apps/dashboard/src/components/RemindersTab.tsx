@@ -115,17 +115,9 @@ const RemindersTab: React.FC = () => {
       badgeCount: pendingReminders.length,
       content: (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-gray-700">
-              Pendientes ({pendingReminders.length})
-            </h3>
-            <Link
-              href="/recordatorio/nuevo"
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-            >
-              Nuevo Recordatorio
-            </Link>
-          </div>
+          <h3 className="text-sm font-medium text-gray-700">
+            Pendientes ({pendingReminders.length})
+          </h3>
           {renderReminderGrid(pendingReminders)}
 
           {completedReminders.length > 0 && (
@@ -159,7 +151,19 @@ const RemindersTab: React.FC = () => {
     },
   ]
 
-  return <Tabs tabs={tabs} tabsId="reminders-tabs" />
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Link
+          href="/recordatorio/nuevo"
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+        >
+          Nuevo Recordatorio
+        </Link>
+      </div>
+      <Tabs tabs={tabs} tabsId="reminders-tabs" />
+    </div>
+  )
 }
 
 export default RemindersTab
