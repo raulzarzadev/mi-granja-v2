@@ -339,9 +339,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                       }}
                       onMouseEnter={() => setHighlightIndex(index)}
                       className={`w-full px-3 py-2 flex items-center gap-3 transition-colors text-left border-b border-gray-100 last:border-b-0 cursor-pointer ${
-                        isHighlighted || isFirstMatch
-                          ? 'bg-green-50'
-                          : 'hover:bg-gray-50'
+                        isHighlighted || isFirstMatch ? 'bg-green-50' : 'hover:bg-gray-50'
                       }`}
                     >
                       {renderOption ? renderOption(animal, false) : defaultRenderOption(animal)}

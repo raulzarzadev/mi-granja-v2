@@ -25,17 +25,20 @@ export function emailTemplate({
   secondaryCtaUrl?: string
   footer?: string
 }): string {
-  const ctaButton = ctaText && ctaUrl
-    ? `<a href="${ctaUrl}" style="display:inline-block;background:#16a34a;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;margin-right:8px;">${ctaText}</a>`
-    : ''
+  const ctaButton =
+    ctaText && ctaUrl
+      ? `<a href="${ctaUrl}" style="display:inline-block;background:#16a34a;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;margin-right:8px;">${ctaText}</a>`
+      : ''
 
-  const secondaryButton = secondaryCtaText && secondaryCtaUrl
-    ? `<a href="${secondaryCtaUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;">${secondaryCtaText}</a>`
-    : ''
+  const secondaryButton =
+    secondaryCtaText && secondaryCtaUrl
+      ? `<a href="${secondaryCtaUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;">${secondaryCtaText}</a>`
+      : ''
 
-  const buttons = (ctaButton || secondaryButton)
-    ? `<div style="margin:28px 0 24px 0;text-align:center;">${ctaButton}${secondaryButton}</div>`
-    : ''
+  const buttons =
+    ctaButton || secondaryButton
+      ? `<div style="margin:28px 0 24px 0;text-align:center;">${ctaButton}${secondaryButton}</div>`
+      : ''
 
   const footerHtml = footer
     ? `<p style="font-size:12px;color:#9ca3af;margin:8px 0 0 0;">${footer}</p>`

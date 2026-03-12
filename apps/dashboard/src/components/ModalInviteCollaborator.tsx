@@ -72,7 +72,9 @@ const ModalInviteCollaborator: React.FC<ModalInviteCollaboratorProps> = ({
       closeModal()
     } catch (err) {
       console.error('Error inviting collaborator:', err)
-      setError(err instanceof Error ? err.message : 'Error al enviar la invitacion. Revisa la consola.')
+      setError(
+        err instanceof Error ? err.message : 'Error al enviar la invitacion. Revisa la consola.',
+      )
     } finally {
       setIsLoading(false)
     }

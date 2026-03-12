@@ -82,7 +82,9 @@ const defaultDefaults: BulkDefaults = {
 }
 
 interface BulkAnimalFormProps {
-  onCreateOne: (animal: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>) => Promise<void>
+  onCreateOne: (
+    animal: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>,
+  ) => Promise<void>
   onDone: () => void
   onCancel: () => void
   isLoading: boolean

@@ -55,12 +55,7 @@ export default function NuevoAnimalPage() {
   const handleCreateOne = async (
     animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>,
   ) => {
-    const record = makeCreationRecord(
-      user!.id,
-      animalData.animalNumber,
-      'masivo',
-      animalData.batch,
-    )
+    const record = makeCreationRecord(user!.id, animalData.animalNumber, 'masivo', animalData.batch)
     await createAnimal({ ...animalData, records: [record] })
   }
 

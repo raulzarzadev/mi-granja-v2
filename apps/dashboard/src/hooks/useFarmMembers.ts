@@ -454,7 +454,8 @@ export const useFarmMembers = (farmId?: string) => {
           ctaUrl: acceptUrl,
           secondaryCtaText: 'Rechazar',
           secondaryCtaUrl: rejectUrl,
-          footer: 'Si los botones no funcionan, copia y pega estos enlaces en tu navegador:<br/>' +
+          footer:
+            'Si los botones no funcionan, copia y pega estos enlaces en tu navegador:<br/>' +
             `<span style="word-break:break-all;">Aceptar: ${acceptUrl}</span><br/>` +
             `<span style="word-break:break-all;">Rechazar: ${rejectUrl}</span>`,
         }),

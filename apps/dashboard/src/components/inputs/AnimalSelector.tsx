@@ -176,7 +176,11 @@ const AnimalSelector: React.FC<AnimalSelectorProps> = ({
               {/* Indicacion de Enter */}
               {query.trim() && filtered.length > 0 && (
                 <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
-                  Presiona <kbd className="px-1 py-0.5 bg-white border border-gray-300 rounded text-[10px] font-mono">Enter</kbd> para agregar el primero
+                  Presiona{' '}
+                  <kbd className="px-1 py-0.5 bg-white border border-gray-300 rounded text-[10px] font-mono">
+                    Enter
+                  </kbd>{' '}
+                  para agregar el primero
                 </div>
               )}
 

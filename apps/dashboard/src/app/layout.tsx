@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
+import { OfflineBanner } from '@/components/OfflineBanner'
 import { ServiceWorkerRegistrar } from '@/components/ServiceWorkerRegistrar'
 import { Providers } from './providers'
 
@@ -96,6 +97,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <ServiceWorkerRegistrar />
+        <OfflineBanner />
         <Providers>{children}</Providers>
       </body>
     </html>

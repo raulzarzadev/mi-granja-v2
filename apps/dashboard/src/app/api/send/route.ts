@@ -85,7 +85,11 @@ export async function POST(request: NextRequest) {
       ...(emailData.cc ? { cc: toBrevoRecipients(emailData.cc) } : {}),
       ...(emailData.bcc ? { bcc: toBrevoRecipients(emailData.bcc) } : {}),
       ...(emailData.reply_to
-        ? { replyTo: { email: Array.isArray(emailData.reply_to) ? emailData.reply_to[0] : emailData.reply_to } }
+        ? {
+            replyTo: {
+              email: Array.isArray(emailData.reply_to) ? emailData.reply_to[0] : emailData.reply_to,
+            },
+          }
         : {}),
       ...(emailData.tags ? { tags: emailData.tags.map((t) => t.value) } : {}),
     }
