@@ -332,13 +332,10 @@ const Dashboard: React.FC = () => {
                     </button>
                   )
                 })}
-                <span className="group/tip relative cursor-help">
-                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-gray-500 text-[10px] font-bold">
-                    ?
-                  </span>
-                  <span className="hidden group-hover/tip:block absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-[10px] rounded whitespace-nowrap z-10">
-                    Toca un icono para filtrar por especie
-                  </span>
+                <span className="text-xs text-gray-500 ml-1 whitespace-nowrap">
+                  {filters.type
+                    ? animals_types_labels[filters.type as AnimalType] || filters.type
+                    : 'Todos'}
                 </span>
               </div>
             )}
