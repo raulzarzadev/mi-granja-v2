@@ -14,6 +14,7 @@ import { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useReminders } from '@/hooks/useReminders'
+import { AnimalType, animal_icon, animals_types_labels } from '@/types/animals'
 import ModalAnimalDetails from '../ModalAnimalDetails'
 import ModalBulkHealthAction from '../ModalBulkHealthAction'
 import RecordsTab from '../RecordsTab'
@@ -288,11 +289,43 @@ const Dashboard: React.FC = () => {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-        {/* Titulo de la granja siempre visible */}
+        {/* Titulo de la granja + filtro global por tipo */}
         {currentFarm && (
           <div className="flex items-center gap-3 mb-3">
             <FarmAvatar name={currentFarm.name} photoURL={currentFarm.photoURL} size="md" />
             <h1 className="text-lg font-semibold text-gray-900">{currentFarm.name}</h1>
+
+            {availableTypes.length > 1 && (
+              <div className="flex items-center gap-1 ml-auto">
+                {availableTypes.map((t) => {
+                  const typeKey = t as AnimalType
+                  const isActive = filters.type === '' || filters.type === t
+                  const hasFilter = filters.type !== ''
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          type: prev.type === t ? '' : (t as AnimalType),
+                        }))
+                      }
+                      className={`text-2xl transition-all ${
+                        isActive && hasFilter
+                          ? 'scale-110'
+                          : !isActive
+                            ? 'opacity-30 grayscale'
+                            : ''
+                      }`}
+                      title={animals_types_labels[typeKey] || t}
+                    >
+                      {animal_icon[typeKey] || '🐾'}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 
