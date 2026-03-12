@@ -296,7 +296,18 @@ const Dashboard: React.FC = () => {
             <h1 className="text-lg font-semibold text-gray-900">{currentFarm.name}</h1>
 
             {availableTypes.length > 1 && (
-              <div className="flex items-center gap-2 group relative">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFilters((prev) => ({ ...prev, type: '' }))}
+                  className={`px-3 h-11 rounded-full text-xs font-medium transition-all duration-200 ${
+                    filters.type === ''
+                      ? 'bg-green-100 ring-2 ring-green-500 text-green-800'
+                      : 'bg-gray-100 text-gray-500 hover:bg-green-50 hover:text-green-700'
+                  }`}
+                >
+                  Todos
+                </button>
                 {availableTypes.map((t) => {
                   const typeKey = t as AnimalType
                   const isSelected = filters.type === t
@@ -332,11 +343,6 @@ const Dashboard: React.FC = () => {
                     </button>
                   )
                 })}
-                <span className="text-xs text-gray-500 ml-1 whitespace-nowrap">
-                  {filters.type
-                    ? animals_types_labels[filters.type as AnimalType] || filters.type
-                    : 'Todos'}
-                </span>
               </div>
             )}
           </div>
