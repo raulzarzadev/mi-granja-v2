@@ -58,6 +58,7 @@ export interface Animal {
   gender: AnimalGender
   motherId?: string
   fatherId?: string
+  batch?: string // Lote al que pertenece el animal
   notes?: string
   createdAt: Date
   updatedAt: Date
@@ -300,6 +301,13 @@ export const animal_status_labels: Record<AnimalStatus, string> = {
   muerto: 'Muerto',
   vendido: 'Vendido',
   perdido: 'Perdido',
+}
+
+export const animal_status_icons: Record<AnimalStatus, string> = {
+  activo: '✅',
+  muerto: '💀',
+  vendido: '💲',
+  perdido: '❓',
 }
 
 export const animal_status_colors: Record<AnimalStatus, string> = {

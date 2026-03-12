@@ -78,6 +78,7 @@ const schema = z
       ),
     motherId: z.string().optional(),
     fatherId: z.string().optional(),
+    batch: z.string().optional(),
     notes: z.string().optional(),
     status: z.enum([...animal_statuses, ...breeding_animal_status] as const).default('activo'),
   })
@@ -112,8 +113,10 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       gender: initialData?.gender ?? animals_genders[0],
       weight:
         typeof initialData?.weight === 'number'
-          ? initialData.weight.toString()
-          : (initialData?.weight?.toString() ?? ''),
+          ? (initialData.weight / 1000).toString()
+          : initialData?.weight
+            ? (Number(initialData.weight) / 1000).toString()
+            : '',
       age:
         typeof initialData?.age === 'number'
           ? initialData.age.toString()
@@ -128,6 +131,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
           : '',
       motherId: initialData?.motherId ?? '',
       fatherId: initialData?.fatherId ?? '',
+      batch: initialData?.batch ?? '',
       notes: initialData?.notes ?? '',
       status: initialData?.status ?? 'activo',
     }
@@ -164,12 +168,13 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       gender: values.gender,
       breed: values.breed?.trim() ?? '',
       status: values.status as Animal['status'],
-      ...(values.weight ? { weight: Number(values.weight) } : {}),
+      ...(values.weight ? { weight: Math.round(Number(values.weight) * 1000) } : {}),
       ...(values.age ? { age: Number(values.age) } : {}),
       ...(values.birthDate ? { birthDate: values.birthDate } : {}),
       ...(values.customWeaningDays ? { customWeaningDays: Number(values.customWeaningDays) } : {}),
       ...(values.motherId?.trim() ? { motherId: values.motherId.trim() } : {}),
       ...(values.fatherId?.trim() ? { fatherId: values.fatherId.trim() } : {}),
+      ...(values.batch?.trim() ? { batch: values.batch.trim() } : {}),
       ...(values.notes?.trim() ? { notes: values.notes.trim() } : {}),
     }
 
@@ -259,10 +264,10 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
         <TextField
           name="weight"
           type="number"
-          label="Peso (gramos)"
+          label="Peso (kg)"
           placeholder="0"
           min="0"
-          step="1"
+          step="0.1"
           disabled={isLoading}
         />
 
@@ -328,6 +333,13 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
         <TextField name="motherId" label="ID Madre" placeholder="Opcional" disabled={isLoading} />
         <TextField name="fatherId" label="ID Padre" placeholder="Opcional" disabled={isLoading} />
       </div>
+
+      <TextField
+        name="batch"
+        label="Lote"
+        placeholder="Ej: L001, Lote-Marzo-2026"
+        disabled={isLoading}
+      />
 
       <TextField
         name="notes"

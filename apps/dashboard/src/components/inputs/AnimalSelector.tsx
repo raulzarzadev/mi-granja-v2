@@ -88,6 +88,15 @@ const AnimalSelector: React.FC<AnimalSelectorProps> = ({
     }
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (filtered.length > 0) {
+        handleSelect(filtered[0].id)
+      }
+    }
+  }
+
   return (
     <div ref={containerRef}>
       {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
@@ -132,9 +141,15 @@ const AnimalSelector: React.FC<AnimalSelectorProps> = ({
               setIsOpen(true)
             }}
             onFocus={() => setIsOpen(true)}
+            onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
           />
+          {mode === 'multi' && !isOpen && selectedIds.length === 0 && (
+            <p className="text-xs text-gray-400 mt-1">
+              Escribe un numero o nombre y presiona Enter para agregar.
+            </p>
+          )}
 
           {/* Dropdown */}
           {isOpen && (
@@ -158,13 +173,24 @@ const AnimalSelector: React.FC<AnimalSelectorProps> = ({
                 </button>
               </div>
 
+              {/* Indicacion de Enter */}
+              {query.trim() && filtered.length > 0 && (
+                <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
+                  Presiona <kbd className="px-1 py-0.5 bg-white border border-gray-300 rounded text-[10px] font-mono">Enter</kbd> para agregar el primero
+                </div>
+              )}
+
               {filtered.length > 0 ? (
-                filtered.map((animal) => (
+                filtered.map((animal, idx) => (
                   <button
                     key={animal.id}
                     type="button"
                     onClick={() => handleSelect(animal.id)}
-                    className="w-full px-3 py-2 flex items-center gap-3 hover:bg-green-50 transition-colors text-left border-b border-gray-50 last:border-b-0"
+                    className={`w-full px-3 py-2 flex items-center gap-3 transition-colors text-left border-b border-gray-50 last:border-b-0 ${
+                      query.trim() && idx === 0
+                        ? 'bg-green-50 ring-1 ring-inset ring-green-200'
+                        : 'hover:bg-green-50'
+                    }`}
                   >
                     <AnimalBadges animal={animal} />
                     <div className="min-w-0 flex-1">

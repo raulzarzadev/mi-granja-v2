@@ -3,8 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import AnimalBadges from '@/components/AnimalBadges'
 import ButtonClose from '@/components/buttons/ButtonClose'
-import { animalAge } from '@/lib/animal-utils'
-import { Animal, animal_icon, gender_icon } from '@/types/animals'
+import { Animal } from '@/types/animals'
 
 export interface InputSelectAnimalsProps {
   /** Lista completa de animales disponibles */
@@ -72,9 +71,12 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     [animals, selectedIds],
   )
 
-  // Lista unificada: seleccionados (con marca) + disponibles
+  // Lista del dropdown: excluye animales ya seleccionados
   const dropdownItems = useMemo(() => {
-    const pool = filterFn ? animals.filter(filterFn) : animals
+    let pool = filterFn ? animals.filter(filterFn) : [...animals]
+    // Ocultar los ya seleccionados
+    const selectedSet = new Set(selectedIds)
+    pool = pool.filter((a) => !selectedSet.has(a.id))
     if (!query.trim()) {
       return pool.slice(0, 30)
     }
@@ -88,7 +90,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
           (a.breed || '').toLowerCase().includes(q),
       )
       .slice(0, 30)
-  }, [animals, query, filterFn])
+  }, [animals, selectedIds, query, filterFn])
 
   // Close on outside click
   useEffect(() => {
@@ -134,14 +136,8 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     } else if (e.key === 'Enter') {
       e.preventDefault()
       if (highlightIndex >= 0 && highlightIndex < dropdownItems.length) {
-        const item = dropdownItems[highlightIndex]
-        const isSelected = selectedIds.includes(item.id)
-        if (isSelected) {
-          if (!fixedIds.includes(item.id)) onRemove(item.id)
-        } else {
-          handleSelect(item.id)
-        }
-      } else if (dropdownItems.length === 1 && !selectedIds.includes(dropdownItems[0].id)) {
+        handleSelect(dropdownItems[highlightIndex].id)
+      } else if (dropdownItems.length > 0) {
         handleSelect(dropdownItems[0].id)
       }
     } else if (e.key === 'Escape') {
@@ -154,15 +150,13 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     <>
       <AnimalBadges animal={animal} />
       <div className="min-w-0 flex-1 truncate">
-        <span className="font-semibold text-sm text-gray-900">#{animal.animalNumber}</span>
-        {animal.name && <span className="text-sm text-gray-500 ml-1.5">{animal.name}</span>}
+        {animal.name && <span className="text-sm text-gray-500">{animal.name}</span>}
         {secondaryLabel?.(animal) && (
           <span className="text-xs text-gray-400 ml-1.5">({secondaryLabel(animal)})</span>
         )}
       </div>
       <div className="text-xs text-gray-400 flex-shrink-0 whitespace-nowrap">
         {animal.breed && <span>{animal.breed}</span>}
-        {animal.birthDate && <span className="ml-1">{animalAge(animal, { format: 'short' })}</span>}
       </div>
     </>
   )
@@ -229,20 +223,14 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
           {selectedAnimals.map((a) => (
             <span
               key={a.id}
-              className="inline-flex items-center gap-1 w-28 px-2 py-1 rounded-full text-xs bg-green-50 text-green-800 border border-green-200"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-50 text-green-800 border border-green-200"
             >
-              <span className="flex-shrink-0">{animal_icon[a.type] || '\uD83D\uDC3E'}</span>
-              <span
-                className={`flex-shrink-0 ${a.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}`}
-              >
-                {gender_icon[a.gender]}
-              </span>
-              <span className="font-medium truncate flex-1">#{a.animalNumber}</span>
+              <AnimalBadges animal={a} ageFormat="rounded" />
               {!fixedIds.includes(a.id) && (
                 <button
                   type="button"
                   onClick={() => onRemove(a.id)}
-                  className="flex-shrink-0 text-green-500 hover:text-red-500 font-bold leading-none"
+                  className="shrink-0 text-green-500 hover:text-red-500 font-bold leading-none"
                   title="Quitar"
                 >
                   ×
@@ -296,16 +284,20 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
             disabled={disabled}
             className={`w-full border rounded-lg px-3 py-2 text-sm transition-colors ${
               isOpen
-                ? 'ring-2 ring-green-500 border-green-500'
-                : 'border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500'
+                ? 'ring-1 ring-green-400 border-green-400'
+                : 'border-gray-300 focus:ring-1 focus:ring-green-400 focus:border-green-400'
             } disabled:bg-gray-100 disabled:cursor-not-allowed`}
           />
-
+          {mode === 'multi' && !isOpen && selectedIds.length === 0 && (
+            <p className="text-xs text-gray-400 mt-1">
+              Escribe un numero o nombre y presiona Enter para agregar.
+            </p>
+          )}
           {/* Dropdown */}
           {isOpen && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-lg shadow-lg max-h-60 overflow-y-auto">
               {/* Cerrar selector */}
-              <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100 px-3 py-1.5 flex justify-end">
+              <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-3 py-1.5 flex justify-end">
                 <ButtonClose
                   showTitle="Cerrar selector"
                   title="Cerrar"
@@ -317,11 +309,21 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                 />
               </div>
 
+              {/* Indicacion de Enter */}
+              {query.trim() && dropdownItems.length > 0 && (
+                <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
+                  Presiona{' '}
+                  <kbd className="px-1 py-0.5 bg-white border border-gray-300 rounded text-[10px] font-mono">
+                    Enter
+                  </kbd>{' '}
+                  para agregar el primero
+                </div>
+              )}
+
               {dropdownItems.length > 0 ? (
                 dropdownItems.map((animal, index) => {
                   const isHighlighted = highlightIndex === index
-                  const isSelected = selectedIds.includes(animal.id)
-                  const isFixed = fixedIds.includes(animal.id)
+                  const isFirstMatch = query.trim() && index === 0 && highlightIndex === -1
 
                   return (
                     <div
@@ -333,38 +335,16 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                       aria-selected={isHighlighted}
                       onMouseDown={(e) => {
                         e.preventDefault()
-                        if (isSelected) {
-                          if (!isFixed) onRemove(animal.id)
-                        } else {
-                          handleSelect(animal.id)
-                        }
+                        handleSelect(animal.id)
                       }}
                       onMouseEnter={() => setHighlightIndex(index)}
-                      className={`w-full px-3 py-2 flex items-center gap-3 transition-colors text-left border-b border-gray-50 last:border-b-0 cursor-pointer ${
-                        isSelected
-                          ? isHighlighted
-                            ? 'bg-green-200'
-                            : 'bg-green-50'
-                          : isHighlighted
-                            ? 'bg-green-100'
-                            : 'hover:bg-green-50'
+                      className={`w-full px-3 py-2 flex items-center gap-3 transition-colors text-left border-b border-gray-100 last:border-b-0 cursor-pointer ${
+                        isHighlighted || isFirstMatch
+                          ? 'bg-green-50'
+                          : 'hover:bg-gray-50'
                       }`}
                     >
-                      {renderOption
-                        ? renderOption(animal, isSelected)
-                        : defaultRenderOption(animal)}
-                      {isSelected && !isFixed && (
-                        <ButtonClose
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            e.preventDefault()
-                            onRemove(animal.id)
-                          }}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          showTitle="Omitir"
-                          title="Omitir animal"
-                        />
-                      )}
+                      {renderOption ? renderOption(animal, false) : defaultRenderOption(animal)}
                     </div>
                   )
                 })
