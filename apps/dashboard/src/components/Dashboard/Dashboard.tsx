@@ -296,7 +296,7 @@ const Dashboard: React.FC = () => {
             <h1 className="text-lg font-semibold text-gray-900">{currentFarm.name}</h1>
 
             {availableTypes.length > 1 && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 group relative">
                 {availableTypes.map((t) => {
                   const typeKey = t as AnimalType
                   const isSelected = filters.type === t
@@ -330,6 +330,9 @@ const Dashboard: React.FC = () => {
                     </button>
                   )
                 })}
+                <span className="hidden group-hover:block absolute -bottom-6 left-0 text-[10px] text-gray-400 whitespace-nowrap">
+                  Toca un icono para filtrar por especie
+                </span>
               </div>
             )}
           </div>
