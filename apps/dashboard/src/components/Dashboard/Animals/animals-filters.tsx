@@ -31,7 +31,7 @@ export interface AnimalFilters {
 // Filtros iniciales por defecto
 export const initialAnimalFilters: AnimalFilters = {
   status: 'activo',
-  type: 'oveja',
+  type: '',
   breed: '',
   stage: '',
   gender: '',
