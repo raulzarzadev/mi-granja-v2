@@ -296,11 +296,12 @@ const Dashboard: React.FC = () => {
             <h1 className="text-lg font-semibold text-gray-900">{currentFarm.name}</h1>
 
             {availableTypes.length > 1 && (
-              <div className="flex items-center gap-1 ml-auto">
+              <div className="flex items-center gap-2 ml-auto">
                 {availableTypes.map((t) => {
                   const typeKey = t as AnimalType
-                  const isActive = filters.type === '' || filters.type === t
+                  const isSelected = filters.type === t
                   const hasFilter = filters.type !== ''
+                  const count = animals.filter((a) => a.type === t).length
                   return (
                     <button
                       key={t}
@@ -311,16 +312,21 @@ const Dashboard: React.FC = () => {
                           type: prev.type === t ? '' : (t as AnimalType),
                         }))
                       }
-                      className={`text-2xl transition-all ${
-                        isActive && hasFilter
-                          ? 'scale-110'
-                          : !isActive
-                            ? 'opacity-30 grayscale'
-                            : ''
+                      className={`relative flex items-center justify-center w-11 h-11 rounded-full text-xl transition-all duration-200 ${
+                        isSelected
+                          ? 'bg-green-100 ring-2 ring-green-500 shadow-sm scale-110'
+                          : hasFilter
+                            ? 'bg-gray-100 opacity-40 grayscale hover:opacity-70 hover:grayscale-0'
+                            : 'bg-gray-100 hover:bg-green-50 hover:ring-1 hover:ring-green-300'
                       }`}
-                      title={animals_types_labels[typeKey] || t}
+                      title={`${animals_types_labels[typeKey] || t} (${count})`}
                     >
                       {animal_icon[typeKey] || '🐾'}
+                      {isSelected && (
+                        <span className="absolute -bottom-1 -right-1 bg-green-600 text-white text-[9px] font-bold min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center">
+                          {count}
+                        </span>
+                      )}
                     </button>
                   )
                 })}
