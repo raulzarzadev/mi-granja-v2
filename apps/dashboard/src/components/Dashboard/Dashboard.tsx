@@ -301,7 +301,9 @@ const Dashboard: React.FC = () => {
                   const typeKey = t as AnimalType
                   const isSelected = filters.type === t
                   const hasFilter = filters.type !== ''
-                  const count = animals.filter((a) => a.type === t).length
+                  const count = animals.filter(
+                    (a) => a.type === t && (a.status ?? 'activo') === filters.status,
+                  ).length
                   return (
                     <button
                       key={t}
