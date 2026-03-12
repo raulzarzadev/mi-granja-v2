@@ -109,7 +109,7 @@ Admins can impersonate users via `/api/admin/impersonate`. All impersonated acti
 - All client components must have `'use client'` directive
 - Date handling: use `DateTimeInput` component and utilities from `lib/dateUtils.ts` — never use raw `new Date()` for user input (timezone issues documented in `MEJORAS_FECHAS.md`)
 - Firebase config loaded from `NEXT_PUBLIC_FIREBASE_CONFIG` env var (JSON string)
-- Email service uses Resend via `/api/send` route
+- Email service uses Brevo via `/api/send` route
 - When adding new shared types or utilities, add them to `packages/shared/` and create re-export proxies in the dashboard if needed
 
 ## Business Model & Roadmap
@@ -164,6 +164,6 @@ The current Firestore model (`Farm`, `User`, `FarmCollaborator`) has **no billin
 
 ## Environment Variables
 
-Required in `apps/dashboard/.env.local`: `NEXT_PUBLIC_FIREBASE_CONFIG`, `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`, `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`
+Required in `apps/dashboard/.env.local`: `NEXT_PUBLIC_FIREBASE_CONFIG`, `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`, `BREVO_API_KEY`, `NEXT_PUBLIC_APP_URL`
 
 Future env vars for billing: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `CONEKTA_API_KEY` (when integrated)

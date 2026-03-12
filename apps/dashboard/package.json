@@ -18,6 +18,7 @@
     "test:e2e:dev": "cypress open"
   },
   "dependencies": {
+    "@getbrevo/brevo": "^5.0.1",
     "@hookform/resolvers": "^3.9.0",
     "@mi-granja/shared": "workspace:*",
     "@reduxjs/toolkit": "^2.8.2",
@@ -33,7 +34,6 @@
     "react-server-dom-parcel": "^19.2.4",
     "react-server-dom-turbopack": "^19.2.4",
     "react-server-dom-webpack": "^19.2.4",
-    "resend": "^6.9.2",
     "zod": "^3.23.8"
   },
   "devDependencies": {

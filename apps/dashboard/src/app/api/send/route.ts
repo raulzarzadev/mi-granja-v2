@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Resend } from 'resend'
 
-// Inicialización lazy para evitar error durante el build
-let resend: Resend | null = null
-function getResend() {
-  if (!resend) {
-    resend = new Resend(process.env.RESEND_API_KEY)
-  }
-  return resend
-}
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
 
 interface EmailRequest {
   to: string | string[]
@@ -22,54 +14,52 @@ interface EmailRequest {
   tags?: { name: string; value: string }[]
 }
 
+function toBrevoRecipients(input: string | string[]): { email: string }[] {
+  const emails = Array.isArray(input) ? input : [input]
+  return emails.map((email) => ({ email }))
+}
+
+function parseSender(from?: string): { name: string; email: string } {
+  if (!from) return { name: 'Mi Granja', email: 'noreply@migranja.app' }
+  // Parse "Name <email>" format
+  const match = from.match(/^(.+?)\s*<(.+?)>$/)
+  if (match) return { name: match[1].trim(), email: match[2].trim() }
+  return { name: 'Mi Granja', email: from }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Verificar que la API key esté configurada
-    if (!process.env.RESEND_API_KEY) {
+    const apiKey = process.env.BREVO_API_KEY
+    if (!apiKey) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'RESEND_API_KEY no está configurada',
-        },
+        { success: false, error: 'BREVO_API_KEY no esta configurada' },
         { status: 500 },
       )
     }
 
-    // Obtener el cuerpo de la petición
     const emailData: EmailRequest = await request.json()
 
-    // Validación básica
+    // Validaciones
     if (!emailData.to || (Array.isArray(emailData.to) && emailData.to.length === 0)) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Se requiere al menos un destinatario',
-        },
+        { success: false, error: 'Se requiere al menos un destinatario' },
         { status: 400 },
       )
     }
-
     if (!emailData.subject) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'El asunto del email es requerido',
-        },
+        { success: false, error: 'El asunto del email es requerido' },
         { status: 400 },
       )
     }
-
     if (!emailData.html && !emailData.text) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Se requiere contenido HTML o texto',
-        },
+        { success: false, error: 'Se requiere contenido HTML o texto' },
         { status: 400 },
       )
     }
 
-    // Preparar el contenido de texto (Resend requiere text)
+    // Preparar texto plano si solo hay HTML
     const htmlToText = (html: string) =>
       html
         .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
@@ -82,40 +72,58 @@ export async function POST(request: NextRequest) {
         .replace(/\s+/g, ' ')
         .trim()
 
-    const textContent: string = emailData.text || (emailData.html ? htmlToText(emailData.html) : '')
+    const textContent = emailData.text || (emailData.html ? htmlToText(emailData.html) : '')
+    const sender = parseSender(emailData.from)
 
-    // Preparar los datos para Resend (text obligatorio)
-    const emailPayload = {
-      to: emailData.to,
+    // Construir payload de Brevo
+    const brevoPayload: Record<string, unknown> = {
+      sender,
+      to: toBrevoRecipients(emailData.to),
       subject: emailData.subject,
-      from: emailData.from || 'Mi Granja <zarza@email.migranja.app>',
-      text: textContent,
-      html: emailData.html,
+      textContent,
+      ...(emailData.html ? { htmlContent: emailData.html } : {}),
+      ...(emailData.cc ? { cc: toBrevoRecipients(emailData.cc) } : {}),
+      ...(emailData.bcc ? { bcc: toBrevoRecipients(emailData.bcc) } : {}),
+      ...(emailData.reply_to
+        ? { replyTo: { email: Array.isArray(emailData.reply_to) ? emailData.reply_to[0] : emailData.reply_to } }
+        : {}),
+      ...(emailData.tags ? { tags: emailData.tags.map((t) => t.value) } : {}),
     }
 
-    // Agregar campos opcionales
-    const withOptional = {
-      ...emailPayload,
-      ...(emailData.cc ? { cc: emailData.cc } : {}),
-      ...(emailData.bcc ? { bcc: emailData.bcc } : {}),
-      ...(emailData.reply_to ? { reply_to: emailData.reply_to } : {}),
-      ...(emailData.tags ? { tags: emailData.tags } : {}),
-    }
+    const response = await fetch(BREVO_API_URL, {
+      method: 'POST',
+      headers: {
+        'api-key': apiKey,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(brevoPayload),
+    })
 
-    // Enviar el email usando Resend
-    const data = await getResend().emails.send(withOptional)
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error('Brevo API error:', data)
+      return NextResponse.json(
+        {
+          success: false,
+          error: data.message || 'Error al enviar email via Brevo',
+          code: data.code,
+        },
+        { status: response.status },
+      )
+    }
 
     return NextResponse.json(
       {
         success: true,
         message: 'Email enviado exitosamente',
-        data: data,
+        data,
       },
       { status: 200 },
     )
   } catch (error) {
     console.error('Error enviando email:', error)
-
     return NextResponse.json(
       {
         success: false,
@@ -127,26 +135,13 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Método GET para verificar el estado del servicio
+// Health check
 export async function GET() {
-  try {
-    // Verificar configuración
-    const isConfigured = !!process.env.RESEND_API_KEY
-
-    return NextResponse.json({
-      service: 'Email Service',
-      status: 'online',
-      configured: isConfigured,
-      timestamp: new Date().toISOString(),
-    })
-  } catch (error) {
-    return NextResponse.json(
-      {
-        service: 'Email Service',
-        status: 'error',
-        error: error instanceof Error ? error.message : 'Error desconocido',
-      },
-      { status: 500 },
-    )
-  }
+  const isConfigured = !!process.env.BREVO_API_KEY
+  return NextResponse.json({
+    service: 'Email Service (Brevo)',
+    status: 'online',
+    configured: isConfigured,
+    timestamp: new Date().toISOString(),
+  })
 }

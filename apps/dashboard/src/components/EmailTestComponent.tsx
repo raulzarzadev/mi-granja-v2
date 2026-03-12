@@ -3,8 +3,8 @@
 import React, { useState } from 'react'
 import { useEmail } from '@/hooks/useEmail'
 
-const EMAIL_TEST = process.env.NEXT_PUBLIC_RESEND_TEST_EMAIL || 'test@example.com'
-const NAME_TEST = process.env.NEXT_PUBLIC_RESEND_TEST_NAME || 'Usuario'
+const EMAIL_TEST = process.env.NEXT_PUBLIC_EMAIL_TEST || 'test@example.com'
+const NAME_TEST = process.env.NEXT_PUBLIC_EMAIL_TEST_NAME || 'Usuario'
 
 const EmailTestComponent: React.FC = () => {
   const { sendEmail, sendWelcomeEmail, sendReminderEmail, isLoading, error } = useEmail()
