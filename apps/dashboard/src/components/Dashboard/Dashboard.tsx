@@ -296,7 +296,7 @@ const Dashboard: React.FC = () => {
             <h1 className="text-lg font-semibold text-gray-900">{currentFarm.name}</h1>
 
             {availableTypes.length > 1 && (
-              <div className="flex items-center gap-2 ml-auto">
+              <div className="flex items-center gap-2">
                 {availableTypes.map((t) => {
                   const typeKey = t as AnimalType
                   const isSelected = filters.type === t
