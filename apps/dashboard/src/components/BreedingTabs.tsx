@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useMemo, useState } from 'react'
 import BirthsWindowSummary from '@/components/BirthsWindowSummary'
@@ -35,6 +34,29 @@ const BreedingTabs: React.FC = () => {
 
   const [selectedAnimal, setSelectedAnimal] = useState<null | string>(null)
   const [montasViewMode, setMontasViewMode] = useState<'cards' | 'table'>('cards')
+  const [search, setSearch] = useState('')
+
+  // Filter breeding records by search text (animal numbers, male)
+  const filteredBreedingRecords = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return breedingRecords
+    return breedingRecords.filter((r) => {
+      const male = animals.find((a) => a.id === r.maleId)
+      const maleNum = male?.animalNumber?.toLowerCase() || ''
+      const maleName = male?.name?.toLowerCase() || ''
+      const femaleNums = r.femaleBreedingInfo
+        .map((f) => {
+          const a = animals.find((an) => an.id === f.femaleId)
+          return `${a?.animalNumber || ''} ${a?.name || ''}`
+        })
+        .join(' ')
+        .toLowerCase()
+      const dateStr = r.breedingDate ? new Date(r.breedingDate).toLocaleDateString() : ''
+      return (
+        maleNum.includes(q) || maleName.includes(q) || femaleNums.includes(q) || dateStr.includes(q)
+      )
+    })
+  }, [breedingRecords, animals, search])
 
   const handleOpenAddBirth: BreedingActionHandlers['onAddBirth'] = (record, femaleId) => {
     setBirthRecord(record)
@@ -51,7 +73,7 @@ const BreedingTabs: React.FC = () => {
   // Lista plana de hembras embarazadas
   const pregnantFemales = useMemo(
     () =>
-      breedingRecords.flatMap((record) =>
+      filteredBreedingRecords.flatMap((record) =>
         record.femaleBreedingInfo
           .filter((f) => f.pregnancyConfirmedDate && !f.actualBirthDate)
           .map((info) => ({
@@ -60,7 +82,7 @@ const BreedingTabs: React.FC = () => {
             animal: animals.find((a) => a.id === info.femaleId),
           })),
       ),
-    [breedingRecords, animals],
+    [filteredBreedingRecords, animals],
   )
   const birthsWindow = getBirthsWindow(14)
   const birthsSummary = getBirthsWindowSummary(14)
@@ -70,7 +92,7 @@ const BreedingTabs: React.FC = () => {
     const daysCutoff = 120
     const now = Date.now()
     const msDay = 86400000
-    return breedingRecords.flatMap((record) =>
+    return filteredBreedingRecords.flatMap((record) =>
       record.femaleBreedingInfo
         .filter((f) => f.actualBirthDate && f.offspring && f.offspring.length > 0)
         .map((f) => ({ record, info: f }))
@@ -79,7 +101,7 @@ const BreedingTabs: React.FC = () => {
           return now - d <= daysCutoff * msDay
         }),
     )
-  }, [breedingRecords])
+  }, [filteredBreedingRecords])
 
   // Ordenar montas
   const orderedBreedings = useMemo(() => {
@@ -87,7 +109,7 @@ const BreedingTabs: React.FC = () => {
     const needBirthConfirmation: BreedingRecord[] = []
     const finished: BreedingRecord[] = []
 
-    breedingRecords.forEach((r) => {
+    filteredBreedingRecords.forEach((r) => {
       let hasPendingPregnancyConfirm = false
       let hasPendingBirth = false
       r.femaleBreedingInfo.forEach((f) => {
@@ -109,7 +131,7 @@ const BreedingTabs: React.FC = () => {
       needBirthConfirmation: needBirthConfirmation.sort(sortDesc),
       finished: finished.sort(sortDesc),
     }
-  }, [breedingRecords])
+  }, [filteredBreedingRecords])
 
   const handleRemoveFromBreeding = async (record: BreedingRecord, animalId: string) => {
     if (record.maleId === animalId) {
@@ -405,20 +427,6 @@ const BreedingTabs: React.FC = () => {
                     </svg>
                   </button>
                 </div>
-                <Link
-                  href="/monta/nueva"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    className="w-4 h-4"
-                  >
-                    <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
-                  </svg>
-                  Registrar Monta
-                </Link>
               </div>
             </div>
 
@@ -543,6 +551,56 @@ const BreedingTabs: React.FC = () => {
 
   return (
     <>
+      {/* Search + add header */}
+      <div className="bg-white rounded-lg shadow mb-3">
+        <div className="px-4 py-3 flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Buscar por animal, macho, hembra..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="p-2 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 transition-colors"
+              title="Limpiar búsqueda"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="w-5 h-5 text-red-500"
+              >
+                <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+              </svg>
+            </button>
+          )}
+          <button
+            onClick={() => router.push('/monta/nueva')}
+            className="p-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
+            title="Nueva Monta"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-5 h-5"
+            >
+              <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+            </svg>
+          </button>
+        </div>
+        {search && (
+          <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-xs text-gray-500">
+              <span className="font-semibold text-gray-700">{filteredBreedingRecords.length}</span>{' '}
+              de {breedingRecords.length} montas
+            </span>
+          </div>
+        )}
+      </div>
       <Tabs tabs={tabs} tabsId="breeding-tabs" />
       <ModalBirthForm
         isOpen={!!birthRecord}

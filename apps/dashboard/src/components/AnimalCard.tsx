@@ -23,7 +23,7 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-md p-4 border border-gray-200 hover:shadow-lg transition-shadow ${
+      className={`bg-white rounded-lg shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow ${
         onClick ? 'cursor-pointer hover:bg-gray-50' : ''
       }`}
       onClick={onClick}
@@ -33,7 +33,7 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
     >
       <AnimalDetailRow animal={animal} />
       {animal.status === 'perdido' && (
-        <div className="mt-2 flex justify-end">
+        <div className="mt-1 flex justify-end">
           <button
             className="text-xs text-green-700 hover:text-green-900 underline"
             onClick={(e) => {
@@ -45,22 +45,21 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
           </button>
         </div>
       )}
-      {formatWeight(animal.weight) && (
-        <div className="mt-3 text-sm">
-          <span className="text-gray-500">Peso:</span>
-          <span className="ml-1 font-medium">{formatWeight(animal.weight)} kg</span>
-        </div>
-      )}
-      {/* Destete objetivo */}
-
-      <WeanedAnimal animal={animal} />
+      <div className="flex items-center gap-2 flex-wrap mt-1">
+        {formatWeight(animal.weight) && (
+          <span className="text-xs text-gray-500">
+            Peso:{' '}
+            <span className="font-medium text-gray-700">{formatWeight(animal.weight)} kg</span>
+          </span>
+        )}
+        <WeanedAnimal animal={animal} />
+      </div>
       {animal.notes && (
-        <div className="mt-3 p-2 bg-gray-50 rounded text-sm text-gray-700">
+        <div className="mt-1 text-xs text-gray-500 truncate">
           {animal.notes.length > 60 ? `${animal.notes.substring(0, 60)}...` : animal.notes}
         </div>
       )}
-      {/* Indicador de acción de admin */}
-      <AdminActionIndicator data={animal} className="mt-2" />
+      <AdminActionIndicator data={animal} className="mt-1" />
     </div>
   )
 }

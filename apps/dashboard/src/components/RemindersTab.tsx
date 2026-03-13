@@ -1,8 +1,7 @@
 'use client'
 
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import HealthRemindersCard from '@/components/HealthRemindersCard'
 import ReminderCard from '@/components/ReminderCard'
 import Tabs from '@/components/Tabs'
@@ -26,11 +25,37 @@ const RemindersTab: React.FC = () => {
   } = useReminders()
 
   const [showCompleted, setShowCompleted] = useState(false)
+  const [search, setSearch] = useState('')
 
-  const pendingReminders = reminders.filter((r) => !r.completed)
-  const completedReminders = reminders.filter((r) => r.completed)
-  const todayReminders = getTodayReminders()
-  const overdueReminders = getOverdueReminders()
+  // Filter reminders by search text
+  const filteredReminders = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return reminders
+    return reminders.filter((r) => {
+      const parts = [
+        r.title || '',
+        r.description || '',
+        r.animalNumber || '',
+        ...(r.animalNumbers || []),
+      ]
+      return parts.join(' ').toLowerCase().includes(q)
+    })
+  }, [reminders, animals, search])
+
+  const pendingReminders = filteredReminders.filter((r) => !r.completed)
+  const completedReminders = filteredReminders.filter((r) => r.completed)
+  const todayReminders = useMemo(() => {
+    const all = getTodayReminders()
+    if (!search.trim()) return all
+    const ids = new Set(filteredReminders.map((r) => r.id))
+    return all.filter((r) => ids.has(r.id))
+  }, [getTodayReminders, filteredReminders, search])
+  const overdueReminders = useMemo(() => {
+    const all = getOverdueReminders()
+    if (!search.trim()) return all
+    const ids = new Set(filteredReminders.map((r) => r.id))
+    return all.filter((r) => ids.has(r.id))
+  }, [getOverdueReminders, filteredReminders, search])
   const todayAndOverdue = [...overdueReminders, ...todayReminders]
 
   const editReminder = (r: Reminder) => router.push(`/recordatorio/${r.id}/editar`)
@@ -108,7 +133,18 @@ const RemindersTab: React.FC = () => {
     {
       label: '🔔 Proximos',
       badgeCount: getUpcomingReminders().length,
-      content: <div className="space-y-4">{renderReminderGrid(getUpcomingReminders())}</div>,
+      content: (
+        <div className="space-y-4">
+          {renderReminderGrid(
+            search.trim()
+              ? getUpcomingReminders().filter((r) => {
+                  const ids = new Set(filteredReminders.map((fr) => fr.id))
+                  return ids.has(r.id)
+                })
+              : getUpcomingReminders(),
+          )}
+        </div>
+      ),
     },
     {
       label: '📋 Todos',
@@ -153,13 +189,55 @@ const RemindersTab: React.FC = () => {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
-        <Link
-          href="/recordatorio/nuevo"
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-        >
-          Nuevo Recordatorio
-        </Link>
+      {/* Search + add header */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-4 py-3 flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Buscar por titulo, animal, descripcion..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="p-2 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 transition-colors"
+              title="Limpiar búsqueda"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="w-5 h-5 text-red-500"
+              >
+                <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+              </svg>
+            </button>
+          )}
+          <button
+            onClick={() => router.push('/recordatorio/nuevo')}
+            className="p-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
+            title="Nuevo Recordatorio"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-5 h-5"
+            >
+              <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+            </svg>
+          </button>
+        </div>
+        {search && (
+          <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-xs text-gray-500">
+              <span className="font-semibold text-gray-700">{filteredReminders.length}</span> de{' '}
+              {reminders.length} recordatorios
+            </span>
+          </div>
+        )}
       </div>
       <Tabs tabs={tabs} tabsId="reminders-tabs" />
     </div>
