@@ -302,17 +302,20 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center gap-3 mb-3">
             <FarmAvatar name={currentFarm.name} photoURL={currentFarm.photoURL} size="md" />
             <h1 className="text-lg font-semibold text-gray-900">{currentFarm.name}</h1>
-            {myRole && myRole !== 'owner' && (
+
+            {myRole && (
               <span
                 className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                  myRole === 'admin'
-                    ? 'bg-blue-100 text-blue-700'
-                    : myRole === 'manager'
-                      ? 'bg-purple-100 text-purple-700'
-                      : 'bg-amber-100 text-amber-700'
+                  myRole === 'owner'
+                    ? 'bg-green-100 text-green-700'
+                    : myRole === 'admin'
+                      ? 'bg-blue-100 text-blue-700'
+                      : myRole === 'manager'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-amber-100 text-amber-700'
                 }`}
               >
-                {collaborator_roles_label[myRole] || myRole}
+                {myRole === 'owner' ? 'Propietario' : (collaborator_roles_label[myRole] || myRole)}
               </span>
             )}
 
