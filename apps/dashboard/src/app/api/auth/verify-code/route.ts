@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ token: customToken, isNewUser })
   } catch (error) {
     console.error('verify-code error:', error)
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Error interno'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
