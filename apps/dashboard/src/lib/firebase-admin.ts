@@ -40,8 +40,13 @@ function getAdminApp(): App {
   } else {
     const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
     if (serviceAccount) {
+      const parsed = JSON.parse(serviceAccount)
+      // Vercel puede escapar doble los \n del private_key — restaurar saltos de línea reales
+      if (parsed.private_key) {
+        parsed.private_key = parsed.private_key.replace(/\\n/g, '\n')
+      }
       adminApp = initializeApp({
-        credential: cert(JSON.parse(serviceAccount)),
+        credential: cert(parsed),
       })
     } else {
       adminApp = initializeApp()

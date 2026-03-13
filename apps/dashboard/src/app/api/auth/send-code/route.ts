@@ -9,25 +9,6 @@ function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
-// Diagnóstico temporal — quitar después de confirmar que funciona
-export async function GET() {
-  const checks = {
-    hasBrevoKey: !!process.env.BREVO_API_KEY,
-    hasServiceAccount: !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY,
-    hasFirebaseConfig: !!process.env.NEXT_PUBLIC_FIREBASE_CONFIG,
-  }
-
-  // Test Firebase Admin init
-  try {
-    getAdminFirestore()
-    Object.assign(checks, { firestoreInit: 'ok' })
-  } catch (e) {
-    Object.assign(checks, { firestoreInit: e instanceof Error ? e.message : 'error' })
-  }
-
-  return NextResponse.json(checks)
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json()
@@ -43,16 +24,13 @@ export async function POST(req: NextRequest) {
     const expiresAt = Date.now() + 10 * 60 * 1000 // 10 minutes
 
     // Store in Firestore (authCodes collection)
-    console.log('send-code: initializing firestore...')
     const firestore = getAdminFirestore()
-    console.log('send-code: writing authCode doc...')
     await firestore.doc(`authCodes/${normalizedEmail}`).set({
       code,
       expiresAt,
       attempts: 0,
       createdAt: Date.now(),
     })
-    console.log('send-code: authCode doc written')
 
     // Send code via Brevo
     if (!BREVO_API_KEY) {
