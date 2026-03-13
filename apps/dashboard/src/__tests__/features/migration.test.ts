@@ -74,7 +74,7 @@ describe('Animal Migration to animalNumber', () => {
 
     // 2. Generación de números únicos debe ser incremental
     const existingNumbers = ['C001', 'C002', 'C005']
-    const maxNumber = Math.max(...existingNumbers.map((n) => parseInt(n.slice(1))))
+    const maxNumber = Math.max(...existingNumbers.map((n) => parseInt(n.slice(1), 10)))
     const nextNumber = maxNumber + 1
 
     if (nextNumber !== 6) {

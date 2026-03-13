@@ -1,67 +1,35 @@
 'use client'
 
 import React from 'react'
+import AnimalFamilyTree from '@/components/AnimalFamilyTree'
 import AnimalRecordsSection from '@/components/AnimalRecordsSection'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { animalAge } from '@/lib/animal-utils'
 import { formatDate } from '@/lib/dates'
-import { MilkProduction, WeightRecord } from '@/types'
-import {
-  Animal,
-  AnimalType,
-  animal_icon,
-  animal_status_colors,
-  animal_status_labels,
-} from '@/types/animals'
-import { BreedingRecord } from '@/types/breedings'
+import { Animal } from '@/types/animals'
 import { AnimalDetailRow } from './AnimalCard'
 import ButtonConfirm from './buttons/ButtonConfirm'
 import ModalEditAnimal from './ModalEditAnimal'
 
 interface AnimalDetailViewProps {
   animal: Animal
-  breedingRecords?: BreedingRecord[]
-  weightRecords?: WeightRecord[]
-  milkRecords?: MilkProduction[]
 }
 
 /**
  * Vista detallada de un animal individual
  */
-const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
-  animal,
-  weightRecords = [],
-  milkRecords = [],
-}) => {
-  const { animals: allAnimals } = useAnimalCRUD()
-  const { breedingRecords: allBreedingRecords } = useBreedingCRUD()
-
-  const { remove: deleteAnimal, markStatus, markFound } = useAnimalCRUD()
-
-  const breedingRecords = allBreedingRecords.filter(
-    (record) =>
-      record.femaleBreedingInfo?.find((female) => female.femaleId === animal.id) ||
-      record.maleId === animal.id,
-  )
+const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal }) => {
+  const { animals: allAnimals, remove: deleteAnimal, markStatus, markFound } = useAnimalCRUD()
 
   const getMother = () => {
     if (!animal.motherId) return null
-    return allAnimals.find((a) => a.id === animal.motherId)
+    return allAnimals.find((a) => a.id === animal.motherId || a.animalNumber === animal.motherId)
   }
 
   const getFather = () => {
     if (!animal.fatherId) return null
-    return allAnimals.find((a) => a.id === animal.fatherId)
-  }
-
-  const getOffspring = () => {
-    return allAnimals.filter((a) => a.motherId === animal.id || a.fatherId === animal.id)
-  }
-
-  const getAnimalIcon = (type: AnimalType) => {
-    return animal_icon[type] || '🐾'
+    return allAnimals.find((a) => a.id === animal.fatherId || a.animalNumber === animal.fatherId)
   }
 
   const tabs = [
@@ -76,7 +44,27 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
               <div className="space-y-2">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Edad</label>
-                  <p className="text-gray-900">{animalAge(animal, { format: 'long' })}</p>
+                  {animal.status === 'muerto' && animal.statusAt ? (
+                    <p className="text-gray-900">
+                      {animalAge(animal, {
+                        format: 'long',
+                        endDate: new Date(animal.statusAt as any),
+                      })}
+                      <span className="ml-1" title="Edad al morir">
+                        💀
+                      </span>
+                    </p>
+                  ) : animal.status === 'vendido' && animal.statusAt ? (
+                    <p className="text-gray-900">
+                      {animalAge(animal, {
+                        format: 'long',
+                        endDate: new Date(animal.statusAt as any),
+                      })}
+                      <span className="ml-1 text-xs text-gray-400">(al vender)</span>
+                    </p>
+                  ) : (
+                    <p className="text-gray-900">{animalAge(animal, { format: 'long' })}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Raza</label>
@@ -90,9 +78,70 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Peso Actual</label>
-                  <p className="text-gray-900">
-                    {animal.weight ? `${animal.weight} kg` : 'No registrado'}
-                  </p>
+                  {(() => {
+                    // Buscar último registro de peso en records[] y weightRecords[]
+                    const weightFromRecords = [...(animal.records || [])]
+                      .filter((r) => r.type === 'weight')
+                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+
+                    const weightFromEntries = [...(animal.weightRecords || [])].sort(
+                      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+                    )[0]
+
+                    // Elegir el más reciente
+                    let lastWeight: { kg: number; date: Date } | null = null
+
+                    if (weightFromRecords && weightFromEntries) {
+                      const rDate = new Date(weightFromRecords.date).getTime()
+                      const eDate = new Date(weightFromEntries.date).getTime()
+                      if (rDate >= eDate) {
+                        const match = weightFromRecords.title.match(/^([\d.]+)/)
+                        if (match)
+                          lastWeight = {
+                            kg: parseFloat(match[1]),
+                            date: new Date(weightFromRecords.date),
+                          }
+                      } else {
+                        lastWeight = {
+                          kg: weightFromEntries.weight / 1000,
+                          date: new Date(weightFromEntries.date),
+                        }
+                      }
+                    } else if (weightFromRecords) {
+                      const match = weightFromRecords.title.match(/^([\d.]+)/)
+                      if (match)
+                        lastWeight = {
+                          kg: parseFloat(match[1]),
+                          date: new Date(weightFromRecords.date),
+                        }
+                    } else if (weightFromEntries) {
+                      lastWeight = {
+                        kg: weightFromEntries.weight / 1000,
+                        date: new Date(weightFromEntries.date),
+                      }
+                    }
+
+                    if (!lastWeight) {
+                      return <p className="text-gray-900">No registrado</p>
+                    }
+
+                    const now = new Date()
+                    const diffMs = now.getTime() - lastWeight.date.getTime()
+                    const diffDays = Math.floor(diffMs / 86400000)
+                    let timeAgo = ''
+                    if (diffDays === 0) timeAgo = 'hoy'
+                    else if (diffDays === 1) timeAgo = 'ayer'
+                    else if (diffDays < 30) timeAgo = `hace ${diffDays}d`
+                    else if (diffDays < 365) timeAgo = `hace ${Math.floor(diffDays / 30)}m`
+                    else timeAgo = `hace ${Math.floor(diffDays / 365)}a`
+
+                    return (
+                      <p className="text-gray-900">
+                        {lastWeight.kg.toFixed(1)} kg
+                        <span className="text-xs text-gray-400 ml-1">({timeAgo})</span>
+                      </p>
+                    )
+                  })()}
                 </div>
               </div>
             </div>
@@ -107,40 +156,6 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
                 <div>
                   <label className="text-sm font-medium text-gray-500">Padre</label>
                   <p className="text-gray-900">{getFather()?.animalNumber || 'No registrado'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Descendencia</label>
-                  <div className="text-gray-900">
-                    {getOffspring().length === 0 ? (
-                      'Sin descendencia registrada'
-                    ) : (
-                      <div>
-                        <p className="font-medium mb-2">
-                          {getOffspring().length} animal
-                          {getOffspring().length !== 1 ? 'es' : ''}:
-                        </p>
-                        <div className="space-y-2">
-                          {getOffspring().map((offspring) => (
-                            <div
-                              key={offspring.id}
-                              className="flex items-center gap-2 text-sm bg-gray-50 rounded px-2 py-1"
-                            >
-                              <span>{getAnimalIcon(offspring.type)}</span>
-                              <span className="font-medium">{offspring.animalNumber}</span>
-                              <span className="text-gray-500">
-                                ({offspring.gender === 'macho' ? '♂' : '♀'})
-                              </span>
-                              <span className="text-gray-400 text-xs">
-                                {offspring.birthDate
-                                  ? formatDate(offspring.birthDate)
-                                  : 'Sin fecha'}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
             </div>
@@ -172,90 +187,8 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
       ),
     },
     {
-      label: '🐣 Reproducción',
-      content: (
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Historial Reproductivo</h3>
-          {breedingRecords.length === 0 ? (
-            <div className="text-center py-8">
-              <span className="text-4xl mb-4 block">🐣</span>
-              <p className="text-gray-500">No hay registros reproductivos</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {breedingRecords.map((record) => (
-                <div key={record.id} className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-sm font-medium text-gray-900">
-                      Monta del {record.breedingDate ? formatDate(record.breedingDate) : ''}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      label: '⚖️ Peso',
-      content: (
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Historial de Peso</h3>
-          {weightRecords.length === 0 ? (
-            <div className="text-center py-8">
-              <span className="text-4xl mb-4 block">⚖️</span>
-              <p className="text-gray-500">No hay registros de peso</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {weightRecords.map((record) => (
-                <div key={record.id} className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-900">{record.weight} kg</span>
-                    <span className="text-sm text-gray-500">{formatDate(record.date)}</span>
-                  </div>
-                  {record.notes && <p className="text-sm text-gray-600 mt-2">{record.notes}</p>}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      label: '🥛 Leche',
-      content: (
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Producción de Leche</h3>
-          {animal.stage !== 'lechera' ? (
-            <div className="text-center py-8">
-              <span className="text-4xl mb-4 block">🥛</span>
-              <p className="text-gray-500">Este animal no está en etapa de producción lechera</p>
-            </div>
-          ) : milkRecords.length === 0 ? (
-            <div className="text-center py-8">
-              <span className="text-4xl mb-4 block">🥛</span>
-              <p className="text-gray-500">No hay registros de producción</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {milkRecords.map((record) => (
-                <div key={record.id} className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-gray-900">{record.totalAmount} L</span>
-                    <span className="text-sm text-gray-500">{formatDate(record.date)}</span>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    Mañana: {record.morningAmount}L | Tarde: {record.eveningAmount}L
-                  </div>
-                  {record.notes && <p className="text-sm text-gray-600 mt-2">{record.notes}</p>}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ),
+      label: '🧬 Genética',
+      content: <AnimalFamilyTree animal={animal} allAnimals={allAnimals} />,
     },
     {
       label: '📋 Registros',
@@ -336,18 +269,6 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({
       <div className="bg-green-600 text-white p-2 mb-2">
         <div className="flex items-center justify-between">
           <AnimalDetailRow animal={animal} />
-          {/* Estado */}
-          {animal.status && (
-            <div className="ml-2">
-              <span
-                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                  animal_status_colors[animal.status || 'activo']
-                }`}
-              >
-                {animal_status_labels[animal.status || 'activo']}
-              </span>
-            </div>
-          )}
         </div>
       </div>
 

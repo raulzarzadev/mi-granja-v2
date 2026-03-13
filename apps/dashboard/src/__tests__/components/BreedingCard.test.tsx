@@ -5,7 +5,6 @@
  * Verificamos que el componente se monta correctamente con Provider.
  */
 
-import React from 'react'
 import '@testing-library/jest-dom'
 import BreedingCard from '@/components/BreedingCard'
 import { Animal } from '@/types/animals'

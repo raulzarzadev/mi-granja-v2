@@ -34,11 +34,16 @@ export interface Reminder {
   id: string
   farmerId: string
   farmId?: string
+  /** @deprecated Usa animalNumbers en su lugar */
   animalNumber?: string
+  /** IDs de animales asociados a este recordatorio */
+  animalNumbers?: string[]
   title: string
   description: string
   dueDate: Date
   completed: boolean
+  /** Estado de completado por animal: { animalNumber: boolean } */
+  completionByAnimal?: Record<string, boolean>
   priority: 'low' | 'medium' | 'high'
   type: 'medical' | 'breeding' | 'feeding' | 'weight' | 'other'
   createdAt: Date

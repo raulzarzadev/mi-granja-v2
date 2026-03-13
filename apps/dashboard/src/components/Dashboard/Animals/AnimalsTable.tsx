@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Modal } from '@/components/Modal'
 import AnimalDetailView from '@/components/AnimalDetailView'
-import { animalAge } from '@/lib/animal-utils'
+import { Modal } from '@/components/Modal'
+import { animalAge, formatWeight } from '@/lib/animal-utils'
 import {
   Animal,
   AnimalStatus,
@@ -12,6 +12,7 @@ import {
   animal_status_labels,
   animals_stages_labels,
   animals_types_labels,
+  gender_colors,
   gender_icon,
 } from '@/types/animals'
 
@@ -83,6 +84,8 @@ const AnimalsTable = ({
   const [sortField, setSortField] = useState<SortField | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null)
+
+  console.debug({ selectedAnimal })
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -246,8 +249,7 @@ const AnimalsTable = ({
             {sortedAnimals.map((animal) => {
               const isSelected = selectedAnimals.includes(animal.id)
               const status = animal.status || 'activo'
-              const weight =
-                animal.weight != null && animal.weight !== '' ? `${animal.weight}` : '—'
+              const weight = formatWeight(animal.weight) ?? '—'
 
               return (
                 <tr
@@ -268,8 +270,13 @@ const AnimalsTable = ({
                       />
                     </td>
                   )}
-                  <td className="px-2 py-1.5 text-sm font-medium text-gray-900 whitespace-nowrap">
-                    {animal.animalNumber || (animal as any).earring || '—'}
+                  <td className="px-2 py-1.5 text-sm whitespace-nowrap">
+                    <span className="font-medium text-gray-900">
+                      {animal.animalNumber || (animal as any).earring || '—'}
+                    </span>
+                    {animal.name && (
+                      <span className="ml-1 text-xs text-gray-500">{animal.name}</span>
+                    )}
                   </td>
                   <td className="px-2 py-1.5 text-sm text-gray-700 whitespace-nowrap">
                     {animals_types_labels[animal.type]}
@@ -278,7 +285,9 @@ const AnimalsTable = ({
                     {animal.breed || '—'}
                   </td>
                   <td className="px-1 py-1.5 text-sm text-center whitespace-nowrap">
-                    {gender_icon[animal.gender]}
+                    <span className={`font-bold ${gender_colors[animal.gender]}`}>
+                      {gender_icon[animal.gender]}
+                    </span>
                   </td>
                   <td className="px-2 py-1.5 text-sm whitespace-nowrap">
                     <span

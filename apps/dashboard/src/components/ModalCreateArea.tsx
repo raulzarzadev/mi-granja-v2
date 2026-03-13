@@ -40,7 +40,7 @@ const ModalCreateArea: React.FC = () => {
         name: formData.name.trim(),
         type: formData.type,
         description: formData.description.trim() || '',
-        capacity: formData.capacity ? parseInt(formData.capacity) : null,
+        capacity: formData.capacity ? parseInt(formData.capacity, 10) : null,
         isActive: true,
         notes: formData.notes.trim() || '',
       })

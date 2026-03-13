@@ -80,7 +80,7 @@ Re-export proxies in `src/types/` and `src/lib/` forward to `@mi-granja/shared`,
 - **`src/app/`** — Next.js App Router pages and API routes. Root layout wraps everything in `<Providers>` (Redux store + `AuthInitializer`).
 - **`src/features/`** — Redux Toolkit slices organized by domain: `auth`, `animals`, `breeding`, `reminders`, `farm`. Each slice has standard CRUD reducers. `store.ts` combines all slices.
 - **`src/hooks/`** — Custom hooks that bridge Redux state and Firestore. Each domain has a CRUD hook (e.g., `useAnimalCRUD`, `useBreedingCRUD`, `useFarmCRUD`). Hooks dispatch Redux actions and call Firestore directly.
-- **`src/components/`** — UI components. Modal system uses a base `Modal.tsx` + domain-specific wrappers (e.g., `ModalAnimalForm`). Forms use react-hook-form + Zod schemas.
+- **`src/components/`** — UI components. Modal system uses a base `Modal.tsx` + domain-specific wrappers (e.g., `ModalAnimalForm`). Forms use react-hook-form + Zod schemas. **`AnimalSelector`** (`src/components/inputs/AnimalSelector.tsx`) is the unified component for searching and selecting animals — use it everywhere an animal picker is needed (supports `single`/`multi` mode, chips, search dropdown, `fixedIds`, `filterFn`).
 - **`src/lib/`** — Dashboard-specific utilities: `adminActions.ts`, `userUtils.ts`, `migrateBreedings.ts`. Other lib files are re-export proxies from shared.
 
 ### Data flow
@@ -109,7 +109,7 @@ Admins can impersonate users via `/api/admin/impersonate`. All impersonated acti
 - All client components must have `'use client'` directive
 - Date handling: use `DateTimeInput` component and utilities from `lib/dateUtils.ts` — never use raw `new Date()` for user input (timezone issues documented in `MEJORAS_FECHAS.md`)
 - Firebase config loaded from `NEXT_PUBLIC_FIREBASE_CONFIG` env var (JSON string)
-- Email service uses Resend via `/api/send` route
+- Email service uses Brevo via `/api/send` route
 - When adding new shared types or utilities, add them to `packages/shared/` and create re-export proxies in the dashboard if needed
 
 ## Business Model & Roadmap
@@ -164,6 +164,6 @@ The current Firestore model (`Farm`, `User`, `FarmCollaborator`) has **no billin
 
 ## Environment Variables
 
-Required in `apps/dashboard/.env.local`: `NEXT_PUBLIC_FIREBASE_CONFIG`, `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`, `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`
+Required in `apps/dashboard/.env.local`: `NEXT_PUBLIC_FIREBASE_CONFIG`, `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`, `BREVO_API_KEY`, `NEXT_PUBLIC_APP_URL`
 
 Future env vars for billing: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `CONEKTA_API_KEY` (when integrated)

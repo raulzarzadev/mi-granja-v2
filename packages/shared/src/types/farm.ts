@@ -21,6 +21,23 @@ export interface Farm {
   collaborators?: FarmCollaborator[]
   createdAt: AppDate
   updatedAt: AppDate
+  restoredBackups?: {
+    createdAt: AppDate
+    farmId: string
+    farmName: string
+    backupDate: string
+  }[]
+  exportedBackups?: {
+    createdAt: AppDate
+    fileName: string
+    counts: {
+      animals: number
+      breedingRecords: number
+      reminders: number
+      weightRecords: number
+      farmInvitations: number
+    }
+  }[]
   // Metadatos cuando la granja proviene de una invitación aceptada o pendiente
   invitationMeta?: {
     invitationId: string

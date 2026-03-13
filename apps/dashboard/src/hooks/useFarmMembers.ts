@@ -19,6 +19,7 @@ import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import { useEmail } from '@/hooks/useEmail'
 import { toDate } from '@/lib/dates'
+import { APP_URL, emailTemplate } from '@/lib/emailTemplate'
 import { db } from '@/lib/firebase'
 import {
   collaborator_roles_label,
@@ -426,45 +427,46 @@ export const useFarmMembers = (farmId?: string) => {
   }) => {
     // Enviar email (best-effort)
     try {
-      const appUrl =
-        process.env.NEXT_PUBLIC_APP_URL ||
-        (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
-      const acceptUrl = `${appUrl}/invitations/confirm?token=${encodeURIComponent(
-        token,
-      )}&action=accept`
-      const rejectUrl = `${appUrl}/invitations/confirm?token=${encodeURIComponent(
-        token,
-      )}&action=reject`
+      const acceptUrl = `${APP_URL}/invitations/confirm?token=${encodeURIComponent(token)}&action=accept`
+      const rejectUrl = `${APP_URL}/invitations/confirm?token=${encodeURIComponent(token)}&action=reject`
+      const roleLabel = collaborator_roles_label[role] || role
+      const farmName = currentFarm?.name || 'una granja'
+      const inviterName = user?.email || 'Un administrador'
 
       await sendEmail({
         to: email,
-        subject: 'Invitación para colaborar en una granja',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #2563eb; margin-bottom:16px;">Has sido invitado a colaborar en una granja</h2>
-            <p style="margin:0 0 8px 0;">Rol propuesto: <strong>${
-              collaborator_roles_label[role] || role
-            }</strong></p>
-            <p style="margin:0 0 16px 0;">La invitación expira el <strong>${expiresAt.toLocaleDateString()}</strong>.</p>
-            <div style="margin: 24px 0; display:flex; gap:12px;">
-              <a href="${acceptUrl}" style="background:#16a34a; color:#fff; padding:12px 18px; text-decoration:none; border-radius:6px; font-weight:600;">Aceptar invitación</a>
-              <a href="${rejectUrl}" style="background:#dc2626; color:#fff; padding:12px 18px; text-decoration:none; border-radius:6px; font-weight:600;">Rechazar</a>
+        subject: `${inviterName} te invitó a colaborar en ${farmName}`,
+        html: emailTemplate({
+          title: 'Te han invitado a colaborar',
+          body: `
+            <p><strong>${inviterName}</strong> te ha invitado a unirte a la granja <strong>${farmName}</strong> en Mi Granja App.</p>
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin:16px 0;">
+              <p style="margin:0 0 4px 0;font-size:13px;color:#6b7280;">Granja</p>
+              <p style="margin:0 0 12px 0;font-size:17px;font-weight:600;color:#111827;">${farmName}</p>
+              <p style="margin:0 0 4px 0;font-size:13px;color:#6b7280;">Rol asignado</p>
+              <p style="margin:0;font-size:17px;font-weight:600;color:#16a34a;">${roleLabel}</p>
+              <p style="margin:12px 0 0 0;font-size:13px;color:#6b7280;">Invitado por</p>
+              <p style="margin:0;font-size:15px;color:#111827;">${inviterName}</p>
             </div>
-            <p style="font-size:12px; color:#6b7280;">Si los botones no funcionan copia y pega estos enlaces:</p>
-            <p style="font-size:11px; word-break:break-all; margin:4px 0;">Aceptar: ${acceptUrl}</p>
-            <p style="font-size:11px; word-break:break-all; margin:4px 0;">Rechazar: ${rejectUrl}</p>
-          </div>
-        `,
-        text: `Has sido invitado como ${
-          collaborator_roles_label[role] || role
-        }. Acepta: ${acceptUrl} | Rechaza: ${rejectUrl}`,
+            <p style="font-size:13px;color:#6b7280;">La invitacion expira el <strong>${expiresAt.toLocaleDateString()}</strong>.</p>
+          `,
+          ctaText: 'Aceptar invitacion',
+          ctaUrl: acceptUrl,
+          secondaryCtaText: 'Rechazar',
+          secondaryCtaUrl: rejectUrl,
+          footer:
+            'Si los botones no funcionan, copia y pega estos enlaces en tu navegador:<br/>' +
+            `<span style="word-break:break-all;">Aceptar: ${acceptUrl}</span><br/>` +
+            `<span style="word-break:break-all;">Rechazar: ${rejectUrl}</span>`,
+        }),
+        text: `${inviterName} te invitó a colaborar en ${farmName} como ${roleLabel}. Acepta: ${acceptUrl} | Rechaza: ${rejectUrl}`,
         tags: [
           { name: 'type', value: 'invitation' },
           { name: 'farm_id', value: farmId },
         ],
       })
     } catch (e) {
-      console.warn('Fallo al enviar email de invitación (continuando):', e)
+      console.warn('Fallo al enviar email de invitacion (continuando):', e)
     }
   }
 

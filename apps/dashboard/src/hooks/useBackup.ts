@@ -1,28 +1,30 @@
 'use client'
 
 import {
-  Timestamp,
+  arrayUnion,
   collection,
   doc,
   getDoc,
   getDocs,
   query,
   setDoc,
+  Timestamp,
+  updateDoc,
   where,
   writeBatch,
 } from 'firebase/firestore'
 import { useCallback, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
-import { db } from '@/lib/firebase'
 import {
   BACKUP_TYPE_DESCRIPTIONS,
   BackupFile,
   deserializeFromBackup,
   serializeForBackup,
-  validateBackupFile,
   ValidationResult,
+  validateBackupFile,
 } from '@/lib/backup-serialization'
+import { db } from '@/lib/firebase'
 
 export interface BackupProgress {
   phase: string
@@ -169,6 +171,19 @@ export function useBackup() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
 
+      // Registrar exportación en Firestore
+      try {
+        await updateDoc(doc(db, 'farms', currentFarm.id), {
+          exportedBackups: arrayUnion({
+            createdAt: Timestamp.now(),
+            fileName: filename,
+            counts: backup._meta.counts,
+          }),
+        })
+      } catch (e) {
+        console.warn('No se pudo registrar la exportación en el historial:', e)
+      }
+
       setProgress({ phase: 'export', percent: 100, message: 'Respaldo descargado' })
     } finally {
       setIsExporting(false)
@@ -225,13 +240,26 @@ export function useBackup() {
             const farmDeserialized = deserializeFromBackup('farm', data.farm)
             const {
               id: _id,
+              name: _name,
               ownerId: _ownerId,
               collaborators: _collaborators,
               collaboratorsIds: _collaboratorsIds,
               collaboratorsEmails: _collaboratorsEmails,
               ...farmFields
             } = farmDeserialized
-            await setDoc(doc(db, 'farms', currentFarm.id), farmFields, { merge: true })
+            await setDoc(
+              doc(db, 'farms', currentFarm.id),
+              {
+                ...farmFields,
+                restoredBackups: arrayUnion({
+                  createdAt: Timestamp.now(),
+                  farmId: data._meta.farmId,
+                  farmName: data._meta.farmName,
+                  backupDate: data._meta.exportDate,
+                }),
+              },
+              { merge: true },
+            )
           } catch (e) {
             errors.push(`Error restaurando granja: ${e instanceof Error ? e.message : 'error'}`)
           }

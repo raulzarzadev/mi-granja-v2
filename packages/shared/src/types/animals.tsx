@@ -2,7 +2,7 @@
 export interface AnimalRecord {
   id: string
   // Categorización del registro
-  type: 'note' | 'health'
+  type: 'note' | 'health' | 'birth' | 'weight'
   category: RecordCategory
 
   // Información básica (todos los tipos)
@@ -58,6 +58,7 @@ export interface Animal {
   gender: AnimalGender
   motherId?: string
   fatherId?: string
+  batch?: string // Lote al que pertenece el animal
   notes?: string
   createdAt: Date
   updatedAt: Date
@@ -97,8 +98,13 @@ export interface Animal {
 export const animals_genders = ['macho', 'hembra'] as const
 export type AnimalGender = (typeof animals_genders)[number]
 export const gender_icon: Record<AnimalGender, string> = {
-  macho: '🚹',
-  hembra: '🚺',
+  macho: '♂',
+  hembra: '♀',
+}
+
+export const gender_colors: Record<AnimalGender, string> = {
+  macho: 'text-blue-600',
+  hembra: 'text-pink-500',
 }
 
 export const animals_types = [
@@ -180,7 +186,7 @@ export const animal_icon: Record<AnimalType, string> = {
 
 // ===== SISTEMA UNIFICADO DE REGISTROS =====
 
-export const record_types = ['note', 'health'] as const
+export const record_types = ['note', 'health', 'weight', 'birth'] as const
 export type RecordType = (typeof record_types)[number]
 
 export const record_categories = [
@@ -200,6 +206,15 @@ export type RecordCategory = (typeof record_categories)[number]
 export const record_type_labels: Record<RecordType, string> = {
   note: 'Nota',
   health: 'Salud',
+  weight: 'Peso',
+  birth: 'Parto',
+}
+
+export const record_type_icons: Record<RecordType, string> = {
+  note: '📝',
+  health: '🏥',
+  weight: '⚖️',
+  birth: '🐣',
 }
 
 export const record_category_labels: Record<RecordCategory, string> = {
@@ -286,6 +301,13 @@ export const animal_status_labels: Record<AnimalStatus, string> = {
   muerto: 'Muerto',
   vendido: 'Vendido',
   perdido: 'Perdido',
+}
+
+export const animal_status_icons: Record<AnimalStatus, string> = {
+  activo: '✅',
+  muerto: '💀',
+  vendido: '💲',
+  perdido: '❓',
 }
 
 export const animal_status_colors: Record<AnimalStatus, string> = {

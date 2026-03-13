@@ -1,4 +1,5 @@
 import React from 'react'
+import { Animal } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 
 interface BirthItem {
@@ -16,7 +17,8 @@ export interface BirthsWindowSummaryProps {
   pastDue: BirthItem[]
   upcoming: BirthItem[]
   days: number
-  onSelectRecord?: (record: BreedingRecord) => void
+  animals: Animal[]
+  onSelectRecord?: (record: BreedingRecord, femaleId: string) => void
 }
 
 const formatRelative = (diff: number) => {
@@ -29,8 +31,14 @@ const BirthsWindowSummary: React.FC<BirthsWindowSummaryProps> = ({
   pastDue,
   upcoming,
   days,
+  animals,
   onSelectRecord,
 }) => {
+  const getAnimalNumber = (femaleId: string) => {
+    const animal = animals.find((a) => a.id === femaleId)
+    return animal?.animalNumber || femaleId
+  }
+
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <section>
@@ -46,9 +54,9 @@ const BirthsWindowSummary: React.FC<BirthsWindowSummaryProps> = ({
               <li
                 key={item.record.id + item.info.femaleId}
                 className="flex items-center justify-between p-2 rounded border border-red-100 bg-red-50 hover:bg-red-100 cursor-pointer"
-                onClick={() => onSelectRecord?.(item.record)}
+                onClick={() => onSelectRecord?.(item.record, item.info.femaleId)}
               >
-                <span className="font-medium">Hembra {item.info.femaleId}</span>
+                <span className="font-medium">Hembra {getAnimalNumber(item.info.femaleId)}</span>
                 <span className="text-xs text-red-700">{formatRelative(item.daysDiff)}</span>
               </li>
             ))}
@@ -68,9 +76,9 @@ const BirthsWindowSummary: React.FC<BirthsWindowSummaryProps> = ({
               <li
                 key={item.record.id + item.info.femaleId}
                 className="flex items-center justify-between p-2 rounded border border-yellow-100 bg-yellow-50 hover:bg-yellow-100 cursor-pointer"
-                onClick={() => onSelectRecord?.(item.record)}
+                onClick={() => onSelectRecord?.(item.record, item.info.femaleId)}
               >
-                <span className="font-medium">Hembra {item.info.femaleId}</span>
+                <span className="font-medium">Hembra {getAnimalNumber(item.info.femaleId)}</span>
                 <span className="text-xs text-yellow-700">{formatRelative(item.daysDiff)}</span>
               </li>
             ))}

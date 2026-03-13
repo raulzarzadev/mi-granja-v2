@@ -42,7 +42,8 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
   record,
   animals,
 }) => {
-  const { updateRecord, removeRecord, resolveRecord, reopenRecord } = useAnimalCRUD()
+  const { updateRecord, removeRecord, resolveRecord, reopenRecord, updateWeightRecord } =
+    useAnimalCRUD()
   const { createReminder } = useReminders()
   const [mode, setMode] = useState<'view' | 'edit'>('view')
   const [form, setForm] = useState<RecordFormState | null>(null)
@@ -60,6 +61,17 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
   }
 
   const startEdit = () => {
+    // Para registros de peso, extraer el valor del título (e.g. "33.0 kg")
+    let weightValue = ''
+    let weightUnit: 'kg' | 'lb' = 'kg'
+    if (record.type === 'weight') {
+      const match = record.title.match(/^([\d.]+)\s*(kg|lb)$/i)
+      if (match) {
+        weightValue = match[1]
+        weightUnit = match[2].toLowerCase() as 'kg' | 'lb'
+      }
+    }
+
     setForm({
       type: record.type,
       category: record.category,
@@ -76,19 +88,56 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
       cost: record.cost?.toString() || '',
       createReminder: false,
       reminderDate: '',
+      reminderTitle: '',
+      weight: weightValue,
+      weightUnit,
     })
     setMode('edit')
   }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form || !form.title.trim()) {
+    if (!form) return
+
+    // Validar según tipo
+    if (form.type === 'weight') {
+      if (!form.weight || parseFloat(form.weight) <= 0) {
+        alert('Ingresa un peso valido')
+        return
+      }
+    } else if (!form.title.trim()) {
       alert('El titulo es requerido')
       return
     }
+
     setIsSubmitting(true)
     try {
-      const data = buildRecordFromForm(form)
+      let data: Partial<AnimalRecord>
+
+      if (form.type === 'weight') {
+        // Para peso, reconstruir el título desde el valor
+        const weightKg =
+          form.weightUnit === 'kg' ? parseFloat(form.weight) : parseFloat(form.weight) * 0.453592
+        const title = `${parseFloat(form.weight).toFixed(1)} ${form.weightUnit}`
+        data = {
+          type: 'weight',
+          category: 'general',
+          title,
+          date: form.date ? new Date(form.date) : new Date(),
+          description: form.description || undefined,
+        }
+
+        // También actualizar weightRecords del animal
+        const weightGrams = Math.round(weightKg * 1000)
+        await updateWeightRecord(record.animalId, record.date, {
+          date: form.date ? new Date(form.date) : new Date(),
+          weight: weightGrams,
+          ...(form.description ? { notes: form.description } : {}),
+        })
+      } else {
+        data = buildRecordFromForm(form)
+      }
+
       if (isGrouped && record.__isGrouped) {
         await Promise.all(record.__animals.map((a) => updateRecord(a.id, record.id, data)))
       } else {
@@ -97,13 +146,14 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
 
       if (form.createReminder && form.reminderDate) {
         const [y, m, d] = form.reminderDate.split('-').map(Number)
+        const reminderTitle = form.reminderTitle?.trim() || `Recordatorio: ${form.title || 'Peso'}`
         await createReminder({
-          title: `Recordatorio: ${form.title}`,
+          title: reminderTitle,
           description: form.description || '',
           dueDate: new Date(y, m - 1, d),
           completed: false,
           priority: 'medium',
-          type: form.type === 'health' ? 'medical' : 'other',
+          type: form.type === 'health' ? 'medical' : form.type === 'weight' ? 'weight' : 'other',
           animalNumber: record.animalNumber,
         })
       }

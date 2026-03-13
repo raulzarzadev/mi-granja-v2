@@ -171,7 +171,7 @@ describe('Authentication Flow', () => {
       cy.contains('Completando autenticación').should('be.visible')
 
       // Should redirect to home page after successful completion
-      cy.url().should('eq', Cypress.config().baseUrl + '/')
+      cy.url().should('eq', `${Cypress.config().baseUrl}/`)
     })
 
     it('should prompt for email when not stored', () => {

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import AdminActivities from './AdminActivities'
 import AdminAnimals from './AdminAnimals'
 import AdminBreedings from './AdminBreedings'

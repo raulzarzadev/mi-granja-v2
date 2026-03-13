@@ -1,7 +1,5 @@
 'use client'
 
-import React from 'react'
-
 type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities'
 
 interface AdminQuickActionsProps {

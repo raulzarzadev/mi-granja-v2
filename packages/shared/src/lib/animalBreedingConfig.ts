@@ -160,7 +160,7 @@ export const calculateExpectedBirthDate = (
   animalType: AnimalType,
 ): Date | null => {
   const date = toDate(breedingDate)
-  if (!date || isNaN(date.getTime())) {
+  if (!date || Number.isNaN(date.getTime())) {
     console.log('Fecha de monta inválida')
     return null
   }

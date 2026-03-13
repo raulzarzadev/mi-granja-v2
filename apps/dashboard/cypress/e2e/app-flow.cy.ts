@@ -38,7 +38,7 @@ describe('Complete Application Flow', () => {
 
       // Should redirect to dashboard/home
       cy.wait('@registerUser')
-      cy.url().should('eq', Cypress.config().baseUrl + '/')
+      cy.url().should('eq', `${Cypress.config().baseUrl}/`)
     })
 
     it('should complete full login flow', () => {
@@ -66,7 +66,7 @@ describe('Complete Application Flow', () => {
 
       // Should redirect to dashboard/home
       cy.wait('@loginUser')
-      cy.url().should('eq', Cypress.config().baseUrl + '/')
+      cy.url().should('eq', `${Cypress.config().baseUrl}/`)
     })
   })
 
@@ -114,7 +114,7 @@ describe('Complete Application Flow', () => {
 
       // Should redirect to dashboard/home
       cy.wait('@completeEmailLink')
-      cy.url().should('eq', Cypress.config().baseUrl + '/')
+      cy.url().should('eq', `${Cypress.config().baseUrl}/`)
     })
   })
 
@@ -140,7 +140,7 @@ describe('Complete Application Flow', () => {
       cy.visit('/')
 
       // Should stay on the page (not redirect to auth)
-      cy.url().should('eq', Cypress.config().baseUrl + '/')
+      cy.url().should('eq', `${Cypress.config().baseUrl}/`)
     })
   })
 

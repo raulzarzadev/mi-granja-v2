@@ -16,19 +16,32 @@ export default function CompleteAuthPage() {
   const [emailInput, setEmailInput] = useState('')
   const [hasAttemptedAuth, setHasAttemptedAuth] = useState(false)
 
+  // Notificar a la pestaña original que el login se completó
+  const notifyOriginalTab = () => {
+    // Método 1: BroadcastChannel (no cerrar inmediatamente para que el mensaje llegue)
+    if (typeof BroadcastChannel !== 'undefined') {
+      const channel = new BroadcastChannel('mi-granja-auth')
+      channel.postMessage({ type: 'AUTH_COMPLETE' })
+      setTimeout(() => channel.close(), 1000)
+    }
+    // Método 2: localStorage event (funciona cross-tab como fallback)
+    localStorage.setItem('mi-granja-auth-complete', Date.now().toString())
+  }
+
   const handleManualEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!emailInput) return
 
     try {
       setStatus('loading')
-      setHasAttemptedAuth(true) // Marcamos que ya intentamos la autenticación
+      setHasAttemptedAuth(true)
       const url = window.location.href
       await completeEmailLinkSignIn(emailInput, url)
       setStatus('success')
+      notifyOriginalTab()
       setTimeout(() => {
         router.push('/')
-      }, 1500)
+      }, 2000)
     } catch (error) {
       console.error('Error with manual email:', error)
       setStatus('error')
@@ -48,57 +61,58 @@ export default function CompleteAuthPage() {
       try {
         setHasAttemptedAuth(true)
         const url = window.location.href
-        console.log('Complete auth page loaded with URL:', url)
 
         // Verificar si es un enlace válido de autenticación
         if (!isEmailLinkSignIn(url)) {
-          console.log('Invalid email link')
           setStatus('error')
           setErrorMessage('El enlace de autenticación no es válido o ha expirado.')
           return
         }
 
-        // Obtener el email del localStorage
+        // Obtener el email: localStorage > URL params > continueUrl > hash params
         let email = window.localStorage.getItem('emailForSignIn')
-        console.log('Email from localStorage:', email)
 
-        // Debug: Mostrar todo el localStorage
-        console.log('All localStorage keys:', Object.keys(localStorage))
-        console.log('localStorage contents:', localStorage)
-
-        // Si no hay email en localStorage, intentar extraerlo de los parámetros de la URL
+        // Intentar extraerlo de los parámetros directos de la URL (?email=...)
         if (!email) {
           const urlParams = new URLSearchParams(window.location.search)
           email = urlParams.get('email')
-          console.log('Email from URL params:', email)
-          console.log('All URL params:', Array.from(urlParams.entries()))
+
+          // Firebase puede envolver la URL original en un parámetro continueUrl
+          if (!email) {
+            const continueUrl = urlParams.get('continueUrl')
+            if (continueUrl) {
+              try {
+                const continueParams = new URL(continueUrl).searchParams
+                email = continueParams.get('email')
+              } catch (_e) {
+                // URL inválida, ignorar
+              }
+            }
+          }
         }
 
-        // Como último recurso, intentar extraer el email del hash de la URL
+        // Intentar desde el hash de la URL
         if (!email) {
           const hashParams = new URLSearchParams(window.location.hash.substring(1))
           email = hashParams.get('email')
-          console.log('Email from hash params:', email)
-          console.log('All hash params:', Array.from(hashParams.entries()))
         }
 
-        // Si aún no hay email, mostrar formulario para ingresarlo en lugar de error
+        // Si aún no hay email, mostrar formulario manual
         if (!email) {
-          console.log('No email found in localStorage or URL params')
           setStatus('needEmail')
           return
         }
 
-        console.log('Proceeding with email:', email)
         // Completar la autenticación
         await completeEmailLinkSignIn(email, url)
 
         setStatus('success')
+        notifyOriginalTab()
 
-        // Redirigir al dashboard inmediatamente
+        // Redirigir al dashboard después de un momento
         setTimeout(() => {
           router.push('/')
-        }, 1500)
+        }, 2000)
       } catch (error) {
         console.error('Error completing email link sign in:', error)
         setStatus('error')
@@ -147,7 +161,10 @@ export default function CompleteAuthPage() {
                 </div>
               </div>
               <h3 className="text-xl font-semibold text-gray-900">¡Autenticación exitosa!</h3>
-              <p className="text-gray-600">Redirigiendo a tu dashboard...</p>
+              <p className="text-gray-600 mb-4">
+                Si tienes la app abierta, ya puedes volver a ella.
+              </p>
+              <p className="text-gray-500 text-sm">Redirigiendo automáticamente...</p>
             </div>
           )}
 

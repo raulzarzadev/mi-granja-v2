@@ -16,6 +16,17 @@ import { RootState } from '@/features/store'
 import { db } from '@/lib/firebase'
 import { Reminder } from '@/types'
 
+/** Normaliza animalNumbers desde datos legacy (animalNumber) y nuevos (animalNumbers) */
+function normalizeAnimalNumbers(data: Record<string, any>): string[] {
+  if (Array.isArray(data.animalNumbers) && data.animalNumbers.length > 0) {
+    return data.animalNumbers
+  }
+  if (data.animalNumber) {
+    return [data.animalNumber]
+  }
+  return []
+}
+
 export const useReminders = () => {
   const { user } = useSelector((state: RootState) => state.auth)
   const { currentFarm } = useSelector((state: RootState) => state.farm)
@@ -37,16 +48,19 @@ export const useReminders = () => {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const remindersData: Reminder[] = []
-      snapshot.forEach((doc) => {
-        const data = doc.data()
+      snapshot.forEach((d) => {
+        const data = d.data()
+        const animalNumbers = normalizeAnimalNumbers(data)
         remindersData.push({
-          id: doc.id,
+          id: d.id,
           farmerId: data.farmerId,
           animalNumber: data.animalNumber,
+          animalNumbers,
           title: data.title,
           description: data.description || '',
           dueDate: data.dueDate.toDate(),
           completed: data.completed || false,
+          completionByAnimal: data.completionByAnimal || {},
           priority: data.priority || 'medium',
           type: data.type || 'other',
           createdAt: data.createdAt.toDate(),
@@ -70,14 +84,24 @@ export const useReminders = () => {
     setIsSubmitting(true)
     try {
       const now = Timestamp.now()
+      const animalNumbers = data.animalNumbers || (data.animalNumber ? [data.animalNumber] : [])
+
+      // Inicializar completionByAnimal con todos en false
+      const completionByAnimal: Record<string, boolean> = {}
+      for (const num of animalNumbers) {
+        completionByAnimal[num] = false
+      }
+
       const docData = {
         farmerId: user.id,
         farmId: currentFarm.id,
-        animalNumber: data.animalNumber || null,
+        animalNumber: animalNumbers[0] || null, // compatibilidad legacy
+        animalNumbers,
         title: data.title,
         description: data.description || '',
         dueDate: Timestamp.fromDate(new Date(data.dueDate)),
         completed: data.completed || false,
+        completionByAnimal,
         priority: data.priority || 'medium',
         type: data.type || 'other',
         createdAt: now,
@@ -108,9 +132,12 @@ export const useReminders = () => {
       if (updates.title !== undefined) updateData.title = updates.title
       if (updates.description !== undefined) updateData.description = updates.description
       if (updates.completed !== undefined) updateData.completed = updates.completed
+      if (updates.completionByAnimal !== undefined)
+        updateData.completionByAnimal = updates.completionByAnimal
       if (updates.priority !== undefined) updateData.priority = updates.priority
       if (updates.type !== undefined) updateData.type = updates.type
       if (updates.animalNumber !== undefined) updateData.animalNumber = updates.animalNumber
+      if (updates.animalNumbers !== undefined) updateData.animalNumbers = updates.animalNumbers
 
       if (updates.dueDate) {
         updateData.dueDate = Timestamp.fromDate(new Date(updates.dueDate))
@@ -125,9 +152,46 @@ export const useReminders = () => {
     }
   }
 
-  // Marcar como completado
+  // Marcar completado total
   const markAsCompleted = async (id: string, completed: boolean = true) => {
-    await updateReminder(id, { completed })
+    const reminder = reminders.find((r) => r.id === id)
+    if (!reminder) return
+
+    // Si se marca como completado, marcar todos los animales también
+    const completionByAnimal = { ...(reminder.completionByAnimal || {}) }
+    if (completed) {
+      for (const num of reminder.animalNumbers || []) {
+        completionByAnimal[num] = true
+      }
+    } else {
+      for (const num of reminder.animalNumbers || []) {
+        completionByAnimal[num] = false
+      }
+    }
+
+    await updateReminder(id, { completed, completionByAnimal })
+  }
+
+  // Marcar completado para un animal específico
+  const markAnimalCompleted = async (
+    id: string,
+    animalNumber: string,
+    completed: boolean = true,
+  ) => {
+    const reminder = reminders.find((r) => r.id === id)
+    if (!reminder) return
+
+    const completionByAnimal = { ...(reminder.completionByAnimal || {}) }
+    completionByAnimal[animalNumber] = completed
+
+    // Verificar si todos los animales están completados
+    const allNumbers = reminder.animalNumbers || []
+    const allCompleted = allNumbers.length > 0 && allNumbers.every((num) => completionByAnimal[num])
+
+    await updateReminder(id, {
+      completionByAnimal,
+      completed: allCompleted,
+    })
   }
 
   // Eliminar recordatorio
@@ -143,9 +207,11 @@ export const useReminders = () => {
     }
   }
 
-  // Obtener recordatorios por animal
+  // Obtener recordatorios por animal (busca en animalNumbers array o legacy animalNumber)
   const getRemindersByAnimal = (animalNumber: string) => {
-    return reminders.filter((reminder) => reminder.animalNumber === animalNumber)
+    return reminders.filter(
+      (r) => r.animalNumbers?.includes(animalNumber) || r.animalNumber === animalNumber,
+    )
   }
 
   // Obtener recordatorios pendientes
@@ -212,6 +278,7 @@ export const useReminders = () => {
     createReminder,
     updateReminder,
     markAsCompleted,
+    markAnimalCompleted,
     deleteReminder,
     getRemindersByAnimal,
     getPendingReminders,

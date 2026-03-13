@@ -1,10 +1,14 @@
+'use client'
+
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import React, { useMemo, useState } from 'react'
 import BirthsWindowSummary from '@/components/BirthsWindowSummary'
 import BreedingCard from '@/components/BreedingCard'
+import BreedingTable from '@/components/BreedingTable'
+import GeneticTree from '@/components/GeneticTree'
 import ModalBirthForm from '@/components/ModalBirthForm'
-import ModalBreedingForm from '@/components/ModalBreedingForm'
 import ModalConfirmPregnancy from '@/components/ModalConfirmPregnancy'
-import ModalEditBreeding from '@/components/ModalEditBreeding'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
@@ -12,6 +16,7 @@ import { BreedingRecord } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 
 const BreedingTabs: React.FC = () => {
+  const router = useRouter()
   const {
     breedingRecords,
     updateBreedingRecord,
@@ -20,8 +25,8 @@ const BreedingTabs: React.FC = () => {
     getBirthsWindowSummary,
   } = useBreedingCRUD()
 
-  const { animals, wean, create } = useAnimalCRUD()
-  const [editingRecord, setEditingRecord] = React.useState<BreedingRecord | null>(null)
+  const { animals, wean, create, addRecord } = useAnimalCRUD()
+  const editRecord = (record: BreedingRecord) => router.push(`/monta/${record.id}/editar`)
   const [birthRecord, setBirthRecord] = React.useState<BreedingRecord | null>(null)
   const [birthFemaleId, setBirthFemaleId] = React.useState<string | null>(null)
   const [confirmPregnancyRecord, setConfirmPregnancyRecord] = React.useState<BreedingRecord | null>(
@@ -29,6 +34,7 @@ const BreedingTabs: React.FC = () => {
   )
 
   const [selectedAnimal, setSelectedAnimal] = useState<null | string>(null)
+  const [montasViewMode, setMontasViewMode] = useState<'cards' | 'table'>('cards')
 
   const handleOpenAddBirth: BreedingActionHandlers['onAddBirth'] = (record, femaleId) => {
     setBirthRecord(record)
@@ -196,7 +202,7 @@ const BreedingTabs: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <button
                           className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded"
-                          onClick={() => setEditingRecord(record)}
+                          onClick={() => editRecord(record)}
                         >
                           Ver monta
                         </button>
@@ -236,7 +242,11 @@ const BreedingTabs: React.FC = () => {
               pastDue={birthsWindow.pastDue}
               upcoming={birthsWindow.upcoming}
               days={birthsSummary.windowDays}
-              onSelectRecord={(r) => setEditingRecord(r)}
+              animals={animals}
+              onSelectRecord={(r, femaleId) => {
+                setBirthRecord(r)
+                setBirthFemaleId(femaleId)
+              }}
             />
           </div>
           {recentBirths.length > 0 && (
@@ -257,7 +267,11 @@ const BreedingTabs: React.FC = () => {
                     <li key={record.id + idx} className="py-2 flex flex-col gap-2">
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="font-medium">Hembra {info.femaleId}</span>{' '}
+                          <span className="font-medium">
+                            Hembra{' '}
+                            {animals.find((a) => a.id === info.femaleId)?.animalNumber ||
+                              info.femaleId}
+                          </span>{' '}
                           <span className="text-gray-500">
                             · {date.toLocaleDateString()} · {ageLabel}
                           </span>
@@ -265,7 +279,7 @@ const BreedingTabs: React.FC = () => {
                         <div className="flex items-center gap-3">
                           <button
                             className="text-xs text-blue-600 hover:underline"
-                            onClick={() => setEditingRecord(record)}
+                            onClick={() => editRecord(record)}
                           >
                             Ver monta
                           </button>
@@ -343,113 +357,193 @@ const BreedingTabs: React.FC = () => {
           <div>
             <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
               <h3 className="text-lg font-semibold">Montas Pendientes</h3>
-              <ModalBreedingForm />
-            </div>
-            {orderedBreedings.needPregnancyConfirmation.length === 0 &&
-            orderedBreedings.needBirthConfirmation.length === 0 ? (
-              <p className="text-sm text-gray-500">No hay montas pendientes.</p>
-            ) : (
-              <div className="space-y-8">
-                {orderedBreedings.needPregnancyConfirmation.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                      <span>Por confirmar embarazos</span>
-                      <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
-                        {orderedBreedings.needPregnancyConfirmation.length}
-                      </span>
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {orderedBreedings.needPregnancyConfirmation.map((r) => (
-                        <BreedingCard
-                          key={r.id}
-                          record={r}
-                          animals={animals}
-                          onEdit={setEditingRecord}
-                          onAddBirth={handleOpenAddBirth}
-                          onConfirmPregnancy={(record, femaleId) => {
-                            handleOpenConfirmPregnancy(record, femaleId)
-                          }}
-                          onUnconfirmPregnancy={handleUnconfirmPregnancy}
-                          onDelete={(rec) => deleteBreedingRecord(rec.id)}
-                          onRemoveFromBreeding={handleRemoveFromBreeding}
-                          onDeleteBirth={() => null}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {orderedBreedings.needBirthConfirmation.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                      <span>Embarazos confirmados (esperando parto)</span>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                        {orderedBreedings.needBirthConfirmation.length}
-                      </span>
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {orderedBreedings.needBirthConfirmation.map((r) => (
-                        <BreedingCard
-                          key={r.id}
-                          record={r}
-                          animals={animals}
-                          onEdit={setEditingRecord}
-                          onAddBirth={handleOpenAddBirth}
-                          onConfirmPregnancy={setConfirmPregnancyRecord}
-                          onUnconfirmPregnancy={handleUnconfirmPregnancy}
-                          onDelete={(rec) => deleteBreedingRecord(rec.id)}
-                          onRemoveFromBreeding={handleRemoveFromBreeding}
-                          onDeleteBirth={() => null}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Montas Finalizadas</h3>
-            {orderedBreedings.finished.length === 0 ? (
-              <p className="text-sm text-gray-500">No hay montas finalizadas.</p>
-            ) : (
-              <details className="group">
-                <summary className="cursor-pointer text-sm text-gray-700 hover:text-gray-900 flex items-center gap-2">
-                  Ver mas ({orderedBreedings.finished.length})
-                </summary>
-                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {orderedBreedings.finished.map((r) => (
-                    <BreedingCard
-                      key={r.id}
-                      record={r}
-                      animals={animals}
-                      onEdit={setEditingRecord}
-                      onAddBirth={handleOpenAddBirth}
-                      onConfirmPregnancy={setConfirmPregnancyRecord}
-                      onUnconfirmPregnancy={handleUnconfirmPregnancy}
-                      onDelete={(rec) => deleteBreedingRecord(rec.id)}
-                      onRemoveFromBreeding={handleRemoveFromBreeding}
-                      onDeleteBirth={() => null}
-                    />
-                  ))}
+              <div className="flex items-center gap-2">
+                {/* Toggle cards/tabla */}
+                <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setMontasViewMode('cards')}
+                    className={`p-1.5 transition-colors ${
+                      montasViewMode === 'cards'
+                        ? 'bg-green-100 text-green-700'
+                        : 'text-gray-500 hover:bg-gray-100'
+                    }`}
+                    title="Vista de tarjetas"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      className="w-4 h-4"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4.25 2A2.25 2.25 0 0 0 2 4.25v2.5A2.25 2.25 0 0 0 4.25 9h2.5A2.25 2.25 0 0 0 9 6.75v-2.5A2.25 2.25 0 0 0 6.75 2h-2.5Zm0 9A2.25 2.25 0 0 0 2 13.25v2.5A2.25 2.25 0 0 0 4.25 18h2.5A2.25 2.25 0 0 0 9 15.75v-2.5A2.25 2.25 0 0 0 6.75 11h-2.5Zm9-9A2.25 2.25 0 0 0 11 4.25v2.5A2.25 2.25 0 0 0 13.25 9h2.5A2.25 2.25 0 0 0 18 6.75v-2.5A2.25 2.25 0 0 0 15.75 2h-2.5Zm0 9A2.25 2.25 0 0 0 11 13.25v2.5A2.25 2.25 0 0 0 13.25 18h2.5A2.25 2.25 0 0 0 18 15.75v-2.5A2.25 2.25 0 0 0 15.75 11h-2.5Z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setMontasViewMode('table')}
+                    className={`p-1.5 transition-colors ${
+                      montasViewMode === 'table'
+                        ? 'bg-green-100 text-green-700'
+                        : 'text-gray-500 hover:bg-gray-100'
+                    }`}
+                    title="Vista de tabla"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      className="w-4 h-4"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M2 3.75A.75.75 0 0 1 2.75 3h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 3.75Zm0 4.167a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Zm0 4.166a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Zm0 4.167a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
                 </div>
-              </details>
+                <Link
+                  href="/monta/nueva"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-4 h-4"
+                  >
+                    <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+                  </svg>
+                  Registrar Monta
+                </Link>
+              </div>
+            </div>
+
+            {montasViewMode === 'table' ? (
+              <BreedingTable
+                records={[
+                  ...orderedBreedings.needPregnancyConfirmation,
+                  ...orderedBreedings.needBirthConfirmation,
+                  ...orderedBreedings.finished,
+                ]}
+                animals={animals}
+                onSelect={editRecord}
+                onDelete={(ids) => {
+                  for (const id of ids) {
+                    deleteBreedingRecord(id)
+                  }
+                }}
+              />
+            ) : (
+              <>
+                {orderedBreedings.needPregnancyConfirmation.length === 0 &&
+                orderedBreedings.needBirthConfirmation.length === 0 ? (
+                  <p className="text-sm text-gray-500">No hay montas pendientes.</p>
+                ) : (
+                  <div className="space-y-8">
+                    {orderedBreedings.needPregnancyConfirmation.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <span>Por confirmar embarazos</span>
+                          <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                            {orderedBreedings.needPregnancyConfirmation.length}
+                          </span>
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {orderedBreedings.needPregnancyConfirmation.map((r) => (
+                            <BreedingCard
+                              key={r.id}
+                              record={r}
+                              animals={animals}
+                              onEdit={editRecord}
+                              onAddBirth={handleOpenAddBirth}
+                              onConfirmPregnancy={(record, femaleId) => {
+                                handleOpenConfirmPregnancy(record, femaleId)
+                              }}
+                              onUnconfirmPregnancy={handleUnconfirmPregnancy}
+                              onDelete={(rec) => deleteBreedingRecord(rec.id)}
+                              onRemoveFromBreeding={handleRemoveFromBreeding}
+                              onDeleteBirth={() => null}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {orderedBreedings.needBirthConfirmation.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <span>Embarazos confirmados (esperando parto)</span>
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                            {orderedBreedings.needBirthConfirmation.length}
+                          </span>
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {orderedBreedings.needBirthConfirmation.map((r) => (
+                            <BreedingCard
+                              key={r.id}
+                              record={r}
+                              animals={animals}
+                              onEdit={editRecord}
+                              onAddBirth={handleOpenAddBirth}
+                              onConfirmPregnancy={setConfirmPregnancyRecord}
+                              onUnconfirmPregnancy={handleUnconfirmPregnancy}
+                              onDelete={(rec) => deleteBreedingRecord(rec.id)}
+                              onRemoveFromBreeding={handleRemoveFromBreeding}
+                              onDeleteBirth={() => null}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold mb-3">Montas Finalizadas</h3>
+                  {orderedBreedings.finished.length === 0 ? (
+                    <p className="text-sm text-gray-500">No hay montas finalizadas.</p>
+                  ) : (
+                    <details className="group">
+                      <summary className="cursor-pointer text-sm text-gray-700 hover:text-gray-900 flex items-center gap-2">
+                        Ver mas ({orderedBreedings.finished.length})
+                      </summary>
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {orderedBreedings.finished.map((r) => (
+                          <BreedingCard
+                            key={r.id}
+                            record={r}
+                            animals={animals}
+                            onEdit={editRecord}
+                            onAddBirth={handleOpenAddBirth}
+                            onConfirmPregnancy={setConfirmPregnancyRecord}
+                            onUnconfirmPregnancy={handleUnconfirmPregnancy}
+                            onDelete={(rec) => deleteBreedingRecord(rec.id)}
+                            onRemoveFromBreeding={handleRemoveFromBreeding}
+                            onDeleteBirth={() => null}
+                          />
+                        ))}
+                      </div>
+                    </details>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>
       ),
+    },
+    {
+      label: '🧬 Genetica',
+      content: <GeneticTree animals={animals} />,
     },
   ]
 
   return (
     <>
       <Tabs tabs={tabs} tabsId="breeding-tabs" />
-      <ModalEditBreeding
-        animals={animals}
-        record={editingRecord}
-        onSubmit={(id, data) => updateBreedingRecord(id, data)}
-        onClose={() => setEditingRecord(null)}
-        isLoading={false}
-      />
       <ModalBirthForm
         isOpen={!!birthRecord}
         onClose={() => {
@@ -508,6 +602,19 @@ const BreedingTabs: React.FC = () => {
             )
             await updateBreedingRecord(birthRecord.id, {
               femaleBreedingInfo: updatedFemaleInfo,
+            })
+
+            // Crear registro tipo 'birth' en la madre
+            const offspringSummary = form.offspring
+              .map((o) => `#${o.animalNumber} (${o.gender}${o.weight ? `, ${o.weight}kg` : ''})`)
+              .join(', ')
+            await addRecord(form.animalId, {
+              type: 'birth',
+              category: 'general',
+              title: `Parto: ${form.totalOffspring} cría${form.totalOffspring > 1 ? 's' : ''}`,
+              description: offspringSummary,
+              date: actualDate,
+              notes: form.notes || undefined,
             })
 
             setBirthRecord(null)

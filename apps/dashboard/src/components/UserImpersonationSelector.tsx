@@ -55,7 +55,7 @@ const UserImpersonationSelector: React.FC<UserImpersonationSelectorProps> = ({ o
   const filteredUsers = users.filter(
     (u) =>
       u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (u.farmName && u.farmName.toLowerCase().includes(searchTerm.toLowerCase())),
+      u.farmName?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   if (loading) {

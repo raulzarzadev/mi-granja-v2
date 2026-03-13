@@ -17,7 +17,6 @@ interface ModalAnimalDetailsProps {
  */
 const ModalAnimalDetails: React.FC<ModalAnimalDetailsProps> = ({ animal, triggerComponent }) => {
   const { isOpen, openModal, closeModal } = useModal()
-
   return (
     <>
       {triggerComponent ? (

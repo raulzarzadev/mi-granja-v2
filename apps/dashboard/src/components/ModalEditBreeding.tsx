@@ -13,6 +13,7 @@ interface ModalEditBreedingProps {
     id: string,
     data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>,
   ) => Promise<void>
+  onDelete?: (id: string) => Promise<void>
   onClose: () => void
   isLoading?: boolean
 }
@@ -24,6 +25,7 @@ const ModalEditBreeding: React.FC<ModalEditBreedingProps> = ({
   animals,
   record,
   onSubmit,
+  onDelete,
   onClose,
   isLoading = false,
 }) => {
@@ -41,6 +43,18 @@ const ModalEditBreeding: React.FC<ModalEditBreedingProps> = ({
     }
   }
 
+  const handleDelete = async () => {
+    if (!record || !onDelete) return
+    if (!window.confirm('¿Estás seguro de eliminar esta monta? Esta acción no se puede deshacer.'))
+      return
+    try {
+      await onDelete(record.id)
+      onClose()
+    } catch (error) {
+      console.error('Error deleting breeding record:', error)
+    }
+  }
+
   if (!record) return null
 
   return (
@@ -52,6 +66,17 @@ const ModalEditBreeding: React.FC<ModalEditBreedingProps> = ({
         isLoading={isLoading}
         initialData={record}
       />
+      {onDelete && (
+        <div className="mt-4 pt-4 border-t">
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="w-full px-4 py-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors"
+          >
+            Eliminar monta
+          </button>
+        </div>
+      )}
     </Modal>
   )
 }

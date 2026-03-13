@@ -5,22 +5,11 @@
   "packageManager": "pnpm@10.25.0",
   "scripts": {
     "dev": "turbo run dev",
-    "build": "turbo run build",
-    "lint": "turbo run lint",
-    "type-check": "turbo run type-check",
-    "test": "turbo run test",
-    "format": "biome format --write .",
-    "dev:dashboard": "turbo run dev --filter=@mi-granja/dashboard",
-    "dev:landing": "turbo run dev --filter=@mi-granja/landing",
-    "build:dashboard": "turbo run build --filter=@mi-granja/dashboard",
-    "build:landing": "turbo run build --filter=@mi-granja/landing",
     "emulators": "cd firebase && firebase emulators:start --import=data --export-on-exit=data",
-    "emulators:start": "cd firebase && firebase emulators:start",
     "emulators:kill": "lsof -ti :9099 -ti :8080 -ti :9199 -ti :4000 -ti :4400 -ti :4500 | xargs kill 2>/dev/null; echo '✅ Emuladores detenidos'",
-    "stripe:listen": "stripe listen --forward-to localhost:3000/api/billing/webhook",
-    "dev:full": "bash scripts/dev-full.sh",
-    "seed": "npx tsx scripts/seed-emulators.ts",
-    "check": "bash scripts/check.sh"
+    "review": "bash scripts/review.sh",
+    "deploy:preview": "git push origin HEAD",
+    "deploy:main": "git push origin main"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",

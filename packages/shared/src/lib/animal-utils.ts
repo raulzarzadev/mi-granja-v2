@@ -14,15 +14,18 @@ import { Animal } from '../types/animals'
  */
 
 // Sobrecarga: cuando format es 'months', retorna number
-export function animalAge(animal: Animal, options: { format: 'months' }): number
+export function animalAge(animal: Animal, options: { format: 'months'; endDate?: Date }): number
 
 // Sobrecarga: cuando format es 'short' o 'long' (o no se especifica), retorna string
-export function animalAge(animal: Animal, options?: { format?: 'short' | 'long' }): string
+export function animalAge(
+  animal: Animal,
+  options?: { format?: 'short' | 'long'; endDate?: Date },
+): string
 
 // Implementación real
 export function animalAge(
   animal: Animal,
-  options?: { format?: 'months' | 'short' | 'long' },
+  options?: { format?: 'months' | 'short' | 'long'; endDate?: Date },
 ): string | number {
   const format = options?.format || 'long'
 
@@ -36,7 +39,7 @@ export function animalAge(
   }
 
   const birthDate = toDate(animal.birthDate)
-  const now = new Date()
+  const now = options?.endDate || new Date()
 
   // Calcular años, meses y días exactos
   let years = now.getFullYear() - birthDate.getFullYear()
@@ -76,8 +79,6 @@ export function animalAge(
       } else {
         return `${days}d`
       }
-
-    case 'long':
     default:
       if (years > 0) {
         const yearText = `${years} año${years !== 1 ? 's' : ''}`
@@ -92,4 +93,17 @@ export function animalAge(
         return `${days} día${days !== 1 ? 's' : ''}`
       }
   }
+}
+
+/**
+ * Convierte gramos a kilogramos para mostrar en la UI
+ * @param grams - Peso en gramos (number | string | null | undefined)
+ * @returns String formateado en kg (ej: "4.5") o null si no hay valor
+ */
+export function formatWeight(grams: number | string | null | undefined): string | null {
+  if (grams == null || grams === '') return null
+  const g = typeof grams === 'number' ? grams : Number.parseFloat(String(grams))
+  if (Number.isNaN(g)) return null
+  const kg = g / 1000
+  return kg % 1 === 0 ? kg.toFixed(0) : kg.toFixed(1)
 }

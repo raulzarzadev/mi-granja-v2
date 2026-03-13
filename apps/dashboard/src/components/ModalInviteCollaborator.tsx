@@ -34,6 +34,7 @@ const ModalInviteCollaborator: React.FC<ModalInviteCollaboratorProps> = ({
   const { canInviteCollaborator } = useBilling()
   const { inviteCollaborator } = useFarmMembers(currentFarm?.id)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: '',
     role: 'caretaker' as const,
@@ -47,10 +48,17 @@ const ModalInviteCollaborator: React.FC<ModalInviteCollaboratorProps> = ({
     e.preventDefault()
 
     if (!formData.email.trim() || !user?.id) {
+      setError('Email y usuario son requeridos')
+      return
+    }
+
+    if (!currentFarm?.id) {
+      setError('No hay granja seleccionada')
       return
     }
 
     setIsLoading(true)
+    setError(null)
     try {
       await inviteCollaborator(formData.email.trim(), formData.role, user.id)
 
@@ -62,8 +70,11 @@ const ModalInviteCollaborator: React.FC<ModalInviteCollaboratorProps> = ({
       })
 
       closeModal()
-    } catch (error) {
-      console.error('Error inviting collaborator:', error)
+    } catch (err) {
+      console.error('Error inviting collaborator:', err)
+      setError(
+        err instanceof Error ? err.message : 'Error al enviar la invitacion. Revisa la consola.',
+      )
     } finally {
       setIsLoading(false)
     }
@@ -177,6 +188,13 @@ const ModalInviteCollaborator: React.FC<ModalInviteCollaboratorProps> = ({
               <li>• El colaborador debe crear una cuenta para aceptar</li>
             </ul>
           </div>
+
+          {/* Error */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
           {/* Botones */}
           <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">

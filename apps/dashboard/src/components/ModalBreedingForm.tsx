@@ -1,6 +1,5 @@
 'use client'
 
-import React from 'react'
 import BreedingForm from '@/components/BreedingForm'
 import { Modal } from '@/components/Modal'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'

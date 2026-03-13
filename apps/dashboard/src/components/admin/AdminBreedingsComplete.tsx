@@ -2,7 +2,6 @@
 
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import React from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAdminBreedings } from '@/hooks/admin/useAdminBreedings'
 

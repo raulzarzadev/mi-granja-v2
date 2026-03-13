@@ -12,7 +12,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { addAnimal, removeAnimal, setAnimals, updateAnimal } from '@/features/animals/animalsSlice'
 import { setError } from '@/features/auth/authSlice'
@@ -286,6 +286,7 @@ export const useAnimalCRUD = () => {
   const animalsFiltered = (
     filters: {
       type?: string
+      breed?: string
       stage?: string
       gender?: string
       search?: string
@@ -304,6 +305,7 @@ export const useAnimalCRUD = () => {
         if (!filters.includeInactive && status !== 'activo') return false
       }
       if (filters.type && animal.type !== filters.type) return false
+      if (filters.breed && animal.breed !== filters.breed) return false
       if (filters.stage && animal.stage !== filters.stage) return false
       if (filters.gender && animal.gender !== filters.gender) return false
       if (filters.search) {
@@ -311,6 +313,9 @@ export const useAnimalCRUD = () => {
         if (
           !(
             animal.animalNumber.toLowerCase().includes(searchLower) ||
+            animal.id.toLowerCase().includes(searchLower) ||
+            animal.name?.toLowerCase().includes(searchLower) ||
+            animal.breed?.toLowerCase().includes(searchLower) ||
             animal.notes?.toLowerCase().includes(searchLower)
           )
         )
@@ -564,7 +569,7 @@ export const useAnimalCRUD = () => {
             const dueDate = new Date(record.nextDueDate)
             if (dueDate <= cutoffDate) {
               const daysUntilDue = Math.ceil(
-                (dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
+                (dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
               )
               upcoming.push({
                 animal,
@@ -580,7 +585,137 @@ export const useAnimalCRUD = () => {
     return upcoming.sort((a, b) => a.daysUntilDue - b.daysUntilDue)
   }
 
-  // Migrar animales al nuevo esquema de animalNumber
+  // Buscar animal en Firestore por coincidencia exacta (animalNumber, name o doc ID)
+  // Ignora el status — trae cualquier animal de la granja
+  const searchExact = useCallback(
+    async (term: string): Promise<Animal[]> => {
+      if (!currentFarm?.id || !term.trim()) return []
+
+      const trimmed = term.trim()
+      const results: Animal[] = []
+      const seenIds = new Set<string>()
+
+      // 1. Buscar por doc ID directo
+      try {
+        const docSnap = await getDoc(doc(db, 'animals', trimmed))
+        if (docSnap.exists()) {
+          const data = docSnap.data()
+          if (data.farmId === currentFarm.id) {
+            const animal = serializeObj({ id: docSnap.id, ...data } as Animal)
+            results.push(animal)
+            seenIds.add(animal.id)
+          }
+        }
+      } catch {
+        // ID invalido, ignorar
+      }
+
+      // 2. Buscar por animalNumber exacto
+      try {
+        const q = query(
+          collection(db, 'animals'),
+          where('farmId', '==', currentFarm.id),
+          where('animalNumber', '==', trimmed),
+        )
+        const snap = await getDocs(q)
+        for (const d of snap.docs) {
+          if (!seenIds.has(d.id)) {
+            results.push(serializeObj({ id: d.id, ...d.data() } as Animal))
+            seenIds.add(d.id)
+          }
+        }
+      } catch (e) {
+        console.error('searchExact animalNumber error:', e)
+      }
+
+      // 3. Buscar por name exacto
+      try {
+        const q = query(
+          collection(db, 'animals'),
+          where('farmId', '==', currentFarm.id),
+          where('name', '==', trimmed),
+        )
+        const snap = await getDocs(q)
+        for (const d of snap.docs) {
+          if (!seenIds.has(d.id)) {
+            results.push(serializeObj({ id: d.id, ...d.data() } as Animal))
+            seenIds.add(d.id)
+          }
+        }
+      } catch (e) {
+        console.error('searchExact name error:', e)
+      }
+
+      return results
+    },
+    [currentFarm?.id],
+  )
+
+  // Agregar entrada de peso al historial del animal
+  const addWeightEntry = async (
+    animalId: string,
+    entry: { date: Date; weight: number; notes?: string },
+  ) => {
+    if (!user?.id) {
+      dispatch(setError('Usuario no autenticado'))
+      return
+    }
+
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal) {
+      dispatch(setError('Animal no encontrado'))
+      return
+    }
+
+    const newEntry = {
+      date: entry.date,
+      weight: entry.weight,
+      ...(entry.notes ? { notes: entry.notes } : {}),
+    }
+
+    const updatedWeightRecords = [...(animal.weightRecords || []), newEntry]
+
+    // También crear un AnimalRecord de tipo 'weight' para que aparezca en la tabla de registros
+    const weightKg = (entry.weight / 1000).toFixed(1)
+    const newRecord = {
+      id: crypto.randomUUID(),
+      type: 'weight' as const,
+      category: 'general' as const,
+      title: `${weightKg} kg`,
+      date: entry.date,
+      createdAt: new Date(),
+      createdBy: user.id,
+      ...(entry.notes ? { notes: entry.notes } : {}),
+    }
+    const updatedRecords = [...(animal.records || []), newRecord]
+
+    await update(animalId, { weightRecords: updatedWeightRecords, records: updatedRecords })
+    console.log('Peso registrado para animal:', animalId, entry.weight, 'g')
+  }
+
+  // Actualizar una entrada de peso existente en weightRecords (match por fecha original)
+  const updateWeightRecord = async (
+    animalId: string,
+    originalDate: Date | string | number,
+    newEntry: { date: Date; weight: number; notes?: string },
+  ) => {
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal) return
+
+    const origTime = new Date(originalDate).getTime()
+    const updatedWeightRecords = (animal.weightRecords || []).map((wr) => {
+      if (new Date(wr.date).getTime() === origTime) {
+        return {
+          date: newEntry.date,
+          weight: newEntry.weight,
+          ...(newEntry.notes ? { notes: newEntry.notes } : {}),
+        }
+      }
+      return wr
+    })
+
+    await update(animalId, { weightRecords: updatedWeightRecords })
+  }
 
   return {
     animals,
@@ -602,7 +737,10 @@ export const useAnimalCRUD = () => {
     resolveRecord,
     reopenRecord,
     addBulkRecord,
+    addWeightEntry,
+    updateWeightRecord,
     getUpcomingHealthRecords,
+    searchExact,
   }
 }
 

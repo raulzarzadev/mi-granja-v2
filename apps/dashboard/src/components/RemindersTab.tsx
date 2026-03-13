@@ -1,8 +1,9 @@
 'use client'
 
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 import HealthRemindersCard from '@/components/HealthRemindersCard'
-import ModalReminderForm from '@/components/ModalReminderForm'
 import ReminderCard from '@/components/ReminderCard'
 import Tabs from '@/components/Tabs'
 import WeaningRemindersCard from '@/components/WeaningRemindersCard'
@@ -11,19 +12,19 @@ import { useReminders } from '@/hooks/useReminders'
 import { Reminder } from '@/types'
 
 const RemindersTab: React.FC = () => {
+  const router = useRouter()
   const { animals } = useAnimalCRUD()
   const {
     reminders,
     isLoading,
     markAsCompleted,
+    markAnimalCompleted,
     deleteReminder,
     getOverdueReminders,
     getTodayReminders,
     getUpcomingReminders,
   } = useReminders()
 
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null)
   const [showCompleted, setShowCompleted] = useState(false)
 
   const pendingReminders = reminders.filter((r) => !r.completed)
@@ -32,15 +33,7 @@ const RemindersTab: React.FC = () => {
   const overdueReminders = getOverdueReminders()
   const todayAndOverdue = [...overdueReminders, ...todayReminders]
 
-  const openNew = () => {
-    setEditingReminder(null)
-    setIsModalOpen(true)
-  }
-
-  const editReminder = (r: Reminder) => {
-    setEditingReminder(r)
-    setIsModalOpen(true)
-  }
+  const editReminder = (r: Reminder) => router.push(`/recordatorio/${r.id}/editar`)
 
   const renderReminderGrid = (list: Reminder[], showComplete = true) => {
     if (isLoading) {
@@ -64,6 +57,11 @@ const RemindersTab: React.FC = () => {
             reminder={reminder}
             animals={animals}
             onComplete={showComplete ? (r) => markAsCompleted(r.id) : undefined}
+            onCompleteAnimal={
+              showComplete
+                ? (r, animalNum, completed) => markAnimalCompleted(r.id, animalNum, completed)
+                : undefined
+            }
             onEdit={editReminder}
             onDelete={(r) => deleteReminder(r.id)}
           />
@@ -117,17 +115,9 @@ const RemindersTab: React.FC = () => {
       badgeCount: pendingReminders.length,
       content: (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-gray-700">
-              Pendientes ({pendingReminders.length})
-            </h3>
-            <button
-              onClick={openNew}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-            >
-              Nuevo Recordatorio
-            </button>
-          </div>
+          <h3 className="text-sm font-medium text-gray-700">
+            Pendientes ({pendingReminders.length})
+          </h3>
           {renderReminderGrid(pendingReminders)}
 
           {completedReminders.length > 0 && (
@@ -162,17 +152,17 @@ const RemindersTab: React.FC = () => {
   ]
 
   return (
-    <>
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Link
+          href="/recordatorio/nuevo"
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+        >
+          Nuevo Recordatorio
+        </Link>
+      </div>
       <Tabs tabs={tabs} tabsId="reminders-tabs" />
-      <ModalReminderForm
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false)
-          setEditingReminder(null)
-        }}
-        editingReminder={editingReminder}
-      />
-    </>
+    </div>
   )
 }
 

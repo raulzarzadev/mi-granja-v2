@@ -21,7 +21,7 @@ export const toDate = (date: string | number | string | Timestamp | Date | null 
   }
   if (typeof date === 'string' || typeof date === 'number') {
     const parsedDate = new Date(date)
-    if (isNaN(parsedDate.getTime())) {
+    if (Number.isNaN(parsedDate.getTime())) {
       throw new Error('Invalid date string or number')
     }
     return parsedDate

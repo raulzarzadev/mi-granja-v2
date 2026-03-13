@@ -11,7 +11,7 @@ import {
   where,
 } from 'firebase/firestore'
 import { useRouter, useSearchParams } from 'next/navigation'
-import React, { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import { toDate } from '@/lib/dates'

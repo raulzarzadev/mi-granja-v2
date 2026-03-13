@@ -107,14 +107,6 @@ export const useAuth = () => {
     }
   }
 
-  // Configuración para envío de enlaces de autenticación
-  const actionCodeSettings = {
-    url:
-      (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000') +
-      '/auth/complete',
-    handleCodeInApp: true,
-  }
-
   // Enviar enlace de autenticación por email
   const loginWithEmailLink = async (email: string) => {
     try {
@@ -122,6 +114,15 @@ export const useAuth = () => {
       dispatch(clearError())
 
       console.log('Sending email link to:', email)
+
+      // Incluir el email en la URL para que funcione al abrir desde otra app (ej. Mail → Safari)
+      // ya que el localStorage del PWA no es accesible desde Safari
+      const origin =
+        typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
+      const actionCodeSettings = {
+        url: `${origin}/auth/complete?email=${encodeURIComponent(email)}`,
+        handleCodeInApp: true,
+      }
 
       // Marcar como enviado ANTES de intentar enviar
       // Esto asegura que se muestre la UI de "revisa tu email" incluso si hay errores

@@ -61,6 +61,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
     if (data) {
       console.log('message_added')
     }
+    return data ?? undefined
   }
 
   const getFemaleStatuses = () => {
@@ -397,6 +398,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
               />
             ) : (
               <AnimalNotFound
+                key={femaleAnimal.animalId || 'unknown'}
                 animalId={femaleAnimal.animalId || ''}
                 onDelete={async () => {
                   return onRemoveFromBreeding?.(record, femaleAnimal.animalId || '')

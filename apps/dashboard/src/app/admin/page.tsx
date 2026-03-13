@@ -1,7 +1,6 @@
 'use client'
 
 import { redirect } from 'next/navigation'
-import React from 'react'
 import AdminDashboardWithNavigation from '@/components/admin/AdminDashboardWithNavigation'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'

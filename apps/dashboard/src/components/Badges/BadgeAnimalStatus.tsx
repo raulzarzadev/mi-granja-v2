@@ -15,15 +15,15 @@ export const BadgeAnimalStatus = ({
       break
     case 'muerto':
       bgColor = 'bg-red-100 text-red-800'
-      text = 'Muerto'
+      text = '💀 Muerto'
       break
     case 'vendido':
       bgColor = 'bg-yellow-100 text-yellow-800'
-      text = 'Vendido'
+      text = '$ Vendido'
       break
     case 'perdido':
       bgColor = 'bg-gray-100 text-gray-800'
-      text = 'Perdido'
+      text = '❓ Perdido'
       break
     case 'monta':
       bgColor = 'bg-indigo-100 text-indigo-800'
