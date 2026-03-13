@@ -97,6 +97,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ token: customToken, isNewUser })
   } catch (error) {
     console.error('verify-code error:', error)
-    return NextResponse.json({ error: 'Error verificando código. Intenta de nuevo.' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Error verificando código. Intenta de nuevo.' },
+      { status: 500 },
+    )
   }
 }
