@@ -431,7 +431,7 @@ export const useFarmMembers = (farmId?: string) => {
       const rejectUrl = `${APP_URL}/invitations/confirm?token=${encodeURIComponent(token)}&action=reject`
       const roleLabel = collaborator_roles_label[role] || role
       const farmName = currentFarm?.name || 'una granja'
-      const inviterName = user?.displayName || user?.email || 'Un administrador'
+      const inviterName = user?.email || 'Un administrador'
 
       await sendEmail({
         to: email,

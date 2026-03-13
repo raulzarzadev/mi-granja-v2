@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import React, { useEffect, useState } from 'react'
 import BrandLogo from '@/components/BrandLogo'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
@@ -10,10 +11,39 @@ import { useAuth } from '@/hooks/useAuth'
  * Interfaz simple y optimizada para móviles
  */
 const AuthForm: React.FC = () => {
+  const router = useRouter()
   // Solo necesitamos el email ahora; se eliminan contraseña y registro
   const [formData, setFormData] = useState({
     email: '',
   })
+
+  // Escuchar cuando el login se completa en otra pestaña (magic link)
+  useEffect(() => {
+    // Fallback: storage event (se dispara cross-tab cuando localStorage cambia)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'mi-granja-auth-complete') {
+        localStorage.removeItem('mi-granja-auth-complete')
+        router.push('/')
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+
+    // BroadcastChannel (más rápido, pero no todos los contextos lo soportan)
+    let channel: BroadcastChannel | null = null
+    if (typeof BroadcastChannel !== 'undefined') {
+      channel = new BroadcastChannel('mi-granja-auth')
+      channel.onmessage = (event) => {
+        if (event.data?.type === 'AUTH_COMPLETE') {
+          router.push('/')
+        }
+      }
+    }
+
+    return () => {
+      window.removeEventListener('storage', handleStorage)
+      channel?.close()
+    }
+  }, [router])
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const {
     loginWithEmailLink,
