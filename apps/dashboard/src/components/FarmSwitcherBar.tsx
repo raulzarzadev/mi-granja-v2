@@ -7,9 +7,9 @@ import { useBilling } from '@/hooks/useBilling'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 import { useMyInvitations } from '@/hooks/useMyInvitations'
-import { collaborator_roles_label, FarmCollaborator } from '@/types/collaborators'
 import { Farm } from '@/types/farm'
 import FarmAvatar from './FarmAvatar'
+import MyRole from './MyRole'
 import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditFarm from './ModalEditFarm'
 
@@ -29,18 +29,6 @@ const FarmSwitcherBar: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const pendingInvs = myInv.getPending()
-  const [acceptedRole, setAcceptedRole] = useState<FarmCollaborator['role'] | null>(null)
-
-  useEffect(() => {
-    if (currentFarm && user && currentFarm.ownerId !== user.id) {
-      const list = myInv.getAccepted()
-      const inv = list.find((i) => i.farmId === currentFarm.id)
-      const nextRole = inv ? inv.role : null
-      setAcceptedRole((prev) => (prev === nextRole ? prev : nextRole))
-    } else {
-      setAcceptedRole((prev) => (prev === null ? prev : null))
-    }
-  }, [currentFarm?.id, user?.id])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -179,11 +167,7 @@ const FarmSwitcherBar: React.FC = () => {
                           <span className="w-4" />
                         )}
                         <span className="truncate">{farm.name}</span>
-                        {farm.invitationMeta?.role && (
-                          <span className="text-xs text-gray-400">
-                            {collaborator_roles_label[farm.invitationMeta.role]}
-                          </span>
-                        )}
+                        {farm.invitationMeta?.role && <MyRole role={farm.invitationMeta.role} />}
                         {pending && (
                           <span className="ml-auto text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-600 rounded font-medium">
                             Pendiente
@@ -240,13 +224,6 @@ const FarmSwitcherBar: React.FC = () => {
               />
             </svg>
           </button>
-        )}
-
-        {/* Rol de invitado */}
-        {currentFarm && acceptedRole && user?.id !== currentFarm.ownerId && (
-          <span className="px-2 py-0.5 text-[10px] uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-200 rounded">
-            {collaborator_roles_label[acceptedRole] || acceptedRole}
-          </span>
         )}
 
         {/* Badge de plan y lugares - empujado a la derecha */}

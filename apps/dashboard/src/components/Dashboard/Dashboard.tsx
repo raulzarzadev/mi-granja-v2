@@ -6,6 +6,7 @@ import AnimalCard from '@/components/AnimalCard'
 import BreedingTabs from '@/components/BreedingTabs'
 import FarmAvatar from '@/components/FarmAvatar'
 import FarmSection from '@/components/FarmSection'
+import MyRole from '@/components/MyRole'
 import Navbar from '@/components/Navbar'
 import ProfileSection from '@/components/ProfileSection'
 import RemindersTab from '@/components/RemindersTab'
@@ -13,10 +14,8 @@ import Tabs from '@/components/Tabs'
 import { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
-import { useFarmMembers } from '@/hooks/useFarmMembers'
 import { useReminders } from '@/hooks/useReminders'
 import { AnimalType, animal_icon, animals_types_labels } from '@/types/animals'
-import { collaborator_roles_label } from '@/types/collaborators'
 import ModalAnimalDetails from '../ModalAnimalDetails'
 import ModalBulkHealthAction from '../ModalBulkHealthAction'
 import RecordsTab from '../RecordsTab'
@@ -30,13 +29,7 @@ import { AnimalsFilters, useAnimalFilters } from './Animals/animals-filters'
 const Dashboard: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth)
   const { farms, currentFarm } = useFarmCRUD()
-  const { collaborators } = useFarmMembers(currentFarm?.id)
   const { isLoading: isLoadingAnimals } = useAnimalCRUD()
-
-  // Role del usuario en la granja actual
-  const isOwner = currentFarm?.ownerId === user?.id
-  const myCollaborator = collaborators.find((c) => c.userId === user?.id && c.isActive)
-  const myRole = isOwner ? 'owner' : myCollaborator?.role
 
   // Usar el hook personalizado para filtros de animales
   const {
@@ -302,22 +295,8 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center gap-3 mb-3">
             <FarmAvatar name={currentFarm.name} photoURL={currentFarm.photoURL} size="md" />
             <h1 className="text-lg font-semibold text-gray-900">{currentFarm.name}</h1>
-
-            {myRole && (
-              <span
-                className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                  myRole === 'owner'
-                    ? 'bg-green-100 text-green-700'
-                    : myRole === 'admin'
-                      ? 'bg-blue-100 text-blue-700'
-                      : myRole === 'manager'
-                        ? 'bg-purple-100 text-purple-700'
-                        : 'bg-amber-100 text-amber-700'
-                }`}
-              >
-                {myRole === 'owner' ? 'Propietario' : (collaborator_roles_label[myRole] || myRole)}
-              </span>
-            )}
+            {/* Rol del usuario en la granja */}
+            <MyRole />
 
             {availableTypes.length > 1 && (
               <div className="flex items-center gap-2">
