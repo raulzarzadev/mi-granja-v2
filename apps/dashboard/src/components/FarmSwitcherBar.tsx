@@ -129,6 +129,7 @@ const FarmSwitcherBar: React.FC = () => {
                         <span className="w-4" />
                       )}
                       <span className="truncate">{farm.name}</span>
+                      <MyRole farm={farm} />
                     </button>
                   ))}
                 </>
@@ -167,7 +168,7 @@ const FarmSwitcherBar: React.FC = () => {
                           <span className="w-4" />
                         )}
                         <span className="truncate">{farm.name}</span>
-                        {farm.invitationMeta?.role && <MyRole role={farm.invitationMeta.role} />}
+                        <MyRole farm={farm} />
                         {pending && (
                           <span className="ml-auto text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-600 rounded font-medium">
                             Pendiente

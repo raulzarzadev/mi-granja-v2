@@ -294,9 +294,10 @@ const Dashboard: React.FC = () => {
         {currentFarm && (
           <div className="flex items-center gap-3 mb-3">
             <FarmAvatar name={currentFarm.name} photoURL={currentFarm.photoURL} size="md" />
-            <h1 className="text-lg font-semibold text-gray-900">{currentFarm.name}</h1>
-            {/* Rol del usuario en la granja */}
-            <MyRole />
+            <div className="flex flex-col justify-center items-start">
+              <h1 className="text-lg font-semibold text-gray-900">{currentFarm.name}</h1>
+              <MyRole farm={currentFarm} />
+            </div>
 
             {availableTypes.length > 1 && (
               <div className="flex items-center gap-2">
