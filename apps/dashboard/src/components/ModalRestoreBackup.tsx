@@ -570,7 +570,7 @@ function ConfirmAnimalsTable({ animals }: { animals: Record<string, unknown>[] }
               <tr>
                 <th className="text-left px-3 py-2 text-gray-600 font-medium">Arete</th>
                 <th className="text-left px-3 py-2 text-gray-600 font-medium">Nombre</th>
-                <th className="text-left px-3 py-2 text-gray-600 font-medium">Tipo</th>
+                <th className="text-left px-3 py-2 text-gray-600 font-medium">Especie</th>
                 <th className="text-left px-3 py-2 text-gray-600 font-medium">Raza</th>
                 <th className="text-left px-3 py-2 text-gray-600 font-medium">Sexo</th>
                 <th className="text-left px-3 py-2 text-gray-600 font-medium">Estado</th>

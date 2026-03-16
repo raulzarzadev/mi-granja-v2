@@ -292,7 +292,7 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tipo de Animal *
+                Especie *
               </label>
               <select
                 value={defaults.type}
@@ -626,7 +626,7 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Tipo</label>
+                      <label className="block text-xs text-gray-500 mb-1">Especie</label>
                       <select
                         value={animal.type}
                         onChange={(e) => updateAnimal(animal.tempId, 'type', e.target.value)}

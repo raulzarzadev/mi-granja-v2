@@ -373,7 +373,7 @@ export const AnimalsFilters = ({
                   : 'border-gray-300'
               }`}
             >
-              <option value="">Tipo: Todos</option>
+              <option value="">Especie: Todos</option>
               {availableTypes.map((key) => (
                 <option key={key} value={key}>
                   {animals_types_labels[key as AnimalType] || key}

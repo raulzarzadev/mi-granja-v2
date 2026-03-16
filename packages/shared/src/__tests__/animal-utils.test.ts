@@ -19,14 +19,14 @@ const createAnimal = (overrides: Partial<Animal> = {}): Animal => ({
 
 describe('animalAge', () => {
   describe('long format (default)', () => {
-    it('should return years and months for older animals', () => {
+    it('should return months for older animals', () => {
       const twoYearsAgo = new Date()
       twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2)
       twoYearsAgo.setMonth(twoYearsAgo.getMonth() - 3)
       const animal = createAnimal({ birthDate: twoYearsAgo })
       const result = animalAge(animal)
-      expect(result).toContain('año')
-      expect(result).toContain('mes')
+      expect(result).toContain('meses')
+      expect(result).toMatch(/\d+ meses/)
     })
 
     it('should return months for young animals', () => {
@@ -38,31 +38,31 @@ describe('animalAge', () => {
       expect(result).toContain('mes')
     })
 
-    it('should return days for newborns', () => {
+    it('should return 0 meses for newborns', () => {
       const fiveDaysAgo = new Date()
       fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5)
       const animal = createAnimal({ birthDate: fiveDaysAgo })
       const result = animalAge(animal)
-      expect(result).toContain('día')
+      expect(result).toBe('0 meses')
     })
   })
 
   describe('short format', () => {
-    it('should return compact format', () => {
+    it('should return months with m suffix', () => {
       const twoYearsAgo = new Date()
       twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2)
       twoYearsAgo.setMonth(twoYearsAgo.getMonth() - 3)
       const animal = createAnimal({ birthDate: twoYearsAgo })
       const result = animalAge(animal, { format: 'short' })
-      expect(result).toMatch(/\d+a/)
+      expect(result).toMatch(/\d+m/)
     })
 
-    it('should return days only for newborns', () => {
+    it('should return 0m for newborns', () => {
       const threeDaysAgo = new Date()
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
       const animal = createAnimal({ birthDate: threeDaysAgo })
       const result = animalAge(animal, { format: 'short' })
-      expect(result).toMatch(/\d+d/)
+      expect(result).toBe('0m')
     })
   })
 
@@ -92,11 +92,16 @@ describe('animalAge', () => {
       expect(result).toBe(0)
     })
 
-    it('should use approximate age if available', () => {
+    it('should use approximate age if available (long)', () => {
       const animal = createAnimal({ birthDate: undefined, age: 18 })
       const result = animalAge(animal)
-      expect(result).toContain('18')
-      expect(result).toContain('aprox')
+      expect(result).toBe('18 meses (aprox.)')
+    })
+
+    it('should use approximate age if available (short)', () => {
+      const animal = createAnimal({ birthDate: undefined, age: 18 })
+      const result = animalAge(animal, { format: 'short' })
+      expect(result).toBe('~18m')
     })
   })
 })

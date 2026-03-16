@@ -135,9 +135,17 @@ export const animals_types_labels: Record<AnimalType, string> = {
   otro: 'Otro',
 }
 
-export const animals_stages = ['cria', 'engorda', 'lechera', 'reproductor', 'descarte'] as const
+export const animals_stages = [
+  'cria',
+  'juvenil',
+  'engorda',
+  'lechera',
+  'reproductor',
+  'descarte',
+] as const
 export const animals_stages_labels: Record<AnimalStage, string> = {
   cria: 'Cría',
+  juvenil: 'Juvenil',
   engorda: 'Engorda',
   lechera: 'Lechera',
   reproductor: 'Reproductor',
@@ -275,6 +283,7 @@ export const record_severity_colors: Record<RecordSeverity, string> = {
 
 export const animal_stage_colors: Record<AnimalStage, string> = {
   cria: 'bg-blue-100 text-blue-800',
+  juvenil: 'bg-cyan-100 text-cyan-800',
   engorda: 'bg-orange-100 text-orange-800',
   lechera: 'bg-purple-100 text-purple-800',
   reproductor: 'bg-green-100 text-green-800',
@@ -283,6 +292,7 @@ export const animal_stage_colors: Record<AnimalStage, string> = {
 
 export const animal_stage_labels: Record<AnimalStage, string> = {
   cria: 'Cría',
+  juvenil: 'Juvenil',
   engorda: 'Engorda',
   lechera: 'Lechera',
   reproductor: 'Reproductor',
@@ -290,10 +300,79 @@ export const animal_stage_labels: Record<AnimalStage, string> = {
 }
 export const animal_stage_icons: Record<AnimalStage, string> = {
   cria: '👶',
+  juvenil: '🌱',
   engorda: '🍖',
   lechera: '🥛',
   reproductor: '❤️',
   descarte: '🚫',
+}
+
+export interface StageDescription {
+  description: string
+  speciesInfo?: Partial<Record<AnimalType, string>>
+}
+
+export const animal_stage_descriptions: Record<AnimalStage, StageDescription> = {
+  cria: {
+    description: 'Recién nacido, depende de la madre. Lactancia y cuidado inicial.',
+    speciesInfo: {
+      oveja: '0–2 meses, destete ~60 días',
+      cabra: '0–2 meses, destete ~60 días',
+      vaca: '0–4 meses, destete ~120 días',
+      cerdo: '0–1 mes, destete ~28 días',
+      gallina: '0–8 semanas',
+      equino: '0–6 meses, destete ~180 días',
+      perro: '0–2 meses, destete ~56 días',
+      gato: '0–2 meses, destete ~56 días',
+    },
+  },
+  juvenil: {
+    description: 'Ya destetado, en crecimiento. Aún no apto para reproducción ni engorda final.',
+    speciesInfo: {
+      oveja: '2–8 meses, <30 kg',
+      cabra: '2–7 meses, <25 kg',
+      vaca: '4–15 meses, <300 kg',
+      cerdo: '1–6 meses, <80 kg',
+      gallina: '8 semanas–5 meses',
+      equino: '6 meses–3 años',
+      perro: '2–12 meses',
+      gato: '2–6 meses',
+    },
+  },
+  engorda: {
+    description: 'Alimentación intensiva para ganancia de peso. Destino: venta o consumo.',
+    speciesInfo: {
+      oveja: '>6 meses, 30–50 kg objetivo',
+      cabra: '>6 meses, 25–40 kg objetivo',
+      vaca: '>12 meses, 400–600 kg objetivo',
+      cerdo: '>6 meses, 90–120 kg objetivo',
+      gallina: '>5 meses (pollo de engorda)',
+    },
+  },
+  lechera: {
+    description: 'Producción de leche activa. Requiere manejo nutricional especial.',
+    speciesInfo: {
+      vaca: 'Hembra adulta >24 meses, en lactancia',
+      cabra: 'Hembra adulta >12 meses, en lactancia',
+      oveja: 'Hembra adulta >12 meses, en lactancia',
+    },
+  },
+  reproductor: {
+    description: 'Apto para reproducción. Semental o pie de cría.',
+    speciesInfo: {
+      oveja: '>8 meses, pie de cría >30 kg / semental >40 kg',
+      cabra: '>7 meses',
+      vaca: 'Pie de cría >15 meses, semental >18 meses',
+      cerdo: '>6 meses, pie de cría >100 kg / semental >110 kg',
+      gallina: '>5 meses',
+      equino: '>3 años',
+      perro: '>12 meses',
+      gato: '>6 meses',
+    },
+  },
+  descarte: {
+    description: 'Fuera del ciclo productivo. Por edad, enfermedad o bajo rendimiento.',
+  },
 }
 
 export const animal_status_labels: Record<AnimalStatus, string> = {

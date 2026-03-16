@@ -7,7 +7,6 @@ import { z } from 'zod'
 import { useZodForm } from '@/hooks/useZodForm'
 import {
   Animal,
-  AnimalStage,
   AnimalType,
   animal_icon,
   animal_statuses,
@@ -18,6 +17,7 @@ import {
 } from '@/types/animals'
 import { Form } from './forms/Form'
 import { SelectField } from './forms/SelectField'
+import { StageSelector } from './forms/StageSelector'
 import { TextField } from './forms/TextField'
 import DateTimeInput from './inputs/DateTimeInput'
 
@@ -38,7 +38,7 @@ const schema = z
     animalNumber: z.string().trim().min(1, 'El ID del animal es requerido'),
     name: z.string().optional(),
     type: z.enum(animals_types, {
-      required_error: 'Selecciona un tipo de animal',
+      required_error: 'Selecciona una especie',
     }),
     stage: z.enum(animals_stages, {
       required_error: 'Selecciona una etapa',
@@ -186,12 +186,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
     label: `${animal_icon[type]} ${type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')}`,
   }))
 
-  const animalStagesOptions: { value: AnimalStage; label: string }[] = animals_stages.map(
-    (stage) => ({
-      value: stage,
-      label: stage.charAt(0).toUpperCase() + stage.slice(1).replace('_', ' '),
-    }),
-  )
+  const selectedType = form.watch('type')
   return (
     <Form form={form} onSubmit={handleSubmit} className="space-y-4">
       <TextField
@@ -210,7 +205,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
 
       <SelectField
         name="type"
-        label="Tipo de Animal *"
+        label="Especie *"
         options={animalTypeOptions.map((type) => ({
           value: type.value,
           label: type.label,
@@ -226,15 +221,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       />
 
       {/* Etapa */}
-      <SelectField
-        name="stage"
-        label="Etapa *"
-        options={animalStagesOptions.map((stage) => ({
-          value: stage.value,
-          label: stage.label,
-        }))}
-        disabled={isLoading}
-      />
+      <StageSelector name="stage" animalType={selectedType} disabled={isLoading} />
 
       {/* Status */}
 

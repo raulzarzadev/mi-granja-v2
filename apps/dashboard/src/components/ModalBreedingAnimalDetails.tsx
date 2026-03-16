@@ -95,7 +95,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
             <h3 className="text-lg font-semibold mb-3">Información del Animal</h3>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-gray-600">Tipo:</span>
+                <span className="text-gray-600">Especie:</span>
                 <span className="font-medium">{animal.type}</span>
               </div>
               <div className="flex justify-between">

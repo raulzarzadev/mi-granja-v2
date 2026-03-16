@@ -184,7 +184,7 @@ const AnimalsTable = ({
                 className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100 transition-colors"
               >
                 <span className="inline-flex items-center gap-0.5">
-                  Tipo
+                  Especie
                   <SortIcon direction={sortField === 'type' ? sortDirection : null} />
                 </span>
               </th>
@@ -297,10 +297,18 @@ const AnimalsTable = ({
                     </span>
                   </td>
                   <td className="hidden sm:table-cell px-2 py-1.5 text-sm text-gray-700 whitespace-nowrap">
-                    {animalAge(animal, { format: 'short' })}
+                    <span className="inline-flex items-baseline gap-0.5">
+                      {!animal.birthDate && animal.age ? (
+                        <span className="text-gray-400">~</span>
+                      ) : null}
+                      <span className="tabular-nums text-right min-w-[2ch]">
+                        {animalAge(animal, { format: 'months' })}
+                      </span>
+                      <span className="text-gray-400">m</span>
+                    </span>
                   </td>
                   <td className="hidden md:table-cell px-2 py-1.5 text-sm text-gray-700 whitespace-nowrap">
-                    {weight} kg
+                    {weight === '—' ? '—' : `${weight} kg`}
                   </td>
                   <td className="px-2 py-1.5 text-sm whitespace-nowrap">
                     <span
