@@ -269,7 +269,7 @@ const Dashboard: React.FC = () => {
     {
       label: '📆 Recordatorios',
       badgeCount: getOverdueReminders().length,
-      content: <RemindersTab />,
+      content: <RemindersTab speciesFilter={filters.type} />,
     },
     {
       label: '📋 Registros',

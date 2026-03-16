@@ -9,8 +9,13 @@ import WeaningRemindersCard from '@/components/WeaningRemindersCard'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useReminders } from '@/hooks/useReminders'
 import { Reminder } from '@/types'
+import { AnimalType } from '@/types/animals'
 
-const RemindersTab: React.FC = () => {
+interface RemindersTabProps {
+  speciesFilter?: AnimalType | ''
+}
+
+const RemindersTab: React.FC<RemindersTabProps> = ({ speciesFilter = '' }) => {
   const router = useRouter()
   const { animals } = useAnimalCRUD()
   const {
@@ -27,11 +32,33 @@ const RemindersTab: React.FC = () => {
   const [showCompleted, setShowCompleted] = useState(false)
   const [search, setSearch] = useState('')
 
-  // Filter reminders by search text
+  // Build a set of animal numbers that match the species filter
+  const speciesAnimalNumbers = useMemo(() => {
+    if (!speciesFilter) return null
+    return new Set(animals.filter((a) => a.type === speciesFilter).map((a) => a.animalNumber))
+  }, [animals, speciesFilter])
+
+  // Filter reminders by species filter and search text
   const filteredReminders = useMemo(() => {
+    let result = reminders
+
+    // Apply species filter
+    if (speciesAnimalNumbers) {
+      result = result.filter((r) => {
+        const nums = r.animalNumbers?.length
+          ? r.animalNumbers
+          : r.animalNumber
+            ? [r.animalNumber]
+            : []
+        if (nums.length === 0) return false
+        return nums.some((n) => speciesAnimalNumbers.has(n))
+      })
+    }
+
+    // Apply search filter
     const q = search.trim().toLowerCase()
-    if (!q) return reminders
-    return reminders.filter((r) => {
+    if (!q) return result
+    return result.filter((r) => {
       const parts = [
         r.title || '',
         r.description || '',
@@ -40,23 +67,25 @@ const RemindersTab: React.FC = () => {
       ]
       return parts.join(' ').toLowerCase().includes(q)
     })
-  }, [reminders, animals, search])
+  }, [reminders, animals, search, speciesAnimalNumbers])
 
   const pendingReminders = filteredReminders.filter((r) => !r.completed)
   const completedReminders = filteredReminders.filter((r) => r.completed)
+  const filteredIds = useMemo(
+    () => new Set(filteredReminders.map((r) => r.id)),
+    [filteredReminders],
+  )
   const todayReminders = useMemo(() => {
-    const all = getTodayReminders()
-    if (!search.trim()) return all
-    const ids = new Set(filteredReminders.map((r) => r.id))
-    return all.filter((r) => ids.has(r.id))
-  }, [getTodayReminders, filteredReminders, search])
+    return getTodayReminders().filter((r) => filteredIds.has(r.id))
+  }, [getTodayReminders, filteredIds])
   const overdueReminders = useMemo(() => {
-    const all = getOverdueReminders()
-    if (!search.trim()) return all
-    const ids = new Set(filteredReminders.map((r) => r.id))
-    return all.filter((r) => ids.has(r.id))
-  }, [getOverdueReminders, filteredReminders, search])
+    return getOverdueReminders().filter((r) => filteredIds.has(r.id))
+  }, [getOverdueReminders, filteredIds])
   const todayAndOverdue = [...overdueReminders, ...todayReminders]
+
+  const upcomingReminders = useMemo(() => {
+    return getUpcomingReminders().filter((r) => filteredIds.has(r.id))
+  }, [getUpcomingReminders, filteredIds])
 
   const editReminder = (r: Reminder) => router.push(`/recordatorio/${r.id}/editar`)
 
@@ -132,19 +161,8 @@ const RemindersTab: React.FC = () => {
     },
     {
       label: '🔔 Proximos',
-      badgeCount: getUpcomingReminders().length,
-      content: (
-        <div className="space-y-4">
-          {renderReminderGrid(
-            search.trim()
-              ? getUpcomingReminders().filter((r) => {
-                  const ids = new Set(filteredReminders.map((fr) => fr.id))
-                  return ids.has(r.id)
-                })
-              : getUpcomingReminders(),
-          )}
-        </div>
-      ),
+      badgeCount: upcomingReminders.length,
+      content: <div className="space-y-4">{renderReminderGrid(upcomingReminders)}</div>,
     },
     {
       label: '📋 Todos',
