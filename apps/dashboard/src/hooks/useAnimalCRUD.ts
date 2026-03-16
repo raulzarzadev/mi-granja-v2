@@ -689,7 +689,11 @@ export const useAnimalCRUD = () => {
     }
     const updatedRecords = [...(animal.records || []), newRecord]
 
-    await update(animalId, { weightRecords: updatedWeightRecords, records: updatedRecords })
+    await update(animalId, {
+      weight: entry.weight,
+      weightRecords: updatedWeightRecords,
+      records: updatedRecords,
+    })
     console.log('Peso registrado para animal:', animalId, entry.weight, 'g')
   }
 
@@ -714,7 +718,16 @@ export const useAnimalCRUD = () => {
       return wr
     })
 
-    await update(animalId, { weightRecords: updatedWeightRecords })
+    // Actualizar weight al peso más reciente por fecha
+    const sorted = [...updatedWeightRecords].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    )
+    const latestWeight = sorted[0]?.weight
+
+    await update(animalId, {
+      ...(latestWeight !== undefined ? { weight: latestWeight } : {}),
+      weightRecords: updatedWeightRecords,
+    })
   }
 
   return {
