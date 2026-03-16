@@ -9,9 +9,9 @@ import { useFarmMembers } from '@/hooks/useFarmMembers'
 import { useMyInvitations } from '@/hooks/useMyInvitations'
 import { Farm } from '@/types/farm'
 import FarmAvatar from './FarmAvatar'
-import MyRole from './MyRole'
 import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditFarm from './ModalEditFarm'
+import MyRole from './MyRole'
 
 const FarmSwitcherBar: React.FC = () => {
   const { currentFarm, switchFarm, loadUserFarms, myFarms, invitationFarms } = useFarmCRUD()

@@ -15,10 +15,7 @@ interface StageSelectorProps<TFieldValues extends FieldValues> {
   disabled?: boolean
 }
 
-const stageStyles: Record<
-  string,
-  { selected: string; hint: string }
-> = {
+const stageStyles: Record<string, { selected: string; hint: string }> = {
   cria: {
     selected: 'border-blue-400 bg-blue-50 text-blue-900',
     hint: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -61,9 +58,7 @@ export function StageSelector<TFieldValues extends FieldValues>({
         render={({ field, fieldState }) => {
           const selectedStage = field.value as string
           const desc =
-            animal_stage_descriptions[
-              selectedStage as keyof typeof animal_stage_descriptions
-            ]
+            animal_stage_descriptions[selectedStage as keyof typeof animal_stage_descriptions]
           const speciesHint = animalType && desc?.speciesInfo?.[animalType]
 
           return (
@@ -85,9 +80,7 @@ export function StageSelector<TFieldValues extends FieldValues>({
                           : 'border-transparent bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700'
                       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
-                      <span className="text-sm leading-none">
-                        {animal_stage_icons[stage]}
-                      </span>
+                      <span className="text-sm leading-none">{animal_stage_icons[stage]}</span>
                       <span>{animals_stages_labels[stage]}</span>
                     </button>
                   )
@@ -101,9 +94,7 @@ export function StageSelector<TFieldValues extends FieldValues>({
                   }`}
                 >
                   <p className="font-medium">{desc.description}</p>
-                  {speciesHint && (
-                    <p className="opacity-75">{speciesHint}</p>
-                  )}
+                  {speciesHint && <p className="opacity-75">{speciesHint}</p>}
                 </div>
               )}
 
