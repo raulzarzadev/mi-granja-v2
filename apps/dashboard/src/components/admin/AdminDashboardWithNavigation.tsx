@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
 import { collection, getDocs } from 'firebase/firestore'
+import { useCallback, useEffect, useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import { db } from '@/lib/firebase'
@@ -66,16 +66,23 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchAll = async () => {
       setIsLoading(true)
-      const [usersSnap, animalsSnap, farmsSnap, breedingsSnap, remindersSnap, invitationsSnap, salesSnap] =
-        await Promise.all([
-          getDocs(collection(db, 'users')),
-          getDocs(collection(db, 'animals')),
-          getDocs(collection(db, 'farms')),
-          getDocs(collection(db, 'breedingRecords')),
-          getDocs(collection(db, 'reminders')),
-          getDocs(collection(db, 'farmInvitations')),
-          getDocs(collection(db, 'sales')),
-        ])
+      const [
+        usersSnap,
+        animalsSnap,
+        farmsSnap,
+        breedingsSnap,
+        remindersSnap,
+        invitationsSnap,
+        salesSnap,
+      ] = await Promise.all([
+        getDocs(collection(db, 'users')),
+        getDocs(collection(db, 'animals')),
+        getDocs(collection(db, 'farms')),
+        getDocs(collection(db, 'breedingRecords')),
+        getDocs(collection(db, 'reminders')),
+        getDocs(collection(db, 'farmInvitations')),
+        getDocs(collection(db, 'sales')),
+      ])
 
       const mapSnap = (snap: any) => snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
 
@@ -121,7 +128,10 @@ export default function AdminDashboard() {
         type: animals_types_labels[a.type as keyof typeof animals_types_labels] || a.type || '',
         stage: a.stage || '',
         gender: a.gender || '',
-        status: animal_status_labels[a.status as keyof typeof animal_status_labels] || a.status || 'activo',
+        status:
+          animal_status_labels[a.status as keyof typeof animal_status_labels] ||
+          a.status ||
+          'activo',
         weight: a.weight ? (Number(a.weight) / 1000).toFixed(1) : '',
       },
     })),
@@ -129,8 +139,21 @@ export default function AdminDashboard() {
 
   // ── Resolve current view based on path ──
 
-  const resolve = useCallback((): { cards?: CardItem[]; rows?: DetailRow[]; table?: TableView; title?: string } => {
-    const { users = [], animals = [], farms = [], breedings = [], reminders = [], invitations = [], sales = [] } = rawData
+  const resolve = useCallback((): {
+    cards?: CardItem[]
+    rows?: DetailRow[]
+    table?: TableView
+    title?: string
+  } => {
+    const {
+      users = [],
+      animals = [],
+      farms = [],
+      breedings = [],
+      reminders = [],
+      invitations = [],
+      sales = [],
+    } = rawData
 
     const userMap = new Map(users.map((u: any) => [u.id, u]))
     const farmMap = new Map(farms.map((f: any) => [f.id, f]))
@@ -140,13 +163,62 @@ export default function AdminDashboard() {
       const activeReminders = reminders.filter((r: any) => !r.completed).length
       return {
         cards: [
-          { key: 'users', label: 'Usuarios', icon: '👥', value: users.length, bg: 'bg-blue-50', text: 'text-blue-700' },
-          { key: 'farms', label: 'Granjas', icon: '🚜', value: farms.length, bg: 'bg-emerald-50', text: 'text-emerald-700' },
-          { key: 'species', label: 'Especies', icon: '🐾', value: new Set(animals.map((a: any) => a.type)).size, bg: 'bg-green-50', text: 'text-green-700' },
-          { key: 'breedings', label: 'Reproducciones', icon: '💕', value: breedings.length, bg: 'bg-pink-50', text: 'text-pink-700' },
-          { key: 'reminders', label: 'Recordatorios', icon: '⏰', value: `${activeReminders}/${reminders.length}`, bg: 'bg-yellow-50', text: 'text-yellow-700' },
-          { key: 'invitations', label: 'Invitaciones', icon: '✉️', value: invitations.length, bg: 'bg-purple-50', text: 'text-purple-700' },
-          { key: 'sales', label: 'Ventas', icon: '💲', value: sales.length, bg: 'bg-indigo-50', text: 'text-indigo-700' },
+          {
+            key: 'users',
+            label: 'Usuarios',
+            icon: '👥',
+            value: users.length,
+            bg: 'bg-blue-50',
+            text: 'text-blue-700',
+          },
+          {
+            key: 'farms',
+            label: 'Granjas',
+            icon: '🚜',
+            value: farms.length,
+            bg: 'bg-emerald-50',
+            text: 'text-emerald-700',
+          },
+          {
+            key: 'species',
+            label: 'Especies',
+            icon: '🐾',
+            value: new Set(animals.map((a: any) => a.type)).size,
+            bg: 'bg-green-50',
+            text: 'text-green-700',
+          },
+          {
+            key: 'breedings',
+            label: 'Reproducciones',
+            icon: '💕',
+            value: breedings.length,
+            bg: 'bg-pink-50',
+            text: 'text-pink-700',
+          },
+          {
+            key: 'reminders',
+            label: 'Recordatorios',
+            icon: '⏰',
+            value: `${activeReminders}/${reminders.length}`,
+            bg: 'bg-yellow-50',
+            text: 'text-yellow-700',
+          },
+          {
+            key: 'invitations',
+            label: 'Invitaciones',
+            icon: '✉️',
+            value: invitations.length,
+            bg: 'bg-purple-50',
+            text: 'text-purple-700',
+          },
+          {
+            key: 'sales',
+            label: 'Ventas',
+            icon: '💲',
+            value: sales.length,
+            bg: 'bg-indigo-50',
+            text: 'text-indigo-700',
+          },
         ],
       }
     }
@@ -242,8 +314,18 @@ export default function AdminDashboard() {
         }
         const rows: DetailRow[] = [
           { key: 'owner', label: 'Dueño', value: owner?.email || farm?.ownerId || '—' },
-          { key: 'collabs', label: 'Colaboradores', value: farm?.collaborators?.length || 0, drillable: (farm?.collaborators?.length || 0) > 0 },
-          { key: 'animals', label: 'Animales', value: farmAnimals.length, drillable: farmAnimals.length > 0 },
+          {
+            key: 'collabs',
+            label: 'Colaboradores',
+            value: farm?.collaborators?.length || 0,
+            drillable: (farm?.collaborators?.length || 0) > 0,
+          },
+          {
+            key: 'animals',
+            label: 'Animales',
+            value: farmAnimals.length,
+            drillable: farmAnimals.length > 0,
+          },
           ...Array.from(speciesSet.entries()).map(([type, count]) => ({
             key: `species-${type}`,
             label: `${animal_icon[type as keyof typeof animal_icon] || '🐾'} ${animals_types_labels[type as keyof typeof animals_types_labels] || type}`,
@@ -251,8 +333,18 @@ export default function AdminDashboard() {
             drillable: true,
           })),
           { key: 'breedings', label: 'Reproducciones', value: farmBreedings.length },
-          { key: 'sales', label: 'Ventas', value: farmSales.length, drillable: farmSales.length > 0 },
-          { key: 'invitations', label: 'Invitaciones', value: farmInvitations.length, drillable: farmInvitations.length > 0 },
+          {
+            key: 'sales',
+            label: 'Ventas',
+            value: farmSales.length,
+            drillable: farmSales.length > 0,
+          },
+          {
+            key: 'invitations',
+            label: 'Invitaciones',
+            value: farmInvitations.length,
+            drillable: farmInvitations.length > 0,
+          },
         ]
         return { title: farm?.name || farmId, rows }
       }
@@ -269,12 +361,16 @@ export default function AdminDashboard() {
         }
       }
       if (subKey === 'animals' || subKey.startsWith('species-')) {
-        const list = subKey === 'animals'
-          ? farmAnimals
-          : farmAnimals.filter((a: any) => a.type === subKey.replace('species-', ''))
-        const typeLabel = subKey === 'animals'
-          ? 'Animales'
-          : animals_types_labels[subKey.replace('species-', '') as keyof typeof animals_types_labels] || subKey
+        const list =
+          subKey === 'animals'
+            ? farmAnimals
+            : farmAnimals.filter((a: any) => a.type === subKey.replace('species-', ''))
+        const typeLabel =
+          subKey === 'animals'
+            ? 'Animales'
+            : animals_types_labels[
+                subKey.replace('species-', '') as keyof typeof animals_types_labels
+              ] || subKey
         return {
           title: `${typeLabel} (${list.length})`,
           table: buildAnimalTable(list),
@@ -344,7 +440,13 @@ export default function AdminDashboard() {
 
     // ── Invitations ──
     if (root === 'invitations') {
-      const statusLabels: Record<string, string> = { pending: 'Pendiente', accepted: 'Aceptada', rejected: 'Rechazada', expired: 'Expirada', revoked: 'Revocada' }
+      const statusLabels: Record<string, string> = {
+        pending: 'Pendiente',
+        accepted: 'Aceptada',
+        rejected: 'Rechazada',
+        expired: 'Expirada',
+        revoked: 'Revocada',
+      }
       if (path.length === 1) {
         const byStatus = new Map<string, number>()
         for (const i of invitations) byStatus.set(i.status, (byStatus.get(i.status) || 0) + 1)
@@ -444,8 +546,12 @@ export default function AdminDashboard() {
             <h1 className="text-lg font-semibold text-gray-900">🏪 Panel Administrativo</h1>
             <div className="flex items-center gap-3 text-sm">
               <span className="text-gray-500">{user?.email}</span>
-              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Admin</span>
-              <button onClick={logout} className="text-gray-400 hover:text-gray-600">Salir</button>
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Admin
+              </span>
+              <button onClick={logout} className="text-gray-400 hover:text-gray-600">
+                Salir
+              </button>
             </div>
           </div>
         </div>
@@ -529,7 +635,11 @@ export default function AdminDashboard() {
                 {view.rows.map((row) => (
                   <div
                     key={row.key}
-                    onClick={row.drillable ? () => drillInto({ key: row.key, label: row.label, icon: row.icon }) : undefined}
+                    onClick={
+                      row.drillable
+                        ? () => drillInto({ key: row.key, label: row.label, icon: row.icon })
+                        : undefined
+                    }
                     className={`flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0 ${
                       row.drillable ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''
                     }`}
@@ -538,10 +648,14 @@ export default function AdminDashboard() {
                       {row.icon && <span className="text-base shrink-0">{row.icon}</span>}
                       <span className="text-sm text-gray-900 truncate">{row.label}</span>
                       {row.meta?.role && (
-                        <span className="text-xs text-gray-400 capitalize">({String(row.meta.role)})</span>
+                        <span className="text-xs text-gray-400 capitalize">
+                          ({String(row.meta.role)})
+                        </span>
                       )}
                       {row.meta?.ownerEmail && (
-                        <span className="text-xs text-gray-400">— {String(row.meta.ownerEmail)}</span>
+                        <span className="text-xs text-gray-400">
+                          — {String(row.meta.ownerEmail)}
+                        </span>
                       )}
                       {row.meta?.pricePerKg && (
                         <span className="text-xs text-gray-400">
@@ -552,8 +666,17 @@ export default function AdminDashboard() {
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-sm text-gray-600">{row.value}</span>
                       {row.drillable && (
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-gray-400">
-                          <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          className="w-4 h-4 text-gray-400"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       )}
                     </div>
@@ -573,7 +696,13 @@ export default function AdminDashboard() {
 
 // ── SortableTable ──
 
-function SortableTable({ table, onDrill }: { table: TableView; onDrill?: (item: BreadcrumbItem) => void }) {
+function SortableTable({
+  table,
+  onDrill,
+}: {
+  table: TableView
+  onDrill?: (item: BreadcrumbItem) => void
+}) {
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
@@ -648,7 +777,16 @@ function SortableTable({ table, onDrill }: { table: TableView; onDrill?: (item: 
             {sorted.map((row) => (
               <tr
                 key={row.key}
-                onClick={row.drillable && onDrill ? () => onDrill({ key: row.key, label: row.drillLabel || String(Object.values(row.cells)[0]), icon: row.drillIcon }) : undefined}
+                onClick={
+                  row.drillable && onDrill
+                    ? () =>
+                        onDrill({
+                          key: row.key,
+                          label: row.drillLabel || String(Object.values(row.cells)[0]),
+                          icon: row.drillIcon,
+                        })
+                    : undefined
+                }
                 className={`hover:bg-gray-50 transition-colors ${row.drillable ? 'cursor-pointer' : ''}`}
               >
                 {table.columns.map((col) => (
@@ -665,7 +803,10 @@ function SortableTable({ table, onDrill }: { table: TableView; onDrill?: (item: 
             ))}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={table.columns.length} className="px-4 py-8 text-center text-sm text-gray-500">
+                <td
+                  colSpan={table.columns.length}
+                  className="px-4 py-8 text-center text-sm text-gray-500"
+                >
                   {search ? 'Sin resultados para la búsqueda' : 'Sin datos'}
                 </td>
               </tr>
