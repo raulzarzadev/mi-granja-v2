@@ -4,7 +4,7 @@ import { collection, getDocs } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import { db } from '@/lib/firebase'
 import { Reminder, User } from '@/types'
-import { Animal } from '@/types/animals'
+import { Animal, AnimalType } from '@/types/animals'
 
 interface AdminStats {
   totalUsers: number
@@ -12,6 +12,12 @@ interface AdminStats {
   totalBreedings: number
   totalReminders: number
   activeReminders: number
+  totalFarms: number
+  totalInvitations: number
+  invitationsByStatus: Record<string, number>
+  totalSales: number
+  salesByStatus: Record<string, number>
+  speciesBreakdown: { type: AnimalType; count: number }[]
   recentUsers: User[]
   recentAnimals: Animal[]
   isLoading: boolean
@@ -25,6 +31,12 @@ export const useAdminStats = (): AdminStats => {
     totalBreedings: 0,
     totalReminders: 0,
     activeReminders: 0,
+    totalFarms: 0,
+    totalInvitations: 0,
+    invitationsByStatus: {},
+    totalSales: 0,
+    salesByStatus: {},
+    speciesBreakdown: [],
     recentUsers: [],
     recentAnimals: [],
     isLoading: true,
@@ -36,19 +48,18 @@ export const useAdminStats = (): AdminStats => {
       try {
         setStats((prev) => ({ ...prev, isLoading: true, error: null }))
 
-        // Obtener estadísticas en paralelo
-        const [usersData, animalsData, breedingsData, remindersData] = await Promise.all([
-          // Usuarios
-          getDocs(collection(db, 'users')),
-          // Animales
-          getDocs(collection(db, 'animals')),
-          // Reproducciones
-          getDocs(collection(db, 'breedingRecords')),
-          // Recordatorios
-          getDocs(collection(db, 'reminders')),
-        ])
+        const [usersData, animalsData, breedingsData, remindersData, farmsData, invitationsData, salesData] =
+          await Promise.all([
+            getDocs(collection(db, 'users')),
+            getDocs(collection(db, 'animals')),
+            getDocs(collection(db, 'breedingRecords')),
+            getDocs(collection(db, 'reminders')),
+            getDocs(collection(db, 'farms')),
+            getDocs(collection(db, 'farmInvitations')),
+            getDocs(collection(db, 'sales')),
+          ])
 
-        // Procesar usuarios
+        // Usuarios
         const users: User[] = []
         usersData.forEach((doc) => {
           const data = doc.data()
@@ -61,8 +72,9 @@ export const useAdminStats = (): AdminStats => {
           })
         })
 
-        // Procesar animales
+        // Animales + desglose por especie
         const animals: Animal[] = []
+        const speciesMap = new Map<AnimalType, number>()
         animalsData.forEach((doc) => {
           const data = doc.data()
           animals.push({
@@ -79,36 +91,39 @@ export const useAdminStats = (): AdminStats => {
             createdAt: data.createdAt?.toDate() || new Date(),
             updatedAt: data.updatedAt?.toDate() || new Date(),
           })
+          const t = data.type as AnimalType
+          speciesMap.set(t, (speciesMap.get(t) || 0) + 1)
         })
 
-        // Procesar recordatorios
-        const reminders: Reminder[] = []
+        const speciesBreakdown = Array.from(speciesMap.entries())
+          .map(([type, count]) => ({ type, count }))
+          .sort((a, b) => b.count - a.count)
+
+        // Recordatorios
         let activeCount = 0
         remindersData.forEach((doc) => {
           const data = doc.data()
-          const reminder: Reminder = {
-            id: doc.id,
-            farmerId: data.farmerId,
-            animalNumber: data.animalNumber,
-            title: data.title,
-            description: data.description || '',
-            dueDate: data.dueDate?.toDate() || new Date(),
-            completed: data.completed || false,
-            priority: data.priority || 'medium',
-            type: data.type || 'other',
-            createdAt: data.createdAt?.toDate() || new Date(),
-            updatedAt: data.updatedAt?.toDate() || new Date(),
-          }
-          reminders.push(reminder)
-          if (!reminder.completed) activeCount++
+          if (!data.completed) activeCount++
         })
 
-        // Obtener usuarios recientes
+        // Invitaciones por status
+        const invitationsByStatus: Record<string, number> = {}
+        invitationsData.forEach((doc) => {
+          const status = doc.data().status || 'unknown'
+          invitationsByStatus[status] = (invitationsByStatus[status] || 0) + 1
+        })
+
+        // Ventas por status
+        const salesByStatus: Record<string, number> = {}
+        salesData.forEach((doc) => {
+          const status = doc.data().status || 'unknown'
+          salesByStatus[status] = (salesByStatus[status] || 0) + 1
+        })
+
         const recentUsers = users
           .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
           .slice(0, 5)
 
-        // Obtener animales recientes
         const recentAnimals = animals
           .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
           .slice(0, 5)
@@ -117,8 +132,14 @@ export const useAdminStats = (): AdminStats => {
           totalUsers: users.length,
           totalAnimals: animals.length,
           totalBreedings: breedingsData.size,
-          totalReminders: reminders.length,
+          totalReminders: remindersData.size,
           activeReminders: activeCount,
+          totalFarms: farmsData.size,
+          totalInvitations: invitationsData.size,
+          invitationsByStatus,
+          totalSales: salesData.size,
+          salesByStatus,
+          speciesBreakdown,
           recentUsers,
           recentAnimals,
           isLoading: false,
