@@ -5,7 +5,13 @@ import { useAdminStats } from '@/hooks/admin/useAdminStats'
 import { animal_icon, animals_types_labels } from '@/types/animals'
 import { sale_status_labels } from '@/types/sales'
 
-export default function AdminStatsCards() {
+type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities'
+
+interface AdminStatsCardsProps {
+  onSectionChange?: (section: AdminSection) => void
+}
+
+export default function AdminStatsCards({ onSectionChange }: AdminStatsCardsProps) {
   const {
     totalUsers,
     totalAnimals,
@@ -38,6 +44,8 @@ export default function AdminStatsCards() {
     )
   }
 
+  const go = (section: AdminSection) => () => onSectionChange?.(section)
+
   const primaryStats = [
     {
       title: 'Usuarios',
@@ -46,6 +54,7 @@ export default function AdminStatsCards() {
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-700',
       iconBg: 'bg-blue-500',
+      onClick: go('users'),
     },
     {
       title: 'Granjas',
@@ -54,6 +63,7 @@ export default function AdminStatsCards() {
       bgColor: 'bg-emerald-50',
       textColor: 'text-emerald-700',
       iconBg: 'bg-emerald-500',
+      onClick: go('users'),
     },
     {
       title: 'Animales',
@@ -62,6 +72,7 @@ export default function AdminStatsCards() {
       bgColor: 'bg-green-50',
       textColor: 'text-green-700',
       iconBg: 'bg-green-500',
+      onClick: go('animals'),
     },
     {
       title: 'Reproducciones',
@@ -70,15 +81,16 @@ export default function AdminStatsCards() {
       bgColor: 'bg-pink-50',
       textColor: 'text-pink-700',
       iconBg: 'bg-pink-500',
+      onClick: go('breedings'),
     },
     {
       title: 'Recordatorios',
       value: `${activeReminders}/${totalReminders}`,
-      subtitle: 'activos',
       icon: '⏰',
       bgColor: 'bg-yellow-50',
       textColor: 'text-yellow-700',
       iconBg: 'bg-yellow-500',
+      onClick: go('reminders'),
     },
     {
       title: 'Ventas',
@@ -87,6 +99,7 @@ export default function AdminStatsCards() {
       bgColor: 'bg-indigo-50',
       textColor: 'text-indigo-700',
       iconBg: 'bg-indigo-500',
+      onClick: go('activities'),
     },
   ]
 
@@ -110,7 +123,11 @@ export default function AdminStatsCards() {
       {/* Stats principales */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {primaryStats.map((stat, index) => (
-          <div key={index} className={`${stat.bgColor} rounded-lg p-4 border`}>
+          <div
+            key={index}
+            onClick={stat.onClick}
+            className={`${stat.bgColor} rounded-lg p-4 border cursor-pointer hover:shadow-md transition-shadow`}
+          >
             <div className="flex items-center gap-3">
               <div className={`${stat.iconBg} rounded-lg p-2 text-white text-lg`}>
                 {stat.icon}
@@ -128,7 +145,10 @@ export default function AdminStatsCards() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Especies */}
         {speciesBreakdown.length > 0 && (
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div
+            onClick={go('animals')}
+            className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
+          >
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Especies</h3>
             <div className="space-y-2">
               {speciesBreakdown.map(({ type, count }) => (
@@ -145,7 +165,10 @@ export default function AdminStatsCards() {
 
         {/* Invitaciones */}
         {totalInvitations > 0 && (
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div
+            onClick={go('users')}
+            className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
+          >
             <h3 className="text-sm font-semibold text-gray-700 mb-3">
               Invitaciones ({totalInvitations})
             </h3>
@@ -164,7 +187,10 @@ export default function AdminStatsCards() {
 
         {/* Ventas */}
         {totalSales > 0 && (
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div
+            onClick={go('activities')}
+            className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
+          >
             <h3 className="text-sm font-semibold text-gray-700 mb-3">
               Ventas ({totalSales})
             </h3>
