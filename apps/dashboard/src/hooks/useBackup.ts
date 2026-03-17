@@ -584,12 +584,12 @@ export function useBackup() {
 
                 // Remap animalIds en entries si hay animalIdMap
                 if (animalIdMap && Array.isArray(deserialized.animals)) {
-                  deserialized.animals = (
-                    deserialized.animals as Record<string, unknown>[]
-                  ).map((entry) => ({
-                    ...entry,
-                    animalId: animalIdMap.get(entry.animalId as string) || entry.animalId,
-                  }))
+                  deserialized.animals = (deserialized.animals as Record<string, unknown>[]).map(
+                    (entry) => ({
+                      ...entry,
+                      animalId: animalIdMap.get(entry.animalId as string) || entry.animalId,
+                    }),
+                  )
                 }
 
                 const newRef = doc(collection(db, 'sales'))
@@ -601,9 +601,7 @@ export function useBackup() {
             }
             counts.sales = written
           } catch (e) {
-            errors.push(
-              `Error restaurando ventas: ${e instanceof Error ? e.message : 'error'}`,
-            )
+            errors.push(`Error restaurando ventas: ${e instanceof Error ? e.message : 'error'}`)
           }
         }
 

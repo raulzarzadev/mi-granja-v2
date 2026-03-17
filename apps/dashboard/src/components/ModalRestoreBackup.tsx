@@ -644,8 +644,7 @@ function ConfirmOtherCollections({ data, mode }: { data: BackupFile; mode: 'merg
     {
       label: 'Ventas',
       count: data.sales?.length || 0,
-      detail:
-        'Se crearán como ventas nuevas con referencias actualizadas a los nuevos animales.',
+      detail: 'Se crearán como ventas nuevas con referencias actualizadas a los nuevos animales.',
     },
   ]
 

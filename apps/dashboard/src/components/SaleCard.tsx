@@ -61,8 +61,7 @@ const SaleCard: React.FC<SaleCardProps> = ({ sale, onClick }) => {
           {sale.animals.length} {sale.animals.length === 1 ? 'animal' : 'animales'}
         </div>
         <div className="text-xs text-gray-500">
-          {formatPrice(sale.pricePerKg)}/kg{' '}
-          ({sale_price_type_labels[sale.priceType || 'en_pie']})
+          {formatPrice(sale.pricePerKg)}/kg ({sale_price_type_labels[sale.priceType || 'en_pie']})
         </div>
       </div>
 

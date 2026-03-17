@@ -276,8 +276,7 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     id: 'string',
     farmId: 'string (ID de la granja)',
     farmerId: 'string (ID del usuario)',
-    animals:
-      '[ { animalId: string, animalNumber: string, weight?: number (gramos) } ]',
+    animals: '[ { animalId: string, animalNumber: string, weight?: number (gramos) } ]',
     date: 'string (ISO 8601) | undefined',
     pricePerKg: 'number | undefined (centavos por kg)',
     priceType: "'en_pie' | 'en_canal' (default: en_pie)",
