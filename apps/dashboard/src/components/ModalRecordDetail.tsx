@@ -91,6 +91,8 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
       reminderTitle: '',
       weight: weightValue,
       weightUnit,
+      expenseCategory: (record as any).expenseCategory || 'feed',
+      supplier: (record as any).supplier || '',
     })
     setMode('edit')
   }

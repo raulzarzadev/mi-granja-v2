@@ -43,6 +43,15 @@ export function buildRecordFromForm(form: RecordFormState): RecordPayload {
     }
   }
 
+  if (fields.type === 'expense') {
+    ;(base as any).expenseCategory = fields.expenseCategory || 'other_expense'
+    if (fields.supplier?.trim()) (base as any).supplier = fields.supplier.trim()
+    if (fields.cost) {
+      const n = parseFloat(fields.cost)
+      if (!Number.isNaN(n)) base.cost = n
+    }
+  }
+
   return base as RecordPayload
 }
 

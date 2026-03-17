@@ -2,7 +2,7 @@
 export interface AnimalRecord {
   id: string
   // Categorización del registro
-  type: 'note' | 'health' | 'birth' | 'weight'
+  type: 'note' | 'health' | 'birth' | 'weight' | 'expense'
   category: RecordCategory
 
   // Información básica (todos los tipos)
@@ -194,7 +194,7 @@ export const animal_icon: Record<AnimalType, string> = {
 
 // ===== SISTEMA UNIFICADO DE REGISTROS =====
 
-export const record_types = ['note', 'health', 'weight', 'birth'] as const
+export const record_types = ['note', 'health', 'weight', 'birth', 'expense'] as const
 export type RecordType = (typeof record_types)[number]
 
 export const record_categories = [
@@ -216,6 +216,7 @@ export const record_type_labels: Record<RecordType, string> = {
   health: 'Salud',
   weight: 'Peso',
   birth: 'Parto',
+  expense: 'Gasto',
 }
 
 export const record_type_icons: Record<RecordType, string> = {
@@ -223,6 +224,50 @@ export const record_type_icons: Record<RecordType, string> = {
   health: '🏥',
   weight: '⚖️',
   birth: '🐣',
+  expense: '💰',
+}
+
+// ===== CATEGORÍAS DE GASTO =====
+
+export const expense_categories = [
+  'feed',
+  'medicine',
+  'maintenance',
+  'transport',
+  'equipment',
+  'labor',
+  'other_expense',
+] as const
+export type ExpenseCategory = (typeof expense_categories)[number]
+
+export const expense_category_labels: Record<ExpenseCategory, string> = {
+  feed: 'Alimento',
+  medicine: 'Medicina',
+  maintenance: 'Mantenimiento',
+  transport: 'Transporte',
+  equipment: 'Equipo',
+  labor: 'Mano de obra',
+  other_expense: 'Otro',
+}
+
+export const expense_category_icons: Record<ExpenseCategory, string> = {
+  feed: '🌾',
+  medicine: '💊',
+  maintenance: '🔧',
+  transport: '🚛',
+  equipment: '🛠️',
+  labor: '👷',
+  other_expense: '📋',
+}
+
+export const expense_category_colors: Record<ExpenseCategory, string> = {
+  feed: 'bg-amber-100 text-amber-800',
+  medicine: 'bg-blue-100 text-blue-800',
+  maintenance: 'bg-gray-100 text-gray-800',
+  transport: 'bg-cyan-100 text-cyan-800',
+  equipment: 'bg-indigo-100 text-indigo-800',
+  labor: 'bg-orange-100 text-orange-800',
+  other_expense: 'bg-gray-100 text-gray-800',
 }
 
 export const record_category_labels: Record<RecordCategory, string> = {

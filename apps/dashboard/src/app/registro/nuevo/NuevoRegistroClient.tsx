@@ -45,6 +45,8 @@ const initialFormData = (): RecordFormState => ({
   reminderTitle: '',
   weight: '',
   weightUnit: 'kg',
+  expenseCategory: 'feed',
+  supplier: '',
 })
 
 const noteCategories: RecordCategory[] = ['general', 'observation', 'other']

@@ -45,6 +45,8 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
     reminderTitle: '',
     weight: '',
     weightUnit: 'kg',
+    expenseCategory: 'feed',
+    supplier: '',
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -69,6 +71,8 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
       reminderTitle: '',
       weight: '',
       weightUnit: 'kg',
+      expenseCategory: 'feed',
+      supplier: '',
     })
   }
 
