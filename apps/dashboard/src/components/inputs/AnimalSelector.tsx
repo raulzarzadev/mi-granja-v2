@@ -99,7 +99,11 @@ const AnimalSelector: React.FC<AnimalSelectorProps> = ({
 
   return (
     <div ref={containerRef}>
-      {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
+      {label && (
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {label} {selectedAnimals.length > 0 && `(${selectedAnimals.length})`}
+        </label>
+      )}
 
       {/* Chips de seleccionados */}
       {selectedAnimals.length > 0 && (
