@@ -11,7 +11,6 @@ import MyRole from '@/components/MyRole'
 import Navbar from '@/components/Navbar'
 import ProfileSection from '@/components/ProfileSection'
 import RemindersTab from '@/components/RemindersTab'
-import SalesTab from '@/components/SalesTab'
 import Tabs from '@/components/Tabs'
 import { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -283,10 +282,6 @@ const Dashboard: React.FC = () => {
     {
       label: '📋 Registros',
       content: <RecordsTab />,
-    },
-    {
-      label: '💲 Ventas',
-      content: <SalesTab />,
     },
     {
       label: '🚜 Granja',
