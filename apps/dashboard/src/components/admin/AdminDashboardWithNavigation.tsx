@@ -34,6 +34,26 @@ interface DetailRow {
   meta?: Record<string, any>
 }
 
+interface TableColumn {
+  key: string
+  label: string
+  align?: 'left' | 'right' | 'center'
+  sortable?: boolean
+}
+
+interface TableRow {
+  key: string
+  cells: Record<string, string | number>
+  drillable?: boolean
+  drillLabel?: string
+  drillIcon?: string
+}
+
+interface TableView {
+  columns: TableColumn[]
+  data: TableRow[]
+}
+
 // ── Main Component ──
 
 export default function AdminDashboard() {
@@ -81,9 +101,35 @@ export default function AdminDashboard() {
     setPath((prev) => prev.slice(0, index))
   }, [])
 
+  // ── Table builders ──
+
+  const buildAnimalTable = (list: any[]): TableView => ({
+    columns: [
+      { key: 'number', label: 'Arete', sortable: true },
+      { key: 'name', label: 'Nombre', sortable: true },
+      { key: 'type', label: 'Especie', sortable: true },
+      { key: 'stage', label: 'Etapa', sortable: true },
+      { key: 'gender', label: 'Sexo', sortable: true },
+      { key: 'status', label: 'Estado', sortable: true },
+      { key: 'weight', label: 'Peso (kg)', align: 'right', sortable: true },
+    ],
+    data: list.map((a: any) => ({
+      key: a.id,
+      cells: {
+        number: a.animalNumber || '',
+        name: a.name || '',
+        type: animals_types_labels[a.type as keyof typeof animals_types_labels] || a.type || '',
+        stage: a.stage || '',
+        gender: a.gender || '',
+        status: animal_status_labels[a.status as keyof typeof animal_status_labels] || a.status || 'activo',
+        weight: a.weight ? (Number(a.weight) / 1000).toFixed(1) : '',
+      },
+    })),
+  })
+
   // ── Resolve current view based on path ──
 
-  const resolve = useCallback((): { cards?: CardItem[]; rows?: DetailRow[]; title?: string } => {
+  const resolve = useCallback((): { cards?: CardItem[]; rows?: DetailRow[]; table?: TableView; title?: string } => {
     const { users = [], animals = [], farms = [], breedings = [], reminders = [], invitations = [], sales = [] } = rawData
 
     const userMap = new Map(users.map((u: any) => [u.id, u]))
@@ -112,14 +158,27 @@ export default function AdminDashboard() {
       if (path.length === 1) {
         return {
           title: `Usuarios (${users.length})`,
-          rows: users.map((u: any) => ({
-            key: u.id,
-            label: u.email,
-            icon: '👤',
-            value: u.farmName || '',
-            drillable: true,
-            meta: u,
-          })),
+          table: {
+            columns: [
+              { key: 'email', label: 'Email', sortable: true },
+              { key: 'farmName', label: 'Granja', sortable: true },
+              { key: 'farms', label: 'Granjas', align: 'right' as const, sortable: true },
+              { key: 'animals', label: 'Animales', align: 'right' as const, sortable: true },
+            ],
+            data: users.map((u: any) => {
+              const userFarms = farms.filter((f: any) => f.ownerId === u.id).length
+              const userAnimals = animals.filter((a: any) => a.farmerId === u.id).length
+              return {
+                key: u.id,
+                cells: {
+                  email: u.email || '',
+                  farmName: u.farmName || '',
+                  farms: userFarms,
+                  animals: userAnimals,
+                },
+              }
+            }),
+          },
         }
       }
       const userId = path[1].key
@@ -142,18 +201,29 @@ export default function AdminDashboard() {
       if (path.length === 1) {
         return {
           title: `Granjas (${farms.length})`,
-          rows: farms.map((f: any) => {
-            const owner = userMap.get(f.ownerId)
-            const count = animals.filter((a: any) => a.farmId === f.id).length
-            return {
-              key: f.id,
-              label: f.name || '(sin nombre)',
-              icon: '🚜',
-              value: `${count} animales`,
-              drillable: true,
-              meta: { ownerEmail: owner?.email, collabs: f.collaborators?.length || 0 },
-            }
-          }),
+          table: {
+            columns: [
+              { key: 'name', label: 'Nombre', sortable: true },
+              { key: 'owner', label: 'Dueño', sortable: true },
+              { key: 'animals', label: 'Animales', align: 'right' as const, sortable: true },
+              { key: 'collabs', label: 'Colaboradores', align: 'right' as const, sortable: true },
+            ],
+            data: farms.map((f: any) => {
+              const owner = userMap.get(f.ownerId)
+              return {
+                key: f.id,
+                drillable: true,
+                drillLabel: f.name || '(sin nombre)',
+                drillIcon: '🚜',
+                cells: {
+                  name: f.name || '(sin nombre)',
+                  owner: owner?.email || f.ownerId || '',
+                  animals: animals.filter((a: any) => a.farmId === f.id).length,
+                  collabs: f.collaborators?.length || 0,
+                },
+              }
+            }),
+          },
         }
       }
       const farmId = path[1].key
@@ -198,28 +268,16 @@ export default function AdminDashboard() {
           })),
         }
       }
-      if (subKey === 'animals') {
+      if (subKey === 'animals' || subKey.startsWith('species-')) {
+        const list = subKey === 'animals'
+          ? farmAnimals
+          : farmAnimals.filter((a: any) => a.type === subKey.replace('species-', ''))
+        const typeLabel = subKey === 'animals'
+          ? 'Animales'
+          : animals_types_labels[subKey.replace('species-', '') as keyof typeof animals_types_labels] || subKey
         return {
-          title: `Animales (${farmAnimals.length})`,
-          rows: farmAnimals.map((a: any) => ({
-            key: a.id,
-            label: `${a.animalNumber}${a.name ? ` (${a.name})` : ''}`,
-            icon: animal_icon[a.type as keyof typeof animal_icon] || '🐾',
-            value: animal_status_labels[a.status as keyof typeof animal_status_labels] || a.status || 'activo',
-          })),
-        }
-      }
-      if (subKey.startsWith('species-')) {
-        const type = subKey.replace('species-', '')
-        const filtered = farmAnimals.filter((a: any) => a.type === type)
-        return {
-          title: `${animals_types_labels[type as keyof typeof animals_types_labels] || type} (${filtered.length})`,
-          rows: filtered.map((a: any) => ({
-            key: a.id,
-            label: `${a.animalNumber}${a.name ? ` (${a.name})` : ''}`,
-            icon: animal_icon[type as keyof typeof animal_icon] || '🐾',
-            value: animal_status_labels[a.status as keyof typeof animal_status_labels] || a.status || 'activo',
-          })),
+          title: `${typeLabel} (${list.length})`,
+          table: buildAnimalTable(list),
         }
       }
       if (subKey === 'sales') {
@@ -450,7 +508,18 @@ export default function AdminDashboard() {
         )}
 
         {/* Detail rows */}
-        {view.rows && (
+        {/* Table view */}
+        {view.table && (
+          <div>
+            {view.title && (
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">{view.title}</h2>
+            )}
+            <SortableTable table={view.table} onDrill={drillInto} />
+          </div>
+        )}
+
+        {/* Detail rows */}
+        {view.rows && !view.table && (
           <div>
             {view.title && (
               <h2 className="text-lg font-semibold text-gray-900 mb-3">{view.title}</h2>
@@ -497,6 +566,112 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ── SortableTable ──
+
+function SortableTable({ table, onDrill }: { table: TableView; onDrill?: (item: BreadcrumbItem) => void }) {
+  const [search, setSearch] = useState('')
+  const [sortKey, setSortKey] = useState<string | null>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }
+
+  const filtered = table.data.filter((row) => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return Object.values(row.cells).some((v) => String(v).toLowerCase().includes(q))
+  })
+
+  const sorted = sortKey
+    ? [...filtered].sort((a, b) => {
+        const av = a.cells[sortKey] ?? ''
+        const bv = b.cells[sortKey] ?? ''
+        const numA = Number(av)
+        const numB = Number(bv)
+        const cmp =
+          !Number.isNaN(numA) && !Number.isNaN(numB) && av !== '' && bv !== ''
+            ? numA - numB
+            : String(av).localeCompare(String(bv), 'es')
+        return sortDir === 'asc' ? cmp : -cmp
+      })
+    : filtered
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      {/* Search */}
+      <div className="px-3 py-2 border-b border-gray-200">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar..."
+          className="w-full sm:w-64 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+        />
+        <span className="ml-2 text-xs text-gray-400">
+          {sorted.length} de {table.data.length}
+        </span>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 sticky top-0">
+            <tr>
+              {table.columns.map((col) => (
+                <th
+                  key={col.key}
+                  onClick={col.sortable ? () => handleSort(col.key) : undefined}
+                  className={`px-3 py-2 text-xs font-medium text-gray-500 whitespace-nowrap ${
+                    col.align === 'right' ? 'text-right' : 'text-left'
+                  } ${col.sortable ? 'cursor-pointer hover:text-gray-700 select-none' : ''}`}
+                >
+                  {col.label}
+                  {sortKey === col.key && (
+                    <span className="ml-1">{sortDir === 'asc' ? '▲' : '▼'}</span>
+                  )}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {sorted.map((row) => (
+              <tr
+                key={row.key}
+                onClick={row.drillable && onDrill ? () => onDrill({ key: row.key, label: row.drillLabel || String(Object.values(row.cells)[0]), icon: row.drillIcon }) : undefined}
+                className={`hover:bg-gray-50 transition-colors ${row.drillable ? 'cursor-pointer' : ''}`}
+              >
+                {table.columns.map((col) => (
+                  <td
+                    key={col.key}
+                    className={`px-3 py-1.5 text-gray-700 whitespace-nowrap ${
+                      col.align === 'right' ? 'text-right' : ''
+                    }`}
+                  >
+                    {row.cells[col.key] ?? ''}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            {sorted.length === 0 && (
+              <tr>
+                <td colSpan={table.columns.length} className="px-4 py-8 text-center text-sm text-gray-500">
+                  {search ? 'Sin resultados para la búsqueda' : 'Sin datos'}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   )
