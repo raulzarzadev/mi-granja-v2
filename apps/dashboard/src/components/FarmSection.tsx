@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import InventoryTab from '@/components/InventoryTab'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import SalesTab from '@/components/SalesTab'
 import StatisticsTab from '@/components/StatisticsTab'
@@ -233,6 +234,10 @@ const FarmSection: React.FC = () => {
     {
       label: '💲 Ventas',
       content: <SalesTab />,
+    },
+    {
+      label: '💰 Gastos',
+      content: <InventoryTab />,
     },
     {
       label: '🏗️ Areas',
