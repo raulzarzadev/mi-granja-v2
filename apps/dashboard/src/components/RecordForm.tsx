@@ -12,6 +12,7 @@ import {
 } from '@/types/animals'
 import { RecordFormState } from '@/types/records'
 import DateTimeInput from './inputs/DateTimeInput'
+import { MoneyInput } from './inputs/MoneyInput'
 
 export type { RecordFormState }
 
@@ -350,18 +351,13 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
                     className="w-full border rounded-lg px-2 py-1.5 text-sm"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium">
-                    {mode === 'bulk' ? 'Costo por animal' : 'Costo'}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={value.cost}
-                    onChange={(e) => onChange({ ...value, cost: e.target.value })}
-                    className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                  />
-                </div>
+                <MoneyInput
+                  label={mode === 'bulk' ? 'Costo por animal' : 'Costo'}
+                  value={value.cost ? Math.round(Number.parseFloat(value.cost) * 100) : null}
+                  onChange={(centavos) =>
+                    onChange({ ...value, cost: centavos ? (centavos / 100).toString() : '' })
+                  }
+                />
               </div>
             </div>
           )}

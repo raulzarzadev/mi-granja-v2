@@ -121,7 +121,15 @@ export function useBackup() {
         'farmInvitations',
         [where('farmId', '==', currentFarm.id)],
         'invitaciones',
-        85,
+        80,
+      )
+
+      // 7. Sales
+      const sales = await fetchCollection(
+        'sales',
+        [where('farmId', '==', currentFarm.id)],
+        'ventas',
+        90,
       )
 
       if (exportErrors.length > 0) {
@@ -144,6 +152,7 @@ export function useBackup() {
             reminders: reminders.length,
             weightRecords: weightRecords.length,
             farmInvitations: farmInvitations.length,
+            sales: sales.length,
           },
         },
         _types: BACKUP_TYPE_DESCRIPTIONS,
@@ -153,6 +162,7 @@ export function useBackup() {
         reminders: serializeForBackup(reminders),
         weightRecords: serializeForBackup(weightRecords),
         farmInvitations: serializeForBackup(farmInvitations),
+        sales: serializeForBackup(sales),
       }
 
       // Generar y descargar archivo
@@ -272,6 +282,7 @@ export function useBackup() {
             ['breedingRecords', ['farmId'], 'registros reproductivos'],
             ['reminders', ['farmerId', 'farmId'], 'recordatorios'],
             ['weightRecords', ['farmerId'], 'registros de peso'],
+            ['sales', ['farmId'], 'ventas'],
           ]
 
           // Consultar todas las colecciones en paralelo
@@ -546,7 +557,57 @@ export function useBackup() {
           )
         }
 
-        // --- Paso 8: Farm invitations — siempre se restauran como pendientes ---
+        // --- Paso 8: Escribir sales ---
+        const backupSales = (data.sales || []) as Record<string, unknown>[]
+
+        if (backupSales.length > 0) {
+          try {
+            let written = 0
+            for (let i = 0; i < backupSales.length; i += 500) {
+              setProgress({
+                phase: 'restore',
+                percent: 88 + Math.round((i / Math.max(backupSales.length, 1)) * 5),
+                message: `Restaurando ventas (${written}/${backupSales.length})...`,
+              })
+              const batch = writeBatch(db)
+              const chunk = backupSales.slice(i, i + 500)
+
+              for (const rawDoc of chunk) {
+                const deserialized = deserializeFromBackup('sales', { ...rawDoc })
+                delete deserialized.id
+
+                // Reasignar ownership y remap animal IDs
+                deserialized.farmId = currentFarm!.id
+                deserialized.farmerId = user!.id
+                deserialized.createdBy = user!.id
+                deserialized.updatedBy = user!.id
+
+                // Remap animalIds en entries si hay animalIdMap
+                if (animalIdMap && Array.isArray(deserialized.animals)) {
+                  deserialized.animals = (
+                    deserialized.animals as Record<string, unknown>[]
+                  ).map((entry) => ({
+                    ...entry,
+                    animalId: animalIdMap.get(entry.animalId as string) || entry.animalId,
+                  }))
+                }
+
+                const newRef = doc(collection(db, 'sales'))
+                batch.set(newRef, deserialized)
+                written++
+              }
+
+              await batch.commit()
+            }
+            counts.sales = written
+          } catch (e) {
+            errors.push(
+              `Error restaurando ventas: ${e instanceof Error ? e.message : 'error'}`,
+            )
+          }
+        }
+
+        // --- Paso 9: Farm invitations — siempre se restauran como pendientes ---
         if (data.farmInvitations?.length) {
           setProgress({
             phase: 'restore',

@@ -6,10 +6,12 @@ import AnimalCard from '@/components/AnimalCard'
 import BreedingTabs from '@/components/BreedingTabs'
 import FarmAvatar from '@/components/FarmAvatar'
 import FarmSection from '@/components/FarmSection'
+import ModalSaleForm from '@/components/ModalSaleForm'
 import MyRole from '@/components/MyRole'
 import Navbar from '@/components/Navbar'
 import ProfileSection from '@/components/ProfileSection'
 import RemindersTab from '@/components/RemindersTab'
+import SalesTab from '@/components/SalesTab'
 import Tabs from '@/components/Tabs'
 import { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -50,6 +52,7 @@ const Dashboard: React.FC = () => {
   const [selectedAnimals, setSelectedAnimals] = useState<string[]>([])
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [isBulkHealthModalOpen, setIsBulkHealthModalOpen] = useState(false)
+  const [isSaleModalOpen, setIsSaleModalOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
 
   // Funciones para selección múltiple
@@ -137,6 +140,12 @@ const Dashboard: React.FC = () => {
                         className="bg-green-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-green-700 transition-colors"
                       >
                         Aplicar Registro
+                      </button>
+                      <button
+                        onClick={() => setIsSaleModalOpen(true)}
+                        className="bg-yellow-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-yellow-700 transition-colors"
+                      >
+                        Crear Venta
                       </button>
                     </>
                   )}
@@ -276,6 +285,10 @@ const Dashboard: React.FC = () => {
       content: <RecordsTab />,
     },
     {
+      label: '💲 Ventas',
+      content: <SalesTab />,
+    },
+    {
       label: '🚜 Granja',
       content: <FarmSection />,
     },
@@ -366,6 +379,16 @@ const Dashboard: React.FC = () => {
           setIsBulkHealthModalOpen(false)
         }}
         onRemoveAnimal={(id) => setSelectedAnimals((prev) => prev.filter((x) => x !== id))}
+      />
+
+      {/* Modal de venta desde selección múltiple */}
+      <ModalSaleForm
+        isOpen={isSaleModalOpen}
+        onClose={() => {
+          setIsSaleModalOpen(false)
+          clearSelection()
+        }}
+        preSelectedAnimals={getSelectedAnimalsData()}
       />
     </div>
   )

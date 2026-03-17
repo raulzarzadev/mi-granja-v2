@@ -20,6 +20,7 @@ import { SelectField } from './forms/SelectField'
 import { StageSelector } from './forms/StageSelector'
 import { TextField } from './forms/TextField'
 import DateTimeInput from './inputs/DateTimeInput'
+import { WeightField } from './inputs/WeightInput'
 
 interface AnimalFormProps {
   onSubmit: (animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>) => void
@@ -248,15 +249,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       />
 
       <div className="grid grid-cols-2 gap-4">
-        <TextField
-          name="weight"
-          type="number"
-          label="Peso (kg)"
-          placeholder="0"
-          min="0"
-          step="0.1"
-          disabled={isLoading}
-        />
+        <WeightField name="weight" label="Peso" disabled={isLoading} />
 
         <TextField
           name="age"

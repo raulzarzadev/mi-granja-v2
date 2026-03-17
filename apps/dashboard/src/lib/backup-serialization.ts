@@ -34,6 +34,7 @@ const DATE_FIELDS_BY_COLLECTION: Record<string, string[]> = {
   reminders: ['createdAt', 'updatedAt', 'dueDate'],
   weightRecords: ['date'],
   farmInvitations: ['createdAt', 'updatedAt', 'expiresAt'],
+  sales: ['createdAt', 'updatedAt', 'date'],
   farm: ['createdAt', 'updatedAt'],
 }
 
@@ -162,6 +163,7 @@ export interface BackupMeta {
     reminders: number
     weightRecords: number
     farmInvitations: number
+    sales: number
   }
 }
 
@@ -174,6 +176,7 @@ export interface BackupFile {
   reminders: Record<string, unknown>[]
   weightRecords: Record<string, unknown>[]
   farmInvitations: Record<string, unknown>[]
+  sales: Record<string, unknown>[]
 }
 
 /**
@@ -269,6 +272,23 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     createdAt: 'string (ISO 8601)',
     updatedAt: 'string (ISO 8601)',
   },
+  sale: {
+    id: 'string',
+    farmId: 'string (ID de la granja)',
+    farmerId: 'string (ID del usuario)',
+    animals:
+      '[ { animalId: string, animalNumber: string, weight?: number (gramos) } ]',
+    date: 'string (ISO 8601) | undefined',
+    pricePerKg: 'number | undefined (centavos por kg)',
+    priceType: "'en_pie' | 'en_canal' (default: en_pie)",
+    buyer: 'string | undefined',
+    notes: 'string | undefined',
+    status: "'scheduled' | 'pending' | 'completed' | 'cancelled'",
+    createdBy: 'string (ID del usuario)',
+    updatedBy: 'string (ID del usuario)',
+    createdAt: 'string (ISO 8601)',
+    updatedAt: 'string (ISO 8601)',
+  },
   farm: {
     id: 'string',
     name: 'string',
@@ -294,6 +314,7 @@ const REQUIRED_COLLECTIONS = [
   'reminders',
   'weightRecords',
   'farmInvitations',
+  'sales',
 ] as const
 
 export function validateBackupFile(data: unknown, currentFarmId: string): ValidationResult {

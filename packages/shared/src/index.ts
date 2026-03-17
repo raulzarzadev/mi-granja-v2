@@ -24,3 +24,4 @@ export type {
   WeightRecord,
 } from './types/index'
 export * from './types/records'
+export * from './types/sales'

@@ -36,6 +36,7 @@ export interface Farm {
       reminders: number
       weightRecords: number
       farmInvitations: number
+      sales: number
     }
   }[]
   // Metadatos cuando la granja proviene de una invitación aceptada o pendiente
