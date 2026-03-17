@@ -110,10 +110,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persist
               aria-controls={`tab-panel-${slugs[index]}`}
               id={`tab-${slugs[index]}`}
               onClick={() => changeActiveTab(index)}
-              className={`group relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium outline-none transition-all border ${
+              className={`group relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium outline-none transition-all border cursor-pointer ${
                 isActive
                   ? 'bg-green-600 text-white border-green-600 shadow-sm'
-                  : 'bg-white/70 text-gray-600 border-gray-200 hover:bg-gray-50'
+                  : 'bg-white/70 text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300 hover:shadow-sm'
               } focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1`}
             >
               <span className="whitespace-nowrap select-none leading-none">{tab.label}</span>

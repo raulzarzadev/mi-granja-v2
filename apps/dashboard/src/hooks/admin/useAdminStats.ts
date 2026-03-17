@@ -90,16 +90,23 @@ export const useAdminStats = (): AdminStats => {
       try {
         setStats((prev) => ({ ...prev, isLoading: true, error: null }))
 
-        const [usersData, animalsData, breedingsData, remindersData, farmsData, invitationsData, salesData] =
-          await Promise.all([
-            getDocs(collection(db, 'users')),
-            getDocs(collection(db, 'animals')),
-            getDocs(collection(db, 'breedingRecords')),
-            getDocs(collection(db, 'reminders')),
-            getDocs(collection(db, 'farms')),
-            getDocs(collection(db, 'farmInvitations')),
-            getDocs(collection(db, 'sales')),
-          ])
+        const [
+          usersData,
+          animalsData,
+          breedingsData,
+          remindersData,
+          farmsData,
+          invitationsData,
+          salesData,
+        ] = await Promise.all([
+          getDocs(collection(db, 'users')),
+          getDocs(collection(db, 'animals')),
+          getDocs(collection(db, 'breedingRecords')),
+          getDocs(collection(db, 'reminders')),
+          getDocs(collection(db, 'farms')),
+          getDocs(collection(db, 'farmInvitations')),
+          getDocs(collection(db, 'sales')),
+        ])
 
         // Usuarios
         const users: User[] = []
