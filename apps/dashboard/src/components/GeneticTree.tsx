@@ -1,5 +1,12 @@
 'use client'
 
+import {
+  computeGeneticScores,
+  computeRealScores,
+  GeneticScore,
+  scoreLabel,
+  scoreTextColor,
+} from '@mi-granja/shared'
 import React, { useMemo, useState } from 'react'
 import AnimalDetailView from '@/components/AnimalDetailView'
 import AnimalTag from '@/components/AnimalTag'
@@ -179,12 +186,17 @@ const buildDescendantLevels = (animal: Animal, animals: Animal[], maxGen: number
 
 // ── Collapsible sire card ─────────────────────────────────────────────
 
+const formatWeight = (grams: number) =>
+  `${(grams / 1000).toLocaleString('es-MX', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg`
+
 const SireCard: React.FC<{
   sire: SireFamily
   idx: AnimalIndex
   onAnimalClick: (animal: Animal) => void
   defaultOpen?: boolean
-}> = ({ sire, idx, onAnimalClick, defaultOpen = false }) => {
+  geneticScore?: GeneticScore
+  realScoreMap?: Map<string, number>
+}> = ({ sire, idx, onAnimalClick, defaultOpen = false, geneticScore, realScoreMap }) => {
   const [open, setOpen] = useState(defaultOpen)
 
   const fatherLabel = sire.father
@@ -237,6 +249,44 @@ const SireCard: React.FC<{
       {/* Contenido colapsable */}
       {open && (
         <div className="divide-y divide-gray-100">
+          {/* Métricas genéticas del semental */}
+          {geneticScore && (
+            <div className="px-4 py-3 bg-blue-50/50">
+              <div className="flex items-center gap-4 flex-wrap text-xs">
+                <span className="font-medium text-blue-700">Rendimiento genético</span>
+                <span className="text-gray-600">
+                  Peso prom. crías:{' '}
+                  <strong>
+                    {geneticScore.avgOffspringWeight > 0
+                      ? formatWeight(geneticScore.avgOffspringWeight)
+                      : '—'}
+                  </strong>
+                </span>
+                <span className="text-gray-600">
+                  Supervivencia: <strong>{(geneticScore.survivalRate * 100).toFixed(0)}%</strong>
+                </span>
+              </div>
+              {/* Barra visual de supervivencia */}
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-xs">
+                  <div
+                    className={`h-2 rounded-full transition-all ${
+                      geneticScore.survivalRate >= 0.9
+                        ? 'bg-green-500'
+                        : geneticScore.survivalRate >= 0.7
+                          ? 'bg-yellow-500'
+                          : 'bg-red-500'
+                    }`}
+                    style={{ width: `${geneticScore.survivalRate * 100}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-gray-400">
+                  {geneticScore.offspringCount} crías · {geneticScore.damsCount} hembras
+                </span>
+              </div>
+            </div>
+          )}
+
           {sire.mates.map((mate, mi) => (
             <div key={mi} className="px-4 py-3">
               <div className="flex items-center gap-2 mb-2">
@@ -245,9 +295,22 @@ const SireCard: React.FC<{
                 <span className="text-[10px] text-gray-400">({mate.offspring.length})</span>
               </div>
               <div className="flex flex-wrap gap-1.5 pl-4">
-                {mate.offspring.map((child) => (
-                  <AnimalTag key={child.id} animal={child} onClick={() => onAnimalClick(child)} />
-                ))}
+                {mate.offspring.map((child) => {
+                  const ratio = realScoreMap?.get(child.id)
+                  return (
+                    <span key={child.id} className="inline-flex items-center gap-0.5">
+                      <AnimalTag animal={child} onClick={() => onAnimalClick(child)} />
+                      {ratio != null && (
+                        <span
+                          className={`text-[9px] font-bold ${scoreTextColor(ratio)}`}
+                          title={`Rendimiento real: ${(ratio * 100).toFixed(0)}%`}
+                        >
+                          {scoreLabel(ratio)[0]}
+                        </span>
+                      )}
+                    </span>
+                  )
+                })}
               </div>
             </div>
           ))}
@@ -269,6 +332,20 @@ const GeneticTree: React.FC<GeneticTreeProps> = ({ animals }) => {
   const idx = useMemo(() => buildIndex(animals), [animals])
 
   const sireFamilies = useMemo(() => buildSireFamilies(animals, idx), [animals, idx])
+
+  const geneticScores = useMemo(() => computeGeneticScores(animals), [animals])
+  const geneticScoreMap = useMemo(() => {
+    const map = new Map<string, GeneticScore>()
+    for (const s of geneticScores) map.set(s.sireId, s)
+    return map
+  }, [geneticScores])
+
+  const realScoreMap = useMemo(() => {
+    const scores = computeRealScores(animals)
+    const map = new Map<string, number>()
+    for (const s of scores) map.set(s.animalId, s.ratio)
+    return map
+  }, [animals])
 
   // Animales sin padre ni madre
   const orphans = useMemo(() => {
@@ -461,6 +538,8 @@ const GeneticTree: React.FC<GeneticTreeProps> = ({ animals }) => {
               idx={idx}
               onAnimalClick={handleAnimalClick}
               defaultOpen={si === 0}
+              geneticScore={sire.rawFatherId ? geneticScoreMap.get(sire.rawFatherId) : undefined}
+              realScoreMap={realScoreMap}
             />
           ))}
 
