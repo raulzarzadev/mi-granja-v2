@@ -19,7 +19,7 @@ export default function AdminOverview({ onSectionChange }: AdminOverviewProps) {
       </div>
 
       {/* Tarjetas de estadísticas */}
-      <AdminStatsCards onSectionChange={onSectionChange} />
+      <AdminStatsCards />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Actividad reciente */}
