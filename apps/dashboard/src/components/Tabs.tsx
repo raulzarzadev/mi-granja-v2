@@ -97,7 +97,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persist
       <div
         role="tablist"
         aria-label="Secciones"
-        className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin"
+        className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin pt-1"
         onKeyDown={handleKey}
       >
         {tabs.map((tab, index) => {

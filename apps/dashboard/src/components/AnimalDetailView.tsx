@@ -9,18 +9,16 @@ import { animalAge } from '@/lib/animal-utils'
 import { formatDate, fromNow, toDate } from '@/lib/dates'
 import {
   Animal,
-  animal_stage_colors,
+  animal_gender_config,
+  animal_icon,
+  animal_stage_config,
   animal_stage_descriptions,
-  animal_stage_icons,
-  animal_stage_labels,
   animal_status_colors,
   animal_status_icons,
   animal_status_labels,
-  animals_genders_labels,
   animals_types_labels,
 } from '@/types/animals'
-import { AnimalDetailRow } from './AnimalCard'
-import ButtonConfirm from './buttons/ButtonConfirm'
+import { Icon } from './Icon/icon'
 import ModalEditAnimal from './ModalEditAnimal'
 
 interface AnimalDetailViewProps {
@@ -31,7 +29,7 @@ interface AnimalDetailViewProps {
  * Vista detallada de un animal individual
  */
 const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal }) => {
-  const { animals: allAnimals, remove: deleteAnimal, markStatus, markFound } = useAnimalCRUD()
+  const { animals: allAnimals } = useAnimalCRUD()
 
   const getMother = () => {
     if (!animal.motherId) return null
@@ -105,34 +103,13 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal }) => {
       label: '📋 Información',
       content: (
         <div className="space-y-4">
-          {/* Estado + Etapa badges */}
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-2">
-              {/* Estado badge */}
-              <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${animal_status_colors[effectiveStatus]}`}
-              >
-                <span aria-hidden="true">{animal_status_icons[effectiveStatus]}</span>
-                <span>{animal_status_labels[effectiveStatus]}</span>
-              </span>
-
-              {/* Etapa badge */}
-              <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${animal_stage_colors[animal.stage]}`}
-              >
-                <span aria-hidden="true">{animal_stage_icons[animal.stage]}</span>
-                <span>{animal_stage_labels[animal.stage]}</span>
-              </span>
-            </div>
-
-            {/* Stage description */}
-            {stageDesc && (
-              <p className="text-sm text-gray-600 leading-relaxed">
-                {stageDesc.description}
-                {speciesInfo && <span className="ml-1 text-gray-400">— {speciesInfo}</span>}
-              </p>
-            )}
-          </div>
+          {/* Stage description */}
+          {stageDesc && (
+            <p className="text-sm text-gray-500 leading-relaxed">
+              {stageDesc.description}
+              {speciesInfo && <span className="ml-1 text-gray-400">— {speciesInfo}</span>}
+            </p>
+          )}
 
           {/* Datos section */}
           <section aria-labelledby="datos-heading">
@@ -144,7 +121,17 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal }) => {
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3">
               <InfoCell label="Especie" value={animals_types_labels[animal.type]} />
-              <InfoCell label="Género" value={animals_genders_labels[animal.gender]} />
+              <InfoCell
+                label="Género"
+                value={
+                  <span
+                    className={`inline-flex items-center gap-1 ${animal_gender_config[animal.gender].color}`}
+                  >
+                    <Icon icon={animal_gender_config[animal.gender].iconName as any} size={4} />
+                    {animal_gender_config[animal.gender].label}
+                  </span>
+                }
+              />
               <InfoCell label="Edad" value={getAgeLabel()} />
               <InfoCell
                 label="Nacimiento"
@@ -326,85 +313,44 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal }) => {
       label: '📋 Registros',
       content: <AnimalRecordsSection animal={animal} />,
     },
-    {
-      label: '⚙️ Configuración',
-      content: (
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-gray-900">Configuración</h3>
-          <div className="flex flex-wrap gap-2 items-center">
-            <ModalEditAnimal animal={animal} />
-            <button
-              className="px-3 py-1 text-sm rounded bg-yellow-100 text-yellow-800 border border-yellow-200"
-              onClick={() =>
-                markStatus(animal.id, {
-                  status: 'vendido',
-                  statusNotes: 'Marcado desde configuración',
-                })
-              }
-            >
-              Marcar vendido
-            </button>
-            <button
-              className="px-3 py-1 text-sm rounded bg-gray-200 text-gray-800 border border-gray-300"
-              onClick={() =>
-                markStatus(animal.id, {
-                  status: 'muerto',
-                  statusNotes: 'Marcado desde configuración',
-                })
-              }
-            >
-              Marcar muerto
-            </button>
-            {animal.status === 'perdido' ? (
-              <button
-                className="px-3 py-1 text-sm rounded bg-green-100 text-green-800 border border-green-200"
-                onClick={() => markFound(animal.id)}
-              >
-                Marcar encontrado
-              </button>
-            ) : (
-              <button
-                className="px-3 py-1 text-sm rounded bg-red-100 text-red-800 border border-red-200"
-                onClick={() =>
-                  markStatus(animal.id, {
-                    status: 'perdido',
-                    statusNotes: 'Marcado desde configuración',
-                    lostInfo: { lostAt: new Date() },
-                  })
-                }
-              >
-                Marcar perdido
-              </button>
-            )}
-            <ButtonConfirm
-              openLabel="Eliminar animal"
-              confirmLabel="Eliminar"
-              confirmText="¿Estás seguro de que quieres eliminar este animal? Esta acción no se puede deshacer."
-              onConfirm={() => deleteAnimal(animal.id)}
-              confirmProps={{ color: 'error', icon: 'delete', size: 'sm' }}
-              openProps={{
-                color: 'error',
-                variant: 'ghost',
-                icon: 'delete',
-                size: 'sm',
-              }}
-            />
-          </div>
-        </div>
-      ),
-    },
   ]
+
+  const stageCfg = animal_stage_config[animal.stage]
+  const genderCfg = animal_gender_config[animal.gender]
 
   return (
     <div className="bg-white w-full h-auto">
       {/* Header */}
-      <div className="bg-green-600 text-white p-2 mb-2">
-        <div className="flex items-center justify-between">
-          <AnimalDetailRow animal={animal} />
+      <div className="px-4 pb-3 border-b border-gray-100">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-2xl">{animal_icon[animal.type]}</span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-gray-900 truncate">{animal.animalNumber}</h2>
+                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full ${genderCfg.bgColor}`}>
+                  <Icon icon={genderCfg.iconName as any} size={3} />
+                </span>
+              </div>
+              {animal.name && (
+                <p className="text-xs text-gray-400 truncate">{animal.name}</p>
+              )}
+            </div>
+          </div>
+          <ModalEditAnimal animal={animal} />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${stageCfg.color}`}>
+            {stageCfg.icon} {stageCfg.label}
+          </span>
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${animal_status_colors[effectiveStatus]}`}>
+            {animal_status_icons[effectiveStatus]} {animal_status_labels[effectiveStatus]}
+          </span>
         </div>
       </div>
 
-      {/* Tabs (componente compartido) */}
+      {/* Tabs */}
       <Tabs tabs={tabs} tabsId={`animal-detail-${animal.id}`} />
     </div>
   )
