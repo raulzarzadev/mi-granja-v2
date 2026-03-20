@@ -19,7 +19,7 @@ import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import { toDate } from '@/lib/dates'
-import { Animal } from '@/types/animals'
+import { Animal, animal_stage_config, AnimalStageKey } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 import ModalBulkHealthAction from '../../ModalBulkHealthAction'
@@ -149,6 +149,22 @@ const AnimalsSection: React.FC = () => {
     setWeanConfirm({ animals: selected, decision })
   }
 
+  // --- Filtro compartido para etapas (usa los mismos filters de useAnimalFilters) ---
+  const matchesEtapasFilters = (animal: Animal | undefined) => {
+    if (!animal) return false
+    if (filters.type && animal.type !== filters.type) return false
+    if (filters.breed && animal.breed !== filters.breed) return false
+    if (filters.gender && animal.gender !== filters.gender) return false
+    const q = filters.search.trim().toLowerCase()
+    if (q) {
+      const num = animal.animalNumber?.toLowerCase() || ''
+      const name = animal.name?.toLowerCase() || ''
+      const notes = animal.notes?.toLowerCase() || ''
+      if (!num.includes(q) && !name.includes(q) && !notes.includes(q)) return false
+    }
+    return true
+  }
+
   // --- Montas ordenadas ---
   const orderedBreedings = useMemo(() => {
     const needPregnancyConfirmation: BreedingRecord[] = []
@@ -189,9 +205,10 @@ const AnimalsSection: React.FC = () => {
             record,
             info,
             animal: animals.find((a) => a.id === info.femaleId),
-          })),
+          }))
+          .filter(({ animal }) => matchesEtapasFilters(animal)),
       ),
-    [breedingRecords, animals],
+    [breedingRecords, animals, filters],
   )
   const birthsWindow = getBirthsWindow(14)
   const birthsSummary = getBirthsWindowSummary(14)
@@ -210,7 +227,7 @@ const AnimalsSection: React.FC = () => {
         if (!fi.offspring || fi.offspring.length === 0) continue
         for (const offId of fi.offspring) {
           const a = animals.find((an) => an.id === offId)
-          if (a && a.stage === 'cria' && a.status !== 'muerto' && a.status !== 'vendido') {
+          if (a && a.stage === 'cria' && a.status !== 'muerto' && a.status !== 'vendido' && matchesEtapasFilters(a)) {
             let weanDate: Date | null = null
             let daysUntilWean: number | null = null
             if (a.birthDate) {
@@ -229,7 +246,7 @@ const AnimalsSection: React.FC = () => {
       if (b.daysUntilWean === null) return -1
       return a.daysUntilWean - b.daysUntilWean
     })
-  }, [breedingRecords, animals])
+  }, [breedingRecords, animals, filters])
 
   // --- Etapas por stage ---
   const activeAnimals = useMemo(
@@ -237,20 +254,20 @@ const AnimalsSection: React.FC = () => {
     [animals],
   )
   const engordaAnimals = useMemo(
-    () => activeAnimals.filter((a) => a.stage === 'engorda'),
-    [activeAnimals],
+    () => activeAnimals.filter((a) => a.stage === 'engorda' && matchesEtapasFilters(a)),
+    [activeAnimals, filters],
   )
   const juvenilAnimals = useMemo(
-    () => activeAnimals.filter((a) => a.stage === 'juvenil'),
-    [activeAnimals],
+    () => activeAnimals.filter((a) => a.stage === 'juvenil' && matchesEtapasFilters(a)),
+    [activeAnimals, filters],
   )
   const reproductorAnimals = useMemo(
-    () => activeAnimals.filter((a) => a.stage === 'reproductor'),
-    [activeAnimals],
+    () => activeAnimals.filter((a) => a.stage === 'reproductor' && matchesEtapasFilters(a)),
+    [activeAnimals, filters],
   )
   const descarteAnimals = useMemo(
-    () => activeAnimals.filter((a) => a.stage === 'descarte'),
-    [activeAnimals],
+    () => activeAnimals.filter((a) => a.stage === 'descarte' && matchesEtapasFilters(a)),
+    [activeAnimals, filters],
   )
 
   const montasCount =
@@ -381,7 +398,7 @@ const AnimalsSection: React.FC = () => {
     <div className="space-y-8">
       <div>
         <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
-          <h3 className="text-lg font-semibold">Montas Pendientes</h3>
+          <h3 className="text-lg font-semibold">{animal_stage_config.monta.icon} Monta</h3>
           <div className="flex items-center gap-2">
             <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
               <button
@@ -483,7 +500,7 @@ const AnimalsSection: React.FC = () => {
                 {orderedBreedings.needBirthConfirmation.length > 0 && (
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                      <span>Partos pendientes</span>
+                      <span>Partos próximos</span>
                       <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
                         {orderedBreedings.needBirthConfirmation.length}
                       </span>
@@ -543,12 +560,13 @@ const AnimalsSection: React.FC = () => {
     </div>
   )
 
-  // Tab: Partos próximos — misma vista que BreedingTabs > Partos pendientes
+  // Tab: Partos próximos — misma vista que BreedingTabs > Partos próximos
   const partosContent = (
     <div className="space-y-6">
+      <h3 className="text-lg font-semibold">{animal_stage_config.partos_proximos.icon} Partos próximos</h3>
       {(birthsWindow.pastDue.length > 0 || birthsWindow.upcoming.length > 0) && (
         <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="text-lg font-semibold mb-4">Proximos / Atrasados</h3>
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Próximos / Atrasados</h4>
           <BirthsWindowSummary
             pastDue={birthsWindow.pastDue}
             upcoming={birthsWindow.upcoming}
@@ -563,9 +581,8 @@ const AnimalsSection: React.FC = () => {
       )}
 
       <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="text-lg font-semibold mb-4">Partos pendientes</h3>
         {pregnantFemales.length === 0 ? (
-          <p className="text-sm text-gray-500">No hay partos pendientes.</p>
+          <p className="text-sm text-gray-500">No hay partos próximos.</p>
         ) : (
           <ul className="divide-y">
             {pregnantFemales.map(({ record, info, animal }) => {
@@ -658,7 +675,9 @@ const AnimalsSection: React.FC = () => {
 
   // Tab: Destetes próximos — misma vista que BreedingTabs > Destetes
   const destetesContent = (
-    <div className="bg-white rounded-lg shadow">
+    <div>
+      <h3 className="text-lg font-semibold mb-3">{animal_stage_config.destetes_proximos.icon} Destetes próximos</h3>
+      <div className="bg-white rounded-lg shadow">
       {unweanedOffspring.length === 0 ? (
         <p className="text-sm text-gray-500 p-4">No hay crías pendientes de destete.</p>
       ) : (
@@ -687,11 +706,11 @@ const AnimalsSection: React.FC = () => {
 
             {selectedWeanIds.size > 0 && (
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button size="xs" color="warning" onClick={() => openBulkWean('engorda')}>
-                  Destetar ({selectedWeanIds.size}) a Engorda
+                <Button size="sm" color="warning" onClick={() => openBulkWean('engorda')}>
+                  {animal_stage_config.engorda.icon} Destetar ({selectedWeanIds.size}) a Engorda
                 </Button>
-                <Button size="xs" color="primary" onClick={() => openBulkWean('reproductor')}>
-                  Destetar ({selectedWeanIds.size}) a Reproductor
+                <Button size="sm" color="error" onClick={() => openBulkWean('reproductor')}>
+                  {animal_stage_config.reproductor.icon} Destetar ({selectedWeanIds.size}) a Reproductor
                 </Button>
               </div>
             )}
@@ -741,12 +760,12 @@ const AnimalsSection: React.FC = () => {
                   </span>
                   <div className="flex items-center gap-2 shrink-0 ml-auto">
                     <ButtonConfirm
-                      openLabel="Destetar a Engorda"
-                      confirmLabel="Destetar a Engorda"
+                      openLabel={`${animal_stage_config.engorda.icon} Destetar a Engorda`}
+                      confirmLabel={`${animal_stage_config.engorda.icon} Destetar a Engorda`}
                       confirmText={`¿Destetar a #${a.animalNumber} y moverlo a Engorda?`}
                       onConfirm={() => wean(a.id, { stageDecision: 'engorda' })}
                       openProps={{
-                        size: 'xs',
+                        size: 'sm',
                         color: 'warning',
                         variant: 'outline',
                         className: '!px-2 !py-1 !text-xs',
@@ -754,17 +773,17 @@ const AnimalsSection: React.FC = () => {
                       confirmProps={{ color: 'warning' }}
                     />
                     <ButtonConfirm
-                      openLabel="Destetar a Reproductor"
-                      confirmLabel="Destetar a Reproductor"
-                      confirmText={`¿Destetar a #${a.animalNumber} y moverlo a Reproductor?`}
+                      openLabel={`${animal_stage_config.reproductor.icon} Destetar a Reproductor`}
+                      confirmLabel={`${animal_stage_config.reproductor.icon} Destetar a Reproductor`}
+                      confirmText={`¿Destetar a #${a.animalNumber} y moverlo a Reproductor? (pasará por etapa Juvenil primero)`}
                       onConfirm={() => wean(a.id, { stageDecision: 'reproductor' })}
                       openProps={{
-                        size: 'xs',
-                        color: 'primary',
+                        size: 'sm',
+                        color: 'error',
                         variant: 'outline',
                         className: '!px-2 !py-1 !text-xs',
                       }}
-                      confirmProps={{ color: 'primary' }}
+                      confirmProps={{ color: 'error' }}
                     />
                   </div>
                 </li>
@@ -773,51 +792,78 @@ const AnimalsSection: React.FC = () => {
           </ul>
         </>
       )}
+      </div>
     </div>
   )
 
   // ========================
   // SUB-TABS DE ETAPAS
   // ========================
+  const etapaLabel = (key: AnimalStageKey, count: number) => {
+    const cfg = animal_stage_config[key]
+    return `${cfg.icon} ${cfg.label} (${count})`
+  }
+
+  const etapaTitle = (key: AnimalStageKey) => {
+    const cfg = animal_stage_config[key]
+    return (
+      <h3 className="text-lg font-semibold mb-3">
+        {cfg.icon} {cfg.label}
+      </h3>
+    )
+  }
+
   const etapasTabs = [
     {
-      label: `Monta (${montasCount})`,
+      label: etapaLabel('monta', montasCount),
       content: montaContent,
     },
     {
-      label: `Partos próximos (${pregnantFemales.length})`,
+      label: etapaLabel('partos_proximos', pregnantFemales.length),
       badgeCount: birthsSummary.pastDueCount,
       content: partosContent,
     },
     {
-      label: `Destetes próximos (${unweanedOffspring.length})`,
+      label: etapaLabel('destetes_proximos', unweanedOffspring.length),
       content: destetesContent,
     },
     {
-      label: `Engorda (${engordaAnimals.length})`,
+      label: etapaLabel('engorda', engordaAnimals.length),
       content: (
-        <AnimalListView animals={engordaAnimals} emptyMessage="No hay animales en engorda." />
+        <div>
+          {etapaTitle('engorda')}
+          <AnimalListView animals={engordaAnimals} emptyMessage="No hay animales en engorda." />
+        </div>
       ),
     },
     {
-      label: `Juveniles (${juvenilAnimals.length})`,
+      label: etapaLabel('juvenil', juvenilAnimals.length),
       content: (
-        <AnimalListView animals={juvenilAnimals} emptyMessage="No hay animales juveniles." />
+        <div>
+          {etapaTitle('juvenil')}
+          <AnimalListView animals={juvenilAnimals} emptyMessage="No hay animales juveniles." />
+        </div>
       ),
     },
     {
-      label: `Reproducción (${reproductorAnimals.length})`,
+      label: etapaLabel('reproductor', reproductorAnimals.length),
       content: (
-        <AnimalListView
-          animals={reproductorAnimals}
-          emptyMessage="No hay animales en reproducción."
-        />
+        <div>
+          {etapaTitle('reproductor')}
+          <AnimalListView
+            animals={reproductorAnimals}
+            emptyMessage="No hay animales en reproducción."
+          />
+        </div>
       ),
     },
     {
-      label: `Descarte (${descarteAnimals.length})`,
+      label: etapaLabel('descarte', descarteAnimals.length),
       content: (
-        <AnimalListView animals={descarteAnimals} emptyMessage="No hay animales en descarte." />
+        <div>
+          {etapaTitle('descarte')}
+          <AnimalListView animals={descarteAnimals} emptyMessage="No hay animales en descarte." />
+        </div>
       ),
     },
   ]
@@ -865,7 +911,18 @@ const AnimalsSection: React.FC = () => {
     {
       label: 'Etapas',
       content: (
-        <div className="mt-2">
+        <div className="mt-2 space-y-3">
+          <AnimalsFilters
+            filters={filters}
+            setFilters={setFilters}
+            filteredCount={filteredAnimals.length}
+            activeFilterCount={activeFilterCount}
+            availableTypes={availableTypes}
+            availableBreeds={availableBreeds}
+            availableStages={availableStages}
+            availableGenders={availableGenders}
+            formatStatLabel={formatStatLabel}
+          />
           <Tabs tabs={etapasTabs} tabsId="animals-etapas" />
         </div>
       ),
@@ -1035,11 +1092,14 @@ const AnimalsSection: React.FC = () => {
                   className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                     weanSuccess.decision === 'engorda'
                       ? 'bg-orange-100 text-orange-800'
-                      : 'bg-purple-100 text-purple-800'
+                      : 'bg-green-100 text-green-800'
                   }`}
                 >
-                  {weanSuccess.decision === 'engorda' ? 'Engorda' : 'Reproductor'}
+                  {weanSuccess.decision === 'engorda' ? 'Engorda' : 'Juvenil'}
                 </span>
+                {weanSuccess.decision === 'reproductor' && (
+                  <span className="text-xs text-gray-400 ml-1">(futuro reproductor)</span>
+                )}
               </p>
             ) : (
               <div className="space-y-2 w-full">
@@ -1052,11 +1112,14 @@ const AnimalsSection: React.FC = () => {
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                       weanSuccess.decision === 'engorda'
                         ? 'bg-orange-100 text-orange-800'
-                        : 'bg-purple-100 text-purple-800'
+                        : 'bg-green-100 text-green-800'
                     }`}
                   >
-                    {weanSuccess.decision === 'engorda' ? 'Engorda' : 'Reproductor'}
+                    {weanSuccess.decision === 'engorda' ? 'Engorda' : 'Juvenil'}
                   </span>
+                  {weanSuccess.decision === 'reproductor' && (
+                    <span className="text-xs text-gray-400 ml-1">(futuro reproductor)</span>
+                  )}
                 </p>
                 <div className="flex flex-wrap gap-1.5 justify-center">
                   {weanSuccess.animalNumbers.map((num) => (

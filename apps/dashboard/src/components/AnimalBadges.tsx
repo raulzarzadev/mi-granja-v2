@@ -2,12 +2,12 @@ import { differenceInCalendarDays } from 'date-fns'
 import React from 'react'
 import {
   Animal,
+  animal_gender_config,
   animal_icon,
   animal_stage_icons,
   animal_status_icons,
-  gender_colors,
-  gender_icon,
 } from '@/types/animals'
+import { Icon, IconName } from './Icon/icon'
 
 type AgeLabelFormat = 'full' | 'rounded'
 
@@ -52,8 +52,8 @@ const AnimalBadges: React.FC<AnimalBadgesProps> = ({ animal, ageFormat = 'full' 
         </span>
       </div>
       <span title={animal.type}>{animal_icon[animal.type]}</span>
-      <span className={`font-bold ${gender_colors[animal.gender]}`} title={animal.gender}>
-        {gender_icon[animal.gender]}
+      <span className={`${animal_gender_config[animal.gender].color}`} title={animal_gender_config[animal.gender].label}>
+        <Icon icon={animal_gender_config[animal.gender].iconName as IconName} size={4} />
       </span>
       {animal.status && animal.status !== 'activo' ? (
         <span title={animal.status}>{animal_status_icons[animal.status]}</span>

@@ -2,7 +2,6 @@
 
 import React from 'react'
 import { useSelector } from 'react-redux'
-import BreedingTabs from '@/components/BreedingTabs'
 import FarmAvatar from '@/components/FarmAvatar'
 import FarmSection from '@/components/FarmSection'
 import MyRole from '@/components/MyRole'
@@ -43,11 +42,6 @@ const Dashboard: React.FC = () => {
       label: '🐄 Animales',
       content: <AnimalsSection />,
     },
-    {
-      label: '🐣 Reproducción',
-      content: <BreedingTabs />,
-    },
-
     {
       label: '📆 Recordatorios',
       badgeCount: getOverdueReminders().length,

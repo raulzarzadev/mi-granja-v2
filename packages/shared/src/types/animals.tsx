@@ -98,14 +98,36 @@ export interface Animal {
 
 export const animals_genders = ['macho', 'hembra'] as const
 export type AnimalGender = (typeof animals_genders)[number]
+// Configuración unificada de género — fuente única de verdad para iconos, colores y labels.
+export const animal_gender_config: Record<
+  AnimalGender,
+  { label: string; icon: string; iconName: string; color: string; bgColor: string }
+> = {
+  macho: {
+    label: 'Macho',
+    icon: 'M',
+    iconName: 'male',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-100 text-blue-800',
+  },
+  hembra: {
+    label: 'Hembra',
+    icon: 'H',
+    iconName: 'female',
+    color: 'text-pink-600',
+    bgColor: 'bg-pink-100 text-pink-800',
+  },
+}
+
+// Compat — usar animal_gender_config en código nuevo
 export const gender_icon: Record<AnimalGender, string> = {
-  macho: '♂',
-  hembra: '♀',
+  macho: animal_gender_config.macho.icon,
+  hembra: animal_gender_config.hembra.icon,
 }
 
 export const gender_colors: Record<AnimalGender, string> = {
-  macho: 'text-blue-600',
-  hembra: 'text-pink-500',
+  macho: animal_gender_config.macho.color,
+  hembra: animal_gender_config.hembra.color,
 }
 
 export const animals_types = [
@@ -154,8 +176,8 @@ export const animals_stages_labels: Record<AnimalStage, string> = {
 }
 
 export const animals_genders_labels: Record<AnimalGender, string> = {
-  macho: 'Macho',
-  hembra: 'Hembra',
+  macho: animal_gender_config.macho.label,
+  hembra: animal_gender_config.hembra.label,
 }
 
 export type AnimalType = (typeof animals_types)[number]
@@ -354,6 +376,28 @@ export const animal_stage_icons: Record<AnimalStage, string> = {
   descarte: '🚫',
 }
 
+// Configuración unificada de etapas y estados — fuente única de verdad para iconos, colores y labels.
+// Incluye AnimalStage + estados derivados de breeding (monta, partos_proximos, destetes_proximos).
+// Usar en tabs de etapas, tablas, badges, filtros y cualquier UI que muestre etapas.
+export type AnimalStageKey = AnimalStage | 'monta' | 'partos_proximos' | 'destetes_proximos'
+
+export const animal_stage_config: Record<
+  AnimalStageKey,
+  { label: string; icon: string; color: string }
+> = {
+  // Breeding-derived stages
+  monta: { label: 'Monta', icon: '🛏️', color: 'bg-amber-100 text-amber-800' },
+  partos_proximos: { label: 'Partos próximos', icon: '🤰', color: 'bg-pink-100 text-pink-800' },
+  destetes_proximos: { label: 'Destetes próximos', icon: '🍼', color: 'bg-cyan-100 text-cyan-800' },
+  // Animal stages
+  cria: { label: 'Cría', icon: '👶', color: 'bg-blue-100 text-blue-800' },
+  juvenil: { label: 'Juvenil', icon: '🌱', color: 'bg-teal-100 text-teal-800' },
+  engorda: { label: 'Engorda', icon: '🍖', color: 'bg-orange-100 text-orange-800' },
+  lechera: { label: 'Lechera', icon: '🥛', color: 'bg-purple-100 text-purple-800' },
+  reproductor: { label: 'Reproducción', icon: '❤️', color: 'bg-rose-100 text-rose-800' },
+  descarte: { label: 'Descarte', icon: '🚫', color: 'bg-gray-100 text-gray-800' },
+}
+
 export interface StageDescription {
   description: string
   speciesInfo?: Partial<Record<AnimalType, string>>
@@ -363,36 +407,36 @@ export const animal_stage_descriptions: Record<AnimalStage, StageDescription> = 
   cria: {
     description: 'Recién nacido, depende de la madre. Lactancia y cuidado inicial.',
     speciesInfo: {
-      oveja: '0–2 meses, destete ~60 días',
-      cabra: '0–2 meses, destete ~60 días',
-      vaca: '0–4 meses, destete ~120 días',
-      cerdo: '0–1 mes, destete ~28 días',
-      gallina: '0–8 semanas',
-      equino: '0–6 meses, destete ~180 días',
-      perro: '0–2 meses, destete ~56 días',
-      gato: '0–2 meses, destete ~56 días',
+      oveja: '0-2 meses, destete ~60 días',
+      cabra: '0-2 meses, destete ~60 días',
+      vaca: '0-4 meses, destete ~120 días',
+      cerdo: '0-1 mes, destete ~28 días',
+      gallina: '0-8 semanas',
+      equino: '0-6 meses, destete ~180 días',
+      perro: '0-2 meses, destete ~56 días',
+      gato: '0-2 meses, destete ~56 días',
     },
   },
   juvenil: {
     description: 'Ya destetado, en crecimiento. Aún no apto para reproducción ni engorda final.',
     speciesInfo: {
-      oveja: '2–8 meses, <30 kg',
-      cabra: '2–7 meses, <25 kg',
-      vaca: '4–15 meses, <300 kg',
-      cerdo: '1–6 meses, <80 kg',
-      gallina: '8 semanas–5 meses',
-      equino: '6 meses–3 años',
-      perro: '2–12 meses',
-      gato: '2–6 meses',
+      oveja: '2-8 meses, <30 kg',
+      cabra: '2-7 meses, <25 kg',
+      vaca: '4-15 meses, <300 kg',
+      cerdo: '1-6 meses, <80 kg',
+      gallina: '8 semanas-5 meses',
+      equino: '6 meses-3 años',
+      perro: '2-12 meses',
+      gato: '2-6 meses',
     },
   },
   engorda: {
     description: 'Alimentación intensiva para ganancia de peso. Destino: venta o consumo.',
     speciesInfo: {
-      oveja: '>6 meses, 30–50 kg objetivo',
-      cabra: '>6 meses, 25–40 kg objetivo',
-      vaca: '>12 meses, 400–600 kg objetivo',
-      cerdo: '>6 meses, 90–120 kg objetivo',
+      oveja: '>6 meses, 30-50 kg objetivo',
+      cabra: '>6 meses, 25-40 kg objetivo',
+      vaca: '>12 meses, 400-600 kg objetivo',
+      cerdo: '>6 meses, 90-120 kg objetivo',
       gallina: '>5 meses (pollo de engorda)',
     },
   },

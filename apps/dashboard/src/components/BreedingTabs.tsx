@@ -311,7 +311,7 @@ const BreedingTabs: React.FC = () => {
                     {orderedBreedings.needBirthConfirmation.length > 0 && (
                       <div>
                         <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                          <span>Partos pendientes</span>
+                          <span>Partos próximos</span>
                           <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
                             {orderedBreedings.needBirthConfirmation.length}
                           </span>
@@ -372,7 +372,7 @@ const BreedingTabs: React.FC = () => {
       ),
     },
     {
-      label: '🤰 Partos pendientes',
+      label: '🤰 Partos próximos',
       badgeCount: pregnantFemales.length + birthsSummary.pastDueCount,
       content: (
         <div className="space-y-6">
@@ -395,7 +395,7 @@ const BreedingTabs: React.FC = () => {
 
           {/* Todas las hembras embarazadas */}
           <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-lg font-semibold mb-4">Partos pendientes</h3>
+            <h3 className="text-lg font-semibold mb-4">Partos próximos</h3>
             {pregnantFemales.length === 0 ? (
               <p className="text-sm text-gray-500">No hay partos pendientes.</p>
             ) : (
