@@ -2,7 +2,7 @@
 
 import { collection, getDocs } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
-import { toDate, toLocalDateStart } from '@/lib/dates'
+import { toLocalDateStart } from '@/lib/dates'
 import { db } from '@/lib/firebase'
 import { BreedingRecord } from '@/types/breedings'
 
@@ -33,9 +33,7 @@ export const useAdminBreedings = (): UseAdminBreedingsReturn => {
           breedingId: data.breedingId || '', // Campo agregado para compatibilidad
           farmerId: data.farmerId,
           maleId: data.maleId,
-          breedingDate: data.breedingDate
-            ? toLocalDateStart(data.breedingDate)
-            : new Date(),
+          breedingDate: data.breedingDate ? toLocalDateStart(data.breedingDate) : new Date(),
           femaleBreedingInfo:
             data.femaleBreedingInfo?.map(
               (info: {

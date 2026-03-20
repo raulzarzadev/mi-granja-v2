@@ -13,7 +13,10 @@ type AgeLabelFormat = 'full' | 'rounded'
 
 const getAgeLabel = (animal: Animal, format: AgeLabelFormat = 'full') => {
   if (!animal.birthDate) return null
-  const bd = animal.birthDate instanceof Date ? animal.birthDate : new Date(animal.birthDate as string | number)
+  const bd =
+    animal.birthDate instanceof Date
+      ? animal.birthDate
+      : new Date(animal.birthDate as string | number)
   if (Number.isNaN(bd.getTime())) return null
   const days = differenceInCalendarDays(new Date(), bd)
 
@@ -52,7 +55,10 @@ const AnimalBadges: React.FC<AnimalBadgesProps> = ({ animal, ageFormat = 'full' 
         </span>
       </div>
       <span title={animal.type}>{animal_icon[animal.type]}</span>
-      <span className={`${animal_gender_config[animal.gender].color}`} title={animal_gender_config[animal.gender].label}>
+      <span
+        className={`${animal_gender_config[animal.gender].color}`}
+        title={animal_gender_config[animal.gender].label}
+      >
         <Icon icon={animal_gender_config[animal.gender].iconName as IconName} size={4} />
       </span>
       {animal.status && animal.status !== 'activo' ? (

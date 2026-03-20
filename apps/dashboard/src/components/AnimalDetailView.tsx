@@ -328,23 +328,27 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal }) => {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-gray-900 truncate">{animal.animalNumber}</h2>
-                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full ${genderCfg.bgColor}`}>
+                <span
+                  className={`inline-flex items-center justify-center w-5 h-5 rounded-full ${genderCfg.bgColor}`}
+                >
                   <Icon icon={genderCfg.iconName as any} size={3} />
                 </span>
               </div>
-              {animal.name && (
-                <p className="text-xs text-gray-400 truncate">{animal.name}</p>
-              )}
+              {animal.name && <p className="text-xs text-gray-400 truncate">{animal.name}</p>}
             </div>
           </div>
           <ModalEditAnimal animal={animal} />
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 mt-2">
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${stageCfg.color}`}>
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${stageCfg.color}`}
+          >
             {stageCfg.icon} {stageCfg.label}
           </span>
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${animal_status_colors[effectiveStatus]}`}>
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${animal_status_colors[effectiveStatus]}`}
+          >
             {animal_status_icons[effectiveStatus]} {animal_status_labels[effectiveStatus]}
           </span>
         </div>

@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react'
 import Button from '@/components/buttons/Button'
+import { toDate } from '@/lib/dates'
 import { BirthRecord, OffspringInfo } from '@/types'
 import { Animal, animal_icon } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
-import { toDate } from '@/lib/dates'
 import DateTimeInput from './inputs/DateTimeInput'
 import { Modal } from './Modal'
 

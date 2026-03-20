@@ -23,11 +23,16 @@ const safeToDate = (val: unknown): Date | null => {
   if (val instanceof Date) return val
   if (typeof val === 'string') return new Date(val)
   if (typeof val === 'number') return new Date(val)
-  if (typeof val === 'object' && 'toDate' in val && typeof (val as { toDate: unknown }).toDate === 'function') {
+  if (
+    typeof val === 'object' &&
+    'toDate' in val &&
+    typeof (val as { toDate: unknown }).toDate === 'function'
+  ) {
     return (val as { toDate: () => Date }).toDate()
   }
   return null
 }
+
 import { db } from '@/lib/firebase'
 import { BreedingRecord } from '@/types/breedings'
 import { Comment, NewCommentInput } from '@/types/comment'
@@ -380,41 +385,41 @@ export const useBreedingCRUD = () => {
       const records: BreedingRecord[] = []
       snapshot.forEach((docSnap) => {
         try {
-        const data = docSnap.data()
-        records.push({
-          ...data,
-          id: docSnap.id,
-          farmerId: data.farmerId,
-          maleId: data.maleId,
-          breedingId: data.breedingId || '',
-          notes: data.notes || '',
-          breedingDate: safeToDate(data.breedingDate)
-            ? toLocalDateStart(safeToDate(data.breedingDate)!)
-            : null,
-          femaleBreedingInfo:
-            data.femaleBreedingInfo?.map(
-              (info: {
-                animalNumber: string
-                pregnancyConfirmedDate?: unknown
-                expectedBirthDate?: unknown
-                actualBirthDate?: unknown
-                offspring?: string[]
-              }) => ({
-                ...info,
-                pregnancyConfirmedDate: safeToDate(info.pregnancyConfirmedDate)
-                  ? toLocalDateStart(safeToDate(info.pregnancyConfirmedDate)!)
-                  : undefined,
-                expectedBirthDate: safeToDate(info.expectedBirthDate)
-                  ? toLocalDateStart(safeToDate(info.expectedBirthDate)!)
-                  : undefined,
-                actualBirthDate: safeToDate(info.actualBirthDate)
-                  ? toLocalDateStart(safeToDate(info.actualBirthDate)!)
-                  : undefined,
-              }),
-            ) || [],
-          createdAt: safeToDate(data.createdAt) || new Date(),
-          updatedAt: safeToDate(data.updatedAt) || new Date(),
-        })
+          const data = docSnap.data()
+          records.push({
+            ...data,
+            id: docSnap.id,
+            farmerId: data.farmerId,
+            maleId: data.maleId,
+            breedingId: data.breedingId || '',
+            notes: data.notes || '',
+            breedingDate: safeToDate(data.breedingDate)
+              ? toLocalDateStart(safeToDate(data.breedingDate)!)
+              : null,
+            femaleBreedingInfo:
+              data.femaleBreedingInfo?.map(
+                (info: {
+                  animalNumber: string
+                  pregnancyConfirmedDate?: unknown
+                  expectedBirthDate?: unknown
+                  actualBirthDate?: unknown
+                  offspring?: string[]
+                }) => ({
+                  ...info,
+                  pregnancyConfirmedDate: safeToDate(info.pregnancyConfirmedDate)
+                    ? toLocalDateStart(safeToDate(info.pregnancyConfirmedDate)!)
+                    : undefined,
+                  expectedBirthDate: safeToDate(info.expectedBirthDate)
+                    ? toLocalDateStart(safeToDate(info.expectedBirthDate)!)
+                    : undefined,
+                  actualBirthDate: safeToDate(info.actualBirthDate)
+                    ? toLocalDateStart(safeToDate(info.actualBirthDate)!)
+                    : undefined,
+                }),
+              ) || [],
+            createdAt: safeToDate(data.createdAt) || new Date(),
+            updatedAt: safeToDate(data.updatedAt) || new Date(),
+          })
         } catch (e) {
           console.error('Error parseando breeding record:', docSnap.id, e)
         }

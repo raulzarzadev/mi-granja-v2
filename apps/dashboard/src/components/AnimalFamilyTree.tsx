@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useMemo, useState } from 'react'
-import { Animal, animal_icon, gender_icon } from '@/types/animals'
-import { Modal } from '@/components/Modal'
 import AnimalBadges from '@/components/AnimalBadges'
+import { Modal } from '@/components/Modal'
+import { Animal, animal_icon, gender_icon } from '@/types/animals'
 
 interface Props {
   animal: Animal
@@ -95,9 +95,17 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
     }
 
     return {
-      mother, father, maternalGM, maternalGF, paternalGM, paternalGF,
-      children, grandchildrenByChild,
-      fullCount, maternalCount, paternalCount,
+      mother,
+      father,
+      maternalGM,
+      maternalGF,
+      paternalGM,
+      paternalGF,
+      children,
+      grandchildrenByChild,
+      fullCount,
+      maternalCount,
+      paternalCount,
     }
   }, [animal.id, animal.motherId, animal.fatherId, animal.animalNumber, allAnimals])
 
@@ -124,7 +132,15 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
       else if (siblingModal === 'padre' && matchFather && !matchMother) result.push(a)
     }
     return result
-  }, [siblingModal, animal.id, animal.motherId, animal.fatherId, allAnimals, tree.mother, tree.father])
+  }, [
+    siblingModal,
+    animal.id,
+    animal.motherId,
+    animal.fatherId,
+    allAnimals,
+    tree.mother,
+    tree.father,
+  ])
 
   const { mother, father, maternalGM, maternalGF, paternalGM, paternalGF } = tree
   const hasAncestors = mother || father
@@ -133,9 +149,13 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
 
   /* ─── Subcomponents ─── */
 
-  const Node: React.FC<{ a: Animal | null; label: string; highlight?: boolean; placeholder?: string; size?: 'sm' | 'md' | 'lg' }> = ({
-    a, label, highlight, placeholder, size = 'md',
-  }) => {
+  const Node: React.FC<{
+    a: Animal | null
+    label: string
+    highlight?: boolean
+    placeholder?: string
+    size?: 'sm' | 'md' | 'lg'
+  }> = ({ a, label, highlight, placeholder, size = 'md' }) => {
     const sizeClasses = {
       sm: 'px-2 py-1 text-[11px]',
       md: 'px-3 py-1.5 text-xs',
@@ -143,21 +163,29 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
     }
     if (!a) {
       return (
-        <div className={`border border-dashed border-gray-200 rounded-lg ${sizeClasses[size]} text-center text-gray-300`}>
+        <div
+          className={`border border-dashed border-gray-200 rounded-lg ${sizeClasses[size]} text-center text-gray-300`}
+        >
           <div className="text-[10px] mb-0.5">{label}</div>
           {placeholder || '?'}
         </div>
       )
     }
     return (
-      <div className={`border rounded-lg ${sizeClasses[size]} ${highlight ? 'border-green-500 bg-green-50 ring-2 ring-green-200' : 'border-gray-200 bg-white'}`}>
+      <div
+        className={`border rounded-lg ${sizeClasses[size]} ${highlight ? 'border-green-500 bg-green-50 ring-2 ring-green-200' : 'border-gray-200 bg-white'}`}
+      >
         <div className="text-[10px] text-gray-400 mb-0.5">{label}</div>
         <div className="flex items-center gap-1.5">
-          <span className={size === 'sm' ? 'text-sm' : size === 'lg' ? 'text-lg' : 'text-base'}>{animal_icon[a.type] || '🐾'}</span>
+          <span className={size === 'sm' ? 'text-sm' : size === 'lg' ? 'text-lg' : 'text-base'}>
+            {animal_icon[a.type] || '🐾'}
+          </span>
           <div className="min-w-0">
             <div className="font-semibold truncate flex items-center gap-1">
               #{a.animalNumber}
-              <span className={a.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}>{gender_icon[a.gender]}</span>
+              <span className={a.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}>
+                {gender_icon[a.gender]}
+              </span>
             </div>
             {a.breed && <div className="text-gray-400 truncate">{a.breed}</div>}
           </div>
@@ -166,9 +194,16 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
     )
   }
 
-  const Connector: React.FC<{ type: 'vertical' | 'fork' | 'spread'; cols?: number }> = ({ type, cols }) => {
+  const Connector: React.FC<{ type: 'vertical' | 'fork' | 'spread'; cols?: number }> = ({
+    type,
+    cols,
+  }) => {
     if (type === 'vertical') {
-      return <div className="flex justify-center"><div className="w-px h-5 bg-gray-300" /></div>
+      return (
+        <div className="flex justify-center">
+          <div className="w-px h-5 bg-gray-300" />
+        </div>
+      )
     }
     if (type === 'fork') {
       return (
@@ -184,18 +219,28 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
       return (
         <div className="relative h-5">
           <div className="absolute left-1/2 top-0 w-px h-2 bg-gray-300 -translate-x-1/2" />
-          <div className="absolute top-2 h-px bg-gray-300" style={{ left: `${100 / (cols * 2)}%`, right: `${100 / (cols * 2)}%` }} />
+          <div
+            className="absolute top-2 h-px bg-gray-300"
+            style={{ left: `${100 / (cols * 2)}%`, right: `${100 / (cols * 2)}%` }}
+          />
           {Array.from({ length: cols }).map((_, i) => (
             <div
               key={i}
               className="absolute top-2 w-px h-3 bg-gray-300"
-              style={{ left: `${(100 / (cols * 2)) + (i * 100 / cols)}%`, transform: 'translateX(-50%)' }}
+              style={{
+                left: `${100 / (cols * 2) + (i * 100) / cols}%`,
+                transform: 'translateX(-50%)',
+              }}
             />
           ))}
         </div>
       )
     }
-    return <div className="flex justify-center"><div className="w-px h-5 bg-gray-300" /></div>
+    return (
+      <div className="flex justify-center">
+        <div className="w-px h-5 bg-gray-300" />
+      </div>
+    )
   }
 
   return (
@@ -287,7 +332,10 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
               const gc = tree.grandchildrenByChild.get(child.id)
               const gcCount = gc?.length || 0
               return (
-                <div key={child.id} className="flex items-center gap-2 px-1 py-0.5 rounded hover:bg-gray-50">
+                <div
+                  key={child.id}
+                  className="flex items-center gap-2 px-1 py-0.5 rounded hover:bg-gray-50"
+                >
                   <AnimalBadges animal={child} />
                   {gcCount > 0 && (
                     <span className="text-[10px] text-gray-400 ml-auto shrink-0">
@@ -299,7 +347,9 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
             })}
           </div>
           {tree.children.length > 20 && (
-            <p className="text-[10px] text-gray-400 text-center mt-1">+{tree.children.length - 20} hijos mas</p>
+            <p className="text-[10px] text-gray-400 text-center mt-1">
+              +{tree.children.length - 20} hijos mas
+            </p>
           )}
         </div>
       )}
@@ -328,19 +378,37 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
         >
           <div className="max-h-96 overflow-y-auto space-y-1 p-1">
             {modalSiblings.map((sib) => (
-              <div key={sib.id} className="flex items-center gap-2 px-3 py-2 border border-gray-100 rounded-lg text-sm">
+              <div
+                key={sib.id}
+                className="flex items-center gap-2 px-3 py-2 border border-gray-100 rounded-lg text-sm"
+              >
                 <span>{animal_icon[sib.type] || '🐾'}</span>
                 <span className="font-medium">#{sib.animalNumber}</span>
-                <span className={sib.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}>{gender_icon[sib.gender]}</span>
+                <span className={sib.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}>
+                  {gender_icon[sib.gender]}
+                </span>
                 {sib.name && <span className="text-gray-400 text-xs">{sib.name}</span>}
                 {sib.breed && <span className="text-gray-400 text-xs">{sib.breed}</span>}
                 {sib.status !== 'activo' && (
-                  <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{sib.status}</span>
+                  <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
+                    {sib.status}
+                  </span>
                 )}
               </div>
             ))}
-            {(siblingModal === 'completos' ? tree.fullCount : siblingModal === 'madre' ? tree.maternalCount : tree.paternalCount) > MAX_SIBLINGS_MODAL && (
-              <p className="text-xs text-gray-400 text-center py-2">Mostrando {MAX_SIBLINGS_MODAL} de {siblingModal === 'completos' ? tree.fullCount : siblingModal === 'madre' ? tree.maternalCount : tree.paternalCount}</p>
+            {(siblingModal === 'completos'
+              ? tree.fullCount
+              : siblingModal === 'madre'
+                ? tree.maternalCount
+                : tree.paternalCount) > MAX_SIBLINGS_MODAL && (
+              <p className="text-xs text-gray-400 text-center py-2">
+                Mostrando {MAX_SIBLINGS_MODAL} de{' '}
+                {siblingModal === 'completos'
+                  ? tree.fullCount
+                  : siblingModal === 'madre'
+                    ? tree.maternalCount
+                    : tree.paternalCount}
+              </p>
             )}
           </div>
         </Modal>

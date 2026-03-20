@@ -19,7 +19,7 @@ import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import { toDate } from '@/lib/dates'
-import { Animal, animal_stage_config, AnimalStageKey } from '@/types/animals'
+import { Animal, AnimalStageKey, animal_stage_config } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 import ModalBulkHealthAction from '../../ModalBulkHealthAction'
@@ -227,7 +227,13 @@ const AnimalsSection: React.FC = () => {
         if (!fi.offspring || fi.offspring.length === 0) continue
         for (const offId of fi.offspring) {
           const a = animals.find((an) => an.id === offId)
-          if (a && a.stage === 'cria' && a.status !== 'muerto' && a.status !== 'vendido' && matchesEtapasFilters(a)) {
+          if (
+            a &&
+            a.stage === 'cria' &&
+            a.status !== 'muerto' &&
+            a.status !== 'vendido' &&
+            matchesEtapasFilters(a)
+          ) {
             let weanDate: Date | null = null
             let daysUntilWean: number | null = null
             if (a.birthDate) {
@@ -563,7 +569,9 @@ const AnimalsSection: React.FC = () => {
   // Tab: Partos próximos — misma vista que BreedingTabs > Partos próximos
   const partosContent = (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">{animal_stage_config.partos_proximos.icon} Partos próximos</h3>
+      <h3 className="text-lg font-semibold">
+        {animal_stage_config.partos_proximos.icon} Partos próximos
+      </h3>
       {(birthsWindow.pastDue.length > 0 || birthsWindow.upcoming.length > 0) && (
         <div className="bg-white rounded-lg shadow p-4">
           <h4 className="text-sm font-medium text-gray-700 mb-3">Próximos / Atrasados</h4>
@@ -676,122 +684,126 @@ const AnimalsSection: React.FC = () => {
   // Tab: Destetes próximos — misma vista que BreedingTabs > Destetes
   const destetesContent = (
     <div>
-      <h3 className="text-lg font-semibold mb-3">{animal_stage_config.destetes_proximos.icon} Destetes próximos</h3>
+      <h3 className="text-lg font-semibold mb-3">
+        {animal_stage_config.destetes_proximos.icon} Destetes próximos
+      </h3>
       <div className="bg-white rounded-lg shadow">
-      {unweanedOffspring.length === 0 ? (
-        <p className="text-sm text-gray-500 p-4">No hay crías pendientes de destete.</p>
-      ) : (
-        <>
-          {/* Toolbar de selección */}
-          <div className="px-4 py-2.5 border-b border-gray-100 space-y-2 flex gap-4">
-            <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-600">
-              <input
-                type="checkbox"
-                checked={
-                  selectedWeanIds.size === unweanedOffspring.length && unweanedOffspring.length > 0
-                }
-                onChange={() => {
-                  if (selectedWeanIds.size === unweanedOffspring.length) {
-                    setSelectedWeanIds(new Set())
-                  } else {
-                    setSelectedWeanIds(new Set(unweanedOffspring.map(({ animal: a }) => a.id)))
+        {unweanedOffspring.length === 0 ? (
+          <p className="text-sm text-gray-500 p-4">No hay crías pendientes de destete.</p>
+        ) : (
+          <>
+            {/* Toolbar de selección */}
+            <div className="px-4 py-2.5 border-b border-gray-100 space-y-2 flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={
+                    selectedWeanIds.size === unweanedOffspring.length &&
+                    unweanedOffspring.length > 0
                   }
-                }}
-                className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-              />
-              {selectedWeanIds.size > 0
-                ? `${selectedWeanIds.size} seleccionados`
-                : 'Seleccionar todos'}
-            </label>
-
-            {selectedWeanIds.size > 0 && (
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button size="sm" color="warning" onClick={() => openBulkWean('engorda')}>
-                  {animal_stage_config.engorda.icon} Destetar ({selectedWeanIds.size}) a Engorda
-                </Button>
-                <Button size="sm" color="error" onClick={() => openBulkWean('reproductor')}>
-                  {animal_stage_config.reproductor.icon} Destetar ({selectedWeanIds.size}) a Reproductor
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <ul className="divide-y px-4">
-            {unweanedOffspring.map(({ animal: a, motherId, daysUntilWean }) => {
-              const mother = animals.find((an) => an.id === motherId)
-              const isOverdue = daysUntilWean !== null && daysUntilWean < 0
-              const isSoon = daysUntilWean !== null && daysUntilWean >= 0 && daysUntilWean <= 7
-              const isSelected = selectedWeanIds.has(a.id)
-              return (
-                <li key={a.id} className="py-3 flex items-center gap-3 flex-wrap sm:flex-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => toggleWeanSelect(a.id)}
-                    className="w-4 h-4 shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                  />
-                  <ModalAnimalDetails
-                    animal={a}
-                    triggerComponent={
-                      <div className="cursor-pointer hover:bg-gray-50 rounded-lg p-1 transition-colors">
-                        <AnimalBadges animal={a} />
-                      </div>
+                  onChange={() => {
+                    if (selectedWeanIds.size === unweanedOffspring.length) {
+                      setSelectedWeanIds(new Set())
+                    } else {
+                      setSelectedWeanIds(new Set(unweanedOffspring.map(({ animal: a }) => a.id)))
                     }
-                  />
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${
-                      isOverdue
-                        ? 'bg-red-100 text-red-700'
-                        : isSoon
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {daysUntilWean !== null
-                      ? daysUntilWean === 0
-                        ? 'Hoy'
-                        : daysUntilWean > 0
-                          ? `En ${daysUntilWean}d`
-                          : `Hace ${Math.abs(daysUntilWean)}d`
-                      : 'Sin fecha'}
-                  </span>
-                  <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                    M: {mother?.animalNumber || '—'}
-                  </span>
-                  <div className="flex items-center gap-2 shrink-0 ml-auto">
-                    <ButtonConfirm
-                      openLabel={`${animal_stage_config.engorda.icon} Destetar a Engorda`}
-                      confirmLabel={`${animal_stage_config.engorda.icon} Destetar a Engorda`}
-                      confirmText={`¿Destetar a #${a.animalNumber} y moverlo a Engorda?`}
-                      onConfirm={() => wean(a.id, { stageDecision: 'engorda' })}
-                      openProps={{
-                        size: 'sm',
-                        color: 'warning',
-                        variant: 'outline',
-                        className: '!px-2 !py-1 !text-xs',
-                      }}
-                      confirmProps={{ color: 'warning' }}
+                  }}
+                  className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                />
+                {selectedWeanIds.size > 0
+                  ? `${selectedWeanIds.size} seleccionados`
+                  : 'Seleccionar todos'}
+              </label>
+
+              {selectedWeanIds.size > 0 && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button size="sm" color="warning" onClick={() => openBulkWean('engorda')}>
+                    {animal_stage_config.engorda.icon} Destetar ({selectedWeanIds.size}) a Engorda
+                  </Button>
+                  <Button size="sm" color="error" onClick={() => openBulkWean('reproductor')}>
+                    {animal_stage_config.reproductor.icon} Destetar ({selectedWeanIds.size}) a
+                    Reproductor
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <ul className="divide-y px-4">
+              {unweanedOffspring.map(({ animal: a, motherId, daysUntilWean }) => {
+                const mother = animals.find((an) => an.id === motherId)
+                const isOverdue = daysUntilWean !== null && daysUntilWean < 0
+                const isSoon = daysUntilWean !== null && daysUntilWean >= 0 && daysUntilWean <= 7
+                const isSelected = selectedWeanIds.has(a.id)
+                return (
+                  <li key={a.id} className="py-3 flex items-center gap-3 flex-wrap sm:flex-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleWeanSelect(a.id)}
+                      className="w-4 h-4 shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                     />
-                    <ButtonConfirm
-                      openLabel={`${animal_stage_config.reproductor.icon} Destetar a Reproductor`}
-                      confirmLabel={`${animal_stage_config.reproductor.icon} Destetar a Reproductor`}
-                      confirmText={`¿Destetar a #${a.animalNumber} y moverlo a Reproductor? (pasará por etapa Juvenil primero)`}
-                      onConfirm={() => wean(a.id, { stageDecision: 'reproductor' })}
-                      openProps={{
-                        size: 'sm',
-                        color: 'error',
-                        variant: 'outline',
-                        className: '!px-2 !py-1 !text-xs',
-                      }}
-                      confirmProps={{ color: 'error' }}
+                    <ModalAnimalDetails
+                      animal={a}
+                      triggerComponent={
+                        <div className="cursor-pointer hover:bg-gray-50 rounded-lg p-1 transition-colors">
+                          <AnimalBadges animal={a} />
+                        </div>
+                      }
                     />
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        </>
-      )}
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${
+                        isOverdue
+                          ? 'bg-red-100 text-red-700'
+                          : isSoon
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {daysUntilWean !== null
+                        ? daysUntilWean === 0
+                          ? 'Hoy'
+                          : daysUntilWean > 0
+                            ? `En ${daysUntilWean}d`
+                            : `Hace ${Math.abs(daysUntilWean)}d`
+                        : 'Sin fecha'}
+                    </span>
+                    <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                      M: {mother?.animalNumber || '—'}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0 ml-auto">
+                      <ButtonConfirm
+                        openLabel={`${animal_stage_config.engorda.icon} Destetar a Engorda`}
+                        confirmLabel={`${animal_stage_config.engorda.icon} Destetar a Engorda`}
+                        confirmText={`¿Destetar a #${a.animalNumber} y moverlo a Engorda?`}
+                        onConfirm={() => wean(a.id, { stageDecision: 'engorda' })}
+                        openProps={{
+                          size: 'sm',
+                          color: 'warning',
+                          variant: 'outline',
+                          className: '!px-2 !py-1 !text-xs',
+                        }}
+                        confirmProps={{ color: 'warning' }}
+                      />
+                      <ButtonConfirm
+                        openLabel={`${animal_stage_config.reproductor.icon} Destetar a Reproductor`}
+                        confirmLabel={`${animal_stage_config.reproductor.icon} Destetar a Reproductor`}
+                        confirmText={`¿Destetar a #${a.animalNumber} y moverlo a Reproductor? (pasará por etapa Juvenil primero)`}
+                        onConfirm={() => wean(a.id, { stageDecision: 'reproductor' })}
+                        openProps={{
+                          size: 'sm',
+                          color: 'error',
+                          variant: 'outline',
+                          className: '!px-2 !py-1 !text-xs',
+                        }}
+                        confirmProps={{ color: 'error' }}
+                      />
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </>
+        )}
       </div>
     </div>
   )

@@ -148,8 +148,7 @@ export const useAnimalCRUD = () => {
       notes?: string
     },
   ) => {
-    const nextStage: Animal['stage'] =
-      opts?.stageDecision === 'engorda' ? 'engorda' : 'juvenil'
+    const nextStage: Animal['stage'] = opts?.stageDecision === 'engorda' ? 'engorda' : 'juvenil'
     const updateData: Partial<Animal> = {
       isWeaned: true,
       weanedAt: opts?.weanDate || new Date(),

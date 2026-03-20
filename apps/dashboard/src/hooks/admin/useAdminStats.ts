@@ -3,7 +3,7 @@
 import { collection, getDocs } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import { db } from '@/lib/firebase'
-import { Reminder, User } from '@/types'
+import { User } from '@/types'
 import { Animal, AnimalType } from '@/types/animals'
 import { FarmCollaborator } from '@/types/collaborators'
 

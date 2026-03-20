@@ -219,7 +219,8 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     id: 'string',
     farmerId: 'string (ID del usuario dueño)',
     farmId: 'string (ID de la granja)',
-    animalNumber: 'string (obligatorio, identificador único asignado por el granjero. No puede estar vacío ni repetirse dentro de la granja)',
+    animalNumber:
+      'string (obligatorio, identificador único asignado por el granjero. No puede estar vacío ni repetirse dentro de la granja)',
     name: 'string | undefined (nombre opcional del animal)',
     type: "'oveja' | 'vaca' | 'cabra' | 'cerdo' | 'gallina' | 'perro' | 'gato' | 'equino' | 'otro' (obligatorio, debe ser uno de estos valores exactos)",
     breed: 'string | undefined (raza)',
@@ -229,8 +230,10 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     weight: 'number | string | null (en GRAMOS, ej: 4500 = 4.5kg). Se muestra al usuario en kg.',
     age: 'number | null (edad en meses al momento del registro, se calcula automáticamente desde birthDate)',
     birthDate: 'string (ISO 8601) | undefined',
-    motherId: 'string | undefined (ID interno del animal madre, debe corresponder a un animal existente en la granja)',
-    fatherId: 'string | undefined (ID interno del animal padre, debe corresponder a un animal existente en la granja)',
+    motherId:
+      'string | undefined (ID interno del animal madre, debe corresponder a un animal existente en la granja)',
+    fatherId:
+      'string | undefined (ID interno del animal padre, debe corresponder a un animal existente en la granja)',
     status:
       "'activo' | 'muerto' | 'vendido' | 'perdido' (default: activo). Si una cría nace muerta, debe tener status='muerto' y statusAt=fecha del parto.",
     statusAt: 'string (ISO 8601) | undefined',
@@ -328,7 +331,8 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     campos_nunca_undefined:
       'Firestore no acepta undefined. Omitir el campo por completo en vez de ponerlo como undefined.',
     peso_en_gramos: 'weight y soldInfo.price se almacenan en gramos y centavos respectivamente',
-    fechas_iso_8601: 'Todas las fechas deben estar en formato ISO 8601 (ej: 2026-03-17T00:00:00.000Z)',
+    fechas_iso_8601:
+      'Todas las fechas deben estar en formato ISO 8601 (ej: 2026-03-17T00:00:00.000Z)',
     etapas_por_edad:
       'cria=recién nacido, juvenil=destetado para reproducción, engorda=destetado para engorda, lechera=madre productora de leche, reproductor=adulto reproductor, descarte=animal a eliminar',
     destete:

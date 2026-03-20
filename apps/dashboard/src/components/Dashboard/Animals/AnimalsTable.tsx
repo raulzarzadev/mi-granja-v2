@@ -2,14 +2,14 @@
 
 import { useState } from 'react'
 import AnimalDetailView from '@/components/AnimalDetailView'
+import { Icon, IconName } from '@/components/Icon/icon'
 import { Modal } from '@/components/Modal'
 import { animalAge, formatWeight } from '@/lib/animal-utils'
-import { Icon, IconName } from '@/components/Icon/icon'
 import {
   Animal,
   AnimalStatus,
-  animal_stage_config,
   animal_gender_config,
+  animal_stage_config,
   animal_status_colors,
   animal_status_labels,
   animals_types_labels,
@@ -284,8 +284,14 @@ const AnimalsTable = ({
                     {animal.breed || '—'}
                   </td>
                   <td className="px-1 py-1.5 text-sm text-center whitespace-nowrap">
-                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${animal_gender_config[animal.gender].bgColor}`} title={animal_gender_config[animal.gender].label}>
-                      <Icon icon={animal_gender_config[animal.gender].iconName as IconName} size={3} />
+                    <span
+                      className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${animal_gender_config[animal.gender].bgColor}`}
+                      title={animal_gender_config[animal.gender].label}
+                    >
+                      <Icon
+                        icon={animal_gender_config[animal.gender].iconName as IconName}
+                        size={3}
+                      />
                     </span>
                   </td>
                   <td className="px-2 py-1.5 text-sm whitespace-nowrap">

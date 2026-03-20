@@ -63,8 +63,19 @@ const ActionButton = ({
       {loading ? (
         <>
           <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            />
           </svg>
           {loadingLabel || 'Procesando...'}
         </>
@@ -236,12 +247,16 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
 
           {/* Acciones disponibles */}
           <div className="border-t pt-4">
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Acciones</h3>
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              Acciones
+            </h3>
             <div className="space-y-2">
               {/* Acciones para macho */}
               {animalType === 'male' && (
                 <ActionButton
-                  onClick={() => handleActionAndClose(() => onRemoveFromBreeding?.(record, animal.id))}
+                  onClick={() =>
+                    handleActionAndClose(() => onRemoveFromBreeding?.(record, animal.id))
+                  }
                   variant="danger"
                   icon="delete"
                   label="Sacar de la monta"
@@ -254,14 +269,18 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
               {animalType === 'female' && status === 'monta' && (
                 <>
                   <ActionButton
-                    onClick={() => handleActionAndClose(() => onConfirmPregnancy?.(record, animal.id))}
+                    onClick={() =>
+                      handleActionAndClose(() => onConfirmPregnancy?.(record, animal.id))
+                    }
                     variant="primary"
                     icon="pregnant"
                     label="Confirmar embarazo"
                     loadingLabel="Abriendo..."
                   />
                   <ActionButton
-                    onClick={() => handleActionAndClose(() => onRemoveFromBreeding?.(record, animal.id))}
+                    onClick={() =>
+                      handleActionAndClose(() => onRemoveFromBreeding?.(record, animal.id))
+                    }
                     variant="danger"
                     icon="delete"
                     label="Sacar de la monta"
@@ -282,14 +301,18 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                     loadingLabel="Abriendo..."
                   />
                   <ActionButton
-                    onClick={() => handleActionAndClose(() => onUnconfirmPregnancy?.(record, animal.id))}
+                    onClick={() =>
+                      handleActionAndClose(() => onUnconfirmPregnancy?.(record, animal.id))
+                    }
                     variant="warning"
                     icon="bed"
                     label="Desconfirmar embarazo"
                     loadingLabel="Desconfirmando..."
                   />
                   <ActionButton
-                    onClick={() => handleActionAndClose(() => onRemoveFromBreeding?.(record, animal.id))}
+                    onClick={() =>
+                      handleActionAndClose(() => onRemoveFromBreeding?.(record, animal.id))
+                    }
                     variant="danger"
                     icon="delete"
                     label="Sacar de la monta"

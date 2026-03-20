@@ -409,7 +409,7 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
               value={quantity}
               onWheel={preventScrollChange}
               onChange={(e) => {
-                const v = Number.parseInt(e.target.value)
+                const v = Number.parseInt(e.target.value, 10)
                 if (!Number.isNaN(v) && v >= 1 && v <= 100) setQuantity(v)
               }}
               className="w-20 text-center px-3 py-2 border border-gray-300 rounded-lg text-lg font-semibold focus:ring-2 focus:ring-green-500 focus:border-green-500"

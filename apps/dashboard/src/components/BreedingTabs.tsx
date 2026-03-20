@@ -1,22 +1,22 @@
 'use client'
 
+import { addDays, differenceInCalendarDays } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import React, { useMemo, useState } from 'react'
+import AnimalBadges from '@/components/AnimalBadges'
 import BirthsWindowSummary from '@/components/BirthsWindowSummary'
 import BreedingCard from '@/components/BreedingCard'
 import BreedingTable from '@/components/BreedingTable'
+import AnimalListView from '@/components/Dashboard/Animals/AnimalListView'
 import GeneticTree from '@/components/GeneticTree'
+import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import ModalBirthForm from '@/components/ModalBirthForm'
 import ModalConfirmPregnancy from '@/components/ModalConfirmPregnancy'
 import Tabs from '@/components/Tabs'
-import { addDays, differenceInCalendarDays } from 'date-fns'
-import AnimalBadges from '@/components/AnimalBadges'
-import AnimalListView from '@/components/Dashboard/Animals/AnimalListView'
-import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import { toDate } from '@/lib/dates'
-import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { BreedingRecord } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 
@@ -95,7 +95,13 @@ const BreedingTabs: React.FC = () => {
 
   // Crías sin destetar (para tab Destetes), ordenadas por fecha de destete
   const unweanedOffspring = useMemo(() => {
-    const result: { animal: typeof animals[number]; motherId: string; record: BreedingRecord; weanDate: Date | null; daysUntilWean: number | null }[] = []
+    const result: {
+      animal: (typeof animals)[number]
+      motherId: string
+      record: BreedingRecord
+      weanDate: Date | null
+      daysUntilWean: number | null
+    }[] = []
     for (const record of filteredBreedingRecords) {
       for (const fi of record.femaleBreedingInfo) {
         if (!fi.offspring || fi.offspring.length === 0) continue
@@ -564,7 +570,8 @@ const BreedingTabs: React.FC = () => {
     },
     {
       label: '🏭 Produccion',
-      badgeCount: prodAnimals.engorda.length + prodAnimals.juvenil.length + prodAnimals.reproductor.length,
+      badgeCount:
+        prodAnimals.engorda.length + prodAnimals.juvenil.length + prodAnimals.reproductor.length,
       content: (
         <Tabs
           tabsId="produccion-tabs"

@@ -25,12 +25,7 @@ const Dashboard: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth)
   const { farms, currentFarm } = useFarmCRUD()
 
-  const {
-    filters,
-    setFilters,
-    animals,
-    availableTypes,
-  } = useAnimalFilters()
+  const { filters, setFilters, animals, availableTypes } = useAnimalFilters()
   const { getOverdueReminders } = useReminders()
 
   if (!user) {
