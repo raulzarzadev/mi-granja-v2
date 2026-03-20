@@ -5,7 +5,6 @@ import React, { useMemo, useState } from 'react'
 import HealthRemindersCard from '@/components/HealthRemindersCard'
 import ReminderCard from '@/components/ReminderCard'
 import Tabs from '@/components/Tabs'
-import WeaningRemindersCard from '@/components/WeaningRemindersCard'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useReminders } from '@/hooks/useReminders'
 import { Reminder } from '@/types'
@@ -154,10 +153,6 @@ const RemindersTab: React.FC<RemindersTabProps> = ({ speciesFilter = '' }) => {
           <HealthRemindersCard />
         </div>
       ),
-    },
-    {
-      label: '🍼 Destetes',
-      content: <WeaningRemindersCard />,
     },
     {
       label: '🔔 Proximos',

@@ -2,7 +2,7 @@
 
 import { collection, getDocs } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
-import { toLocalDateStart } from '@/lib/dates'
+import { toDate, toLocalDateStart } from '@/lib/dates'
 import { db } from '@/lib/firebase'
 import { BreedingRecord } from '@/types/breedings'
 
@@ -34,26 +34,26 @@ export const useAdminBreedings = (): UseAdminBreedingsReturn => {
           farmerId: data.farmerId,
           maleId: data.maleId,
           breedingDate: data.breedingDate
-            ? toLocalDateStart(data.breedingDate.toDate())
+            ? toLocalDateStart(data.breedingDate)
             : new Date(),
           femaleBreedingInfo:
             data.femaleBreedingInfo?.map(
               (info: {
                 femaleId: string
-                pregnancyConfirmedDate?: { toDate: () => Date }
-                expectedBirthDate?: { toDate: () => Date }
-                actualBirthDate?: { toDate: () => Date }
+                pregnancyConfirmedDate?: unknown
+                expectedBirthDate?: unknown
+                actualBirthDate?: unknown
                 offspring?: string[]
               }) => ({
                 femaleId: info.femaleId,
                 pregnancyConfirmedDate: info.pregnancyConfirmedDate
-                  ? toLocalDateStart(info.pregnancyConfirmedDate.toDate())
+                  ? toLocalDateStart(info.pregnancyConfirmedDate as any)
                   : undefined,
                 expectedBirthDate: info.expectedBirthDate
-                  ? toLocalDateStart(info.expectedBirthDate.toDate())
+                  ? toLocalDateStart(info.expectedBirthDate as any)
                   : undefined,
                 actualBirthDate: info.actualBirthDate
-                  ? toLocalDateStart(info.actualBirthDate.toDate())
+                  ? toLocalDateStart(info.actualBirthDate as any)
                   : undefined,
                 offspring: info.offspring || [],
               }),

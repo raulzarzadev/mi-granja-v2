@@ -17,7 +17,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { setSales } from '@/features/sales/salesSlice'
 import { RootState } from '@/features/store'
-import { toLocalDateStart } from '@/lib/dates'
+import { toDate, toLocalDateStart } from '@/lib/dates'
 import { db } from '@/lib/firebase'
 import { isSaleComplete, Sale, SaleStatus } from '@/types/sales'
 import { useAnimalCRUD } from './useAnimalCRUD'
@@ -48,7 +48,7 @@ export const useSalesCRUD = () => {
           farmId: data.farmId,
           farmerId: data.farmerId,
           animals: data.animals || [],
-          date: data.date ? toLocalDateStart(data.date.toDate()) : undefined,
+          date: data.date ? toLocalDateStart(data.date) : undefined,
           pricePerKg: data.pricePerKg || undefined,
           priceType: data.priceType || 'en_pie',
           buyer: data.buyer || '',
@@ -56,8 +56,8 @@ export const useSalesCRUD = () => {
           status: data.status,
           createdBy: data.createdBy,
           updatedBy: data.updatedBy,
-          createdAt: data.createdAt.toDate(),
-          updatedAt: data.updatedAt.toDate(),
+          createdAt: toDate(data.createdAt),
+          updatedAt: toDate(data.updatedAt),
         })
       })
       dispatch(setSales(serializeObj(records)))

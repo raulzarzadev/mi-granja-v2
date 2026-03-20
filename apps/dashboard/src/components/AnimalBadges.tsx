@@ -13,7 +13,9 @@ type AgeLabelFormat = 'full' | 'rounded'
 
 const getAgeLabel = (animal: Animal, format: AgeLabelFormat = 'full') => {
   if (!animal.birthDate) return null
-  const days = differenceInCalendarDays(new Date(), animal.birthDate as Date)
+  const bd = animal.birthDate instanceof Date ? animal.birthDate : new Date(animal.birthDate as string | number)
+  if (Number.isNaN(bd.getTime())) return null
+  const days = differenceInCalendarDays(new Date(), bd)
 
   if (format === 'rounded') {
     const years = Math.floor(days / 365)

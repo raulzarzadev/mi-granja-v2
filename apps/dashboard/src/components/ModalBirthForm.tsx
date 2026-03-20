@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { BirthRecord, OffspringInfo } from '@/types'
 import { Animal, animal_icon } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
+import { toDate } from '@/lib/dates'
 import DateTimeInput from './inputs/DateTimeInput'
 import { Modal } from './Modal'
 
@@ -49,6 +50,9 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
     healthIssues: '',
     gender: 'hembra',
   })
+
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [successData, setSuccessData] = useState<{ motherNumber: string; offspringNumbers: string[] } | null>(null)
 
   const [formData, setFormData] = useState<BirthRecord>({
     animalId: selectedFemaleId || '',
@@ -96,12 +100,25 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
       return
     }
 
+    setIsSubmitting(true)
     try {
+      const mother = animals.find((a) => a.id === formData.animalId)
+      const offNums = formData.offspring.map((o) => o.animalNumber.trim())
       await onSubmit(formData)
-      onClose()
+      setSuccessData({
+        motherNumber: mother?.animalNumber || formData.animalId,
+        offspringNumbers: offNums,
+      })
     } catch (error) {
       console.error('Error registrando parto:', error, formData)
+    } finally {
+      setIsSubmitting(false)
     }
+  }
+
+  const handleClose = () => {
+    setSuccessData(null)
+    onClose()
   }
 
   const handleFemaleChange = (animalId: string) => {
@@ -144,8 +161,43 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
     }))
   }
 
+  // Vista de éxito
+  if (successData) {
+    return (
+      <Modal isOpen={isOpen} onClose={handleClose} title="Parto Registrado">
+        <div className="flex flex-col items-center py-6 space-y-4">
+          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-9 h-9 text-green-600">
+              <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900">Parto registrado exitosamente</h3>
+          <div className="bg-gray-50 rounded-lg p-4 w-full space-y-2">
+            <p className="text-sm text-gray-600">
+              Se registraron <span className="font-semibold text-gray-900">{successData.offspringNumbers.length} cría{successData.offspringNumbers.length > 1 ? 's' : ''}</span> de la madre <span className="font-semibold text-gray-900">#{successData.motherNumber}</span>
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {successData.offspringNumbers.map((num) => (
+                <span key={num} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  #{num}
+                </span>
+              ))}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="w-full mt-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors cursor-pointer"
+          >
+            Aceptar
+          </button>
+        </div>
+      </Modal>
+    )
+  }
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Registrar Parto">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Registrar Parto">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Selección o muestra fija de hembra + padre */}
         {selectedFemaleId ? (
@@ -171,7 +223,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                       <div className="text-xs text-gray-700">
                         {female.type} • Parto esperado:{' '}
                         {breedingInfo?.expectedBirthDate
-                          ? new Date(breedingInfo.expectedBirthDate).toLocaleDateString('es-ES')
+                          ? toDate(breedingInfo.expectedBirthDate).toLocaleDateString('es-ES')
                           : 'No definido'}
                       </div>
                     </div>
@@ -233,7 +285,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                         <div className="text-sm text-gray-600">
                           {female?.type} • Parto esperado:{' '}
                           {female?.breedingInfo?.expectedBirthDate
-                            ? new Date(female.breedingInfo.expectedBirthDate).toLocaleDateString(
+                            ? toDate(female.breedingInfo.expectedBirthDate).toLocaleDateString(
                                 'es-ES',
                               )
                             : 'No definido'}
@@ -478,21 +530,29 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
         <div className="flex gap-3 pt-4 border-t">
           <button
             type="button"
-            onClick={onClose}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50 transition-colors cursor-pointer"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={
-              isLoading ||
+              isSubmitting ||
               !formData.animalId ||
               formData.offspring.some((o) => !o.animalNumber.trim())
             }
-            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
+            className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer"
           >
-            {isLoading ? 'Registrando...' : 'Registrar Parto'}
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                Registrando...
+              </>
+            ) : (
+              'Registrar Parto'
+            )}
           </button>
         </div>
       </form>

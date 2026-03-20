@@ -1,12 +1,16 @@
 'use client'
 
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Animal, animal_icon, gender_icon } from '@/types/animals'
+import { Modal } from '@/components/Modal'
+import AnimalBadges from '@/components/AnimalBadges'
 
 interface Props {
   animal: Animal
   allAnimals: Animal[]
 }
+
+const MAX_SIBLINGS_MODAL = 200
 
 const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
   const findAnimal = (id?: string): Animal | null => {
@@ -14,25 +18,21 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
     return allAnimals.find((a) => a.id === id || a.animalNumber === id) || null
   }
 
-  // Pre-computar todo en un solo useMemo
+  const [siblingModal, setSiblingModal] = useState<'completos' | 'madre' | 'padre' | null>(null)
+
   const tree = useMemo(() => {
     const mother = findAnimal(animal.motherId)
     const father = findAnimal(animal.fatherId)
-
     const maternalGM = mother ? findAnimal(mother.motherId) : null
     const maternalGF = mother ? findAnimal(mother.fatherId) : null
     const paternalGM = father ? findAnimal(father.motherId) : null
     const paternalGF = father ? findAnimal(father.fatherId) : null
 
-    // Índices para búsqueda rápida
     const animalId = animal.id
     const animalNumber = animal.animalNumber
 
-    let childrenCount = 0
-    let grandchildrenCount = 0
-    const childIds: string[] = []
-
-    // Contar hijos en una sola pasada
+    // Hijos
+    const children: Animal[] = []
     for (const a of allAnimals) {
       if (a.id === animalId) continue
       if (
@@ -41,43 +41,39 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
         a.motherId === animalNumber ||
         a.fatherId === animalNumber
       ) {
-        childrenCount++
-        childIds.push(a.id)
+        children.push(a)
       }
     }
 
-    // Contar nietos solo si hay hijos (una pasada más)
-    if (childIds.length > 0) {
-      const childIdSet = new Set(childIds)
-      const childNumbers = new Set(
-        childIds.map((id) => allAnimals.find((a) => a.id === id)?.animalNumber).filter(Boolean),
-      )
+    // Nietos por hijo
+    const grandchildrenByChild = new Map<string, Animal[]>()
+    if (children.length > 0) {
       for (const a of allAnimals) {
-        if (childIdSet.has(a.id)) continue
-        if (
-          childIdSet.has(a.motherId || '') ||
-          childIdSet.has(a.fatherId || '') ||
-          childNumbers.has(a.motherId || '') ||
-          childNumbers.has(a.fatherId || '')
-        ) {
-          grandchildrenCount++
+        if (children.some((c) => c.id === a.id)) continue
+        for (const child of children) {
+          if (
+            a.motherId === child.id ||
+            a.fatherId === child.id ||
+            a.motherId === child.animalNumber ||
+            a.fatherId === child.animalNumber
+          ) {
+            const list = grandchildrenByChild.get(child.id) || []
+            list.push(a)
+            grandchildrenByChild.set(child.id, list)
+            break
+          }
         }
       }
     }
 
-    // Hermanos: separar en completos, maternos y paternos
+    // Hermanos
     const motherId = animal.motherId
     const fatherId = animal.fatherId
     const motherNumber = mother?.animalNumber
     const fatherNumber = father?.animalNumber
-
-    const fullSiblings: Animal[] = []
-    const maternalHalf: Animal[] = []
-    const paternalHalf: Animal[] = []
     let fullCount = 0
     let maternalCount = 0
     let paternalCount = 0
-    const MAX_SHOW = 8
 
     if (motherId || fatherId) {
       for (const a of allAnimals) {
@@ -92,85 +88,76 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
           (a.fatherId === fatherId ||
             a.fatherId === fatherNumber ||
             (father && a.fatherId === father.id))
-
-        if (matchMother && matchFather) {
-          fullCount++
-          if (fullSiblings.length < MAX_SHOW) fullSiblings.push(a)
-        } else if (matchMother) {
-          maternalCount++
-          if (maternalHalf.length < MAX_SHOW) maternalHalf.push(a)
-        } else if (matchFather) {
-          paternalCount++
-          if (paternalHalf.length < MAX_SHOW) paternalHalf.push(a)
-        }
+        if (matchMother && matchFather) fullCount++
+        else if (matchMother) maternalCount++
+        else if (matchFather) paternalCount++
       }
     }
 
     return {
-      mother,
-      father,
-      maternalGM,
-      maternalGF,
-      paternalGM,
-      paternalGF,
-      childrenCount,
-      grandchildrenCount,
-      fullSiblings,
-      fullCount,
-      maternalHalf,
-      maternalCount,
-      paternalHalf,
-      paternalCount,
+      mother, father, maternalGM, maternalGF, paternalGM, paternalGF,
+      children, grandchildrenByChild,
+      fullCount, maternalCount, paternalCount,
     }
   }, [animal.id, animal.motherId, animal.fatherId, animal.animalNumber, allAnimals])
 
+  // Siblings for modal
+  const modalSiblings = useMemo(() => {
+    if (!siblingModal) return []
+    const result: Animal[] = []
+    const motherObj = tree.mother
+    const fatherObj = tree.father
+    for (const a of allAnimals) {
+      if (a.id === animal.id || result.length >= MAX_SIBLINGS_MODAL) continue
+      const matchMother =
+        animal.motherId &&
+        (a.motherId === animal.motherId ||
+          a.motherId === motherObj?.animalNumber ||
+          (motherObj && a.motherId === motherObj.id))
+      const matchFather =
+        animal.fatherId &&
+        (a.fatherId === animal.fatherId ||
+          a.fatherId === fatherObj?.animalNumber ||
+          (fatherObj && a.fatherId === fatherObj.id))
+      if (siblingModal === 'completos' && matchMother && matchFather) result.push(a)
+      else if (siblingModal === 'madre' && matchMother && !matchFather) result.push(a)
+      else if (siblingModal === 'padre' && matchFather && !matchMother) result.push(a)
+    }
+    return result
+  }, [siblingModal, animal.id, animal.motherId, animal.fatherId, allAnimals, tree.mother, tree.father])
+
   const { mother, father, maternalGM, maternalGF, paternalGM, paternalGF } = tree
+  const hasAncestors = mother || father
+  const hasGrandparents = maternalGM || maternalGF || paternalGM || paternalGF
+  const hasSiblings = tree.fullCount > 0 || tree.maternalCount > 0 || tree.paternalCount > 0
 
-  // Nodo del árbol
-  const NodeCard: React.FC<{
-    animal: Animal | null
-    label: string
-    depth: number
-    placeholder?: string
-  }> = ({ animal: a, label, depth, placeholder }) => {
-    const absDepth = Math.abs(depth)
-    const opacity = absDepth === 0 ? 1 : absDepth === 1 ? 0.85 : 0.6
-    const scale = absDepth === 0 ? 'text-sm' : absDepth === 1 ? 'text-xs' : 'text-[11px]'
-    const padding = absDepth === 0 ? 'px-3 py-2' : absDepth === 1 ? 'px-2.5 py-1.5' : 'px-2 py-1'
-    const iconSize = absDepth === 0 ? 'text-lg' : absDepth === 1 ? 'text-base' : 'text-sm'
+  /* ─── Subcomponents ─── */
 
+  const Node: React.FC<{ a: Animal | null; label: string; highlight?: boolean; placeholder?: string; size?: 'sm' | 'md' | 'lg' }> = ({
+    a, label, highlight, placeholder, size = 'md',
+  }) => {
+    const sizeClasses = {
+      sm: 'px-2 py-1 text-[11px]',
+      md: 'px-3 py-1.5 text-xs',
+      lg: 'px-3 py-2 text-sm',
+    }
     if (!a) {
       return (
-        <div
-          className={`border border-dashed border-gray-200 rounded-lg ${padding} ${scale} text-gray-300 text-center`}
-          style={{ opacity: opacity * 0.6 }}
-        >
-          <div className="text-[10px] text-gray-300 mb-0.5">{label}</div>
-          <span>{placeholder || '?'}</span>
+        <div className={`border border-dashed border-gray-200 rounded-lg ${sizeClasses[size]} text-center text-gray-300`}>
+          <div className="text-[10px] mb-0.5">{label}</div>
+          {placeholder || '?'}
         </div>
       )
     }
-
-    const isCurrent = depth === 0
-
     return (
-      <div
-        className={`border rounded-lg ${padding} ${scale} ${
-          isCurrent
-            ? 'border-green-500 bg-green-50 ring-2 ring-green-200'
-            : 'border-gray-200 bg-white'
-        }`}
-        style={{ opacity }}
-      >
+      <div className={`border rounded-lg ${sizeClasses[size]} ${highlight ? 'border-green-500 bg-green-50 ring-2 ring-green-200' : 'border-gray-200 bg-white'}`}>
         <div className="text-[10px] text-gray-400 mb-0.5">{label}</div>
         <div className="flex items-center gap-1.5">
-          <span className={iconSize}>{animal_icon[a.type] || '🐾'}</span>
+          <span className={size === 'sm' ? 'text-sm' : size === 'lg' ? 'text-lg' : 'text-base'}>{animal_icon[a.type] || '🐾'}</span>
           <div className="min-w-0">
             <div className="font-semibold truncate flex items-center gap-1">
               #{a.animalNumber}
-              <span className={a.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}>
-                {gender_icon[a.gender]}
-              </span>
+              <span className={a.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}>{gender_icon[a.gender]}</span>
             </div>
             {a.breed && <div className="text-gray-400 truncate">{a.breed}</div>}
           </div>
@@ -179,162 +166,185 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
     )
   }
 
-  const HFork: React.FC = () => (
-    <div className="flex items-center">
-      <div className="flex-1 h-px bg-gray-200" />
-      <div className="w-px h-3 bg-gray-200" />
-      <div className="flex-1 h-px bg-gray-200" />
-    </div>
-  )
-
-  const VLine: React.FC = () => (
-    <div className="flex justify-center">
-      <div className="w-px h-4 bg-gray-200" />
-    </div>
-  )
-
-  const SiblingGroup: React.FC<{
-    label: string
-    animals: Animal[]
-    total: number
-    max: number
-  }> = ({ label, animals: sibs, total, max }) => (
-    <div>
-      <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1.5">
-        {label} ({total})
-      </h4>
-      <div className="flex flex-wrap gap-1.5">
-        {sibs.map((sib) => (
-          <span
-            key={sib.id}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] bg-gray-50 border border-gray-200 text-gray-600"
-            style={{ opacity: 0.75 }}
-          >
-            <span className="text-xs">{animal_icon[sib.type] || '🐾'}</span>#{sib.animalNumber}
-            <span className={sib.gender === 'macho' ? 'text-blue-400' : 'text-pink-400'}>
-              {gender_icon[sib.gender]}
-            </span>
-          </span>
-        ))}
-        {total > max && (
-          <span className="text-[11px] text-gray-400 self-center">+{total - max} más</span>
-        )}
-      </div>
-    </div>
-  )
-
-  const hasAncestors = mother || father
-  const hasGrandparents = maternalGM || maternalGF || paternalGM || paternalGF
+  const Connector: React.FC<{ type: 'vertical' | 'fork' | 'spread'; cols?: number }> = ({ type, cols }) => {
+    if (type === 'vertical') {
+      return <div className="flex justify-center"><div className="w-px h-5 bg-gray-300" /></div>
+    }
+    if (type === 'fork') {
+      return (
+        <div className="flex items-center px-4">
+          <div className="flex-1 h-px bg-gray-300" />
+          <div className="w-px h-4 bg-gray-300" />
+          <div className="flex-1 h-px bg-gray-300" />
+        </div>
+      )
+    }
+    // spread: horizontal line connecting N children
+    if (type === 'spread' && cols && cols > 1) {
+      return (
+        <div className="relative h-5">
+          <div className="absolute left-1/2 top-0 w-px h-2 bg-gray-300 -translate-x-1/2" />
+          <div className="absolute top-2 h-px bg-gray-300" style={{ left: `${100 / (cols * 2)}%`, right: `${100 / (cols * 2)}%` }} />
+          {Array.from({ length: cols }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute top-2 w-px h-3 bg-gray-300"
+              style={{ left: `${(100 / (cols * 2)) + (i * 100 / cols)}%`, transform: 'translateX(-50%)' }}
+            />
+          ))}
+        </div>
+      )
+    }
+    return <div className="flex justify-center"><div className="w-px h-5 bg-gray-300" /></div>
+  }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-0">
+      {/* ═══ ANCESTROS ═══ */}
+
       {/* Abuelos */}
       {hasGrandparents && (
-        <>
-          <div className="grid grid-cols-4 gap-1.5">
-            <NodeCard animal={maternalGM} label="Abuela mat." depth={2} />
-            <NodeCard animal={maternalGF} label="Abuelo mat." depth={2} />
-            <NodeCard animal={paternalGM} label="Abuela pat." depth={2} />
-            <NodeCard animal={paternalGF} label="Abuelo pat." depth={2} />
+        <div className="mb-0">
+          <div className="grid grid-cols-2 gap-6">
+            {/* Abuelos maternos */}
+            <div>
+              <div className="grid grid-cols-2 gap-1">
+                <Node a={maternalGM} label="Abuela mat." size="sm" />
+                <Node a={maternalGF} label="Abuelo mat." size="sm" />
+              </div>
+              <Connector type="fork" />
+            </div>
+            {/* Abuelos paternos */}
+            <div>
+              <div className="grid grid-cols-2 gap-1">
+                <Node a={paternalGM} label="Abuela pat." size="sm" />
+                <Node a={paternalGF} label="Abuelo pat." size="sm" />
+              </div>
+              <Connector type="fork" />
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <HFork />
-            <HFork />
-          </div>
-        </>
+        </div>
       )}
 
       {/* Padres */}
       {hasAncestors && (
-        <>
-          <div className="grid grid-cols-2 gap-3">
-            <NodeCard animal={mother} label="Madre" depth={1} placeholder="Desconocida" />
-            <NodeCard animal={father} label="Padre" depth={1} placeholder="Desconocido" />
+        <div className="mb-0">
+          <div className="grid grid-cols-2 gap-6">
+            <Node a={mother} label="Madre" placeholder="Desconocida" />
+            <Node a={father} label="Padre" placeholder="Desconocido" />
           </div>
-          <HFork />
-        </>
+          <Connector type="fork" />
+        </div>
       )}
 
-      {/* Animal principal */}
+      {/* ═══ ANIMAL (centrado, protagonista) ═══ */}
       <div className="max-w-xs mx-auto">
-        <NodeCard animal={animal} label="Animal" depth={0} />
+        <Node a={animal} label="Animal" highlight size="lg" />
       </div>
 
-      {/* Hermanos */}
-      {(tree.fullCount > 0 || tree.maternalCount > 0 || tree.paternalCount > 0) && (
-        <div className="space-y-3">
+      {/* ═══ HERMANOS (secundario, debajo) ═══ */}
+      {hasSiblings && (
+        <div className="flex items-center justify-center gap-2 flex-wrap pt-1">
           {tree.fullCount > 0 && (
-            <SiblingGroup
-              label="Hermanos completos"
-              animals={tree.fullSiblings}
-              total={tree.fullCount}
-              max={8}
-            />
+            <button
+              onClick={() => setSiblingModal('completos')}
+              className="inline-flex items-center gap-1.5 px-2 py-1 text-[10px] text-gray-400 border border-gray-100 rounded-full hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              Completos <span className="font-semibold text-gray-500">{tree.fullCount}</span>
+            </button>
           )}
           {tree.maternalCount > 0 && (
-            <SiblingGroup
-              label="Medios hermanos (madre)"
-              animals={tree.maternalHalf}
-              total={tree.maternalCount}
-              max={8}
-            />
+            <button
+              onClick={() => setSiblingModal('madre')}
+              className="inline-flex items-center gap-1.5 px-2 py-1 text-[10px] text-gray-400 border border-gray-100 rounded-full hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              1/2 madre <span className="font-semibold text-gray-500">{tree.maternalCount}</span>
+            </button>
           )}
           {tree.paternalCount > 0 && (
-            <SiblingGroup
-              label="Medios hermanos (padre)"
-              animals={tree.paternalHalf}
-              total={tree.paternalCount}
-              max={8}
-            />
+            <button
+              onClick={() => setSiblingModal('padre')}
+              className="inline-flex items-center gap-1.5 px-2 py-1 text-[10px] text-gray-400 border border-gray-100 rounded-full hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              1/2 padre <span className="font-semibold text-gray-500">{tree.paternalCount}</span>
+            </button>
           )}
         </div>
       )}
 
-      {/* Descendencia — solo contadores */}
-      {(tree.childrenCount > 0 || tree.grandchildrenCount > 0) && (
-        <>
-          <VLine />
-          <div className="flex gap-3">
-            {tree.childrenCount > 0 && (
-              <div
-                className="flex-1 border border-gray-200 rounded-lg p-3 text-center"
-                style={{ opacity: 0.85 }}
-              >
-                <div className="text-2xl mb-1">👶</div>
-                <div className="text-lg font-bold text-gray-800">{tree.childrenCount}</div>
-                <div className="text-xs text-gray-500">
-                  {tree.childrenCount === 1 ? 'Hijo/a' : 'Hijos'}
-                </div>
-              </div>
-            )}
-            {tree.grandchildrenCount > 0 && (
-              <div
-                className="flex-1 border border-dashed border-gray-200 rounded-lg p-3 text-center"
-                style={{ opacity: 0.6 }}
-              >
-                <div className="text-xl mb-1">👶</div>
-                <div className="text-lg font-bold text-gray-600">{tree.grandchildrenCount}</div>
-                <div className="text-[11px] text-gray-400">
-                  {tree.grandchildrenCount === 1 ? 'Nieto/a' : 'Nietos'}
-                </div>
-              </div>
-            )}
+      {/* ═══ DESCENDENCIA ═══ */}
+      {tree.children.length > 0 && (
+        <div className="mt-1">
+          <Connector type="vertical" />
+
+          <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2 text-center">
+            Hijos ({tree.children.length})
           </div>
-        </>
+
+          {/* Lista de hijos */}
+          <div className="space-y-1">
+            {tree.children.slice(0, 20).map((child) => {
+              const gc = tree.grandchildrenByChild.get(child.id)
+              const gcCount = gc?.length || 0
+              return (
+                <div key={child.id} className="flex items-center gap-2 px-1 py-0.5 rounded hover:bg-gray-50">
+                  <AnimalBadges animal={child} />
+                  {gcCount > 0 && (
+                    <span className="text-[10px] text-gray-400 ml-auto shrink-0">
+                      {gcCount} {gcCount === 1 ? 'nieto' : 'nietos'}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          {tree.children.length > 20 && (
+            <p className="text-[10px] text-gray-400 text-center mt-1">+{tree.children.length - 20} hijos mas</p>
+          )}
+        </div>
       )}
 
       {/* Sin familia */}
-      {!hasAncestors &&
-        tree.childrenCount === 0 &&
-        tree.fullCount === 0 &&
-        tree.maternalCount === 0 &&
-        tree.paternalCount === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            <div className="text-4xl mb-2">🧬</div>
-            <p>No hay información genealógica</p>
-            <p className="text-xs text-gray-400 mt-1">Asigna madre/padre para ver su árbol</p>
+      {!hasAncestors && tree.children.length === 0 && !hasSiblings && (
+        <div className="text-center py-8 text-gray-500">
+          <div className="text-4xl mb-2">🧬</div>
+          <p>No hay informacion genealogica</p>
+          <p className="text-xs text-gray-400 mt-1">Asigna madre/padre para ver su arbol</p>
+        </div>
+      )}
+
+      {/* ═══ Modal hermanos ═══ */}
+      {siblingModal && (
+        <Modal
+          isOpen={true}
+          title={
+            siblingModal === 'completos'
+              ? `Hermanos completos (${tree.fullCount})`
+              : siblingModal === 'madre'
+                ? `Medios hermanos — madre (${tree.maternalCount})`
+                : `Medios hermanos — padre (${tree.paternalCount})`
+          }
+          onClose={() => setSiblingModal(null)}
+        >
+          <div className="max-h-96 overflow-y-auto space-y-1 p-1">
+            {modalSiblings.map((sib) => (
+              <div key={sib.id} className="flex items-center gap-2 px-3 py-2 border border-gray-100 rounded-lg text-sm">
+                <span>{animal_icon[sib.type] || '🐾'}</span>
+                <span className="font-medium">#{sib.animalNumber}</span>
+                <span className={sib.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}>{gender_icon[sib.gender]}</span>
+                {sib.name && <span className="text-gray-400 text-xs">{sib.name}</span>}
+                {sib.breed && <span className="text-gray-400 text-xs">{sib.breed}</span>}
+                {sib.status !== 'activo' && (
+                  <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{sib.status}</span>
+                )}
+              </div>
+            ))}
+            {(siblingModal === 'completos' ? tree.fullCount : siblingModal === 'madre' ? tree.maternalCount : tree.paternalCount) > MAX_SIBLINGS_MODAL && (
+              <p className="text-xs text-gray-400 text-center py-2">Mostrando {MAX_SIBLINGS_MODAL} de {siblingModal === 'completos' ? tree.fullCount : siblingModal === 'madre' ? tree.maternalCount : tree.paternalCount}</p>
+            )}
           </div>
-        )}
+        </Modal>
+      )}
     </div>
   )
 }

@@ -21,7 +21,10 @@ export const WeanedAnimal = ({ animal }: WeanedAnimalProps) => {
 
   if (!animal.birthDate) return null
 
-  const birthDate = toDate(animal.birthDate)
+  const raw = animal.birthDate
+  const birthDate = raw instanceof Date ? raw : new Date(raw as string | number)
+  if (Number.isNaN(birthDate.getTime())) return null
+
   const weaningDays = getWeaningDays(animal)
   const targetWeanDate = addDays(birthDate, weaningDays)
   const daysUntilWean = differenceInCalendarDays(targetWeanDate, new Date())

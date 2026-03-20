@@ -13,6 +13,7 @@ import {
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
+import { toDate } from '@/lib/dates'
 import { db } from '@/lib/firebase'
 import { WeightRecord } from '@/types'
 
@@ -44,7 +45,7 @@ export const useWeight = () => {
           id: doc.id,
           animalNumber: data.animalNumber,
           weight: data.weight,
-          date: data.date.toDate(),
+          date: toDate(data.date),
           notes: data.notes || '',
         })
       })

@@ -20,7 +20,7 @@ import { serializeObj } from '@/features/libs/serializeObj'
 import { RootState } from '@/features/store'
 import { useAdminActions } from '@/lib/adminActions'
 import { db } from '@/lib/firebase'
-import { Animal, AnimalRecord, AnimalStatus } from '@/types/animals'
+import { Animal, AnimalRecord, AnimalStatus, WeanNextStage } from '@/types/animals'
 
 /**
  * Hook personalizado para el manejo de animales
@@ -138,6 +138,8 @@ export const useAnimalCRUD = () => {
   }
 
   // Marcar destete (wean)
+  // engorda → stage directo a 'engorda'
+  // reproductor → stage a 'juvenil' (luego pasa a reproductor)
   const wean = async (
     animalId: string,
     opts?: {
@@ -146,19 +148,17 @@ export const useAnimalCRUD = () => {
       notes?: string
     },
   ) => {
-    const stageMap: Record<string, Animal['stage'] | undefined> = {
-      engorda: 'engorda',
-      reproductor: 'reproductor',
-    }
+    const nextStage: Animal['stage'] =
+      opts?.stageDecision === 'engorda' ? 'engorda' : 'juvenil'
     const updateData: Partial<Animal> = {
-      // isWeaned: true,
+      isWeaned: true,
       weanedAt: opts?.weanDate || new Date(),
+      stage: nextStage,
+    }
+    if (opts?.stageDecision) {
+      updateData.weaningDestination = opts.stageDecision
     }
     if (opts?.notes) updateData.notes = opts?.notes
-    if (opts?.stageDecision) {
-      const nextStage = stageMap[opts.stageDecision]
-      if (nextStage) updateData.stage = nextStage
-    }
     await update(animalId, updateData)
   }
 
@@ -757,4 +757,4 @@ export const useAnimalCRUD = () => {
   }
 }
 
-export type WeanNextStage = 'engorda' | 'reproductor'
+export type { WeanNextStage } from '@/types/animals'

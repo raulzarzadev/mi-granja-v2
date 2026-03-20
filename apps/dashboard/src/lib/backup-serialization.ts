@@ -63,6 +63,25 @@ const KNOWN_DATE_FIELD_NAMES = new Set([
 ])
 
 /**
+ * Elimina recursivamente todos los campos con valor undefined de un objeto.
+ * Firestore no acepta undefined — lanza "Unsupported field value: undefined".
+ */
+export function stripUndefined<T>(obj: T): T {
+  if (obj === null || obj === undefined) return obj
+  if (Array.isArray(obj)) return obj.map((item) => stripUndefined(item)) as unknown as T
+  if (typeof obj === 'object' && !(obj instanceof Date)) {
+    const result: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      if (value !== undefined) {
+        result[key] = stripUndefined(value)
+      }
+    }
+    return result as T
+  }
+  return obj
+}
+
+/**
  * Serializa un objeto para backup, convirtiendo Date y Timestamp a ISO strings
  */
 export function serializeForBackup<T>(obj: T): T {
@@ -93,6 +112,17 @@ export function serializeForBackup<T>(obj: T): T {
 
   if (obj instanceof Date) {
     return obj.toISOString() as unknown as T
+  }
+
+  // Duck-typed Timestamp sin toDate: { seconds: number, nanoseconds: number }
+  if (
+    obj &&
+    typeof obj === 'object' &&
+    'seconds' in obj &&
+    typeof (obj as { seconds: unknown }).seconds === 'number' &&
+    !('toDate' in obj)
+  ) {
+    return new Date((obj as { seconds: number }).seconds * 1000).toISOString() as unknown as T
   }
 
   // Millis serializados (número grande que parece timestamp — >2000-01-01)
@@ -189,24 +219,28 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     id: 'string',
     farmerId: 'string (ID del usuario dueño)',
     farmId: 'string (ID de la granja)',
-    animalNumber: 'string (identificador único asignado por el granjero)',
+    animalNumber: 'string (obligatorio, identificador único asignado por el granjero. No puede estar vacío ni repetirse dentro de la granja)',
     name: 'string | undefined (nombre opcional del animal)',
-    type: "'oveja' | 'vaca' | 'cabra' | 'cerdo' | 'gallina' | 'perro' | 'gato' | 'equino' | 'otro'",
+    type: "'oveja' | 'vaca' | 'cabra' | 'cerdo' | 'gallina' | 'perro' | 'gato' | 'equino' | 'otro' (obligatorio, debe ser uno de estos valores exactos)",
     breed: 'string | undefined (raza)',
-    stage: "'cria' | 'juvenil' | 'engorda' | 'lechera' | 'reproductor' | 'descarte'",
-    gender: "'macho' | 'hembra'",
-    weight: 'number | string | null (en gramos)',
-    age: 'number | null',
+    stage:
+      "'cria' | 'juvenil' | 'engorda' | 'lechera' | 'reproductor' | 'descarte'. Reglas: las crías recién nacidas siempre inician en 'cria'. Al destetar: si destino es engorda → stage='engorda'; si destino es reproductor → stage='juvenil'. 'lechera' es para madres productoras de leche (adultas), NO para crías.",
+    gender: "'macho' | 'hembra' (obligatorio)",
+    weight: 'number | string | null (en GRAMOS, ej: 4500 = 4.5kg). Se muestra al usuario en kg.',
+    age: 'number | null (edad en meses al momento del registro, se calcula automáticamente desde birthDate)',
     birthDate: 'string (ISO 8601) | undefined',
-    motherId: 'string | undefined (ID del animal madre)',
-    fatherId: 'string | undefined (ID del animal padre)',
-    status: "'activo' | 'muerto' | 'vendido' | 'perdido' (default: activo)",
+    motherId: 'string | undefined (ID interno del animal madre, debe corresponder a un animal existente en la granja)',
+    fatherId: 'string | undefined (ID interno del animal padre, debe corresponder a un animal existente en la granja)',
+    status:
+      "'activo' | 'muerto' | 'vendido' | 'perdido' (default: activo). Si una cría nace muerta, debe tener status='muerto' y statusAt=fecha del parto.",
     statusAt: 'string (ISO 8601) | undefined',
     statusNotes: 'string | undefined',
     batch: 'string | undefined (lote al que pertenece el animal)',
     notes: 'string | undefined',
-    isWeaned: 'boolean | undefined',
-    weanedAt: 'string (ISO 8601) | undefined',
+    isWeaned: 'boolean | undefined (true cuando el animal fue destetado)',
+    weanedAt: 'string (ISO 8601) | undefined (fecha en que se destetó)',
+    weaningDestination:
+      "'engorda' | 'reproductor' | undefined. Indica el destino al destetar. Si 'engorda' → stage cambia a 'engorda'. Si 'reproductor' → stage cambia a 'juvenil' (luego pasará a reproductor).",
     weightRecords:
       '[{ date: ISO 8601, weight: number (gramos), age?: number (meses), notes?: string }] | undefined',
     soldInfo:
@@ -287,6 +321,21 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     updatedBy: 'string (ID del usuario)',
     createdAt: 'string (ISO 8601)',
     updatedAt: 'string (ISO 8601)',
+  },
+  _reglas_de_negocio: {
+    _nota: 'Reglas que deben cumplirse para que los datos importados funcionen correctamente',
+    campos_obligatorios_animal: 'animalNumber, type, stage, gender, createdAt, updatedAt',
+    campos_nunca_undefined:
+      'Firestore no acepta undefined. Omitir el campo por completo en vez de ponerlo como undefined.',
+    peso_en_gramos: 'weight y soldInfo.price se almacenan en gramos y centavos respectivamente',
+    fechas_iso_8601: 'Todas las fechas deben estar en formato ISO 8601 (ej: 2026-03-17T00:00:00.000Z)',
+    etapas_por_edad:
+      'cria=recién nacido, juvenil=destetado para reproducción, engorda=destetado para engorda, lechera=madre productora de leche, reproductor=adulto reproductor, descarte=animal a eliminar',
+    destete:
+      'Al destetar una cría: isWeaned=true, weanedAt=fecha, stage cambia según destino. Para engorda→stage="engorda". Para reproductor→stage="juvenil".',
+    nacimiento_muerto: 'Si una cría nace muerta: status="muerto", statusAt=fecha del parto',
+    ids_de_referencia:
+      'motherId, fatherId, maleId, femaleId, offspring[] — son IDs internos. Al importar se remapean automáticamente.',
   },
   farm: {
     id: 'string',

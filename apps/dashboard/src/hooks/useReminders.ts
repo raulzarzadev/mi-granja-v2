@@ -13,6 +13,7 @@ import {
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
+import { toDate, toLocalDateStart } from '@/lib/dates'
 import { db } from '@/lib/firebase'
 import { Reminder } from '@/types'
 
@@ -58,13 +59,13 @@ export const useReminders = () => {
           animalNumbers,
           title: data.title,
           description: data.description || '',
-          dueDate: data.dueDate.toDate(),
+          dueDate: toLocalDateStart(data.dueDate),
           completed: data.completed || false,
           completionByAnimal: data.completionByAnimal || {},
           priority: data.priority || 'medium',
           type: data.type || 'other',
-          createdAt: data.createdAt.toDate(),
-          updatedAt: data.updatedAt.toDate(),
+          createdAt: toDate(data.createdAt),
+          updatedAt: toDate(data.updatedAt),
         })
       })
       setReminders(remindersData)

@@ -21,6 +21,7 @@ import {
   BackupFile,
   deserializeFromBackup,
   serializeForBackup,
+  stripUndefined,
   ValidationResult,
   validateBackupFile,
 } from '@/lib/backup-serialization'
@@ -400,7 +401,7 @@ export function useBackup() {
 
               const newId = animalIdMap.get(oldId)
               if (newId) {
-                batch.set(doc(db, 'animals', newId), remapped)
+                batch.set(doc(db, 'animals', newId), stripUndefined(remapped))
                 written++
               }
             }
@@ -478,7 +479,7 @@ export function useBackup() {
               }
 
               const newRef = doc(collection(db, 'breedingRecords'))
-              batch.set(newRef, remapped)
+              batch.set(newRef, stripUndefined(remapped))
               written++
             }
 
@@ -511,7 +512,7 @@ export function useBackup() {
               const remapped = assignOwnership(deserialized)
 
               const newRef = doc(collection(db, 'reminders'))
-              batch.set(newRef, remapped)
+              batch.set(newRef, stripUndefined(remapped))
               written++
             }
 
@@ -544,7 +545,7 @@ export function useBackup() {
               const remapped = assignOwnership(deserialized)
 
               const newRef = doc(collection(db, 'weightRecords'))
-              batch.set(newRef, remapped)
+              batch.set(newRef, stripUndefined(remapped))
               written++
             }
 
@@ -593,7 +594,7 @@ export function useBackup() {
                 }
 
                 const newRef = doc(collection(db, 'sales'))
-                batch.set(newRef, deserialized)
+                batch.set(newRef, stripUndefined(deserialized))
                 written++
               }
 
@@ -642,7 +643,7 @@ export function useBackup() {
                 delete deserialized.rejectedAt
 
                 const newRef = doc(collection(db, 'farmInvitations'))
-                batch.set(newRef, deserialized)
+                batch.set(newRef, stripUndefined(deserialized))
                 written++
               }
 
