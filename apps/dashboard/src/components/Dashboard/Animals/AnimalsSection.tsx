@@ -17,6 +17,7 @@ import StatisticsTab from '@/components/StatisticsTab'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
+import { useLocalPreference } from '@/hooks/useLocalPreference'
 import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import { toDate } from '@/lib/dates'
 import { Animal, AnimalStageKey, animal_stage_config } from '@/types/animals'
@@ -65,7 +66,10 @@ const AnimalsSection: React.FC = () => {
   const [birthFemaleId, setBirthFemaleId] = useState<string | null>(null)
   const [confirmPregnancyRecord, setConfirmPregnancyRecord] = useState<BreedingRecord | null>(null)
   const [selectedAnimal, setSelectedAnimal] = useState<null | string>(null)
-  const [montasViewMode, setMontasViewMode] = useState<'cards' | 'table'>('cards')
+  const [montasViewMode, setMontasViewMode] = useLocalPreference<'cards' | 'table'>(
+    'montas_view_mode',
+    'cards',
+  )
   const [weanConfirm, setWeanConfirm] = useState<{
     animals: { id: string; number: string }[]
     decision: 'engorda' | 'reproductor'

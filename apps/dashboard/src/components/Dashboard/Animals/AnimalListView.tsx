@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import AnimalCard from '@/components/AnimalCard'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
+import { useLocalPreference } from '@/hooks/useLocalPreference'
 import { Animal } from '@/types/animals'
 import AnimalsTable from './AnimalsTable'
 
@@ -29,11 +30,14 @@ const AnimalListView: React.FC<AnimalListViewProps> = ({
   defaultView = 'table',
   emptyMessage = 'No se encontraron animales',
 }) => {
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>(defaultView)
+  const [viewMode, setViewMode] = useLocalPreference<'cards' | 'table'>(
+    'animal_view_mode',
+    defaultView,
+  )
   const [selectedAnimals, setSelectedAnimals] = useState<string[]>([])
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [page, setPage] = useState(0)
-  const [pageSize, setPageSize] = useState(10)
+  const [pageSize, setPageSize] = useLocalPreference('animal_page_size', 10)
 
   const filtered = animals
 
