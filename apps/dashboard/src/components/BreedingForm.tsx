@@ -88,7 +88,9 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
     return {
       breedingId: initialData?.breedingId ?? '',
-      breedingDate: initialData?.breedingDate ? toDateStr(initialData.breedingDate) : toDateStr(new Date()),
+      breedingDate: initialData?.breedingDate
+        ? toDateStr(initialData.breedingDate)
+        : toDateStr(new Date()),
       maleId: initialData?.maleId ?? '',
       femaleIds: normalizedFemaleInfo.map((info) => info.femaleId),
       femaleBreedingInfo: normalizedFemaleInfo,
@@ -340,9 +342,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         pregnancyConfirmedDate: info.pregnancyConfirmedDate
           ? parseLocalDate(info.pregnancyConfirmedDate)
           : null,
-        expectedBirthDate: info.expectedBirthDate
-          ? parseLocalDate(info.expectedBirthDate)
-          : null,
+        expectedBirthDate: info.expectedBirthDate ? parseLocalDate(info.expectedBirthDate) : null,
         actualBirthDate: info.actualBirthDate ? parseLocalDate(info.actualBirthDate) : null,
         offspring: info.offspring ?? [],
       })),
@@ -466,7 +466,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
               </label>
 
               <div className="space-y-3 bg-gray-50 rounded-md">
-                {femaleBreedingInfo.map((info, index) => {
+                {femaleBreedingInfo.map((info, _index) => {
                   const animal = animals.find((item) => item.id === info.femaleId)
                   if (!animal) {
                     return null

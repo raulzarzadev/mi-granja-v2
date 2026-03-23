@@ -15,11 +15,11 @@ import {
   animals_types,
   breeding_animal_status,
 } from '@/types/animals'
+import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Form } from './forms/Form'
 import { SelectField } from './forms/SelectField'
 import { StageSelector } from './forms/StageSelector'
 import { TextField } from './forms/TextField'
-import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { WeightField } from './inputs/WeightInput'
 
 interface AnimalFormProps {
@@ -292,8 +292,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
                 if (val) {
                   const [y, m] = val.split('-').map(Number)
                   const today = new Date()
-                  const monthsDiff =
-                    (today.getFullYear() - y) * 12 + (today.getMonth() + 1 - m)
+                  const monthsDiff = (today.getFullYear() - y) * 12 + (today.getMonth() + 1 - m)
                   form.setValue('age', Math.max(0, monthsDiff).toString())
                 }
               }}
