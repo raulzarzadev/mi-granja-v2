@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import AnimalBadges from '@/components/AnimalBadges'
-import DateTimeInput from '@/components/inputs/DateTimeInput'
+import { DatePickerButtons } from '@/components/buttons/date-picker-buttons'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
 import PageShell from '@/components/PageShell'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -240,16 +240,11 @@ export default function NuevoRegistroClient() {
       {/* ─── Step 1: Tipo y Fecha ─── */}
       {step === 0 && (
         <div className="space-y-5">
-          <DateTimeInput
-            value={formData.date ? new Date(`${formData.date}T12:00:00`) : null}
-            onChange={(date) =>
-              setFormData({
-                ...formData,
-                date: date ? date.toISOString().split('T')[0] : '',
-              })
-            }
+          <DatePickerButtons
+            value={formData.date}
+            onChange={(date) => setFormData({ ...formData, date })}
             label="Fecha"
-            type="date"
+            showToday
           />
 
           <div>
@@ -472,18 +467,11 @@ export default function NuevoRegistroClient() {
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
-                <DateTimeInput
-                  value={
-                    formData.reminderDate ? new Date(`${formData.reminderDate}T12:00:00`) : null
-                  }
-                  onChange={(date) =>
-                    setFormData({
-                      ...formData,
-                      reminderDate: date ? date.toISOString().split('T')[0] : '',
-                    })
-                  }
+                <DatePickerButtons
+                  value={formData.reminderDate}
+                  onChange={(reminderDate) => setFormData({ ...formData, reminderDate })}
                   label="Fecha del recordatorio"
-                  type="date"
+                  showToday
                 />
               </>
             )}
@@ -612,16 +600,11 @@ const HealthDetailsSection: React.FC<{
             </div>
             {value.isResolved && (
               <div>
-                <DateTimeInput
-                  value={value.resolvedDate ? new Date(`${value.resolvedDate}T12:00:00`) : null}
-                  onChange={(date) =>
-                    onChange({
-                      ...value,
-                      resolvedDate: date ? date.toISOString().split('T')[0] : '',
-                    })
-                  }
+                <DatePickerButtons
+                  value={value.resolvedDate}
+                  onChange={(resolvedDate) => onChange({ ...value, resolvedDate })}
                   label="Fecha de resolucion"
-                  type="date"
+                  showToday
                 />
               </div>
             )}
@@ -637,16 +620,10 @@ const HealthDetailsSection: React.FC<{
           </>
         )}
         <div>
-          <DateTimeInput
-            value={value.nextDueDate ? new Date(`${value.nextDueDate}T12:00:00`) : null}
-            onChange={(date) =>
-              onChange({
-                ...value,
-                nextDueDate: date ? date.toISOString().split('T')[0] : '',
-              })
-            }
+          <DatePickerButtons
+            value={value.nextDueDate}
+            onChange={(nextDueDate) => onChange({ ...value, nextDueDate })}
             label="Proximo vencimiento"
-            type="date"
           />
         </div>
         <div>

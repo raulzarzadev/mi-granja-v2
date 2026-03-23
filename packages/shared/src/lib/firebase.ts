@@ -40,9 +40,9 @@ const useEmulator =
 if (useEmulator) {
   console.log('🔧 Conectando a Firebase Emulators...')
   try {
-    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: false })
-    connectFirestoreEmulator(db, 'localhost', 8080)
-    connectStorageEmulator(storage, 'localhost', 9199)
+    connectAuthEmulator(auth, 'http://localhost:9299', { disableWarnings: false })
+    connectFirestoreEmulator(db, 'localhost', 8180)
+    connectStorageEmulator(storage, 'localhost', 9399)
     console.log('✅ Firebase Emulators conectados')
   } catch (_e) {
     // Emuladores ya conectados (HMR)
