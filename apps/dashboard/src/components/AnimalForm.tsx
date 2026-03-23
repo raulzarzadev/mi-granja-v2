@@ -19,7 +19,7 @@ import { Form } from './forms/Form'
 import { SelectField } from './forms/SelectField'
 import { StageSelector } from './forms/StageSelector'
 import { TextField } from './forms/TextField'
-import DateTimeInput from './inputs/DateTimeInput'
+import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { WeightField } from './inputs/WeightInput'
 
 interface AnimalFormProps {
@@ -66,7 +66,7 @@ const schema = z
         },
       ),
     breed: z.string().optional(),
-    birthDate: z.date().nullable().optional(),
+    birthDate: z.string().optional(),
     customWeaningDays: z
       .string()
       .optional()
@@ -85,8 +85,9 @@ const schema = z
   })
   .superRefine((data, ctx) => {
     if (data.birthDate) {
-      const today = new Date()
-      if (data.birthDate > today) {
+      const [y, m, d] = data.birthDate.split('-').map(Number)
+      const parsed = new Date(y, m - 1, d)
+      if (parsed > new Date()) {
         ctx.addIssue({
           path: ['birthDate'],
           code: z.ZodIssueCode.custom,
@@ -125,7 +126,12 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
             ? String(initialData.age)
             : '',
       breed: initialData?.breed ?? '',
-      birthDate: initialData?.birthDate ? toDate(initialData.birthDate) : null,
+      birthDate: initialData?.birthDate
+        ? (() => {
+            const d = toDate(initialData.birthDate)
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+          })()
+        : '',
       customWeaningDays:
         typeof initialData?.customWeaningDays === 'number'
           ? initialData.customWeaningDays.toString()
@@ -171,7 +177,14 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       status: values.status as Animal['status'],
       ...(values.weight ? { weight: Math.round(Number(values.weight) * 1000) } : {}),
       ...(values.age ? { age: Number(values.age) } : {}),
-      ...(values.birthDate ? { birthDate: values.birthDate } : {}),
+      ...(values.birthDate
+        ? {
+            birthDate: (() => {
+              const [y, m, d] = values.birthDate.split('-').map(Number)
+              return new Date(y, m - 1, d)
+            })(),
+          }
+        : {}),
       ...(values.customWeaningDays ? { customWeaningDays: Number(values.customWeaningDays) } : {}),
       ...(values.motherId?.trim() ? { motherId: values.motherId.trim() } : {}),
       ...(values.fatherId?.trim() ? { fatherId: values.fatherId.trim() } : {}),
@@ -272,21 +285,20 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
           fieldState: { error?: { message?: string } }
         }) => (
           <div className="space-y-1">
-            <DateTimeInput
-              value={field.value ?? null}
-              onChange={(date) => {
-                field.onChange(date)
-                if (date) {
+            <DatePickerButtons
+              value={field.value ?? ''}
+              onChange={(val) => {
+                field.onChange(val)
+                if (val) {
+                  const [y, m] = val.split('-').map(Number)
                   const today = new Date()
                   const monthsDiff =
-                    (today.getFullYear() - date.getFullYear()) * 12 +
-                    (today.getMonth() - date.getMonth())
+                    (today.getFullYear() - y) * 12 + (today.getMonth() + 1 - m)
                   form.setValue('age', Math.max(0, monthsDiff).toString())
                 }
               }}
               label="Fecha de Nacimiento"
-              type="datetime"
-              disabled={isLoading}
+              showToday
             />
             {fieldState.error?.message ? (
               <p className="text-xs text-red-600">{fieldState.error.message}</p>

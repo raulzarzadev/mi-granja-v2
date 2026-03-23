@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { Animal } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
-import { InputDate } from './inputs/input-date'
+import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Modal } from './Modal'
 
 interface ModalConfirmPregnancyProps {
@@ -126,12 +126,12 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
           </div>
         ) : (
           <>
-            <InputDate
+            <DatePickerButtons
+              value={confirmationDate}
+              onChange={setConfirmationDate}
               label="Fecha de confirmación"
-              value={new Date()}
-              onChange={(date) => setConfirmationDate(date ? date.toISOString().split('T')[0] : '')}
-              mode="date"
-              helperText={'Esta fecha se usará para calcular el parto esperado'}
+              helperText="Esta fecha se usará para calcular el parto esperado"
+              showToday
             />
 
             {/* Lista de hembras para confirmar */}

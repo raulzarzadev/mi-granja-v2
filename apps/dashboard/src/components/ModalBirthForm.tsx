@@ -6,7 +6,7 @@ import { toDate } from '@/lib/dates'
 import { BirthRecord, OffspringInfo } from '@/types'
 import { Animal, animal_icon } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
-import DateTimeInput from './inputs/DateTimeInput'
+import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Modal } from './Modal'
 
 interface ModalBirthFormProps {
@@ -530,22 +530,14 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
           <>
             {/* Fecha y hora del parto */}
             <div className="grid grid-cols-2 gap-4">
+              <DatePickerButtons
+                value={formData.birthDate}
+                onChange={(val) => setFormData((prev) => ({ ...prev, birthDate: val }))}
+                label="Fecha del parto"
+                showToday
+              />
               <div>
-                <DateTimeInput
-                  value={formData.birthDate ? new Date(formData.birthDate) : null}
-                  onChange={(date) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      birthDate: date ? date.toISOString().split('T')[0] : '',
-                    }))
-                  }
-                  label="Fecha del parto"
-                  type="date"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="birthTime" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="birthTime" className="block text-xs font-medium text-gray-500 mb-1">
                   Hora del parto *
                 </label>
                 <input
@@ -554,7 +546,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                   value={formData.birthTime}
                   onChange={(e) => setFormData((prev) => ({ ...prev, birthTime: e.target.value }))}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full h-10 px-3 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
             </div>
