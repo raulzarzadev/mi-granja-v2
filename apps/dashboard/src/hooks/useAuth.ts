@@ -36,7 +36,8 @@ export const useAuth = () => {
   } = useSelector((state: RootState) => state.auth)
 
   // Enviar código de autenticación por email
-  const sendCode = async (email: string) => {
+  // En desarrollo, retorna el código directamente (sin enviar email real)
+  const sendCode = async (email: string): Promise<string | undefined> => {
     try {
       dispatch(setLoading(true))
       dispatch(clearError())
@@ -58,6 +59,9 @@ export const useAuth = () => {
       // Reuse emailLinkSent state to indicate code was sent
       dispatch(setEmailLinkSent({ sent: true, email }))
       dispatch(setLoading(false))
+
+      // En desarrollo, el API devuelve el código directamente
+      return data.devCode
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Error enviando código'
       dispatch(setError(errorMessage))

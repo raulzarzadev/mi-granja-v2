@@ -242,6 +242,9 @@ export default function AdminDashboard() {
               const userAnimals = animals.filter((a: any) => a.farmerId === u.id).length
               return {
                 key: u.id,
+                drillable: true,
+                drillLabel: u.email || u.id,
+                drillIcon: '👤',
                 cells: {
                   email: u.email || '',
                   farmName: u.farmName || '',
@@ -257,15 +260,108 @@ export default function AdminDashboard() {
       const u = users.find((x: any) => x.id === userId)
       const userFarms = farms.filter((f: any) => f.ownerId === userId)
       const userAnimals = animals.filter((a: any) => a.farmerId === userId)
-      return {
-        title: u?.email || userId,
-        rows: [
+
+      if (path.length === 2) {
+        // User detail — show info + their farms as drillable rows
+        const rows: DetailRow[] = [
           { key: 'email', label: 'Email', value: u?.email || '—' },
           { key: 'farmName', label: 'Nombre granja', value: u?.farmName || '—' },
-          { key: 'farms', label: 'Granjas propias', value: userFarms.length },
-          { key: 'animals', label: 'Animales', value: userAnimals.length },
-        ],
+          { key: 'totalAnimals', label: 'Total animales', value: userAnimals.length },
+        ]
+
+        for (const farm of userFarms) {
+          const farmAnimalCount = animals.filter((a: any) => a.farmId === farm.id).length
+          const collabCount = farm.collaborators?.length || 0
+          rows.push({
+            key: `farm-${farm.id}`,
+            label: `🚜 ${farm.name || '(sin nombre)'}`,
+            value: `${farmAnimalCount} animales${collabCount > 0 ? ` · ${collabCount} colab.` : ''}`,
+            drillable: true,
+          })
+        }
+
+        if (userFarms.length === 0) {
+          rows.push({ key: 'no-farms', label: 'Sin granjas registradas', value: '—' })
+        }
+
+        return { title: u?.email || userId, rows }
       }
+
+      // path.length >= 3: drill into a specific farm from user context
+      const farmKey = path[2].key
+      if (farmKey.startsWith('farm-')) {
+        const farmId = farmKey.replace('farm-', '')
+        const farm = farms.find((f: any) => f.id === farmId)
+        const farmAnimals = animals.filter((a: any) => a.farmId === farmId)
+        const farmBreedings = breedings.filter((b: any) => b.farmId === farmId)
+        const farmSales = sales.filter((s: any) => s.farmId === farmId)
+        const farmInvitations = invitations.filter((i: any) => i.farmId === farmId)
+
+        if (path.length === 3) {
+          // Farm detail within user context
+          const speciesSet = new Map<string, number>()
+          for (const a of farmAnimals) {
+            speciesSet.set(a.type, (speciesSet.get(a.type) || 0) + 1)
+          }
+          const rows: DetailRow[] = [
+            {
+              key: 'collabs',
+              label: 'Colaboradores',
+              value: farm?.collaborators?.length || 0,
+              drillable: (farm?.collaborators?.length || 0) > 0,
+            },
+            {
+              key: 'animals',
+              label: 'Todos los animales',
+              value: farmAnimals.length,
+              drillable: farmAnimals.length > 0,
+            },
+            ...Array.from(speciesSet.entries())
+              .sort((a, b) => b[1] - a[1])
+              .map(([type, count]) => ({
+                key: `species-${type}`,
+                label: `${animal_icon[type as keyof typeof animal_icon] || '🐾'} ${animals_types_labels[type as keyof typeof animals_types_labels] || type}`,
+                value: count,
+                drillable: true,
+              })),
+            { key: 'breedings', label: 'Reproducciones', value: farmBreedings.length },
+            { key: 'sales', label: 'Ventas', value: farmSales.length },
+            { key: 'invitations', label: 'Invitaciones', value: farmInvitations.length },
+          ]
+          return { title: farm?.name || farmId, rows }
+        }
+
+        // path.length >= 4: sub-drill within farm
+        const subKey = path[3].key
+        if (subKey === 'collabs') {
+          return {
+            title: 'Colaboradores',
+            rows: (farm?.collaborators || []).map((c: any, i: number) => ({
+              key: `c-${i}`,
+              label: c.email || c.userId,
+              value: c.role,
+            })),
+          }
+        }
+        if (subKey === 'animals' || subKey.startsWith('species-')) {
+          const list =
+            subKey === 'animals'
+              ? farmAnimals
+              : farmAnimals.filter((a: any) => a.type === subKey.replace('species-', ''))
+          const typeLabel =
+            subKey === 'animals'
+              ? 'Animales'
+              : animals_types_labels[
+                  subKey.replace('species-', '') as keyof typeof animals_types_labels
+                ] || subKey
+          return {
+            title: `${typeLabel} (${list.length})`,
+            table: buildAnimalTable(list),
+          }
+        }
+      }
+
+      return { title: u?.email || userId, rows: [] }
     }
 
     // ── Farms ──

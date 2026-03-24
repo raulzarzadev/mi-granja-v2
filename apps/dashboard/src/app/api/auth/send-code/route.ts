@@ -32,6 +32,14 @@ export async function POST(req: NextRequest) {
       createdAt: Date.now(),
     })
 
+    // In dev/emulator mode, skip sending real email and return code directly
+    const isEmulator =
+      process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' || !!process.env.FIREBASE_AUTH_EMULATOR_HOST
+    if (isEmulator || process.env.NODE_ENV === 'development') {
+      console.log(`[DEV] Código de acceso para ${normalizedEmail}: ${code}`)
+      return NextResponse.json({ ok: true, devCode: code })
+    }
+
     // Send code via Brevo
     if (!BREVO_API_KEY) {
       console.error('BREVO_API_KEY not configured')

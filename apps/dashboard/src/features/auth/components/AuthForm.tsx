@@ -53,7 +53,14 @@ const AuthForm: React.FC = () => {
     e.preventDefault()
     if (!validateEmail()) return
     if (error) clearError()
-    await sendCode(email)
+    const devCode = await sendCode(email)
+    // En desarrollo, auto-rellenar el código sin enviar email real
+    if (devCode) {
+      const digits = devCode.split('')
+      setCode(digits)
+      // Auto-submit después de un breve delay para que el UI se actualice
+      setTimeout(() => handleVerify(devCode), 300)
+    }
   }
 
   const handleCodeChange = (index: number, value: string) => {
@@ -116,12 +123,16 @@ const AuthForm: React.FC = () => {
     }
   }
 
-  const handleResend = () => {
+  const handleResend = async () => {
     setCode(Array(CODE_LENGTH).fill(''))
     clearEmailLink()
-    // Re-send immediately
     clearError()
-    sendCode(emailForCode || email)
+    const devCode = await sendCode(emailForCode || email)
+    if (devCode) {
+      const digits = devCode.split('')
+      setCode(digits)
+      setTimeout(() => handleVerify(devCode), 300)
+    }
   }
 
   const handleChangeEmail = () => {
