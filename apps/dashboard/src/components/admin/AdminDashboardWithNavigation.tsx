@@ -6,8 +6,10 @@ import { useCallback, useEffect, useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import { db } from '@/lib/firebase'
+import { auth } from '@/lib/firebase'
 import { animal_icon, animal_status_labels, animals_types_labels } from '@/types/animals'
 import { sale_status_labels } from '@/types/sales'
+import AdminUserActions from './AdminUserActions'
 
 // ── Types ──
 
@@ -71,6 +73,14 @@ export default function AdminDashboard() {
   const [rawData, setRawData] = useState<Record<string, any[]>>({})
   const [path, setPath] = useState<BreadcrumbItem[]>([])
 
+  // User action modals
+  const [actionUser, setActionUser] = useState<any>(null)
+  const [planUser, setPlanUser] = useState<any>(null)
+  const [planData, setPlanData] = useState<{ places: number; planType: string; actualFarmCount: number; actualCollaboratorCount: number; usedPlaces: number } | null>(null)
+  const [placesInput, setPlacesInput] = useState(0)
+  const [isSavingPlan, setIsSavingPlan] = useState(false)
+  const [isLoadingPlan, setIsLoadingPlan] = useState(false)
+
   // Fetch all data once
   useEffect(() => {
     const fetchAll = async () => {
@@ -83,6 +93,7 @@ export default function AdminDashboard() {
         remindersSnap,
         invitationsSnap,
         salesSnap,
+        subsSnap,
       ] = await Promise.all([
         getDocs(collection(db, 'users')),
         getDocs(collection(db, 'animals')),
@@ -91,12 +102,26 @@ export default function AdminDashboard() {
         getDocs(collection(db, 'reminders')),
         getDocs(collection(db, 'farmInvitations')),
         getDocs(collection(db, 'sales')),
+        getDocs(collection(db, 'subscriptions')),
       ])
 
       const mapSnap = (snap: any) => snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
 
+      // Build places map from subscriptions
+      const subsMap = new Map<string, number>()
+      subsSnap.docs.forEach((d: any) => {
+        const data = d.data()
+        subsMap.set(data.userId ?? d.id, data.places ?? 0)
+      })
+
+      // Inject places into users
+      const usersWithPlaces = mapSnap(usersSnap).map((u: any) => ({
+        ...u,
+        places: subsMap.get(u.id) ?? 0,
+      }))
+
       setRawData({
-        users: mapSnap(usersSnap),
+        users: usersWithPlaces,
         animals: mapSnap(animalsSnap),
         farms: mapSnap(farmsSnap),
         breedings: mapSnap(breedingsSnap),
@@ -116,6 +141,56 @@ export default function AdminDashboard() {
   const goTo = useCallback((index: number) => {
     setPath((prev) => prev.slice(0, index))
   }, [])
+
+  // ── Plan modal helpers ──
+
+  const openPlanModal = useCallback(async (u: any) => {
+    setPlanUser(u)
+    setPlanData(null)
+    setPlacesInput(0)
+    setIsLoadingPlan(true)
+    try {
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) return
+      const res = await fetch(`/api/admin/billing?userId=${u.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setPlanData(data)
+        setPlacesInput(data.places)
+      }
+    } catch (err) {
+      console.error('Error cargando plan:', err)
+    } finally {
+      setIsLoadingPlan(false)
+    }
+  }, [])
+
+  const handleSavePlan = async () => {
+    if (!planUser) return
+    setIsSavingPlan(true)
+    try {
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) return
+      const res = await fetch('/api/admin/billing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId: planUser.id, places: placesInput }),
+      })
+      if (res.ok) {
+        setPlanUser(null)
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Error al guardar')
+      }
+    } catch (err) {
+      console.error('Error guardando plan:', err)
+      alert('Error al guardar el plan')
+    } finally {
+      setIsSavingPlan(false)
+    }
+  }
 
   // ── Table builders ──
 
@@ -181,6 +256,7 @@ export default function AdminDashboard() {
     rows?: DetailRow[]
     table?: TableView
     title?: string
+    userId?: string
   } => {
     const {
       users = [],
@@ -209,6 +285,8 @@ export default function AdminDashboard() {
           table: {
             columns: [
               { key: 'email', label: 'Email', sortable: true },
+              { key: 'plan', label: 'Plan', sortable: true },
+              { key: 'places', label: 'Lugares', align: 'right' as const, sortable: true },
               { key: 'farms', label: 'Granjas', align: 'right' as const, sortable: true },
               { key: 'animals', label: 'Animales', align: 'right' as const, sortable: true },
               { key: 'createdAt', label: 'Registro', sortable: true },
@@ -224,6 +302,8 @@ export default function AdminDashboard() {
                 drillIcon: '👤',
                 cells: {
                   email: u.email || '',
+                  plan: u.planType === 'pro' ? 'Pro' : 'Free',
+                  places: u.places > 0 ? u.places : '—',
                   farms: userFarms,
                   animals: userAnimals,
                   createdAt: formatDate(u.createdAt),
@@ -262,7 +342,7 @@ export default function AdminDashboard() {
           rows.push({ key: 'no-farms', label: 'Sin granjas registradas', value: '—' })
         }
 
-        return { title: u?.email || userId, rows }
+        return { title: u?.email || userId, rows, userId }
       }
 
       // path.length >= 3: drill into a specific farm from user context
@@ -806,7 +886,123 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* User action buttons */}
+        {view.userId && (() => {
+          const u = rawData.users?.find((x: any) => x.id === view.userId)
+          if (!u) return null
+          return (
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setActionUser(u)}
+                className="px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
+              >
+                Gestionar usuario
+              </button>
+              <button
+                onClick={() => openPlanModal(u)}
+                className="px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+              >
+                Gestionar Plan
+              </button>
+            </div>
+          )
+        })()}
       </div>
+
+      {/* Modal acciones de usuario */}
+      {actionUser && (
+        <AdminUserActions
+          user={{ id: actionUser.id, email: actionUser.email, farmName: actionUser.farmName || '', roles: actionUser.roles || ['farmer'], createdAt: actionUser.createdAt?.toDate?.() || actionUser.createdAt || new Date() }}
+          onClose={() => setActionUser(null)}
+        />
+      )}
+
+      {/* Modal gestion de plan */}
+      {planUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Gestionar Plan</h3>
+            <p className="text-sm text-gray-500 mb-4">{planUser.email}</p>
+
+            {isLoadingPlan ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {planData && (
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Uso actual</p>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Granjas:</span>
+                        <span className="font-medium text-gray-900">{planData.actualFarmCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Colaboradores:</span>
+                        <span className="font-medium text-gray-900">{planData.actualCollaboratorCount}</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
+                      <span className="text-gray-500">Lugares en uso:</span>
+                      <span className={`font-bold ${planData.usedPlaces > planData.places ? 'text-red-600' : 'text-gray-900'}`}>
+                        {planData.usedPlaces} de {planData.places}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      1 granja incluida gratis. Cada granja extra o colaborador usa 1 lugar.
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Lugares asignados
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={placesInput}
+                    onChange={(e) => setPlacesInput(parseInt(e.target.value, 10) || 0)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {placesInput === 0
+                      ? 'Plan Free: 1 granja, sin colaboradores'
+                      : `Plan Pro: el usuario puede usar ${placesInput} ${placesInput === 1 ? 'lugar' : 'lugares'} para granjas extra o colaboradores`}
+                  </p>
+                </div>
+
+                <div className={`rounded-md p-3 ${placesInput > 0 ? 'bg-green-50' : 'bg-gray-50'}`}>
+                  <p className={`text-sm font-medium ${placesInput > 0 ? 'text-green-800' : 'text-gray-600'}`}>
+                    {placesInput > 0
+                      ? `Pro — ${placesInput} ${placesInput === 1 ? 'lugar' : 'lugares'}`
+                      : 'Free — sin lugares extra'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setPlanUser(null)}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+                disabled={isSavingPlan}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSavePlan}
+                disabled={isSavingPlan || isLoadingPlan}
+                className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+              >
+                {isSavingPlan ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
