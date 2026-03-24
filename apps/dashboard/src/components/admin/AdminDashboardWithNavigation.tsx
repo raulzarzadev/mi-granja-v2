@@ -1,6 +1,7 @@
 'use client'
 
 import { collection, getDocs } from 'firebase/firestore'
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
@@ -52,6 +53,14 @@ interface TableRow {
 interface TableView {
   columns: TableColumn[]
   data: TableRow[]
+}
+
+function formatDate(raw: any): string {
+  const d = raw?.toDate?.() || raw
+  if (d instanceof Date && !isNaN(d.getTime())) {
+    return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+  }
+  return '—'
 }
 
 // ── Main Component ──
@@ -119,6 +128,8 @@ export default function AdminDashboard() {
       { key: 'gender', label: 'Sexo', sortable: true },
       { key: 'status', label: 'Estado', sortable: true },
       { key: 'weight', label: 'Peso (kg)', align: 'right', sortable: true },
+      { key: 'createdAt', label: 'Registro', sortable: true },
+      { key: 'updatedAt', label: 'Actualizado', sortable: true },
     ],
     data: list.map((a: any) => ({
       key: a.id,
@@ -133,14 +144,40 @@ export default function AdminDashboard() {
           a.status ||
           'activo',
         weight: a.weight ? (Number(a.weight) / 1000).toFixed(1) : '',
+        createdAt: formatDate(a.createdAt),
+        updatedAt: formatDate(a.updatedAt),
       },
     })),
   })
 
+  // ── Summary cards (always visible) ──
+
+  const summaryCards = useCallback((): CardItem[] => {
+    const {
+      users = [],
+      animals = [],
+      farms = [],
+      breedings = [],
+      reminders = [],
+      invitations = [],
+      sales = [],
+    } = rawData
+
+    const activeReminders = reminders.filter((r: any) => !r.completed).length
+    return [
+      { key: 'users', label: 'Usuarios', icon: '👥', value: users.length, bg: 'bg-blue-50', text: 'text-blue-700' },
+      { key: 'farms', label: 'Granjas', icon: '🚜', value: farms.length, bg: 'bg-emerald-50', text: 'text-emerald-700' },
+      { key: 'species', label: 'Especies', icon: '🐾', value: new Set(animals.map((a: any) => a.type)).size, bg: 'bg-green-50', text: 'text-green-700' },
+      { key: 'breedings', label: 'Reproducciones', icon: '💕', value: breedings.length, bg: 'bg-pink-50', text: 'text-pink-700' },
+      { key: 'reminders', label: 'Recordatorios', icon: '⏰', value: `${activeReminders}/${reminders.length}`, bg: 'bg-yellow-50', text: 'text-yellow-700' },
+      { key: 'invitations', label: 'Invitaciones', icon: '✉️', value: invitations.length, bg: 'bg-purple-50', text: 'text-purple-700' },
+      { key: 'sales', label: 'Ventas', icon: '💲', value: sales.length, bg: 'bg-indigo-50', text: 'text-indigo-700' },
+    ]
+  }, [rawData])
+
   // ── Resolve current view based on path ──
 
   const resolve = useCallback((): {
-    cards?: CardItem[]
     rows?: DetailRow[]
     table?: TableView
     title?: string
@@ -159,68 +196,7 @@ export default function AdminDashboard() {
     const farmMap = new Map(farms.map((f: any) => [f.id, f]))
 
     if (path.length === 0) {
-      // Root level — summary cards
-      const activeReminders = reminders.filter((r: any) => !r.completed).length
-      return {
-        cards: [
-          {
-            key: 'users',
-            label: 'Usuarios',
-            icon: '👥',
-            value: users.length,
-            bg: 'bg-blue-50',
-            text: 'text-blue-700',
-          },
-          {
-            key: 'farms',
-            label: 'Granjas',
-            icon: '🚜',
-            value: farms.length,
-            bg: 'bg-emerald-50',
-            text: 'text-emerald-700',
-          },
-          {
-            key: 'species',
-            label: 'Especies',
-            icon: '🐾',
-            value: new Set(animals.map((a: any) => a.type)).size,
-            bg: 'bg-green-50',
-            text: 'text-green-700',
-          },
-          {
-            key: 'breedings',
-            label: 'Reproducciones',
-            icon: '💕',
-            value: breedings.length,
-            bg: 'bg-pink-50',
-            text: 'text-pink-700',
-          },
-          {
-            key: 'reminders',
-            label: 'Recordatorios',
-            icon: '⏰',
-            value: `${activeReminders}/${reminders.length}`,
-            bg: 'bg-yellow-50',
-            text: 'text-yellow-700',
-          },
-          {
-            key: 'invitations',
-            label: 'Invitaciones',
-            icon: '✉️',
-            value: invitations.length,
-            bg: 'bg-purple-50',
-            text: 'text-purple-700',
-          },
-          {
-            key: 'sales',
-            label: 'Ventas',
-            icon: '💲',
-            value: sales.length,
-            bg: 'bg-indigo-50',
-            text: 'text-indigo-700',
-          },
-        ],
-      }
+      return {}
     }
 
     const root = path[0].key
@@ -233,9 +209,10 @@ export default function AdminDashboard() {
           table: {
             columns: [
               { key: 'email', label: 'Email', sortable: true },
-              { key: 'farmName', label: 'Granja', sortable: true },
               { key: 'farms', label: 'Granjas', align: 'right' as const, sortable: true },
               { key: 'animals', label: 'Animales', align: 'right' as const, sortable: true },
+              { key: 'createdAt', label: 'Registro', sortable: true },
+              { key: 'updatedAt', label: 'Actualizado', sortable: true },
             ],
             data: users.map((u: any) => {
               const userFarms = farms.filter((f: any) => f.ownerId === u.id).length
@@ -247,9 +224,10 @@ export default function AdminDashboard() {
                 drillIcon: '👤',
                 cells: {
                   email: u.email || '',
-                  farmName: u.farmName || '',
                   farms: userFarms,
                   animals: userAnimals,
+                  createdAt: formatDate(u.createdAt),
+                  updatedAt: formatDate(u.updatedAt),
                 },
               }
             }),
@@ -375,6 +353,8 @@ export default function AdminDashboard() {
               { key: 'owner', label: 'Dueño', sortable: true },
               { key: 'animals', label: 'Animales', align: 'right' as const, sortable: true },
               { key: 'collabs', label: 'Colaboradores', align: 'right' as const, sortable: true },
+              { key: 'createdAt', label: 'Registro', sortable: true },
+              { key: 'updatedAt', label: 'Actualizado', sortable: true },
             ],
             data: farms.map((f: any) => {
               const owner = userMap.get(f.ownerId)
@@ -388,6 +368,8 @@ export default function AdminDashboard() {
                   owner: owner?.email || f.ownerId || '',
                   animals: animals.filter((a: any) => a.farmId === f.id).length,
                   collabs: f.collaborators?.length || 0,
+                  createdAt: formatDate(f.createdAt),
+                  updatedAt: formatDate(f.updatedAt),
                 },
               }
             }),
@@ -515,22 +497,46 @@ export default function AdminDashboard() {
       }
       const type = path[1].key
       const filtered = animals.filter((a: any) => a.type === type)
-      // Group by farm
-      const byFarm = new Map<string, number>()
-      for (const a of filtered) {
-        const fname = farmMap.get(a.farmId)?.name || a.farmId || 'Sin granja'
-        byFarm.set(fname, (byFarm.get(fname) || 0) + 1)
+
+      if (path.length === 2) {
+        // Group by farm
+        const byFarm = new Map<string, { name: string; count: number }>()
+        for (const a of filtered) {
+          const farmId = a.farmId || 'sin-granja'
+          const existing = byFarm.get(farmId)
+          if (existing) {
+            existing.count++
+          } else {
+            byFarm.set(farmId, {
+              name: farmMap.get(farmId)?.name || 'Sin granja',
+              count: 1,
+            })
+          }
+        }
+        return {
+          title: `${animals_types_labels[type as keyof typeof animals_types_labels] || type} (${filtered.length})`,
+          rows: Array.from(byFarm.entries())
+            .sort((a, b) => b[1].count - a[1].count)
+            .map(([farmId, { name, count }]) => ({
+              key: farmId,
+              label: name,
+              icon: '🚜',
+              value: count,
+              drillable: true,
+            })),
+        }
       }
+
+      // path.length >= 3: show animal table for species + farm
+      const farmId = path[2].key
+      const farmAnimals = farmId === 'sin-granja'
+        ? filtered.filter((a: any) => !a.farmId)
+        : filtered.filter((a: any) => a.farmId === farmId)
+      const farmName = farmMap.get(farmId)?.name || 'Sin granja'
+      const typeLabel = animals_types_labels[type as keyof typeof animals_types_labels] || type
       return {
-        title: `${animals_types_labels[type as keyof typeof animals_types_labels] || type} (${filtered.length})`,
-        rows: Array.from(byFarm.entries())
-          .sort((a, b) => b[1] - a[1])
-          .map(([name, count]) => ({
-            key: name,
-            label: name,
-            icon: '🚜',
-            value: count,
-          })),
+        title: `${typeLabel} — ${farmName} (${farmAnimals.length})`,
+        table: buildAnimalTable(farmAnimals),
       }
     }
 
@@ -632,6 +638,8 @@ export default function AdminDashboard() {
   }
 
   const view = resolve()
+  const cards = summaryCards()
+  const activeRoot = path.length > 0 ? path[0].key : null
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -645,6 +653,12 @@ export default function AdminDashboard() {
               <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                 Admin
               </span>
+              <Link
+                href="/"
+                className="text-gray-600 hover:text-gray-900 font-medium"
+              >
+                Panel
+              </Link>
               <button onClick={logout} className="text-gray-400 hover:text-gray-600">
                 Salir
               </button>
@@ -653,20 +667,50 @@ export default function AdminDashboard() {
         </div>
       </header>
 
+      {/* Summary cards — always visible */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+            {cards.map((card) => {
+              const isActive = activeRoot === card.key
+              return (
+                <button
+                  key={card.key}
+                  type="button"
+                  onClick={() => {
+                    if (isActive) {
+                      goTo(0)
+                    } else {
+                      setPath([{ key: card.key, label: card.label, icon: card.icon }])
+                    }
+                  }}
+                  className={`rounded-lg p-3 border text-left transition-all ${
+                    isActive
+                      ? `${card.bg} border-current ring-2 ring-offset-1 shadow-md ${card.text}`
+                      : `${card.bg} border-transparent hover:shadow-sm hover:border-gray-200`
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{card.icon}</span>
+                    <div>
+                      <p className="text-[10px] font-medium text-gray-500">{card.label}</p>
+                      <p className={`text-lg font-bold ${card.text} leading-tight`}>{card.value}</p>
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Breadcrumbs */}
-        {path.length > 0 && (
+        {path.length > 1 && (
           <nav className="flex items-center gap-1 text-sm mb-4">
-            <button
-              onClick={() => goTo(0)}
-              className="text-blue-600 hover:text-blue-800 font-medium"
-              type="button"
-            >
-              Resumen
-            </button>
             {path.map((item, i) => (
               <span key={item.key} className="flex items-center gap-1">
-                <span className="text-gray-400">/</span>
+                {i > 0 && <span className="text-gray-400">/</span>}
                 {i < path.length - 1 ? (
                   <button
                     onClick={() => goTo(i + 1)}
@@ -687,29 +731,6 @@ export default function AdminDashboard() {
           </nav>
         )}
 
-        {/* Cards (root level) — shown small when drilled in */}
-        {view.cards && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-            {view.cards.map((card) => (
-              <button
-                key={card.key}
-                type="button"
-                onClick={() => drillInto({ key: card.key, label: card.label, icon: card.icon })}
-                className={`${card.bg} rounded-lg p-4 border text-left hover:shadow-md transition-all`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{card.icon}</span>
-                  <div>
-                    <p className="text-[10px] font-medium text-gray-500">{card.label}</p>
-                    <p className={`text-xl font-bold ${card.text} leading-tight`}>{card.value}</p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Detail rows */}
         {/* Table view */}
         {view.table && (
           <div>
