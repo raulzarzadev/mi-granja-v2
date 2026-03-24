@@ -32,7 +32,7 @@ const ModalInviteCollaborator: React.FC<ModalInviteCollaboratorProps> = ({
   const closeModal = isControlled ? (externalOnClose ?? (() => {})) : modal.closeModal
   const { user } = useSelector((state: RootState) => state.auth)
   const { currentFarm } = useFarmCRUD()
-  const { canInviteCollaborator, usage } = useBilling()
+  const { canInviteCollaborator, usage, planType } = useBilling()
   const { inviteCollaborator } = useFarmMembers(currentFarm?.id)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -127,10 +127,12 @@ const ModalInviteCollaborator: React.FC<ModalInviteCollaboratorProps> = ({
                 Cada lugar extra te permite agregar una granja o un colaborador. Solicita mas
                 lugares enviando un correo a{' '}
                 <a
-                  href="mailto:admin@migranja.app"
+                  href={`mailto:hola@migranja.app?subject=${encodeURIComponent('Agregar mas lugares a mi plan')}&body=${encodeURIComponent(
+                    `Hola, me gustaria agregar mas lugares a mi plan.\n\n¿Cuantos lugares te gustaria agregar?\nR: \n\n--- Datos de mi cuenta ---\nEmail: ${user?.email || '—'}\nID: ${user?.id || '—'}\nPlan actual: ${planType || 'free'}\nLugares: ${usage?.usedPlaces ?? 0}/${usage?.totalPlaces ?? 0} ocupados\nGranjas: ${usage?.farmCount ?? 0}\nColaboradores: ${usage?.collaboratorCount ?? 0}\n`
+                  )}`}
                   className="font-semibold underline hover:text-blue-900"
                 >
-                  admin@migranja.app
+                  hola@migranja.app
                 </a>
               </p>
             </div>

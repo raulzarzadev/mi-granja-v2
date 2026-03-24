@@ -14,7 +14,7 @@ const basicEmail = {
 // Ejemplo 2: Email con múltiples destinatarios y opciones avanzadas
 const advancedEmail = {
   to: ['usuario1@ejemplo.com', 'usuario2@ejemplo.com'],
-  cc: ['admin@migranja.app'],
+  cc: ['hola@migranja.app'],
   bcc: ['logs@migranja.app'],
   from: 'Mi Granja <no-reply@migranja.app>',
   reply_to: 'soporte@migranja.app',

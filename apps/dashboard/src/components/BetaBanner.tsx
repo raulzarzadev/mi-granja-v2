@@ -2,7 +2,7 @@
 
 import { useLocalPreference } from '@/hooks/useLocalPreference'
 
-const FEEDBACK_EMAIL = 'contacto@migranja.app'
+const FEEDBACK_EMAIL = 'hola@migranja.app'
 
 export function BetaBanner() {
   const [dismissed, setDismissed] = useLocalPreference('beta_dismissed', false)

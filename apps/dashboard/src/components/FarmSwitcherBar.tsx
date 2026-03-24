@@ -228,23 +228,33 @@ const FarmSwitcherBar: React.FC = () => {
                     : 'bg-gray-50 text-gray-500 border-gray-200'
               }`}
             >
-              <div className="flex items-center gap-1.5">
-                <span className="font-semibold">{isPro ? 'Pro' : 'Free'}</span>
-                <span className="opacity-30">|</span>
-                <span>
-                  {usage.usedPlaces}/{usage.totalPlaces} lugares usados
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-[10px] opacity-70">
-                <span>
-                  {usage.farmCount} {usage.farmCount === 1 ? 'granja' : 'granjas'}
-                </span>
-                <span>·</span>
-                <span>
-                  {usage.collaboratorCount}{' '}
-                  {usage.collaboratorCount === 1 ? 'colaborador' : 'colaboradores'}
-                </span>
-              </div>
+              {isPro ? (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold">Pro</span>
+                    <span className="opacity-30">|</span>
+                    <span>
+                      {usage.usedPlaces}/{usage.totalPlaces} lugares ocupados
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px] opacity-70">
+                    <span>
+                      {usage.farmCount} {usage.farmCount === 1 ? 'granja' : 'granjas'}
+                    </span>
+                    <span>·</span>
+                    <span>
+                      {usage.collaboratorCount}{' '}
+                      {usage.collaboratorCount === 1 ? 'colaborador' : 'colaboradores'}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold">Free</span>
+                  <span className="opacity-30">|</span>
+                  <span>1 lugar gratis</span>
+                </div>
+              )}
             </div>
           </div>
         )}

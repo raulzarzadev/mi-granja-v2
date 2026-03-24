@@ -85,7 +85,7 @@ const ProfileSection: React.FC = () => {
 }
 
 const PRICE_PER_PLACE = 250
-const FEEDBACK_EMAIL = 'contacto@migranja.app'
+const FEEDBACK_EMAIL = 'hola@migranja.app'
 
 const PlanTab: React.FC<{
   isFreePlan: boolean
