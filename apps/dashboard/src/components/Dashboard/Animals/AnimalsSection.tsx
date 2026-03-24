@@ -403,12 +403,71 @@ const AnimalsSection: React.FC = () => {
   // ETAPAS SUB-TABS CONTENT
   // ========================
 
+  const [etapasGuideDismissed, setEtapasGuideDismissed] = useLocalPreference(
+    'etapas_guide_dismissed',
+    false,
+  )
+
   // Tab: Monta — misma vista que BreedingTabs > Montas
   const montaContent = (
     <div className="space-y-8">
+      {!etapasGuideDismissed && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-2">
+              <p className="font-semibold">Como funciona el flujo de etapas</p>
+              <ol className="list-decimal list-inside space-y-1 text-blue-700">
+                <li>
+                  <strong>Monta</strong> — Registra el cruce entre un macho y una o varias hembras.
+                </li>
+                <li>
+                  <strong>Confirmar gestacion</strong> — Confirma que la hembra quedo preñada y se
+                  calcula la fecha estimada de parto.
+                </li>
+                <li>
+                  <strong>Parto</strong> — Registra el nacimiento de las crias. Se crean
+                  automaticamente como animales nuevos.
+                </li>
+                <li>
+                  <strong>Destete</strong> — Cuando la cria esta lista, la destetas a engorda o
+                  reproductor.
+                </li>
+                <li>
+                  <strong>Descarte</strong> — Cuando un animal termina su ciclo reproductivo, esta
+                  listo para venta, es muy viejo o tiene problemas de salud, se mueve a descarte.
+                </li>
+              </ol>
+              <p className="text-blue-600">
+                Empieza creando una monta con el boton{' '}
+                <strong>&quot;Nueva Monta&quot;</strong>.
+              </p>
+            </div>
+            <Button
+              size="xs"
+              variant="ghost"
+              color="primary"
+              icon="close"
+              onClick={() => setEtapasGuideDismissed(true)}
+              title="Cerrar guia"
+            />
+          </div>
+        </div>
+      )}
       <div>
         <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
-          <h3 className="text-lg font-semibold">{animal_stage_config.monta.icon} Monta</h3>
+          <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold">{animal_stage_config.monta.icon} Monta</h3>
+              {etapasGuideDismissed && (
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  color="primary"
+                  icon="help"
+                  onClick={() => setEtapasGuideDismissed(false)}
+                  title="Ver guia de etapas"
+                />
+              )}
+            </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
               <button
@@ -456,6 +515,14 @@ const AnimalsSection: React.FC = () => {
                 </svg>
               </button>
             </div>
+            <Button
+              size="xs"
+              color="success"
+              icon="add"
+              onClick={() => router.push('/monta/nueva')}
+            >
+              Nueva Monta
+            </Button>
           </div>
         </div>
 

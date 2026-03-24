@@ -153,7 +153,7 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
                 lugares enviando un correo a{' '}
                 <a
                   href={`mailto:hola@migranja.app?subject=${encodeURIComponent('Agregar mas lugares a mi plan')}&body=${encodeURIComponent(
-                    `Hola, me gustaria agregar mas lugares a mi plan.\n\n¿Cuantos lugares te gustaria agregar?\nR: \n\n--- Datos de mi cuenta ---\nEmail: ${user?.email || '—'}\nID: ${user?.id || '—'}\nPlan actual: ${planType || 'free'}\nLugares: ${usage?.usedPlaces ?? 0}/${usage?.totalPlaces ?? 0} ocupados\nGranjas: ${usage?.farmCount ?? 0}\nColaboradores: ${usage?.collaboratorCount ?? 0}\n`
+                    `Hola, me gustaria agregar mas lugares a mi plan.\n\n¿Cuantos lugares te gustaria agregar?\nR: \n\n--- Datos de mi cuenta ---\nEmail: ${user?.email || '—'}\nID: ${user?.id || '—'}\nPlan actual: ${planType || 'free'}\nLugares: ${usage?.usedPlaces ?? 0}/${usage?.totalPlaces ?? 0} ocupados\nGranjas: ${usage?.farmCount ?? 0}\nColaboradores: ${usage?.collaboratorCount ?? 0}\n`,
                   )}`}
                   className="font-semibold underline hover:text-blue-900"
                 >

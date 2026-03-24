@@ -178,11 +178,13 @@ const Navbar: React.FC = () => {
                         <p className="text-gray-500 truncate text-xs">{user.farmName}</p>
                       )}
                       <div className="mt-1.5 space-y-1">
-                        <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${
-                          billingPlanType === 'pro'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
+                        <span
+                          className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${
+                            billingPlanType === 'pro'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
                           {billingPlanType === 'pro' ? 'Plan Pro' : 'Plan Gratis'}
                         </span>
                         {billingUsage && (
@@ -190,12 +192,22 @@ const Navbar: React.FC = () => {
                             <p>
                               {billingUsage.usedPlaces}/{billingUsage.totalPlaces} lugares usados
                               {billingUsage.totalPlaces > 0 && (
-                                <> ({billingUsage.farmCount} {billingUsage.farmCount === 1 ? 'granja' : 'granjas'}, {billingUsage.collaboratorCount} {billingUsage.collaboratorCount === 1 ? 'colab.' : 'colabs.'})</>
+                                <>
+                                  {' '}
+                                  ({billingUsage.farmCount}{' '}
+                                  {billingUsage.farmCount === 1 ? 'granja' : 'granjas'},{' '}
+                                  {billingUsage.collaboratorCount}{' '}
+                                  {billingUsage.collaboratorCount === 1 ? 'colab.' : 'colabs.'})
+                                </>
                               )}
                             </p>
                             {billingUsage.totalPlaces > billingUsage.usedPlaces && (
                               <p className="text-green-600">
-                                {billingUsage.totalPlaces - billingUsage.usedPlaces} {billingUsage.totalPlaces - billingUsage.usedPlaces === 1 ? 'lugar libre' : 'lugares libres'} para granjas o colaboradores
+                                {billingUsage.totalPlaces - billingUsage.usedPlaces}{' '}
+                                {billingUsage.totalPlaces - billingUsage.usedPlaces === 1
+                                  ? 'lugar libre'
+                                  : 'lugares libres'}{' '}
+                                para granjas o colaboradores
                               </p>
                             )}
                             {billingUsage.totalPlaces === 0 && (
