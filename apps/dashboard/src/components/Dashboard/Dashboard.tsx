@@ -35,7 +35,7 @@ const Dashboard: React.FC = () => {
   const tabs = [
     {
       label: '🐄 Animales',
-      content: <AnimalsSection />,
+      content: <AnimalsSection filters={filters} setFilters={setFilters} />,
     },
     {
       label: '📆 Recordatorios',

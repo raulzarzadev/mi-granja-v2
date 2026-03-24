@@ -26,12 +26,17 @@ import { BreedingActionHandlers } from '@/types/components/breeding'
 import ModalBulkHealthAction from '../../ModalBulkHealthAction'
 import ModalSaleForm from '../../ModalSaleForm'
 import AnimalListView from './AnimalListView'
-import { AnimalsFilters, useAnimalFilters } from './animals-filters'
+import { AnimalFilters, AnimalsFilters, useAnimalFilters } from './animals-filters'
+
+interface AnimalsSectionProps {
+  filters: AnimalFilters
+  setFilters: React.Dispatch<React.SetStateAction<AnimalFilters>>
+}
 
 /**
  * Sección de Animales con sub-tabs: Todos, Etapas, Estadísticas
  */
-const AnimalsSection: React.FC = () => {
+const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) => {
   const router = useRouter()
   const { animals, isLoading: isLoadingAnimals, wean, create, addRecord } = useAnimalCRUD()
   const {
@@ -43,8 +48,6 @@ const AnimalsSection: React.FC = () => {
   } = useBreedingCRUD()
 
   const {
-    filters,
-    setFilters,
     filteredAnimals,
     animals: allAnimals,
     formatStatLabel,
@@ -53,7 +56,7 @@ const AnimalsSection: React.FC = () => {
     availableBreeds,
     availableStages,
     availableGenders,
-  } = useAnimalFilters()
+  } = useAnimalFilters({ filters, setFilters })
 
   // Bulk actions state
   const [isBulkHealthModalOpen, setIsBulkHealthModalOpen] = useState(false)
@@ -169,13 +172,24 @@ const AnimalsSection: React.FC = () => {
     return true
   }
 
+  // --- Montas filtradas por tipo/raza/género ---
+  const filteredBreedingRecords = useMemo(() => {
+    if (!filters.type && !filters.breed && !filters.gender) return breedingRecords
+    return breedingRecords.filter((r) => {
+      const male = animals.find((a) => a.id === r.maleId)
+      const females = r.femaleBreedingInfo.map((f) => animals.find((a) => a.id === f.femaleId))
+      const allAnimals = [male, ...females]
+      return allAnimals.some((a) => matchesEtapasFilters(a))
+    })
+  }, [breedingRecords, animals, filters])
+
   // --- Montas ordenadas ---
   const orderedBreedings = useMemo(() => {
     const needPregnancyConfirmation: BreedingRecord[] = []
     const needBirthConfirmation: BreedingRecord[] = []
     const finished: BreedingRecord[] = []
 
-    breedingRecords.forEach((r) => {
+    filteredBreedingRecords.forEach((r) => {
       let hasPendingPregnancyConfirm = false
       let hasPendingBirth = false
       r.femaleBreedingInfo.forEach((f) => {
@@ -197,12 +211,12 @@ const AnimalsSection: React.FC = () => {
       needBirthConfirmation: needBirthConfirmation.sort(sortDesc),
       finished: finished.sort(sortDesc),
     }
-  }, [breedingRecords])
+  }, [filteredBreedingRecords])
 
   // --- Partos próximos ---
   const pregnantFemales = useMemo(
     () =>
-      breedingRecords.flatMap((record) =>
+      filteredBreedingRecords.flatMap((record) =>
         record.femaleBreedingInfo
           .filter((f) => f.pregnancyConfirmedDate && !f.actualBirthDate)
           .map((info) => ({
@@ -212,7 +226,7 @@ const AnimalsSection: React.FC = () => {
           }))
           .filter(({ animal }) => matchesEtapasFilters(animal)),
       ),
-    [breedingRecords, animals, filters],
+    [filteredBreedingRecords, animals, filters],
   )
   const birthsWindow = getBirthsWindow(14)
   const birthsSummary = getBirthsWindowSummary(14)
@@ -226,7 +240,7 @@ const AnimalsSection: React.FC = () => {
       weanDate: Date | null
       daysUntilWean: number | null
     }[] = []
-    for (const record of breedingRecords) {
+    for (const record of filteredBreedingRecords) {
       for (const fi of record.femaleBreedingInfo) {
         if (!fi.offspring || fi.offspring.length === 0) continue
         for (const offId of fi.offspring) {
@@ -256,7 +270,7 @@ const AnimalsSection: React.FC = () => {
       if (b.daysUntilWean === null) return -1
       return a.daysUntilWean - b.daysUntilWean
     })
-  }, [breedingRecords, animals, filters])
+  }, [filteredBreedingRecords, animals, filters])
 
   // --- Etapas por stage ---
   const activeAnimals = useMemo(
@@ -1012,7 +1026,7 @@ const AnimalsSection: React.FC = () => {
     },
     {
       label: 'Estadísticas',
-      content: <StatisticsTab />,
+      content: <StatisticsTab typeFilter={filters.type} />,
     },
   ]
 

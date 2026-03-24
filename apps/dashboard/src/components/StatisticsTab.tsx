@@ -54,10 +54,45 @@ const Bar: React.FC<{ value: number; max: number; label: string; color?: string 
   )
 }
 
-const StatisticsTab: React.FC = () => {
-  const animals = useSelector((state: RootState) => state.animals.animals)
-  const sales = useSelector((state: RootState) => state.sales.sales)
-  const breedings = useSelector((state: RootState) => state.breeding.breedingRecords)
+interface StatisticsTabProps {
+  typeFilter?: AnimalType | ''
+}
+
+const StatisticsTab: React.FC<StatisticsTabProps> = ({ typeFilter = '' }) => {
+  const allAnimals = useSelector((state: RootState) => state.animals.animals)
+  const allSales = useSelector((state: RootState) => state.sales.sales)
+  const allBreedings = useSelector((state: RootState) => state.breeding.breedingRecords)
+
+  const animals = useMemo(
+    () => (typeFilter ? allAnimals.filter((a) => a.type === typeFilter) : allAnimals),
+    [allAnimals, typeFilter],
+  )
+  const sales = useMemo(
+    () =>
+      typeFilter
+        ? allSales.filter((s) =>
+            s.animals?.some((sa) => {
+              const a = allAnimals.find((an) => an.id === sa.animalId)
+              return a && a.type === typeFilter
+            }),
+          )
+        : allSales,
+    [allSales, allAnimals, typeFilter],
+  )
+  const breedings = useMemo(
+    () =>
+      typeFilter
+        ? allBreedings.filter((b) => {
+            const male = allAnimals.find((a) => a.id === b.maleId)
+            if (male && male.type === typeFilter) return true
+            return b.femaleBreedingInfo.some((f) => {
+              const fem = allAnimals.find((a) => a.id === f.femaleId)
+              return fem && fem.type === typeFilter
+            })
+          })
+        : allBreedings,
+    [allBreedings, allAnimals, typeFilter],
+  )
 
   const months = useMemo(() => getLast6Months(), [])
 

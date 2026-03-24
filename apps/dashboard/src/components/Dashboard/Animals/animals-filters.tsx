@@ -40,10 +40,15 @@ export const initialAnimalFilters: AnimalFilters = {
 }
 
 // Hook personalizado para manejar filtros de animales
-export const useAnimalFilters = () => {
+export const useAnimalFilters = (externalState?: {
+  filters: AnimalFilters
+  setFilters: React.Dispatch<React.SetStateAction<AnimalFilters>>
+}) => {
   const { animals, animalsFiltered, getFarmAnimals, searchExact } = useAnimalCRUD()
   const { breedingRecords } = useBreedingCRUD()
-  const [filters, setFilters] = useState<AnimalFilters>(initialAnimalFilters)
+  const [internalFilters, internalSetFilters] = useState<AnimalFilters>(initialAnimalFilters)
+  const filters = externalState?.filters ?? internalFilters
+  const setFilters = externalState?.setFilters ?? internalSetFilters
   const [statusAnimals, setStatusAnimals] = useState<Animal[]>([])
   const [searchResults, setSearchResults] = useState<Animal[]>([])
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
