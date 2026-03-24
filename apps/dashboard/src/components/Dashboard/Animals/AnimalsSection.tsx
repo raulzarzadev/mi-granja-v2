@@ -178,8 +178,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     return breedingRecords.filter((r) => {
       const male = animals.find((a) => a.id === r.maleId)
       const females = r.femaleBreedingInfo.map((f) => animals.find((a) => a.id === f.femaleId))
-      const allAnimals = [male, ...females]
-      return allAnimals.some((a) => matchesEtapasFilters(a))
+      const involved = [male, ...females]
+      return involved.some((a) => matchesEtapasFilters(a))
     })
   }, [breedingRecords, animals, filters])
 
@@ -228,8 +228,27 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       ),
     [filteredBreedingRecords, animals, filters],
   )
-  const birthsWindow = getBirthsWindow(14)
-  const birthsSummary = getBirthsWindowSummary(14)
+  const rawBirthsWindow = getBirthsWindow(14)
+  const birthsWindow = useMemo(() => {
+    if (!filters.type && !filters.breed && !filters.gender) return rawBirthsWindow
+    const filterEntry = (e: (typeof rawBirthsWindow.pastDue)[number]) => {
+      const animal = animals.find((a) => a.id === e.info.femaleId)
+      return matchesEtapasFilters(animal)
+    }
+    return {
+      pastDue: rawBirthsWindow.pastDue.filter(filterEntry),
+      upcoming: rawBirthsWindow.upcoming.filter(filterEntry),
+      days: rawBirthsWindow.days,
+    }
+  }, [rawBirthsWindow, animals, filters])
+  const birthsSummary = useMemo(
+    () => ({
+      pastDueCount: birthsWindow.pastDue.length,
+      upcomingCount: birthsWindow.upcoming.length,
+      windowDays: birthsWindow.days,
+    }),
+    [birthsWindow],
+  )
 
   // --- Destetes próximos ---
   const unweanedOffspring = useMemo(() => {
