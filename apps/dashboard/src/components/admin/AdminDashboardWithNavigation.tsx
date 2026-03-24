@@ -5,8 +5,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
-import { db } from '@/lib/firebase'
-import { auth } from '@/lib/firebase'
+import { auth, db } from '@/lib/firebase'
 import { animal_icon, animal_status_labels, animals_types_labels } from '@/types/animals'
 import { sale_status_labels } from '@/types/sales'
 import AdminUserActions from './AdminUserActions'
@@ -76,7 +75,13 @@ export default function AdminDashboard() {
   // User action modals
   const [actionUser, setActionUser] = useState<any>(null)
   const [planUser, setPlanUser] = useState<any>(null)
-  const [planData, setPlanData] = useState<{ places: number; planType: string; actualFarmCount: number; actualCollaboratorCount: number; usedPlaces: number } | null>(null)
+  const [planData, setPlanData] = useState<{
+    places: number
+    planType: string
+    actualFarmCount: number
+    actualCollaboratorCount: number
+    usedPlaces: number
+  } | null>(null)
   const [placesInput, setPlacesInput] = useState(0)
   const [isSavingPlan, setIsSavingPlan] = useState(false)
   const [isLoadingPlan, setIsLoadingPlan] = useState(false)
@@ -240,13 +245,62 @@ export default function AdminDashboard() {
 
     const activeReminders = reminders.filter((r: any) => !r.completed).length
     return [
-      { key: 'users', label: 'Usuarios', icon: '👥', value: users.length, bg: 'bg-blue-50', text: 'text-blue-700' },
-      { key: 'farms', label: 'Granjas', icon: '🚜', value: farms.length, bg: 'bg-emerald-50', text: 'text-emerald-700' },
-      { key: 'species', label: 'Especies', icon: '🐾', value: new Set(animals.map((a: any) => a.type)).size, bg: 'bg-green-50', text: 'text-green-700' },
-      { key: 'breedings', label: 'Reproducciones', icon: '💕', value: breedings.length, bg: 'bg-pink-50', text: 'text-pink-700' },
-      { key: 'reminders', label: 'Recordatorios', icon: '⏰', value: `${activeReminders}/${reminders.length}`, bg: 'bg-yellow-50', text: 'text-yellow-700' },
-      { key: 'invitations', label: 'Invitaciones', icon: '✉️', value: invitations.length, bg: 'bg-purple-50', text: 'text-purple-700' },
-      { key: 'sales', label: 'Ventas', icon: '💲', value: sales.length, bg: 'bg-indigo-50', text: 'text-indigo-700' },
+      {
+        key: 'users',
+        label: 'Usuarios',
+        icon: '👥',
+        value: users.length,
+        bg: 'bg-blue-50',
+        text: 'text-blue-700',
+      },
+      {
+        key: 'farms',
+        label: 'Granjas',
+        icon: '🚜',
+        value: farms.length,
+        bg: 'bg-emerald-50',
+        text: 'text-emerald-700',
+      },
+      {
+        key: 'species',
+        label: 'Especies',
+        icon: '🐾',
+        value: new Set(animals.map((a: any) => a.type)).size,
+        bg: 'bg-green-50',
+        text: 'text-green-700',
+      },
+      {
+        key: 'breedings',
+        label: 'Reproducciones',
+        icon: '💕',
+        value: breedings.length,
+        bg: 'bg-pink-50',
+        text: 'text-pink-700',
+      },
+      {
+        key: 'reminders',
+        label: 'Recordatorios',
+        icon: '⏰',
+        value: `${activeReminders}/${reminders.length}`,
+        bg: 'bg-yellow-50',
+        text: 'text-yellow-700',
+      },
+      {
+        key: 'invitations',
+        label: 'Invitaciones',
+        icon: '✉️',
+        value: invitations.length,
+        bg: 'bg-purple-50',
+        text: 'text-purple-700',
+      },
+      {
+        key: 'sales',
+        label: 'Ventas',
+        icon: '💲',
+        value: sales.length,
+        bg: 'bg-indigo-50',
+        text: 'text-indigo-700',
+      },
     ]
   }, [rawData])
 
@@ -609,9 +663,10 @@ export default function AdminDashboard() {
 
       // path.length >= 3: show animal table for species + farm
       const farmId = path[2].key
-      const farmAnimals = farmId === 'sin-granja'
-        ? filtered.filter((a: any) => !a.farmId)
-        : filtered.filter((a: any) => a.farmId === farmId)
+      const farmAnimals =
+        farmId === 'sin-granja'
+          ? filtered.filter((a: any) => !a.farmId)
+          : filtered.filter((a: any) => a.farmId === farmId)
       const farmName = farmMap.get(farmId)?.name || 'Sin granja'
       const typeLabel = animals_types_labels[type as keyof typeof animals_types_labels] || type
       return {
@@ -733,10 +788,7 @@ export default function AdminDashboard() {
               <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                 Admin
               </span>
-              <Link
-                href="/"
-                className="text-gray-600 hover:text-gray-900 font-medium"
-              >
+              <Link href="/" className="text-gray-600 hover:text-gray-900 font-medium">
                 Panel
               </Link>
               <button onClick={logout} className="text-gray-400 hover:text-gray-600">
@@ -888,32 +940,39 @@ export default function AdminDashboard() {
         )}
 
         {/* User action buttons */}
-        {view.userId && (() => {
-          const u = rawData.users?.find((x: any) => x.id === view.userId)
-          if (!u) return null
-          return (
-            <div className="flex gap-3 mt-4">
-              <button
-                onClick={() => setActionUser(u)}
-                className="px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
-              >
-                Gestionar usuario
-              </button>
-              <button
-                onClick={() => openPlanModal(u)}
-                className="px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
-              >
-                Gestionar Plan
-              </button>
-            </div>
-          )
-        })()}
+        {view.userId &&
+          (() => {
+            const u = rawData.users?.find((x: any) => x.id === view.userId)
+            if (!u) return null
+            return (
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => setActionUser(u)}
+                  className="px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
+                >
+                  Gestionar usuario
+                </button>
+                <button
+                  onClick={() => openPlanModal(u)}
+                  className="px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  Gestionar Plan
+                </button>
+              </div>
+            )
+          })()}
       </div>
 
       {/* Modal acciones de usuario */}
       {actionUser && (
         <AdminUserActions
-          user={{ id: actionUser.id, email: actionUser.email, farmName: actionUser.farmName || '', roles: actionUser.roles || ['farmer'], createdAt: actionUser.createdAt?.toDate?.() || actionUser.createdAt || new Date() }}
+          user={{
+            id: actionUser.id,
+            email: actionUser.email,
+            farmName: actionUser.farmName || '',
+            roles: actionUser.roles || ['farmer'],
+            createdAt: actionUser.createdAt?.toDate?.() || actionUser.createdAt || new Date(),
+          }}
           onClose={() => setActionUser(null)}
         />
       )}
@@ -937,16 +996,22 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-500">Granjas:</span>
-                        <span className="font-medium text-gray-900">{planData.actualFarmCount}</span>
+                        <span className="font-medium text-gray-900">
+                          {planData.actualFarmCount}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Colaboradores:</span>
-                        <span className="font-medium text-gray-900">{planData.actualCollaboratorCount}</span>
+                        <span className="font-medium text-gray-900">
+                          {planData.actualCollaboratorCount}
+                        </span>
                       </div>
                     </div>
                     <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
                       <span className="text-gray-500">Lugares en uso:</span>
-                      <span className={`font-bold ${planData.usedPlaces > planData.places ? 'text-red-600' : 'text-gray-900'}`}>
+                      <span
+                        className={`font-bold ${planData.usedPlaces > planData.places ? 'text-red-600' : 'text-gray-900'}`}
+                      >
                         {planData.usedPlaces} de {planData.places}
                       </span>
                     </div>
@@ -975,7 +1040,9 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className={`rounded-md p-3 ${placesInput > 0 ? 'bg-green-50' : 'bg-gray-50'}`}>
-                  <p className={`text-sm font-medium ${placesInput > 0 ? 'text-green-800' : 'text-gray-600'}`}>
+                  <p
+                    className={`text-sm font-medium ${placesInput > 0 ? 'text-green-800' : 'text-gray-600'}`}
+                  >
                     {placesInput > 0
                       ? `Pro — ${placesInput} ${placesInput === 1 ? 'lugar' : 'lugares'}`
                       : 'Free — sin lugares extra'}

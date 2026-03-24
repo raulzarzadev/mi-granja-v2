@@ -165,7 +165,8 @@ export default function AdminUsers() {
                         <div>
                           <div className="text-sm font-medium text-gray-900">{user.email}</div>
                           <div className="text-sm text-gray-500">
-                            {user.farms.length} {user.farms.length === 1 ? 'granja' : 'granjas'} · {user.totalAnimals} animales
+                            {user.farms.length} {user.farms.length === 1 ? 'granja' : 'granjas'} ·{' '}
+                            {user.totalAnimals} animales
                           </div>
                         </div>
                       </div>
@@ -217,13 +218,19 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
-                        onClick={(e) => { e.stopPropagation(); setSelectedUser(user) }}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedUser(user)
+                        }}
                         className="text-indigo-600 hover:text-indigo-900 mr-3"
                       >
                         Gestionar
                       </button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); openPlanModal(user) }}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          openPlanModal(user)
+                        }}
                         className="text-green-600 hover:text-green-900"
                       >
                         Gestionar Plan
@@ -245,7 +252,10 @@ export default function AdminUsers() {
                               </p>
                               {user.farms.map((farm) => {
                                 const farmAnimals = user.animalsByFarm.get(farm.id) || []
-                                const totalFarmAnimals = farmAnimals.reduce((s, a) => s + a.count, 0)
+                                const totalFarmAnimals = farmAnimals.reduce(
+                                  (s, a) => s + a.count,
+                                  0,
+                                )
                                 return (
                                   <div
                                     key={farm.id}
@@ -259,12 +269,19 @@ export default function AdminUsers() {
                                         <p className="text-xs text-gray-500">
                                           Creada {format(farm.createdAt, 'PP', { locale: es })}
                                           {farm.collaborators.length > 0 && (
-                                            <> · {farm.collaborators.length} {farm.collaborators.length === 1 ? 'colaborador' : 'colaboradores'}</>
+                                            <>
+                                              {' '}
+                                              · {farm.collaborators.length}{' '}
+                                              {farm.collaborators.length === 1
+                                                ? 'colaborador'
+                                                : 'colaboradores'}
+                                            </>
                                           )}
                                         </p>
                                       </div>
                                       <span className="text-sm font-medium text-gray-700">
-                                        {totalFarmAnimals} {totalFarmAnimals === 1 ? 'animal' : 'animales'}
+                                        {totalFarmAnimals}{' '}
+                                        {totalFarmAnimals === 1 ? 'animal' : 'animales'}
                                       </span>
                                     </div>
 
@@ -285,7 +302,9 @@ export default function AdminUsers() {
                                         ))}
                                       </div>
                                     ) : (
-                                      <p className="text-xs text-gray-400 mt-1 italic">Sin animales</p>
+                                      <p className="text-xs text-gray-400 mt-1 italic">
+                                        Sin animales
+                                      </p>
                                     )}
 
                                     {/* Colaboradores */}
@@ -300,7 +319,9 @@ export default function AdminUsers() {
                                             >
                                               {collab.email || collab.userId || 'Desconocido'}
                                               {collab.role && (
-                                                <span className="text-blue-400">({collab.role})</span>
+                                                <span className="text-blue-400">
+                                                  ({collab.role})
+                                                </span>
                                               )}
                                             </span>
                                           ))}
