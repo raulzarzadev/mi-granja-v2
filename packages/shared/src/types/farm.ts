@@ -39,6 +39,10 @@ export interface Farm {
       sales: number
     }
   }[]
+  // Soft delete — granja marcada para eliminación
+  deletedAt?: AppDate
+  scheduledDeletionAt?: AppDate // 15 días después de deletedAt
+
   // Metadatos cuando la granja proviene de una invitación aceptada o pendiente
   invitationMeta?: {
     invitationId: string

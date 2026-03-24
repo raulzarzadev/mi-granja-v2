@@ -4,7 +4,6 @@ import {
   arrayRemove,
   arrayUnion,
   collection,
-  deleteDoc,
   doc,
   getDocs,
   query,
@@ -21,6 +20,7 @@ import {
   removeCollaboratorFromFarm,
   removeFarm,
   setCurrentFarm,
+  setDeletedFarms,
   setError,
   setFarms,
   setInvitationFarms,
@@ -39,9 +39,8 @@ import { Farm, FarmArea } from '@/types/farm'
 export const useFarmCRUD = () => {
   const dispatch = useDispatch<AppDispatch>()
   const { user } = useSelector((state: RootState) => state.auth)
-  const { farms, currentFarm, isLoading, error, myFarms, invitationFarms } = useSelector(
-    (state: RootState) => state.farm,
-  )
+  const { farms, currentFarm, isLoading, error, myFarms, invitationFarms, deletedFarms } =
+    useSelector((state: RootState) => state.farm)
   // Cargar granjas del usuario
   const loadUserFarms = async () => {
     if (!user) {
@@ -59,14 +58,21 @@ export const useFarmCRUD = () => {
       const ownerQuery = query(collection(db, 'farms'), where('ownerId', '==', user.id))
       const ownerSnapshot = await getDocs(ownerQuery)
       console.log('🔍 ownerFarms found:', ownerSnapshot.size)
-      const ownerFarms = ownerSnapshot.docs.map((doc) => ({
+      const allOwnerFarms = ownerSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
         areas: doc.data().areas || [],
         collaborators: doc.data().collaborators || [],
         createdAt: doc.data().createdAt?.toDate() || new Date(),
         updatedAt: doc.data().updatedAt?.toDate() || new Date(),
+        deletedAt: doc.data().deletedAt?.toDate() || undefined,
+        scheduledDeletionAt: doc.data().scheduledDeletionAt?.toDate() || undefined,
       })) as Farm[]
+
+      // Separar granjas activas de eliminadas
+      const ownerFarms = allOwnerFarms.filter((f) => !f.deletedAt)
+      const deleted = allOwnerFarms.filter((f) => !!f.deletedAt)
+      dispatch(serializeObj(setDeletedFarms(deleted)))
       // 2) Invitaciones (aceptadas o pendientes) para el email del usuario
       const invitationsQuery = query(
         collection(db, 'farmInvitations'),
@@ -235,14 +241,41 @@ export const useFarmCRUD = () => {
     }
   }
 
-  // Eliminar granja
-  const deleteFarm = async (farmId: string) => {
+  // Soft delete — marcar granja para eliminación (15 días de gracia)
+  const softDeleteFarm = async (farmId: string) => {
     try {
-      await deleteDoc(doc(db, 'farms', farmId))
+      const now = Timestamp.now()
+      const scheduledDate = Timestamp.fromDate(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000))
+
+      await updateDoc(doc(db, 'farms', farmId), {
+        deletedAt: now,
+        scheduledDeletionAt: scheduledDate,
+        updatedAt: now,
+      })
+
       dispatch(serializeObj(removeFarm(farmId)))
+      // Recargar para actualizar deletedFarms
+      await loadUserFarms()
     } catch (error) {
       console.error('Error deleting farm:', error)
       dispatch(setError('Error al eliminar la granja'))
+      throw error
+    }
+  }
+
+  // Restaurar granja eliminada
+  const restoreFarm = async (farmId: string) => {
+    try {
+      const { deleteField } = await import('firebase/firestore')
+      await updateDoc(doc(db, 'farms', farmId), {
+        deletedAt: deleteField(),
+        scheduledDeletionAt: deleteField(),
+        updatedAt: Timestamp.now(),
+      })
+      await loadUserFarms()
+    } catch (error) {
+      console.error('Error restoring farm:', error)
+      dispatch(setError('Error al restaurar la granja'))
       throw error
     }
   }
@@ -546,6 +579,7 @@ export const useFarmCRUD = () => {
     farms,
     myFarms,
     invitationFarms,
+    deletedFarms,
     currentFarm,
     isLoading,
     error,
@@ -553,7 +587,8 @@ export const useFarmCRUD = () => {
     // Operaciones de granja
     createFarm,
     updateFarm,
-    deleteFarm,
+    softDeleteFarm,
+    restoreFarm,
     switchFarm,
     loadAndSwitchFarm,
 

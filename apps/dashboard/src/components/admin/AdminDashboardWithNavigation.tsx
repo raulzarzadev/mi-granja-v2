@@ -1,6 +1,14 @@
 'use client'
 
-import { collection, getDocs } from 'firebase/firestore'
+import {
+  collection,
+  deleteDoc,
+  doc as firestoreDoc,
+  getDocs,
+  query,
+  where,
+  writeBatch,
+} from 'firebase/firestore'
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
@@ -58,8 +66,9 @@ interface TableView {
 
 function formatDate(raw: any): string {
   const d = raw?.toDate?.() || raw
-  if (d instanceof Date && !isNaN(d.getTime())) {
-    return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+  if (d instanceof Date && !Number.isNaN(d.getTime())) {
+    // YYYY-MM-DD format sorts correctly as string
+    return d.toISOString().slice(0, 10)
   }
   return '—'
 }
@@ -85,6 +94,10 @@ export default function AdminDashboard() {
   const [placesInput, setPlacesInput] = useState(0)
   const [isSavingPlan, setIsSavingPlan] = useState(false)
   const [isLoadingPlan, setIsLoadingPlan] = useState(false)
+
+  // Hard delete modal
+  const [deleteFarm, setDeleteFarm] = useState<any>(null)
+  const [isDeletingFarm, setIsDeletingFarm] = useState(false)
 
   // Fetch all data once
   useEffect(() => {
@@ -197,6 +210,43 @@ export default function AdminDashboard() {
     }
   }
 
+  // Hard delete — eliminar granja y todos sus datos permanentemente
+  const handleHardDelete = async (farmId: string) => {
+    setIsDeletingFarm(true)
+    try {
+      const collections = ['animals', 'breedingRecords', 'reminders', 'sales', 'farmInvitations']
+      for (const col of collections) {
+        const snap = await getDocs(query(collection(db, col), where('farmId', '==', farmId)))
+        // Batch delete in groups of 500
+        const batch = writeBatch(db)
+        let count = 0
+        for (const d of snap.docs) {
+          batch.delete(d.ref)
+          count++
+          if (count >= 499) {
+            await batch.commit()
+            count = 0
+          }
+        }
+        if (count > 0) await batch.commit()
+      }
+      // Delete the farm doc
+      await deleteDoc(firestoreDoc(db, 'farms', farmId))
+
+      // Refresh data
+      setDeleteFarm(null)
+      // Re-fetch all data
+      const farmsSnap = await getDocs(collection(db, 'farms'))
+      const mapSnap = (snap: any) => snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+      setRawData((prev) => ({ ...prev, farms: mapSnap(farmsSnap) }))
+    } catch (err) {
+      console.error('Error eliminando granja:', err)
+      alert('Error al eliminar la granja')
+    } finally {
+      setIsDeletingFarm(false)
+    }
+  }
+
   // ── Table builders ──
 
   const buildAnimalTable = (list: any[]): TableView => ({
@@ -244,7 +294,8 @@ export default function AdminDashboard() {
     } = rawData
 
     const activeReminders = reminders.filter((r: any) => !r.completed).length
-    return [
+    const deletedCount = farms.filter((f: any) => f.deletedAt).length
+    const result: CardItem[] = [
       {
         key: 'users',
         label: 'Usuarios',
@@ -302,6 +353,17 @@ export default function AdminDashboard() {
         text: 'text-indigo-700',
       },
     ]
+    if (deletedCount > 0) {
+      result.push({
+        key: 'deletions',
+        label: 'Eliminaciones',
+        icon: '🗑️',
+        value: deletedCount,
+        bg: 'bg-red-50',
+        text: 'text-red-700',
+      })
+    }
+    return result
   }, [rawData])
 
   // ── Resolve current view based on path ──
@@ -761,6 +823,25 @@ export default function AdminDashboard() {
       }
     }
 
+    // ── Deletions ──
+    if (root === 'deletions') {
+      const deletedFarmsList = farms.filter((f: any) => f.deletedAt)
+      return {
+        title: `Eliminaciones programadas (${deletedFarmsList.length})`,
+        rows: deletedFarmsList.map((f: any) => {
+          const deletedDate = formatDate(f.deletedAt)
+          const scheduledDate = formatDate(f.scheduledDeletionAt)
+          const owner = userMap.get(f.ownerId)
+          return {
+            key: f.id,
+            label: `🚜 ${f.name || '(sin nombre)'}`,
+            value: `${owner?.email || f.ownerId}`,
+            meta: { deletedDate, scheduledDate },
+          }
+        }),
+      }
+    }
+
     return {}
   }, [rawData, path])
 
@@ -911,9 +992,28 @@ export default function AdminDashboard() {
                           ${(Number(row.meta.pricePerKg) / 100).toFixed(2)}/kg
                         </span>
                       )}
+                      {row.meta?.deletedDate && (
+                        <span className="text-xs text-red-500">
+                          Eliminada: {String(row.meta.deletedDate)} · Expira:{' '}
+                          {String(row.meta.scheduledDate)}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-sm text-gray-600">{row.value}</span>
+                      {row.meta?.deletedDate && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const farm = rawData.farms?.find((f: any) => f.id === row.key)
+                            if (farm) setDeleteFarm(farm)
+                          }}
+                          className="px-2 py-1 text-xs font-medium text-red-700 bg-red-100 border border-red-200 rounded hover:bg-red-200 transition-colors cursor-pointer"
+                        >
+                          Eliminar ahora
+                        </button>
+                      )}
                       {row.drillable && (
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -1070,6 +1170,86 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Modal confirmacion eliminacion permanente */}
+      {deleteFarm &&
+        (() => {
+          const deletedDate = deleteFarm.deletedAt?.toDate?.() || new Date(deleteFarm.deletedAt)
+          const scheduledDate =
+            deleteFarm.scheduledDeletionAt?.toDate?.() || new Date(deleteFarm.scheduledDeletionAt)
+          const daysLeft = Math.max(
+            0,
+            Math.ceil((scheduledDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+          )
+          const ownerEmail =
+            rawData.users?.find((u: any) => u.id === deleteFarm.ownerId)?.email ||
+            deleteFarm.ownerId
+
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+                <h3 className="text-lg font-bold text-red-800 mb-1">
+                  Eliminar granja permanentemente
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">{deleteFarm.name}</p>
+
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2 mb-4">
+                  <div className="text-sm space-y-1">
+                    <p>
+                      <span className="text-gray-500">Propietario:</span>{' '}
+                      <span className="font-medium">{ownerEmail}</span>
+                    </p>
+                    <p>
+                      <span className="text-gray-500">Eliminada:</span>{' '}
+                      <span className="font-medium">{deletedDate.toISOString().slice(0, 10)}</span>
+                    </p>
+                    <p>
+                      <span className="text-gray-500">Eliminacion programada:</span>{' '}
+                      <span className="font-medium">
+                        {scheduledDate.toISOString().slice(0, 10)}
+                      </span>
+                    </p>
+                  </div>
+                  {daysLeft > 0 ? (
+                    <p className="text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                      Faltan {daysLeft} {daysLeft === 1 ? 'dia' : 'dias'} para que se cumpla el
+                      plazo
+                    </p>
+                  ) : (
+                    <p className="text-sm font-medium text-red-700 bg-red-100 rounded px-2 py-1">
+                      El plazo ya se cumplio
+                    </p>
+                  )}
+                </div>
+
+                <div className="bg-red-100 border border-red-300 rounded-lg p-3 text-sm text-red-800 mb-4">
+                  <p className="font-medium">Esta accion es irreversible.</p>
+                  <p className="text-xs mt-1">
+                    Se eliminaran permanentemente: la granja, animales, reproducciones, ventas,
+                    gastos, invitaciones y todos los datos asociados.
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setDeleteFarm(null)}
+                    className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer"
+                    disabled={isDeletingFarm}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => handleHardDelete(deleteFarm.id)}
+                    disabled={isDeletingFarm}
+                    className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 cursor-pointer"
+                  >
+                    {isDeletingFarm ? 'Eliminando...' : 'Eliminar permanentemente'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
     </div>
   )
 }

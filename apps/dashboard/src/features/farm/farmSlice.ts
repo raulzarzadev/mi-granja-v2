@@ -5,6 +5,7 @@ interface FarmState {
   farms: Farm[] // Unión de todas las granjas con acceso
   myFarms: Farm[] // Granjas donde soy owner
   invitationFarms: Farm[] // Granjas accesibles por invitación (pendiente, aceptada, etc.) con invitationMeta
+  deletedFarms: Farm[] // Granjas marcadas para eliminación (soft delete)
   currentFarm: Farm | null
   isLoading: boolean
   error: string | null
@@ -14,6 +15,7 @@ const initialState: FarmState = {
   farms: [],
   myFarms: [],
   invitationFarms: [],
+  deletedFarms: [],
   currentFarm: null,
   isLoading: false,
   error: null,
@@ -243,6 +245,10 @@ const farmSlice = createSlice({
       }
     },
 
+    setDeletedFarms: (state, action: PayloadAction<Farm[]>) => {
+      state.deletedFarms = action.payload
+    },
+
     clearFarms: () => initialState,
   },
 })
@@ -263,6 +269,7 @@ export const {
   addCollaboratorToFarm,
   updateCollaboratorInFarm,
   removeCollaboratorFromFarm,
+  setDeletedFarms,
   clearFarms,
 } = farmSlice.actions
 
