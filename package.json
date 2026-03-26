@@ -5,11 +5,12 @@
   "packageManager": "pnpm@10.25.0",
   "scripts": {
     "dev": "turbo run dev",
+    "dev:portless": "portless proxy start & sleep 1 && turbo run dev:portless",
     "emulators": "cd firebase && firebase emulators:start --import=data --export-on-exit=data",
-    "emulators:kill": "lsof -ti :9099 -ti :8080 -ti :9199 -ti :4000 -ti :4400 -ti :4500 | xargs kill 2>/dev/null; echo '✅ Emuladores detenidos'",
+    "emulators:kill": "lsof -ti :9299 -ti :8180 -ti :9399 -ti :4100 | xargs kill 2>/dev/null; echo '✅ Emuladores detenidos'",
     "review": "bash scripts/review.sh",
-    "deploy:preview": "git push origin HEAD",
-    "deploy:main": "git push origin main"
+    "deploy:preview": "git switch monorepo-dev && git pull origin monorepo-dev && git push origin monorepo-dev",
+    "deploy:prod": "git switch monorepo-dev && git switch monorepo &&git merge monorepo-dev  && git push origin monorepo && git switch monorepo-dev"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",

@@ -6,6 +6,7 @@ export { default as catchError } from './lib/catchError'
 export * from './lib/dates'
 // Lib
 export * from './lib/dateUtils'
+export * from './lib/genetics'
 export * from './lib/records'
 export * from './lib/serializeObj'
 export * from './types/animals'
@@ -15,6 +16,7 @@ export * from './types/collaborators'
 export * from './types/comment'
 export * from './types/date'
 export * from './types/farm'
+export * from './types/genetics'
 export type {
   BirthRecord,
   MilkProduction,
@@ -24,3 +26,4 @@ export type {
   WeightRecord,
 } from './types/index'
 export * from './types/records'
+export * from './types/sales'

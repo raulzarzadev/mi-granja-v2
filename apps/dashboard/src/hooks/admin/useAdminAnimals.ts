@@ -21,17 +21,22 @@ export const useAdminAnimals = (): UseAdminAnimalsReturn => {
 
   const mapDoc = (doc: any): Animal => {
     const data = doc.data()
-    const birthdateDate = data.birthDate?.toDate()
-    const age = animalAge(birthdateDate, { format: 'months' })
+    const birthdateDate = data.birthDate?.toDate?.() || undefined
+    const partial: Partial<Animal> = {
+      birthDate: birthdateDate,
+      age: data.age,
+    }
+    const age = animalAge(partial as Animal, { format: 'months' })
     return {
       id: doc.id,
       farmerId: data.farmerId,
+      farmId: data.farmId,
       animalNumber: data.animalNumber,
       type: data.type,
       stage: data.stage,
       gender: data.gender,
       weight: data.weight,
-      age, // Calculated age from birthDate
+      age,
       birthDate: birthdateDate,
       motherId: data.motherId,
       fatherId: data.fatherId,

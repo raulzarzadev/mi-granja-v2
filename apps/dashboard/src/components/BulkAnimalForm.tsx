@@ -291,9 +291,7 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tipo de Animal *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Especie *</label>
               <select
                 value={defaults.type}
                 onChange={(e) => setDefaults((d) => ({ ...d, type: e.target.value as AnimalType }))}
@@ -411,7 +409,7 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
               value={quantity}
               onWheel={preventScrollChange}
               onChange={(e) => {
-                const v = Number.parseInt(e.target.value)
+                const v = Number.parseInt(e.target.value, 10)
                 if (!Number.isNaN(v) && v >= 1 && v <= 100) setQuantity(v)
               }}
               className="w-20 text-center px-3 py-2 border border-gray-300 rounded-lg text-lg font-semibold focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -626,7 +624,7 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Tipo</label>
+                      <label className="block text-xs text-gray-500 mb-1">Especie</label>
                       <select
                         value={animal.type}
                         onChange={(e) => updateAnimal(animal.tempId, 'type', e.target.value)}

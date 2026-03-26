@@ -8,6 +8,7 @@ import { billingReducer } from '@/features/billing/billingSlice'
 import { breedingReducer } from '@/features/breeding/breedingSlice'
 import { farmReducer } from '@/features/farm/farmSlice'
 import { remindersReducer } from '@/features/reminders/remindersSlice'
+import { salesReducer } from '@/features/sales/salesSlice'
 import { User } from '@/types'
 import '@testing-library/jest-dom'
 
@@ -29,6 +30,7 @@ export const createMockStore = (initialAuthState = {}) => {
       breeding: breedingReducer,
       reminders: remindersReducer,
       farm: farmReducer,
+      sales: salesReducer,
     },
     preloadedState: {
       auth: {

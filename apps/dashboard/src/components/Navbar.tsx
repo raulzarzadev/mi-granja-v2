@@ -20,6 +20,7 @@ const Navbar: React.FC = () => {
     (state: RootState) => state.auth,
   )
   const billingPlanType = useSelector((s: RootState) => s.billing.planType)
+  const billingUsage = useSelector((s: RootState) => s.billing.usage)
   const { logout, stopImpersonation } = useAuth()
   const [showUserSelector, setShowUserSelector] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -176,15 +177,47 @@ const Navbar: React.FC = () => {
                       {user.farmName && (
                         <p className="text-gray-500 truncate text-xs">{user.farmName}</p>
                       )}
-                      {billingPlanType === 'free' ? (
-                        <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-600">
-                          Plan Gratis
+                      <div className="mt-1.5 space-y-1">
+                        <span
+                          className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${
+                            billingPlanType === 'pro'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {billingPlanType === 'pro' ? 'Plan Pro' : 'Plan Gratis'}
                         </span>
-                      ) : (
-                        <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700">
-                          Plan Pro
-                        </span>
-                      )}
+                        {billingUsage && (
+                          <div className="text-[11px] text-gray-500 space-y-0.5">
+                            <p>
+                              {billingUsage.usedPlaces}/{billingUsage.totalPlaces} lugares usados
+                              {billingUsage.totalPlaces > 0 && (
+                                <>
+                                  {' '}
+                                  ({billingUsage.farmCount}{' '}
+                                  {billingUsage.farmCount === 1 ? 'granja' : 'granjas'},{' '}
+                                  {billingUsage.collaboratorCount}{' '}
+                                  {billingUsage.collaboratorCount === 1 ? 'colab.' : 'colabs.'})
+                                </>
+                              )}
+                            </p>
+                            {billingUsage.totalPlaces > billingUsage.usedPlaces && (
+                              <p className="text-green-600">
+                                {billingUsage.totalPlaces - billingUsage.usedPlaces}{' '}
+                                {billingUsage.totalPlaces - billingUsage.usedPlaces === 1
+                                  ? 'lugar libre'
+                                  : 'lugares libres'}{' '}
+                                para granjas o colaboradores
+                              </p>
+                            )}
+                            {billingUsage.totalPlaces === 0 && (
+                              <p className="text-gray-400">
+                                1 granja incluida. Contacta al admin para mas lugares.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       {impersonatingUser && originalUser && (
                         <p className="mt-1 text-xs font-medium text-yellow-700 bg-yellow-100 rounded px-1 py-0.5">
                           🎭 Impersonando

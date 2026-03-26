@@ -1,45 +1,1378 @@
 'use client'
 
-import { useState } from 'react'
-import AdminActivities from './AdminActivities'
-import AdminAnimals from './AdminAnimals'
-import AdminBreedings from './AdminBreedings'
-import AdminHeader from './AdminHeader'
-import AdminOverview from './AdminOverview'
-import AdminReminders from './AdminReminders'
-import AdminSidebar from './AdminSidebar'
-import AdminUsers from './AdminUsers'
+import {
+  collection,
+  deleteDoc,
+  doc as firestoreDoc,
+  getDocs,
+  query,
+  where,
+  writeBatch,
+} from 'firebase/firestore'
+import Link from 'next/link'
+import { useCallback, useEffect, useState } from 'react'
+import LoadingSpinner from '@/components/LoadingSpinner'
+import { useAuth } from '@/hooks/useAuth'
+import { auth, db } from '@/lib/firebase'
+import { animal_icon, animal_status_labels, animals_types_labels } from '@/types/animals'
+import { sale_status_labels } from '@/types/sales'
+import AdminUserActions from './AdminUserActions'
 
-type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities'
+// ── Types ──
+
+interface BreadcrumbItem {
+  label: string
+  icon?: string
+  key: string
+}
+
+interface CardItem {
+  key: string
+  label: string
+  icon: string
+  value: number | string
+  bg: string
+  text: string
+}
+
+interface DetailRow {
+  key: string
+  label: string
+  icon?: string
+  value: number | string
+  drillable?: boolean
+  meta?: Record<string, any>
+}
+
+interface TableColumn {
+  key: string
+  label: string
+  align?: 'left' | 'right' | 'center'
+  sortable?: boolean
+}
+
+interface TableRow {
+  key: string
+  cells: Record<string, string | number>
+  drillable?: boolean
+  drillLabel?: string
+  drillIcon?: string
+}
+
+interface TableView {
+  columns: TableColumn[]
+  data: TableRow[]
+}
+
+function formatDate(raw: any): string {
+  const d = raw?.toDate?.() || raw
+  if (d instanceof Date && !Number.isNaN(d.getTime())) {
+    // YYYY-MM-DD format sorts correctly as string
+    return d.toISOString().slice(0, 10)
+  }
+  return '—'
+}
+
+// ── Main Component ──
 
 export default function AdminDashboard() {
-  const [activeSection, setActiveSection] = useState<AdminSection>('overview')
+  const { user, logout } = useAuth()
+  const [isLoading, setIsLoading] = useState(true)
+  const [rawData, setRawData] = useState<Record<string, any[]>>({})
+  const [path, setPath] = useState<BreadcrumbItem[]>([])
 
-  const renderSection = () => {
-    switch (activeSection) {
-      case 'overview':
-        return <AdminOverview onSectionChange={setActiveSection} />
-      case 'users':
-        return <AdminUsers />
-      case 'animals':
-        return <AdminAnimals />
-      case 'breedings':
-        return <AdminBreedings />
-      case 'reminders':
-        return <AdminReminders />
-      case 'activities':
-        return <AdminActivities />
-      default:
-        return <AdminOverview onSectionChange={setActiveSection} />
+  // User action modals
+  const [actionUser, setActionUser] = useState<any>(null)
+  const [planUser, setPlanUser] = useState<any>(null)
+  const [planData, setPlanData] = useState<{
+    places: number
+    planType: string
+    actualFarmCount: number
+    actualCollaboratorCount: number
+    usedPlaces: number
+  } | null>(null)
+  const [placesInput, setPlacesInput] = useState(0)
+  const [isSavingPlan, setIsSavingPlan] = useState(false)
+  const [isLoadingPlan, setIsLoadingPlan] = useState(false)
+
+  // Hard delete modal
+  const [deleteFarm, setDeleteFarm] = useState<any>(null)
+  const [isDeletingFarm, setIsDeletingFarm] = useState(false)
+
+  // Fetch all data once
+  useEffect(() => {
+    const fetchAll = async () => {
+      setIsLoading(true)
+      const [
+        usersSnap,
+        animalsSnap,
+        farmsSnap,
+        breedingsSnap,
+        remindersSnap,
+        invitationsSnap,
+        salesSnap,
+        subsSnap,
+      ] = await Promise.all([
+        getDocs(collection(db, 'users')),
+        getDocs(collection(db, 'animals')),
+        getDocs(collection(db, 'farms')),
+        getDocs(collection(db, 'breedingRecords')),
+        getDocs(collection(db, 'reminders')),
+        getDocs(collection(db, 'farmInvitations')),
+        getDocs(collection(db, 'sales')),
+        getDocs(collection(db, 'subscriptions')),
+      ])
+
+      const mapSnap = (snap: any) => snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+
+      // Build places map from subscriptions
+      const subsMap = new Map<string, number>()
+      subsSnap.docs.forEach((d: any) => {
+        const data = d.data()
+        subsMap.set(data.userId ?? d.id, data.places ?? 0)
+      })
+
+      // Inject places into users
+      const usersWithPlaces = mapSnap(usersSnap).map((u: any) => ({
+        ...u,
+        places: subsMap.get(u.id) ?? 0,
+      }))
+
+      setRawData({
+        users: usersWithPlaces,
+        animals: mapSnap(animalsSnap),
+        farms: mapSnap(farmsSnap),
+        breedings: mapSnap(breedingsSnap),
+        reminders: mapSnap(remindersSnap),
+        invitations: mapSnap(invitationsSnap),
+        sales: mapSnap(salesSnap),
+      })
+      setIsLoading(false)
+    }
+    fetchAll()
+  }, [])
+
+  const drillInto = useCallback((item: BreadcrumbItem) => {
+    setPath((prev) => [...prev, item])
+  }, [])
+
+  const goTo = useCallback((index: number) => {
+    setPath((prev) => prev.slice(0, index))
+  }, [])
+
+  // ── Plan modal helpers ──
+
+  const openPlanModal = useCallback(async (u: any) => {
+    setPlanUser(u)
+    setPlanData(null)
+    setPlacesInput(0)
+    setIsLoadingPlan(true)
+    try {
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) return
+      const res = await fetch(`/api/admin/billing?userId=${u.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setPlanData(data)
+        setPlacesInput(data.places)
+      }
+    } catch (err) {
+      console.error('Error cargando plan:', err)
+    } finally {
+      setIsLoadingPlan(false)
+    }
+  }, [])
+
+  const handleSavePlan = async () => {
+    if (!planUser) return
+    setIsSavingPlan(true)
+    try {
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) return
+      const res = await fetch('/api/admin/billing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId: planUser.id, places: placesInput }),
+      })
+      if (res.ok) {
+        setPlanUser(null)
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Error al guardar')
+      }
+    } catch (err) {
+      console.error('Error guardando plan:', err)
+      alert('Error al guardar el plan')
+    } finally {
+      setIsSavingPlan(false)
     }
   }
 
+  // Hard delete — eliminar granja y todos sus datos permanentemente
+  const handleHardDelete = async (farmId: string) => {
+    setIsDeletingFarm(true)
+    try {
+      const collections = ['animals', 'breedingRecords', 'reminders', 'sales', 'farmInvitations']
+      for (const col of collections) {
+        const snap = await getDocs(query(collection(db, col), where('farmId', '==', farmId)))
+        // Batch delete in groups of 500
+        const batch = writeBatch(db)
+        let count = 0
+        for (const d of snap.docs) {
+          batch.delete(d.ref)
+          count++
+          if (count >= 499) {
+            await batch.commit()
+            count = 0
+          }
+        }
+        if (count > 0) await batch.commit()
+      }
+      // Delete the farm doc
+      await deleteDoc(firestoreDoc(db, 'farms', farmId))
+
+      // Refresh data
+      setDeleteFarm(null)
+      // Re-fetch all data
+      const farmsSnap = await getDocs(collection(db, 'farms'))
+      const mapSnap = (snap: any) => snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+      setRawData((prev) => ({ ...prev, farms: mapSnap(farmsSnap) }))
+    } catch (err) {
+      console.error('Error eliminando granja:', err)
+      alert('Error al eliminar la granja')
+    } finally {
+      setIsDeletingFarm(false)
+    }
+  }
+
+  // ── Table builders ──
+
+  const buildAnimalTable = (list: any[]): TableView => ({
+    columns: [
+      { key: 'number', label: 'Arete', sortable: true },
+      { key: 'name', label: 'Nombre', sortable: true },
+      { key: 'type', label: 'Especie', sortable: true },
+      { key: 'stage', label: 'Etapa', sortable: true },
+      { key: 'gender', label: 'Sexo', sortable: true },
+      { key: 'status', label: 'Estado', sortable: true },
+      { key: 'weight', label: 'Peso (kg)', align: 'right', sortable: true },
+      { key: 'createdAt', label: 'Registro', sortable: true },
+      { key: 'updatedAt', label: 'Actualizado', sortable: true },
+    ],
+    data: list.map((a: any) => ({
+      key: a.id,
+      cells: {
+        number: a.animalNumber || '',
+        name: a.name || '',
+        type: animals_types_labels[a.type as keyof typeof animals_types_labels] || a.type || '',
+        stage: a.stage || '',
+        gender: a.gender || '',
+        status:
+          animal_status_labels[a.status as keyof typeof animal_status_labels] ||
+          a.status ||
+          'activo',
+        weight: a.weight ? (Number(a.weight) / 1000).toFixed(1) : '',
+        createdAt: formatDate(a.createdAt),
+        updatedAt: formatDate(a.updatedAt),
+      },
+    })),
+  })
+
+  // ── Summary cards (always visible) ──
+
+  const summaryCards = useCallback((): CardItem[] => {
+    const {
+      users = [],
+      animals = [],
+      farms = [],
+      breedings = [],
+      reminders = [],
+      invitations = [],
+      sales = [],
+    } = rawData
+
+    const activeReminders = reminders.filter((r: any) => !r.completed).length
+    const deletedCount = farms.filter((f: any) => f.deletedAt).length
+    const result: CardItem[] = [
+      {
+        key: 'users',
+        label: 'Usuarios',
+        icon: '👥',
+        value: users.length,
+        bg: 'bg-blue-50',
+        text: 'text-blue-700',
+      },
+      {
+        key: 'farms',
+        label: 'Granjas',
+        icon: '🚜',
+        value: farms.length,
+        bg: 'bg-emerald-50',
+        text: 'text-emerald-700',
+      },
+      {
+        key: 'species',
+        label: 'Especies',
+        icon: '🐾',
+        value: new Set(animals.map((a: any) => a.type)).size,
+        bg: 'bg-green-50',
+        text: 'text-green-700',
+      },
+      {
+        key: 'breedings',
+        label: 'Reproducciones',
+        icon: '💕',
+        value: breedings.length,
+        bg: 'bg-pink-50',
+        text: 'text-pink-700',
+      },
+      {
+        key: 'reminders',
+        label: 'Recordatorios',
+        icon: '⏰',
+        value: `${activeReminders}/${reminders.length}`,
+        bg: 'bg-yellow-50',
+        text: 'text-yellow-700',
+      },
+      {
+        key: 'invitations',
+        label: 'Invitaciones',
+        icon: '✉️',
+        value: invitations.length,
+        bg: 'bg-purple-50',
+        text: 'text-purple-700',
+      },
+      {
+        key: 'sales',
+        label: 'Ventas',
+        icon: '💲',
+        value: sales.length,
+        bg: 'bg-indigo-50',
+        text: 'text-indigo-700',
+      },
+    ]
+    if (deletedCount > 0) {
+      result.push({
+        key: 'deletions',
+        label: 'Eliminaciones',
+        icon: '🗑️',
+        value: deletedCount,
+        bg: 'bg-red-50',
+        text: 'text-red-700',
+      })
+    }
+    return result
+  }, [rawData])
+
+  // ── Resolve current view based on path ──
+
+  const resolve = useCallback((): {
+    rows?: DetailRow[]
+    table?: TableView
+    title?: string
+    userId?: string
+  } => {
+    const {
+      users = [],
+      animals = [],
+      farms = [],
+      breedings = [],
+      reminders = [],
+      invitations = [],
+      sales = [],
+    } = rawData
+
+    const userMap = new Map(users.map((u: any) => [u.id, u]))
+    const farmMap = new Map(farms.map((f: any) => [f.id, f]))
+
+    if (path.length === 0) {
+      return {}
+    }
+
+    const root = path[0].key
+
+    // ── Users ──
+    if (root === 'users') {
+      if (path.length === 1) {
+        return {
+          title: `Usuarios (${users.length})`,
+          table: {
+            columns: [
+              { key: 'email', label: 'Email', sortable: true },
+              { key: 'plan', label: 'Plan', sortable: true },
+              { key: 'places', label: 'Lugares', align: 'right' as const, sortable: true },
+              { key: 'farms', label: 'Granjas', align: 'right' as const, sortable: true },
+              { key: 'animals', label: 'Animales', align: 'right' as const, sortable: true },
+              { key: 'createdAt', label: 'Registro', sortable: true },
+              { key: 'updatedAt', label: 'Actualizado', sortable: true },
+            ],
+            data: users.map((u: any) => {
+              const userFarms = farms.filter((f: any) => f.ownerId === u.id).length
+              const userAnimals = animals.filter((a: any) => a.farmerId === u.id).length
+              return {
+                key: u.id,
+                drillable: true,
+                drillLabel: u.email || u.id,
+                drillIcon: '👤',
+                cells: {
+                  email: u.email || '',
+                  plan: u.planType === 'pro' ? 'Pro' : 'Free',
+                  places: u.places > 0 ? u.places : '—',
+                  farms: userFarms,
+                  animals: userAnimals,
+                  createdAt: formatDate(u.createdAt),
+                  updatedAt: formatDate(u.updatedAt),
+                },
+              }
+            }),
+          },
+        }
+      }
+      const userId = path[1].key
+      const u = users.find((x: any) => x.id === userId)
+      const userFarms = farms.filter((f: any) => f.ownerId === userId)
+      const userAnimals = animals.filter((a: any) => a.farmerId === userId)
+
+      if (path.length === 2) {
+        // User detail — show info + their farms as drillable rows
+        const rows: DetailRow[] = [
+          { key: 'email', label: 'Email', value: u?.email || '—' },
+          { key: 'farmName', label: 'Nombre granja', value: u?.farmName || '—' },
+          { key: 'totalAnimals', label: 'Total animales', value: userAnimals.length },
+        ]
+
+        for (const farm of userFarms) {
+          const farmAnimalCount = animals.filter((a: any) => a.farmId === farm.id).length
+          const collabCount = farm.collaborators?.length || 0
+          rows.push({
+            key: `farm-${farm.id}`,
+            label: `🚜 ${farm.name || '(sin nombre)'}`,
+            value: `${farmAnimalCount} animales${collabCount > 0 ? ` · ${collabCount} colab.` : ''}`,
+            drillable: true,
+          })
+        }
+
+        if (userFarms.length === 0) {
+          rows.push({ key: 'no-farms', label: 'Sin granjas registradas', value: '—' })
+        }
+
+        return { title: u?.email || userId, rows, userId }
+      }
+
+      // path.length >= 3: drill into a specific farm from user context
+      const farmKey = path[2].key
+      if (farmKey.startsWith('farm-')) {
+        const farmId = farmKey.replace('farm-', '')
+        const farm = farms.find((f: any) => f.id === farmId)
+        const farmAnimals = animals.filter((a: any) => a.farmId === farmId)
+        const farmBreedings = breedings.filter((b: any) => b.farmId === farmId)
+        const farmSales = sales.filter((s: any) => s.farmId === farmId)
+        const farmInvitations = invitations.filter((i: any) => i.farmId === farmId)
+
+        if (path.length === 3) {
+          // Farm detail within user context
+          const speciesSet = new Map<string, number>()
+          for (const a of farmAnimals) {
+            speciesSet.set(a.type, (speciesSet.get(a.type) || 0) + 1)
+          }
+          const rows: DetailRow[] = [
+            {
+              key: 'collabs',
+              label: 'Colaboradores',
+              value: farm?.collaborators?.length || 0,
+              drillable: (farm?.collaborators?.length || 0) > 0,
+            },
+            {
+              key: 'animals',
+              label: 'Todos los animales',
+              value: farmAnimals.length,
+              drillable: farmAnimals.length > 0,
+            },
+            ...Array.from(speciesSet.entries())
+              .sort((a, b) => b[1] - a[1])
+              .map(([type, count]) => ({
+                key: `species-${type}`,
+                label: `${animal_icon[type as keyof typeof animal_icon] || '🐾'} ${animals_types_labels[type as keyof typeof animals_types_labels] || type}`,
+                value: count,
+                drillable: true,
+              })),
+            { key: 'breedings', label: 'Reproducciones', value: farmBreedings.length },
+            { key: 'sales', label: 'Ventas', value: farmSales.length },
+            { key: 'invitations', label: 'Invitaciones', value: farmInvitations.length },
+          ]
+          return { title: farm?.name || farmId, rows }
+        }
+
+        // path.length >= 4: sub-drill within farm
+        const subKey = path[3].key
+        if (subKey === 'collabs') {
+          return {
+            title: 'Colaboradores',
+            rows: (farm?.collaborators || []).map((c: any, i: number) => ({
+              key: `c-${i}`,
+              label: c.email || c.userId,
+              value: c.role,
+            })),
+          }
+        }
+        if (subKey === 'animals' || subKey.startsWith('species-')) {
+          const list =
+            subKey === 'animals'
+              ? farmAnimals
+              : farmAnimals.filter((a: any) => a.type === subKey.replace('species-', ''))
+          const typeLabel =
+            subKey === 'animals'
+              ? 'Animales'
+              : animals_types_labels[
+                  subKey.replace('species-', '') as keyof typeof animals_types_labels
+                ] || subKey
+          return {
+            title: `${typeLabel} (${list.length})`,
+            table: buildAnimalTable(list),
+          }
+        }
+      }
+
+      return { title: u?.email || userId, rows: [] }
+    }
+
+    // ── Farms ──
+    if (root === 'farms') {
+      if (path.length === 1) {
+        return {
+          title: `Granjas (${farms.length})`,
+          table: {
+            columns: [
+              { key: 'name', label: 'Nombre', sortable: true },
+              { key: 'owner', label: 'Dueño', sortable: true },
+              { key: 'animals', label: 'Animales', align: 'right' as const, sortable: true },
+              { key: 'collabs', label: 'Colaboradores', align: 'right' as const, sortable: true },
+              { key: 'createdAt', label: 'Registro', sortable: true },
+              { key: 'updatedAt', label: 'Actualizado', sortable: true },
+            ],
+            data: farms.map((f: any) => {
+              const owner = userMap.get(f.ownerId)
+              return {
+                key: f.id,
+                drillable: true,
+                drillLabel: f.name || '(sin nombre)',
+                drillIcon: '🚜',
+                cells: {
+                  name: f.name || '(sin nombre)',
+                  owner: owner?.email || f.ownerId || '',
+                  animals: animals.filter((a: any) => a.farmId === f.id).length,
+                  collabs: f.collaborators?.length || 0,
+                  createdAt: formatDate(f.createdAt),
+                  updatedAt: formatDate(f.updatedAt),
+                },
+              }
+            }),
+          },
+        }
+      }
+      const farmId = path[1].key
+      const farm = farms.find((f: any) => f.id === farmId)
+      const farmAnimals = animals.filter((a: any) => a.farmId === farmId)
+      const farmBreedings = breedings.filter((b: any) => b.farmId === farmId)
+      const farmSales = sales.filter((s: any) => s.farmId === farmId)
+      const farmInvitations = invitations.filter((i: any) => i.farmId === farmId)
+      const owner = userMap.get(farm?.ownerId)
+
+      if (path.length === 2) {
+        // Farm detail — show categories to drill into
+        const speciesSet = new Map<string, number>()
+        for (const a of farmAnimals) {
+          speciesSet.set(a.type, (speciesSet.get(a.type) || 0) + 1)
+        }
+        const rows: DetailRow[] = [
+          { key: 'owner', label: 'Dueño', value: owner?.email || farm?.ownerId || '—' },
+          {
+            key: 'collabs',
+            label: 'Colaboradores',
+            value: farm?.collaborators?.length || 0,
+            drillable: (farm?.collaborators?.length || 0) > 0,
+          },
+          {
+            key: 'animals',
+            label: 'Animales',
+            value: farmAnimals.length,
+            drillable: farmAnimals.length > 0,
+          },
+          ...Array.from(speciesSet.entries()).map(([type, count]) => ({
+            key: `species-${type}`,
+            label: `${animal_icon[type as keyof typeof animal_icon] || '🐾'} ${animals_types_labels[type as keyof typeof animals_types_labels] || type}`,
+            value: count,
+            drillable: true,
+          })),
+          { key: 'breedings', label: 'Reproducciones', value: farmBreedings.length },
+          {
+            key: 'sales',
+            label: 'Ventas',
+            value: farmSales.length,
+            drillable: farmSales.length > 0,
+          },
+          {
+            key: 'invitations',
+            label: 'Invitaciones',
+            value: farmInvitations.length,
+            drillable: farmInvitations.length > 0,
+          },
+        ]
+        return { title: farm?.name || farmId, rows }
+      }
+
+      const subKey = path[2].key
+      if (subKey === 'collabs') {
+        return {
+          title: 'Colaboradores',
+          rows: (farm?.collaborators || []).map((c: any, i: number) => ({
+            key: `c-${i}`,
+            label: c.email || c.userId,
+            value: c.role,
+          })),
+        }
+      }
+      if (subKey === 'animals' || subKey.startsWith('species-')) {
+        const list =
+          subKey === 'animals'
+            ? farmAnimals
+            : farmAnimals.filter((a: any) => a.type === subKey.replace('species-', ''))
+        const typeLabel =
+          subKey === 'animals'
+            ? 'Animales'
+            : animals_types_labels[
+                subKey.replace('species-', '') as keyof typeof animals_types_labels
+              ] || subKey
+        return {
+          title: `${typeLabel} (${list.length})`,
+          table: buildAnimalTable(list),
+        }
+      }
+      if (subKey === 'sales') {
+        return {
+          title: `Ventas (${farmSales.length})`,
+          rows: farmSales.map((s: any) => ({
+            key: s.id,
+            label: s.buyer || '(sin comprador)',
+            value: sale_status_labels[s.status as keyof typeof sale_status_labels] || s.status,
+            meta: { animals: s.animals?.length || 0, pricePerKg: s.pricePerKg },
+          })),
+        }
+      }
+      if (subKey === 'invitations') {
+        return {
+          title: `Invitaciones (${farmInvitations.length})`,
+          rows: farmInvitations.map((i: any) => ({
+            key: i.id,
+            label: i.email,
+            value: i.status,
+          })),
+        }
+      }
+    }
+
+    // ── Species ──
+    if (root === 'species') {
+      if (path.length === 1) {
+        const speciesMap = new Map<string, number>()
+        for (const a of animals) speciesMap.set(a.type, (speciesMap.get(a.type) || 0) + 1)
+        return {
+          title: `Especies (${speciesMap.size})`,
+          rows: Array.from(speciesMap.entries())
+            .sort((a, b) => b[1] - a[1])
+            .map(([type, count]) => ({
+              key: type,
+              label: animals_types_labels[type as keyof typeof animals_types_labels] || type,
+              icon: animal_icon[type as keyof typeof animal_icon] || '🐾',
+              value: `${count} (${Math.round((count / animals.length) * 100)}%)`,
+              drillable: true,
+            })),
+        }
+      }
+      const type = path[1].key
+      const filtered = animals.filter((a: any) => a.type === type)
+
+      if (path.length === 2) {
+        // Group by farm
+        const byFarm = new Map<string, { name: string; count: number }>()
+        for (const a of filtered) {
+          const farmId = a.farmId || 'sin-granja'
+          const existing = byFarm.get(farmId)
+          if (existing) {
+            existing.count++
+          } else {
+            byFarm.set(farmId, {
+              name: farmMap.get(farmId)?.name || 'Sin granja',
+              count: 1,
+            })
+          }
+        }
+        return {
+          title: `${animals_types_labels[type as keyof typeof animals_types_labels] || type} (${filtered.length})`,
+          rows: Array.from(byFarm.entries())
+            .sort((a, b) => b[1].count - a[1].count)
+            .map(([farmId, { name, count }]) => ({
+              key: farmId,
+              label: name,
+              icon: '🚜',
+              value: count,
+              drillable: true,
+            })),
+        }
+      }
+
+      // path.length >= 3: show animal table for species + farm
+      const farmId = path[2].key
+      const farmAnimals =
+        farmId === 'sin-granja'
+          ? filtered.filter((a: any) => !a.farmId)
+          : filtered.filter((a: any) => a.farmId === farmId)
+      const farmName = farmMap.get(farmId)?.name || 'Sin granja'
+      const typeLabel = animals_types_labels[type as keyof typeof animals_types_labels] || type
+      return {
+        title: `${typeLabel} — ${farmName} (${farmAnimals.length})`,
+        table: buildAnimalTable(farmAnimals),
+      }
+    }
+
+    // ── Invitations ──
+    if (root === 'invitations') {
+      const statusLabels: Record<string, string> = {
+        pending: 'Pendiente',
+        accepted: 'Aceptada',
+        rejected: 'Rechazada',
+        expired: 'Expirada',
+        revoked: 'Revocada',
+      }
+      if (path.length === 1) {
+        const byStatus = new Map<string, number>()
+        for (const i of invitations) byStatus.set(i.status, (byStatus.get(i.status) || 0) + 1)
+        return {
+          title: `Invitaciones (${invitations.length})`,
+          rows: Array.from(byStatus.entries()).map(([status, count]) => ({
+            key: status,
+            label: statusLabels[status] || status,
+            value: count,
+            drillable: true,
+          })),
+        }
+      }
+      const status = path[1].key
+      const filtered = invitations.filter((i: any) => i.status === status)
+      return {
+        title: `${statusLabels[status] || status} (${filtered.length})`,
+        rows: filtered.map((i: any) => ({
+          key: i.id,
+          label: i.email,
+          value: farmMap.get(i.farmId)?.name || i.farmId,
+          meta: { role: i.role },
+        })),
+      }
+    }
+
+    // ── Sales ──
+    if (root === 'sales') {
+      if (path.length === 1) {
+        const byStatus = new Map<string, number>()
+        for (const s of sales) byStatus.set(s.status, (byStatus.get(s.status) || 0) + 1)
+        return {
+          title: `Ventas (${sales.length})`,
+          rows: Array.from(byStatus.entries()).map(([status, count]) => ({
+            key: status,
+            label: sale_status_labels[status as keyof typeof sale_status_labels] || status,
+            value: count,
+            drillable: true,
+          })),
+        }
+      }
+      const status = path[1].key
+      const filtered = sales.filter((s: any) => s.status === status)
+      return {
+        title: `${sale_status_labels[status as keyof typeof sale_status_labels] || status} (${filtered.length})`,
+        rows: filtered.map((s: any) => ({
+          key: s.id,
+          label: `${farmMap.get(s.farmId)?.name || '—'} — ${s.buyer || '(sin comprador)'}`,
+          value: `${s.animals?.length || 0} animales`,
+          meta: { pricePerKg: s.pricePerKg },
+        })),
+      }
+    }
+
+    // ── Breedings / Reminders — simple list ──
+    if (root === 'breedings') {
+      return {
+        title: `Reproducciones (${breedings.length})`,
+        rows: breedings.slice(0, 50).map((b: any) => ({
+          key: b.id,
+          label: farmMap.get(b.farmId)?.name || b.farmId || '—',
+          value: `${b.femaleBreedingInfo?.length || 0} hembras`,
+        })),
+      }
+    }
+    if (root === 'reminders') {
+      const active = reminders.filter((r: any) => !r.completed)
+      return {
+        title: `Recordatorios activos (${active.length}/${reminders.length})`,
+        rows: active.slice(0, 50).map((r: any) => ({
+          key: r.id,
+          label: r.title,
+          value: r.priority || '—',
+        })),
+      }
+    }
+
+    // ── Deletions ──
+    if (root === 'deletions') {
+      const deletedFarmsList = farms.filter((f: any) => f.deletedAt)
+      return {
+        title: `Eliminaciones programadas (${deletedFarmsList.length})`,
+        rows: deletedFarmsList.map((f: any) => {
+          const deletedDate = formatDate(f.deletedAt)
+          const scheduledDate = formatDate(f.scheduledDeletionAt)
+          const owner = userMap.get(f.ownerId)
+          return {
+            key: f.id,
+            label: `🚜 ${f.name || '(sin nombre)'}`,
+            value: `${owner?.email || f.ownerId}`,
+            meta: { deletedDate, scheduledDate },
+          }
+        }),
+      }
+    }
+
+    return {}
+  }, [rawData, path])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+
+  const view = resolve()
+  const cards = summaryCards()
+  const activeRoot = path.length > 0 ? path[0].key : null
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminHeader />
-      <div className="flex">
-        <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
-        <main className="flex-1 p-6">{renderSection()}</main>
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14">
+            <h1 className="text-lg font-semibold text-gray-900">🏪 Panel Administrativo</h1>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-gray-500">{user?.email}</span>
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Admin
+              </span>
+              <Link href="/" className="text-gray-600 hover:text-gray-900 font-medium">
+                Panel
+              </Link>
+              <button onClick={logout} className="text-gray-400 hover:text-gray-600">
+                Salir
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Summary cards — always visible */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+            {cards.map((card) => {
+              const isActive = activeRoot === card.key
+              return (
+                <button
+                  key={card.key}
+                  type="button"
+                  onClick={() => {
+                    if (isActive) {
+                      goTo(0)
+                    } else {
+                      setPath([{ key: card.key, label: card.label, icon: card.icon }])
+                    }
+                  }}
+                  className={`rounded-lg p-3 border text-left transition-all ${
+                    isActive
+                      ? `${card.bg} border-current ring-2 ring-offset-1 shadow-md ${card.text}`
+                      : `${card.bg} border-transparent hover:shadow-sm hover:border-gray-200`
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{card.icon}</span>
+                    <div>
+                      <p className="text-[10px] font-medium text-gray-500">{card.label}</p>
+                      <p className={`text-lg font-bold ${card.text} leading-tight`}>{card.value}</p>
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        {/* Breadcrumbs */}
+        {path.length > 1 && (
+          <nav className="flex items-center gap-1 text-sm mb-4">
+            {path.map((item, i) => (
+              <span key={item.key} className="flex items-center gap-1">
+                {i > 0 && <span className="text-gray-400">/</span>}
+                {i < path.length - 1 ? (
+                  <button
+                    onClick={() => goTo(i + 1)}
+                    className="text-blue-600 hover:text-blue-800"
+                    type="button"
+                  >
+                    {item.icon && <span className="mr-0.5">{item.icon}</span>}
+                    {item.label}
+                  </button>
+                ) : (
+                  <span className="text-gray-900 font-medium">
+                    {item.icon && <span className="mr-0.5">{item.icon}</span>}
+                    {item.label}
+                  </span>
+                )}
+              </span>
+            ))}
+          </nav>
+        )}
+
+        {/* Table view */}
+        {view.table && (
+          <div>
+            {view.title && (
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">{view.title}</h2>
+            )}
+            <SortableTable table={view.table} onDrill={drillInto} />
+          </div>
+        )}
+
+        {/* Detail rows */}
+        {view.rows && !view.table && (
+          <div>
+            {view.title && (
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">{view.title}</h2>
+            )}
+            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <div className="max-h-[60vh] overflow-y-auto">
+                {view.rows.map((row) => (
+                  <div
+                    key={row.key}
+                    onClick={
+                      row.drillable
+                        ? () => drillInto({ key: row.key, label: row.label, icon: row.icon })
+                        : undefined
+                    }
+                    className={`flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0 ${
+                      row.drillable ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      {row.icon && <span className="text-base shrink-0">{row.icon}</span>}
+                      <span className="text-sm text-gray-900 truncate">{row.label}</span>
+                      {row.meta?.role && (
+                        <span className="text-xs text-gray-400 capitalize">
+                          ({String(row.meta.role)})
+                        </span>
+                      )}
+                      {row.meta?.ownerEmail && (
+                        <span className="text-xs text-gray-400">
+                          — {String(row.meta.ownerEmail)}
+                        </span>
+                      )}
+                      {row.meta?.pricePerKg && (
+                        <span className="text-xs text-gray-400">
+                          ${(Number(row.meta.pricePerKg) / 100).toFixed(2)}/kg
+                        </span>
+                      )}
+                      {row.meta?.deletedDate && (
+                        <span className="text-xs text-red-500">
+                          Eliminada: {String(row.meta.deletedDate)} · Expira:{' '}
+                          {String(row.meta.scheduledDate)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-sm text-gray-600">{row.value}</span>
+                      {row.meta?.deletedDate && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const farm = rawData.farms?.find((f: any) => f.id === row.key)
+                            if (farm) setDeleteFarm(farm)
+                          }}
+                          className="px-2 py-1 text-xs font-medium text-red-700 bg-red-100 border border-red-200 rounded hover:bg-red-200 transition-colors cursor-pointer"
+                        >
+                          Eliminar ahora
+                        </button>
+                      )}
+                      {row.drillable && (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          className="w-4 h-4 text-gray-400"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {view.rows.length === 0 && (
+                  <div className="px-4 py-8 text-center text-sm text-gray-500">Sin datos</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* User action buttons */}
+        {view.userId &&
+          (() => {
+            const u = rawData.users?.find((x: any) => x.id === view.userId)
+            if (!u) return null
+            return (
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => setActionUser(u)}
+                  className="px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
+                >
+                  Gestionar usuario
+                </button>
+                <button
+                  onClick={() => openPlanModal(u)}
+                  className="px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  Gestionar Plan
+                </button>
+              </div>
+            )
+          })()}
+      </div>
+
+      {/* Modal acciones de usuario */}
+      {actionUser && (
+        <AdminUserActions
+          user={{
+            id: actionUser.id,
+            email: actionUser.email,
+            farmName: actionUser.farmName || '',
+            roles: actionUser.roles || ['farmer'],
+            createdAt: actionUser.createdAt?.toDate?.() || actionUser.createdAt || new Date(),
+          }}
+          onClose={() => setActionUser(null)}
+        />
+      )}
+
+      {/* Modal gestion de plan */}
+      {planUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Gestionar Plan</h3>
+            <p className="text-sm text-gray-500 mb-4">{planUser.email}</p>
+
+            {isLoadingPlan ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {planData && (
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Uso actual</p>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Granjas:</span>
+                        <span className="font-medium text-gray-900">
+                          {planData.actualFarmCount}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Colaboradores:</span>
+                        <span className="font-medium text-gray-900">
+                          {planData.actualCollaboratorCount}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
+                      <span className="text-gray-500">Lugares en uso:</span>
+                      <span
+                        className={`font-bold ${planData.usedPlaces > planData.places ? 'text-red-600' : 'text-gray-900'}`}
+                      >
+                        {planData.usedPlaces} de {planData.places}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      1 granja incluida gratis. Cada granja extra o colaborador usa 1 lugar.
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Lugares asignados
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={placesInput}
+                    onChange={(e) => setPlacesInput(parseInt(e.target.value, 10) || 0)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {placesInput === 0
+                      ? 'Plan Free: 1 granja, sin colaboradores'
+                      : `Plan Pro: el usuario puede usar ${placesInput} ${placesInput === 1 ? 'lugar' : 'lugares'} para granjas extra o colaboradores`}
+                  </p>
+                </div>
+
+                <div className={`rounded-md p-3 ${placesInput > 0 ? 'bg-green-50' : 'bg-gray-50'}`}>
+                  <p
+                    className={`text-sm font-medium ${placesInput > 0 ? 'text-green-800' : 'text-gray-600'}`}
+                  >
+                    {placesInput > 0
+                      ? `Pro — ${placesInput} ${placesInput === 1 ? 'lugar' : 'lugares'}`
+                      : 'Free — sin lugares extra'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setPlanUser(null)}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+                disabled={isSavingPlan}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSavePlan}
+                disabled={isSavingPlan || isLoadingPlan}
+                className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+              >
+                {isSavingPlan ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal confirmacion eliminacion permanente */}
+      {deleteFarm &&
+        (() => {
+          const deletedDate = deleteFarm.deletedAt?.toDate?.() || new Date(deleteFarm.deletedAt)
+          const scheduledDate =
+            deleteFarm.scheduledDeletionAt?.toDate?.() || new Date(deleteFarm.scheduledDeletionAt)
+          const daysLeft = Math.max(
+            0,
+            Math.ceil((scheduledDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+          )
+          const ownerEmail =
+            rawData.users?.find((u: any) => u.id === deleteFarm.ownerId)?.email ||
+            deleteFarm.ownerId
+
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+                <h3 className="text-lg font-bold text-red-800 mb-1">
+                  Eliminar granja permanentemente
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">{deleteFarm.name}</p>
+
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2 mb-4">
+                  <div className="text-sm space-y-1">
+                    <p>
+                      <span className="text-gray-500">Propietario:</span>{' '}
+                      <span className="font-medium">{ownerEmail}</span>
+                    </p>
+                    <p>
+                      <span className="text-gray-500">Eliminada:</span>{' '}
+                      <span className="font-medium">{deletedDate.toISOString().slice(0, 10)}</span>
+                    </p>
+                    <p>
+                      <span className="text-gray-500">Eliminacion programada:</span>{' '}
+                      <span className="font-medium">
+                        {scheduledDate.toISOString().slice(0, 10)}
+                      </span>
+                    </p>
+                  </div>
+                  {daysLeft > 0 ? (
+                    <p className="text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                      Faltan {daysLeft} {daysLeft === 1 ? 'dia' : 'dias'} para que se cumpla el
+                      plazo
+                    </p>
+                  ) : (
+                    <p className="text-sm font-medium text-red-700 bg-red-100 rounded px-2 py-1">
+                      El plazo ya se cumplio
+                    </p>
+                  )}
+                </div>
+
+                <div className="bg-red-100 border border-red-300 rounded-lg p-3 text-sm text-red-800 mb-4">
+                  <p className="font-medium">Esta accion es irreversible.</p>
+                  <p className="text-xs mt-1">
+                    Se eliminaran permanentemente: la granja, animales, reproducciones, ventas,
+                    gastos, invitaciones y todos los datos asociados.
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setDeleteFarm(null)}
+                    className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer"
+                    disabled={isDeletingFarm}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => handleHardDelete(deleteFarm.id)}
+                    disabled={isDeletingFarm}
+                    className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 cursor-pointer"
+                  >
+                    {isDeletingFarm ? 'Eliminando...' : 'Eliminar permanentemente'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+    </div>
+  )
+}
+
+// ── SortableTable ──
+
+function SortableTable({
+  table,
+  onDrill,
+}: {
+  table: TableView
+  onDrill?: (item: BreadcrumbItem) => void
+}) {
+  const [search, setSearch] = useState('')
+  const [sortKey, setSortKey] = useState<string | null>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }
+
+  const filtered = table.data.filter((row) => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return Object.values(row.cells).some((v) => String(v).toLowerCase().includes(q))
+  })
+
+  const sorted = sortKey
+    ? [...filtered].sort((a, b) => {
+        const av = a.cells[sortKey] ?? ''
+        const bv = b.cells[sortKey] ?? ''
+        const numA = Number(av)
+        const numB = Number(bv)
+        const cmp =
+          !Number.isNaN(numA) && !Number.isNaN(numB) && av !== '' && bv !== ''
+            ? numA - numB
+            : String(av).localeCompare(String(bv), 'es')
+        return sortDir === 'asc' ? cmp : -cmp
+      })
+    : filtered
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      {/* Search */}
+      <div className="px-3 py-2 border-b border-gray-200">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar..."
+          className="w-full sm:w-64 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+        />
+        <span className="ml-2 text-xs text-gray-400">
+          {sorted.length} de {table.data.length}
+        </span>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 sticky top-0">
+            <tr>
+              {table.columns.map((col) => (
+                <th
+                  key={col.key}
+                  onClick={col.sortable ? () => handleSort(col.key) : undefined}
+                  className={`px-3 py-2 text-xs font-medium text-gray-500 whitespace-nowrap ${
+                    col.align === 'right' ? 'text-right' : 'text-left'
+                  } ${col.sortable ? 'cursor-pointer hover:text-gray-700 select-none' : ''}`}
+                >
+                  {col.label}
+                  {sortKey === col.key && (
+                    <span className="ml-1">{sortDir === 'asc' ? '▲' : '▼'}</span>
+                  )}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {sorted.map((row) => (
+              <tr
+                key={row.key}
+                onClick={
+                  row.drillable && onDrill
+                    ? () =>
+                        onDrill({
+                          key: row.key,
+                          label: row.drillLabel || String(Object.values(row.cells)[0]),
+                          icon: row.drillIcon,
+                        })
+                    : undefined
+                }
+                className={`hover:bg-gray-50 transition-colors ${row.drillable ? 'cursor-pointer' : ''}`}
+              >
+                {table.columns.map((col) => (
+                  <td
+                    key={col.key}
+                    className={`px-3 py-1.5 text-gray-700 whitespace-nowrap ${
+                      col.align === 'right' ? 'text-right' : ''
+                    }`}
+                  >
+                    {row.cells[col.key] ?? ''}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            {sorted.length === 0 && (
+              <tr>
+                <td
+                  colSpan={table.columns.length}
+                  className="px-4 py-8 text-center text-sm text-gray-500"
+                >
+                  {search ? 'Sin resultados para la búsqueda' : 'Sin datos'}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   )

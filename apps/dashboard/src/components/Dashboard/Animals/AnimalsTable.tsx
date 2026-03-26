@@ -2,18 +2,17 @@
 
 import { useState } from 'react'
 import AnimalDetailView from '@/components/AnimalDetailView'
+import { Icon, IconName } from '@/components/Icon/icon'
 import { Modal } from '@/components/Modal'
 import { animalAge, formatWeight } from '@/lib/animal-utils'
 import {
   Animal,
   AnimalStatus,
-  animal_stage_colors,
+  animal_gender_config,
+  animal_stage_config,
   animal_status_colors,
   animal_status_labels,
-  animals_stages_labels,
   animals_types_labels,
-  gender_colors,
-  gender_icon,
 } from '@/types/animals'
 
 type SortField =
@@ -127,8 +126,8 @@ const AnimalsTable = ({
           cmp = a.gender.localeCompare(b.gender, 'es')
           break
         case 'stage':
-          cmp = (animals_stages_labels[a.stage] || '').localeCompare(
-            animals_stages_labels[b.stage] || '',
+          cmp = (animal_stage_config[a.stage].label || '').localeCompare(
+            animal_stage_config[b.stage].label || '',
             'es',
           )
           break
@@ -184,7 +183,7 @@ const AnimalsTable = ({
                 className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100 transition-colors"
               >
                 <span className="inline-flex items-center gap-0.5">
-                  Tipo
+                  Especie
                   <SortIcon direction={sortField === 'type' ? sortDirection : null} />
                 </span>
               </th>
@@ -285,22 +284,37 @@ const AnimalsTable = ({
                     {animal.breed || '—'}
                   </td>
                   <td className="px-1 py-1.5 text-sm text-center whitespace-nowrap">
-                    <span className={`font-bold ${gender_colors[animal.gender]}`}>
-                      {gender_icon[animal.gender]}
+                    <span
+                      className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${animal_gender_config[animal.gender].bgColor}`}
+                      title={animal_gender_config[animal.gender].label}
+                    >
+                      <Icon
+                        icon={animal_gender_config[animal.gender].iconName as IconName}
+                        size={3}
+                      />
                     </span>
                   </td>
                   <td className="px-2 py-1.5 text-sm whitespace-nowrap">
                     <span
-                      className={`inline-flex px-1.5 py-0.5 rounded-full text-xs font-medium ${animal_stage_colors[animal.stage]}`}
+                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium ${animal_stage_config[animal.stage].color}`}
                     >
-                      {animals_stages_labels[animal.stage]}
+                      <span>{animal_stage_config[animal.stage].icon}</span>
+                      {animal_stage_config[animal.stage].label}
                     </span>
                   </td>
                   <td className="hidden sm:table-cell px-2 py-1.5 text-sm text-gray-700 whitespace-nowrap">
-                    {animalAge(animal, { format: 'short' })}
+                    <span className="inline-flex items-baseline gap-0.5">
+                      {!animal.birthDate && animal.age ? (
+                        <span className="text-gray-400">~</span>
+                      ) : null}
+                      <span className="tabular-nums text-right min-w-[2ch]">
+                        {animalAge(animal, { format: 'months' })}
+                      </span>
+                      <span className="text-gray-400">m</span>
+                    </span>
                   </td>
                   <td className="hidden md:table-cell px-2 py-1.5 text-sm text-gray-700 whitespace-nowrap">
-                    {weight} kg
+                    {weight === '—' ? '—' : `${weight} kg`}
                   </td>
                   <td className="px-2 py-1.5 text-sm whitespace-nowrap">
                     <span

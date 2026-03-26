@@ -493,6 +493,7 @@ const COLLECTION_LABELS: Record<string, string> = {
   reminders: 'Recordatorios',
   weightRecords: 'Registros de peso',
   farmInvitations: 'Invitaciones',
+  sales: 'Ventas',
 }
 
 const ANIMAL_TYPE_LABELS: Record<string, string> = {
@@ -570,7 +571,7 @@ function ConfirmAnimalsTable({ animals }: { animals: Record<string, unknown>[] }
               <tr>
                 <th className="text-left px-3 py-2 text-gray-600 font-medium">Arete</th>
                 <th className="text-left px-3 py-2 text-gray-600 font-medium">Nombre</th>
-                <th className="text-left px-3 py-2 text-gray-600 font-medium">Tipo</th>
+                <th className="text-left px-3 py-2 text-gray-600 font-medium">Especie</th>
                 <th className="text-left px-3 py-2 text-gray-600 font-medium">Raza</th>
                 <th className="text-left px-3 py-2 text-gray-600 font-medium">Sexo</th>
                 <th className="text-left px-3 py-2 text-gray-600 font-medium">Estado</th>
@@ -640,6 +641,11 @@ function ConfirmOtherCollections({ data, mode }: { data: BackupFile; mode: 'merg
       count: data.weightRecords?.length || 0,
       detail: 'Se crearán como registros nuevos.',
     },
+    {
+      label: 'Ventas',
+      count: data.sales?.length || 0,
+      detail: 'Se crearán como ventas nuevas con referencias actualizadas a los nuevos animales.',
+    },
   ]
 
   const hasData = items.some((it) => it.count > 0)
@@ -703,7 +709,8 @@ const BACKUP_SCHEMA_JSON = `{
       "breedingRecords": 0,
       "reminders": 0,
       "weightRecords": 0,
-      "farmInvitations": 0
+      "farmInvitations": 0,
+      "sales": 0
     }
   },
   "_types": {
@@ -716,7 +723,7 @@ const BACKUP_SCHEMA_JSON = `{
       "type": "oveja | vaca | cabra | cerdo | gallina | perro | gato | equino | otro",
       "gender": "macho | hembra",
       "breed": "string (raza, opcional)",
-      "stage": "cria | engorda | lechera | reproductor | descarte",
+      "stage": "cria | juvenil | engorda | lechera | reproductor | descarte",
       "status": "activo | muerto | vendido | perdido",
       "statusAt": "ISO 8601 (opcional, fecha del cambio de status)",
       "statusNotes": "string (notas sobre el cambio de status, opcional)",
@@ -724,6 +731,7 @@ const BACKUP_SCHEMA_JSON = `{
       "weight": "number en gramos (opcional)",
       "motherId": "string ID animal madre (opcional)",
       "fatherId": "string ID animal padre (opcional)",
+      "batch": "string (lote, opcional)",
       "notes": "string (opcional)",
       "isWeaned": "true | false (opcional)",
       "weanedAt": "ISO 8601 (opcional)",
@@ -796,6 +804,22 @@ const BACKUP_SCHEMA_JSON = `{
       "location": "{ address?, city?, state?, country?, coordinates?: { lat, lng } } (opcional)",
       "createdAt": "ISO 8601",
       "updatedAt": "ISO 8601"
+    },
+    "sale": {
+      "id": "string",
+      "farmId": "string",
+      "farmerId": "string",
+      "animals": "[{ animalId, animalNumber, weight? (gramos) }]",
+      "date": "ISO 8601 (opcional)",
+      "pricePerKg": "number centavos/kg (opcional)",
+      "priceType": "en_pie | en_canal",
+      "buyer": "string (opcional)",
+      "notes": "string (opcional)",
+      "status": "scheduled | pending | completed | cancelled",
+      "createdBy": "string",
+      "updatedBy": "string",
+      "createdAt": "ISO 8601",
+      "updatedAt": "ISO 8601"
     }
   },
   "farm": { },
@@ -803,7 +827,8 @@ const BACKUP_SCHEMA_JSON = `{
   "breedingRecords": [ ],
   "reminders": [ ],
   "weightRecords": [ ],
-  "farmInvitations": [ ]
+  "farmInvitations": [ ],
+  "sales": [ ]
 }`
 
 export default ModalRestoreBackup

@@ -207,7 +207,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
           <span className="sr-only">Abrir acciones</span>
           <Icon icon="more" className="w-5 h-5 text-gray-500" />
         </summary>
-        <div className="absolute left-0 mt-2 w-36 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+        <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded-md shadow-lg z-10">
           <ul className="py-1 text-sm text-gray-700">
             {onEdit ? (
               <li>

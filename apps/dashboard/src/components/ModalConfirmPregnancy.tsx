@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { Animal } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
-import { InputDate } from './inputs/input-date'
+import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Modal } from './Modal'
 
 interface ModalConfirmPregnancyProps {
@@ -41,6 +41,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
 
   const [selectedFemales, setSelectedFemales] = useState<string[]>([])
   const [confirmationDate, setConfirmationDate] = useState(new Date().toISOString().split('T')[0])
+  const [submitting, setSubmitting] = useState(false)
 
   const handleFemaleToggle = (animalNumber: string) => {
     setSelectedFemales((prev) =>
@@ -82,12 +83,15 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
       femaleBreedingInfo: updatedFemaleBreedingInfo,
     }
 
+    setSubmitting(true)
     try {
       await onSubmit(updatedRecord)
       setSelectedFemales([])
       onClose()
     } catch (error) {
       console.error('Error confirmando embarazos:', error)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -105,7 +109,11 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
   }, [selectedAnimal])
 
   return (
-    <Modal isOpen={isOpen} onClose={handleCancel} title="Confirmar Embarazos">
+    <Modal
+      isOpen={isOpen}
+      onClose={handleCancel}
+      title={`Confirmar Embarazos — Monta ${breedingRecord?.breedingId || ''}`}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         {unconfirmedFemales.length === 0 ? (
           <div className="text-center py-8">
@@ -122,12 +130,12 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
           </div>
         ) : (
           <>
-            <InputDate
+            <DatePickerButtons
+              value={confirmationDate}
+              onChange={setConfirmationDate}
               label="Fecha de confirmación"
-              value={new Date()}
-              onChange={(date) => setConfirmationDate(date ? date.toISOString().split('T')[0] : '')}
-              mode="date"
-              helperText={'Esta fecha se usará para calcular el parto esperado'}
+              helperText="Esta fecha se usará para calcular el parto esperado"
+              showToday
             />
 
             {/* Lista de hembras para confirmar */}
@@ -205,22 +213,40 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
               <button
                 type="button"
                 onClick={handleCancel}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                disabled={submitting}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                disabled={isLoading || selectedFemales.length === 0}
-                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                disabled={submitting || selectedFemales.length === 0}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2 cursor-pointer"
               >
-                {isLoading
-                  ? 'Confirmando...'
-                  : selectedFemales.length === 0
-                    ? 'Selecciona hembras'
-                    : `Confirmar ${selectedFemales.length} embarazo${
-                        selectedFemales.length !== 1 ? 's' : ''
-                      }`}
+                {submitting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
+                    </svg>
+                    Confirmando...
+                  </>
+                ) : selectedFemales.length === 0 ? (
+                  'Selecciona hembras'
+                ) : (
+                  `Confirmar ${selectedFemales.length} embarazo${selectedFemales.length !== 1 ? 's' : ''}`
+                )}
               </button>
             </div>
           </>

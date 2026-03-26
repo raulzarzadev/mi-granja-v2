@@ -3,6 +3,10 @@
 import React, { useMemo, useState } from 'react'
 import {
   AnimalRecord,
+  ExpenseCategory,
+  expense_categories,
+  expense_category_icons,
+  expense_category_labels,
   RecordType,
   record_categories,
   record_category_icons,
@@ -12,6 +16,7 @@ import {
 } from '@/types/animals'
 import { RecordFormState } from '@/types/records'
 import DateTimeInput from './inputs/DateTimeInput'
+import { MoneyInput } from './inputs/MoneyInput'
 
 export type { RecordFormState }
 
@@ -28,7 +33,7 @@ const clinicalCategories: ReadonlyArray<AnimalRecord['category']> = [
   'surgery',
 ]
 
-const editableTypes: RecordType[] = ['note', 'health', 'weight', 'birth']
+const editableTypes: RecordType[] = ['note', 'health', 'weight', 'birth', 'expense']
 
 export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }) => {
   const noteCategories = useMemo(() => ['general', 'observation', 'other'] as const, [])
@@ -46,6 +51,7 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
 
   const isClinicalCategory = clinicalCategories.includes(value.category)
   const isWeight = value.type === 'weight'
+  const isExpense = value.type === 'expense'
   const _isBirth = value.type === 'birth'
   const isNoteOrHealth = value.type === 'note' || value.type === 'health'
 
@@ -72,7 +78,7 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
             value={value.type}
             onChange={(e) => {
               const t = e.target.value as RecordType
-              if (t === 'weight' || t === 'birth') {
+              if (t === 'weight' || t === 'birth' || t === 'expense') {
                 onChange({ ...value, type: t, category: 'general' })
               } else {
                 const firstCat = (
@@ -233,6 +239,45 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
         </div>
       </div>
 
+      {/* Expense fields */}
+      {isExpense && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium">Categoría de gasto *</label>
+            <select
+              value={value.expenseCategory}
+              onChange={(e) =>
+                onChange({ ...value, expenseCategory: e.target.value as ExpenseCategory })
+              }
+              className="w-full border rounded-lg px-2 py-1.5 text-sm"
+            >
+              {expense_categories.map((c) => (
+                <option key={c} value={c}>
+                  {expense_category_icons[c]} {expense_category_labels[c]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <MoneyInput
+            label="Monto *"
+            value={value.cost ? Math.round(Number.parseFloat(value.cost) * 100) : null}
+            onChange={(centavos) =>
+              onChange({ ...value, cost: centavos ? (centavos / 100).toString() : '' })
+            }
+          />
+          <div>
+            <label className="block text-sm font-medium">Proveedor</label>
+            <input
+              type="text"
+              value={value.supplier}
+              onChange={(e) => onChange({ ...value, supplier: e.target.value })}
+              className="w-full border rounded-lg px-2 py-1.5 text-sm"
+              placeholder="Nombre del proveedor..."
+            />
+          </div>
+        </div>
+      )}
+
       {/* Collapsible health details */}
       {value.type === 'health' && (
         <div className="border border-gray-200 rounded-lg">
@@ -350,18 +395,13 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
                     className="w-full border rounded-lg px-2 py-1.5 text-sm"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium">
-                    {mode === 'bulk' ? 'Costo por animal' : 'Costo'}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={value.cost}
-                    onChange={(e) => onChange({ ...value, cost: e.target.value })}
-                    className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                  />
-                </div>
+                <MoneyInput
+                  label={mode === 'bulk' ? 'Costo por animal' : 'Costo'}
+                  value={value.cost ? Math.round(Number.parseFloat(value.cost) * 100) : null}
+                  onChange={(centavos) =>
+                    onChange({ ...value, cost: centavos ? (centavos / 100).toString() : '' })
+                  }
+                />
               </div>
             </div>
           )}

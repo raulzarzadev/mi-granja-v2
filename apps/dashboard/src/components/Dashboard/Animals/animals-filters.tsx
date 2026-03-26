@@ -40,10 +40,15 @@ export const initialAnimalFilters: AnimalFilters = {
 }
 
 // Hook personalizado para manejar filtros de animales
-export const useAnimalFilters = () => {
+export const useAnimalFilters = (externalState?: {
+  filters: AnimalFilters
+  setFilters: React.Dispatch<React.SetStateAction<AnimalFilters>>
+}) => {
   const { animals, animalsFiltered, getFarmAnimals, searchExact } = useAnimalCRUD()
   const { breedingRecords } = useBreedingCRUD()
-  const [filters, setFilters] = useState<AnimalFilters>(initialAnimalFilters)
+  const [internalFilters, internalSetFilters] = useState<AnimalFilters>(initialAnimalFilters)
+  const filters = externalState?.filters ?? internalFilters
+  const setFilters = externalState?.setFilters ?? internalSetFilters
   const [statusAnimals, setStatusAnimals] = useState<Animal[]>([])
   const [searchResults, setSearchResults] = useState<Animal[]>([])
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -344,120 +349,138 @@ export const AnimalsFilters = ({
             )}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
-            <select
-              value={filters.status}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, status: e.target.value as AnimalStatus }))
-              }
-              className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                filters.status !== 'activo'
-                  ? 'border-green-500 bg-green-50 text-green-800'
-                  : 'border-gray-300'
-              }`}
-            >
-              {Object.entries(animal_status_labels).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-gray-500">Estado</label>
+              <select
+                value={filters.status}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, status: e.target.value as AnimalStatus }))
+                }
+                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                  filters.status !== 'activo'
+                    ? 'border-green-500 bg-green-50 text-green-800'
+                    : 'border-gray-300'
+                }`}
+              >
+                {Object.entries(animal_status_labels).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <select
-              value={filters.type}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, type: e.target.value as AnimalType | '' }))
-              }
-              className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                filters.type !== ''
-                  ? 'border-green-500 bg-green-50 text-green-800'
-                  : 'border-gray-300'
-              }`}
-            >
-              <option value="">Tipo: Todos</option>
-              {availableTypes.map((key) => (
-                <option key={key} value={key}>
-                  {animals_types_labels[key as AnimalType] || key}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-gray-500">Especie</label>
+              <select
+                value={filters.type}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, type: e.target.value as AnimalType | '' }))
+                }
+                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                  filters.type !== ''
+                    ? 'border-green-500 bg-green-50 text-green-800'
+                    : 'border-gray-300'
+                }`}
+              >
+                <option value="">Todas</option>
+                {availableTypes.map((key) => (
+                  <option key={key} value={key}>
+                    {animals_types_labels[key as AnimalType] || key}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <select
-              value={filters.breed}
-              onChange={(e) => setFilters((prev) => ({ ...prev, breed: e.target.value }))}
-              className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                filters.breed !== ''
-                  ? 'border-green-500 bg-green-50 text-green-800'
-                  : 'border-gray-300'
-              }`}
-            >
-              <option value="">Raza: Todas</option>
-              {availableBreeds.map((breed) => (
-                <option key={breed} value={breed}>
-                  {breed}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-gray-500">Raza</label>
+              <select
+                value={filters.breed}
+                onChange={(e) => setFilters((prev) => ({ ...prev, breed: e.target.value }))}
+                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                  filters.breed !== ''
+                    ? 'border-green-500 bg-green-50 text-green-800'
+                    : 'border-gray-300'
+                }`}
+              >
+                <option value="">Todas</option>
+                {availableBreeds.map((breed) => (
+                  <option key={breed} value={breed}>
+                    {breed}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <select
-              value={filters.stage}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, stage: e.target.value as AnimalStage | '' }))
-              }
-              className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                filters.stage !== ''
-                  ? 'border-green-500 bg-green-50 text-green-800'
-                  : 'border-gray-300'
-              }`}
-            >
-              <option value="">Etapa: Todas</option>
-              {availableStages.map((key) => (
-                <option key={key} value={key}>
-                  {animals_stages_labels[key as AnimalStage] || key}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-gray-500">Etapa</label>
+              <select
+                value={filters.stage}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, stage: e.target.value as AnimalStage | '' }))
+                }
+                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                  filters.stage !== ''
+                    ? 'border-green-500 bg-green-50 text-green-800'
+                    : 'border-gray-300'
+                }`}
+              >
+                <option value="">Todas</option>
+                {Object.entries(animals_stages_labels).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <select
-              value={filters.gender}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, gender: e.target.value as AnimalGender | '' }))
-              }
-              className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                filters.gender !== ''
-                  ? 'border-green-500 bg-green-50 text-green-800'
-                  : 'border-gray-300'
-              }`}
-            >
-              <option value="">Genero: Todos</option>
-              {availableGenders.map((key) => (
-                <option key={key} value={key}>
-                  {animals_genders_labels[key as AnimalGender] || key}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-gray-500">Genero</label>
+              <select
+                value={filters.gender}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, gender: e.target.value as AnimalGender | '' }))
+                }
+                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                  filters.gender !== ''
+                    ? 'border-green-500 bg-green-50 text-green-800'
+                    : 'border-gray-300'
+                }`}
+              >
+                <option value="">Todos</option>
+                {Object.entries(animals_genders_labels).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <select
-              value={filters.breedingStatus}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  breedingStatus: e.target.value as AnimalBreedingStatus | 'libre' | '',
-                }))
-              }
-              className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                filters.breedingStatus !== ''
-                  ? 'border-green-500 bg-green-50 text-green-800'
-                  : 'border-gray-300'
-              }`}
-            >
-              <option value="">Cria: Todos</option>
-              <option value="libre">Libre</option>
-              {Object.entries(breeding_animal_status_labels).map(([key, value]) => (
-                <option key={key} value={key}>
-                  {value}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-gray-500">Reproduccion</label>
+              <select
+                value={filters.breedingStatus}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    breedingStatus: e.target.value as AnimalBreedingStatus | 'libre' | '',
+                  }))
+                }
+                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                  filters.breedingStatus !== ''
+                    ? 'border-green-500 bg-green-50 text-green-800'
+                    : 'border-gray-300'
+                }`}
+              >
+                <option value="">Todos</option>
+                <option value="libre">Libre</option>
+                {Object.entries(breeding_animal_status_labels).map(([key, value]) => (
+                  <option key={key} value={key}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       )}

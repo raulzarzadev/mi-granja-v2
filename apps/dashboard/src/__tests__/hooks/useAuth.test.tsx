@@ -49,12 +49,12 @@ describe('useAuth', () => {
     }
 
     // Verificar que las funciones están definidas
-    if (typeof result.current.login !== 'function') {
-      throw new Error('login should be a function')
+    if (typeof result.current.sendCode !== 'function') {
+      throw new Error('sendCode should be a function')
     }
 
-    if (typeof result.current.register !== 'function') {
-      throw new Error('register should be a function')
+    if (typeof result.current.verifyCode !== 'function') {
+      throw new Error('verifyCode should be a function')
     }
 
     if (typeof result.current.logout !== 'function') {

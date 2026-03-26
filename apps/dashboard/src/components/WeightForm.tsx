@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { WeightRecord } from '@/types'
 import DateTimeInput from './inputs/DateTimeInput'
+import { WeightInput } from './inputs/WeightInput'
 
 interface WeightFormProps {
   animalNumber?: string
@@ -100,23 +101,16 @@ const WeightForm: React.FC<WeightFormProps> = ({
             )}
 
             {/* Peso */}
-            <div>
-              <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-1">
-                Peso (gramos) *
-              </label>
-              <input
-                type="number"
-                id="weight"
-                name="weight"
-                value={formData.weight}
-                onChange={handleChange}
-                step="1"
-                min="0"
-                required
-                placeholder="0.0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
+            <WeightInput
+              label="Peso *"
+              value={formData.weight ? Math.round(Number.parseFloat(formData.weight) * 1000) : null}
+              onChange={(grams) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  weight: grams ? (grams / 1000).toString() : '',
+                }))
+              }
+            />
 
             {/* Fecha */}
             <div>

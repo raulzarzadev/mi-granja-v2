@@ -6,6 +6,7 @@ import { RootState } from '@/features/store'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useModal } from '@/hooks/useModal'
 import { Farm } from '@/types/farm'
+import Button from './buttons/Button'
 import FarmAvatar from './FarmAvatar'
 import { Modal } from './Modal'
 
@@ -31,9 +32,11 @@ const ModalEditFarm: React.FC<ModalEditFarmProps> = ({
     onClose?.()
     modal.closeModal()
   }
-  const { updateFarm } = useFarmCRUD()
+  const { updateFarm, softDeleteFarm } = useFarmCRUD()
   const { user } = useSelector((s: RootState) => s.auth)
   const [isLoading, setIsLoading] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -216,29 +219,91 @@ const ModalEditFarm: React.FC<ModalEditFarmProps> = ({
             </div>
           </div>
 
+          {/* Zona de peligro — solo para el propietario */}
+          {user?.id === farm?.ownerId && (
+            <div className="border border-red-200 rounded-lg p-4 bg-red-50">
+              <h4 className="text-sm font-semibold text-red-800 mb-1">Zona de peligro</h4>
+              {!showDeleteConfirm ? (
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-red-600">
+                    Eliminar esta granja y todos sus datos asociados.
+                  </p>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    color="error"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    disabled={isLoading}
+                  >
+                    Eliminar granja
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="bg-white border border-red-300 rounded-md p-3 text-sm text-red-800">
+                    <p className="font-medium mb-1">Estas seguro?</p>
+                    <p className="text-xs text-red-600">
+                      Se marcara la granja para eliminacion. Tendras <strong>15 dias</strong> para
+                      recuperarla. Despues de ese plazo, se eliminaran permanentemente todos los
+                      datos: animales, reproducciones, ventas, gastos y colaboradores.
+                    </p>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      color="neutral"
+                      onClick={() => setShowDeleteConfirm(false)}
+                      disabled={isDeleting}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="filled"
+                      color="error"
+                      disabled={isDeleting}
+                      onClick={async () => {
+                        if (!farm?.id) return
+                        setIsDeleting(true)
+                        try {
+                          await softDeleteFarm(farm.id)
+                          closeModal()
+                        } catch (e) {
+                          console.error('Error eliminando granja:', e)
+                        } finally {
+                          setIsDeleting(false)
+                        }
+                      }}
+                    >
+                      {isDeleting ? 'Eliminando...' : 'Si, eliminar granja'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              color="neutral"
+              size="sm"
               onClick={closeModal}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
               disabled={isLoading}
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="filled"
+              color="primary"
+              size="sm"
               disabled={isLoading || !formData.name.trim()}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium flex items-center gap-2 disabled:opacity-50"
             >
-              {isLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Guardando...
-                </>
-              ) : (
-                'Guardar Cambios'
-              )}
-            </button>
+              {isLoading ? 'Guardando...' : 'Guardar Cambios'}
+            </Button>
           </div>
         </form>
       </Modal>

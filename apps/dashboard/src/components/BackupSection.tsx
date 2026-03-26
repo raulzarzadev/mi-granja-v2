@@ -45,6 +45,7 @@ function formatCounts(counts: Record<string, number>): string {
   if (counts.reminders) parts.push(`${counts.reminders} recordatorios`)
   if (counts.weightRecords) parts.push(`${counts.weightRecords} pesos`)
   if (counts.farmInvitations) parts.push(`${counts.farmInvitations} invitaciones`)
+  if (counts.sales) parts.push(`${counts.sales} ventas`)
   return parts.join(', ') || 'Sin datos'
 }
 

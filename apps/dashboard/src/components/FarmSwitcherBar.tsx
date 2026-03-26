@@ -7,18 +7,28 @@ import { useBilling } from '@/hooks/useBilling'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 import { useMyInvitations } from '@/hooks/useMyInvitations'
-import { collaborator_roles_label, FarmCollaborator } from '@/types/collaborators'
 import { Farm } from '@/types/farm'
+import Button from './buttons/Button'
 import FarmAvatar from './FarmAvatar'
 import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditFarm from './ModalEditFarm'
+import MyRole from './MyRole'
 
 const FarmSwitcherBar: React.FC = () => {
-  const { currentFarm, switchFarm, loadUserFarms, myFarms, invitationFarms } = useFarmCRUD()
+  const {
+    currentFarm,
+    switchFarm,
+    loadUserFarms,
+    myFarms,
+    invitationFarms,
+    deletedFarms,
+    restoreFarm,
+  } = useFarmCRUD()
+  const [isRestoring, setIsRestoring] = useState<string | null>(null)
 
   const myInv = useMyInvitations()
   const { acceptInvitation } = useFarmMembers(undefined)
-  const { usage, canCreateFarm } = useBilling()
+  const { usage } = useBilling()
 
   const { user } = useSelector((s: RootState) => s.auth)
   const billingPlanType = useSelector((s: RootState) => s.billing.planType)
@@ -29,18 +39,6 @@ const FarmSwitcherBar: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const pendingInvs = myInv.getPending()
-  const [acceptedRole, setAcceptedRole] = useState<FarmCollaborator['role'] | null>(null)
-
-  useEffect(() => {
-    if (currentFarm && user && currentFarm.ownerId !== user.id) {
-      const list = myInv.getAccepted()
-      const inv = list.find((i) => i.farmId === currentFarm.id)
-      const nextRole = inv ? inv.role : null
-      setAcceptedRole((prev) => (prev === nextRole ? prev : nextRole))
-    } else {
-      setAcceptedRole((prev) => (prev === null ? prev : null))
-    }
-  }, [currentFarm?.id, user?.id])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -71,14 +69,13 @@ const FarmSwitcherBar: React.FC = () => {
     [switchFarm],
   )
 
-  const availablePlaces = usage ? usage.totalPlaces - usage.usedPlaces : 0
   const isPro = billingPlanType === 'pro'
 
   if (allFarms.length === 0) return null
 
   return (
     <div>
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex justify-center gap-3 my-2 items-center">
         {/* Farm switcher dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
@@ -141,6 +138,7 @@ const FarmSwitcherBar: React.FC = () => {
                         <span className="w-4" />
                       )}
                       <span className="truncate">{farm.name}</span>
+                      <MyRole farm={farm} />
                     </button>
                   ))}
                 </>
@@ -179,11 +177,7 @@ const FarmSwitcherBar: React.FC = () => {
                           <span className="w-4" />
                         )}
                         <span className="truncate">{farm.name}</span>
-                        {farm.invitationMeta?.role && (
-                          <span className="text-xs text-gray-400">
-                            {collaborator_roles_label[farm.invitationMeta.role]}
-                          </span>
-                        )}
+                        <MyRole farm={farm} />
                         {pending && (
                           <span className="ml-auto text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-600 rounded font-medium">
                             Pendiente
@@ -194,78 +188,75 @@ const FarmSwitcherBar: React.FC = () => {
                   })}
                 </>
               )}
-
-              {/* Nueva granja - dentro del dropdown */}
-              <div className="border-t border-gray-100 my-1" />
-              <button
-                onClick={() => {
-                  setDropdownOpen(false)
-                  if (!canCreateFarm()) {
-                    alert(
-                      'Has alcanzado el limite de granjas. Contacta al administrador para obtener mas lugares.',
-                    )
-                    return
-                  }
-                  setShowCreateModal(true)
-                }}
-                className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-green-700 hover:bg-green-50 transition-colors"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                <span>Nueva granja</span>
-              </button>
             </div>
           )}
         </div>
 
         {/* Editar granja (icon) */}
         {currentFarm && user?.id === currentFarm.ownerId && (
-          <button
+          <Button
+            size="icon"
+            variant="ghost"
+            color="primary"
+            icon="edit"
             onClick={() => setShowEditModal(true)}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
             title="Editar granja"
-          >
-            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-              />
-            </svg>
-          </button>
+            className="!h-8 !w-8"
+          />
         )}
 
-        {/* Rol de invitado */}
-        {currentFarm && acceptedRole && user?.id !== currentFarm.ownerId && (
-          <span className="px-2 py-0.5 text-[10px] uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-200 rounded">
-            {collaborator_roles_label[acceptedRole] || acceptedRole}
-          </span>
-        )}
+        {/* Nueva granja */}
+        <Button
+          size="xs"
+          variant="outline"
+          color="success"
+          icon="add"
+          onClick={() => setShowCreateModal(true)}
+        >
+          Nueva granja
+        </Button>
 
-        {/* Badge de plan y lugares - empujado a la derecha */}
+        {/* Indicador de plan y uso */}
         {usage && (
-          <span
-            className={`ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border ${
-              usage.usedPlaces > usage.totalPlaces
-                ? 'bg-red-50 text-red-700 border-red-200'
-                : isPro
-                  ? 'bg-green-50 text-green-700 border-green-200'
-                  : 'bg-gray-50 text-gray-500 border-gray-200'
-            }`}
-          >
-            <span className="font-semibold">{isPro ? 'Pro' : 'Free'}</span>
-            <span className="opacity-30">|</span>
-            <span>
-              {availablePlaces} {availablePlaces === 1 ? 'lugar disponible' : 'lugares disponibles'}
-            </span>
-          </span>
+          <div className="ml-auto flex items-center gap-2">
+            <div
+              className={`inline-flex flex-col items-end px-3 py-1.5 text-xs rounded-lg border ${
+                usage.usedPlaces > usage.totalPlaces
+                  ? 'bg-red-50 text-red-700 border-red-200'
+                  : isPro
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : 'bg-gray-50 text-gray-500 border-gray-200'
+              }`}
+            >
+              {isPro ? (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold">Pro</span>
+                    <span className="opacity-30">|</span>
+                    <span>
+                      {usage.usedPlaces}/{usage.totalPlaces} lugares ocupados
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px] opacity-70">
+                    <span>
+                      {usage.farmCount} {usage.farmCount === 1 ? 'granja' : 'granjas'}
+                    </span>
+                    <span>·</span>
+                    <span>
+                      {usage.collaboratorCount}{' '}
+                      {usage.collaboratorCount === 1 ? 'colaborador' : 'colaboradores'}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold">Free</span>
+                  <span className="opacity-30">|</span>
+                  <span>1 lugar gratis</span>
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
 
@@ -315,6 +306,57 @@ const FarmSwitcherBar: React.FC = () => {
           >
             Cerrar
           </button>
+        </div>
+      )}
+
+      {/* Banner granjas eliminadas */}
+      {deletedFarms.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-3 space-y-2">
+          <p className="text-sm font-medium text-red-800">Granjas marcadas para eliminacion</p>
+          {deletedFarms.map((farm) => {
+            const deletedDate =
+              farm.deletedAt instanceof Date ? farm.deletedAt : new Date(farm.deletedAt as any)
+            const scheduledDate =
+              farm.scheduledDeletionAt instanceof Date
+                ? farm.scheduledDeletionAt
+                : new Date(farm.scheduledDeletionAt as any)
+            const daysLeft = Math.max(
+              0,
+              Math.ceil((scheduledDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+            )
+            return (
+              <div
+                key={farm.id}
+                className="flex items-center justify-between bg-white rounded-md border border-red-100 px-3 py-2"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{farm.name}</p>
+                  <p className="text-xs text-red-600">
+                    Eliminada el {deletedDate.toLocaleDateString('es-MX')} ·{' '}
+                    {daysLeft > 0 ? `${daysLeft} dias para recuperar` : 'Eliminacion pendiente'}
+                  </p>
+                </div>
+                <Button
+                  size="xs"
+                  variant="filled"
+                  color="success"
+                  disabled={isRestoring === farm.id}
+                  onClick={async () => {
+                    setIsRestoring(farm.id)
+                    try {
+                      await restoreFarm(farm.id)
+                    } catch (e) {
+                      console.error(e)
+                    } finally {
+                      setIsRestoring(null)
+                    }
+                  }}
+                >
+                  {isRestoring === farm.id ? 'Restaurando...' : 'Recuperar'}
+                </Button>
+              </div>
+            )
+          })}
         </div>
       )}
 

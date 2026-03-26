@@ -33,27 +33,25 @@ export const useAdminBreedings = (): UseAdminBreedingsReturn => {
           breedingId: data.breedingId || '', // Campo agregado para compatibilidad
           farmerId: data.farmerId,
           maleId: data.maleId,
-          breedingDate: data.breedingDate
-            ? toLocalDateStart(data.breedingDate.toDate())
-            : new Date(),
+          breedingDate: data.breedingDate ? toLocalDateStart(data.breedingDate) : new Date(),
           femaleBreedingInfo:
             data.femaleBreedingInfo?.map(
               (info: {
                 femaleId: string
-                pregnancyConfirmedDate?: { toDate: () => Date }
-                expectedBirthDate?: { toDate: () => Date }
-                actualBirthDate?: { toDate: () => Date }
+                pregnancyConfirmedDate?: unknown
+                expectedBirthDate?: unknown
+                actualBirthDate?: unknown
                 offspring?: string[]
               }) => ({
                 femaleId: info.femaleId,
                 pregnancyConfirmedDate: info.pregnancyConfirmedDate
-                  ? toLocalDateStart(info.pregnancyConfirmedDate.toDate())
+                  ? toLocalDateStart(info.pregnancyConfirmedDate as any)
                   : undefined,
                 expectedBirthDate: info.expectedBirthDate
-                  ? toLocalDateStart(info.expectedBirthDate.toDate())
+                  ? toLocalDateStart(info.expectedBirthDate as any)
                   : undefined,
                 actualBirthDate: info.actualBirthDate
-                  ? toLocalDateStart(info.actualBirthDate.toDate())
+                  ? toLocalDateStart(info.actualBirthDate as any)
                   : undefined,
                 offspring: info.offspring || [],
               }),

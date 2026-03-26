@@ -1,10 +1,13 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useSelector } from 'react-redux'
+import { RootState } from '@/features/store'
 import { useBilling } from '@/hooks/useBilling'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useModal } from '@/hooks/useModal'
 import { Farm } from '@/types/farm'
+import Button from './buttons/Button'
 import { Modal } from './Modal'
 
 /**
@@ -32,7 +35,8 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
   const openModal = modal.openModal
   const closeModal = onClose ?? modal.closeModal
   const { createFarm } = useFarmCRUD()
-  const { canCreateFarm } = useBilling()
+  const { canCreateFarm, usage, planType } = useBilling()
+  const { user } = useSelector((s: RootState) => s.auth)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -107,140 +111,181 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
     }
   }
 
+  const hasPlaces = canCreateFarm()
+
   return (
     <>
       {showTrigger && (
-        <button
-          onClick={() => {
-            if (!canCreateFarm()) {
-              alert(
-                'Has alcanzado el limite de granjas. Contacta al administrador para obtener mas lugares.',
-              )
-              return
-            }
-            openModal()
-          }}
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors"
-        >
-          <span>🚜</span>
+        <Button size="md" variant="filled" color="success" icon="add" onClick={openModal}>
           Crear Mi Granja
-        </button>
+        </Button>
       )}
 
       <Modal isOpen={isOpen} onClose={closeModal} title="Crear Nueva Granja" size="lg">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Nombre de la granja */}
-          <div>
-            <label htmlFor="farmName" className="block text-sm font-medium text-gray-700 mb-2">
-              Nombre de la Granja *
-            </label>
-            <input
-              id="farmName"
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => handleChange('name', e.target.value)}
-              placeholder="Ej: Granja San José"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
+        {!hasPlaces ? (
+          <div className="space-y-4 py-4">
+            <div className="text-center">
+              <span className="text-4xl">🚜</span>
+              <h3 className="text-lg font-semibold text-gray-900 mt-2">
+                No tienes lugares disponibles
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Tu plan actual solo incluye{' '}
+                <strong>
+                  {usage?.totalPlaces ?? 0} {(usage?.totalPlaces ?? 0) === 1 ? 'lugar' : 'lugares'}
+                </strong>{' '}
+                y {usage?.usedPlaces === 1 ? 'esta usando' : 'estan usando'}{' '}
+                <strong>{usage?.usedPlaces ?? 0}</strong>.
+              </p>
+              {usage && (
+                <p className="text-xs text-gray-400 mt-1">
+                  ({usage.farmCount} {usage.farmCount === 1 ? 'granja' : 'granjas'} +{' '}
+                  {usage.collaboratorCount}{' '}
+                  {usage.collaboratorCount === 1 ? 'colaborador' : 'colaboradores'})
+                </p>
+              )}
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+              <p className="font-medium mb-1">Necesitas mas lugares?</p>
+              <p>
+                Cada lugar extra te permite agregar una granja o un colaborador. Solicita mas
+                lugares enviando un correo a{' '}
+                <a
+                  href={`mailto:hola@migranja.app?subject=${encodeURIComponent('Agregar mas lugares a mi plan')}&body=${encodeURIComponent(
+                    `Hola, me gustaria agregar mas lugares a mi plan.\n\n¿Cuantos lugares te gustaria agregar?\nR: \n\n--- Datos de mi cuenta ---\nEmail: ${user?.email || '—'}\nID: ${user?.id || '—'}\nPlan actual: ${planType || 'free'}\nLugares: ${usage?.usedPlaces ?? 0}/${usage?.totalPlaces ?? 0} ocupados\nGranjas: ${usage?.farmCount ?? 0}\nColaboradores: ${usage?.collaboratorCount ?? 0}\n`,
+                  )}`}
+                  className="font-semibold underline hover:text-blue-900"
+                >
+                  hola@migranja.app
+                </a>
+              </p>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button variant="ghost" color="neutral" size="sm" onClick={closeModal}>
+                Cerrar
+              </Button>
+            </div>
           </div>
-
-          {/* Descripción */}
-          <div>
-            <label
-              htmlFor="farmDescription"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Descripción (Opcional)
-            </label>
-            <textarea
-              id="farmDescription"
-              rows={3}
-              value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Describe brevemente tu granja..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-            />
-          </div>
-
-          {/* Ubicación */}
-          <div className="space-y-4">
-            <h3 className="text-md font-medium text-gray-900">Ubicación (Opcional)</h3>
-
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Nombre de la granja */}
             <div>
-              <label htmlFor="farmAddress" className="block text-sm font-medium text-gray-700 mb-1">
-                Dirección
+              <label htmlFor="farmName" className="block text-sm font-medium text-gray-700 mb-2">
+                Nombre de la Granja *
               </label>
               <input
-                id="farmAddress"
+                id="farmName"
                 type="text"
-                value={formData.location.address}
-                onChange={(e) => handleChange('location.address', e.target.value)}
-                placeholder="Dirección completa"
+                required
+                value={formData.name}
+                onChange={(e) => handleChange('name', e.target.value)}
+                placeholder="Ej: Granja San Jose"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Descripción */}
+            <div>
+              <label
+                htmlFor="farmDescription"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Descripcion (Opcional)
+              </label>
+              <textarea
+                id="farmDescription"
+                rows={3}
+                value={formData.description}
+                onChange={(e) => handleChange('description', e.target.value)}
+                placeholder="Describe brevemente tu granja..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+              />
+            </div>
+
+            {/* Ubicación */}
+            <div className="space-y-4">
+              <h3 className="text-md font-medium text-gray-900">Ubicacion (Opcional)</h3>
+
               <div>
-                <label htmlFor="farmCity" className="block text-sm font-medium text-gray-700 mb-1">
-                  Ciudad
+                <label
+                  htmlFor="farmAddress"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Direccion
                 </label>
                 <input
-                  id="farmCity"
+                  id="farmAddress"
                   type="text"
-                  value={formData.location.city}
-                  onChange={(e) => handleChange('location.city', e.target.value)}
-                  placeholder="Ciudad"
+                  value={formData.location.address}
+                  onChange={(e) => handleChange('location.address', e.target.value)}
+                  placeholder="Direccion completa"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
 
-              <div>
-                <label htmlFor="farmState" className="block text-sm font-medium text-gray-700 mb-1">
-                  Estado
-                </label>
-                <input
-                  id="farmState"
-                  type="text"
-                  value={formData.location.state}
-                  onChange={(e) => handleChange('location.state', e.target.value)}
-                  placeholder="Estado"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="farmCity"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Ciudad
+                  </label>
+                  <input
+                    id="farmCity"
+                    type="text"
+                    value={formData.location.city}
+                    onChange={(e) => handleChange('location.city', e.target.value)}
+                    placeholder="Ciudad"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="farmState"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Estado
+                  </label>
+                  <input
+                    id="farmState"
+                    type="text"
+                    value={formData.location.state}
+                    onChange={(e) => handleChange('location.state', e.target.value)}
+                    placeholder="Estado"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Botones */}
-          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={closeModal}
-              disabled={isLoading}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md font-medium transition-colors disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading || !formData.name.trim()}
-              className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Creando...
-                </>
-              ) : (
-                <>
-                  <span>🚜</span>
-                  Crear Granja
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+            {/* Botones */}
+            <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+              <Button
+                type="button"
+                variant="ghost"
+                color="neutral"
+                size="sm"
+                onClick={closeModal}
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                variant="filled"
+                color="success"
+                size="sm"
+                disabled={isLoading || !formData.name.trim()}
+              >
+                {isLoading ? 'Creando...' : 'Crear Granja'}
+              </Button>
+            </div>
+          </form>
+        )}
       </Modal>
     </>
   )

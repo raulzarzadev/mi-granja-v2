@@ -4,7 +4,7 @@ import { Icon, IconName } from '../Icon/icon'
 //options
 
 export const VARIANTS = ['outline', 'ghost', 'filled', 'link'] as const
-export const SIZES = ['icon', 'sm', 'md', 'lg'] as const
+export const SIZES = ['icon', 'sm', 'md', 'lg', 'xs'] as const
 export const COLORS = ['error', 'primary', 'success', 'info', 'warning', 'neutral'] as const
 
 //types
@@ -36,6 +36,7 @@ const Button: React.FC<ButtonProps> = ({
     sm: 'px-3 py-2 text-sm gap-1.5',
     md: 'px-4 py-2.5 text-base gap-2',
     lg: 'px-6 py-3 text-lg gap-2.5',
+    xs: 'px-2 py-1 text-xs gap-1',
   }
 
   const variantClasses: Record<Variant, string> = {
@@ -98,7 +99,8 @@ const Button: React.FC<ButtonProps> = ({
     'select-none active:scale-95',
   ].join(' ')
 
-  const iconSize = size === 'icon' ? 4 : size === 'sm' ? 4 : size === 'md' ? 5 : 6
+  const iconSize =
+    size === 'icon' ? 4 : size === 'sm' ? 4 : size === 'md' ? 5 : size === 'lg' ? 6 : 3
 
   const renderContent = () => {
     if (size === 'icon' && icon) {

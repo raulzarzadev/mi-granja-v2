@@ -5,6 +5,7 @@ import { billingReducer } from './billing/billingSlice'
 import { breedingReducer } from './breeding/breedingSlice'
 import { farmReducer } from './farm/farmSlice'
 import { remindersReducer } from './reminders/remindersSlice'
+import { salesReducer } from './sales/salesSlice'
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     breeding: breedingReducer,
     reminders: remindersReducer,
     farm: farmReducer,
+    sales: salesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

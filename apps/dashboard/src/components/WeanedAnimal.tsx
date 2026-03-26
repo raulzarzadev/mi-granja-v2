@@ -21,7 +21,10 @@ export const WeanedAnimal = ({ animal }: WeanedAnimalProps) => {
 
   if (!animal.birthDate) return null
 
-  const birthDate = toDate(animal.birthDate)
+  const raw = animal.birthDate
+  const birthDate = raw instanceof Date ? raw : new Date(raw as string | number)
+  if (Number.isNaN(birthDate.getTime())) return null
+
   const weaningDays = getWeaningDays(animal)
   const targetWeanDate = addDays(birthDate, weaningDays)
   const daysUntilWean = differenceInCalendarDays(targetWeanDate, new Date())
@@ -67,27 +70,15 @@ export const WeanedAnimal = ({ animal }: WeanedAnimalProps) => {
   return (
     <>
       <div
-        className={`mt-3 p-3 rounded-md border ${statusBg} ${statusBorder} ${statusColor} cursor-pointer hover:opacity-80 transition-opacity`}
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${statusBg} ${statusBorder} ${statusColor} cursor-pointer hover:opacity-80 transition-opacity`}
         onClick={(e) => {
           e.stopPropagation()
           setShowWeanModal(true)
         }}
+        title={`Destete: ${format(targetWeanDate, 'dd/MM/yyyy', { locale: es })}`}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Icon icon="babyBottle" className="text-lg" />
-            <div>
-              <div className="font-semibold text-sm">Destete objetivo</div>
-            </div>
-          </div>
-          <div className="text-xs opacity-75">
-            {format(targetWeanDate, 'dd/MM/yyyy', { locale: es })}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{statusText}</span>
-            <span className="opacity-50">›</span>
-          </div>
-        </div>
+        <Icon icon="babyBottle" className="text-xs" />
+        <span>{statusText}</span>
       </div>
 
       {showWeanModal && (

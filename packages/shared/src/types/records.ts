@@ -1,4 +1,4 @@
-import { AnimalRecord, RecordType } from './animals'
+import { AnimalRecord, ExpenseCategory, RecordType } from './animals'
 
 export type RecordFormState = {
   type: RecordType
@@ -20,4 +20,7 @@ export type RecordFormState = {
   // Campos de peso
   weight: string // gramos como string para el input
   weightUnit: 'kg' | 'lb'
+  // Campos de gasto
+  expenseCategory: ExpenseCategory
+  supplier: string
 }

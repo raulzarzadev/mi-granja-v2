@@ -1,7 +1,10 @@
 'use client'
 
 import React, { useState } from 'react'
+import InventoryTab from '@/components/InventoryTab'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import SalesTab from '@/components/SalesTab'
+import StatisticsTab from '@/components/StatisticsTab'
 import Tabs from '@/components/Tabs'
 import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
@@ -223,6 +226,18 @@ const FarmSection: React.FC = () => {
           </div>
         </div>
       ),
+    },
+    {
+      label: '📊 Estadísticas',
+      content: <StatisticsTab />,
+    },
+    {
+      label: '💲 Ventas',
+      content: <SalesTab />,
+    },
+    {
+      label: '💰 Gastos',
+      content: <InventoryTab />,
     },
     {
       label: '🏗️ Areas',

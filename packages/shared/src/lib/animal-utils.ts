@@ -2,15 +2,15 @@ import { toDate } from 'date-fns'
 import { Animal } from '../types/animals'
 
 /**
- * Calcula la edad de un animal en diferentes formatos
+ * Calcula la edad de un animal en meses
  * @param animal - El animal del que se quiere calcular la edad
  * @param options - Opciones de formato
- * @returns La edad en el formato especificado
+ * @returns La edad formateada
  *
  * Formatos disponibles:
  * - 'months': Devuelve solo el número de meses (ej: 25)
- * - 'short': Formato corto (ej: "2a3m5d", "15m10d", "5d")
- * - 'long': Formato largo (ej: "2 años y 3 meses", "15 meses", "5 días")
+ * - 'short': Formato corto en meses (ej: "25m", "~36m" si es aprox.)
+ * - 'long': Formato largo en meses (ej: "25 meses", "36 meses (aprox.)")
  */
 
 // Sobrecarga: cuando format es 'months', retorna number
@@ -33,7 +33,8 @@ export function animalAge(
   if (!animal.birthDate) {
     if (animal.age) {
       if (format === 'months') return animal.age
-      return `${animal.age} meses (aprox.)`
+      if (format === 'short') return `~${animal.age}m`
+      return `${animal.age} mes${animal.age !== 1 ? 'es' : ''} (aprox.)`
     }
     return format === 'months' ? 0 : 'No registrado'
   }
@@ -44,13 +45,11 @@ export function animalAge(
   // Calcular años, meses y días exactos
   let years = now.getFullYear() - birthDate.getFullYear()
   let months = now.getMonth() - birthDate.getMonth()
-  let days = now.getDate() - birthDate.getDate()
+  const days = now.getDate() - birthDate.getDate()
 
   // Ajustar si los días son negativos
   if (days < 0) {
     months--
-    const lastMonth = new Date(now.getFullYear(), now.getMonth(), 0)
-    days += lastMonth.getDate()
   }
 
   // Ajustar si los meses son negativos
@@ -62,36 +61,13 @@ export function animalAge(
   // Calcular total de meses
   const totalMonths = years * 12 + months
 
-  // Retornar según el formato solicitado
   switch (format) {
     case 'months':
       return totalMonths
-
     case 'short':
-      if (years > 0) {
-        if (months > 0) {
-          return days > 0 ? `${years}a${months}m${days}d` : `${years}a${months}m`
-        } else {
-          return days > 0 ? `${years}a${days}d` : `${years}a`
-        }
-      } else if (months > 0) {
-        return days > 0 ? `${months}m${days}d` : `${months}m`
-      } else {
-        return `${days}d`
-      }
+      return `${totalMonths}m`
     default:
-      if (years > 0) {
-        const yearText = `${years} año${years !== 1 ? 's' : ''}`
-        if (months > 0) {
-          const monthText = `${months} mes${months !== 1 ? 'es' : ''}`
-          return `${yearText} y ${monthText}`
-        }
-        return yearText
-      } else if (months > 0) {
-        return `${months} mes${months !== 1 ? 'es' : ''}`
-      } else {
-        return `${days} día${days !== 1 ? 's' : ''}`
-      }
+      return `${totalMonths} mes${totalMonths !== 1 ? 'es' : ''}`
   }
 }
 
@@ -103,7 +79,7 @@ export function animalAge(
 export function formatWeight(grams: number | string | null | undefined): string | null {
   if (grams == null || grams === '') return null
   const g = typeof grams === 'number' ? grams : Number.parseFloat(String(grams))
-  if (Number.isNaN(g)) return null
+  if (Number.isNaN(g) || g === 0) return null
   const kg = g / 1000
   return kg % 1 === 0 ? kg.toFixed(0) : kg.toFixed(1)
 }

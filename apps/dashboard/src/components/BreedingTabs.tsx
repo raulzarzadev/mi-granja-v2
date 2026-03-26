@@ -1,17 +1,22 @@
 'use client'
 
-import Link from 'next/link'
+import { addDays, differenceInCalendarDays } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import React, { useMemo, useState } from 'react'
+import AnimalBadges from '@/components/AnimalBadges'
 import BirthsWindowSummary from '@/components/BirthsWindowSummary'
 import BreedingCard from '@/components/BreedingCard'
 import BreedingTable from '@/components/BreedingTable'
+import AnimalListView from '@/components/Dashboard/Animals/AnimalListView'
 import GeneticTree from '@/components/GeneticTree'
+import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import ModalBirthForm from '@/components/ModalBirthForm'
 import ModalConfirmPregnancy from '@/components/ModalConfirmPregnancy'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
+import { getWeaningDays } from '@/lib/animalBreedingConfig'
+import { toDate } from '@/lib/dates'
 import { BreedingRecord } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 
@@ -35,6 +40,29 @@ const BreedingTabs: React.FC = () => {
 
   const [selectedAnimal, setSelectedAnimal] = useState<null | string>(null)
   const [montasViewMode, setMontasViewMode] = useState<'cards' | 'table'>('cards')
+  const [search, setSearch] = useState('')
+
+  // Filter breeding records by search text (animal numbers, male)
+  const filteredBreedingRecords = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return breedingRecords
+    return breedingRecords.filter((r) => {
+      const male = animals.find((a) => a.id === r.maleId)
+      const maleNum = male?.animalNumber?.toLowerCase() || ''
+      const maleName = male?.name?.toLowerCase() || ''
+      const femaleNums = r.femaleBreedingInfo
+        .map((f) => {
+          const a = animals.find((an) => an.id === f.femaleId)
+          return `${a?.animalNumber || ''} ${a?.name || ''}`
+        })
+        .join(' ')
+        .toLowerCase()
+      const dateStr = r.breedingDate ? new Date(r.breedingDate).toLocaleDateString() : ''
+      return (
+        maleNum.includes(q) || maleName.includes(q) || femaleNums.includes(q) || dateStr.includes(q)
+      )
+    })
+  }, [breedingRecords, animals, search])
 
   const handleOpenAddBirth: BreedingActionHandlers['onAddBirth'] = (record, femaleId) => {
     setBirthRecord(record)
@@ -51,7 +79,7 @@ const BreedingTabs: React.FC = () => {
   // Lista plana de hembras embarazadas
   const pregnantFemales = useMemo(
     () =>
-      breedingRecords.flatMap((record) =>
+      filteredBreedingRecords.flatMap((record) =>
         record.femaleBreedingInfo
           .filter((f) => f.pregnancyConfirmedDate && !f.actualBirthDate)
           .map((info) => ({
@@ -60,26 +88,46 @@ const BreedingTabs: React.FC = () => {
             animal: animals.find((a) => a.id === info.femaleId),
           })),
       ),
-    [breedingRecords, animals],
+    [filteredBreedingRecords, animals],
   )
   const birthsWindow = getBirthsWindow(14)
   const birthsSummary = getBirthsWindowSummary(14)
 
-  // Partos recientes
-  const recentBirths = useMemo(() => {
-    const daysCutoff = 120
-    const now = Date.now()
-    const msDay = 86400000
-    return breedingRecords.flatMap((record) =>
-      record.femaleBreedingInfo
-        .filter((f) => f.actualBirthDate && f.offspring && f.offspring.length > 0)
-        .map((f) => ({ record, info: f }))
-        .filter(({ info }) => {
-          const d = (info.actualBirthDate as Date).getTime()
-          return now - d <= daysCutoff * msDay
-        }),
-    )
-  }, [breedingRecords])
+  // Crías sin destetar (para tab Destetes), ordenadas por fecha de destete
+  const unweanedOffspring = useMemo(() => {
+    const result: {
+      animal: (typeof animals)[number]
+      motherId: string
+      record: BreedingRecord
+      weanDate: Date | null
+      daysUntilWean: number | null
+    }[] = []
+    for (const record of filteredBreedingRecords) {
+      for (const fi of record.femaleBreedingInfo) {
+        if (!fi.offspring || fi.offspring.length === 0) continue
+        for (const offId of fi.offspring) {
+          const a = animals.find((an) => an.id === offId)
+          if (a && a.stage === 'cria' && a.status !== 'muerto' && a.status !== 'vendido') {
+            let weanDate: Date | null = null
+            let daysUntilWean: number | null = null
+            if (a.birthDate) {
+              const days = getWeaningDays(a)
+              weanDate = addDays(toDate(a.birthDate), days)
+              daysUntilWean = differenceInCalendarDays(weanDate, new Date())
+            }
+            result.push({ animal: a, motherId: fi.femaleId, record, weanDate, daysUntilWean })
+          }
+        }
+      }
+    }
+    // Ordenar: más urgentes primero (daysUntilWean ascendente, nulls al final)
+    return result.sort((a, b) => {
+      if (a.daysUntilWean === null && b.daysUntilWean === null) return 0
+      if (a.daysUntilWean === null) return 1
+      if (b.daysUntilWean === null) return -1
+      return a.daysUntilWean - b.daysUntilWean
+    })
+  }, [filteredBreedingRecords, animals])
 
   // Ordenar montas
   const orderedBreedings = useMemo(() => {
@@ -87,7 +135,7 @@ const BreedingTabs: React.FC = () => {
     const needBirthConfirmation: BreedingRecord[] = []
     const finished: BreedingRecord[] = []
 
-    breedingRecords.forEach((r) => {
+    filteredBreedingRecords.forEach((r) => {
       let hasPendingPregnancyConfirm = false
       let hasPendingBirth = false
       r.femaleBreedingInfo.forEach((f) => {
@@ -109,7 +157,7 @@ const BreedingTabs: React.FC = () => {
       needBirthConfirmation: needBirthConfirmation.sort(sortDesc),
       finished: finished.sort(sortDesc),
     }
-  }, [breedingRecords])
+  }, [filteredBreedingRecords])
 
   const handleRemoveFromBreeding = async (record: BreedingRecord, animalId: string) => {
     if (record.maleId === animalId) {
@@ -137,216 +185,24 @@ const BreedingTabs: React.FC = () => {
     })
   }
 
+  // Producción: animales por etapa (filtrados por search)
+  const prodAnimals = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const alive = animals.filter((a) => {
+      if (a.status === 'muerto' || a.status === 'vendido') return false
+      if (!q) return true
+      const num = a.animalNumber?.toLowerCase() || ''
+      const name = a.name?.toLowerCase() || ''
+      return num.includes(q) || name.includes(q)
+    })
+    return {
+      engorda: alive.filter((a) => a.stage === 'engorda'),
+      juvenil: alive.filter((a) => a.stage === 'juvenil'),
+      reproductor: alive.filter((a) => a.stage === 'reproductor'),
+    }
+  }, [animals, search])
+
   const tabs = [
-    {
-      label: '🤰 Embarazos',
-      badgeCount: pregnantFemales.length,
-      content: (
-        <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-lg font-semibold mb-4">Embarazos Confirmados</h3>
-            {pregnantFemales.length === 0 ? (
-              <p className="text-sm text-gray-500">No hay embarazos confirmados.</p>
-            ) : (
-              <ul className="divide-y">
-                {pregnantFemales.map(({ record, info, animal }) => {
-                  const expected = info.expectedBirthDate ? new Date(info.expectedBirthDate) : null
-                  const daysLeft = expected
-                    ? Math.round((expected.getTime() - Date.now()) / 86400000)
-                    : null
-                  return (
-                    <li
-                      key={record.id + info.femaleId}
-                      className="py-3 flex flex-col sm:flex-row sm:items-center gap-3"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-lg">
-                            {animal?.type === 'oveja'
-                              ? '🐑'
-                              : animal?.type === 'cabra'
-                                ? '🐐'
-                                : animal?.type?.includes('vaca')
-                                  ? '🐄'
-                                  : '🐾'}
-                          </span>
-                          <span className="font-medium">
-                            {animal?.animalNumber || info.femaleId}
-                          </span>
-                          {expected && (
-                            <span className="text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-700">
-                              {expected.toLocaleDateString()} (
-                              {daysLeft !== null
-                                ? daysLeft === 0
-                                  ? 'Hoy'
-                                  : daysLeft > 0
-                                    ? `En ${daysLeft}d`
-                                    : `Hace ${Math.abs(daysLeft)}d`
-                                : '—'}
-                              )
-                            </span>
-                          )}
-                          {info.pregnancyConfirmedDate && (
-                            <span className="text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded">
-                              Confirmado
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1 truncate">
-                          Monta: {record.id}{' '}
-                          {record.breedingDate && (
-                            <>· {new Date(record.breedingDate).toLocaleDateString()}</>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded"
-                          onClick={() => editRecord(record)}
-                        >
-                          Ver monta
-                        </button>
-                        <button
-                          className="text-xs bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1 rounded"
-                          onClick={() => {
-                            setBirthRecord(record)
-                            setBirthFemaleId(info.femaleId)
-                          }}
-                        >
-                          Registrar parto
-                        </button>
-                        <button
-                          className="text-xs bg-red-50 hover:bg-red-100 text-red-700 px-3 py-1 rounded"
-                          onClick={() => handleUnconfirmPregnancy(record, info.femaleId)}
-                        >
-                          Desconfirmar
-                        </button>
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      label: '🐣 Partos',
-      badgeCount: birthsSummary.upcomingCount + birthsSummary.pastDueCount,
-      content: (
-        <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-lg font-semibold mb-4">Proximos / Atrasados</h3>
-            <BirthsWindowSummary
-              pastDue={birthsWindow.pastDue}
-              upcoming={birthsWindow.upcoming}
-              days={birthsSummary.windowDays}
-              animals={animals}
-              onSelectRecord={(r, femaleId) => {
-                setBirthRecord(r)
-                setBirthFemaleId(femaleId)
-              }}
-            />
-          </div>
-          {recentBirths.length > 0 && (
-            <div className="bg-white rounded-lg shadow p-4">
-              <h3 className="text-lg font-semibold mb-4">Ultimos Nacimientos</h3>
-              <ul className="divide-y text-sm">
-                {recentBirths.map(({ record, info }, idx) => {
-                  const date = info.actualBirthDate as Date
-                  const ageDays = Math.floor((Date.now() - date.getTime()) / 86400000)
-                  const ageLabel =
-                    ageDays < 7
-                      ? `${ageDays} dias`
-                      : ageDays < 30
-                        ? `${Math.floor(ageDays / 7)} sem`
-                        : `${Math.floor(ageDays / 30)} mes(es)`
-                  const offspringList = info.offspring || []
-                  return (
-                    <li key={record.id + idx} className="py-2 flex flex-col gap-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-medium">
-                            Hembra{' '}
-                            {animals.find((a) => a.id === info.femaleId)?.animalNumber ||
-                              info.femaleId}
-                          </span>{' '}
-                          <span className="text-gray-500">
-                            · {date.toLocaleDateString()} · {ageLabel}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <button
-                            className="text-xs text-blue-600 hover:underline"
-                            onClick={() => editRecord(record)}
-                          >
-                            Ver monta
-                          </button>
-                        </div>
-                      </div>
-                      {offspringList.length > 0 && (
-                        <div className="flex flex-wrap gap-2 pl-2">
-                          {offspringList.map((offspringId) => {
-                            const a = animals.find((an) => an.id === offspringId)
-                            if (!a) return null
-                            const isWeaned = a.isWeaned
-                            return (
-                              <div
-                                key={offspringId}
-                                className={`flex items-center gap-2 border rounded px-2 py-1 text-xs ${
-                                  isWeaned
-                                    ? 'bg-green-50 border-green-200'
-                                    : 'bg-yellow-50 border-yellow-200'
-                                }`}
-                              >
-                                <span className="font-medium">{a.animalNumber}</span>
-                                <span className="text-[10px] text-gray-500">
-                                  {a.gender === 'macho' ? 'M' : 'H'}
-                                </span>
-                                {!isWeaned && (
-                                  <div className="flex items-center gap-1">
-                                    <button
-                                      className="text-[10px] bg-white border border-green-300 text-green-700 px-2 py-0.5 rounded hover:bg-green-100"
-                                      onClick={() =>
-                                        wean(offspringId, {
-                                          stageDecision: 'engorda',
-                                        })
-                                      }
-                                    >
-                                      Destetar→Engorda
-                                    </button>
-                                    <button
-                                      className="text-[10px] bg-white border border-blue-300 text-blue-700 px-2 py-0.5 rounded hover:bg-blue-100"
-                                      onClick={() =>
-                                        wean(offspringId, {
-                                          stageDecision: 'reproductor',
-                                        })
-                                      }
-                                    >
-                                      Destetar→Repro
-                                    </button>
-                                  </div>
-                                )}
-                                {isWeaned && (
-                                  <span className="text-[10px] text-green-700 flex items-center gap-1">
-                                    Destetado
-                                  </span>
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-          )}
-        </div>
-      ),
-    },
     {
       label: '📑 Montas',
       badgeCount:
@@ -405,20 +261,6 @@ const BreedingTabs: React.FC = () => {
                     </svg>
                   </button>
                 </div>
-                <Link
-                  href="/monta/nueva"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    className="w-4 h-4"
-                  >
-                    <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
-                  </svg>
-                  Registrar Monta
-                </Link>
               </div>
             </div>
 
@@ -436,6 +278,10 @@ const BreedingTabs: React.FC = () => {
                     deleteBreedingRecord(id)
                   }
                 }}
+                onConfirmPregnancy={(record) => {
+                  setConfirmPregnancyRecord(record)
+                  setSelectedAnimal(null)
+                }}
               />
             ) : (
               <>
@@ -447,7 +293,7 @@ const BreedingTabs: React.FC = () => {
                     {orderedBreedings.needPregnancyConfirmation.length > 0 && (
                       <div>
                         <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                          <span>Por confirmar embarazos</span>
+                          <span>Por confirmar gestacion</span>
                           <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
                             {orderedBreedings.needPregnancyConfirmation.length}
                           </span>
@@ -475,7 +321,7 @@ const BreedingTabs: React.FC = () => {
                     {orderedBreedings.needBirthConfirmation.length > 0 && (
                       <div>
                         <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                          <span>Embarazos confirmados (esperando parto)</span>
+                          <span>Partos próximos</span>
                           <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
                             {orderedBreedings.needBirthConfirmation.length}
                           </span>
@@ -536,6 +382,239 @@ const BreedingTabs: React.FC = () => {
       ),
     },
     {
+      label: '🤰 Partos próximos',
+      badgeCount: pregnantFemales.length + birthsSummary.pastDueCount,
+      content: (
+        <div className="space-y-6">
+          {/* Próximos / Atrasados (ventana de 14 días) */}
+          {(birthsWindow.pastDue.length > 0 || birthsWindow.upcoming.length > 0) && (
+            <div className="bg-white rounded-lg shadow p-4">
+              <h3 className="text-lg font-semibold mb-4">Proximos / Atrasados</h3>
+              <BirthsWindowSummary
+                pastDue={birthsWindow.pastDue}
+                upcoming={birthsWindow.upcoming}
+                days={birthsSummary.windowDays}
+                animals={animals}
+                onSelectRecord={(r, femaleId) => {
+                  setBirthRecord(r)
+                  setBirthFemaleId(femaleId)
+                }}
+              />
+            </div>
+          )}
+
+          {/* Todas las hembras embarazadas */}
+          <div className="bg-white rounded-lg shadow p-4">
+            <h3 className="text-lg font-semibold mb-4">Partos próximos</h3>
+            {pregnantFemales.length === 0 ? (
+              <p className="text-sm text-gray-500">No hay partos pendientes.</p>
+            ) : (
+              <ul className="divide-y">
+                {pregnantFemales.map(({ record, info, animal }) => {
+                  const expected = info.expectedBirthDate ? toDate(info.expectedBirthDate) : null
+                  const daysLeft = expected
+                    ? Math.round((expected.getTime() - Date.now()) / 86400000)
+                    : null
+                  return (
+                    <li
+                      key={record.id + info.femaleId}
+                      className="py-3 flex flex-col sm:flex-row sm:items-center gap-3"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-lg">
+                            {animal?.type === 'oveja'
+                              ? '🐑'
+                              : animal?.type === 'cabra'
+                                ? '🐐'
+                                : animal?.type?.includes('vaca')
+                                  ? '🐄'
+                                  : '🐾'}
+                          </span>
+                          <span className="font-medium">
+                            {animal?.animalNumber || info.femaleId}
+                          </span>
+                          {expected && (
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded ${
+                                daysLeft !== null && daysLeft < 0
+                                  ? 'bg-red-100 text-red-700'
+                                  : daysLeft !== null && daysLeft <= 7
+                                    ? 'bg-orange-100 text-orange-700'
+                                    : 'bg-yellow-100 text-yellow-700'
+                              }`}
+                            >
+                              {expected.toLocaleDateString()} (
+                              {daysLeft !== null
+                                ? daysLeft === 0
+                                  ? 'Hoy'
+                                  : daysLeft > 0
+                                    ? `En ${daysLeft}d`
+                                    : `Atrasado ${Math.abs(daysLeft)}d`
+                                : '—'}
+                              )
+                            </span>
+                          )}
+                          {info.pregnancyConfirmedDate && (
+                            <span className="text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded">
+                              Confirmado
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1 truncate">
+                          Monta: {record.id}{' '}
+                          {record.breedingDate && (
+                            <>· {toDate(record.breedingDate).toLocaleDateString()}</>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded"
+                          onClick={() => editRecord(record)}
+                        >
+                          Ver monta
+                        </button>
+                        <button
+                          className="text-xs bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1 rounded"
+                          onClick={() => {
+                            setBirthRecord(record)
+                            setBirthFemaleId(info.femaleId)
+                          }}
+                        >
+                          Registrar parto
+                        </button>
+                        <button
+                          className="text-xs bg-red-50 hover:bg-red-100 text-red-700 px-3 py-1 rounded"
+                          onClick={() => handleUnconfirmPregnancy(record, info.femaleId)}
+                        >
+                          Desconfirmar
+                        </button>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      label: '🍼 Destetes',
+      badgeCount: unweanedOffspring.length,
+      content: (
+        <div className="bg-white rounded-lg shadow p-4">
+          {unweanedOffspring.length === 0 ? (
+            <p className="text-sm text-gray-500">No hay crías pendientes de destete.</p>
+          ) : (
+            <ul className="divide-y">
+              {unweanedOffspring.map(({ animal: a, motherId, daysUntilWean, weanDate }) => {
+                const mother = animals.find((an) => an.id === motherId)
+                const isOverdue = daysUntilWean !== null && daysUntilWean < 0
+                const isSoon = daysUntilWean !== null && daysUntilWean >= 0 && daysUntilWean <= 7
+                return (
+                  <li key={a.id} className="py-3 flex items-center gap-3 flex-wrap sm:flex-nowrap">
+                    {/* Click para ver detalles */}
+                    <ModalAnimalDetails
+                      animal={a}
+                      triggerComponent={
+                        <div className="cursor-pointer hover:bg-gray-50 rounded-lg p-1 transition-colors">
+                          <AnimalBadges animal={a} />
+                        </div>
+                      }
+                    />
+
+                    {/* Fecha de destete */}
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${
+                        isOverdue
+                          ? 'bg-red-100 text-red-700'
+                          : isSoon
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {daysUntilWean !== null
+                        ? daysUntilWean === 0
+                          ? 'Hoy'
+                          : daysUntilWean > 0
+                            ? `En ${daysUntilWean}d`
+                            : `Hace ${Math.abs(daysUntilWean)}d`
+                        : 'Sin fecha'}
+                    </span>
+
+                    {/* Madre */}
+                    <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                      M: {mother?.animalNumber || '—'}
+                    </span>
+
+                    {/* Botones de destete */}
+                    <div className="flex items-center gap-2 shrink-0 ml-auto">
+                      <button
+                        className="text-xs bg-orange-50 border border-orange-200 text-orange-700 px-3 py-1.5 rounded-lg hover:bg-orange-100 cursor-pointer transition-colors font-medium"
+                        onClick={() => wean(a.id, { stageDecision: 'engorda' })}
+                      >
+                        Destetar a Engorda
+                      </button>
+                      <button
+                        className="text-xs bg-purple-50 border border-purple-200 text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-100 cursor-pointer transition-colors font-medium"
+                        onClick={() => wean(a.id, { stageDecision: 'reproductor' })}
+                      >
+                        Destetar a Reproductor
+                      </button>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </div>
+      ),
+    },
+    {
+      label: '🏭 Produccion',
+      badgeCount:
+        prodAnimals.engorda.length + prodAnimals.juvenil.length + prodAnimals.reproductor.length,
+      content: (
+        <Tabs
+          tabsId="produccion-tabs"
+          tabs={[
+            {
+              label: '🍖 Engorda',
+              badgeCount: prodAnimals.engorda.length,
+              content: (
+                <AnimalListView
+                  animals={prodAnimals.engorda}
+                  emptyMessage="No hay animales en engorda"
+                />
+              ),
+            },
+            {
+              label: '🌱 Juveniles',
+              badgeCount: prodAnimals.juvenil.length,
+              content: (
+                <AnimalListView
+                  animals={prodAnimals.juvenil}
+                  emptyMessage="No hay animales juveniles"
+                />
+              ),
+            },
+            {
+              label: '🐏 Reproductores',
+              badgeCount: prodAnimals.reproductor.length,
+              content: (
+                <AnimalListView
+                  animals={prodAnimals.reproductor}
+                  emptyMessage="No hay animales reproductores"
+                />
+              ),
+            },
+          ]}
+        />
+      ),
+    },
+    {
       label: '🧬 Genetica',
       content: <GeneticTree animals={animals} />,
     },
@@ -543,6 +622,56 @@ const BreedingTabs: React.FC = () => {
 
   return (
     <>
+      {/* Search + add header */}
+      <div className="bg-white rounded-lg shadow mb-3">
+        <div className="px-4 py-3 flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Buscar por animal, macho, hembra..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="p-2 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 transition-colors"
+              title="Limpiar búsqueda"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="w-5 h-5 text-red-500"
+              >
+                <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+              </svg>
+            </button>
+          )}
+          <button
+            onClick={() => router.push('/monta/nueva')}
+            className="p-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
+            title="Nueva Monta"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-5 h-5"
+            >
+              <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+            </svg>
+          </button>
+        </div>
+        {search && (
+          <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-xs text-gray-500">
+              <span className="font-semibold text-gray-700">{filteredBreedingRecords.length}</span>{' '}
+              de {breedingRecords.length} montas
+            </span>
+          </div>
+        )}
+      </div>
       <Tabs tabs={tabs} tabsId="breeding-tabs" />
       <ModalBirthForm
         isOpen={!!birthRecord}
@@ -573,9 +702,10 @@ const BreedingTabs: React.FC = () => {
                   : (off.weight ?? null)
               const notesParts = [
                 off.color ? `Color: ${off.color}` : null,
-                off.status ? `Estado: ${off.status}` : null,
                 off.healthIssues ? `Salud: ${off.healthIssues}` : null,
               ].filter(Boolean)
+
+              const isDead = off.status === 'muerto'
 
               const createdId = await create({
                 animalNumber: off.animalNumber,
@@ -586,7 +716,8 @@ const BreedingTabs: React.FC = () => {
                 gender: off.gender,
                 motherId: mother.id,
                 fatherId: birthRecord.maleId,
-                notes: notesParts.length ? notesParts.join(' · ') : undefined,
+                ...(notesParts.length > 0 && { notes: notesParts.join(' · ') }),
+                ...(isDead && { status: 'muerto' as const, statusAt: actualDate }),
               })
               if (createdId) offspringIds.push(createdId)
             }
@@ -616,9 +747,6 @@ const BreedingTabs: React.FC = () => {
               date: actualDate,
               notes: form.notes || undefined,
             })
-
-            setBirthRecord(null)
-            setBirthFemaleId(null)
           } catch (e) {
             console.error(e)
           }

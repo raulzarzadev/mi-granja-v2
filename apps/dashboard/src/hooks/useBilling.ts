@@ -61,12 +61,12 @@ export function useBilling() {
   }, [dispatch])
 
   const canCreateFarm = useCallback((): boolean => {
-    if (!billing.usage) return true // Sin datos de uso, permitir (se valida server-side)
+    if (!billing.usage) return false // Sin datos de uso, no permitir hasta que se carguen
     return canAddFarm(billing.usage)
   }, [billing.usage])
 
   const canInviteCollaborator = useCallback((): boolean => {
-    if (!billing.usage) return true
+    if (!billing.usage) return false
     return canAddCollaborator(billing.usage)
   }, [billing.usage])
 

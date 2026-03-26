@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "NEXT_PUBLIC_USE_EMULATOR=true next dev --turbopack",
+    "dev:portless": "NEXT_PUBLIC_USE_EMULATOR=true portless dashboard next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "biome check .",

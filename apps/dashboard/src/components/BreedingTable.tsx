@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useMemo, useState } from 'react'
+import Button from '@/components/buttons/Button'
 import { formatDate } from '@/lib/dates'
 import { Animal, animals_types_labels } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
@@ -13,6 +14,7 @@ interface BreedingTableProps {
   animals: Animal[]
   onSelect: (record: BreedingRecord) => void
   onDelete: (recordIds: string[]) => void
+  onConfirmPregnancy?: (record: BreedingRecord) => void
 }
 
 function getBreedingStatus(record: BreedingRecord) {
@@ -91,7 +93,13 @@ const SortIcon = ({ direction }: { direction: SortDirection | null }) => {
   )
 }
 
-const BreedingTable: React.FC<BreedingTableProps> = ({ records, animals, onSelect, onDelete }) => {
+const BreedingTable: React.FC<BreedingTableProps> = ({
+  records,
+  animals,
+  onSelect,
+  onDelete,
+  onConfirmPregnancy,
+}) => {
   const [sortField, setSortField] = useState<SortField | null>('date')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [isSelectionMode, setIsSelectionMode] = useState(false)
@@ -268,6 +276,11 @@ const BreedingTable: React.FC<BreedingTableProps> = ({ records, animals, onSelec
               <th className="hidden sm:table-cell px-2 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Crias
               </th>
+              {!isSelectionMode && (
+                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wider text-right">
+                  Acciones
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -325,6 +338,49 @@ const BreedingTable: React.FC<BreedingTableProps> = ({ records, animals, onSelec
                   <td className="hidden sm:table-cell px-2 py-1.5 text-sm text-gray-700 whitespace-nowrap">
                     {status.totalOffspring > 0 ? status.totalOffspring : '-'}
                   </td>
+                  {!isSelectionMode && (
+                    <td className="px-2 py-1.5 text-right whitespace-nowrap">
+                      <div
+                        className="inline-flex items-center gap-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          color="primary"
+                          icon="edit"
+                          onClick={() => onSelect(record)}
+                          title="Editar monta"
+                        />
+                        {onConfirmPregnancy && status.pending > 0 && (
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="success"
+                            icon="pregnant"
+                            onClick={() => onConfirmPregnancy(record)}
+                            title="Registrar embarazo"
+                          />
+                        )}
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          color="error"
+                          icon="delete"
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                '¿Eliminar esta monta? Esta accion no se puede deshacer.',
+                              )
+                            ) {
+                              onDelete([record.id])
+                            }
+                          }}
+                          title="Eliminar monta"
+                        />
+                      </div>
+                    </td>
+                  )}
                 </tr>
               )
             })}

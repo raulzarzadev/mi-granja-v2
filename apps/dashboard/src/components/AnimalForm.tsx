@@ -7,7 +7,6 @@ import { z } from 'zod'
 import { useZodForm } from '@/hooks/useZodForm'
 import {
   Animal,
-  AnimalStage,
   AnimalType,
   animal_icon,
   animal_statuses,
@@ -16,10 +15,12 @@ import {
   animals_types,
   breeding_animal_status,
 } from '@/types/animals'
+import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Form } from './forms/Form'
 import { SelectField } from './forms/SelectField'
+import { StageSelector } from './forms/StageSelector'
 import { TextField } from './forms/TextField'
-import DateTimeInput from './inputs/DateTimeInput'
+import { WeightField } from './inputs/WeightInput'
 
 interface AnimalFormProps {
   onSubmit: (animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>) => void
@@ -38,7 +39,7 @@ const schema = z
     animalNumber: z.string().trim().min(1, 'El ID del animal es requerido'),
     name: z.string().optional(),
     type: z.enum(animals_types, {
-      required_error: 'Selecciona un tipo de animal',
+      required_error: 'Selecciona una especie',
     }),
     stage: z.enum(animals_stages, {
       required_error: 'Selecciona una etapa',
@@ -65,7 +66,7 @@ const schema = z
         },
       ),
     breed: z.string().optional(),
-    birthDate: z.date().nullable().optional(),
+    birthDate: z.string().optional(),
     customWeaningDays: z
       .string()
       .optional()
@@ -84,8 +85,9 @@ const schema = z
   })
   .superRefine((data, ctx) => {
     if (data.birthDate) {
-      const today = new Date()
-      if (data.birthDate > today) {
+      const [y, m, d] = data.birthDate.split('-').map(Number)
+      const parsed = new Date(y, m - 1, d)
+      if (parsed > new Date()) {
         ctx.addIssue({
           path: ['birthDate'],
           code: z.ZodIssueCode.custom,
@@ -124,7 +126,12 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
             ? String(initialData.age)
             : '',
       breed: initialData?.breed ?? '',
-      birthDate: initialData?.birthDate ? toDate(initialData.birthDate) : null,
+      birthDate: initialData?.birthDate
+        ? (() => {
+            const d = toDate(initialData.birthDate)
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+          })()
+        : '',
       customWeaningDays:
         typeof initialData?.customWeaningDays === 'number'
           ? initialData.customWeaningDays.toString()
@@ -170,7 +177,14 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       status: values.status as Animal['status'],
       ...(values.weight ? { weight: Math.round(Number(values.weight) * 1000) } : {}),
       ...(values.age ? { age: Number(values.age) } : {}),
-      ...(values.birthDate ? { birthDate: values.birthDate } : {}),
+      ...(values.birthDate
+        ? {
+            birthDate: (() => {
+              const [y, m, d] = values.birthDate.split('-').map(Number)
+              return new Date(y, m - 1, d)
+            })(),
+          }
+        : {}),
       ...(values.customWeaningDays ? { customWeaningDays: Number(values.customWeaningDays) } : {}),
       ...(values.motherId?.trim() ? { motherId: values.motherId.trim() } : {}),
       ...(values.fatherId?.trim() ? { fatherId: values.fatherId.trim() } : {}),
@@ -186,12 +200,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
     label: `${animal_icon[type]} ${type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')}`,
   }))
 
-  const animalStagesOptions: { value: AnimalStage; label: string }[] = animals_stages.map(
-    (stage) => ({
-      value: stage,
-      label: stage.charAt(0).toUpperCase() + stage.slice(1).replace('_', ' '),
-    }),
-  )
+  const selectedType = form.watch('type')
   return (
     <Form form={form} onSubmit={handleSubmit} className="space-y-4">
       <TextField
@@ -210,7 +219,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
 
       <SelectField
         name="type"
-        label="Tipo de Animal *"
+        label="Especie *"
         options={animalTypeOptions.map((type) => ({
           value: type.value,
           label: type.label,
@@ -226,15 +235,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       />
 
       {/* Etapa */}
-      <SelectField
-        name="stage"
-        label="Etapa *"
-        options={animalStagesOptions.map((stage) => ({
-          value: stage.value,
-          label: stage.label,
-        }))}
-        disabled={isLoading}
-      />
+      <StageSelector name="stage" animalType={selectedType} disabled={isLoading} />
 
       {/* Status */}
 
@@ -261,15 +262,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       />
 
       <div className="grid grid-cols-2 gap-4">
-        <TextField
-          name="weight"
-          type="number"
-          label="Peso (kg)"
-          placeholder="0"
-          min="0"
-          step="0.1"
-          disabled={isLoading}
-        />
+        <WeightField name="weight" label="Peso" disabled={isLoading} />
 
         <TextField
           name="age"
@@ -292,21 +285,19 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
           fieldState: { error?: { message?: string } }
         }) => (
           <div className="space-y-1">
-            <DateTimeInput
-              value={field.value ?? null}
-              onChange={(date) => {
-                field.onChange(date)
-                if (date) {
+            <DatePickerButtons
+              value={field.value ?? ''}
+              onChange={(val) => {
+                field.onChange(val)
+                if (val) {
+                  const [y, m] = val.split('-').map(Number)
                   const today = new Date()
-                  const monthsDiff =
-                    (today.getFullYear() - date.getFullYear()) * 12 +
-                    (today.getMonth() - date.getMonth())
+                  const monthsDiff = (today.getFullYear() - y) * 12 + (today.getMonth() + 1 - m)
                   form.setValue('age', Math.max(0, monthsDiff).toString())
                 }
               }}
               label="Fecha de Nacimiento"
-              type="datetime"
-              disabled={isLoading}
+              showToday
             />
             {fieldState.error?.message ? (
               <p className="text-xs text-red-600">{fieldState.error.message}</p>

@@ -6,10 +6,19 @@ import AnimalRecordsSection from '@/components/AnimalRecordsSection'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { animalAge } from '@/lib/animal-utils'
-import { formatDate } from '@/lib/dates'
-import { Animal } from '@/types/animals'
-import { AnimalDetailRow } from './AnimalCard'
-import ButtonConfirm from './buttons/ButtonConfirm'
+import { formatDate, fromNow, toDate } from '@/lib/dates'
+import {
+  Animal,
+  animal_gender_config,
+  animal_icon,
+  animal_stage_config,
+  animal_stage_descriptions,
+  animal_status_colors,
+  animal_status_icons,
+  animal_status_labels,
+  animals_types_labels,
+} from '@/types/animals'
+import { Icon } from './Icon/icon'
 import ModalEditAnimal from './ModalEditAnimal'
 
 interface AnimalDetailViewProps {
@@ -20,7 +29,7 @@ interface AnimalDetailViewProps {
  * Vista detallada de un animal individual
  */
 const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal }) => {
-  const { animals: allAnimals, remove: deleteAnimal, markStatus, markFound } = useAnimalCRUD()
+  const { animals: allAnimals } = useAnimalCRUD()
 
   const getMother = () => {
     if (!animal.motherId) return null
@@ -32,156 +41,266 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal }) => {
     return allAnimals.find((a) => a.id === animal.fatherId || a.animalNumber === animal.fatherId)
   }
 
+  /** Computes the most recent weight record across both record sources */
+  const getLastWeight = (): { kg: number; date: Date } | null => {
+    const weightFromRecords = [...(animal.records || [])]
+      .filter((r) => r.type === 'weight')
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+
+    const weightFromEntries = [...(animal.weightRecords || [])].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    )[0]
+
+    if (weightFromRecords && weightFromEntries) {
+      const rDate = new Date(weightFromRecords.date).getTime()
+      const eDate = new Date(weightFromEntries.date).getTime()
+      if (rDate >= eDate) {
+        const match = weightFromRecords.title.match(/^([\d.]+)/)
+        if (match) return { kg: parseFloat(match[1]), date: new Date(weightFromRecords.date) }
+      } else {
+        return { kg: weightFromEntries.weight / 1000, date: new Date(weightFromEntries.date) }
+      }
+    } else if (weightFromRecords) {
+      const match = weightFromRecords.title.match(/^([\d.]+)/)
+      if (match) return { kg: parseFloat(match[1]), date: new Date(weightFromRecords.date) }
+    } else if (weightFromEntries) {
+      return { kg: weightFromEntries.weight / 1000, date: new Date(weightFromEntries.date) }
+    }
+
+    return null
+  }
+
+  const lastWeight = getLastWeight()
+  const mother = getMother()
+  const father = getFather()
+  const stageDesc = animal_stage_descriptions[animal.stage]
+  const speciesInfo = stageDesc?.speciesInfo?.[animal.type]
+  const effectiveStatus = animal.status ?? 'activo'
+
+  /** Computes age label with optional end-date context for dead/sold animals */
+  const getAgeLabel = (): React.ReactNode => {
+    if (animal.status === 'muerto' && animal.statusAt) {
+      return (
+        <>
+          {animalAge(animal, { format: 'long', endDate: toDate(animal.statusAt as any) })}
+          <span className="ml-1 text-xs text-gray-400">(al morir)</span>
+        </>
+      )
+    }
+    if (animal.status === 'vendido' && animal.statusAt) {
+      return (
+        <>
+          {animalAge(animal, { format: 'long', endDate: toDate(animal.statusAt as any) })}
+          <span className="ml-1 text-xs text-gray-400">(al vender)</span>
+        </>
+      )
+    }
+    return animalAge(animal, { format: 'long' })
+  }
+
   const tabs = [
     {
       label: '📋 Información',
       content: (
-        <div className="space-y-2">
-          {/* Información básica */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">Datos Básicos</h3>
-              <div className="space-y-2">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Edad</label>
-                  {animal.status === 'muerto' && animal.statusAt ? (
-                    <p className="text-gray-900">
-                      {animalAge(animal, {
-                        format: 'long',
-                        endDate: new Date(animal.statusAt as any),
-                      })}
-                      <span className="ml-1" title="Edad al morir">
-                        💀
+        <div className="space-y-4">
+          {/* Stage description */}
+          {stageDesc && (
+            <p className="text-sm text-gray-500 leading-relaxed">
+              {stageDesc.description}
+              {speciesInfo && <span className="ml-1 text-gray-400">— {speciesInfo}</span>}
+            </p>
+          )}
+
+          {/* Datos section */}
+          <section aria-labelledby="datos-heading">
+            <h3
+              id="datos-heading"
+              className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2"
+            >
+              Datos
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3">
+              <InfoCell label="Especie" value={animals_types_labels[animal.type]} />
+              <InfoCell
+                label="Género"
+                value={
+                  <span
+                    className={`inline-flex items-center gap-1 ${animal_gender_config[animal.gender].color}`}
+                  >
+                    <Icon icon={animal_gender_config[animal.gender].iconName as any} size={4} />
+                    {animal_gender_config[animal.gender].label}
+                  </span>
+                }
+              />
+              <InfoCell label="Edad" value={getAgeLabel()} />
+              <InfoCell
+                label="Nacimiento"
+                value={animal.birthDate ? formatDate(animal.birthDate) : '—'}
+              />
+              <InfoCell label="Raza" value={animal.breed || '—'} />
+              <InfoCell
+                label="Peso actual"
+                value={
+                  lastWeight ? (
+                    <>
+                      {lastWeight.kg.toFixed(1)} kg
+                      <span className="ml-1 text-xs text-gray-400">
+                        ({fromNow(lastWeight.date)})
                       </span>
-                    </p>
-                  ) : animal.status === 'vendido' && animal.statusAt ? (
-                    <p className="text-gray-900">
-                      {animalAge(animal, {
-                        format: 'long',
-                        endDate: new Date(animal.statusAt as any),
-                      })}
-                      <span className="ml-1 text-xs text-gray-400">(al vender)</span>
-                    </p>
+                    </>
                   ) : (
-                    <p className="text-gray-900">{animalAge(animal, { format: 'long' })}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Raza</label>
-                  <p className="text-gray-900">{animal.breed || ''}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Fecha de Nacimiento</label>
-                  <p className="text-gray-900">
-                    {animal.birthDate ? formatDate(animal.birthDate) : 'No registrado'}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Peso Actual</label>
-                  {(() => {
-                    // Buscar último registro de peso en records[] y weightRecords[]
-                    const weightFromRecords = [...(animal.records || [])]
-                      .filter((r) => r.type === 'weight')
-                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
-
-                    const weightFromEntries = [...(animal.weightRecords || [])].sort(
-                      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-                    )[0]
-
-                    // Elegir el más reciente
-                    let lastWeight: { kg: number; date: Date } | null = null
-
-                    if (weightFromRecords && weightFromEntries) {
-                      const rDate = new Date(weightFromRecords.date).getTime()
-                      const eDate = new Date(weightFromEntries.date).getTime()
-                      if (rDate >= eDate) {
-                        const match = weightFromRecords.title.match(/^([\d.]+)/)
-                        if (match)
-                          lastWeight = {
-                            kg: parseFloat(match[1]),
-                            date: new Date(weightFromRecords.date),
-                          }
-                      } else {
-                        lastWeight = {
-                          kg: weightFromEntries.weight / 1000,
-                          date: new Date(weightFromEntries.date),
-                        }
-                      }
-                    } else if (weightFromRecords) {
-                      const match = weightFromRecords.title.match(/^([\d.]+)/)
-                      if (match)
-                        lastWeight = {
-                          kg: parseFloat(match[1]),
-                          date: new Date(weightFromRecords.date),
-                        }
-                    } else if (weightFromEntries) {
-                      lastWeight = {
-                        kg: weightFromEntries.weight / 1000,
-                        date: new Date(weightFromEntries.date),
-                      }
-                    }
-
-                    if (!lastWeight) {
-                      return <p className="text-gray-900">No registrado</p>
-                    }
-
-                    const now = new Date()
-                    const diffMs = now.getTime() - lastWeight.date.getTime()
-                    const diffDays = Math.floor(diffMs / 86400000)
-                    let timeAgo = ''
-                    if (diffDays === 0) timeAgo = 'hoy'
-                    else if (diffDays === 1) timeAgo = 'ayer'
-                    else if (diffDays < 30) timeAgo = `hace ${diffDays}d`
-                    else if (diffDays < 365) timeAgo = `hace ${Math.floor(diffDays / 30)}m`
-                    else timeAgo = `hace ${Math.floor(diffDays / 365)}a`
-
-                    return (
-                      <p className="text-gray-900">
-                        {lastWeight.kg.toFixed(1)} kg
-                        <span className="text-xs text-gray-400 ml-1">({timeAgo})</span>
-                      </p>
-                    )
-                  })()}
-                </div>
-              </div>
+                    '—'
+                  )
+                }
+              />
+              {animal.batch && <InfoCell label="Lote" value={animal.batch} />}
             </div>
+          </section>
 
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">Genealogía</h3>
-              <div className="space-y-2">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Madre</label>
-                  <p className="text-gray-900">{getMother()?.animalNumber || 'No registrado'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Padre</label>
-                  <p className="text-gray-900">{getFather()?.animalNumber || 'No registrado'}</p>
-                </div>
-              </div>
+          {/* Genealogía section */}
+          <section aria-labelledby="genealogia-heading">
+            <h3
+              id="genealogia-heading"
+              className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2"
+            >
+              Genealogía
+            </h3>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <InfoCell
+                label="Madre"
+                value={
+                  mother ? (
+                    <span className="font-medium text-gray-900">{mother.animalNumber}</span>
+                  ) : (
+                    '—'
+                  )
+                }
+              />
+              <InfoCell
+                label="Padre"
+                value={
+                  father ? (
+                    <span className="font-medium text-gray-900">{father.animalNumber}</span>
+                  ) : (
+                    '—'
+                  )
+                }
+              />
             </div>
-          </div>
+          </section>
+
+          {/* Estado adicional — vendido */}
+          {effectiveStatus === 'vendido' && animal.soldInfo && (
+            <section
+              aria-labelledby="venta-heading"
+              className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 space-y-2"
+            >
+              <h3
+                id="venta-heading"
+                className="text-xs font-semibold uppercase tracking-wider text-yellow-700"
+              >
+                Información de venta
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
+                <InfoCell label="Fecha" value={formatDate(animal.soldInfo.date)} muted />
+                {animal.soldInfo.buyer && (
+                  <InfoCell label="Comprador" value={animal.soldInfo.buyer} muted />
+                )}
+                {animal.soldInfo.price != null && (
+                  <InfoCell
+                    label="Precio"
+                    value={`$${(animal.soldInfo.price / 100).toFixed(2)}`}
+                    muted
+                  />
+                )}
+                {animal.soldInfo.weight != null && (
+                  <InfoCell
+                    label="Peso al vender"
+                    value={`${(animal.soldInfo.weight / 1000).toFixed(1)} kg`}
+                    muted
+                  />
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Estado adicional — perdido */}
+          {effectiveStatus === 'perdido' && animal.lostInfo && (
+            <section
+              aria-labelledby="perdido-heading"
+              className="rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 space-y-2"
+            >
+              <h3
+                id="perdido-heading"
+                className="text-xs font-semibold uppercase tracking-wider text-orange-700"
+              >
+                Información de extravío
+              </h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                <InfoCell label="Perdido el" value={formatDate(animal.lostInfo.lostAt)} muted />
+                {animal.lostInfo.foundAt && (
+                  <InfoCell
+                    label="Encontrado el"
+                    value={formatDate(animal.lostInfo.foundAt)}
+                    muted
+                  />
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Estado adicional — destetado */}
+          {animal.isWeaned && animal.weanedAt && (
+            <section
+              aria-labelledby="destete-heading"
+              className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 space-y-2"
+            >
+              <h3
+                id="destete-heading"
+                className="text-xs font-semibold uppercase tracking-wider text-teal-700"
+              >
+                Destete
+              </h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                <InfoCell label="Fecha de destete" value={formatDate(animal.weanedAt)} muted />
+                {animal.weaningDestination && (
+                  <InfoCell
+                    label="Destino"
+                    value={animal.weaningDestination === 'engorda' ? 'Engorda' : 'Reproductor'}
+                    muted
+                  />
+                )}
+              </div>
+            </section>
+          )}
 
           {/* Notas */}
           {animal.notes && (
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Notas</h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-gray-700">{animal.notes}</p>
+            <section aria-labelledby="notas-heading">
+              <h3
+                id="notas-heading"
+                className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2"
+              >
+                Notas
+              </h3>
+              <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-3">
+                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+                  {animal.notes}
+                </p>
               </div>
-            </div>
+            </section>
           )}
 
-          {/* Fechas de registro */}
-          <div className="pt-4 border-t border-gray-100">
-            <div className="grid grid-cols-2 gap-4 text-sm text-gray-500">
-              <div>
-                <span className="font-medium">Registrado:</span>{' '}
-                {formatDate(animal.createdAt, 'dd MMM yy')}
-              </div>
-              <div>
-                <span className="font-medium">Actualizado:</span> {formatDate(animal.updatedAt)}
-              </div>
-            </div>
+          {/* Footer — fechas de registro */}
+          <div className="pt-3 border-t border-gray-100 flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-400">
+            <span>
+              <span className="font-medium text-gray-500">Registrado:</span>{' '}
+              {formatDate(animal.createdAt, 'dd MMM yy')}
+            </span>
+            <span>
+              <span className="font-medium text-gray-500">Actualizado:</span>{' '}
+              {formatDate(animal.updatedAt)}
+            </span>
           </div>
         </div>
       ),
@@ -194,88 +313,66 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal }) => {
       label: '📋 Registros',
       content: <AnimalRecordsSection animal={animal} />,
     },
-    {
-      label: '⚙️ Configuración',
-      content: (
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-gray-900">Configuración</h3>
-          <div className="flex flex-wrap gap-2 items-center">
-            <ModalEditAnimal animal={animal} />
-            <button
-              className="px-3 py-1 text-sm rounded bg-yellow-100 text-yellow-800 border border-yellow-200"
-              onClick={() =>
-                markStatus(animal.id, {
-                  status: 'vendido',
-                  statusNotes: 'Marcado desde configuración',
-                })
-              }
-            >
-              Marcar vendido
-            </button>
-            <button
-              className="px-3 py-1 text-sm rounded bg-gray-200 text-gray-800 border border-gray-300"
-              onClick={() =>
-                markStatus(animal.id, {
-                  status: 'muerto',
-                  statusNotes: 'Marcado desde configuración',
-                })
-              }
-            >
-              Marcar muerto
-            </button>
-            {animal.status === 'perdido' ? (
-              <button
-                className="px-3 py-1 text-sm rounded bg-green-100 text-green-800 border border-green-200"
-                onClick={() => markFound(animal.id)}
-              >
-                Marcar encontrado
-              </button>
-            ) : (
-              <button
-                className="px-3 py-1 text-sm rounded bg-red-100 text-red-800 border border-red-200"
-                onClick={() =>
-                  markStatus(animal.id, {
-                    status: 'perdido',
-                    statusNotes: 'Marcado desde configuración',
-                    lostInfo: { lostAt: new Date() },
-                  })
-                }
-              >
-                Marcar perdido
-              </button>
-            )}
-            <ButtonConfirm
-              openLabel="Eliminar animal"
-              confirmLabel="Eliminar"
-              confirmText="¿Estás seguro de que quieres eliminar este animal? Esta acción no se puede deshacer."
-              onConfirm={() => deleteAnimal(animal.id)}
-              confirmProps={{ color: 'error', icon: 'delete', size: 'sm' }}
-              openProps={{
-                color: 'error',
-                variant: 'ghost',
-                icon: 'delete',
-                size: 'sm',
-              }}
-            />
-          </div>
-        </div>
-      ),
-    },
   ]
+
+  const stageCfg = animal_stage_config[animal.stage]
+  const genderCfg = animal_gender_config[animal.gender]
 
   return (
     <div className="bg-white w-full h-auto">
       {/* Header */}
-      <div className="bg-green-600 text-white p-2 mb-2">
-        <div className="flex items-center justify-between">
-          <AnimalDetailRow animal={animal} />
+      <div className="px-4 pb-3 border-b border-gray-100">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-2xl">{animal_icon[animal.type]}</span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-gray-900 truncate">{animal.animalNumber}</h2>
+                <span
+                  className={`inline-flex items-center justify-center w-5 h-5 rounded-full ${genderCfg.bgColor}`}
+                >
+                  <Icon icon={genderCfg.iconName as any} size={3} />
+                </span>
+              </div>
+              {animal.name && <p className="text-xs text-gray-400 truncate">{animal.name}</p>}
+            </div>
+          </div>
+          <ModalEditAnimal animal={animal} />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${stageCfg.color}`}
+          >
+            {stageCfg.icon} {stageCfg.label}
+          </span>
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${animal_status_colors[effectiveStatus]}`}
+          >
+            {animal_status_icons[effectiveStatus]} {animal_status_labels[effectiveStatus]}
+          </span>
         </div>
       </div>
 
-      {/* Tabs (componente compartido) */}
+      {/* Tabs */}
       <Tabs tabs={tabs} tabsId={`animal-detail-${animal.id}`} />
     </div>
   )
 }
+
+/** Small two-line info cell: label on top, value below */
+interface InfoCellProps {
+  label: string
+  value: React.ReactNode
+  /** Use slightly muted text styling for secondary cards */
+  muted?: boolean
+}
+
+const InfoCell = ({ label, value, muted }: InfoCellProps) => (
+  <div>
+    <dt className="text-xs text-gray-400 mb-0.5">{label}</dt>
+    <dd className={`text-sm font-medium ${muted ? 'text-gray-700' : 'text-gray-900'}`}>{value}</dd>
+  </div>
+)
 
 export default AnimalDetailView

@@ -37,6 +37,18 @@ export function serializeObj<T>(obj: T): T {
     return obj.getTime() as unknown as T
   }
 
+  // Duck-typed Timestamp sin toMillis: { seconds: number, nanoseconds: number }
+  // Ocurre cuando Firestore almacena un mapa en vez de un Timestamp real
+  if (
+    obj &&
+    typeof obj === 'object' &&
+    'seconds' in obj &&
+    typeof (obj as { seconds: unknown }).seconds === 'number' &&
+    !('toMillis' in obj)
+  ) {
+    return ((obj as { seconds: number }).seconds * 1000) as unknown as T
+  }
+
   // Si es un objeto, procesar cada propiedad
   if (typeof obj === 'object') {
     const result: Record<string, unknown> = {}

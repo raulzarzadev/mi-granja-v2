@@ -8,25 +8,29 @@ export const formatDate = (date: Date | null | undefined, stringFormat = 'dd/MM/
   return format(validDate, stringFormat, { locale: es })
 }
 
-export const toDate = (date: string | number | string | Timestamp | Date | null | undefined) => {
+export const toDate = (date: string | number | Timestamp | Date | null | undefined): Date => {
   if (!date) {
     return new Date()
   }
   if (date instanceof Date) return date
+
   if (typeof date === 'string' || typeof date === 'number') {
-    return new Date(date)
+    const d = new Date(date)
+    return Number.isNaN(d.getTime()) ? new Date() : d
   }
   if (date instanceof Timestamp) {
-    return fnsToDate(date.toDate())
+    return date.toDate()
   }
-  if (typeof date === 'string' || typeof date === 'number') {
-    const parsedDate = new Date(date)
-    if (Number.isNaN(parsedDate.getTime())) {
-      throw new Error('Invalid date string or number')
+  // Duck-typed Timestamp ({ seconds, nanoseconds } o { toDate() })
+  if (typeof date === 'object') {
+    if ('toDate' in date && typeof (date as any).toDate === 'function') {
+      return (date as any).toDate()
     }
-    return parsedDate
+    if ('seconds' in date && typeof (date as any).seconds === 'number') {
+      return new Date((date as any).seconds * 1000)
+    }
   }
-  throw new Error('Invalid date type')
+  return new Date()
 }
 
 // Normaliza una fecha al inicio del día en horario local (00:00)

@@ -27,14 +27,14 @@ export interface BillingUsage {
   farmCount: number
   collaboratorCount: number
   totalPlaces: number // lugares asignados
-  usedPlaces: number // (farmCount - 1) + collaboratorCount
+  usedPlaces: number // farmCount + collaboratorCount
 }
 
 // --- Helpers ---
 
 export function computeUsedPlaces(farmCount: number, collaboratorCount: number): number {
-  // La primera granja es gratuita, las demas consumen un lugar cada una
-  return Math.max(0, farmCount - 1) + collaboratorCount
+  // Cada granja y cada colaborador consume un lugar
+  return farmCount + collaboratorCount
 }
 
 export function canAddFarm(usage: BillingUsage): boolean {

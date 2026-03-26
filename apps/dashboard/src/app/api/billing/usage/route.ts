@@ -10,22 +10,33 @@ export async function GET(request: NextRequest) {
 
     const firestore = getAdminFirestore()
 
-    // Contar granjas del usuario (como dueno)
+    // Contar granjas del usuario (como dueno), excluyendo soft-deleted
     const farmsSnap = await firestore.collection('farms').where('ownerId', '==', auth.uid).get()
-    const farmCount = farmsSnap.size
+    const activeFarms = farmsSnap.docs.filter((d) => !d.data().deletedAt)
+    const farmCount = activeFarms.length
 
-    // Contar colaboradores activos en todas las granjas del usuario
+    // Contar colaboradores via invitaciones (pending o accepted) en granjas propias
+    const activeFarmIds = activeFarms.map((d) => d.id)
     let collaboratorCount = 0
-    for (const farmDoc of farmsSnap.docs) {
-      const farmData = farmDoc.data()
-      const collabs = (farmData.collaborators ?? []) as { isActive?: boolean }[]
-      collaboratorCount += collabs.filter((c) => c.isActive !== false).length
+
+    if (activeFarmIds.length > 0) {
+      for (let i = 0; i < activeFarmIds.length; i += 30) {
+        const batch = activeFarmIds.slice(i, i + 30)
+        const invSnap = await firestore
+          .collection('farmInvitations')
+          .where('farmId', 'in', batch)
+          .where('status', 'in', ['pending', 'accepted'])
+          .get()
+        collaboratorCount += invSnap.size
+      }
     }
 
     // Obtener lugares asignados
     const subDoc = await firestore.doc(`subscriptions/${auth.uid}`).get()
     const subData = subDoc.exists ? subDoc.data() : null
-    const totalPlaces = subData?.places ?? 0
+    // Free = 1 lugar (granja gratis). Pro = lugares asignados por admin
+    const assignedPlaces = subData?.places ?? 0
+    const totalPlaces = assignedPlaces > 0 ? assignedPlaces : 1
 
     const usage: BillingUsage = {
       farmCount,

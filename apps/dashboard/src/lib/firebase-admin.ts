@@ -21,8 +21,8 @@ function getProjectId(): string {
 
 // Setear variables de emulador lo antes posible (antes de que cualquier SDK las lea)
 if (isEmulatorMode()) {
-  process.env.FIREBASE_AUTH_EMULATOR_HOST ??= 'localhost:9099'
-  process.env.FIRESTORE_EMULATOR_HOST ??= 'localhost:8080'
+  process.env.FIREBASE_AUTH_EMULATOR_HOST ??= 'localhost:9299'
+  process.env.FIRESTORE_EMULATOR_HOST ??= 'localhost:8180'
 }
 
 function getAdminApp(): App {
@@ -40,8 +40,13 @@ function getAdminApp(): App {
   } else {
     const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
     if (serviceAccount) {
+      const parsed = JSON.parse(serviceAccount)
+      // Vercel puede escapar doble los \n del private_key — restaurar saltos de línea reales
+      if (parsed.private_key) {
+        parsed.private_key = parsed.private_key.replace(/\\n/g, '\n')
+      }
       adminApp = initializeApp({
-        credential: cert(JSON.parse(serviceAccount)),
+        credential: cert(parsed),
       })
     } else {
       adminApp = initializeApp()
