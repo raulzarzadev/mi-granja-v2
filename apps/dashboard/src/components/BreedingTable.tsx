@@ -17,6 +17,7 @@ interface BreedingTableProps {
   onConfirmPregnancy?: (record: BreedingRecord) => void
   toolbar?: React.ReactNode
   renderCard?: (row: { record: BreedingRecord; male: Animal | undefined; status: ReturnType<typeof getBreedingStatus> }) => React.ReactNode
+  onView?: (row: { record: BreedingRecord; male: Animal | undefined; status: ReturnType<typeof getBreedingStatus> }) => React.ReactNode
 }
 
 function getBreedingStatus(record: BreedingRecord) {
@@ -68,6 +69,7 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
   onConfirmPregnancy,
   toolbar,
   renderCard,
+  onView,
 }) => {
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
   const [bulkDeleteIds, setBulkDeleteIds] = useState<Set<string>>(new Set())
@@ -184,6 +186,7 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
         toolbar={toolbar}
         renderCard={renderCard}
         viewModeKey="montas_view_mode"
+        onView={onView}
         renderBulkActions={(selectedIds, clearSelection) => (
           <Button
             size="xs"
@@ -205,8 +208,9 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
               color="primary"
               icon="edit"
               onClick={() => onSelect(row.record)}
-              title="Editar monta"
-            />
+            >
+              Editar
+            </Button>
             {onConfirmPregnancy && row.status.pending > 0 && (
               <Button
                 size="xs"
@@ -214,11 +218,12 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
                 color="success"
                 icon="pregnant"
                 onClick={() => onConfirmPregnancy(row.record)}
-                title="Registrar embarazo"
-              />
+              >
+                Embarazo
+              </Button>
             )}
             <ButtonConfirm
-              openLabel=""
+              openLabel="Eliminar"
               openProps={{ size: 'xs', variant: 'ghost', color: 'error', icon: 'delete' }}
               confirmProps={{ color: 'error' }}
               confirmText={`¿Eliminar monta ${row.record.breedingId || row.record.id}? Esta accion no se puede deshacer.`}

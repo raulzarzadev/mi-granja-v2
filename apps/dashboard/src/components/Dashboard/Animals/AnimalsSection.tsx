@@ -712,15 +712,41 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
             animals={animals}
             onEdit={editRecord}
             onAddBirth={handleOpenAddBirth}
-            onConfirmPregnancy={(record, femaleId) =>
-              handleOpenConfirmPregnancy(record, femaleId)
-            }
+            onConfirmPregnancy={(record, femaleId) => handleOpenConfirmPregnancy(record, femaleId)}
             onUnconfirmPregnancy={handleUnconfirmPregnancy}
             onDelete={(rec) => deleteBreedingRecord(rec.id)}
             onRemoveFromBreeding={handleRemoveFromBreeding}
             onDeleteBirth={() => null}
           />
         )}
+        onView={(row) => {
+          const ViewModal = () => {
+            const [open, setOpen] = useState(false)
+            return (
+              <>
+                <Button size="xs" variant="ghost" color="primary" icon="view" onClick={() => setOpen(true)}>
+                  Ver
+                </Button>
+                <Modal isOpen={open} onClose={() => setOpen(false)} title={`Monta ${row.record.breedingId || ''}`} size="lg">
+                  <div className="p-2">
+                    <BreedingCard
+                      record={row.record}
+                      animals={animals}
+                      onEdit={(r) => { setOpen(false); editRecord(r) }}
+                      onAddBirth={(r, fId) => { setOpen(false); handleOpenAddBirth(r, fId) }}
+                      onConfirmPregnancy={(r, fId) => { setOpen(false); handleOpenConfirmPregnancy(r, fId) }}
+                      onUnconfirmPregnancy={handleUnconfirmPregnancy}
+                      onDelete={(rec) => { setOpen(false); deleteBreedingRecord(rec.id) }}
+                      onRemoveFromBreeding={handleRemoveFromBreeding}
+                      onDeleteBirth={() => null}
+                    />
+                  </div>
+                </Modal>
+              </>
+            )
+          }
+          return <ViewModal />
+        }}
       />
     </div>
   )
@@ -839,6 +865,18 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         sessionStorageKey="mg_last_parto_id"
         selectable
         emptyMessage="No hay partos próximos."
+        onView={(row) =>
+          row.animal ? (
+            <ModalAnimalDetails
+              animal={row.animal}
+              triggerComponent={
+                <Button size="xs" variant="ghost" color="primary" icon="view">
+                  Ver
+                </Button>
+              }
+            />
+          ) : null
+        }
         renderActions={(row) => (
           <>
             <Button
@@ -859,7 +897,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
               icon="edit"
               onClick={() => editRecord(row.record)}
             >
-              Monta
+              Editar
             </Button>
             <ButtonConfirm
               openProps={{ size: 'xs', variant: 'ghost', color: 'error', icon: 'close' }}
@@ -910,10 +948,20 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
             </Button>
           </>
         )}
+        onView={(row) => (
+          <ModalAnimalDetails
+            animal={row.animal}
+            triggerComponent={
+              <Button size="xs" variant="ghost" color="primary" icon="view">
+                Ver
+              </Button>
+            }
+          />
+        )}
         renderActions={(row) => (
           <>
             <ButtonConfirm
-              openLabel={animal_stage_config.engorda.icon}
+              openLabel={`${animal_stage_config.engorda.icon} Engorda`}
               confirmLabel="Destetar a Engorda"
               confirmText={`¿Destetar a #${row.animal.animalNumber} y moverlo a Engorda?`}
               onConfirm={() => wean(row.animal.id, { stageDecision: 'engorda' })}
@@ -921,7 +969,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
               confirmProps={{ color: 'warning' }}
             />
             <ButtonConfirm
-              openLabel={animal_stage_config.reproductor.icon}
+              openLabel={`${animal_stage_config.reproductor.icon} Reproductor`}
               confirmLabel="Destetar a Reproductor"
               confirmText={`¿Destetar a #${row.animal.animalNumber} y moverlo a Reproductor?`}
               onConfirm={() => wean(row.animal.id, { stageDecision: 'reproductor' })}
@@ -1048,15 +1096,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     [],
   )
 
-  const etapaTitle = (key: AnimalStageKey) => {
-    const cfg = animal_stage_config[key]
-    return (
-      <h3 className="text-lg font-semibold mb-3">
-        {cfg.icon} {cfg.label}
-      </h3>
-    )
-  }
-
   const etapasTabs = [
     {
       label: etapaLabel('monta', montasCount),
@@ -1082,6 +1121,16 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           defaultSortKey="animalNumber"
           sessionStorageKey="mg_last_engorda_id"
           emptyMessage="No hay animales en engorda."
+          onView={(row) => (
+            <ModalAnimalDetails
+              animal={row}
+              triggerComponent={
+                <Button size="xs" variant="ghost" color="primary" icon="view">
+                  Ver
+                </Button>
+              }
+            />
+          )}
         />
       ),
     },
@@ -1096,6 +1145,16 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           defaultSortKey="animalNumber"
           sessionStorageKey="mg_last_juvenil_id"
           emptyMessage="No hay animales juveniles."
+          onView={(row) => (
+            <ModalAnimalDetails
+              animal={row}
+              triggerComponent={
+                <Button size="xs" variant="ghost" color="primary" icon="view">
+                  Ver
+                </Button>
+              }
+            />
+          )}
         />
       ),
     },
@@ -1110,6 +1169,16 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           defaultSortKey="animalNumber"
           sessionStorageKey="mg_last_reproductor_id"
           emptyMessage="No hay animales en reproducción."
+          onView={(row) => (
+            <ModalAnimalDetails
+              animal={row}
+              triggerComponent={
+                <Button size="xs" variant="ghost" color="primary" icon="view">
+                  Ver
+                </Button>
+              }
+            />
+          )}
         />
       ),
     },
@@ -1124,6 +1193,16 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           defaultSortKey="animalNumber"
           sessionStorageKey="mg_last_descarte_id"
           emptyMessage="No hay animales en descarte."
+          onView={(row) => (
+            <ModalAnimalDetails
+              animal={row}
+              triggerComponent={
+                <Button size="xs" variant="ghost" color="primary" icon="view">
+                  Ver
+                </Button>
+              }
+            />
+          )}
         />
       ),
     },

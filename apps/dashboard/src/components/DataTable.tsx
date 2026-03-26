@@ -35,6 +35,8 @@ export interface DataTableProps<T> {
   viewModeKey?: string
   /** Page size (default 10). Set to 0 to disable pagination. */
   pageSize?: number
+  /** If provided, adds a default "Ver" button in actions that calls this with the row */
+  onView?: (row: T) => React.ReactNode
 }
 
 // ── Sort Icon ──
@@ -89,7 +91,7 @@ function DataTable<T>({
   renderActions,
   sessionStorageKey,
   onRowClick,
-  selectable = false,
+  selectable = true,
   renderBulkActions,
   defaultSortKey,
   defaultSortDir = 'asc',
@@ -99,6 +101,7 @@ function DataTable<T>({
   renderCard,
   viewModeKey,
   pageSize: initialPageSize = 10,
+  onView,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(defaultSortKey ?? null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>(defaultSortDir)
@@ -370,7 +373,7 @@ function DataTable<T>({
                     </span>
                   </th>
                 ))}
-                {renderActions && !isSelectionMode && (
+                {(renderActions || onView) && !isSelectionMode && (
                   <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wider text-right">
                     Acciones
                   </th>
@@ -411,13 +414,14 @@ function DataTable<T>({
                         {col.render(row)}
                       </td>
                     ))}
-                    {renderActions && !isSelectionMode && (
+                    {(renderActions || onView) && !isSelectionMode && (
                       <td className="px-2 py-1.5 text-right whitespace-nowrap">
                         <div
                           className="inline-flex items-center gap-1"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          {renderActions(row)}
+                          {onView?.(row)}
+                          {renderActions?.(row)}
                         </div>
                       </td>
                     )}
