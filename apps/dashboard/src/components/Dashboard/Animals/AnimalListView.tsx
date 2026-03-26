@@ -21,6 +21,8 @@ interface AnimalListViewProps {
   defaultView?: 'cards' | 'table'
   /** Mensaje cuando no hay animales */
   emptyMessage?: string
+  /** Título dentro del contenedor */
+  title?: React.ReactNode
 }
 
 const AnimalListView: React.FC<AnimalListViewProps> = ({
@@ -29,6 +31,7 @@ const AnimalListView: React.FC<AnimalListViewProps> = ({
   selectionActions,
   defaultView = 'table',
   emptyMessage = 'No se encontraron animales',
+  title,
 }) => {
   const [viewMode, setViewMode] = useLocalPreference<'cards' | 'table'>(
     'animal_view_mode',
@@ -67,7 +70,12 @@ const AnimalListView: React.FC<AnimalListViewProps> = ({
   return (
     <div>
       {/* Lista */}
-      <div className="bg-white rounded-lg shadow">
+      <div>
+        {title && (
+          <div className="px-2 py-2">
+            {typeof title === 'string' ? <h3 className="text-lg font-semibold">{title}</h3> : title}
+          </div>
+        )}
         {/* Toolbar: selección + paginación + toggle vista */}
         {filtered.length > 0 && (
           <div className="px-4 py-2 flex items-center justify-between gap-2 flex-wrap">
