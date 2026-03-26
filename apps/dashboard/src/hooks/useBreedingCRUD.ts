@@ -143,6 +143,10 @@ export const useBreedingCRUD = () => {
         updateData.notes = updates.notes ?? ''
       }
 
+      if (hasProp('status')) {
+        updateData.status = updates.status ?? 'active'
+      }
+
       if (hasProp('breedingDate')) {
         updateData.breedingDate = updates.breedingDate
           ? Timestamp.fromDate(toLocalDateStart(new Date(updates.breedingDate)))
@@ -393,6 +397,7 @@ export const useBreedingCRUD = () => {
             maleId: data.maleId,
             breedingId: data.breedingId || '',
             notes: data.notes || '',
+            status: data.status || undefined,
             breedingDate: safeToDate(data.breedingDate)
               ? toLocalDateStart(safeToDate(data.breedingDate)!)
               : null,

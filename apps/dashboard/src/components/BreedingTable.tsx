@@ -151,13 +151,18 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
           const scoreB = b.status.pending * 100 + b.status.pregnant * 10
           return scoreB - scoreA
         },
-        render: (row) => (
-          <span
-            className={`inline-flex px-1.5 py-0.5 rounded-full text-xs font-medium ${statusColor(row.status)}`}
-          >
-            {statusLabel(row.status)}
-          </span>
-        ),
+        render: (row) =>
+          row.record.status === 'finished' ? (
+            <span className="inline-flex px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+              Terminada
+            </span>
+          ) : (
+            <span
+              className={`inline-flex px-1.5 py-0.5 rounded-full text-xs font-medium ${statusColor(row.status)}`}
+            >
+              {statusLabel(row.status)}
+            </span>
+          ),
         className: 'whitespace-nowrap',
       },
       {

@@ -21,7 +21,7 @@ import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useLocalPreference } from '@/hooks/useLocalPreference'
 import { animalAge, formatWeight } from '@/lib/animal-utils'
 import { getWeaningDays } from '@/lib/animalBreedingConfig'
-import { toDate } from '@/lib/dates'
+import { formatDate, toDate } from '@/lib/dates'
 import {
   Animal,
   AnimalStageKey,
@@ -208,9 +208,14 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   const orderedBreedings = useMemo(() => {
     const needPregnancyConfirmation: BreedingRecord[] = []
     const needBirthConfirmation: BreedingRecord[] = []
-    const finished: BreedingRecord[] = []
+    const completed: BreedingRecord[] = []
+    const terminated: BreedingRecord[] = []
 
     filteredBreedingRecords.forEach((r) => {
+      if (r.status === 'finished') {
+        terminated.push(r)
+        return
+      }
       let hasPendingPregnancyConfirm = false
       let hasPendingBirth = false
       r.femaleBreedingInfo.forEach((f) => {
@@ -221,7 +226,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       })
       if (hasPendingPregnancyConfirm) needPregnancyConfirmation.push(r)
       else if (hasPendingBirth) needBirthConfirmation.push(r)
-      else finished.push(r)
+      else completed.push(r)
     })
 
     const sortDesc = (a: BreedingRecord, b: BreedingRecord) =>
@@ -230,7 +235,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     return {
       needPregnancyConfirmation: needPregnancyConfirmation.sort(sortDesc),
       needBirthConfirmation: needBirthConfirmation.sort(sortDesc),
-      finished: finished.sort(sortDesc),
+      completed: completed.sort(sortDesc),
+      terminated: terminated.sort(sortDesc),
     }
   }, [filteredBreedingRecords])
 
@@ -450,10 +456,11 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     () => activeAnimals.filter((a) => a.stage === 'juvenil' && matchesEtapasFilters(a)),
     [activeAnimals, filters],
   )
-  // IDs de animales en montas activas (sin parto o sin destete completo)
+  // IDs de animales en montas activas (no terminadas y sin parto completo)
   const animalsInBreeding = useMemo(() => {
     const ids = new Set<string>()
     for (const r of breedingRecords) {
+      if (r.status === 'finished') continue
       const hasActiveFemale = r.femaleBreedingInfo.some((f) => !f.actualBirthDate)
       if (hasActiveFemale) {
         ids.add(r.maleId)
@@ -673,7 +680,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         records={[
           ...orderedBreedings.needPregnancyConfirmation,
           ...orderedBreedings.needBirthConfirmation,
-          ...orderedBreedings.finished,
+          ...orderedBreedings.completed,
         ]}
         animals={animals}
         onSelect={editRecord}
@@ -720,26 +727,98 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           />
         )}
         onView={(row) => {
+          const r = row.record
+          const male = animals.find((a) => a.id === r.maleId)
           const ViewModal = () => {
             const [open, setOpen] = useState(false)
+            const [confirming, setConfirming] = useState(false)
             return (
               <>
                 <Button size="xs" variant="ghost" color="primary" icon="view" onClick={() => setOpen(true)}>
                   Ver
                 </Button>
-                <Modal isOpen={open} onClose={() => setOpen(false)} title={`Monta ${row.record.breedingId || ''}`} size="lg">
-                  <div className="p-2">
-                    <BreedingCard
-                      record={row.record}
-                      animals={animals}
-                      onEdit={(r) => { setOpen(false); editRecord(r) }}
-                      onAddBirth={(r, fId) => { setOpen(false); handleOpenAddBirth(r, fId) }}
-                      onConfirmPregnancy={(r, fId) => { setOpen(false); handleOpenConfirmPregnancy(r, fId) }}
-                      onUnconfirmPregnancy={handleUnconfirmPregnancy}
-                      onDelete={(rec) => { setOpen(false); deleteBreedingRecord(rec.id) }}
-                      onRemoveFromBreeding={handleRemoveFromBreeding}
-                      onDeleteBirth={() => null}
-                    />
+                <Modal isOpen={open} onClose={() => setOpen(false)} title={`Monta ${r.breedingId || ''}`}>
+                  <div className="p-4 space-y-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Fecha</span>
+                      <span className="font-medium">{r.breedingDate ? formatDate(r.breedingDate, 'dd MMM yyyy') : '—'}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Macho</span>
+                      <span className="font-medium">{male?.animalNumber || '?'} <span className="text-xs text-gray-400">{male ? animals_types_labels[male.type] : ''}</span></span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-2">Hembras ({r.femaleBreedingInfo.length})</p>
+                      <div className="space-y-1.5">
+                        {r.femaleBreedingInfo.map((fi) => {
+                          const fem = animals.find((a) => a.id === fi.femaleId)
+                          const status = fi.actualBirthDate ? 'Parida' : fi.pregnancyConfirmedDate ? 'Embarazada' : 'En monta'
+                          const statusColor = fi.actualBirthDate ? 'bg-green-100 text-green-700' : fi.pregnancyConfirmedDate ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
+                          return (
+                            <div key={fi.femaleId} className="flex items-center justify-between text-sm py-1 border-b border-gray-50">
+                              <span className="font-medium">{fem?.animalNumber || fi.femaleId}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}`}>{status}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    {r.status === 'finished' && (
+                      <div className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 text-center">
+                        Monta terminada
+                      </div>
+                    )}
+                    {confirming ? (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-3">
+                        <p className="text-sm text-amber-800">
+                          Las hembras pendientes (en monta) quedarán disponibles para nuevas montas.
+                          Las que amamantan seguirán ocupadas hasta el destete.
+                        </p>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" color="neutral" onClick={() => setConfirming(false)} className="flex-1">
+                            Cancelar
+                          </Button>
+                          <Button
+                            size="sm"
+                            color="warning"
+                            icon="check_circle"
+                            className="flex-1"
+                            onClick={async () => {
+                              await updateBreedingRecord(r.id, { status: 'finished' })
+                              setOpen(false)
+                              setConfirming(false)
+                            }}
+                          >
+                            Confirmar
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 pt-2">
+                        <Button size="sm" color="primary" icon="edit" onClick={() => { setOpen(false); editRecord(r) }} className="flex-1">
+                          Editar
+                        </Button>
+                        {r.status !== 'finished' ? (
+                          <Button size="sm" variant="outline" color="warning" icon="check_circle" className="flex-1" onClick={() => setConfirming(true)}>
+                            Terminar
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            color="success"
+                            className="flex-1"
+                            icon="check_circle"
+                            onClick={async () => {
+                              await updateBreedingRecord(r.id, { status: 'active' })
+                              setOpen(false)
+                            }}
+                          >
+                            Reactivar
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </Modal>
               </>
@@ -748,6 +827,87 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           return <ViewModal />
         }}
       />
+      {orderedBreedings.terminated.length > 0 && (
+        <details className="mt-6">
+          <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700 flex items-center gap-2 py-2">
+            Montas terminadas ({orderedBreedings.terminated.length})
+          </summary>
+          <div className="mt-2">
+            <BreedingTable
+              records={orderedBreedings.terminated}
+              animals={animals}
+              onSelect={editRecord}
+              onDelete={async (ids) => {
+                for (const id of ids) await deleteBreedingRecord(id)
+              }}
+              onView={(row) => {
+                const r = row.record
+                const male = animals.find((a) => a.id === r.maleId)
+                const ViewModal = () => {
+                  const [open, setOpen] = useState(false)
+                  return (
+                    <>
+                      <Button size="xs" variant="ghost" color="primary" icon="view" onClick={() => setOpen(true)}>
+                        Ver
+                      </Button>
+                      <Modal isOpen={open} onClose={() => setOpen(false)} title={`Monta ${r.breedingId || ''}`}>
+                        <div className="p-4 space-y-4">
+                          <div className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 text-center">
+                            Monta terminada
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-500">Fecha</span>
+                            <span className="font-medium">{r.breedingDate ? formatDate(r.breedingDate, 'dd MMM yyyy') : '—'}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-500">Macho</span>
+                            <span className="font-medium">{male?.animalNumber || '?'}</span>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500 mb-2">Hembras ({r.femaleBreedingInfo.length})</p>
+                            <div className="space-y-1.5">
+                              {r.femaleBreedingInfo.map((fi) => {
+                                const fem = animals.find((a) => a.id === fi.femaleId)
+                                const status = fi.actualBirthDate ? 'Parida' : fi.pregnancyConfirmedDate ? 'Embarazada' : 'En monta'
+                                const statusColor = fi.actualBirthDate ? 'bg-green-100 text-green-700' : fi.pregnancyConfirmedDate ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
+                                return (
+                                  <div key={fi.femaleId} className="flex items-center justify-between text-sm py-1 border-b border-gray-50">
+                                    <span className="font-medium">{fem?.animalNumber || fi.femaleId}</span>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}`}>{status}</span>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <Button size="sm" color="primary" icon="edit" onClick={() => { setOpen(false); editRecord(r) }} className="flex-1">
+                              Editar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              color="success"
+                              className="flex-1"
+                              icon="check_circle"
+                              onClick={async () => {
+                                await updateBreedingRecord(r.id, { status: 'active' })
+                                setOpen(false)
+                              }}
+                            >
+                              Reactivar
+                            </Button>
+                          </div>
+                        </div>
+                      </Modal>
+                    </>
+                  )
+                }
+                return <ViewModal />
+              }}
+            />
+          </div>
+        </details>
+      )}
     </div>
   )
 
@@ -1098,6 +1258,30 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
 
   const etapasTabs = [
     {
+      label: etapaLabel('reproductor', reproductorAnimals.length),
+      content: (
+        <DataTable
+          title={`${animal_stage_config.reproductor.icon} Reproducción`}
+          data={reproductorAnimals}
+          columns={animalColumns}
+          rowKey={(row) => row.id}
+          defaultSortKey="animalNumber"
+          sessionStorageKey="mg_last_reproductor_id"
+          emptyMessage="No hay animales en reproducción."
+          onView={(row) => (
+            <ModalAnimalDetails
+              animal={row}
+              triggerComponent={
+                <Button size="xs" variant="ghost" color="primary" icon="view">
+                  Ver
+                </Button>
+              }
+            />
+          )}
+        />
+      ),
+    },
+    {
       label: etapaLabel('monta', montasCount),
       content: montaContent,
     },
@@ -1145,30 +1329,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           defaultSortKey="animalNumber"
           sessionStorageKey="mg_last_juvenil_id"
           emptyMessage="No hay animales juveniles."
-          onView={(row) => (
-            <ModalAnimalDetails
-              animal={row}
-              triggerComponent={
-                <Button size="xs" variant="ghost" color="primary" icon="view">
-                  Ver
-                </Button>
-              }
-            />
-          )}
-        />
-      ),
-    },
-    {
-      label: etapaLabel('reproductor', reproductorAnimals.length),
-      content: (
-        <DataTable
-          title={`${animal_stage_config.reproductor.icon} Reproducción`}
-          data={reproductorAnimals}
-          columns={animalColumns}
-          rowKey={(row) => row.id}
-          defaultSortKey="animalNumber"
-          sessionStorageKey="mg_last_reproductor_id"
-          emptyMessage="No hay animales en reproducción."
           onView={(row) => (
             <ModalAnimalDetails
               animal={row}

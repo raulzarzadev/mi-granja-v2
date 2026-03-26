@@ -8,6 +8,8 @@ export interface FemaleBreedingInfo {
   offspring?: string[] // IDs de las crías de esta hembra específica
 }
 
+export type BreedingStatus = 'active' | 'finished'
+
 export interface BreedingRecord {
   id: string
   breedingId?: string // ID legible por humanos, ej: "10-10-25-01"
@@ -16,6 +18,7 @@ export interface BreedingRecord {
   maleId: string
   breedingDate: Date | null
   femaleBreedingInfo: FemaleBreedingInfo[] // Información específica de cada hembra
+  status?: BreedingStatus
   notes?: string
   comments?: Comment[]
   createdAt?: Date

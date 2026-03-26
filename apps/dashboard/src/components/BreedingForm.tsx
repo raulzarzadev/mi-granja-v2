@@ -475,7 +475,13 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
               </label>
 
               <div className="space-y-3 bg-gray-50 rounded-md">
-                {femaleBreedingInfo.map((info, _index) => {
+                {[...femaleBreedingInfo]
+                  .sort((a, b) => {
+                    const anA = animals.find((x) => x.id === a.femaleId)?.animalNumber || ''
+                    const anB = animals.find((x) => x.id === b.femaleId)?.animalNumber || ''
+                    return anA.localeCompare(anB, 'es', { numeric: true })
+                  })
+                  .map((info, _index) => {
                   const animal = animals.find((item) => item.id === info.femaleId)
                   if (!animal) {
                     return null

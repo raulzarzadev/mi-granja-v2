@@ -274,7 +274,7 @@ export const AnimalsFilters = ({
         />
 
         {/* Botón limpiar filtros */}
-        {activeFilterCount > 0 && (
+        {(activeFilterCount > 0 || filters.search) && (
           <button
             onClick={() =>
               setFilters({
@@ -287,7 +287,7 @@ export const AnimalsFilters = ({
                 search: '',
               })
             }
-            className="p-2 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 transition-colors"
+            className="relative p-2 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 transition-colors cursor-pointer text-white "
             title="Borrar filtros"
           >
             <svg
@@ -298,6 +298,9 @@ export const AnimalsFilters = ({
             >
               <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
             </svg>
+            <span className="absolute -top-1.5 -right-1.5 bg-rose-400 text-white text-[12px] min-w-4 h-4 rounded-full flex items-center justify-center px-1 font-extrabold ">
+              {filteredCount}
+            </span>
           </button>
         )}
 
@@ -339,34 +342,6 @@ export const AnimalsFilters = ({
       {/* Panel de filtros colapsable */}
       {showFilters && (
         <div className="px-4 pb-3 pt-1 border-t border-gray-100">
-          <div className="flex justify-end my-2">
-            {hasActiveFilters && (
-              <button
-                onClick={() =>
-                  setFilters({
-                    status: 'activo',
-                    type: '',
-                    breed: '',
-                    stage: '',
-                    gender: '',
-                    breedingStatus: '',
-                    search: '',
-                  })
-                }
-                className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="w-3.5 h-3.5"
-                >
-                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                </svg>
-                Limpiar filtros
-              </button>
-            )}
-          </div>
           <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
             <div className="flex flex-col gap-1">
               <label className="text-[11px] font-medium text-gray-500">Estado</label>
