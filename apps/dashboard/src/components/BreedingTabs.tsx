@@ -278,6 +278,10 @@ const BreedingTabs: React.FC = () => {
                     deleteBreedingRecord(id)
                   }
                 }}
+                onConfirmPregnancy={(record) => {
+                  setConfirmPregnancyRecord(record)
+                  setSelectedAnimal(null)
+                }}
               />
             ) : (
               <>

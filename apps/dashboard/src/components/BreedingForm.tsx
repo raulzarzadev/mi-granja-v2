@@ -139,8 +139,14 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     }
   }, [breedingDate, breedingIdValue, form, initialData])
 
+  const initialFemaleIds = useMemo(
+    () => new Set(initialData?.femaleBreedingInfo?.map((f) => f.femaleId) ?? []),
+    [initialData],
+  )
+
   useEffect(() => {
     if (!selectedMale) {
+      if (initialData) return
       if (femaleIds.length > 0) {
         form.setValue('femaleIds', [], { shouldDirty: true })
       }
@@ -148,6 +154,8 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     }
 
     const compatibleIds = femaleIds.filter((id) => {
+      // En modo edición, conservar hembras que ya estaban en la monta
+      if (initialFemaleIds.has(id)) return true
       const female = animals.find((animal) => animal.id === id)
       return female && female.type === selectedMale.type
     })
@@ -155,7 +163,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     if (compatibleIds.length !== femaleIds.length) {
       form.setValue('femaleIds', compatibleIds, { shouldDirty: true })
     }
-  }, [animals, femaleIds, form, selectedMale])
+  }, [animals, femaleIds, form, selectedMale, initialData, initialFemaleIds])
 
   useEffect(() => {
     const currentInfos = form.getValues('femaleBreedingInfo') ?? []
@@ -257,11 +265,12 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
     if (field === 'pregnancyConfirmed') {
       if (value && animalType) {
-        const nowStr = toDateStr(new Date())
-        const expected = calculateExpectedBirthDate(new Date(), animalType)
+        const confirmDate = breedingDate || toDateStr(new Date())
+        const confirmDateObj = parseLocalDate(confirmDate)
+        const expected = calculateExpectedBirthDate(confirmDateObj, animalType)
         updatedInfo[index] = {
           ...current,
-          pregnancyConfirmedDate: nowStr,
+          pregnancyConfirmedDate: confirmDate,
           expectedBirthDate: expected ? toDateStr(expected) : null,
         }
       } else {
@@ -475,7 +484,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                   const femaleBreedingId = getFemaleBreedingId(animal.id)
 
                   return (
-                    <div key={animal.id} className="bg-white p-3 rounded border">
+                    <div key={animal.id} className="bg-white p-3 rounded-lg border border-gray-100">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium text-gray-900 flex items-center gap-2">
                           {animal.animalNumber} - {animal.type}
@@ -485,66 +494,48 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                             </span>
                           ) : null}
                         </span>
-                        <div className="flex items-center gap-2">
-                          {!info.pregnancyConfirmedDate ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleFemaleBreedingChange(animal.id, 'pregnancyConfirmed', true)
-                              }
-                              className="px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors"
-                            >
-                              Confirmar embarazo
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleFemaleBreedingChange(animal.id, 'pregnancyConfirmed', false)
-                              }
-                              className="text-xs text-red-600 hover:text-red-800 underline"
-                            >
-                              Desconfirmar
-                            </button>
-                          )}
-                          <ButtonClose
-                            onClick={() => handleRemoveFemale(animal.id)}
-                            showTitle="Omitir"
-                            title="Quitar hembra"
-                          />
-                        </div>
+                        <ButtonClose
+                          onClick={() => handleRemoveFemale(animal.id)}
+                          showTitle="Omitir"
+                          title="Quitar hembra"
+                        />
                       </div>
 
-                      {info.pregnancyConfirmedDate ? (
-                        <div className="mt-3 space-y-3">
-                          <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
-                            ✓ Embarazo confirmado
-                          </span>
+                      <label className="mt-2 flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!info.pregnancyConfirmedDate}
+                          onChange={(e) =>
+                            handleFemaleBreedingChange(
+                              animal.id,
+                              'pregnancyConfirmed',
+                              e.target.checked,
+                            )
+                          }
+                          className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                        />
+                        <span className="text-sm text-gray-700">Embarazo confirmado</span>
+                      </label>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <DatePickerButtons
-                              value={info.pregnancyConfirmedDate ?? ''}
-                              onChange={(val) =>
-                                handleFemaleBreedingChange(
-                                  animal.id,
-                                  'pregnancyConfirmedDate',
-                                  val || null,
-                                )
-                              }
-                              label="Fecha de confirmación"
-                              showToday
-                            />
-                            {info.expectedBirthDate ? (
-                              <div className="space-y-1">
-                                <label className="text-xs font-medium text-gray-500">
-                                  Fecha de parto esperado
-                                </label>
-                                <p className="h-10 flex items-center px-3 text-sm font-medium bg-gray-50 border border-gray-200 rounded-md">
-                                  {info.expectedBirthDate}
-                                </p>
-                              </div>
-                            ) : null}
-                          </div>
+                      {info.pregnancyConfirmedDate ? (
+                        <div className="mt-2 space-y-2">
+                          <DatePickerButtons
+                            value={info.pregnancyConfirmedDate ?? ''}
+                            onChange={(val) =>
+                              handleFemaleBreedingChange(
+                                animal.id,
+                                'pregnancyConfirmedDate',
+                                val || null,
+                              )
+                            }
+                            label="Fecha de confirmación"
+                            showToday
+                          />
+                          {info.expectedBirthDate ? (
+                            <p className="text-xs text-gray-400">
+                              Parto esperado: {info.expectedBirthDate}
+                            </p>
+                          ) : null}
                         </div>
                       ) : null}
 

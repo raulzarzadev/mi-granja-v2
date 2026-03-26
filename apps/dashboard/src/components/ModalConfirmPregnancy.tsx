@@ -109,7 +109,11 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
   }, [selectedAnimal])
 
   return (
-    <Modal isOpen={isOpen} onClose={handleCancel} title="Confirmar Embarazos">
+    <Modal
+      isOpen={isOpen}
+      onClose={handleCancel}
+      title={`Confirmar Embarazos — Monta ${breedingRecord?.breedingId || ''}`}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         {unconfirmedFemales.length === 0 ? (
           <div className="text-center py-8">
