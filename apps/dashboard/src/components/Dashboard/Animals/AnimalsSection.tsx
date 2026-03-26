@@ -784,13 +784,13 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                       onClick={() => editRecord(record)}
                       title="Ver monta"
                     />
-                    <Button
-                      size="xs"
-                      variant="ghost"
-                      color="error"
-                      icon="close"
-                      onClick={() => handleUnconfirmPregnancy(record, info.femaleId)}
-                      title="Desconfirmar embarazo"
+                    <ButtonConfirm
+                      openProps={{ size: 'xs', variant: 'ghost', color: 'error', icon: 'close' }}
+                      confirmProps={{ color: 'error' }}
+                      openLabel=""
+                      confirmText={`¿Desconfirmar embarazo de ${animal?.animalNumber || info.femaleId}? Se perderá la fecha de parto esperada.`}
+                      confirmLabel="Desconfirmar"
+                      onConfirm={() => handleUnconfirmPregnancy(record, info.femaleId)}
                     />
                   </div>
                 </li>

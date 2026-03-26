@@ -46,9 +46,28 @@ export const useAnimalFilters = (externalState?: {
 }) => {
   const { animals, animalsFiltered, getFarmAnimals, searchExact } = useAnimalCRUD()
   const { breedingRecords } = useBreedingCRUD()
-  const [internalFilters, internalSetFilters] = useState<AnimalFilters>(initialAnimalFilters)
+  const [internalFilters, internalSetFilters] = useState<AnimalFilters>(() => {
+    if (typeof window === 'undefined') return initialAnimalFilters
+    try {
+      const saved = sessionStorage.getItem('mg_animal_search')
+      return saved ? { ...initialAnimalFilters, search: saved } : initialAnimalFilters
+    } catch {
+      return initialAnimalFilters
+    }
+  })
   const filters = externalState?.filters ?? internalFilters
   const setFilters = externalState?.setFilters ?? internalSetFilters
+
+  // Persistir búsqueda en sessionStorage
+  useEffect(() => {
+    try {
+      if (filters.search) {
+        sessionStorage.setItem('mg_animal_search', filters.search)
+      } else {
+        sessionStorage.removeItem('mg_animal_search')
+      }
+    } catch {}
+  }, [filters.search])
   const [statusAnimals, setStatusAnimals] = useState<Animal[]>([])
   const [searchResults, setSearchResults] = useState<Animal[]>([])
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)

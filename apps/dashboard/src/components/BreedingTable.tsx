@@ -103,6 +103,14 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
   const [sortField, setSortField] = useState<SortField | null>('date')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [lastClickedId, setLastClickedId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      return sessionStorage.getItem('mg_last_breeding_id')
+    } catch {
+      return null
+    }
+  })
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const handleSort = (field: SortField) => {
@@ -293,11 +301,19 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
                     if (isSelectionMode) {
                       toggleSelection(record.id)
                     } else {
+                      setLastClickedId(record.id)
+                      try {
+                        sessionStorage.setItem('mg_last_breeding_id', record.id)
+                      } catch {}
                       onSelect(record)
                     }
                   }}
                   className={`border-t border-gray-100 cursor-pointer transition-colors ${
-                    isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
+                    isSelected
+                      ? 'bg-blue-50'
+                      : lastClickedId === record.id
+                        ? 'bg-blue-100 hover:bg-blue-200'
+                        : 'hover:bg-gray-50'
                   }`}
                 >
                   {isSelectionMode && (
