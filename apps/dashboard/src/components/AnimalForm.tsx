@@ -50,9 +50,9 @@ const schema = z
       .optional()
       .refine(
         (value: string | undefined) =>
-          !value || (!Number.isNaN(Number(value)) && Number(value) > 0),
+          !value || (!Number.isNaN(Number(value)) && Number(value) >= 0),
         {
-          message: 'El peso debe ser un número válido mayor a 0',
+          message: 'El peso debe ser un número válido',
         },
       ),
     age: z
@@ -340,6 +340,17 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
         rows={3}
         disabled={isLoading}
       />
+
+      {Object.keys(form.formState.errors).length > 0 && form.formState.isSubmitted && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+          <p className="font-medium mb-1">Corrige los siguientes errores:</p>
+          <ul className="list-disc list-inside space-y-0.5 text-xs">
+            {Object.entries(form.formState.errors).map(([key, error]) => (
+              <li key={key}>{(error as { message?: string })?.message || `Campo "${key}" inválido`}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="flex space-x-3 pt-4">
         <button

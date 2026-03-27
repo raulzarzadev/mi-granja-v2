@@ -1,9 +1,11 @@
 'use client'
 
 import React from 'react'
+import { useSelector } from 'react-redux'
 import AnimalFamilyTree from '@/components/AnimalFamilyTree'
 import AnimalRecordsSection from '@/components/AnimalRecordsSection'
 import Tabs from '@/components/Tabs'
+import { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { animalAge } from '@/lib/animal-utils'
 import { formatDate, fromNow, toDate } from '@/lib/dates'
@@ -28,8 +30,11 @@ interface AnimalDetailViewProps {
 /**
  * Vista detallada de un animal individual
  */
-const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal }) => {
+const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp }) => {
   const { animals: allAnimals } = useAnimalCRUD()
+  const animal = useSelector(
+    (state: RootState) => state.animals.animals.find((a) => a.id === animalProp.id),
+  ) ?? animalProp
 
   const getMother = () => {
     if (!animal.motherId) return null

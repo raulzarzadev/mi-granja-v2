@@ -1,7 +1,9 @@
 'use client'
 
 import React from 'react'
+import { useSelector } from 'react-redux'
 import { Modal } from '@/components/Modal'
+import { RootState } from '@/features/store'
 import { useModal } from '@/hooks/useModal'
 import { Animal } from '@/types/animals'
 import AnimalDetailView from './AnimalDetailView'
@@ -17,6 +19,9 @@ interface ModalAnimalDetailsProps {
  */
 const ModalAnimalDetails: React.FC<ModalAnimalDetailsProps> = ({ animal, triggerComponent }) => {
   const { isOpen, openModal, closeModal } = useModal()
+  const freshAnimal = useSelector(
+    (state: RootState) => state.animals.animals.find((a) => a.id === animal.id),
+  ) ?? animal
   return (
     <>
       {triggerComponent ? (
@@ -32,8 +37,8 @@ const ModalAnimalDetails: React.FC<ModalAnimalDetailsProps> = ({ animal, trigger
         </button>
       )}
       <Modal isOpen={isOpen} onClose={closeModal} title={'Detalles del Animal'} size="lg">
-        {animal && <AnimalDetailView animal={animal} />}
-        {!animal && (
+        {freshAnimal && <AnimalDetailView animal={freshAnimal} />}
+        {!freshAnimal && (
           <div className="text-center text-gray-500">No se encontró información del animal.</div>
         )}
       </Modal>

@@ -19,11 +19,11 @@ interface ModalEditAnimalProps {
 const ModalEditAnimal: React.FC<ModalEditAnimalProps> = ({ animal }) => {
   const { isOpen, openModal, closeModal } = useModal()
   const { update: updateAnimal, animals } = useAnimalCRUD()
-  const handleEditAnimal = (
+  const handleEditAnimal = async (
     animalNumber: string,
     animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>,
   ) => {
-    updateAnimal(animalNumber, animalData)
+    await updateAnimal(animalNumber, animalData)
     closeModal()
   }
   return (
