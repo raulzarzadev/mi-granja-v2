@@ -1301,8 +1301,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         sortable: true,
         sortFn: (a, b) => animalAge(a, { format: 'months' }) - animalAge(b, { format: 'months' }),
         render: (row) => {
-          const months = animalAge(row, { format: 'months' })
-          return <span className="text-gray-600">{months > 0 ? `${months} m` : '—'}</span>
+          const age = animalAge(row, { format: 'short' })
+          return <span className="text-gray-600">{age === 'No registrado' ? '—' : age}</span>
         },
       },
       {

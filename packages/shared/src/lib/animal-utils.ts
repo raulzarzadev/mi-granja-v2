@@ -62,12 +62,17 @@ export function animalAge(
   // Calcular total de meses
   const totalMonths = years * 12 + months
 
+  // Calcular días totales para animales muy jóvenes
+  const totalDays = Math.floor((now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24))
+
   switch (format) {
     case 'months':
       return totalMonths
     case 'short':
+      if (totalMonths === 0) return `${Math.max(0, totalDays)}d`
       return `${totalMonths}m`
     default:
+      if (totalMonths === 0) return `${Math.max(0, totalDays)} día${totalDays !== 1 ? 's' : ''}`
       return `${totalMonths} mes${totalMonths !== 1 ? 'es' : ''}`
   }
 }
