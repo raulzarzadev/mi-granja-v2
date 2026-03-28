@@ -329,7 +329,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       weanDate: Date | null
       daysUntilWean: number | null
     }[] = []
-    for (const record of filteredBreedingRecords) {
+    for (const record of breedingRecords) {
       for (const fi of record.femaleBreedingInfo) {
         if (!fi.offspring || fi.offspring.length === 0) continue
         for (const offId of fi.offspring) {
@@ -371,7 +371,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       }
     }
     return result
-  }, [filteredBreedingRecords, animals, filters])
+  }, [breedingRecords, animals, filters])
 
   type UnweanedRow = (typeof unweanedOffspring)[number]
   const destetesColumns: ColumnDef<UnweanedRow>[] = useMemo(
