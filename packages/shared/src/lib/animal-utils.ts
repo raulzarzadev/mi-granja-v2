@@ -77,7 +77,7 @@ const MANUAL_STAGES = new Set<AnimalStage>(['engorda', 'pie_cria', 'descarte'])
 
 /**
  * Calcula el stage de un animal basándose en sus parámetros:
- *  - cria: no destetado o edad < weaningDays de su especie
+ *  - cria: no destetado Y edad < weaningDays de su especie
  *  - juvenil: destetado, edad >= weaningDays pero < minBreedingAge
  *  - reproductor: edad >= minBreedingAge
  *  - engorda / pie_cria / descarte: asignación manual, se respeta
@@ -91,10 +91,11 @@ export function computeAnimalStage(animal: Animal): AnimalStage {
   const weaningMonths = Math.ceil((config?.weaningDays ?? 60) / 30)
   const minBreedingAge = config?.minBreedingAge ?? 12
 
-  // Cría: no destetado o edad menor al tiempo de destete
-  if (!animal.isWeaned || ageMonths < weaningMonths) return 'cria'
+  // Cría: no destetado Y edad menor al tiempo de destete
+  if (!animal.isWeaned && ageMonths < weaningMonths) return 'cria'
 
-  // Juvenil: destetado pero no alcanza edad reproductiva
+  // Si ya fue destetado o superó la edad de destete → ya no es cría
+  // Juvenil: aún no alcanza edad reproductiva
   if (ageMonths < minBreedingAge) return 'juvenil'
 
   // Alcanzó edad reproductiva → reproductor
