@@ -188,6 +188,9 @@ export const animals_genders_labels: Record<AnimalGender, string> = {
 
 export type AnimalType = (typeof animals_types)[number]
 export type AnimalStage = (typeof animals_stages)[number]
+
+/** Stages that imply the animal is already weaned */
+export const POST_WEAN_STAGES: AnimalStage[] = ['reproductor', 'engorda', 'pie_cria', 'descarte', 'juvenil']
 export type WeanNextStage = 'engorda' | 'reproductor'
 
 export const breeding_animal_status = ['monta', 'embarazada', 'parida'] as const

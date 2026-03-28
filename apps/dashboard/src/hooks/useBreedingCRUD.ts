@@ -9,6 +9,7 @@ import {
   Timestamp,
   updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore'
 import { useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
@@ -120,20 +121,21 @@ export const useBreedingCRUD = () => {
 
       await addDoc(collection(db, 'breedingRecords'), docData)
 
-      // Si alguna hembra ya tiene embarazo confirmado, actualizar su registro de animal
+      // Actualizar animales confirmados como embarazadas en un solo batch
       const confirmedFemales = data.femaleBreedingInfo?.filter(
         (info) => !!info.pregnancyConfirmedDate,
       ) || []
-      for (const info of confirmedFemales) {
-        const animalRef = doc(db, 'animals', info.femaleId)
-        await updateDoc(animalRef, {
-          pregnantAt: info.pregnancyConfirmedDate
-            ? Timestamp.fromDate(toLocalDateStart(new Date(info.pregnancyConfirmedDate)))
-            : null,
-          birthedAt: null,
-          weanedMotherAt: null,
-          updatedAt: now,
-        })
+      if (confirmedFemales.length > 0) {
+        const batch = writeBatch(db)
+        for (const info of confirmedFemales) {
+          batch.update(doc(db, 'animals', info.femaleId), {
+            pregnantAt: Timestamp.fromDate(toLocalDateStart(new Date(info.pregnancyConfirmedDate!))),
+            birthedAt: null,
+            weanedMotherAt: null,
+            updatedAt: now,
+          })
+        }
+        await batch.commit()
       }
     } catch (error) {
       console.error('Error creating breeding record:', error)
@@ -207,7 +209,6 @@ export const useBreedingCRUD = () => {
       }
 
       await updateDoc(docRef, updateData)
-      // El listener onSnapshot actualiza Redux automáticamente
     } catch (error) {
       console.error('Error updating breeding record:', error)
       throw error
@@ -221,7 +222,6 @@ export const useBreedingCRUD = () => {
     setIsSubmitting(true)
     try {
       await deleteDoc(doc(db, 'breedingRecords', id))
-      // El listener onSnapshot actualiza Redux automáticamente
     } catch (error) {
       console.error('Error deleting breeding record:', error)
       throw error

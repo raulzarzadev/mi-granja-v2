@@ -12,6 +12,7 @@ import {
   animals_stages,
   animals_stages_labels,
   animals_types,
+  POST_WEAN_STAGES,
 } from '@/types/animals'
 import { BirthDateInput } from './inputs/BirthDateInput'
 import { DatePickerModal } from './inputs/DatePickerModal'
@@ -220,21 +221,13 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
   const handleSubmitAll = async () => {
     if (!validate()) return
 
-    const postWeanStages: Animal['stage'][] = [
-      'reproductor',
-      'engorda',
-      'pie_cria',
-      'descarte',
-      'juvenil',
-    ]
-
     const transformed = animals.map((a) => ({
       animalNumber: a.animalNumber.trim(),
       ...(a.name.trim() ? { name: a.name.trim() } : {}),
       type: a.type,
       stage: a.stage,
       gender: a.gender,
-      ...(postWeanStages.includes(a.stage) ? { isWeaned: true } : {}),
+      ...(POST_WEAN_STAGES.includes(a.stage) ? { isWeaned: true } : {}),
       breed: a.breed.trim(),
       status: a.status as Animal['status'],
       ...(a.weight ? { weight: Math.round(Number(a.weight) * 1000) } : {}),

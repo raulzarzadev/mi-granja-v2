@@ -15,6 +15,7 @@ import {
   animals_stages_labels,
   animals_types,
   breeding_animal_status,
+  POST_WEAN_STAGES,
 } from '@/types/animals'
 import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { BirthDateInput } from './inputs/BirthDateInput'
@@ -269,15 +270,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       return
     }
 
-    // Etapas que implican que el animal ya fue destetado
-    const postWeanStages: Animal['stage'][] = [
-      'reproductor',
-      'engorda',
-      'pie_cria',
-      'descarte',
-      'juvenil',
-    ]
-    const isPostWean = postWeanStages.includes(values.stage)
+    const isPostWean = POST_WEAN_STAGES.includes(values.stage)
 
     const transformed: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'> = {
       animalNumber: trimmedAnimalNumber,

@@ -65,7 +65,6 @@ export const useAnimalCRUD = () => {
       newAnimal = wrapWithAdminMetadata(newAnimal, 'Creación de animal')
 
       const docRef = await addDoc(collection(db, 'animals'), newAnimal)
-      // El listener onSnapshot actualiza Redux automáticamente
       return docRef.id
     } catch (error) {
       console.error('Error creating animal:', error, { animalData })
@@ -97,7 +96,6 @@ export const useAnimalCRUD = () => {
       updatedData = wrapWithAdminMetadata(updatedData, 'Actualización de animal')
 
       await updateDoc(animalRef, updatedData)
-      // El listener onSnapshot actualiza Redux automáticamente
     } catch (error) {
       console.error('Error actualizando animal:', error)
       dispatch(setError('Error actualizando animal'))
@@ -116,7 +114,6 @@ export const useAnimalCRUD = () => {
     setIsLoading(true)
     try {
       await deleteDoc(doc(db, 'animals', animalId))
-      // El listener onSnapshot actualiza Redux automáticamente
     } catch (error) {
       console.error('Error deleting animal:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error al eliminar el animal'
@@ -182,38 +179,6 @@ export const useAnimalCRUD = () => {
         })
     })
   }
-  /**
-   * @deprecated  you should get animals by farm
-   */
-  const getUserAnimals = () => {
-    return new Promise<Animal[]>(async (resolve, reject) => {
-      if (!user?.id) {
-        dispatch(setError('Usuario no autenticado'))
-        return resolve([])
-      }
-
-      const constraints = [where('farmerId', '==', user.id)]
-      if (currentFarm?.id) constraints.push(where('farmId', '==', currentFarm.id))
-      const q = query(collection(db, 'animals'), ...constraints, orderBy('createdAt', 'desc'))
-
-      try {
-        const querySnapshot = await getDocs(q)
-        const animals = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Animal[]
-        dispatch(setAnimals(serializeObj(animals)))
-        resolve(animals)
-      } catch (error) {
-        console.error('Error fetching user animals:', error)
-        const errorMessage =
-          error instanceof Error ? error.message : 'Error al obtener los animales del usuario'
-        dispatch(setError(errorMessage))
-        reject(error)
-      }
-    })
-  }
-
   /**
    * Listener en tiempo real para animales de la granja.
    * Retorna función unsubscribe para limpiar el listener.
@@ -737,7 +702,6 @@ export const useAnimalCRUD = () => {
     update,
     remove,
     get,
-    getUserAnimals,
     getFarmAnimals,
     queryAnimalsByStatus,
     animalsStats,
