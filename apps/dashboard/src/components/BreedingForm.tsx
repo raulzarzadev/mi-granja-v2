@@ -114,19 +114,35 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     return animals.find((animal) => animal.id === maleId) ?? null
   }, [animals, maleId])
 
-  const filteredFemales = useMemo(() => {
-    if (!selectedMale) {
-      return []
-    }
+  const [onlyAvailable, setOnlyAvailable] = useState(true)
 
-    return animals.filter(
-      (animal) =>
-        (animal.status ?? 'activo') === 'activo' &&
-        animal.gender === 'hembra' &&
-        animal.type === selectedMale.type &&
-        (animal.stage === 'reproductor' || animal.stage === 'pie_cria'),
-    )
-  }, [animals, selectedMale])
+  // IDs de hembras en montas activas (embarazadas o pendientes de parto)
+  const busyFemaleIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const r of breedingRecords) {
+      if (r.id === initialData?.id) continue // excluir la monta actual en edición
+      for (const fi of r.femaleBreedingInfo) {
+        if (!fi.actualBirthDate) ids.add(fi.femaleId) // sin parto = ocupada
+      }
+    }
+    return ids
+  }, [breedingRecords, initialData?.id])
+
+  const filteredFemales = useMemo(() => {
+    if (!selectedMale) return []
+
+    return animals.filter((animal) => {
+      if ((animal.status ?? 'activo') !== 'activo') return false
+      if (animal.gender !== 'hembra') return false
+      if (animal.type !== selectedMale.type) return false
+      if (animal.stage !== 'reproductor' && animal.stage !== 'pie_cria') return false
+      if (onlyAvailable) {
+        if (animal.pregnantAt || animal.birthedAt) return false
+        if (busyFemaleIds.has(animal.id)) return false
+      }
+      return true
+    })
+  }, [animals, selectedMale, onlyAvailable, busyFemaleIds])
 
   useEffect(() => {
     if (initialData) {
@@ -427,6 +443,18 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
       {selectedMale ? (
         <>
+          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={onlyAvailable}
+              onChange={(e) => setOnlyAvailable(e.target.checked)}
+              className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+            />
+            Solo hembras disponibles
+            <span className="text-xs text-gray-400">
+              ({filteredFemales.length})
+            </span>
+          </label>
           <InputSelectAnimals
             animals={filteredFemales}
             selectedIds={femaleIds}
