@@ -299,6 +299,10 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp 
           {/* Footer — fechas de registro */}
           <div className="pt-3 border-t border-gray-100 flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-400">
             <span>
+              <span className="font-medium text-gray-500">ID:</span>{' '}
+              <span className="font-mono select-all">{animal.id}</span>
+            </span>
+            <span>
               <span className="font-medium text-gray-500">Registrado:</span>{' '}
               {formatDate(animal.createdAt, 'dd MMM yy')}
             </span>
