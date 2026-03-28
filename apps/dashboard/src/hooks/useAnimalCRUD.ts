@@ -195,10 +195,10 @@ export const useAnimalCRUD = () => {
     return onSnapshot(
       q,
       (snapshot) => {
-        const list = snapshot.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        })) as Animal[]
+        const list = snapshot.docs.map((d) => {
+          const animal = { id: d.id, ...d.data() } as Animal
+          return { ...animal, stage: computeAnimalStage(animal) }
+        })
         dispatch(setAnimals(serializeObj(list)))
       },
       (error) => {
