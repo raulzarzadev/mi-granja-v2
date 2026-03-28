@@ -16,7 +16,9 @@
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
     "test:e2e": "cypress run",
-    "test:e2e:dev": "cypress open"
+    "test:e2e:dev": "cypress open",
+    "test:pw": "playwright test",
+    "test:pw:ui": "playwright test --ui"
   },
   "dependencies": {
     "@getbrevo/brevo": "^5.0.1",
@@ -39,6 +41,7 @@
   },
   "devDependencies": {
     "@cypress/code-coverage": "^3.14.4",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
