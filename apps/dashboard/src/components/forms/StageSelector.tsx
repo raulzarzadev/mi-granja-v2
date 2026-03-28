@@ -28,7 +28,7 @@ const stageStyles: Record<string, { selected: string; hint: string }> = {
     selected: 'border-orange-400 bg-orange-50 text-orange-900',
     hint: 'bg-orange-50 text-orange-700 border-orange-200',
   },
-  lechera: {
+  pie_cria: {
     selected: 'border-purple-400 bg-purple-50 text-purple-900',
     hint: 'bg-purple-50 text-purple-700 border-purple-200',
   },

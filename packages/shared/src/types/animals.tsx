@@ -86,6 +86,12 @@ export interface Animal {
   weaningDestination?: WeanNextStage
   // Override opcional para días de destete recomendados
   customWeaningDays?: number
+  /** Fecha de confirmación de embarazo (hembras). Se limpia al registrar parto. */
+  pregnantAt?: Date | null
+  /** Fecha de parto como madre (hembras). Se limpia al destetar todas las crías. */
+  birthedAt?: Date | null
+  /** Fecha en que destetó a sus crías (hembras). Se limpia al iniciar nueva monta. */
+  weanedMotherAt?: Date | null
   // Metadata de admin para rastrear acciones administrativas
   adminAction?: {
     performedByAdmin: boolean
@@ -162,7 +168,7 @@ export const animals_stages = [
   'cria',
   'juvenil',
   'engorda',
-  'lechera',
+  'pie_cria',
   'reproductor',
   'descarte',
 ] as const
@@ -170,7 +176,7 @@ export const animals_stages_labels: Record<AnimalStage, string> = {
   cria: 'Cría',
   juvenil: 'Juvenil',
   engorda: 'Engorda',
-  lechera: 'Lechera',
+  pie_cria: 'Pie de cría',
   reproductor: 'Reproductor',
   descarte: 'Descarte',
 }
@@ -190,6 +196,19 @@ export const breeding_animal_status_labels: Record<AnimalBreedingStatus, string>
   monta: 'En monta',
   embarazada: 'Embarazada',
   parida: 'Parida',
+}
+
+/**
+ * Deriva el estado reproductivo de una hembra desde sus campos.
+ * pregnantAt → embarazada
+ * birthedAt → parida
+ * ninguno → libre
+ */
+export function getReproductiveStatus(animal: Animal): AnimalBreedingStatus | 'libre' {
+  if (animal.gender !== 'hembra') return 'libre'
+  if (animal.birthedAt) return 'parida'
+  if (animal.pregnantAt) return 'embarazada'
+  return 'libre'
 }
 
 export const animal_statuses = [
@@ -354,7 +373,7 @@ export const animal_stage_colors: Record<AnimalStage, string> = {
   cria: 'bg-blue-100 text-blue-800',
   juvenil: 'bg-cyan-100 text-cyan-800',
   engorda: 'bg-orange-100 text-orange-800',
-  lechera: 'bg-purple-100 text-purple-800',
+  pie_cria: 'bg-purple-100 text-purple-800',
   reproductor: 'bg-green-100 text-green-800',
   descarte: 'bg-red-100 text-red-800',
 }
@@ -363,7 +382,7 @@ export const animal_stage_labels: Record<AnimalStage, string> = {
   cria: 'Cría',
   juvenil: 'Juvenil',
   engorda: 'Engorda',
-  lechera: 'Lechera',
+  pie_cria: 'Pie de cría',
   reproductor: 'Reproductor',
   descarte: 'Descarte',
 }
@@ -371,7 +390,7 @@ export const animal_stage_icons: Record<AnimalStage, string> = {
   cria: '👶',
   juvenil: '🌱',
   engorda: '🍖',
-  lechera: '🥛',
+  pie_cria: '🐑',
   reproductor: '❤️',
   descarte: '🚫',
 }
@@ -393,7 +412,7 @@ export const animal_stage_config: Record<
   cria: { label: 'Cría', icon: '👶', color: 'bg-blue-100 text-blue-800' },
   juvenil: { label: 'Juvenil', icon: '🌱', color: 'bg-teal-100 text-teal-800' },
   engorda: { label: 'Engorda', icon: '🍖', color: 'bg-orange-100 text-orange-800' },
-  lechera: { label: 'Lechera', icon: '🥛', color: 'bg-purple-100 text-purple-800' },
+  pie_cria: { label: 'Pie de cría', icon: '🐑', color: 'bg-purple-100 text-purple-800' },
   reproductor: { label: 'Reproducción', icon: '❤️', color: 'bg-rose-100 text-rose-800' },
   descarte: { label: 'Descarte', icon: '🚫', color: 'bg-gray-100 text-gray-800' },
 }
@@ -440,12 +459,12 @@ export const animal_stage_descriptions: Record<AnimalStage, StageDescription> = 
       gallina: '>5 meses (pollo de engorda)',
     },
   },
-  lechera: {
-    description: 'Producción de leche activa. Requiere manejo nutricional especial.',
+  pie_cria: {
+    description: 'Animal destinado a reproducción y mejora genética del rebaño.',
     speciesInfo: {
-      vaca: 'Hembra adulta >24 meses, en lactancia',
-      cabra: 'Hembra adulta >12 meses, en lactancia',
-      oveja: 'Hembra adulta >12 meses, en lactancia',
+      vaca: 'Hembra o semental seleccionado para cría',
+      cabra: 'Hembra o semental seleccionado para cría',
+      oveja: 'Hembra o semental seleccionado para cría',
     },
   },
   reproductor: {

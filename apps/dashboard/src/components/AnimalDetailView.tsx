@@ -7,7 +7,7 @@ import AnimalRecordsSection from '@/components/AnimalRecordsSection'
 import Tabs from '@/components/Tabs'
 import { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { animalAge } from '@/lib/animal-utils'
+import { animalAge, computeAnimalStage } from '@/lib/animal-utils'
 import { formatDate, fromNow, toDate } from '@/lib/dates'
 import {
   Animal,
@@ -320,7 +320,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp 
     },
   ]
 
-  const stageCfg = animal_stage_config[animal.stage]
+  const stageCfg = animal_stage_config[computeAnimalStage(animal)]
   const genderCfg = animal_gender_config[animal.gender]
 
   return (

@@ -1,5 +1,6 @@
 import { toDate } from 'date-fns'
-import { Animal } from '../types/animals'
+import { Animal, AnimalStage, getReproductiveStatus } from '../types/animals'
+import { ANIMAL_BREEDING_CONFIGS } from './animalBreedingConfig'
 
 /**
  * Calcula la edad de un animal en meses
@@ -69,6 +70,42 @@ export function animalAge(
     default:
       return `${totalMonths} mes${totalMonths !== 1 ? 'es' : ''}`
   }
+}
+
+/** Stages asignados manualmente por el usuario (no se sobreescriben) */
+const MANUAL_STAGES = new Set<AnimalStage>(['engorda', 'pie_cria', 'descarte'])
+
+/**
+ * Calcula el stage de un animal basándose en sus parámetros:
+ *  - cria: no destetado o edad < weaningDays de su especie
+ *  - juvenil: destetado, edad >= weaningDays pero < minBreedingAge
+ *  - reproductor: edad >= minBreedingAge
+ *  - engorda / pie_cria / descarte: asignación manual, se respeta
+ */
+export function computeAnimalStage(animal: Animal): AnimalStage {
+  // Stages manuales: el usuario los asignó explícitamente
+  if (MANUAL_STAGES.has(animal.stage)) return animal.stage
+
+  const ageMonths = animalAge(animal, { format: 'months' })
+  const config = ANIMAL_BREEDING_CONFIGS[animal.type]
+  const weaningMonths = Math.ceil((config?.weaningDays ?? 60) / 30)
+  const minBreedingAge = config?.minBreedingAge ?? 12
+
+  // Cría: no destetado o edad menor al tiempo de destete
+  if (!animal.isWeaned || ageMonths < weaningMonths) return 'cria'
+
+  // Juvenil: destetado pero no alcanza edad reproductiva
+  if (ageMonths < minBreedingAge) return 'juvenil'
+
+  // Alcanzó edad reproductiva → reproductor
+  return 'reproductor'
+}
+
+/**
+ * Determina si un animal es juvenil según computeAnimalStage.
+ */
+export function isJuvenile(animal: Animal): boolean {
+  return computeAnimalStage(animal) === 'juvenil'
 }
 
 /**

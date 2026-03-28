@@ -5,7 +5,7 @@ import { es } from 'date-fns/locale'
 import React from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAdminAnimals } from '@/hooks/admin/useAdminAnimals'
-import { formatWeight } from '@/lib/animal-utils'
+import { computeAnimalStage, formatWeight } from '@/lib/animal-utils'
 import {
   AnimalStatus,
   animal_icon,
@@ -148,7 +148,7 @@ export default function AdminAnimals() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900 capitalize">{animal.type}</div>
-                  <div className="text-sm text-gray-500">{animal_stage_labels[animal.stage]}</div>
+                  <div className="text-sm text-gray-500">{animal_stage_labels[computeAnimalStage(animal)]}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {animal.farmerId}

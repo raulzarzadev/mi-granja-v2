@@ -168,6 +168,8 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
       {
         key: 'offspring',
         label: 'Crias',
+        sortable: true,
+        sortFn: (a, b) => a.status.totalOffspring - b.status.totalOffspring,
         render: (row) => <>{row.status.totalOffspring > 0 ? row.status.totalOffspring : '-'}</>,
         className: 'hidden sm:table-cell whitespace-nowrap',
         headerClassName: 'hidden sm:table-cell',

@@ -723,7 +723,7 @@ const BACKUP_SCHEMA_JSON = `{
       "type": "oveja | vaca | cabra | cerdo | gallina | perro | gato | equino | otro",
       "gender": "macho | hembra",
       "breed": "string (raza, opcional)",
-      "stage": "cria | juvenil | engorda | lechera | reproductor | descarte",
+      "stage": "cria | juvenil | engorda | pie_cria | reproductor | descarte",
       "status": "activo | muerto | vendido | perdido",
       "statusAt": "ISO 8601 (opcional, fecha del cambio de status)",
       "statusNotes": "string (notas sobre el cambio de status, opcional)",
@@ -740,6 +740,9 @@ const BACKUP_SCHEMA_JSON = `{
       "lostInfo": "{ lostAt, foundAt? } (si perdido)",
       "records": "[{ id, type, category, title, date, severity?, isResolved?, resolvedDate?, treatment?, nextDueDate?, batch?, veterinarian?, cost?, notes?, appliedToAnimals?, isBulkApplication?, createdAt, createdBy, updatedAt? }] (opcional)",
       "customWeaningDays": "number (override días de destete, opcional)",
+      "pregnantAt": "ISO 8601 | null (fecha confirmación embarazo, solo hembras)",
+      "birthedAt": "ISO 8601 | null (fecha de parto como madre, solo hembras)",
+      "weanedMotherAt": "ISO 8601 | null (fecha en que destetó sus crías, solo hembras)",
       "adminAction": "{ performedByAdmin, adminEmail?, adminId?, originalTimestamp, impersonationReason? } (opcional)",
       "createdAt": "ISO 8601",
       "updatedAt": "ISO 8601"
@@ -756,6 +759,7 @@ const BACKUP_SCHEMA_JSON = `{
         expectedBirthDate?, actualBirthDate?,
         offspring?: string[]
       }]",
+      "status": "active | finished (opcional, default: active)",
       "notes": "string (opcional)",
       "comments": "[{ id, content, urgency?, createdAt? }] (opcional)",
       "createdAt": "ISO 8601",

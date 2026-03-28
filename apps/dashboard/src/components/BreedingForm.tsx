@@ -124,7 +124,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         (animal.status ?? 'activo') === 'activo' &&
         animal.gender === 'hembra' &&
         animal.type === selectedMale.type &&
-        (animal.stage === 'reproductor' || animal.stage === 'lechera'),
+        (animal.stage === 'reproductor' || animal.stage === 'pie_cria'),
     )
   }, [animals, selectedMale])
 

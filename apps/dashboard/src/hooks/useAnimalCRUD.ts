@@ -20,6 +20,7 @@ import { serializeObj } from '@/features/libs/serializeObj'
 import { RootState } from '@/features/store'
 import { useAdminActions } from '@/lib/adminActions'
 import { db } from '@/lib/firebase'
+import { computeAnimalStage } from '@/lib/animal-utils'
 import { Animal, AnimalRecord, AnimalStatus, WeanNextStage } from '@/types/animals'
 
 /**
@@ -305,7 +306,7 @@ export const useAnimalCRUD = () => {
       }
       if (filters.type && animal.type !== filters.type) return false
       if (filters.breed && animal.breed !== filters.breed) return false
-      if (filters.stage && animal.stage !== filters.stage) return false
+      if (filters.stage && computeAnimalStage(animal) !== filters.stage) return false
       if (filters.gender && animal.gender !== filters.gender) return false
       if (filters.search) {
         const searchLower = filters.search.toLowerCase()

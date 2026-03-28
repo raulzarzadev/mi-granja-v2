@@ -17,6 +17,10 @@ const DATE_FIELDS_BY_COLLECTION: Record<string, string[]> = {
     // Dentro de lostInfo
     'lostInfo.lostAt',
     'lostInfo.foundAt',
+    // Estado reproductivo
+    'pregnantAt',
+    'birthedAt',
+    'weanedMotherAt',
     // Admin action
     'adminAction.originalTimestamp',
   ],
@@ -52,6 +56,9 @@ const KNOWN_DATE_FIELD_NAMES = new Set([
   'pregnancyConfirmedDate',
   'expectedBirthDate',
   'actualBirthDate',
+  'pregnantAt',
+  'birthedAt',
+  'weanedMotherAt',
   'timestamp',
   'dueDate',
   'expiresAt',
@@ -225,7 +232,7 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     type: "'oveja' | 'vaca' | 'cabra' | 'cerdo' | 'gallina' | 'perro' | 'gato' | 'equino' | 'otro' (obligatorio, debe ser uno de estos valores exactos)",
     breed: 'string | undefined (raza)',
     stage:
-      "'cria' | 'juvenil' | 'engorda' | 'lechera' | 'reproductor' | 'descarte'. Reglas: las crías recién nacidas siempre inician en 'cria'. Al destetar: si destino es engorda → stage='engorda'; si destino es reproductor → stage='juvenil'. 'lechera' es para madres productoras de leche (adultas), NO para crías.",
+      "'cria' | 'juvenil' | 'engorda' | 'pie_cria' | 'reproductor' | 'descarte'. Se calcula dinámicamente por edad y estado, pero engorda/pie_cria/descarte son asignaciones manuales.",
     gender: "'macho' | 'hembra' (obligatorio)",
     weight: 'number | string | null (en GRAMOS, ej: 4500 = 4.5kg). Se muestra al usuario en kg.',
     age: 'number | null (edad en meses al momento del registro, se calcula automáticamente desde birthDate)',
@@ -252,6 +259,12 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     records:
       '[ { id, type, category, title, description?, date, severity?, isResolved?, resolvedDate?, treatment?, nextDueDate?, batch?, veterinarian?, cost?, notes?, appliedToAnimals?: string[], isBulkApplication?: boolean, createdAt, createdBy, updatedAt? } ] | undefined',
     customWeaningDays: 'number | undefined (override de días de destete recomendados)',
+    pregnantAt:
+      'string (ISO 8601) | null | undefined. Fecha de confirmación de embarazo (hembras). Se limpia al registrar parto.',
+    birthedAt:
+      'string (ISO 8601) | null | undefined. Fecha de parto como madre (hembras). Se limpia al destetar todas las crías.',
+    weanedMotherAt:
+      'string (ISO 8601) | null | undefined. Fecha en que destetó a sus crías (hembras). Se limpia al iniciar nueva monta.',
     adminAction:
       '{ performedByAdmin: boolean, adminEmail?: string, adminId?: string, originalTimestamp: ISO 8601, impersonationReason?: string } | undefined',
     createdAt: 'string (ISO 8601)',
@@ -334,10 +347,12 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     fechas_iso_8601:
       'Todas las fechas deben estar en formato ISO 8601 (ej: 2026-03-17T00:00:00.000Z)',
     etapas_por_edad:
-      'cria=recién nacido, juvenil=destetado para reproducción, engorda=destetado para engorda, lechera=madre productora de leche, reproductor=adulto reproductor, descarte=animal a eliminar',
+      'cria=no destetado, juvenil=destetado pero sin edad reproductiva, engorda=manual, pie_cria=manual (destinado a cría), reproductor=edad reproductiva alcanzada, descarte=manual',
     destete:
       'Al destetar una cría: isWeaned=true, weanedAt=fecha, stage cambia según destino. Para engorda→stage="engorda". Para reproductor→stage="juvenil".',
     nacimiento_muerto: 'Si una cría nace muerta: status="muerto", statusAt=fecha del parto',
+    estado_reproductivo:
+      'Solo hembras. pregnantAt=embarazada, birthedAt=parida, weanedMotherAt=destetó. Cada transición limpia el estado anterior: embarazo→parto limpia pregnantAt, parto→destete limpia birthedAt.',
     ids_de_referencia:
       'motherId, fatherId, maleId, femaleId, offspring[] — son IDs internos. Al importar se remapean automáticamente.',
   },

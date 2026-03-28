@@ -215,7 +215,7 @@ export const ExampleModalAnimalForm = () => {
           farmerId: 'farmer1',
           animalNumber: 'COW-001',
           type: 'vaca',
-          stage: 'lechera',
+          stage: 'pie_cria',
           gender: 'hembra',
           birthDate: new Date('2021-01-15'),
           createdAt: new Date(),

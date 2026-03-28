@@ -21,14 +21,20 @@ import { toDate, toLocalDateStart } from '@/lib/dates'
 const safeToDate = (val: unknown): Date | null => {
   if (!val) return null
   if (val instanceof Date) return val
-  if (typeof val === 'string') return new Date(val)
+  if (typeof val === 'string') {
+    const d = new Date(val)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
   if (typeof val === 'number') return new Date(val)
-  if (
-    typeof val === 'object' &&
-    'toDate' in val &&
-    typeof (val as { toDate: unknown }).toDate === 'function'
-  ) {
-    return (val as { toDate: () => Date }).toDate()
+  if (typeof val === 'object') {
+    // Firestore Timestamp con toDate()
+    if ('toDate' in val && typeof (val as { toDate: unknown }).toDate === 'function') {
+      return (val as { toDate: () => Date }).toDate()
+    }
+    // Duck-typed Timestamp: { seconds: number, nanoseconds: number }
+    if ('seconds' in val && typeof (val as { seconds: unknown }).seconds === 'number') {
+      return new Date((val as { seconds: number }).seconds * 1000)
+    }
   }
   return null
 }

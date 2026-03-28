@@ -82,6 +82,9 @@ const schema = z
     batch: z.string().optional(),
     notes: z.string().optional(),
     status: z.enum([...animal_statuses, ...breeding_animal_status] as const).default('activo'),
+    pregnantAt: z.string().optional(),
+    birthedAt: z.string().optional(),
+    weanedMotherAt: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.birthDate) {
@@ -141,6 +144,24 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       batch: initialData?.batch ?? '',
       notes: initialData?.notes ?? '',
       status: initialData?.status ?? 'activo',
+      pregnantAt: initialData?.pregnantAt
+        ? (() => {
+            const d = toDate(initialData.pregnantAt)
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+          })()
+        : '',
+      birthedAt: initialData?.birthedAt
+        ? (() => {
+            const d = toDate(initialData.birthedAt)
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+          })()
+        : '',
+      weanedMotherAt: initialData?.weanedMotherAt
+        ? (() => {
+            const d = toDate(initialData.weanedMotherAt)
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+          })()
+        : '',
     }
   }, [initialData])
 
@@ -190,6 +211,28 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       ...(values.fatherId?.trim() ? { fatherId: values.fatherId.trim() } : {}),
       ...(values.batch?.trim() ? { batch: values.batch.trim() } : {}),
       ...(values.notes?.trim() ? { notes: values.notes.trim() } : {}),
+      ...(values.gender === 'hembra'
+        ? {
+            pregnantAt: values.pregnantAt
+              ? (() => {
+                  const [y, m, d] = values.pregnantAt.split('-').map(Number)
+                  return new Date(y, m - 1, d)
+                })()
+              : null,
+            birthedAt: values.birthedAt
+              ? (() => {
+                  const [y, m, d] = values.birthedAt.split('-').map(Number)
+                  return new Date(y, m - 1, d)
+                })()
+              : null,
+            weanedMotherAt: values.weanedMotherAt
+              ? (() => {
+                  const [y, m, d] = values.weanedMotherAt.split('-').map(Number)
+                  return new Date(y, m - 1, d)
+                })()
+              : null,
+          }
+        : {}),
     }
 
     onSubmit(transformed)
@@ -201,6 +244,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
   }))
 
   const selectedType = form.watch('type')
+  const selectedGender = form.watch('gender')
   return (
     <Form form={form} onSubmit={handleSubmit} className="space-y-4">
       <TextField
@@ -331,6 +375,54 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
         placeholder="Ej: L001, Lote-Marzo-2026"
         disabled={isLoading}
       />
+
+      {selectedGender === 'hembra' && (
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-gray-700">Estado reproductivo</p>
+          <p className="text-xs text-gray-400">
+            Estos campos se actualizan automaticamente al confirmar embarazos, registrar partos y
+            destetar. Tambien puedes editarlos manualmente.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Controller
+              control={form.control}
+              name="pregnantAt"
+              render={({ field }) => (
+                <DatePickerButtons
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  label="Embarazada desde"
+                  showToday
+                />
+              )}
+            />
+            <Controller
+              control={form.control}
+              name="birthedAt"
+              render={({ field }) => (
+                <DatePickerButtons
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  label="Parió el"
+                  showToday
+                />
+              )}
+            />
+            <Controller
+              control={form.control}
+              name="weanedMotherAt"
+              render={({ field }) => (
+                <DatePickerButtons
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  label="Destetó el"
+                  showToday
+                />
+              )}
+            />
+          </div>
+        </div>
+      )}
 
       <TextField
         name="notes"

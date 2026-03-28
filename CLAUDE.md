@@ -111,6 +111,10 @@ Admins can impersonate users via `/api/admin/impersonate`. All impersonated acti
 - Firebase config loaded from `NEXT_PUBLIC_FIREBASE_CONFIG` env var (JSON string)
 - Email service uses Brevo via `/api/send` route
 - When adding new shared types or utilities, add them to `packages/shared/` and create re-export proxies in the dashboard if needed
+- **Backup sync**: When modifying types in `packages/shared/src/types/` (adding/removing/renaming fields on `Animal`, `BreedingRecord`, `Reminder`, `Sale`, etc.), also update:
+  1. `apps/dashboard/src/lib/backup-serialization.ts` — add date fields to `DATE_FIELDS_BY_COLLECTION` and `KNOWN_DATE_FIELD_NAMES`, update `BACKUP_SCHEMA` descriptions
+  2. `apps/dashboard/src/components/ModalRestoreBackup.tsx` — update the hardcoded JSON schema shown in "Ver formato requerido del archivo"
+  This ensures backup export/import handles the new fields correctly and the UI documentation stays in sync.
 
 ## Business Model & Roadmap
 

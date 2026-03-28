@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { formatWeight } from '@/lib/animal-utils'
+import { computeAnimalStage, formatWeight } from '@/lib/animal-utils'
 import {
   Animal,
   animal_gender_config,
@@ -35,7 +35,7 @@ const getBgClass = (colorStr: string) => colorStr.split(' ')[0]
 
 const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
   const weight = formatWeight(animal.weight)
-  const stageCfg = animal_stage_config[animal.stage]
+  const stageCfg = animal_stage_config[computeAnimalStage(animal)]
   const genderCfg = animal_gender_config[animal.gender]
   const isActive = !animal.status || animal.status === 'activo'
   const accentBorder = stageAccentBorder[getBgClass(stageCfg.color)] ?? 'border-l-gray-300'

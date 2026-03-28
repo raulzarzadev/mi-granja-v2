@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { setAnimals } from '@/features/animals/animalsSlice'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
+import { computeAnimalStage } from '@/lib/animal-utils'
 import {
   Animal,
   AnimalBreedingStatus,
@@ -15,6 +16,7 @@ import {
   animals_stages_labels,
   animals_types_labels,
   breeding_animal_status_labels,
+  getReproductiveStatus,
 } from '@/types/animals'
 
 // Interfaz para los filtros de animales
@@ -72,24 +74,9 @@ export const useAnimalFilters = (externalState?: {
   const [searchResults, setSearchResults] = useState<Animal[]>([])
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Función para determinar el estado de cría de un animal
+  // Estado reproductivo derivado de los campos del animal
   const getAnimalBreedingStatus = (animal: Animal): AnimalBreedingStatus | 'libre' => {
-    if (animal.gender !== 'hembra') return 'libre' // Solo hembras pueden estar en estos estados
-
-    // Buscar en registros de cría activos para esta hembra
-    const activeBreeding = breedingRecords.find((breeding) =>
-      breeding.femaleBreedingInfo.some((femaleInfo) => femaleInfo.femaleId === animal.id),
-    )
-
-    if (!activeBreeding) return 'libre'
-
-    const femaleInfo = activeBreeding.femaleBreedingInfo.find((info) => info.femaleId === animal.id)
-    if (!femaleInfo) return 'libre'
-
-    // Determinar estado basado en fechas
-    if (femaleInfo.actualBirthDate) return 'parida'
-    if (femaleInfo.pregnancyConfirmedDate) return 'embarazada'
-    return 'monta' // Está en proceso de monta pero no confirmada
+    return getReproductiveStatus(animal)
   }
 
   // Recargar animales desde BD cuando cambia el filtro de estado (solo no-activo)
@@ -180,7 +167,7 @@ export const useAnimalFilters = (externalState?: {
   const availableBreeds = [
     ...new Set(animals.map((a) => a.breed).filter(Boolean)),
   ].sort() as string[]
-  const availableStages = [...new Set(animals.map((a) => a.stage))].sort()
+  const availableStages = [...new Set(animals.map((a) => computeAnimalStage(a)))].sort()
   const availableGenders = [...new Set(animals.map((a) => a.gender))].sort()
 
   // Contar filtros activos (excluyendo los defaults)

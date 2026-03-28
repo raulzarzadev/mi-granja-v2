@@ -12,6 +12,8 @@ export interface ColumnDef<T> {
   sortFn?: (a: T, b: T) => number
   headerClassName?: string
   className?: string
+  /** Ancho fijo CSS para la columna (ej: '80px', '10%'). Si se define, la tabla usa table-fixed. */
+  width?: string
 }
 
 export interface DataTableProps<T> {
@@ -199,7 +201,7 @@ function DataTable<T>({
 
   const thClass = (col: ColumnDef<T>) =>
     [
-      'px-2 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wider',
+      'px-2 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap',
       col.sortable ? 'cursor-pointer select-none hover:bg-gray-100 transition-colors' : '',
       col.headerClassName ?? '',
     ]
@@ -359,7 +361,7 @@ function DataTable<T>({
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[600px]">
+          <table className="w-full text-left">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 {isSelectionMode && <th className="w-8 px-2 py-2" />}
@@ -410,7 +412,7 @@ function DataTable<T>({
                       </td>
                     )}
                     {columns.map((col) => (
-                      <td key={col.key} className={`px-2 py-1.5 text-sm ${col.className ?? ''}`}>
+                      <td key={col.key} className={`px-2 py-1.5 text-sm whitespace-nowrap ${col.className ?? ''}`}>
                         {col.render(row)}
                       </td>
                     ))}
