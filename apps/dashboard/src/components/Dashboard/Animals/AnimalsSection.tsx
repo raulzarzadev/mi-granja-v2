@@ -254,8 +254,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   // --- Montas ordenadas ---
   const orderedBreedings = useMemo(() => {
     const needPregnancyConfirmation: BreedingRecord[] = []
-    const needBirthConfirmation: BreedingRecord[] = []
-    const completed: BreedingRecord[] = []
     const terminated: BreedingRecord[] = []
 
     filteredBreedingRecords.forEach((r) => {
@@ -263,17 +261,15 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         terminated.push(r)
         return
       }
-      let hasPendingPregnancyConfirm = false
-      let hasPendingBirth = false
-      r.femaleBreedingInfo.forEach((f) => {
-        if (!f.actualBirthDate) {
-          if (f.pregnancyConfirmedDate) hasPendingBirth = true
-          else hasPendingPregnancyConfirm = true
-        }
-      })
-      if (hasPendingPregnancyConfirm) needPregnancyConfirmation.push(r)
-      else if (hasPendingBirth) needBirthConfirmation.push(r)
-      else completed.push(r)
+      const hasPendingPregnancyConfirm = r.femaleBreedingInfo.some(
+        (f) => !f.pregnancyConfirmedDate && !f.actualBirthDate,
+      )
+      if (hasPendingPregnancyConfirm) {
+        needPregnancyConfirmation.push(r)
+      } else {
+        // Todas confirmadas o paridas — monta terminada
+        terminated.push(r)
+      }
     })
 
     const sortDesc = (a: BreedingRecord, b: BreedingRecord) =>
@@ -281,8 +277,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
 
     return {
       needPregnancyConfirmation: needPregnancyConfirmation.sort(sortDesc),
-      needBirthConfirmation: needBirthConfirmation.sort(sortDesc),
-      completed: completed.sort(sortDesc),
       terminated: terminated.sort(sortDesc),
     }
   }, [filteredBreedingRecords])
@@ -510,9 +504,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     [activeAnimals, filters],
   )
 
-  const montasCount =
-    orderedBreedings.needPregnancyConfirmation.length +
-    orderedBreedings.needBirthConfirmation.length
+  const montasCount = orderedBreedings.needPregnancyConfirmation.length
 
   // --- Birth form submit handler ---
   const handleBirthSubmit = async (form: {
@@ -654,8 +646,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       <BreedingTable
         records={[
           ...orderedBreedings.needPregnancyConfirmation,
-          ...orderedBreedings.needBirthConfirmation,
-          ...orderedBreedings.completed,
         ]}
         animals={animals}
         onSelect={editRecord}
@@ -1651,7 +1641,12 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         breedingRecord={confirmPregnancyRecord as BreedingRecord}
         animals={animals}
         onSubmit={async (r) => {
-          await updateBreedingRecord(r.id, r)
+          // Si todas las hembras tienen embarazo confirmado, marcar monta como terminada
+          const allConfirmed = r.femaleBreedingInfo.every((fi) => !!fi.pregnancyConfirmedDate)
+          await updateBreedingRecord(r.id, {
+            ...r,
+            ...(allConfirmed ? { status: 'finished' } : {}),
+          })
           for (const fi of r.femaleBreedingInfo) {
             if (fi.pregnancyConfirmedDate) {
               await update(fi.femaleId, {

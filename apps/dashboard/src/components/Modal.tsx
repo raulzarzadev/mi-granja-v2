@@ -27,6 +27,8 @@ export interface ModalProps {
   icon?: IconName
   /** Clase CSS adicional para el icono */
   iconClassName?: string
+  /** Clase CSS adicional para el contenido scrolleable */
+  contentClassName?: string
 }
 
 const sizeClasses = {
@@ -53,6 +55,7 @@ export const Modal: React.FC<ModalProps> = ({
   className = '',
   icon,
   iconClassName,
+  contentClassName,
 }) => {
   // Manejar tecla Escape
   useEffect(() => {
@@ -136,7 +139,7 @@ export const Modal: React.FC<ModalProps> = ({
 
           {/* Contenido scrolleable */}
           <div
-            className="flex-1 overflow-y-scroll p-3 sm:p-4 "
+            className={`flex-1 overflow-y-scroll p-3 sm:p-4 ${contentClassName || ''}`}
             style={{
               WebkitOverflowScrolling: 'touch',
             }}

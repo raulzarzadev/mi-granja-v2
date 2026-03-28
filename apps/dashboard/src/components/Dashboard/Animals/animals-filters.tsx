@@ -1,6 +1,5 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { setAnimals } from '@/features/animals/animalsSlice'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { computeAnimalStage } from '@/lib/animal-utils'
@@ -46,7 +45,7 @@ export const useAnimalFilters = (externalState?: {
   filters: AnimalFilters
   setFilters: React.Dispatch<React.SetStateAction<AnimalFilters>>
 }) => {
-  const { animals, animalsFiltered, getFarmAnimals, searchExact } = useAnimalCRUD()
+  const { animals, animalsFiltered, queryAnimalsByStatus, searchExact } = useAnimalCRUD()
   const { breedingRecords } = useBreedingCRUD()
   const [internalFilters, internalSetFilters] = useState<AnimalFilters>(() => {
     if (typeof window === 'undefined') return initialAnimalFilters
@@ -84,9 +83,8 @@ export const useAnimalFilters = (externalState?: {
     let cancelled = false
     const load = async () => {
       if (filters.status !== 'activo') {
-        const list = await getFarmAnimals({ status: filters.status })
+        const list = await queryAnimalsByStatus(filters.status)
         if (cancelled) return
-        setAnimals(list)
         setStatusAnimals((prev) => {
           const prevIds = prev.map((a) => a.id).join(',')
           const newIds = list.map((a) => a.id).join(',')
@@ -101,7 +99,7 @@ export const useAnimalFilters = (externalState?: {
     return () => {
       cancelled = true
     }
-  }, [filters.status, getFarmAnimals])
+  }, [filters.status, queryAnimalsByStatus])
 
   // Busqueda exacta en Firestore (debounced) — trae animales de cualquier status
   useEffect(() => {

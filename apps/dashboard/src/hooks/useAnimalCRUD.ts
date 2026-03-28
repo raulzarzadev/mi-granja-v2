@@ -7,6 +7,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   orderBy,
   query,
   updateDoc,
@@ -14,7 +15,7 @@ import {
 } from 'firebase/firestore'
 import { useCallback, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { addAnimal, removeAnimal, setAnimals, updateAnimal } from '@/features/animals/animalsSlice'
+import { setAnimals } from '@/features/animals/animalsSlice'
 import { setError } from '@/features/auth/authSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { RootState } from '@/features/store'
@@ -64,10 +65,7 @@ export const useAnimalCRUD = () => {
       newAnimal = wrapWithAdminMetadata(newAnimal, 'Creación de animal')
 
       const docRef = await addDoc(collection(db, 'animals'), newAnimal)
-
-      dispatch(addAnimal(serializeObj({ id: docRef.id, ...newAnimal })))
-      console.log('Animal creado con ID:', docRef.id)
-
+      // El listener onSnapshot actualiza Redux automáticamente
       return docRef.id
     } catch (error) {
       console.error('Error creating animal:', error, { animalData })
@@ -99,15 +97,7 @@ export const useAnimalCRUD = () => {
       updatedData = wrapWithAdminMetadata(updatedData, 'Actualización de animal')
 
       await updateDoc(animalRef, updatedData)
-      // Actualizar Redux con datos serializados
-      dispatch(
-        updateAnimal({
-          id: animalId,
-          data: serializeObj(updatedData),
-        }),
-      )
-
-      console.log('Animal actualizado:', animalId, updatedData)
+      // El listener onSnapshot actualiza Redux automáticamente
     } catch (error) {
       console.error('Error actualizando animal:', error)
       dispatch(setError('Error actualizando animal'))
@@ -126,8 +116,7 @@ export const useAnimalCRUD = () => {
     setIsLoading(true)
     try {
       await deleteDoc(doc(db, 'animals', animalId))
-      dispatch(removeAnimal(animalId)) // Actualizar estado global
-      console.log('Animal eliminado:', animalId)
+      // El listener onSnapshot actualiza Redux automáticamente
     } catch (error) {
       console.error('Error deleting animal:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error al eliminar el animal'
@@ -225,40 +214,51 @@ export const useAnimalCRUD = () => {
     })
   }
 
-  const getFarmAnimals = (opts?: { status?: AnimalStatus }) => {
-    return new Promise<Animal[]>(async (resolve, reject) => {
-      if (!user?.id) {
-        dispatch(setError('Usuario no autenticado'))
-        return resolve([])
-      }
+  /**
+   * Listener en tiempo real para animales de la granja.
+   * Retorna función unsubscribe para limpiar el listener.
+   */
+  const getFarmAnimals = (): (() => void) | undefined => {
+    if (!currentFarm?.id) return undefined
 
-      const constraints = [] as any[]
-      if (currentFarm?.id) constraints.push(where('farmId', '==', currentFarm.id))
-      if (opts?.status) constraints.push(where('status', '==', opts.status))
-      const q = query(collection(db, 'animals'), ...constraints, orderBy('createdAt', 'desc'))
+    const q = query(
+      collection(db, 'animals'),
+      where('farmId', '==', currentFarm.id),
+      orderBy('createdAt', 'desc'),
+    )
 
-      try {
-        const querySnapshot = await getDocs(q)
-        const animals = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const list = snapshot.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
         })) as Animal[]
+        dispatch(setAnimals(serializeObj(list)))
+      },
+      (error) => {
+        console.error('Animals listener error:', error)
+        dispatch(setError('Error sincronizando animales'))
+      },
+    )
+  }
 
-        if (opts?.status) {
-          // Cuando filtramos por estado, devolvemos resultados sin mutar el store global
-          resolve(serializeObj(animals))
-        } else {
-          dispatch(setAnimals(serializeObj(animals)))
-          resolve(animals)
-        }
-      } catch (error) {
-        console.error('Error fetching farm animals:', error)
-        const errorMessage =
-          error instanceof Error ? error.message : 'Error al obtener los animales de la granja'
-        dispatch(setError(errorMessage))
-        reject(error)
-      }
-    })
+  /**
+   * Query one-time para animales por status (muerto, vendido, perdido).
+   * No afecta el store global — retorna resultados directamente.
+   */
+  const queryAnimalsByStatus = async (status: AnimalStatus): Promise<Animal[]> => {
+    if (!currentFarm?.id) return []
+    const q = query(
+      collection(db, 'animals'),
+      where('farmId', '==', currentFarm.id),
+      where('status', '==', status),
+      orderBy('createdAt', 'desc'),
+    )
+    const snapshot = await getDocs(q)
+    return serializeObj(
+      snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Animal[],
+    )
   }
 
   const animalsStats = () => {
@@ -739,6 +739,7 @@ export const useAnimalCRUD = () => {
     get,
     getUserAnimals,
     getFarmAnimals,
+    queryAnimalsByStatus,
     animalsStats,
     animalsFiltered,
     wean,

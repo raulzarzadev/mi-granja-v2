@@ -7,12 +7,15 @@ import {
   AnimalStage,
   AnimalType,
   animal_icon,
-  animal_statuses,
+  animal_stage_icons,
   animals_genders,
   animals_stages,
+  animals_stages_labels,
   animals_types,
-  breeding_animal_status,
 } from '@/types/animals'
+import { BirthDateInput } from './inputs/BirthDateInput'
+import { DatePickerModal } from './inputs/DatePickerModal'
+import { InputRadioCards } from './inputs/InputRadioCards'
 
 // Campos compartidos que se preconfiguran para todos los animales
 interface BulkDefaults {
@@ -21,6 +24,7 @@ interface BulkDefaults {
   stage: AnimalStage
   gender: AnimalGender
   status: string
+  birthDate: string
   batch: string
   notes: string
 }
@@ -36,7 +40,7 @@ export interface BulkAnimalEntry {
   gender: AnimalGender
   status: string
   weight: string
-  age: string
+  birthDate: string
   batch: string
   notes: string
 }
@@ -77,6 +81,7 @@ const defaultDefaults: BulkDefaults = {
   stage: animals_stages[0],
   gender: animals_genders[0],
   status: 'activo',
+  birthDate: '',
   batch: '',
   notes: '',
 }
@@ -153,7 +158,7 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
         gender: defaults.gender,
         status: defaults.status,
         weight: '',
-        age: '',
+        birthDate: defaults.birthDate,
         batch: defaults.batch,
         notes: defaults.notes,
       })
@@ -206,9 +211,6 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
       if (animal.weight && (Number.isNaN(Number(animal.weight)) || Number(animal.weight) <= 0)) {
         newErrors[`${animal.tempId}-weight`] = 'Invalido'
       }
-      if (animal.age && (Number.isNaN(Number(animal.age)) || Number(animal.age) < 0)) {
-        newErrors[`${animal.tempId}-age`] = 'Invalido'
-      }
     }
 
     setErrors(newErrors)
@@ -218,16 +220,32 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
   const handleSubmitAll = async () => {
     if (!validate()) return
 
+    const postWeanStages: Animal['stage'][] = [
+      'reproductor',
+      'engorda',
+      'pie_cria',
+      'descarte',
+      'juvenil',
+    ]
+
     const transformed = animals.map((a) => ({
       animalNumber: a.animalNumber.trim(),
       ...(a.name.trim() ? { name: a.name.trim() } : {}),
       type: a.type,
       stage: a.stage,
       gender: a.gender,
+      ...(postWeanStages.includes(a.stage) ? { isWeaned: true } : {}),
       breed: a.breed.trim(),
       status: a.status as Animal['status'],
       ...(a.weight ? { weight: Math.round(Number(a.weight) * 1000) } : {}),
-      ...(a.age ? { age: Number(a.age) } : {}),
+      ...(a.birthDate
+        ? {
+            birthDate: (() => {
+              const [y, m, d] = a.birthDate.split('-').map(Number)
+              return new Date(y, m - 1, d)
+            })(),
+          }
+        : {}),
       ...(a.batch.trim() ? { batch: a.batch.trim() } : {}),
       ...(a.notes.trim() ? { notes: a.notes.trim() } : {}),
     }))
@@ -275,10 +293,11 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
     setEditingId(null)
   }
 
-  const allStatuses = [...animal_statuses, ...breeding_animal_status]
-
   // Vista de configuracion (antes de generar)
   if (!generated) {
+    const inputClass =
+      'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500'
+
     return (
       <div className="space-y-6">
         {/* Preconfiguración */}
@@ -289,22 +308,35 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
             individualmente despues.
           </p>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Especie *</label>
-              <select
-                value={defaults.type}
-                onChange={(e) => setDefaults((d) => ({ ...d, type: e.target.value as AnimalType }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                {animals_types.map((t) => (
-                  <option key={t} value={t}>
-                    {animal_icon[t]} {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Especie */}
+          <InputRadioCards
+            label="Especie *"
+            value={defaults.type}
+            onChange={(v) => setDefaults((d) => ({ ...d, type: v }))}
+            columns={5}
+            options={animals_types.map((t) => ({
+              value: t,
+              label: t.charAt(0).toUpperCase() + t.slice(1).replace('_', ' '),
+              icon: animal_icon[t],
+            }))}
+          />
 
+          {/* Estado */}
+          <InputRadioCards
+            label="Estado *"
+            value={defaults.status}
+            onChange={(v) => setDefaults((d) => ({ ...d, status: v }))}
+            columns={4}
+            options={[
+              { value: 'activo', label: 'Activo', icon: '✅' },
+              { value: 'muerto', label: 'Muerto', icon: '💀' },
+              { value: 'vendido', label: 'Vendido', icon: '💰' },
+              { value: 'perdido', label: 'Perdido', icon: '🔍' },
+            ]}
+          />
+
+          {/* Raza + Género */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Raza</label>
               <input
@@ -312,80 +344,60 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
                 value={defaults.breed}
                 onChange={(e) => setDefaults((d) => ({ ...d, breed: e.target.value }))}
                 placeholder="Ej: Dorper, Holstein"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className={inputClass}
               />
             </div>
+            <InputRadioCards
+              label="Género *"
+              value={defaults.gender}
+              onChange={(v) => setDefaults((d) => ({ ...d, gender: v }))}
+              columns={2}
+              options={[
+                { value: 'macho', label: 'Macho', icon: '♂' },
+                { value: 'hembra', label: 'Hembra', icon: '♀' },
+              ]}
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Etapa *</label>
-              <select
-                value={defaults.stage}
-                onChange={(e) =>
-                  setDefaults((d) => ({ ...d, stage: e.target.value as AnimalStage }))
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                {animals_stages.map((s) => (
-                  <option key={s} value={s}>
-                    {s.charAt(0).toUpperCase() + s.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Etapa */}
+          <InputRadioCards
+            label="Etapa *"
+            value={defaults.stage}
+            onChange={(v) => setDefaults((d) => ({ ...d, stage: v }))}
+            columns={3}
+            options={animals_stages.map((s) => ({
+              value: s,
+              label: animals_stages_labels[s],
+              icon: animal_stage_icons[s],
+            }))}
+          />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Genero *</label>
-              <select
-                value={defaults.gender}
-                onChange={(e) =>
-                  setDefaults((d) => ({ ...d, gender: e.target.value as AnimalGender }))
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                {animals_genders.map((g) => (
-                  <option key={g} value={g}>
-                    {g.charAt(0).toUpperCase() + g.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Fecha de nacimiento + Edad */}
+          <BirthDateInput
+            value={defaults.birthDate}
+            onChange={(val) => setDefaults((d) => ({ ...d, birthDate: val || '' }))}
+          />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Estado *</label>
-              <select
-                value={defaults.status}
-                onChange={(e) => setDefaults((d) => ({ ...d, status: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                {allStatuses.map((s) => (
-                  <option key={s} value={s}>
-                    {s.charAt(0).toUpperCase() + s.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
+          {/* Lote + Notas */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Lote</label>
               <input
                 type="text"
                 value={defaults.batch}
                 onChange={(e) => setDefaults((d) => ({ ...d, batch: e.target.value }))}
-                placeholder="Ej: L001, Lote-Marzo-2026"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                placeholder="Ej: L001"
+                className={inputClass}
               />
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Notas (compartida)
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
               <input
                 type="text"
                 value={defaults.notes}
                 onChange={(e) => setDefaults((d) => ({ ...d, notes: e.target.value }))}
                 placeholder="Notas para todos..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className={inputClass}
               />
             </div>
           </div>
@@ -487,7 +499,6 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
           const isEditing = editingId === animal.tempId
           const numError = errors[`${animal.tempId}-animalNumber`]
           const weightError = errors[`${animal.tempId}-weight`]
-          const ageError = errors[`${animal.tempId}-age`]
 
           return (
             <div
@@ -546,19 +557,12 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
                   />
                 </div>
 
-                {/* Edad editable siempre */}
-                <div className="w-16">
-                  <input
-                    type="number"
-                    value={animal.age}
-                    onChange={(e) => updateAnimal(animal.tempId, 'age', e.target.value)}
-                    onWheel={preventScrollChange}
-                    className={`w-full px-2 py-1 border rounded text-sm ${
-                      ageError
-                        ? 'border-red-400 bg-red-50'
-                        : 'border-gray-300 focus:ring-1 focus:ring-green-500 focus:border-green-500'
-                    }`}
-                    placeholder="Meses"
+                {/* Fecha de nacimiento */}
+                <div className="w-24">
+                  <DatePickerModal
+                    value={animal.birthDate}
+                    onChange={(val) => updateAnimal(animal.tempId, 'birthDate', val || '')}
+                    placeholder="Nac."
                     disabled={isLoading}
                   />
                 </div>
@@ -609,35 +613,32 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
 
               {/* Panel expandido para editar todos los campos */}
               {isEditing && (
-                <div className="px-3 pb-3 pt-1 border-t border-gray-100">
+                <div className="px-3 pb-3 pt-2 border-t border-gray-100 space-y-3">
+                  {/* Nombre en movil */}
+                  <div className="sm:hidden">
+                    <label className="block text-xs text-gray-500 mb-1">Nombre</label>
+                    <input
+                      type="text"
+                      value={animal.name}
+                      onChange={(e) => updateAnimal(animal.tempId, 'name', e.target.value)}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                      placeholder="Nombre"
+                    />
+                  </div>
+
+                  <InputRadioCards
+                    label="Especie"
+                    value={animal.type}
+                    onChange={(v) => updateAnimal(animal.tempId, 'type', v)}
+                    columns={5}
+                    options={animals_types.map((t) => ({
+                      value: t,
+                      label: t.charAt(0).toUpperCase() + t.slice(1).replace('_', ' '),
+                      icon: animal_icon[t],
+                    }))}
+                  />
+
                   <div className="grid grid-cols-2 gap-3">
-                    {/* Nombre en movil */}
-                    <div className="sm:hidden col-span-2">
-                      <label className="block text-xs text-gray-500 mb-1">Nombre</label>
-                      <input
-                        type="text"
-                        value={animal.name}
-                        onChange={(e) => updateAnimal(animal.tempId, 'name', e.target.value)}
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-                        placeholder="Nombre"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">Especie</label>
-                      <select
-                        value={animal.type}
-                        onChange={(e) => updateAnimal(animal.tempId, 'type', e.target.value)}
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-                      >
-                        {animals_types.map((t) => (
-                          <option key={t} value={t}>
-                            {animal_icon[t]} {t.charAt(0).toUpperCase() + t.slice(1)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Raza</label>
                       <input
@@ -648,52 +649,44 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
                         placeholder="Raza"
                       />
                     </div>
+                    <InputRadioCards
+                      label="Género"
+                      value={animal.gender}
+                      onChange={(v) => updateAnimal(animal.tempId, 'gender', v)}
+                      columns={2}
+                      options={[
+                        { value: 'macho', label: 'Macho', icon: '♂' },
+                        { value: 'hembra', label: 'Hembra', icon: '♀' },
+                      ]}
+                    />
+                  </div>
 
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">Etapa</label>
-                      <select
-                        value={animal.stage}
-                        onChange={(e) => updateAnimal(animal.tempId, 'stage', e.target.value)}
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-                      >
-                        {animals_stages.map((s) => (
-                          <option key={s} value={s}>
-                            {s.charAt(0).toUpperCase() + s.slice(1)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  <InputRadioCards
+                    label="Etapa"
+                    value={animal.stage}
+                    onChange={(v) => updateAnimal(animal.tempId, 'stage', v)}
+                    columns={3}
+                    options={animals_stages.map((s) => ({
+                      value: s,
+                      label: animals_stages_labels[s],
+                      icon: animal_stage_icons[s],
+                    }))}
+                  />
 
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">Genero</label>
-                      <select
-                        value={animal.gender}
-                        onChange={(e) => updateAnimal(animal.tempId, 'gender', e.target.value)}
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-                      >
-                        {animals_genders.map((g) => (
-                          <option key={g} value={g}>
-                            {g.charAt(0).toUpperCase() + g.slice(1)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  <InputRadioCards
+                    label="Estado"
+                    value={animal.status}
+                    onChange={(v) => updateAnimal(animal.tempId, 'status', v)}
+                    columns={4}
+                    options={[
+                      { value: 'activo', label: 'Activo', icon: '✅' },
+                      { value: 'muerto', label: 'Muerto', icon: '💀' },
+                      { value: 'vendido', label: 'Vendido', icon: '💰' },
+                      { value: 'perdido', label: 'Perdido', icon: '🔍' },
+                    ]}
+                  />
 
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">Estado</label>
-                      <select
-                        value={animal.status}
-                        onChange={(e) => updateAnimal(animal.tempId, 'status', e.target.value)}
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-                      >
-                        {allStatuses.map((s) => (
-                          <option key={s} value={s}>
-                            {s.charAt(0).toUpperCase() + s.slice(1)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Lote</label>
                       <input
@@ -704,8 +697,7 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
                         placeholder="Lote"
                       />
                     </div>
-
-                    <div className="col-span-2">
+                    <div>
                       <label className="block text-xs text-gray-500 mb-1">Notas</label>
                       <input
                         type="text"

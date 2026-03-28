@@ -44,10 +44,10 @@ function TextFieldComponent<TFieldValues extends FieldValues>(
   const { error } = getFieldState(name, formState)
   const { ref: registerRef, ...fieldProps } = register(name, rules)
 
-  const baseClassName = `w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 placeholder:text-gray-500  resize-none ${
+  const baseClassName = `w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900   resize-none ${
     error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
   }`
-  const finalClassName = className ? `${baseClassName} ${className}`.trim() : baseClassName
+  const finalClassName = className ? `${baseClassName} ${className} `.trim() : baseClassName
 
   const handleRef = (element: HTMLInputElement | HTMLTextAreaElement | null) => {
     registerRef(element)

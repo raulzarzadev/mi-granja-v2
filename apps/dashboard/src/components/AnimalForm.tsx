@@ -2,24 +2,25 @@
 
 import { toDate } from 'date-fns'
 import React, { useMemo } from 'react'
-import { Controller, ControllerRenderProps } from 'react-hook-form'
+import { Controller, UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
 import { useZodForm } from '@/hooks/useZodForm'
 import {
   Animal,
-  AnimalType,
   animal_icon,
+  animal_stage_icons,
   animal_statuses,
   animals_genders,
   animals_stages,
+  animals_stages_labels,
   animals_types,
   breeding_animal_status,
 } from '@/types/animals'
 import { DatePickerButtons } from './buttons/date-picker-buttons'
+import { BirthDateInput } from './inputs/BirthDateInput'
 import { Form } from './forms/Form'
-import { SelectField } from './forms/SelectField'
-import { StageSelector } from './forms/StageSelector'
 import { TextField } from './forms/TextField'
+import { InputRadioCards } from './inputs/InputRadioCards'
 import { WeightField } from './inputs/WeightInput'
 
 interface AnimalFormProps {
@@ -101,6 +102,86 @@ const schema = z
   })
 
 type FormSchema = z.infer<typeof schema>
+
+type ReproductiveState = 'embarazada' | 'parida' | 'destetada' | ''
+
+const reproOptions: {
+  value: ReproductiveState
+  label: string
+  icon: string
+  field: keyof FormSchema
+}[] = [
+  { value: 'embarazada', label: 'Embarazada', icon: '🤰', field: 'pregnantAt' },
+  { value: 'parida', label: 'Parida', icon: '🍼', field: 'birthedAt' },
+  { value: 'destetada', label: 'Destetó', icon: '✂️', field: 'weanedMotherAt' },
+]
+
+const ReproductiveStatusField: React.FC<{
+  form: UseFormReturn<FormSchema>
+  isLoading?: boolean
+}> = ({ form, isLoading }) => {
+  const pregnantAt = form.watch('pregnantAt')
+  const birthedAt = form.watch('birthedAt')
+  const weanedMotherAt = form.watch('weanedMotherAt')
+
+  const selected: ReproductiveState = weanedMotherAt
+    ? 'destetada'
+    : birthedAt
+      ? 'parida'
+      : pregnantAt
+        ? 'embarazada'
+        : ''
+
+  const activeOption = reproOptions.find((o) => o.value === selected)
+  const activeField = activeOption?.field
+
+  const handleSelect = (state: ReproductiveState) => {
+    // Limpiar todos
+    form.setValue('pregnantAt', '')
+    form.setValue('birthedAt', '')
+    form.setValue('weanedMotherAt', '')
+
+    // Si deselecciona el mismo, queda sin estado
+    if (state === selected) return
+
+    // Poner fecha de hoy en el campo correspondiente
+    const today = new Date().toISOString().split('T')[0]
+    const opt = reproOptions.find((o) => o.value === state)
+    if (opt) form.setValue(opt.field, today)
+  }
+
+  return (
+    <div className="space-y-3">
+      <InputRadioCards
+        label="Estado reproductivo"
+        value={selected}
+        onChange={handleSelect}
+        disabled={isLoading}
+        columns={3}
+        options={reproOptions.map((o) => ({ value: o.value, label: o.label, icon: o.icon }))}
+      />
+      {activeField && (
+        <Controller
+          control={form.control}
+          name={activeField}
+          render={({ field }) => (
+            <DatePickerButtons
+              value={field.value ?? ''}
+              onChange={field.onChange}
+              label={activeOption!.label}
+              showToday
+            />
+          )}
+        />
+      )}
+      {!selected && (
+        <p className="text-xs text-gray-400">
+          Sin estado reproductivo activo. Selecciona uno si aplica.
+        </p>
+      )}
+    </div>
+  )
+}
 
 const AnimalForm: React.FC<AnimalFormProps> = ({
   onSubmit,
@@ -188,12 +269,23 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       return
     }
 
+    // Etapas que implican que el animal ya fue destetado
+    const postWeanStages: Animal['stage'][] = [
+      'reproductor',
+      'engorda',
+      'pie_cria',
+      'descarte',
+      'juvenil',
+    ]
+    const isPostWean = postWeanStages.includes(values.stage)
+
     const transformed: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'> = {
       animalNumber: trimmedAnimalNumber,
       ...(values.name?.trim() ? { name: values.name.trim() } : {}),
       type: values.type,
       stage: values.stage,
       gender: values.gender,
+      ...(isPostWean ? { isWeaned: true } : {}),
       breed: values.breed?.trim() ?? '',
       status: values.status as Animal['status'],
       ...(values.weight ? { weight: Math.round(Number(values.weight) * 1000) } : {}),
@@ -238,207 +330,160 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
     onSubmit(transformed)
   }
 
-  const animalTypeOptions: { value: AnimalType; label: string }[] = animals_types.map((type) => ({
-    value: type,
-    label: `${animal_icon[type]} ${type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')}`,
-  }))
-
   const selectedType = form.watch('type')
   const selectedGender = form.watch('gender')
   return (
     <Form form={form} onSubmit={handleSubmit} className="space-y-4">
-      <TextField
-        name="animalNumber"
-        label="ID del Animal *"
-        placeholder="Ej: A001, OV123"
-        disabled={isLoading}
-      />
-
-      <TextField
-        name="name"
-        label="Nombre"
-        placeholder="Ej: Luna, Manchas (opcional)"
-        disabled={isLoading}
-      />
-
-      <SelectField
-        name="type"
+      {/* Especie */}
+      <InputRadioCards
         label="Especie *"
-        options={animalTypeOptions.map((type) => ({
-          value: type.value,
-          label: type.label,
+        value={selectedType}
+        onChange={(v) => form.setValue('type', v)}
+        disabled={isLoading}
+        columns={5}
+        options={animals_types.map((type) => ({
+          value: type,
+          label: type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' '),
+          icon: animal_icon[type],
         }))}
-        disabled={isLoading}
-      />
-      {/* Raza */}
-      <TextField
-        name="breed"
-        label="Raza"
-        placeholder="Ej: Holstein, Angus, Dorper"
-        disabled={isLoading}
       />
 
-      {/* Etapa */}
-      <StageSelector name="stage" animalType={selectedType} disabled={isLoading} />
-
-      {/* Status */}
-
-      <SelectField
-        name="status"
-        label="Estado *"
-        options={[...animal_statuses, ...breeding_animal_status].map((status) => ({
-          value: status,
-          label: status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' '),
-        }))}
+      {/* Estado */}
+      <InputRadioCards
+        label="Estado"
+        value={form.watch('status')}
+        onChange={(v) => form.setValue('status', v)}
         disabled={isLoading}
+        columns={4}
+        options={[
+          { value: 'activo', label: 'Activo', icon: '✅' },
+          { value: 'muerto', label: 'Muerto', icon: '💀' },
+          { value: 'vendido', label: 'Vendido', icon: '💰' },
+          { value: 'perdido', label: 'Perdido', icon: '🔍' },
+        ]}
       />
 
-      {/* Género */}
-
-      <SelectField
-        name="gender"
-        label="Género *"
-        options={animals_genders.map((gender) => ({
-          value: gender,
-          label: gender.charAt(0).toUpperCase() + gender.slice(1),
-        }))}
-        disabled={isLoading}
-      />
-
+      {/* ID + Nombre */}
       <div className="grid grid-cols-2 gap-4">
-        <WeightField name="weight" label="Peso" disabled={isLoading} />
-
         <TextField
-          name="age"
-          type="number"
-          label="Edad (meses)"
-          placeholder="0"
-          min="0"
+          name="animalNumber"
+          label="ID del Animal *"
+          placeholder="Ej: A001, OV123"
+          disabled={isLoading}
+          autoFocus
+        />
+        <TextField
+          name="name"
+          label="Nombre"
+          placeholder="Ej: Luna, Manchas"
           disabled={isLoading}
         />
       </div>
 
-      <Controller
-        control={form.control}
-        name="birthDate"
-        render={({
-          field,
-          fieldState,
-        }: {
-          field: ControllerRenderProps<FormSchema, 'birthDate'>
-          fieldState: { error?: { message?: string } }
-        }) => (
-          <div className="space-y-1">
-            <DatePickerButtons
+      {/* Fila 3: Raza + Género */}
+      <div className="grid grid-cols-2 gap-4">
+        <TextField
+          name="breed"
+          label="Raza"
+          placeholder="Ej: Dorper, Katahdin"
+          disabled={isLoading}
+        />
+        <InputRadioCards
+          label="Género *"
+          value={selectedGender}
+          onChange={(v) => form.setValue('gender', v)}
+          disabled={isLoading}
+          columns={2}
+          options={[
+            { value: 'macho', label: 'Macho', icon: '♂' },
+            { value: 'hembra', label: 'Hembra', icon: '♀' },
+          ]}
+        />
+      </div>
+
+      {/* Fila 4: Peso + Fecha nac / Edad */}
+      <div className="grid grid-cols-2 gap-4">
+        <WeightField name="weight" label="Peso" disabled={isLoading} />
+        <Controller
+          control={form.control}
+          name="birthDate"
+          render={({ field, fieldState }) => (
+            <BirthDateInput
               value={field.value ?? ''}
               onChange={(val) => {
                 field.onChange(val)
                 if (val) {
-                  const [y, m] = val.split('-').map(Number)
-                  const today = new Date()
-                  const monthsDiff = (today.getFullYear() - y) * 12 + (today.getMonth() + 1 - m)
-                  form.setValue('age', Math.max(0, monthsDiff).toString())
+                  const [y2, m2] = val.split('-').map(Number)
+                  const now = new Date()
+                  const diff = (now.getFullYear() - y2) * 12 + (now.getMonth() + 1 - m2)
+                  form.setValue('age', Math.max(0, diff).toString())
                 }
               }}
-              label="Fecha de Nacimiento"
-              showToday
+              disabled={isLoading}
+              error={fieldState.error?.message}
             />
-            {fieldState.error?.message ? (
-              <p className="text-xs text-red-600">{fieldState.error.message}</p>
-            ) : null}
-          </div>
-        )}
+          )}
+        />
+      </div>
+
+      {/* Fila 5: Etapa */}
+      <InputRadioCards
+        label="Etapa *"
+        value={form.watch('stage')}
+        onChange={(v) => form.setValue('stage', v)}
+        disabled={isLoading}
+        columns={3}
+        options={animals_stages.map((s) => ({
+          value: s,
+          label: animals_stages_labels[s],
+          icon: animal_stage_icons[s],
+        }))}
       />
 
-      <div>
+      {/* Fila 6: Estado reproductivo (solo hembras) */}
+      {selectedGender === 'hembra' && <ReproductiveStatusField form={form} isLoading={isLoading} />}
+
+      {/* Campos secundarios colapsados */}
+      <div className="border-t border-gray-100 pt-4 space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <TextField name="motherId" label="ID Madre" placeholder="Opcional" disabled={isLoading} />
+          <TextField name="fatherId" label="ID Padre" placeholder="Opcional" disabled={isLoading} />
+        </div>
+
+        <TextField name="batch" label="Lote" placeholder="Ej: L001" disabled={isLoading} />
+
+        <div>
+          <TextField
+            name="customWeaningDays"
+            type="number"
+            label="Días de destete (opcional)"
+            placeholder="Ej: 60"
+            min="1"
+            disabled={isLoading}
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Si lo dejas vacío, se usará el valor por defecto según la especie.
+          </p>
+        </div>
+
         <TextField
-          name="customWeaningDays"
-          type="number"
-          label="Días de destete (opcional)"
-          placeholder="Ej: 60"
-          min="1"
+          name="notes"
+          label="Notas"
+          placeholder="Observaciones adicionales..."
+          multiline
+          rows={2}
           disabled={isLoading}
         />
-        <p className="text-xs text-gray-500 mt-1">
-          Si lo dejas vacío, se usará el valor por defecto según la especie.
-        </p>
       </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <TextField name="motherId" label="ID Madre" placeholder="Opcional" disabled={isLoading} />
-        <TextField name="fatherId" label="ID Padre" placeholder="Opcional" disabled={isLoading} />
-      </div>
-
-      <TextField
-        name="batch"
-        label="Lote"
-        placeholder="Ej: L001, Lote-Marzo-2026"
-        disabled={isLoading}
-      />
-
-      {selectedGender === 'hembra' && (
-        <div className="space-y-3">
-          <p className="text-sm font-medium text-gray-700">Estado reproductivo</p>
-          <p className="text-xs text-gray-400">
-            Estos campos se actualizan automaticamente al confirmar embarazos, registrar partos y
-            destetar. Tambien puedes editarlos manualmente.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Controller
-              control={form.control}
-              name="pregnantAt"
-              render={({ field }) => (
-                <DatePickerButtons
-                  value={field.value ?? ''}
-                  onChange={field.onChange}
-                  label="Embarazada desde"
-                  showToday
-                />
-              )}
-            />
-            <Controller
-              control={form.control}
-              name="birthedAt"
-              render={({ field }) => (
-                <DatePickerButtons
-                  value={field.value ?? ''}
-                  onChange={field.onChange}
-                  label="Parió el"
-                  showToday
-                />
-              )}
-            />
-            <Controller
-              control={form.control}
-              name="weanedMotherAt"
-              render={({ field }) => (
-                <DatePickerButtons
-                  value={field.value ?? ''}
-                  onChange={field.onChange}
-                  label="Destetó el"
-                  showToday
-                />
-              )}
-            />
-          </div>
-        </div>
-      )}
-
-      <TextField
-        name="notes"
-        label="Notas"
-        placeholder="Observaciones adicionales..."
-        multiline
-        rows={3}
-        disabled={isLoading}
-      />
 
       {Object.keys(form.formState.errors).length > 0 && form.formState.isSubmitted && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
           <p className="font-medium mb-1">Corrige los siguientes errores:</p>
           <ul className="list-disc list-inside space-y-0.5 text-xs">
             {Object.entries(form.formState.errors).map(([key, error]) => (
-              <li key={key}>{(error as { message?: string })?.message || `Campo "${key}" inválido`}</li>
+              <li key={key}>
+                {(error as { message?: string })?.message || `Campo "${key}" inválido`}
+              </li>
             ))}
           </ul>
         </div>

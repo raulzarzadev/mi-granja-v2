@@ -109,11 +109,32 @@ export const useBreedingCRUD = () => {
           })) || [],
 
         notes: data.notes || '',
+        // Si todas las hembras ya tienen embarazo confirmado, marcar como terminada
+        ...(data.femaleBreedingInfo?.length &&
+        data.femaleBreedingInfo.every((info) => !!info.pregnancyConfirmedDate)
+          ? { status: 'finished' }
+          : {}),
         createdAt: now,
         updatedAt: now,
       }
 
       await addDoc(collection(db, 'breedingRecords'), docData)
+
+      // Si alguna hembra ya tiene embarazo confirmado, actualizar su registro de animal
+      const confirmedFemales = data.femaleBreedingInfo?.filter(
+        (info) => !!info.pregnancyConfirmedDate,
+      ) || []
+      for (const info of confirmedFemales) {
+        const animalRef = doc(db, 'animals', info.femaleId)
+        await updateDoc(animalRef, {
+          pregnantAt: info.pregnancyConfirmedDate
+            ? Timestamp.fromDate(toLocalDateStart(new Date(info.pregnancyConfirmedDate)))
+            : null,
+          birthedAt: null,
+          weanedMotherAt: null,
+          updatedAt: now,
+        })
+      }
     } catch (error) {
       console.error('Error creating breeding record:', error)
       throw error
@@ -185,23 +206,8 @@ export const useBreedingCRUD = () => {
         updateData.comments = updates.comments?.map(commentToFirestore) ?? []
       }
 
-      dispatch(
-        setBreedingRecords(
-          serializeObj(
-            breedingRecords.map((record) =>
-              record.id === id
-                ? {
-                    ...record,
-                    ...updates,
-                    updatedAt: new Date(), // Update the modification date
-                  }
-                : record,
-            ),
-          ),
-        ),
-      )
-
       await updateDoc(docRef, updateData)
+      // El listener onSnapshot actualiza Redux automáticamente
     } catch (error) {
       console.error('Error updating breeding record:', error)
       throw error
@@ -215,9 +221,7 @@ export const useBreedingCRUD = () => {
     setIsSubmitting(true)
     try {
       await deleteDoc(doc(db, 'breedingRecords', id))
-      dispatch(
-        setBreedingRecords(serializeObj(breedingRecords.filter((record) => record.id !== id))),
-      )
+      // El listener onSnapshot actualiza Redux automáticamente
     } catch (error) {
       console.error('Error deleting breeding record:', error)
       throw error
@@ -391,7 +395,7 @@ export const useBreedingCRUD = () => {
       orderBy('breedingDate', 'desc'),
     )
 
-    onSnapshot(q, (snapshot) => {
+    return onSnapshot(q, (snapshot) => {
       const records: BreedingRecord[] = []
       snapshot.forEach((docSnap) => {
         try {

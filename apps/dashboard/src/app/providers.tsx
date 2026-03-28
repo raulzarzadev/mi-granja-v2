@@ -63,21 +63,22 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
     }
   }, [user])
 
-  //* ==================================== FARM ANIMALS INITIALIZER
+  //* ==================================== FARM ANIMALS LISTENER
   const { getFarmAnimals } = useAnimalCRUD()
   const currentFarm = useSelector((state: RootState) => state.farm.currentFarm)
   useEffect(() => {
     if (currentFarm) {
-      getFarmAnimals()
+      const unsub = getFarmAnimals()
+      return () => unsub?.()
     }
-    // también cuando cambia la granja actual
   }, [currentFarm?.id])
 
-  //* ==================================== BREEDINGS INITIALIZER
+  //* ==================================== BREEDINGS LISTENER
   const { getFarmBreedings } = useBreedingCRUD()
   useEffect(() => {
     if (currentFarm) {
-      getFarmBreedings()
+      const unsub = getFarmBreedings()
+      return () => unsub?.()
     }
   }, [currentFarm?.id])
 
