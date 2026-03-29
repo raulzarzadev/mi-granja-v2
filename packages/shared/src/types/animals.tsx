@@ -168,7 +168,6 @@ export const animals_stages = [
   'cria',
   'juvenil',
   'engorda',
-  'pie_cria',
   'reproductor',
   'descarte',
 ] as const
@@ -176,7 +175,6 @@ export const animals_stages_labels: Record<AnimalStage, string> = {
   cria: 'Cría',
   juvenil: 'Juvenil',
   engorda: 'Engorda',
-  pie_cria: 'Pie de cría',
   reproductor: 'Reproductor',
   descarte: 'Descarte',
 }
@@ -190,7 +188,7 @@ export type AnimalType = (typeof animals_types)[number]
 export type AnimalStage = (typeof animals_stages)[number]
 
 /** Stages that imply the animal is already weaned */
-export const POST_WEAN_STAGES: AnimalStage[] = ['reproductor', 'engorda', 'pie_cria', 'descarte', 'juvenil']
+export const POST_WEAN_STAGES: AnimalStage[] = ['reproductor', 'engorda', 'descarte', 'juvenil']
 export type WeanNextStage = 'engorda' | 'reproductor'
 
 export const breeding_animal_status = ['monta', 'embarazada', 'parida'] as const
@@ -376,7 +374,6 @@ export const animal_stage_colors: Record<AnimalStage, string> = {
   cria: 'bg-blue-100 text-blue-800',
   juvenil: 'bg-cyan-100 text-cyan-800',
   engorda: 'bg-orange-100 text-orange-800',
-  pie_cria: 'bg-purple-100 text-purple-800',
   reproductor: 'bg-green-100 text-green-800',
   descarte: 'bg-red-100 text-red-800',
 }
@@ -385,7 +382,6 @@ export const animal_stage_labels: Record<AnimalStage, string> = {
   cria: 'Cría',
   juvenil: 'Juvenil',
   engorda: 'Engorda',
-  pie_cria: 'Pie de cría',
   reproductor: 'Reproductor',
   descarte: 'Descarte',
 }
@@ -393,7 +389,6 @@ export const animal_stage_icons: Record<AnimalStage, string> = {
   cria: '👶',
   juvenil: '🌱',
   engorda: '🍖',
-  pie_cria: '🐑',
   reproductor: '❤️',
   descarte: '🚫',
 }
@@ -415,7 +410,6 @@ export const animal_stage_config: Record<
   cria: { label: 'Cría', icon: '👶', color: 'bg-blue-100 text-blue-800' },
   juvenil: { label: 'Juvenil', icon: '🌱', color: 'bg-teal-100 text-teal-800' },
   engorda: { label: 'Engorda', icon: '🍖', color: 'bg-orange-100 text-orange-800' },
-  pie_cria: { label: 'Pie de cría', icon: '🐑', color: 'bg-purple-100 text-purple-800' },
   reproductor: { label: 'Reproducción', icon: '❤️', color: 'bg-rose-100 text-rose-800' },
   descarte: { label: 'Descarte', icon: '🚫', color: 'bg-gray-100 text-gray-800' },
 }
@@ -462,21 +456,13 @@ export const animal_stage_descriptions: Record<AnimalStage, StageDescription> = 
       gallina: '>5 meses (pollo de engorda)',
     },
   },
-  pie_cria: {
-    description: 'Animal destinado a reproducción y mejora genética del rebaño.',
-    speciesInfo: {
-      vaca: 'Hembra o semental seleccionado para cría',
-      cabra: 'Hembra o semental seleccionado para cría',
-      oveja: 'Hembra o semental seleccionado para cría',
-    },
-  },
   reproductor: {
-    description: 'Apto para reproducción. Semental o pie de cría.',
+    description: 'Apto para reproducción. Semental o hembra reproductora.',
     speciesInfo: {
-      oveja: '>8 meses, pie de cría >30 kg / semental >40 kg',
+      oveja: '>8 meses, hembra >30 kg / semental >40 kg',
       cabra: '>7 meses',
-      vaca: 'Pie de cría >15 meses, semental >18 meses',
-      cerdo: '>6 meses, pie de cría >100 kg / semental >110 kg',
+      vaca: 'Hembra >15 meses, semental >18 meses',
+      cerdo: '>6 meses, hembra >100 kg / semental >110 kg',
       gallina: '>5 meses',
       equino: '>3 años',
       perro: '>12 meses',

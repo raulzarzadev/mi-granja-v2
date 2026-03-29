@@ -135,7 +135,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
       if ((animal.status ?? 'activo') !== 'activo') return false
       if (animal.gender !== 'hembra') return false
       if (animal.type !== selectedMale.type) return false
-      if (animal.stage !== 'reproductor' && animal.stage !== 'pie_cria') return false
+      if (animal.stage !== 'reproductor') return false
       if (onlyAvailable) {
         if (animal.pregnantAt || animal.birthedAt) return false
         if (busyFemaleIds.has(animal.id)) return false

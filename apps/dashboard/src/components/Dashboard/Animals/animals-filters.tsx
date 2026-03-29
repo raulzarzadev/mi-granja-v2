@@ -206,6 +206,7 @@ interface AnimalsFiltersProps {
   formatStatLabel: (
     key: AnimalStage | AnimalType | AnimalGender | AnimalStatus | AnimalBreedingStatus | 'libre',
   ) => string
+  tabsTotal?: number
 }
 
 const FilterIcon = ({ active }: { active: boolean }) => (
@@ -233,6 +234,7 @@ export const AnimalsFilters = ({
   availableStages,
   availableGenders,
   formatStatLabel,
+  tabsTotal,
 }: AnimalsFiltersProps) => {
   const router = useRouter()
   const [showFilters, setShowFilters] = useState(false)
@@ -502,9 +504,18 @@ export const AnimalsFilters = ({
             </>
           )}
         </div>
-        <span className="text-xs text-gray-500 whitespace-nowrap">
+        <span className="text-xs text-gray-500 whitespace-nowrap flex items-center gap-1">
           <span className="font-semibold text-gray-700">{filteredCount}</span>{' '}
           {filteredCount === 1 ? 'animal' : 'animales'}
+          {typeof tabsTotal === 'number' && (
+            tabsTotal === filteredCount ? (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="size-3.5 text-green-500">
+                <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
+              </svg>
+            ) : (
+              <span className="text-amber-500 font-medium">{tabsTotal}/{filteredCount}</span>
+            )
+          )}
         </span>
       </div>
     </div>

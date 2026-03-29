@@ -78,14 +78,14 @@ export function animalAge(
 }
 
 /** Stages asignados manualmente por el usuario (no se sobreescriben) */
-const MANUAL_STAGES = new Set<AnimalStage>(['engorda', 'pie_cria', 'descarte'])
+const MANUAL_STAGES = new Set<AnimalStage>(['engorda', 'descarte'])
 
 /**
  * Calcula el stage de un animal basándose en sus parámetros:
  *  - cria: no destetado Y edad < weaningDays de su especie
  *  - juvenil: destetado, edad >= weaningDays pero < minBreedingAge
  *  - reproductor: edad >= minBreedingAge
- *  - engorda / pie_cria / descarte: asignación manual, se respeta
+ *  - engorda / descarte: asignación manual, se respeta
  */
 export function computeAnimalStage(animal: Animal): AnimalStage {
   // Stages manuales: el usuario los asignó explícitamente

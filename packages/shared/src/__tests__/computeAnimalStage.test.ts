@@ -34,11 +34,6 @@ describe('computeAnimalStage — stages manuales', () => {
     expect(computeAnimalStage(animal)).toBe('engorda')
   })
 
-  it('respeta pie_cria sin importar edad', () => {
-    const animal = makeAnimal({ stage: 'pie_cria', birthDate: monthsAgo(3), isWeaned: false })
-    expect(computeAnimalStage(animal)).toBe('pie_cria')
-  })
-
   it('respeta descarte sin importar edad', () => {
     const animal = makeAnimal({ stage: 'descarte', birthDate: monthsAgo(1) })
     expect(computeAnimalStage(animal)).toBe('descarte')

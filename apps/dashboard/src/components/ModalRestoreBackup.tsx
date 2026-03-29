@@ -723,7 +723,7 @@ const BACKUP_SCHEMA_JSON = `{
       "type": "oveja | vaca | cabra | cerdo | gallina | perro | gato | equino | otro",
       "gender": "macho | hembra",
       "breed": "string (raza, opcional)",
-      "stage": "cria | juvenil | engorda | pie_cria | reproductor | descarte",
+      "stage": "cria | juvenil | engorda | reproductor | descarte",
       "status": "activo | muerto | vendido | perdido",
       "statusAt": "ISO 8601 (opcional, fecha del cambio de status)",
       "statusNotes": "string (notas sobre el cambio de status, opcional)",

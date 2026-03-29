@@ -232,7 +232,7 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     type: "'oveja' | 'vaca' | 'cabra' | 'cerdo' | 'gallina' | 'perro' | 'gato' | 'equino' | 'otro' (obligatorio, debe ser uno de estos valores exactos)",
     breed: 'string | undefined (raza)',
     stage:
-      "'cria' | 'juvenil' | 'engorda' | 'pie_cria' | 'reproductor' | 'descarte'. Se calcula dinámicamente por edad y estado, pero engorda/pie_cria/descarte son asignaciones manuales.",
+      "'cria' | 'juvenil' | 'engorda' | 'reproductor' | 'descarte'. Se calcula dinámicamente por edad y estado, pero engorda/descarte son asignaciones manuales.",
     gender: "'macho' | 'hembra' (obligatorio)",
     weight: 'number | string | null (en GRAMOS, ej: 4500 = 4.5kg). Se muestra al usuario en kg.',
     age: 'number | null (edad en meses al momento del registro, se calcula automáticamente desde birthDate)',
@@ -347,7 +347,7 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     fechas_iso_8601:
       'Todas las fechas deben estar en formato ISO 8601 (ej: 2026-03-17T00:00:00.000Z)',
     etapas_por_edad:
-      'cria=no destetado, juvenil=destetado pero sin edad reproductiva, engorda=manual, pie_cria=manual (destinado a cría), reproductor=edad reproductiva alcanzada, descarte=manual',
+      'cria=no destetado, juvenil=destetado pero sin edad reproductiva, engorda=manual, reproductor=edad reproductiva alcanzada, descarte=manual',
     destete:
       'Al destetar una cría: isWeaned=true, weanedAt=fecha, stage cambia según destino. Para engorda→stage="engorda". Para reproductor→stage="juvenil".',
     nacimiento_muerto: 'Si una cría nace muerta: status="muerto", statusAt=fecha del parto',

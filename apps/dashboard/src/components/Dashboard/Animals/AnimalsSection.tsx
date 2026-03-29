@@ -477,16 +477,32 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     [animals],
   )
 
-  // --- Etapas por computeAnimalStage ---
+  // IDs de animales ya contados en tabs de breeding (Monta, Partos próximos, Destetes próximos)
+  const breedingTabIds = useMemo(() => {
+    const ids = new Set<string>()
+    // Hembras en monta (pendientes de confirmar embarazo)
+    for (const r of orderedBreedings.needPregnancyConfirmation) {
+      for (const f of r.femaleBreedingInfo) {
+        if (!f.pregnancyConfirmedDate && !f.actualBirthDate) ids.add(f.femaleId)
+      }
+    }
+    // Hembras embarazadas
+    for (const entry of pregnantFemales) ids.add(entry.animal.id)
+    // Crías en destete
+    for (const entry of unweanedOffspring) ids.add(entry.animal.id)
+    return ids
+  }, [orderedBreedings.needPregnancyConfirmation, pregnantFemales, unweanedOffspring])
+
+  // --- Etapas por computeAnimalStage (excluyendo animales en tabs de breeding) ---
   const engordaAnimals = useMemo(
     () =>
-      activeAnimals.filter((a) => computeAnimalStage(a) === 'engorda' && matchesEtapasFilters(a)),
-    [activeAnimals, filters],
+      activeAnimals.filter((a) => computeAnimalStage(a) === 'engorda' && matchesEtapasFilters(a) && !breedingTabIds.has(a.id)),
+    [activeAnimals, filters, breedingTabIds],
   )
   const juvenilAnimals = useMemo(
     () =>
-      activeAnimals.filter((a) => computeAnimalStage(a) === 'juvenil' && matchesEtapasFilters(a)),
-    [activeAnimals, filters],
+      activeAnimals.filter((a) => computeAnimalStage(a) === 'juvenil' && matchesEtapasFilters(a) && !breedingTabIds.has(a.id)),
+    [activeAnimals, filters, breedingTabIds],
   )
   const reproductorAnimals = useMemo(
     () =>
@@ -494,17 +510,31 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         (a) =>
           computeAnimalStage(a) === 'reproductor' &&
           matchesEtapasFilters(a) &&
-          getReproductiveStatus(a) === 'libre',
+          !breedingTabIds.has(a.id),
       ),
-    [activeAnimals, filters],
+    [activeAnimals, filters, breedingTabIds],
+  )
+  const criaAnimals = useMemo(
+    () =>
+      activeAnimals.filter((a) => computeAnimalStage(a) === 'cria' && matchesEtapasFilters(a) && !breedingTabIds.has(a.id)),
+    [activeAnimals, filters, breedingTabIds],
   )
   const descarteAnimals = useMemo(
     () =>
-      activeAnimals.filter((a) => computeAnimalStage(a) === 'descarte' && matchesEtapasFilters(a)),
-    [activeAnimals, filters],
+      activeAnimals.filter((a) => computeAnimalStage(a) === 'descarte' && matchesEtapasFilters(a) && !breedingTabIds.has(a.id)),
+    [activeAnimals, filters, breedingTabIds],
   )
 
   const montasCount = orderedBreedings.needPregnancyConfirmation.length
+  const montaFemalesCount = useMemo(
+    () =>
+      orderedBreedings.needPregnancyConfirmation.reduce(
+        (sum, r) =>
+          sum + r.femaleBreedingInfo.filter((f) => !f.pregnancyConfirmedDate && !f.actualBirthDate).length,
+        0,
+      ),
+    [orderedBreedings.needPregnancyConfirmation],
+  )
 
   // --- Birth form submit handler ---
   const handleBirthSubmit = async (form: {
@@ -1400,7 +1430,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       ),
     },
     {
-      label: etapaLabel('monta', montasCount),
+      label: etapaLabel('monta', montaFemalesCount),
+      badgeCount: montasCount,
       content: montaContent,
     },
     {
@@ -1410,6 +1441,30 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     {
       label: etapaLabel('destetes_proximos', unweanedOffspring.length),
       content: destetesContent,
+    },
+    {
+      label: etapaLabel('cria', criaAnimals.length),
+      content: (
+        <DataTable
+          title={`${animal_stage_config.cria.icon} Cría`}
+          data={criaAnimals}
+          columns={animalColumns}
+          rowKey={(row) => row.id}
+          defaultSortKey="animalNumber"
+          sessionStorageKey="mg_last_cria_id"
+          emptyMessage="No hay crías."
+          onView={(row) => (
+            <ModalAnimalDetails
+              animal={row}
+              triggerComponent={
+                <Button size="xs" variant="ghost" color="primary" icon="view">
+                  Ver
+                </Button>
+              }
+            />
+          )}
+        />
+      ),
     },
     {
       label: etapaLabel('juvenil', juvenilAnimals.length),
@@ -1585,6 +1640,16 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
             availableStages={availableStages}
             availableGenders={availableGenders}
             formatStatLabel={formatStatLabel}
+            tabsTotal={
+              reproductorAnimals.length +
+              montaFemalesCount +
+              pregnantFemales.length +
+              unweanedOffspring.length +
+              criaAnimals.length +
+              juvenilAnimals.length +
+              engordaAnimals.length +
+              descarteAnimals.length
+            }
           />
           <Tabs tabs={etapasTabs} tabsId="animals-etapas" />
         </div>
