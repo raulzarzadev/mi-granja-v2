@@ -14,7 +14,7 @@ export interface AnimalBreedingConfig {
   weaningDays: number // Días de destete recomendados
   description: string
 }
-//* COnfiguración de animales por monta, tiempo de crianza, destete, lactancia, etc.
+//* Configuración de animales por empadre, tiempo de crianza, destete, lactancia, etc.
 //* config animals  weaning time,
 export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> = {
   oveja: {
@@ -161,7 +161,7 @@ export const calculateExpectedBirthDate = (
 ): Date | null => {
   const date = toDate(breedingDate)
   if (!date || Number.isNaN(date.getTime())) {
-    console.log('Fecha de monta inválida')
+    console.log('Fecha de empadre inválida')
     return null
   }
 
@@ -195,7 +195,7 @@ export const calculateNextExpectedBirthDate = (
     if (confirmedPregnancies.length > 0) {
       // Buscar la fecha de parto más próxima
       const nextBirthDates = confirmedPregnancies.map((info) => {
-        // Usar fecha específica si existe, sino calcular desde confirmación o monta
+        // Usar fecha específica si existe, sino calcular desde confirmación o empadre
         if (info.expectedBirthDate) {
           return new Date(info.expectedBirthDate)
         }
@@ -219,7 +219,7 @@ export const calculateNextExpectedBirthDate = (
     }
   }
 
-  // Fallback: calcular desde la fecha de monta original
+  // Fallback: calcular desde la fecha de empadre original
   const expectedDate = new Date(breedingRecord.breedingDate)
   expectedDate.setDate(expectedDate.getDate() + config.gestationDays)
   return expectedDate
@@ -300,7 +300,7 @@ export const getNextBirthInfo = (
       // Buscar la fecha de parto más próxima
       let expectedDate: Date | null
       const birthInfos = confirmedPregnancies.map((info) => {
-        // Usar fecha específica si existe, sino calcular desde confirmación o monta
+        // Usar fecha específica si existe, sino calcular desde confirmación o empadre
         const baseDate = info.pregnancyConfirmedDate
         if (baseDate) {
           expectedDate = calculateExpectedBirthDate(baseDate, animalType)
@@ -350,7 +350,7 @@ export const getNextBirthInfo = (
     }
   }
 
-  // Fallback: calcular desde la fecha de monta original
+  // Fallback: calcular desde la fecha de empadre original
   const expectedDate = breedingRecord.breedingDate
     ? calculateExpectedBirthDate(breedingRecord.breedingDate, animalType)
     : null

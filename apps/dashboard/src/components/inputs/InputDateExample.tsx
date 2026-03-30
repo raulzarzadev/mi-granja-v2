@@ -19,7 +19,7 @@ const InputDateExample: React.FC = () => {
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-gray-800">Ejemplo Básico</h2>
         <InputDate
-          label="Fecha de Monta"
+          label="Fecha de Empadre"
           value={selectedDate}
           onChange={setSelectedDate}
           required
@@ -91,7 +91,7 @@ const InputDateExample: React.FC = () => {
 const [fecha, setFecha] = useState<Date | null>(null)
 
 <InputDate
-  label="Fecha de Monta"
+  label="Fecha de Empadre"
   value={fecha}
   onChange={setFecha}
   required

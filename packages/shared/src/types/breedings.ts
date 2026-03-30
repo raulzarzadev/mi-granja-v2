@@ -8,7 +8,7 @@ export interface FemaleBreedingInfo {
   offspring?: string[] // IDs de las crías de esta hembra específica
 }
 
-/** Estado de una monta: active = en curso, finished = terminada manualmente */
+/** Estado de un empadre: active = en curso, finished = terminada manualmente */
 export type BreedingStatus = 'active' | 'finished'
 
 export interface BreedingRecord {
@@ -19,7 +19,7 @@ export interface BreedingRecord {
   maleId: string
   breedingDate: Date | null
   femaleBreedingInfo: FemaleBreedingInfo[] // Información específica de cada hembra
-  /** Estado de la monta. Si es 'finished', las hembras pendientes quedan libres */
+  /** Estado del empadre. Si es 'finished', las hembras pendientes quedan libres */
   status?: BreedingStatus
   notes?: string
   comments?: Comment[]

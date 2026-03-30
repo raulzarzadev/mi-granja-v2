@@ -128,7 +128,7 @@ export default function UIShowcasePage() {
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <h3 className="font-medium text-gray-900 mb-1">Con Omitir + labels secundarios</h3>
                 <p className="text-xs text-gray-500 mb-4">
-                  Muestra seleccionados en el dropdown con boton Omitir y datos de monta
+                  Muestra seleccionados en el dropdown con boton Omitir y datos de empadre
                 </p>
                 <ExampleWithOmit />
               </div>
@@ -170,9 +170,9 @@ export default function UIShowcasePage() {
                 <div className="flex items-center mb-4">
                   <span className="text-2xl mr-3">🐄💕</span>
                   <div>
-                    <h3 className="font-medium text-gray-900">Modal de Monta/Reproducción</h3>
+                    <h3 className="font-medium text-gray-900">Modal de Empadre/Reproducción</h3>
                     <p className="text-sm text-gray-600">
-                      Registra montas entre animales reproductores
+                      Registra empadres entre animales reproductores
                     </p>
                   </div>
                 </div>
@@ -181,7 +181,7 @@ export default function UIShowcasePage() {
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Características:</h4>
                   <ul className="text-xs text-gray-600 space-y-1">
                     <li>• Selección de hembra y macho</li>
-                    <li>• Fecha de monta y parto esperado</li>
+                    <li>• Fecha de empadre y parto esperado</li>
                     <li>• Confirmación de embarazo</li>
                     <li>• Notas adicionales</li>
                   </ul>

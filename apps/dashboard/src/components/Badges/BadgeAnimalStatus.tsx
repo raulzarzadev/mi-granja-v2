@@ -25,9 +25,9 @@ export const BadgeAnimalStatus = ({
       bgColor = 'bg-gray-100 text-gray-800'
       text = '❓ Perdido'
       break
-    case 'monta':
+    case 'empadre':
       bgColor = 'bg-indigo-100 text-indigo-800'
-      text = 'En monta'
+      text = 'En empadre'
       break
     case 'embarazada':
       bgColor = 'bg-purple-100 text-purple-800'

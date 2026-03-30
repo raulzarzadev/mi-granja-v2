@@ -115,11 +115,11 @@ const mockAnimals: Animal[] = [
   },
 ]
 
-// Datos de monta simulados
+// Datos de empadre simulados
 const breedingDates: Record<string, string> = {
-  '2': 'Monta: 13-01-26-121',
-  '3': 'Monta: 15-05-25-137',
-  '7': 'Monta: 14-11-25-28',
+  '2': 'Empadre: 13-01-26-121',
+  '3': 'Empadre: 15-05-25-137',
+  '7': 'Empadre: 14-11-25-28',
 }
 
 /** Ejemplo multi-seleccion basico */
@@ -200,7 +200,7 @@ export function ExampleWithOmit() {
       onRemove={(id) => setIds((prev) => prev.filter((i) => i !== id))}
       showOmitButton
       secondaryLabel={(a) => breedingDates[a.id]}
-      label="Hembras para monta (con Omitir)"
+      label="Hembras para empadre (con Omitir)"
       placeholder="Buscar hembra oveja por numero..."
     />
   )

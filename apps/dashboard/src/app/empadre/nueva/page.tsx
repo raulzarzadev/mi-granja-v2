@@ -7,7 +7,7 @@ import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { BreedingRecord } from '@/types/breedings'
 
-export default function NuevaMontaPage() {
+export default function NuevoEmpadrePage() {
   const router = useRouter()
   const { animals } = useAnimalCRUD()
   const { createBreedingRecord, isSubmitting } = useBreedingCRUD()
@@ -20,7 +20,7 @@ export default function NuevaMontaPage() {
   }
 
   return (
-    <PageShell title="Registrar Monta">
+    <PageShell title="Registrar Empadre">
       <BreedingForm
         animals={animals}
         onSubmit={handleSubmit}

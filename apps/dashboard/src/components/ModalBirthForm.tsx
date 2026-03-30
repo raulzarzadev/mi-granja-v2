@@ -481,7 +481,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
             </label>
             {pregnantFemales.length === 0 ? (
               <p className="text-sm text-gray-600 p-3 bg-gray-50 rounded-md">
-                No hay hembras con embarazos confirmados en esta monta
+                No hay hembras con embarazos confirmados en este empadre
               </p>
             ) : (
               <div className="grid gap-2">

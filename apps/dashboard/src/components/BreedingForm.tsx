@@ -49,8 +49,8 @@ const femaleBreedingInfoSchema = z.object({
 })
 
 const schema = z.object({
-  breedingId: z.string().trim().min(1, 'El ID de monta es requerido'),
-  breedingDate: z.string().min(1, 'La fecha de monta es obligatoria'),
+  breedingId: z.string().trim().min(1, 'El ID de empadre es requerido'),
+  breedingDate: z.string().min(1, 'La fecha de empadre es obligatoria'),
   maleId: z.string().trim().min(1, 'Selecciona un macho reproductor'),
   femaleIds: z.array(z.string().min(1)).min(1, 'Selecciona al menos una hembra'),
   femaleBreedingInfo: z.array(femaleBreedingInfoSchema).default([]),
@@ -61,7 +61,7 @@ type FormSchema = z.infer<typeof schema>
 type FemaleBreedingInfoForm = FormSchema['femaleBreedingInfo'][number]
 
 /**
- * Formulario para registrar montas/reproducciones
+ * Formulario para registrar empadres/reproducciones
  * Solo el formulario sin modal wrapper
  */
 const BreedingForm: React.FC<BreedingFormProps> = ({
@@ -116,11 +116,11 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
   const [onlyAvailable, setOnlyAvailable] = useState(true)
 
-  // IDs de hembras en montas activas (embarazadas o pendientes de parto)
+  // IDs de hembras en empadres activos (embarazadas o pendientes de parto)
   const busyFemaleIds = useMemo(() => {
     const ids = new Set<string>()
     for (const r of breedingRecords) {
-      if (r.id === initialData?.id) continue // excluir la monta actual en edición
+      if (r.id === initialData?.id) continue // excluir el empadre actual en edición
       for (const fi of r.femaleBreedingInfo) {
         if (!fi.actualBirthDate) ids.add(fi.femaleId) // sin parto = ocupada
       }
@@ -170,7 +170,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     }
 
     const compatibleIds = femaleIds.filter((id) => {
-      // En modo edición, conservar hembras que ya estaban en la monta
+      // En modo edición, conservar hembras que ya estaban en el empadre
       if (initialFemaleIds.has(id)) return true
       const female = animals.find((animal) => animal.id === id)
       return female && female.type === selectedMale.type
@@ -250,7 +250,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
   const validateBreedingId = (breedingId: string): string | null => {
     if (!breedingId.trim()) {
-      return 'El ID de monta es requerido'
+      return 'El ID de empadre es requerido'
     }
 
     const isDuplicate = breedingRecords.some(
@@ -258,7 +258,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     )
 
     if (isDuplicate) {
-      return `Ya existe una monta con el ID "${breedingId.trim()}"`
+      return `Ya existe un empadre con el ID "${breedingId.trim()}"`
     }
 
     return null
@@ -381,7 +381,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
   return (
     <Form form={form} onSubmit={onSubmitForm} className="space-y-4">
-      <TextField name="breedingId" label="ID de Monta" placeholder="Ej: 10-10-25-01" required />
+      <TextField name="breedingId" label="ID de Empadre" placeholder="Ej: 10-10-25-01" required />
 
       {selectedMale ? (
         <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
@@ -403,7 +403,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             <DatePickerButtons
               value={field.value ?? ''}
               onChange={field.onChange}
-              label="Fecha de Monta"
+              label="Fecha de Empadre"
               showToday
             />
             {fieldState.error?.message ? (
@@ -469,7 +469,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             showOmitButton
             secondaryLabel={(animal) => {
               const brId = getFemaleBreedingId(animal.id)
-              return brId ? `Monta: ${brId}` : undefined
+              return brId ? `Empadre: ${brId}` : undefined
             }}
           />
 
@@ -479,7 +479,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                 <div className="mb-3 p-2 rounded bg-orange-100 border border-orange-300 text-orange-900 text-sm flex items-center gap-2">
                   <span className="text-xl">⚠️</span>
                   <span>
-                    Las siguientes hembras ya pertenecen a otra monta:
+                    Las siguientes hembras ya pertenecen a otro empadre:
                     {femalesInOtherBreeding.map((animal) => (
                       <span key={animal.id} className="ml-2 font-semibold">
                         {animal.animalNumber}
@@ -487,7 +487,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                           const brId = getFemaleBreedingId(animal.id)
                           return brId ? (
                             <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-200 text-orange-800">
-                              monta {brId}
+                              empadre {brId}
                             </span>
                           ) : null
                         })()}
@@ -524,7 +524,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                           {animal.animalNumber} - {animal.type}
                           {femaleBreedingId ? (
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-100 text-orange-800">
-                              monta {femaleBreedingId}
+                              empadre {femaleBreedingId}
                             </span>
                           ) : null}
                         </span>
@@ -644,8 +644,8 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                 : errors.breedingId
                   ? 'ID duplicado'
                   : initialData
-                    ? 'Actualizar Monta'
-                    : 'Registrar Monta'}
+                    ? 'Actualizar Empadre'
+                    : 'Registrar Empadre'}
         </button>
       </div>
     </Form>

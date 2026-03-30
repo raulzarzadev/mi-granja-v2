@@ -90,7 +90,7 @@ export interface Animal {
   pregnantAt?: Date | null
   /** Fecha de parto como madre (hembras). Se limpia al destetar todas las crías. */
   birthedAt?: Date | null
-  /** Fecha en que destetó a sus crías (hembras). Se limpia al iniciar nueva monta. */
+  /** Fecha en que destetó a sus crías (hembras). Se limpia al iniciar nuevo empadre. */
   weanedMotherAt?: Date | null
   // Metadata de admin para rastrear acciones administrativas
   adminAction?: {
@@ -191,10 +191,10 @@ export type AnimalStage = (typeof animals_stages)[number]
 export const POST_WEAN_STAGES: AnimalStage[] = ['reproductor', 'engorda', 'descarte', 'juvenil']
 export type WeanNextStage = 'engorda' | 'reproductor'
 
-export const breeding_animal_status = ['monta', 'embarazada', 'parida'] as const
+export const breeding_animal_status = ['empadre', 'embarazada', 'parida'] as const
 export type AnimalBreedingStatus = (typeof breeding_animal_status)[number]
 export const breeding_animal_status_labels: Record<AnimalBreedingStatus, string> = {
-  monta: 'En monta',
+  empadre: 'En empadre',
   embarazada: 'Embarazada',
   parida: 'Parida',
 }
@@ -394,18 +394,18 @@ export const animal_stage_icons: Record<AnimalStage, string> = {
 }
 
 // Configuración unificada de etapas y estados — fuente única de verdad para iconos, colores y labels.
-// Incluye AnimalStage + estados derivados de breeding (monta, partos_proximos, destetes_proximos).
+// Incluye AnimalStage + estados derivados de breeding (empadre, embarazos, crias_lactantes).
 // Usar en tabs de etapas, tablas, badges, filtros y cualquier UI que muestre etapas.
-export type AnimalStageKey = AnimalStage | 'monta' | 'partos_proximos' | 'destetes_proximos'
+export type AnimalStageKey = AnimalStage | 'empadre' | 'embarazos' | 'crias_lactantes'
 
 export const animal_stage_config: Record<
   AnimalStageKey,
   { label: string; icon: string; color: string }
 > = {
   // Breeding-derived stages
-  monta: { label: 'Monta', icon: '🛏️', color: 'bg-amber-100 text-amber-800' },
-  partos_proximos: { label: 'Partos próximos', icon: '🤰', color: 'bg-pink-100 text-pink-800' },
-  destetes_proximos: { label: 'Destetes próximos', icon: '🍼', color: 'bg-cyan-100 text-cyan-800' },
+  empadre: { label: 'Empadre', icon: '🛏️', color: 'bg-amber-100 text-amber-800' },
+  embarazos: { label: 'Embarazos', icon: '🤰', color: 'bg-pink-100 text-pink-800' },
+  crias_lactantes: { label: 'Crías', icon: '🍼', color: 'bg-cyan-100 text-cyan-800' },
   // Animal stages
   cria: { label: 'Cría', icon: '👶', color: 'bg-blue-100 text-blue-800' },
   juvenil: { label: 'Juvenil', icon: '🌱', color: 'bg-teal-100 text-teal-800' },

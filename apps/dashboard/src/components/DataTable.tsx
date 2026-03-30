@@ -29,7 +29,7 @@ export interface DataTableProps<T> {
   defaultSortDir?: 'asc' | 'desc'
   emptyMessage?: string
   title?: React.ReactNode
-  /** Extra buttons rendered in the header bar (e.g. "Nueva Monta") */
+  /** Extra buttons rendered in the header bar (e.g. "Nuevo Empadre") */
   toolbar?: React.ReactNode
   /** If provided, enables card/table view toggle. Renders each item as a card. */
   renderCard?: (row: T) => React.ReactNode

@@ -7,7 +7,7 @@ import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { BreedingRecord } from '@/types/breedings'
 
-export default function EditarMontaPage() {
+export default function EditarEmpadrePage() {
   const router = useRouter()
   const params = useParams<{ id: string }>()
   const { animals } = useAnimalCRUD()
@@ -26,7 +26,7 @@ export default function EditarMontaPage() {
 
   const handleDelete = async () => {
     if (!record) return
-    if (!window.confirm('¿Estas seguro de eliminar esta monta? Esta accion no se puede deshacer.'))
+    if (!window.confirm('¿Estas seguro de eliminar este empadre? Esta accion no se puede deshacer.'))
       return
     await deleteBreedingRecord(record.id)
     router.back()
@@ -34,9 +34,9 @@ export default function EditarMontaPage() {
 
   if (!record) {
     return (
-      <PageShell title="Editar Monta">
+      <PageShell title="Editar Empadre">
         <div className="text-center py-8 text-gray-500">
-          <p>No se encontro el registro de monta.</p>
+          <p>No se encontro el registro de empadre.</p>
           <button
             type="button"
             onClick={() => router.back()}
@@ -50,7 +50,7 @@ export default function EditarMontaPage() {
   }
 
   return (
-    <PageShell title="Editar Monta">
+    <PageShell title="Editar Empadre">
       <BreedingForm
         animals={animals}
         onSubmit={handleSubmit}
@@ -64,7 +64,7 @@ export default function EditarMontaPage() {
           onClick={handleDelete}
           className="w-full px-4 py-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors"
         >
-          Eliminar monta
+          Eliminar empadre
         </button>
       </div>
     </PageShell>

@@ -43,7 +43,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   const handleDelete = () => {
     if (
       window.confirm(
-        '¿Estás seguro de que quieres eliminar este registro de monta? Esta acción no se puede deshacer.',
+        '¿Estás seguro de que quieres eliminar este registro de empadre? Esta acción no se puede deshacer.',
       )
     ) {
       onDelete?.(record)
@@ -65,8 +65,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   }
 
   const getFemaleStatuses = () => {
-    //TODO: los estados son , Monta en proceso, no. de partos, no. de embarazos confirmados,
-    // algo asi Monta en proceso. Partos:2 Embarazos:3 Pendientes: 1
+    //TODO: los estados son , Empadre en proceso, no. de partos, no. de embarazos confirmados,
+    // algo asi Empadre en proceso. Partos:2 Embarazos:3 Pendientes: 1
     const births = record.femaleBreedingInfo.filter((info) => info.actualBirthDate).length
     const pregnancies = record.femaleBreedingInfo.filter(
       (info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate,
@@ -83,7 +83,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   }
 
   const getStatusColor = (statuses: ReturnType<typeof getFemaleStatuses>) => {
-    if (statuses.pending > 0) return 'bg-yellow-100 text-yellow-800' // Montas pendientes
+    if (statuses.pending > 0) return 'bg-yellow-100 text-yellow-800' // Empadres pendientes
     if (statuses.pregnancies > 0) return 'bg-blue-100 text-blue-800' // Embarazos
     if (statuses.births > 0) return 'bg-green-100 text-green-800' // Partos
   }
@@ -94,13 +94,13 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       const animalInfo = animals.find((a) => info.femaleId === a.id)
 
       // Determinar el estado real de la hembra
-      let status: AnimalBreedingStatus = 'monta'
+      let status: AnimalBreedingStatus = 'empadre'
       if (info.actualBirthDate) {
         status = 'parida'
       } else if (info.pregnancyConfirmedDate) {
         status = 'embarazada'
       } else {
-        status = 'monta'
+        status = 'empadre'
       }
 
       const expectedBirthDate = () => {
@@ -117,7 +117,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
           return res
         }
 
-        // si no hay confirmación, opcionalmente usar la fecha de monta
+        // si no hay confirmación, opcionalmente usar la fecha de empadre
         if (record.breedingDate) return calculateExpectedBirthDate(record.breedingDate, typeForCalc)
 
         return null
@@ -137,7 +137,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   const offspring = record.femaleBreedingInfo.flatMap((info) => info.offspring || [])
 
   // Orden de hembras:
-  // 1) En monta (pendiente de confirmación)
+  // 1) En empadre (pendiente de confirmación)
   // 2) Embarazadas con fecha probable de parto vencida
   // 3) Embarazadas con fecha probable futura (más próximas primero)
   // 4) Al final, las que ya han parido (más reciente primero)
@@ -145,7 +145,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
     const now = Date.now()
 
     const getGroup = (f: (typeof femalesBreedingInfo)[number]) => {
-      if (f.status === 'monta') return 0
+      if (f.status === 'empadre') return 0
       if (f.status === 'embarazada') {
         if (f.expectedBirthDate && f.expectedBirthDate.getTime() < now) {
           return 1 // vencida
@@ -165,7 +165,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
 
       // Dentro del mismo grupo, ordenar por criterio específico
       switch (ga) {
-        case 0: // monta: por número de animal asc para estabilidad
+        case 0: // empadre: por número de animal asc para estabilidad
           return getAnimalNumber(a).localeCompare(getAnimalNumber(b), 'es', {
             numeric: true,
           })
@@ -292,7 +292,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
           {femaleStatuses.pending > 0 && (
             <span className="text-yellow-600 ml-2">
               <Icon icon="bed" className="inline mr-1" />
-              {femaleStatuses.pending} monta pendiente
+              {femaleStatuses.pending} empadre pendiente
               {femaleStatuses.pending !== 1 ? 's' : ''}
             </span>
           )}
@@ -448,8 +448,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
             handleUpdateCommentUrgency(record.id, commentId, newLevel)
           }}
           onAddComment={handleAddComment}
-          title="Comentarios de la monta"
-          emptyStateText="Esta monta aún no tiene comentarios registrados."
+          title="Comentarios del empadre"
+          emptyStateText="Este empadre aún no tiene comentarios registrados."
         />
       </div>
     </div>
@@ -492,7 +492,7 @@ export const AnimalNotFound = ({
             <h2 className="text-sm font-semibold text-gray-800">Confirmar eliminación</h2>
             <p className="text-xs text-gray-600">
               ¿Seguro que deseas eliminar esta referencia a la hembra (ID: {animalId}) del registro
-              de monta? Esta acción no se puede deshacer.
+              de empadre? Esta acción no se puede deshacer.
             </p>
             <div className="flex justify-end gap-2 pt-2">
               <button

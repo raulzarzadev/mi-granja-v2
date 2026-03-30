@@ -91,7 +91,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   } | null>(null)
   const [selectedWeanIds, setSelectedWeanIds] = useState<Set<string>>(new Set())
 
-  const editRecord = (record: BreedingRecord) => router.push(`/monta/${record.id}/editar`)
+  const editRecord = (record: BreedingRecord) => router.push(`/empadre/${record.id}/editar`)
 
   // --- Breeding handlers (from BreedingTabs) ---
   const handleOpenAddBirth: BreedingActionHandlers['onAddBirth'] = (record, femaleId) => {
@@ -227,7 +227,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     [animals],
   )
 
-  // --- Montas filtradas por tipo/raza/género/búsqueda ---
+  // --- Empadres filtrados por tipo/raza/género/búsqueda ---
   const filteredBreedingRecords = useMemo(() => {
     const hasFilters = filters.type || filters.breed || filters.gender
     const q = filters.search.trim().toLowerCase()
@@ -251,7 +251,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     })
   }, [breedingRecords, animals, filters])
 
-  // --- Montas ordenadas ---
+  // --- Empadres ordenados ---
   const orderedBreedings = useMemo(() => {
     const needPregnancyConfirmation: BreedingRecord[] = []
     const terminated: BreedingRecord[] = []
@@ -267,7 +267,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       if (hasPendingPregnancyConfirm) {
         needPregnancyConfirmation.push(r)
       } else {
-        // Todas confirmadas o paridas — monta terminada
+        // Todas confirmadas o paridas — empadre terminado
         terminated.push(r)
       }
     })
@@ -288,7 +288,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       (a) => a.gender === 'hembra' && a.pregnantAt && matchesEtapasFilters(a),
     )
     return pregnant.map((animal) => {
-      // Buscar la monta asociada para obtener fecha esperada de parto
+      // Buscar el empadre asociado para obtener fecha esperada de parto
       const record = breedingRecords.find((r) =>
         r.femaleBreedingInfo.some(
           (f) => f.femaleId === animal.id && f.pregnancyConfirmedDate && !f.actualBirthDate,
@@ -477,10 +477,10 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     [animals],
   )
 
-  // IDs de animales ya contados en tabs de breeding (Monta, Partos próximos, Destetes próximos)
+  // IDs de animales ya contados en tabs de breeding (Empadre, Embarazos, Crías)
   const breedingTabIds = useMemo(() => {
     const ids = new Set<string>()
-    // Hembras en monta (pendientes de confirmar embarazo)
+    // Hembras en empadre (pendientes de confirmar embarazo)
     for (const r of orderedBreedings.needPregnancyConfirmation) {
       for (const f of r.femaleBreedingInfo) {
         if (!f.pregnancyConfirmedDate && !f.actualBirthDate) ids.add(f.femaleId)
@@ -525,8 +525,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     [activeAnimals, filters, breedingTabIds],
   )
 
-  const montasCount = orderedBreedings.needPregnancyConfirmation.length
-  const montaFemalesCount = useMemo(
+  const empadresCount = orderedBreedings.needPregnancyConfirmation.length
+  const empadreFemalesCount = useMemo(
     () =>
       orderedBreedings.needPregnancyConfirmation.reduce(
         (sum, r) =>
@@ -629,8 +629,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     false,
   )
 
-  // Tab: Monta
-  const montaContent = (
+  // Tab: Empadre
+  const empadreContent = (
     <div>
       {!etapasGuideDismissed && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 mb-3">
@@ -639,7 +639,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
               <p className="font-semibold">Como funciona el flujo de etapas</p>
               <ol className="list-decimal list-inside space-y-1 text-blue-700">
                 <li>
-                  <strong>Monta</strong> — Registra el cruce entre un macho y una o varias hembras.
+                  <strong>Empadre</strong> — Registra el cruce entre un macho y una o varias hembras.
                 </li>
                 <li>
                   <strong>Confirmar gestacion</strong> — Confirma que la hembra quedo preñada y se
@@ -659,7 +659,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                 </li>
               </ol>
               <p className="text-blue-600">
-                Empieza creando una monta con el boton <strong>&quot;Nueva Monta&quot;</strong>.
+                Empieza creando un empadre con el boton <strong>&quot;Nuevo Empadre&quot;</strong>.
               </p>
             </div>
             <Button
@@ -702,9 +702,9 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
               size="xs"
               color="success"
               icon="add"
-              onClick={() => router.push('/monta/nueva')}
+              onClick={() => router.push('/empadre/nueva')}
             >
-              Nueva Monta
+              Nuevo Empadre
             </Button>
           </div>
         }
@@ -741,7 +741,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                 <Modal
                   isOpen={open}
                   onClose={() => setOpen(false)}
-                  title={`Monta ${r.breedingId || ''}`}
+                  title={`Empadre ${r.breedingId || ''}`}
                 >
                   <div className="p-4 space-y-4">
                     <div className="flex items-center justify-between text-sm">
@@ -770,7 +770,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                             ? 'Parida'
                             : fi.pregnancyConfirmedDate
                               ? 'Embarazada'
-                              : 'En monta'
+                              : 'En empadre'
                           const statusColor = fi.actualBirthDate
                             ? 'bg-green-100 text-green-700'
                             : fi.pregnancyConfirmedDate
@@ -796,13 +796,13 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                     </div>
                     {r.status === 'finished' && (
                       <div className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 text-center">
-                        Monta terminada
+                        Empadre terminado
                       </div>
                     )}
                     {confirming ? (
                       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-3">
                         <p className="text-sm text-amber-800">
-                          Las hembras pendientes (en monta) quedarán disponibles para nuevas montas.
+                          Las hembras pendientes (en empadre) quedarán disponibles para nuevos empadres.
                           Las que amamantan seguirán ocupadas hasta el destete.
                         </p>
                         <div className="flex gap-2">
@@ -883,7 +883,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       {orderedBreedings.terminated.length > 0 && (
         <details className="mt-6">
           <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700 flex items-center gap-2 py-2">
-            Montas terminadas ({orderedBreedings.terminated.length})
+            Empadres terminados ({orderedBreedings.terminated.length})
           </summary>
           <div className="mt-2">
             <BreedingTable
@@ -912,11 +912,11 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                       <Modal
                         isOpen={open}
                         onClose={() => setOpen(false)}
-                        title={`Monta ${r.breedingId || ''}`}
+                        title={`Empadre ${r.breedingId || ''}`}
                       >
                         <div className="p-4 space-y-4">
                           <div className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 text-center">
-                            Monta terminada
+                            Empadre terminado
                           </div>
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-500">Fecha</span>
@@ -939,7 +939,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                                   ? 'Parida'
                                   : fi.pregnancyConfirmedDate
                                     ? 'Embarazada'
-                                    : 'En monta'
+                                    : 'En empadre'
                                 const statusColor = fi.actualBirthDate
                                   ? 'bg-green-100 text-green-700'
                                   : fi.pregnancyConfirmedDate
@@ -1021,7 +1021,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   const enrichedPregnantFemales: EnrichedPregnant[] = useMemo(
     () =>
       pregnantFemales.map((entry) => {
-        // Prioridad: fecha esperada de la monta, o calcular desde pregnantAt + gestación
+        // Prioridad: fecha esperada del empadre, o calcular desde pregnantAt + gestación
         let expected = entry.info?.expectedBirthDate ? toDate(entry.info.expectedBirthDate) : null
         if (!expected && entry.animal.pregnantAt) {
           const pregnantDate = toDate(entry.animal.pregnantAt)
@@ -1058,8 +1058,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         className: 'whitespace-nowrap',
       },
       {
-        key: 'monta',
-        label: 'Monta',
+        key: 'empadre',
+        label: 'Empadre',
         sortable: true,
         sortFn: (a, b) =>
           (a.record?.breedingId || '').localeCompare(b.record?.breedingId || '', 'es', {
@@ -1067,7 +1067,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           }),
         render: (row) => (
           <span className={row.record ? 'text-gray-600' : 'text-gray-400 italic'}>
-            {row.record?.breedingId || 'Sin monta'}
+            {row.record?.breedingId || 'Sin empadre'}
           </span>
         ),
         className: 'whitespace-nowrap',
@@ -1121,11 +1121,12 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     [],
   )
 
-  // Tab: Partos próximos
+  // Tab: Embarazos
   const partosContent = (
     <div>
+      <p className="text-xs text-gray-500 mb-2">Hembras con embarazo confirmado, en espera de parto.</p>
       <DataTable
-        title={`${animal_stage_config.partos_proximos.icon} Partos próximos`}
+        title={`${animal_stage_config.embarazos.icon} Embarazos`}
         data={enrichedPregnantFemales}
         columns={partosColumns}
         rowKey={(row) => row.animal.id}
@@ -1166,7 +1167,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                 icon="edit"
                 onClick={() => editRecord(row.record!)}
               >
-                Monta
+                Empadre
               </Button>
             )}
             <ButtonConfirm
@@ -1189,12 +1190,31 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     </div>
   )
 
-  // Tab: Destetes próximos — misma vista que BreedingTabs > Destetes
+  // Tab: Crías — recién nacidos en espera de destete
+  const allCrias: UnweanedRow[] = useMemo(() => {
+    const fromBreeding = unweanedOffspring
+    const breedingCriaIds = new Set(fromBreeding.map((r) => r.animal.id))
+    const standalone = criaAnimals
+      .filter((a) => !breedingCriaIds.has(a.id))
+      .map((a) => {
+        let weanDate: Date | null = null
+        let daysUntilWean: number | null = null
+        if (a.birthDate) {
+          const days = getWeaningDays(a)
+          weanDate = addDays(toDate(a.birthDate), days)
+          daysUntilWean = differenceInCalendarDays(weanDate, new Date())
+        }
+        return { animal: a, motherId: '', record: null as any, weanDate, daysUntilWean }
+      })
+    return [...fromBreeding, ...standalone]
+  }, [unweanedOffspring, criaAnimals])
+
   const destetesContent = (
     <div>
+      <p className="text-xs text-gray-500 mb-2">Recién nacidos, en espera de destete.</p>
       <DataTable
-        title={`${animal_stage_config.destetes_proximos.icon} Destetes próximos`}
-        data={unweanedOffspring}
+        title={`${animal_stage_config.crias_lactantes.icon} Crías`}
+        data={allCrias}
         columns={destetesColumns}
         rowKey={(row) => row.animal.id}
         defaultSortKey="weanDate"
@@ -1430,41 +1450,17 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       ),
     },
     {
-      label: etapaLabel('monta', montaFemalesCount),
-      badgeCount: montasCount,
-      content: montaContent,
+      label: etapaLabel('empadre', empadreFemalesCount),
+      badgeCount: empadresCount,
+      content: empadreContent,
     },
     {
-      label: etapaLabel('partos_proximos', pregnantFemales.length),
+      label: etapaLabel('embarazos', pregnantFemales.length),
       content: partosContent,
     },
     {
-      label: etapaLabel('destetes_proximos', unweanedOffspring.length),
+      label: etapaLabel('crias_lactantes', unweanedOffspring.length + criaAnimals.length),
       content: destetesContent,
-    },
-    {
-      label: etapaLabel('cria', criaAnimals.length),
-      content: (
-        <DataTable
-          title={`${animal_stage_config.cria.icon} Cría`}
-          data={criaAnimals}
-          columns={animalColumns}
-          rowKey={(row) => row.id}
-          defaultSortKey="animalNumber"
-          sessionStorageKey="mg_last_cria_id"
-          emptyMessage="No hay crías."
-          onView={(row) => (
-            <ModalAnimalDetails
-              animal={row}
-              triggerComponent={
-                <Button size="xs" variant="ghost" color="primary" icon="view">
-                  Ver
-                </Button>
-              }
-            />
-          )}
-        />
-      ),
     },
     {
       label: etapaLabel('juvenil', juvenilAnimals.length),
@@ -1642,7 +1638,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
             formatStatLabel={formatStatLabel}
             tabsTotal={
               reproductorAnimals.length +
-              montaFemalesCount +
+              empadreFemalesCount +
               pregnantFemales.length +
               unweanedOffspring.length +
               criaAnimals.length +
@@ -1706,7 +1702,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         breedingRecord={confirmPregnancyRecord as BreedingRecord}
         animals={animals}
         onSubmit={async (r) => {
-          // Si todas las hembras tienen embarazo confirmado, marcar monta como terminada
+          // Si todas las hembras tienen embarazo confirmado, marcar empadre como terminado
           const allConfirmed = r.femaleBreedingInfo.every((fi) => !!fi.pregnancyConfirmedDate)
           await updateBreedingRecord(r.id, {
             ...r,

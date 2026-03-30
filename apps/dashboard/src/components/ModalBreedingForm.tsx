@@ -27,10 +27,10 @@ const ModalBreedingForm = () => {
   return (
     <>
       <Button onClick={openModal} icon="add">
-        Registrar Monta
+        Registrar Empadre
       </Button>
 
-      <Modal isOpen={isOpen} onClose={closeModal} title="Registrar Monta" size="md">
+      <Modal isOpen={isOpen} onClose={closeModal} title="Registrar Empadre" size="md">
         <BreedingForm
           animals={animals}
           onSubmit={handleSubmit}

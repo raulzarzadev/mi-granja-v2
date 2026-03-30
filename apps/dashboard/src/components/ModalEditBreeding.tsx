@@ -19,7 +19,7 @@ interface ModalEditBreedingProps {
 }
 
 /**
- * Modal para editar un registro de monta existente
+ * Modal para editar un registro de empadre existente
  */
 const ModalEditBreeding: React.FC<ModalEditBreedingProps> = ({
   animals,
@@ -45,7 +45,7 @@ const ModalEditBreeding: React.FC<ModalEditBreedingProps> = ({
 
   const handleDelete = async () => {
     if (!record || !onDelete) return
-    if (!window.confirm('¿Estás seguro de eliminar esta monta? Esta acción no se puede deshacer.'))
+    if (!window.confirm('¿Estás seguro de eliminar este empadre? Esta acción no se puede deshacer.'))
       return
     try {
       await onDelete(record.id)
@@ -58,7 +58,7 @@ const ModalEditBreeding: React.FC<ModalEditBreedingProps> = ({
   if (!record) return null
 
   return (
-    <Modal isOpen={!!record} onClose={onClose} title="Editar Monta" size="lg">
+    <Modal isOpen={!!record} onClose={onClose} title="Editar Empadre" size="lg">
       <BreedingForm
         animals={animals}
         onSubmit={handleSubmit}
@@ -73,7 +73,7 @@ const ModalEditBreeding: React.FC<ModalEditBreedingProps> = ({
             onClick={handleDelete}
             className="w-full px-4 py-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors"
           >
-            Eliminar monta
+            Eliminar empadre
           </button>
         </div>
       )}

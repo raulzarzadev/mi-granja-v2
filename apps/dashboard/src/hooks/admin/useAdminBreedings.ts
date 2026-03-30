@@ -60,7 +60,7 @@ export const useAdminBreedings = (): UseAdminBreedingsReturn => {
         })
       })
 
-      // Ordenar por fecha de monta (más recientes primero)
+      // Ordenar por fecha de empadre (más recientes primero)
       breedingsData.sort((a, b) => {
         const dateA = a.breedingDate ? a.breedingDate.getTime() : 0
         const dateB = b.breedingDate ? b.breedingDate.getTime() : 0

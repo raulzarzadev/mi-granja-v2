@@ -67,14 +67,14 @@ describe('BreedingForm Tests', () => {
     expect(cancelButton).toBeTruthy()
   })
 
-  it('should render ID de Monta field', () => {
+  it('should render ID de Empadre field', () => {
     renderWithProviders(<BreedingForm {...defaultProps} />)
-    expect(screen.getByText('ID de Monta')).toBeTruthy()
+    expect(screen.getByText('ID de Empadre')).toBeTruthy()
   })
 
-  it('should render Fecha de Monta field', () => {
+  it('should render Fecha de Empadre field', () => {
     renderWithProviders(<BreedingForm {...defaultProps} />)
-    expect(screen.getByText('Fecha de Monta')).toBeTruthy()
+    expect(screen.getByText('Fecha de Empadre')).toBeTruthy()
   })
 
   it('should render male section label', () => {

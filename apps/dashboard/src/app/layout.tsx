@@ -28,7 +28,7 @@ const jsonLd = {
   name: 'Mi Granja',
   url: appUrl,
   description:
-    'Aplicación para gestionar tu ganado de manera eficiente. Registra animales, montas, recordatorios y colaboradores.',
+    'Aplicación para gestionar tu ganado de manera eficiente. Registra animales, empadres, recordatorios y colaboradores.',
   applicationCategory: 'BusinessApplication',
   applicationSubCategory: 'Farm Management',
   operatingSystem: 'Web',

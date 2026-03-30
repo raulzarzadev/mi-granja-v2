@@ -90,7 +90,7 @@ const ActionButton = ({
 }
 
 /**
- * Modal especializado para mostrar detalles de un animal en el contexto de una monta/breeding
+ * Modal especializado para mostrar detalles de un animal en el contexto de un empadre/breeding
  */
 const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
   animal,
@@ -174,12 +174,12 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
             </div>
           </div>
 
-          {/* Información específica de la monta */}
+          {/* Información específica del empadre */}
           <div className="bg-blue-50 rounded-lg p-4">
-            <h3 className="text-lg font-semibold mb-3">Estado en la Monta</h3>
+            <h3 className="text-lg font-semibold mb-3">Estado en el Empadre</h3>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-gray-600">Fecha de monta:</span>
+                <span className="text-gray-600">Fecha de empadre:</span>
                 <span className="font-medium">
                   {record.breedingDate ? formatDate(record.breedingDate) : 'No disponible'}
                 </span>
@@ -259,14 +259,14 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                   }
                   variant="danger"
                   icon="delete"
-                  label="Sacar de la monta"
+                  label="Sacar del empadre"
                   loadingLabel="Sacando..."
-                  confirm="¿Estás seguro de sacar al macho de esta monta? Se eliminará el registro completo."
+                  confirm="¿Estás seguro de sacar al macho de este empadre? Se eliminará el registro completo."
                 />
               )}
 
-              {/* Acciones para hembras en monta */}
-              {animalType === 'female' && status === 'monta' && (
+              {/* Acciones para hembras en empadre */}
+              {animalType === 'female' && status === 'empadre' && (
                 <>
                   <ActionButton
                     onClick={() =>
@@ -283,9 +283,9 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                     }
                     variant="danger"
                     icon="delete"
-                    label="Sacar de la monta"
+                    label="Sacar del empadre"
                     loadingLabel="Sacando..."
-                    confirm="¿Estás seguro de sacar a esta hembra de la monta?"
+                    confirm="¿Estás seguro de sacar a esta hembra del empadre?"
                   />
                 </>
               )}
@@ -315,9 +315,9 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                     }
                     variant="danger"
                     icon="delete"
-                    label="Sacar de la monta"
+                    label="Sacar del empadre"
                     loadingLabel="Sacando..."
-                    confirm="¿Estás seguro de sacar a esta hembra de la monta?"
+                    confirm="¿Estás seguro de sacar a esta hembra del empadre?"
                   />
                 </>
               )}

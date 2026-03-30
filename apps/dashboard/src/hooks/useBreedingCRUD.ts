@@ -73,7 +73,7 @@ export const useBreedingCRUD = () => {
     return `${baseId}-${consecutive}`
   }
 
-  // Crear registro de monta
+  // Crear registro de empadre
   const createBreedingRecord = async (
     data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt' | 'breedingId'>,
   ) => {
@@ -447,7 +447,7 @@ export const useBreedingCRUD = () => {
     if (!user) throw new Error('Usuario no autenticado')
 
     const record = breedingRecords.find((b) => b.id === breedingId)
-    if (!record) throw new Error('Registro de monta no encontrado')
+    if (!record) throw new Error('Registro de empadre no encontrado')
 
     const newComment = {
       id: `cmt-${Date.now()}`, // ID temporal, idealmente generado por el backend
@@ -468,7 +468,7 @@ export const useBreedingCRUD = () => {
     newLevel: NewCommentInput['urgency'],
   ) => {
     const record = breedingRecords.find((b) => b.id === breedingId)
-    if (!record) throw new Error('Registro de monta no encontrado')
+    if (!record) throw new Error('Registro de empadre no encontrado')
 
     const updatedComments = record.comments?.map((comment) =>
       comment.id === commentId ? { ...comment, urgency: newLevel } : comment,

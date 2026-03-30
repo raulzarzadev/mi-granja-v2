@@ -18,7 +18,7 @@ interface ModalConfirmPregnancyProps {
 }
 
 /**
- * Modal para confirmar embarazos de hembras en una monta
+ * Modal para confirmar embarazos de hembras en un empadre
  */
 const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
   isOpen,
@@ -112,7 +112,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleCancel}
-      title={`Confirmar Embarazos — Monta ${breedingRecord?.breedingId || ''}`}
+      title={`Confirmar Embarazos — Empadre ${breedingRecord?.breedingId || ''}`}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {unconfirmedFemales.length === 0 ? (

@@ -264,7 +264,7 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     birthedAt:
       'string (ISO 8601) | null | undefined. Fecha de parto como madre (hembras). Se limpia al destetar todas las crías.',
     weanedMotherAt:
-      'string (ISO 8601) | null | undefined. Fecha en que destetó a sus crías (hembras). Se limpia al iniciar nueva monta.',
+      'string (ISO 8601) | null | undefined. Fecha en que destetó a sus crías (hembras). Se limpia al iniciar nuevo empadre.',
     adminAction:
       '{ performedByAdmin: boolean, adminEmail?: string, adminId?: string, originalTimestamp: ISO 8601, impersonationReason?: string } | undefined',
     createdAt: 'string (ISO 8601)',

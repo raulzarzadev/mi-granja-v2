@@ -189,10 +189,10 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
         sessionStorageKey="mg_last_breeding_id"
         onRowClick={(row) => onSelect(row.record)}
         selectable
-        title="Montas"
+        title="Empadres"
         toolbar={toolbar}
         renderCard={renderCard}
-        viewModeKey="montas_view_mode"
+        viewModeKey="empadres_view_mode"
         onView={onView}
         renderBulkActions={(selectedIds, clearSelection) => (
           <Button
@@ -233,7 +233,7 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
               openLabel="Eliminar"
               openProps={{ size: 'xs', variant: 'ghost', color: 'error', icon: 'delete' }}
               confirmProps={{ color: 'error' }}
-              confirmText={`¿Eliminar monta ${row.record.breedingId || row.record.id}? Esta accion no se puede deshacer.`}
+              confirmText={`¿Eliminar empadre ${row.record.breedingId || row.record.id}? Esta accion no se puede deshacer.`}
               confirmLabel="Eliminar"
               onConfirm={() => {
                 onDelete([row.record.id])
@@ -242,16 +242,16 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
             />
           </>
         )}
-        emptyMessage="No hay montas."
+        emptyMessage="No hay empadres."
       />
       <Modal
         isOpen={showBulkDeleteModal}
         onClose={() => setShowBulkDeleteModal(false)}
-        title="Eliminar montas"
+        title="Eliminar empadres"
       >
         <div className="p-4 space-y-4">
           <p className="text-sm text-gray-700">
-            ¿Eliminar {bulkDeleteIds.size} monta{bulkDeleteIds.size !== 1 ? 's' : ''}? Esta accion
+            ¿Eliminar {bulkDeleteIds.size} empadre{bulkDeleteIds.size !== 1 ? 's' : ''}? Esta accion
             no se puede deshacer.
           </p>
           <div className="flex justify-end gap-2">

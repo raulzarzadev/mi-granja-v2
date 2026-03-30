@@ -26,7 +26,7 @@ export interface InputSelectAnimalsProps {
   filterFn?: (animal: Animal) => boolean
   /** Render personalizado para cada opcion en el dropdown */
   renderOption?: (animal: Animal, isSelected: boolean) => React.ReactNode
-  /** Texto secundario por animal (ej: info de monta) */
+  /** Texto secundario por animal (ej: info de empadre) */
   secondaryLabel?: (animal: Animal) => string | undefined
   /** Mostrar boton "Omitir" en items ya seleccionados dentro del dropdown */
   showOmitButton?: boolean
