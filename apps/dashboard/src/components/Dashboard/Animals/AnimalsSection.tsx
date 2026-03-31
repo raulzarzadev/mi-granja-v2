@@ -66,7 +66,7 @@ const CHIP_COLORS: Record<FemaleGroup['key'], string> = {
   parida: 'bg-green-50 text-green-800 border-green-200',
 }
 
-function sortFemalesByAnimalNumber(items: FemaleBreedingInfo[], animals: Animal[]) {
+export function sortFemalesByAnimalNumber(items: FemaleBreedingInfo[], animals: Animal[]) {
   return [...items].sort((a, b) => {
     const numA = animals.find((an) => an.id === a.femaleId)?.animalNumber || ''
     const numB = animals.find((an) => an.id === b.femaleId)?.animalNumber || ''
