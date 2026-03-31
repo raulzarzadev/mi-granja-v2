@@ -52,7 +52,7 @@ type FemaleGroup = {
   items: FemaleBreedingInfo[]
 }
 
-function groupFemalesByStatus(females: FemaleBreedingInfo[]): FemaleGroup[] {
+export function groupFemalesByStatus(females: FemaleBreedingInfo[]): FemaleGroup[] {
   return [
     { key: 'empadre', label: 'En empadre', items: females.filter((fi) => !fi.pregnancyConfirmedDate && !fi.actualBirthDate) },
     { key: 'embarazada', label: 'Embarazada', items: females.filter((fi) => fi.pregnancyConfirmedDate && !fi.actualBirthDate) },
@@ -509,6 +509,30 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     [animals],
   )
 
+  // Madres únicas amamantando: hembras con crías activas sin destetar
+  // Busca en breeding records todas las hembras que tienen offspring en stage 'cria'
+  const nursingMotherIds = useMemo(() => {
+    const ids = new Set<string>()
+    const activeCriaIds = new Set(activeAnimals.filter((a) => computeAnimalStage(a) === 'cria').map((a) => a.id))
+    for (const r of breedingRecords) {
+      for (const fi of r.femaleBreedingInfo) {
+        if (fi.offspring?.some((offId) => activeCriaIds.has(offId))) {
+          ids.add(fi.femaleId)
+        }
+      }
+    }
+    // Excluir madres ya contadas en empadre o embarazos
+    const empadreIds = new Set<string>()
+    for (const r of orderedBreedings.needPregnancyConfirmation) {
+      for (const f of r.femaleBreedingInfo) {
+        if (!f.pregnancyConfirmedDate && !f.actualBirthDate) empadreIds.add(f.femaleId)
+      }
+    }
+    for (const entry of pregnantFemales) empadreIds.add(entry.animal.id)
+    for (const id of empadreIds) ids.delete(id)
+    return ids
+  }, [activeAnimals, breedingRecords, orderedBreedings.needPregnancyConfirmation, pregnantFemales])
+
   // IDs de animales ya contados en tabs de breeding (Empadre, Embarazos, Crías)
   const breedingTabIds = useMemo(() => {
     const ids = new Set<string>()
@@ -522,8 +546,10 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     for (const entry of pregnantFemales) ids.add(entry.animal.id)
     // Crías en destete
     for (const entry of unweanedOffspring) ids.add(entry.animal.id)
+    // Madres amamantando
+    for (const id of nursingMotherIds) ids.add(id)
     return ids
-  }, [orderedBreedings.needPregnancyConfirmation, pregnantFemales, unweanedOffspring])
+  }, [orderedBreedings.needPregnancyConfirmation, pregnantFemales, unweanedOffspring, nursingMotherIds])
 
   // --- Etapas por computeAnimalStage (excluyendo animales en tabs de breeding) ---
   const engordaAnimals = useMemo(
@@ -1218,10 +1244,23 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           weanDate = addDays(toDate(a.birthDate), days)
           daysUntilWean = differenceInCalendarDays(weanDate, new Date())
         }
-        return { animal: a, motherId: '', record: null as any, weanDate, daysUntilWean }
+        // Buscar madre en breeding records
+        let motherId = ''
+        let record: BreedingRecord | null = null
+        for (const r of breedingRecords) {
+          for (const fi of r.femaleBreedingInfo) {
+            if (fi.offspring?.includes(a.id)) {
+              motherId = fi.femaleId
+              record = r
+              break
+            }
+          }
+          if (motherId) break
+        }
+        return { animal: a, motherId, record: record as any, weanDate, daysUntilWean }
       })
     return [...fromBreeding, ...standalone]
-  }, [unweanedOffspring, criaAnimals])
+  }, [unweanedOffspring, criaAnimals, breedingRecords])
 
   const destetesContent = (
     <div>
@@ -1473,7 +1512,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       content: partosContent,
     },
     {
-      label: etapaLabel('crias_lactantes', unweanedOffspring.length + criaAnimals.length),
+      label: `${animal_stage_config.crias_lactantes.icon} Crías (${unweanedOffspring.length + criaAnimals.length}) Madres (${nursingMotherIds.size})`,
       content: destetesContent,
     },
     {
@@ -1656,6 +1695,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
               pregnantFemales.length +
               unweanedOffspring.length +
               criaAnimals.length +
+              nursingMotherIds.size +
               juvenilAnimals.length +
               engordaAnimals.length +
               descarteAnimals.length
