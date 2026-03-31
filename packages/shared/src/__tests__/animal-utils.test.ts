@@ -38,12 +38,12 @@ describe('animalAge', () => {
       expect(result).toContain('mes')
     })
 
-    it('should return 0 meses for newborns', () => {
+    it('should return days for newborns', () => {
       const fiveDaysAgo = new Date()
       fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5)
       const animal = createAnimal({ birthDate: fiveDaysAgo })
       const result = animalAge(animal)
-      expect(result).toBe('0 meses')
+      expect(result).toBe('5 días')
     })
   })
 
@@ -57,12 +57,12 @@ describe('animalAge', () => {
       expect(result).toMatch(/\d+m/)
     })
 
-    it('should return 0m for newborns', () => {
+    it('should return days for newborns', () => {
       const threeDaysAgo = new Date()
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
       const animal = createAnimal({ birthDate: threeDaysAgo })
       const result = animalAge(animal, { format: 'short' })
-      expect(result).toBe('0m')
+      expect(result).toBe('3d')
     })
   })
 

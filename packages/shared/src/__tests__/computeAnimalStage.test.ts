@@ -21,8 +21,8 @@ const makeAnimal = (overrides: Partial<Animal> = {}): Animal => ({
 /** Helper: fecha N meses atrás */
 const monthsAgo = (n: number): Date => {
   const d = new Date()
+  d.setDate(1) // evitar desfases por días (setDate antes de setMonth para no desbordar meses cortos)
   d.setMonth(d.getMonth() - n)
-  d.setDate(1) // evitar desfases por días
   return d
 }
 
