@@ -21,8 +21,8 @@ function getProjectId(): string {
 
 // Setear variables de emulador lo antes posible (antes de que cualquier SDK las lea)
 if (isEmulatorMode()) {
-  process.env.FIREBASE_AUTH_EMULATOR_HOST ??= 'localhost:9299'
-  process.env.FIRESTORE_EMULATOR_HOST ??= 'localhost:8180'
+  process.env.FIREBASE_AUTH_EMULATOR_HOST ??= '127.0.0.1:9299'
+  process.env.FIRESTORE_EMULATOR_HOST ??= '127.0.0.1:8180'
 }
 
 function getAdminApp(): App {
