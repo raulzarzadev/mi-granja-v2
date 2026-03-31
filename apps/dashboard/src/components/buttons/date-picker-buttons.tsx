@@ -197,7 +197,7 @@ export function DatePickerButtons({
   const { day: dayPh = 'Día', month: monthPh = 'Mes', year: yearPh = 'Año' } = placeholders
 
   return (
-    <div className="relative max-w-sm">
+    <div className={`relative max-w-sm ${activePicker ? 'min-h-[22rem]' : ''}`}>
       {(label || showToday) && (
         <div className="flex items-center justify-between mb-1">
           {label && <label className="text-sm font-semibold text-gray-900">{label}</label>}
