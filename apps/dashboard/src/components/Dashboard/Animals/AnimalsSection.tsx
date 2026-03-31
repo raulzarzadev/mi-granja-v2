@@ -1329,6 +1329,75 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         )}
         emptyMessage="No hay crías pendientes de destete."
       />
+      {nursingMotherIds.size > 0 && (() => {
+        // Agrupar crías por madre y calcular el destete más urgente por madre
+        const motherMap = new Map<string, { motherId: string; minDaysUntilWean: number | null }>()
+        for (const entry of allCrias) {
+          if (!entry.motherId) continue
+          const existing = motherMap.get(entry.motherId)
+          if (!existing) {
+            motherMap.set(entry.motherId, { motherId: entry.motherId, minDaysUntilWean: entry.daysUntilWean })
+          } else if (entry.daysUntilWean !== null && (existing.minDaysUntilWean === null || entry.daysUntilWean < existing.minDaysUntilWean)) {
+            existing.minDaysUntilWean = entry.daysUntilWean
+          }
+        }
+        const overdue = [...motherMap.values()].filter((m) => m.minDaysUntilWean !== null && m.minDaysUntilWean < 0)
+          .sort((a, b) => (a.minDaysUntilWean ?? 0) - (b.minDaysUntilWean ?? 0))
+        const upcoming = [...motherMap.values()].filter((m) => m.minDaysUntilWean === null || m.minDaysUntilWean >= 0)
+          .sort((a, b) => (a.minDaysUntilWean ?? 999) - (b.minDaysUntilWean ?? 999))
+
+        return (
+          <div className="mt-4 space-y-2">
+            <p className="text-xs font-semibold text-gray-600">Madres amamantando ({motherMap.size})</p>
+            {overdue.length > 0 && (
+              <div>
+                <span className="text-xs font-semibold text-red-600">Destetes atrasados ({overdue.length})</span>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {overdue.map((m) => {
+                    const mother = animals.find((a) => a.id === m.motherId)
+                    return (
+                      <ModalAnimalDetails
+                        key={m.motherId}
+                        animal={mother!}
+                        triggerComponent={
+                          <button type="button" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border cursor-pointer transition-all hover:shadow-sm bg-red-50 text-red-800 border-red-200 hover:bg-red-100">
+                            {mother?.animalNumber || m.motherId}
+                            <span className="text-[10px] opacity-70">({Math.abs(m.minDaysUntilWean!)}d)</span>
+                          </button>
+                        }
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+            {upcoming.length > 0 && (
+              <div>
+                <span className="text-xs font-semibold text-gray-500">Destetes próximos ({upcoming.length})</span>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {upcoming.map((m) => {
+                    const mother = animals.find((a) => a.id === m.motherId)
+                    return (
+                      <ModalAnimalDetails
+                        key={m.motherId}
+                        animal={mother!}
+                        triggerComponent={
+                          <button type="button" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border cursor-pointer transition-all hover:shadow-sm bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100">
+                            {mother?.animalNumber || m.motherId}
+                            {m.minDaysUntilWean !== null && (
+                              <span className="text-[10px] opacity-70">({m.minDaysUntilWean}d)</span>
+                            )}
+                          </button>
+                        }
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
     </div>
   )
 
