@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@source "../../../packages/shared/src";
 
 :root {
   --background: #ffffff;
@@ -13,12 +12,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Dark mode deshabilitado — la app es light-only por ahora */
 
 body {
   background: var(--background);
