@@ -12,6 +12,8 @@ import {
 } from '@/components/examples/InputSelectAnimalsExamples'
 import {
   ExampleDatePickerBasic,
+  ExampleDatePickerDisabled,
+  ExampleDatePickerInModal,
   ExampleDatePickerWithTime,
   ExampleDatePickerWithToday,
   ExampleModalLg,
@@ -77,6 +79,18 @@ export default function UIShowcasePage() {
                 <h3 className="font-medium text-gray-900 mb-1">Con hora</h3>
                 <p className="text-xs text-gray-500 mb-4">showTime habilitado</p>
                 <ExampleDatePickerWithTime />
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-1">Deshabilitado</h3>
+                <p className="text-xs text-gray-500 mb-4">disabled con valor</p>
+                <ExampleDatePickerDisabled />
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-1">En Modal</h3>
+                <p className="text-xs text-gray-500 mb-4">DatePicker dentro de un Modal</p>
+                <ExampleDatePickerInModal />
               </div>
             </div>
           </section>

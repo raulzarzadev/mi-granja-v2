@@ -53,6 +53,40 @@ export const ExampleDatePickerWithTime = () => {
   )
 }
 
+export const ExampleDatePickerDisabled = () => (
+  <div>
+    <DatePickerButtons value="2026-03-15" onChange={() => {}} label="Deshabilitado" disabled />
+  </div>
+)
+
+export const ExampleDatePickerInModal = () => {
+  const { isOpen, openModal, closeModal } = useModal()
+  const [value, setValue] = useState('')
+
+  return (
+    <>
+      <button
+        onClick={openModal}
+        className="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 cursor-pointer"
+      >
+        Abrir fecha en Modal
+      </button>
+      <Modal isOpen={isOpen} onClose={closeModal} title="Seleccionar fecha" size="sm">
+        <div className="p-4 space-y-4">
+          <DatePickerButtons value={value} onChange={setValue} label="Fecha" showToday />
+          {value && <p className="text-sm text-gray-600">Seleccionado: {value}</p>}
+          <button
+            onClick={closeModal}
+            className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 cursor-pointer"
+          >
+            Aceptar
+          </button>
+        </div>
+      </Modal>
+    </>
+  )
+}
+
 // --- Modal size examples ---
 
 export const ExampleModalSm = () => {

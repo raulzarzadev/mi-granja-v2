@@ -125,6 +125,8 @@ export interface DatePickerButtonsProps {
   showToday?: boolean
   /** Show time picker button */
   showTime?: boolean
+  /** Disable the picker */
+  disabled?: boolean
 }
 
 const currentYear = new Date().getFullYear()
@@ -151,6 +153,7 @@ export function DatePickerButtons({
   helperText,
   showToday = false,
   showTime = false,
+  disabled = false,
 }: DatePickerButtonsProps) {
   const [activePicker, setActivePicker] = useState<PickerType>(null)
   const [yearPageStart, setYearPageStart] = useState<number>(() => getDecadeStart(defaultDecade))
@@ -187,8 +190,9 @@ export function DatePickerButtons({
     emit(t.getDate(), t.getMonth() + 1, t.getFullYear(), t.getHours(), t.getMinutes(), showTime)
   }
 
-  const btnBase =
-    'h-10 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-900 transition-colors hover:bg-gray-50 active:bg-gray-100 cursor-pointer'
+  const btnBase = disabled
+    ? 'h-10 rounded-md border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-400 cursor-not-allowed'
+    : 'h-10 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-900 transition-colors hover:bg-gray-50 active:bg-gray-100 cursor-pointer'
 
   const { day: dayPh = 'Día', month: monthPh = 'Mes', year: yearPh = 'Año' } = placeholders
 
@@ -212,7 +216,7 @@ export function DatePickerButtons({
         {/* Day */}
         <button
           type="button"
-          onClick={() => setActivePicker(activePicker === 'day' ? null : 'day')}
+          onClick={() => !disabled && setActivePicker(activePicker === 'day' ? null : 'day')}
           className={`${btnBase} w-14 flex-none text-center ${activePicker === 'day' ? 'ring-2 ring-blue-500' : ''}`}
         >
           {day ? day : <span className="text-gray-500">{dayPh}</span>}
@@ -221,7 +225,7 @@ export function DatePickerButtons({
         {/* Month */}
         <button
           type="button"
-          onClick={() => setActivePicker(activePicker === 'month' ? null : 'month')}
+          onClick={() => !disabled && setActivePicker(activePicker === 'month' ? null : 'month')}
           className={`${btnBase} flex-1 text-center ${activePicker === 'month' ? 'ring-2 ring-blue-500' : ''}`}
         >
           {month ? MONTHS_SHORT[month - 1] : <span className="text-gray-500">{monthPh}</span>}
@@ -231,6 +235,7 @@ export function DatePickerButtons({
         <button
           type="button"
           onClick={() => {
+            if (disabled) return
             if (activePicker !== 'year') setYearPageStart(getDecadeStart(year || defaultDecade))
             setActivePicker(activePicker === 'year' ? null : 'year')
           }}
@@ -265,7 +270,7 @@ export function DatePickerButtons({
               {DAYS_HEADER.map((dh) => (
                 <th
                   key={dh}
-                  className="h-7 w-9 text-center text-[10px] font-semibold text-gray-400"
+                  className="h-7 w-9 text-center text-[10px] font-semibold text-gray-500"
                 >
                   {dh}
                 </th>
@@ -294,7 +299,7 @@ export function DatePickerButtons({
                             setActivePicker(null)
                           }}
                           className={`h-8 w-8 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                            d === day ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'
+                            d === day ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
                           }`}
                         >
                           {d}
@@ -323,7 +328,7 @@ export function DatePickerButtons({
                 setActivePicker(null)
               }}
               className={`h-9 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                i + 1 === month ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'
+                i + 1 === month ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
               {m}
@@ -379,7 +384,7 @@ export function DatePickerButtons({
                           setActivePicker(null)
                         }}
                         className={`h-8 w-full rounded-md text-xs font-medium transition-colors cursor-pointer ${
-                          y === year ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'
+                          y === year ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
                         }`}
                       >
                         {y}
@@ -410,7 +415,7 @@ export function DatePickerButtons({
                   className={`h-8 px-2 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                     hours === qh.h && minutes === qh.m && hasTime
                       ? 'bg-blue-600 text-white'
-                      : 'hover:bg-gray-100'
+                      : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   {qh.label}
