@@ -12,6 +12,7 @@ import ButtonConfirm from '@/components/buttons/ButtonConfirm'
 import DataTable, { ColumnDef } from '@/components/DataTable'
 import { Modal } from '@/components/Modal'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
+import ModalBulkEdit from '@/components/ModalBulkEdit'
 import ModalBreedingAnimalDetails from '@/components/ModalBreedingAnimalDetails'
 import ModalBirthForm from '@/components/ModalBirthForm'
 import ModalConfirmPregnancy from '@/components/ModalConfirmPregnancy'
@@ -120,6 +121,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     decision: 'engorda' | 'reproductor'
   } | null>(null)
   const [selectedWeanIds, setSelectedWeanIds] = useState<Set<string>>(new Set())
+  const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
   const [viewingBreedingRecord, setViewingBreedingRecord] = useState<BreedingRecord | null>(null)
   const [viewingConfirming, setViewingConfirming] = useState(false)
 
@@ -1752,6 +1754,17 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                 <>
                   <Button
                     size="xs"
+                    color="primary"
+                    onClick={() => {
+                      setBulkSelectedAnimals(Array.from(selectedIds))
+                      setBulkClearFn(() => clearSelection)
+                      setIsBulkEditOpen(true)
+                    }}
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    size="xs"
                     color="success"
                     onClick={() => {
                       setBulkSelectedAnimals(Array.from(selectedIds))
@@ -1830,6 +1843,20 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       <Tabs tabs={animalSubTabs} tabsId="animals-section" />
 
       {/* Modals de bulk actions */}
+      <ModalBulkEdit
+        isOpen={isBulkEditOpen}
+        onClose={() => {
+          setIsBulkEditOpen(false)
+          bulkClearFn?.()
+          setBulkSelectedAnimals([])
+        }}
+        selectedAnimals={animals.filter((a) => bulkSelectedAnimals.includes(a.id))}
+        onSave={async (ids, updates) => {
+          for (const id of ids) {
+            await update(id, updates)
+          }
+        }}
+      />
       <ModalBulkHealthAction
         isOpen={isBulkHealthModalOpen}
         onClose={() => setIsBulkHealthModalOpen(false)}
