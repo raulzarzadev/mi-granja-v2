@@ -11,6 +11,14 @@ import {
   ExampleWithOmit,
 } from '@/components/examples/InputSelectAnimalsExamples'
 import {
+  ExampleDatePickerBasic,
+  ExampleDatePickerWithTime,
+  ExampleDatePickerWithToday,
+  ExampleModalLg,
+  ExampleModalMd,
+  ExampleModalSm,
+} from '@/components/examples/DatePickerAndModalSizeExamples'
+import {
   ExampleConfirmModal,
   ExampleFormModal,
   ExampleFullModal,
@@ -39,6 +47,74 @@ export default function UIShowcasePage() {
 
         {/* Grid de componentes */}
         <div className="space-y-12">
+          {/* Seccion: DatePickerButtons */}
+          <section>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
+              <span className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
+                Fechas
+              </span>
+              DatePickerButtons
+            </h2>
+            <p className="text-sm text-gray-600 mb-6">
+              Selector de fecha basado en botones con popovers para dia, mes, ano y hora. Soporta
+              atajos rapidos como "Hoy" y selector de hora con valores predefinidos.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-1">Basico</h3>
+                <p className="text-xs text-gray-500 mb-4">Selector de fecha con label</p>
+                <ExampleDatePickerBasic />
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-1">Con boton Hoy</h3>
+                <p className="text-xs text-gray-500 mb-4">showToday habilitado</p>
+                <ExampleDatePickerWithToday />
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-1">Con hora</h3>
+                <p className="text-xs text-gray-500 mb-4">showTime habilitado</p>
+                <ExampleDatePickerWithTime />
+              </div>
+            </div>
+          </section>
+
+          {/* Seccion: Modal por tamano */}
+          <section>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
+              <span className="bg-indigo-100 text-indigo-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
+                Tamanos
+              </span>
+              Modal por Tamano
+            </h2>
+            <p className="text-sm text-gray-600 mb-6">
+              El componente Modal soporta distintos tamanos: sm, md, lg, xl y full. Cada uno ajusta
+              el ancho maximo del contenedor.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-2">Pequeno (sm)</h3>
+                <p className="text-sm text-gray-600 mb-4">Confirmaciones y mensajes cortos</p>
+                <ExampleModalSm />
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-2">Mediano (md)</h3>
+                <p className="text-sm text-gray-600 mb-4">Tamano por defecto</p>
+                <ExampleModalMd />
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-2">Grande (lg)</h3>
+                <p className="text-sm text-gray-600 mb-4">Formularios complejos</p>
+                <ExampleModalLg />
+              </div>
+            </div>
+          </section>
+
           {/* Sección: Modales Básicos */}
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
