@@ -1255,8 +1255,9 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   const allCrias: UnweanedRow[] = useMemo(() => {
     const fromBreeding = unweanedOffspring
     const breedingCriaIds = new Set(fromBreeding.map((r) => r.animal.id))
-    const standalone = criaAnimals
-      .filter((a) => !breedingCriaIds.has(a.id))
+    // Crías standalone: buscar madre y aplicar búsqueda por madre
+    const allStandalone = activeAnimals
+      .filter((a) => computeAnimalStage(a) === 'cria' && !breedingCriaIds.has(a.id) && matchesEtapasFilters(a, { skipSearch: true }))
       .map((a) => {
         let weanDate: Date | null = null
         let daysUntilWean: number | null = null
@@ -1265,7 +1266,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           weanDate = addDays(toDate(a.birthDate), days)
           daysUntilWean = differenceInCalendarDays(weanDate, new Date())
         }
-        // Buscar madre en breeding records
         let motherId = ''
         let record: BreedingRecord | null = null
         for (const r of breedingRecords) {
@@ -1280,8 +1280,23 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         }
         return { animal: a, motherId, record: record as any, weanDate, daysUntilWean }
       })
-    return [...fromBreeding, ...standalone]
-  }, [unweanedOffspring, criaAnimals, breedingRecords])
+      .filter((entry) => {
+        const q = filters.search.trim().toLowerCase()
+        if (!q) return true
+        const num = entry.animal.animalNumber?.toLowerCase() || ''
+        const name = entry.animal.name?.toLowerCase() || ''
+        if (num.includes(q) || name.includes(q)) return true
+        // Buscar también por número/nombre de madre
+        if (entry.motherId) {
+          const mother = animals.find((an) => an.id === entry.motherId)
+          const motherNum = mother?.animalNumber?.toLowerCase() || ''
+          const motherName = mother?.name?.toLowerCase() || ''
+          if (motherNum.includes(q) || motherName.includes(q)) return true
+        }
+        return false
+      })
+    return [...fromBreeding, ...allStandalone]
+  }, [unweanedOffspring, activeAnimals, breedingRecords, animals, filters])
 
   // Madres únicas de las crías mostradas (consistente con filtros de búsqueda)
   const nursingMotherIds = useMemo(() => {
