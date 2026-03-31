@@ -74,10 +74,12 @@ function Popover({
   open,
   onClose,
   children,
+  inline = false,
 }: {
   open: boolean
   onClose: () => void
   children: React.ReactNode
+  inline?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
 
@@ -97,7 +99,7 @@ function Popover({
   return (
     <div
       ref={ref}
-      className="mt-1 rounded-lg border border-gray-200 bg-white p-2 shadow-lg"
+      className={`${inline ? '' : 'absolute top-full left-0 z-50'} mt-1 rounded-lg border border-gray-200 bg-white p-2 shadow-lg`}
     >
       {children}
     </div>
@@ -127,6 +129,8 @@ export interface DatePickerButtonsProps {
   showTime?: boolean
   /** Disable the picker */
   disabled?: boolean
+  /** Render picker inline (pushes content down) instead of absolute overlay. Use inside modals. */
+  inline?: boolean
 }
 
 const currentYear = new Date().getFullYear()
@@ -154,6 +158,7 @@ export function DatePickerButtons({
   showToday = false,
   showTime = false,
   disabled = false,
+  inline = false,
 }: DatePickerButtonsProps) {
   const [activePicker, setActivePicker] = useState<PickerType>(null)
   const [yearPageStart, setYearPageStart] = useState<number>(() => getDecadeStart(defaultDecade))
@@ -263,7 +268,7 @@ export function DatePickerButtons({
       {helperText && <p className="text-[11px] text-gray-500 mt-1">{helperText}</p>}
 
       {/* Day picker — calendar grid */}
-      <Popover open={activePicker === 'day'} onClose={() => setActivePicker(null)}>
+      <Popover open={activePicker === 'day'} onClose={() => setActivePicker(null)} inline={inline}>
         <table className="border-collapse">
           <thead>
             <tr>
@@ -317,7 +322,7 @@ export function DatePickerButtons({
       </Popover>
 
       {/* Month picker */}
-      <Popover open={activePicker === 'month'} onClose={() => setActivePicker(null)}>
+      <Popover open={activePicker === 'month'} onClose={() => setActivePicker(null)} inline={inline}>
         <div className="grid grid-cols-4 gap-1 w-80">
           {MONTHS_SHORT.map((m, i) => (
             <button
@@ -338,7 +343,7 @@ export function DatePickerButtons({
       </Popover>
 
       {/* Year picker — fixed table row */}
-      <Popover open={activePicker === 'year'} onClose={() => setActivePicker(null)}>
+      <Popover open={activePicker === 'year'} onClose={() => setActivePicker(null)} inline={inline}>
         <table className="border-collapse">
           <thead>
             <tr>
@@ -400,7 +405,7 @@ export function DatePickerButtons({
 
       {/* Time picker */}
       {showTime && (
-        <Popover open={activePicker === 'time'} onClose={() => setActivePicker(null)}>
+        <Popover open={activePicker === 'time'} onClose={() => setActivePicker(null)} inline={inline}>
           <div className="w-60">
             <div className="flex flex-wrap gap-1 mb-2">
               {QUICK_HOURS.map((qh) => (

@@ -139,7 +139,7 @@ export const Modal: React.FC<ModalProps> = ({
 
           {/* Contenido scrolleable */}
           <div
-            className={`flex-1 overflow-y-scroll p-3 sm:p-4 ${contentClassName || ''}`}
+            className={`flex-1 overflow-y-auto p-3 sm:p-4 ${contentClassName || ''}`}
             style={{
               WebkitOverflowScrolling: 'touch',
             }}
