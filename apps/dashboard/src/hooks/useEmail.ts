@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { APP_URL, emailTemplate } from '@/lib/emailTemplate'
+import { auth } from '@/lib/firebase'
 
 interface EmailData {
   to: string | string[]
@@ -52,10 +53,15 @@ export const useEmail = () => {
         }),
       }
 
+      const user = auth.currentUser
+      if (!user) throw new Error('Usuario no autenticado')
+      const token = await user.getIdToken()
+
       const response = await fetch('/api/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(sanitizedEmailData),
       })

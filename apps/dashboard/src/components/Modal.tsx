@@ -35,8 +35,8 @@ const sizeClasses = {
   sm: 'sm:max-w-sm',
   md: 'sm:max-w-md',
   lg: 'sm:max-w-lg',
-  xl: 'sm:max-w-xl',
-  full: 'sm:max-w-[95vw]',
+  xl: 'sm:max-w-xl lg:max-w-4xl xl:max-w-5xl',
+  full: 'sm:max-w-[95vw] lg:max-w-4xl xl:max-w-5xl',
 }
 
 /**
@@ -109,7 +109,7 @@ export const Modal: React.FC<ModalProps> = ({
         <div
           className={`
             bg-white w-full h-full rounded-none
-            sm:rounded-lg sm:w-auto sm:h-auto sm:max-h-[90vh] sm:min-w-96 ${sizeClasses[size]} lg:max-w-4xl xl:max-w-5xl
+            sm:rounded-lg sm:w-auto sm:h-auto sm:max-h-[90vh] sm:min-w-96 ${sizeClasses[size]}
             shadow-none sm:shadow-xl animate-in zoom-in-95 duration-200 
             flex flex-col max-w-none
             ${className}

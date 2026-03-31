@@ -22,12 +22,11 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
 
 /* Placeholders sutiles */
 ::placeholder {
-  color: rgb(189 195 199); /* gris claro */
+  color: rgb(156 163 175); /* gray-400 — mejor contraste */
   opacity: 1;
 }
 
@@ -66,23 +65,6 @@ select {
   color: rgb(17 24 39); /* gray-900 - texto oscuro */
 }
 
-/* Configuración global para mejorar visibilidad de todos los textos */
-.text-gray-500 {
-  color: rgb(75 85 99); /* gray-600 en lugar de gray-500 */
-}
-
-.text-gray-600 {
-  color: rgb(55 65 81); /* gray-700 en lugar de gray-600 */
-}
-
-.text-gray-700 {
-  color: rgb(17 24 39); /* gray-900 en lugar de gray-700 */
-}
-
-.text-gray-800 {
-  color: rgb(17 24 39); /* gray-900 en lugar de gray-800 */
-}
-
 /* Asegurar que los labels sean bien visibles */
 label {
   color: rgb(17 24 39); /* gray-900 */
@@ -94,17 +76,3 @@ button {
   font-weight: 500;
 }
 
-/* Mejorar contraste de texto en divs */
-div {
-  color: rgb(17 24 39); /* Por defecto texto oscuro */
-}
-
-/* Mejorar visibilidad de texto en spans */
-span {
-  color: inherit;
-}
-
-/* Asegurar que el texto de párrafos sea visible */
-p {
-  color: rgb(17 24 39);
-}

@@ -110,12 +110,15 @@ function DataTable<T>({
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(initialPageSize)
   const [viewMode, setViewMode] = useState<'table' | 'cards'>(() => {
-    if (!renderCard || !viewModeKey || typeof window === 'undefined') return 'table'
-    try {
-      return (localStorage.getItem(`mg_pref_${viewModeKey}`) as 'table' | 'cards') || 'table'
-    } catch {
-      return 'table'
+    if (!renderCard || typeof window === 'undefined') return 'table'
+    if (viewModeKey) {
+      try {
+        const stored = localStorage.getItem(`mg_pref_${viewModeKey}`) as 'table' | 'cards' | null
+        if (stored) return stored
+      } catch {}
     }
+    // Auto-select card view on small screens when no persisted preference
+    return window.innerWidth < 640 ? 'cards' : 'table'
   })
 
   const handleViewMode = (mode: 'table' | 'cards') => {

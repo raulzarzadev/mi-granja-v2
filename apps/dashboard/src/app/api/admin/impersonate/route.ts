@@ -1,22 +1,19 @@
-import { doc, getDoc } from 'firebase/firestore'
+import crypto from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebase'
+import { verifyBillingAuth, isAuthError } from '@/lib/billing-auth'
+import { getAdminFirestore } from '@/lib/firebase-admin'
 import { isUserAdmin } from '@/lib/userUtils'
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Token requerido' }, { status: 401 })
-    }
+    const auth = await verifyBillingAuth(request)
+    if (isAuthError(auth)) return auth
 
-    const adminEmail = request.headers.get('x-user-email')
-
+    // Verificar que el usuario autenticado es admin usando su email verificado del token
     if (
-      !adminEmail ||
       !isUserAdmin({
-        id: 'temp',
-        email: adminEmail,
+        id: auth.uid,
+        email: auth.email,
         roles: [],
         createdAt: new Date(),
       })
@@ -30,10 +27,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'ID de usuario requerido' }, { status: 400 })
     }
 
-    // Obtener el usuario objetivo
-    const targetUserDoc = await getDoc(doc(db, 'users', targetUserId))
+    // Obtener el usuario objetivo usando Admin SDK
+    const firestore = getAdminFirestore()
+    const targetUserDoc = await firestore.doc(`users/${targetUserId}`).get()
 
-    if (!targetUserDoc.exists()) {
+    if (!targetUserDoc.exists) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
     }
 
@@ -42,9 +40,8 @@ export async function POST(request: NextRequest) {
       ...targetUserDoc.data(),
     }
 
-    // Generar token de suplantación (simplificado)
-    // En producción, usarías JWT con información especial
-    const impersonationToken = `impersonation_${Date.now()}_${targetUserId}`
+    // Generar token de suplantación criptográficamente seguro
+    const impersonationToken = crypto.randomUUID()
 
     return NextResponse.json({
       user: targetUser,

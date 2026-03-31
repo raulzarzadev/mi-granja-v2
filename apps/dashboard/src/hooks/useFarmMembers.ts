@@ -204,7 +204,7 @@ export const useFarmMembers = (farmId?: string) => {
       permissions: DEFAULT_PERMISSIONS[role],
       invitedBy,
       status: 'pending',
-      token: `${farmId}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+      token: `${farmId}_${globalThis.crypto.randomUUID()}`,
       expiresAt: Timestamp.fromDate(expiresAt),
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),

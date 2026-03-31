@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyBillingAuth, isAuthError } from '@/lib/billing-auth'
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
 
@@ -29,6 +30,10 @@ function parseSender(from?: string): { name: string; email: string } {
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify Firebase Auth token
+    const auth = await verifyBillingAuth(request)
+    if (isAuthError(auth)) return auth
+
     const apiKey = process.env.BREVO_API_KEY
     if (!apiKey) {
       return NextResponse.json(
@@ -111,10 +116,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: data.message || 'Error al enviar email via Brevo',
-          code: data.code,
+          error: 'Error al enviar email',
         },
-        { status: response.status },
+        { status: 502 },
       )
     }
 
@@ -122,7 +126,6 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         message: 'Email enviado exitosamente',
-        data,
       },
       { status: 200 },
     )
@@ -132,7 +135,6 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Error interno del servidor',
-        message: error instanceof Error ? error.message : 'Error desconocido',
       },
       { status: 500 },
     )
@@ -141,11 +143,9 @@ export async function POST(request: NextRequest) {
 
 // Health check
 export async function GET() {
-  const isConfigured = !!process.env.BREVO_API_KEY
   return NextResponse.json({
-    service: 'Email Service (Brevo)',
+    service: 'Email Service',
     status: 'online',
-    configured: isConfigured,
     timestamp: new Date().toISOString(),
   })
 }

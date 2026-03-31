@@ -1,30 +1,18 @@
-import { collection, getDocs, query, where } from 'firebase/firestore'
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebase'
+import { verifyBillingAuth, isAuthError } from '@/lib/billing-auth'
+import { getAdminFirestore } from '@/lib/firebase-admin'
 import { isUserAdmin } from '@/lib/userUtils'
 
 export async function GET(request: NextRequest) {
   try {
-    // Obtener el ID del usuario desde el token (esto debería venir del middleware de auth)
-    // Por ahora usaremos un método simple
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Token requerido' }, { status: 401 })
-    }
+    const auth = await verifyBillingAuth(request)
+    if (isAuthError(auth)) return auth
 
-    // Obtener el token y decodificarlo para obtener el ID del usuario
-    // Por ahora simularemos que tenemos el userId desde el token
-    // En producción, deberías decodificar el JWT aquí
-
-    // Necesitamos una forma de verificar que el usuario actual es admin
-    // Podemos usar el email desde las headers o desde el token decodificado
-    const adminEmail = request.headers.get('x-user-email')
-
+    // Verificar que el usuario autenticado es admin usando su email verificado del token
     if (
-      !adminEmail ||
       !isUserAdmin({
-        id: 'temp',
-        email: adminEmail,
+        id: auth.uid,
+        email: auth.email,
         roles: [],
         createdAt: new Date(),
       })
@@ -32,14 +20,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
 
-    // Obtener todos los usuarios excepto el admin actual
-    const usersQuery = query(collection(db, 'users'), where('email', '!=', adminEmail))
+    // Obtener todos los usuarios excepto el admin actual usando Admin SDK
+    const firestore = getAdminFirestore()
+    const usersSnap = await firestore
+      .collection('users')
+      .where('email', '!=', auth.email)
+      .get()
 
-    const querySnapshot = await getDocs(usersQuery)
-    const users = querySnapshot.docs.map((doc) => ({
+    const users = usersSnap.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-      isActive: true, // Por ahora todos los usuarios están activos
+      isActive: true,
     }))
 
     return NextResponse.json({ users })
