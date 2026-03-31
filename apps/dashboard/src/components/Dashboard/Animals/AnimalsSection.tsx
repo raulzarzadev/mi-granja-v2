@@ -545,29 +545,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     [animals],
   )
 
-  // Madres únicas amamantando: hembras con crías activas sin destetar
-  // Busca en breeding records todas las hembras que tienen offspring en stage 'cria'
-  const nursingMotherIds = useMemo(() => {
-    const ids = new Set<string>()
-    const activeCriaIds = new Set(activeAnimals.filter((a) => computeAnimalStage(a) === 'cria').map((a) => a.id))
-    for (const r of breedingRecords) {
-      for (const fi of r.femaleBreedingInfo) {
-        if (fi.offspring?.some((offId) => activeCriaIds.has(offId))) {
-          ids.add(fi.femaleId)
-        }
-      }
-    }
-    // Excluir madres ya contadas en empadre o embarazos
-    const empadreIds = new Set<string>()
-    for (const r of orderedBreedings.needPregnancyConfirmation) {
-      for (const f of r.femaleBreedingInfo) {
-        if (!f.pregnancyConfirmedDate && !f.actualBirthDate) empadreIds.add(f.femaleId)
-      }
-    }
-    for (const entry of pregnantFemales) empadreIds.add(entry.animal.id)
-    for (const id of empadreIds) ids.delete(id)
-    return ids
-  }, [activeAnimals, breedingRecords, orderedBreedings.needPregnancyConfirmation, pregnantFemales])
+  // Madres únicas amamantando — se calcula después de allCrias para ser consistente con filtros
 
   // IDs de animales ya contados en tabs de breeding (Empadre, Embarazos, Crías)
   const breedingTabIds = useMemo(() => {
@@ -582,10 +560,17 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     for (const entry of pregnantFemales) ids.add(entry.animal.id)
     // Crías en destete
     for (const entry of unweanedOffspring) ids.add(entry.animal.id)
-    // Madres amamantando
-    for (const id of nursingMotherIds) ids.add(id)
+    // Madres amamantando (por offspring en stage cria)
+    const activeCriaIds = new Set(activeAnimals.filter((a) => computeAnimalStage(a) === 'cria').map((a) => a.id))
+    for (const r of breedingRecords) {
+      for (const fi of r.femaleBreedingInfo) {
+        if (fi.offspring?.some((offId) => activeCriaIds.has(offId))) {
+          if (!ids.has(fi.femaleId)) ids.add(fi.femaleId)
+        }
+      }
+    }
     return ids
-  }, [orderedBreedings.needPregnancyConfirmation, pregnantFemales, unweanedOffspring, nursingMotherIds])
+  }, [orderedBreedings.needPregnancyConfirmation, pregnantFemales, unweanedOffspring, activeAnimals, breedingRecords])
 
   // --- Etapas por computeAnimalStage (excluyendo animales en tabs de breeding) ---
   const engordaAnimals = useMemo(
@@ -1297,6 +1282,15 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       })
     return [...fromBreeding, ...standalone]
   }, [unweanedOffspring, criaAnimals, breedingRecords])
+
+  // Madres únicas de las crías mostradas (consistente con filtros de búsqueda)
+  const nursingMotherIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const entry of allCrias) {
+      if (entry.motherId) ids.add(entry.motherId)
+    }
+    return ids
+  }, [allCrias])
 
   const destetesContent = (
     <div>
