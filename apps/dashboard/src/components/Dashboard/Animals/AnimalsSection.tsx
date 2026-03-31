@@ -79,7 +79,7 @@ function sortFemalesByAnimalNumber(items: FemaleBreedingInfo[], animals: Animal[
  */
 const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) => {
   const router = useRouter()
-  const { animals, isLoading: isLoadingAnimals, wean, create, addRecord, update } = useAnimalCRUD()
+  const { animals, isLoading: isLoadingAnimals, wean, create, addRecord, update, remove } = useAnimalCRUD()
   const {
     breedingRecords,
     updateBreedingRecord,
@@ -157,6 +157,42 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     )
     await updateBreedingRecord(record.id, { femaleBreedingInfo: updatedFemaleInfo })
     await update(femaleId, { pregnantAt: null, birthedAt: null, weanedMotherAt: null })
+  }
+
+  const handleRevertBirth = async (record: BreedingRecord, femaleId: string) => {
+    const femaleInfo = record.femaleBreedingInfo.find((fi) => fi.femaleId === femaleId)
+    if (!femaleInfo) return
+
+    // 1. Eliminar crías creadas en el parto
+    if (femaleInfo.offspring?.length) {
+      for (const offspringId of femaleInfo.offspring) {
+        await remove(offspringId)
+      }
+    }
+
+    // 2. Limpiar datos de parto en el breeding record (vuelve a embarazada)
+    const updatedFemaleInfo = record.femaleBreedingInfo.map((fi) =>
+      fi.femaleId === femaleId
+        ? { ...fi, actualBirthDate: null, offspring: [] }
+        : fi,
+    )
+    await updateBreedingRecord(record.id, { femaleBreedingInfo: updatedFemaleInfo })
+
+    // 3. Restaurar estado reproductivo de la madre (embarazada, no parida)
+    await update(femaleId, {
+      birthedAt: null,
+      pregnantAt: femaleInfo.pregnancyConfirmedDate ?? null,
+    })
+
+    // 4. Registrar la reversión como registro de salud
+    const mother = animals.find((a) => a.id === femaleId)
+    await addRecord(femaleId, {
+      type: 'note',
+      category: 'general',
+      title: 'Parto revertido',
+      description: `Se revirtió el parto de ${mother?.animalNumber || femaleId}. ${femaleInfo.offspring?.length || 0} cría(s) eliminada(s).`,
+      date: new Date(),
+    })
   }
 
   const handleWeanConfirm = async () => {
@@ -776,7 +812,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
             onUnconfirmPregnancy={handleUnconfirmPregnancy}
             onDelete={(rec) => deleteBreedingRecord(rec.id)}
             onRemoveFromBreeding={handleRemoveFromBreeding}
-            onDeleteBirth={() => null}
+            onDeleteBirth={handleRevertBirth}
           />
         )}
         onView={(row) => {
@@ -1909,6 +1945,10 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                                 onRemoveFromBreeding={async (rec, animalId) => {
                                   const updated = rec.femaleBreedingInfo.filter((f) => f.femaleId !== animalId)
                                   await updateBreedingRecord(rec.id, { femaleBreedingInfo: updated })
+                                  setViewingBreedingRecord(null)
+                                }}
+                                onDeleteBirth={async (rec, fId) => {
+                                  await handleRevertBirth(rec, fId)
                                   setViewingBreedingRecord(null)
                                 }}
                                 triggerComponent={

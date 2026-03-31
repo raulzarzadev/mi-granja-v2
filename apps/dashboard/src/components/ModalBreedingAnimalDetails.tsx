@@ -328,9 +328,9 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                   onClick={() => handleActionAndClose(() => onDeleteBirth?.(record, animal.id))}
                   variant="danger"
                   icon="delete"
-                  label="Eliminar parto"
-                  loadingLabel="Eliminando..."
-                  confirm="¿Estás seguro? Se borrarán todos los datos de las crías asociadas."
+                  label="Revertir parto"
+                  loadingLabel="Revirtiendo..."
+                  confirm="¿Estás seguro? La madre volverá a estado embarazada y las crías asociadas serán eliminadas. Esta acción no se puede deshacer."
                 />
               )}
             </div>
