@@ -15,6 +15,7 @@ import { FarmCollaborator } from '@/types/collaborators'
 import { FARM_AREA_TYPES, FarmInvitation } from '@/types/farm'
 import AreaCard from './AreaCard'
 import BackupSection from './BackupSection'
+import BreedingConfigTab from './BreedingConfigTab'
 import MigrationBanner from './billing/MigrationBanner'
 import CollaboratorCard from './CollaboratorCard'
 import FarmSwitcherBar from './FarmSwitcherBar'
@@ -438,6 +439,10 @@ const FarmSection: React.FC = () => {
     {
       label: '💾 Respaldos',
       content: <BackupSection />,
+    },
+    {
+      label: '⚙️ Configuración',
+      content: <BreedingConfigTab />,
     },
   ]
 
