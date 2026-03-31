@@ -188,7 +188,7 @@ export function DatePickerButtons({
   }
 
   const btnBase =
-    'h-10 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium transition-colors hover:bg-gray-50 active:bg-gray-100 cursor-pointer'
+    'h-10 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-900 transition-colors hover:bg-gray-50 active:bg-gray-100 cursor-pointer'
 
   const { day: dayPh = 'Día', month: monthPh = 'Mes', year: yearPh = 'Año' } = placeholders
 
@@ -196,7 +196,7 @@ export function DatePickerButtons({
     <div className="relative max-w-sm">
       {(label || showToday) && (
         <div className="flex items-center justify-between mb-1">
-          {label && <label className="text-xs font-medium text-gray-500">{label}</label>}
+          {label && <label className="text-sm font-semibold text-gray-900">{label}</label>}
           {showToday && (
             <button
               type="button"
