@@ -215,7 +215,7 @@ export function DatePickerButtons({
           onClick={() => setActivePicker(activePicker === 'day' ? null : 'day')}
           className={`${btnBase} w-14 flex-none text-center ${activePicker === 'day' ? 'ring-2 ring-blue-500' : ''}`}
         >
-          {day ? day : <span className="text-gray-400">{dayPh}</span>}
+          {day ? day : <span className="text-gray-500">{dayPh}</span>}
         </button>
 
         {/* Month */}
@@ -224,7 +224,7 @@ export function DatePickerButtons({
           onClick={() => setActivePicker(activePicker === 'month' ? null : 'month')}
           className={`${btnBase} flex-1 text-center ${activePicker === 'month' ? 'ring-2 ring-blue-500' : ''}`}
         >
-          {month ? MONTHS_SHORT[month - 1] : <span className="text-gray-400">{monthPh}</span>}
+          {month ? MONTHS_SHORT[month - 1] : <span className="text-gray-500">{monthPh}</span>}
         </button>
 
         {/* Year */}
@@ -236,7 +236,7 @@ export function DatePickerButtons({
           }}
           className={`${btnBase} w-[4.5rem] flex-none text-center ${activePicker === 'year' ? 'ring-2 ring-blue-500' : ''}`}
         >
-          {year ? year : <span className="text-gray-400">{yearPh}</span>}
+          {year ? year : <span className="text-gray-500">{yearPh}</span>}
         </button>
 
         {/* Time */}
