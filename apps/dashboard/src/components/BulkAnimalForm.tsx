@@ -14,6 +14,7 @@ import {
   animals_types,
   POST_WEAN_STAGES,
 } from '@/types/animals'
+import { Icon } from './Icon/icon'
 import { BirthDateInput } from './inputs/BirthDateInput'
 import { DatePickerModal } from './inputs/DatePickerModal'
 import { InputRadioCards } from './inputs/InputRadioCards'
@@ -346,8 +347,8 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
               onChange={(v) => setDefaults((d) => ({ ...d, gender: v }))}
               columns={2}
               options={[
-                { value: 'macho', label: 'Macho', icon: '♂' },
-                { value: 'hembra', label: 'Hembra', icon: '♀' },
+                { value: 'macho', label: 'Macho', icon: <Icon icon="male" className="w-4 h-4 inline" /> },
+                { value: 'hembra', label: 'Hembra', icon: <Icon icon="female" className="w-4 h-4 inline" /> },
               ]}
             />
           </div>
