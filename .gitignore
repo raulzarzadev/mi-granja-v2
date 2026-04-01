@@ -52,6 +52,9 @@ next-env.d.ts
 .playwright-mcp/
 test-results/
 
+# cypress
+cypress/e2e/
+
 # claude
 .claude/
 firebase/data/
