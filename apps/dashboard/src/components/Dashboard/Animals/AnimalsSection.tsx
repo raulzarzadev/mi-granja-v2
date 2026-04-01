@@ -39,6 +39,8 @@ import ModalSaleForm from '../../ModalSaleForm'
 import AnimalCard from '@/components/AnimalCard'
 import { AnimalFilters, AnimalsFilters, useAnimalFilters } from './animals-filters'
 
+const ICON_GENDER_SIZE = 4
+
 interface AnimalsSectionProps {
   filters: AnimalFilters
   setFilters: React.Dispatch<React.SetStateAction<AnimalFilters>>
@@ -481,8 +483,10 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         render: (row) => {
           const cfg = animal_gender_config[row.animal.gender]
           return cfg ? (
-            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium ${cfg.bgColor}`}>
-              <Icon icon={cfg.iconName as 'male' | 'female'} className="w-3 h-3" />
+            <span
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium ${cfg.bgColor}`}
+            >
+              <Icon icon={cfg.iconName as 'male' | 'female'} size={ICON_GENDER_SIZE} />
               {cfg.label}
             </span>
           ) : null
@@ -1600,8 +1604,10 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         render: (row) => {
           const cfg = animal_gender_config[row.gender]
           return cfg ? (
-            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium ${cfg.bgColor}`}>
-              <Icon icon={cfg.iconName as 'male' | 'female'} className="w-3 h-3" />
+            <span
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium ${cfg.bgColor}`}
+            >
+              <Icon icon={cfg.iconName as 'male' | 'female'} size={ICON_GENDER_SIZE} />
               {cfg.label}
             </span>
           ) : null

@@ -47,6 +47,13 @@ next-env.d.ts
 
 # firebase
 .firebase/
+
+# playwright
+.playwright-mcp/
+test-results/
+
+# claude
+.claude/
 firebase/data/
 firebase-export-*
 *-debug.log

@@ -26,7 +26,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     minBreedingAge: 8, // 8 meses
     maxBreedingAge: 96, // 8 años
     breedingCycleDays: 17,
-    weaningDays: 60,
+    weaningDays: 70,
     description: 'Ovejas: gestación ~5 meses, temporada de abril a julio',
   },
   cabra: {
