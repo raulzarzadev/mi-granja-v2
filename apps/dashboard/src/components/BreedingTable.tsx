@@ -73,6 +73,8 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
 }) => {
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
   const [bulkDeleteIds, setBulkDeleteIds] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
+  const [deleteProgress, setDeleteProgress] = useState({ current: 0, total: 0 })
 
   const enriched: EnrichedBreeding[] = useMemo(
     () =>
@@ -259,6 +261,7 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
               size="sm"
               variant="outline"
               color="neutral"
+              disabled={deleting}
               onClick={() => setShowBulkDeleteModal(false)}
             >
               Cancelar
@@ -267,13 +270,22 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
               size="sm"
               color="error"
               icon="delete"
-              onClick={() => {
-                onDelete(Array.from(bulkDeleteIds))
+              disabled={deleting}
+              onClick={async () => {
+                const ids = Array.from(bulkDeleteIds)
+                setDeleting(true)
+                setDeleteProgress({ current: 0, total: ids.length })
+                for (let i = 0; i < ids.length; i++) {
+                  setDeleteProgress({ current: i + 1, total: ids.length })
+                  await onDelete([ids[i]])
+                }
+                setDeleting(false)
+                setDeleteProgress({ current: 0, total: 0 })
                 setShowBulkDeleteModal(false)
                 setBulkDeleteIds(new Set())
               }}
             >
-              Eliminar {bulkDeleteIds.size}
+              {deleting ? `Eliminando ${deleteProgress.current}/${deleteProgress.total}...` : `Eliminar ${bulkDeleteIds.size}`}
             </Button>
           </div>
         </div>
