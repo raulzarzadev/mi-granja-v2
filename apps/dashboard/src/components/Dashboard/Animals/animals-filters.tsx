@@ -1,7 +1,6 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { computeAnimalStage } from '@/lib/animal-utils'
 import {
   Animal,
@@ -46,7 +45,6 @@ export const useAnimalFilters = (externalState?: {
   setFilters: React.Dispatch<React.SetStateAction<AnimalFilters>>
 }) => {
   const { animals, animalsFiltered, queryAnimalsByStatus, searchExact } = useAnimalCRUD()
-  const { breedingRecords } = useBreedingCRUD()
   const [internalFilters, internalSetFilters] = useState<AnimalFilters>(() => {
     if (typeof window === 'undefined') return initialAnimalFilters
     try {

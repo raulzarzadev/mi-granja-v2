@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyBillingAuth, isAuthError } from '@/lib/billing-auth'
+import { isAuthError, verifyBillingAuth } from '@/lib/billing-auth'
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
 

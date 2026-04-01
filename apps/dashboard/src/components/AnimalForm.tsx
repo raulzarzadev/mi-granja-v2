@@ -7,7 +7,6 @@ import { z } from 'zod'
 import { useZodForm } from '@/hooks/useZodForm'
 import {
   Animal,
-  animal_gender_config,
   animal_icon,
   animal_stage_icons,
   animal_statuses,
@@ -18,11 +17,11 @@ import {
   breeding_animal_status,
   POST_WEAN_STAGES,
 } from '@/types/animals'
-import { Icon } from './Icon/icon'
 import { DatePickerButtons } from './buttons/date-picker-buttons'
-import { BirthDateInput } from './inputs/BirthDateInput'
 import { Form } from './forms/Form'
 import { TextField } from './forms/TextField'
+import { Icon } from './Icon/icon'
+import { BirthDateInput } from './inputs/BirthDateInput'
 import { InputRadioCards } from './inputs/InputRadioCards'
 import { WeightField } from './inputs/WeightInput'
 

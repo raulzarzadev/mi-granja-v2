@@ -204,7 +204,7 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
         renderCard={renderCard}
         viewModeKey="empadres_view_mode"
         onView={onView}
-        renderBulkActions={(selectedIds, clearSelection) => (
+        renderBulkActions={(selectedIds, _clearSelection) => (
           <Button
             size="xs"
             color="error"

@@ -20,8 +20,8 @@ import { setError } from '@/features/auth/authSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { RootState } from '@/features/store'
 import { useAdminActions } from '@/lib/adminActions'
-import { db } from '@/lib/firebase'
 import { computeAnimalStage } from '@/lib/animal-utils'
+import { db } from '@/lib/firebase'
 import { Animal, AnimalRecord, AnimalStatus, WeanNextStage } from '@/types/animals'
 
 /**

@@ -24,7 +24,7 @@ function expectedBirthDate(breedingDate: Date, gestationDays: number): Date {
 }
 
 /** Formatea fecha como "dd mmm yy" para coincidir con el formato de la tabla */
-function formatShortDate(date: Date): string {
+function _formatShortDate(date: Date): string {
   return date
     .toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: '2-digit' })
     .replace('.', '')
@@ -86,7 +86,7 @@ describe('Flujo de monta → embarazo → partos próximos', () => {
 
     // Verificar que la fecha esperada es breedingDate + 147 días (oveja)
     const expectedDate = expectedBirthDate(today, GESTATION_DAYS_OVEJA)
-    const expectedFormatted = expectedDate.toLocaleDateString('es-MX')
+    const _expectedFormatted = expectedDate.toLocaleDateString('es-MX')
     // La fecha debe estar visible en algún formato
     cy.get('table').should('contain', expectedDate.getFullYear().toString())
 

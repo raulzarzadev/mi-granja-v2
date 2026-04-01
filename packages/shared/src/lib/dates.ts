@@ -1,4 +1,4 @@
-import { toDate as fnsToDate, format } from 'date-fns'
+import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Timestamp } from 'firebase/firestore'
 

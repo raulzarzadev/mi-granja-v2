@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { randomInt } from 'node:crypto'
+import { NextRequest, NextResponse } from 'next/server'
 import { emailTemplate } from '@/lib/emailTemplate'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 

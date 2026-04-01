@@ -3,17 +3,18 @@
 import { addDays, differenceInCalendarDays } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import React, { useMemo, useState } from 'react'
+import AnimalCard from '@/components/AnimalCard'
 import BreedingCard from '@/components/BreedingCard'
 import BreedingTable from '@/components/BreedingTable'
 import Button from '@/components/buttons/Button'
 import ButtonConfirm from '@/components/buttons/ButtonConfirm'
 import DataTable, { ColumnDef } from '@/components/DataTable'
+import { Icon } from '@/components/Icon/icon'
 import { Modal } from '@/components/Modal'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
-import ModalBulkEdit from '@/components/ModalBulkEdit'
-import ModalBreedingAnimalDetails from '@/components/ModalBreedingAnimalDetails'
-import { Icon } from '@/components/Icon/icon'
 import ModalBirthForm from '@/components/ModalBirthForm'
+import ModalBreedingAnimalDetails from '@/components/ModalBreedingAnimalDetails'
+import ModalBulkEdit from '@/components/ModalBulkEdit'
 import ModalConfirmPregnancy from '@/components/ModalConfirmPregnancy'
 import StatisticsTab from '@/components/StatisticsTab'
 import Tabs from '@/components/Tabs'
@@ -36,7 +37,6 @@ import { BreedingRecord, FemaleBreedingInfo } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 import ModalBulkHealthAction from '../../ModalBulkHealthAction'
 import ModalSaleForm from '../../ModalSaleForm'
-import AnimalCard from '@/components/AnimalCard'
 import { AnimalFilters, AnimalsFilters, useAnimalFilters } from './animals-filters'
 
 const ICON_GENDER_SIZE = 4
@@ -265,7 +265,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     }
   }
 
-  const toggleWeanSelect = (id: string) => {
+  const _toggleWeanSelect = (id: string) => {
     setSelectedWeanIds((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -390,7 +390,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       days: rawBirthsWindow.days,
     }
   }, [rawBirthsWindow, animals, filters])
-  const birthsSummary = useMemo(
+  const _birthsSummary = useMemo(
     () => ({
       pastDueCount: birthsWindow.pastDue.length,
       upcomingCount: birthsWindow.upcoming.length,

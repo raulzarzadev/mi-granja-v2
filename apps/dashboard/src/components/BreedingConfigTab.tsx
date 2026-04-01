@@ -1,7 +1,7 @@
 'use client'
 
 import { ANIMAL_BREEDING_CONFIGS } from '@/lib/animalBreedingConfig'
-import { animals_types_labels, AnimalType } from '@/types/animals'
+import { AnimalType, animals_types_labels } from '@/types/animals'
 
 const formatMonths = (months: number) => {
   if (months >= 12) {

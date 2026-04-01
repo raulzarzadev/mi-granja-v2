@@ -2,15 +2,6 @@
 
 import EmailTestComponent from '@/components/EmailTestComponent'
 import {
-  ExampleDisabled,
-  ExampleFiltered,
-  ExampleFixedIds,
-  ExampleManySelected,
-  ExampleMultiSelect,
-  ExampleSingleSelect,
-  ExampleWithOmit,
-} from '@/components/examples/InputSelectAnimalsExamples'
-import {
   ExampleDatePickerBasic,
   ExampleDatePickerDisabled,
   ExampleDatePickerInModal,
@@ -20,6 +11,15 @@ import {
   ExampleModalMd,
   ExampleModalSm,
 } from '@/components/examples/DatePickerAndModalSizeExamples'
+import {
+  ExampleDisabled,
+  ExampleFiltered,
+  ExampleFixedIds,
+  ExampleManySelected,
+  ExampleMultiSelect,
+  ExampleSingleSelect,
+  ExampleWithOmit,
+} from '@/components/examples/InputSelectAnimalsExamples'
 import {
   ExampleConfirmModal,
   ExampleFormModal,

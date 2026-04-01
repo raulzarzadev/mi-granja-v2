@@ -3,7 +3,7 @@ import {
   sortFemalesByAnimalNumber,
 } from '@/components/Dashboard/Animals/AnimalsSection'
 import { Animal } from '@/types/animals'
-import { FemaleBreedingInfo, BreedingRecord } from '@/types/breedings'
+import { BreedingRecord, FemaleBreedingInfo } from '@/types/breedings'
 
 // --- Factories ---
 

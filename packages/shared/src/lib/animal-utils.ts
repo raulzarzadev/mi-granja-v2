@@ -1,5 +1,5 @@
 import { toDate } from 'date-fns'
-import { Animal, AnimalStage, getReproductiveStatus } from '../types/animals'
+import { Animal, AnimalStage } from '../types/animals'
 import { ANIMAL_BREEDING_CONFIGS } from './animalBreedingConfig'
 
 /**

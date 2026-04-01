@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyBillingAuth, isAuthError } from '@/lib/billing-auth'
+import { isAuthError, verifyBillingAuth } from '@/lib/billing-auth'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { isUserAdmin } from '@/lib/userUtils'
 

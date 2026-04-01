@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Modal } from '@/components/Modal'
 import Button from '@/components/buttons/Button'
+import { Modal } from '@/components/Modal'
 import {
   Animal,
   AnimalGender,
