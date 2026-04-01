@@ -11,13 +11,15 @@ function computeAge(dateStr: string): string | null {
   const birth = new Date(y, m - 1, d || 1)
   const diffMs = now.getTime() - birth.getTime()
   if (diffMs < 0) {
-    const totalNeg = (birth.getFullYear() - now.getFullYear()) * 12 + (birth.getMonth() - now.getMonth())
+    const totalNeg =
+      (birth.getFullYear() - now.getFullYear()) * 12 + (birth.getMonth() - now.getMonth())
     const yrsN = Math.floor(totalNeg / 12)
     const mosN = totalNeg % 12
     if (totalNeg < 1) return '-0m'
     return yrsN > 0 ? `-${yrsN}a ${mosN}m` : `-${mosN}m`
   }
-  const totalMonths = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth())
+  const totalMonths =
+    (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth())
   if (totalMonths < 1) {
     const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
     return `${days}d`

@@ -131,7 +131,8 @@ const OffspringFormModal: React.FC<{
                   onChange={() => setData((p) => ({ ...p, gender: g }))}
                   className="sr-only"
                 />
-                <Icon icon={g === 'hembra' ? 'female' : 'male'} className="w-4 h-4 inline" /> {g === 'hembra' ? 'Hembra' : 'Macho'}
+                <Icon icon={g === 'hembra' ? 'female' : 'male'} className="w-4 h-4 inline" />{' '}
+                {g === 'hembra' ? 'Hembra' : 'Macho'}
               </label>
             ))}
           </div>

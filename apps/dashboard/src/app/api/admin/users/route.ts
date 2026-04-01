@@ -22,10 +22,7 @@ export async function GET(request: NextRequest) {
 
     // Obtener todos los usuarios excepto el admin actual usando Admin SDK
     const firestore = getAdminFirestore()
-    const usersSnap = await firestore
-      .collection('users')
-      .where('email', '!=', auth.email)
-      .get()
+    const usersSnap = await firestore.collection('users').where('email', '!=', auth.email).get()
 
     const users = usersSnap.docs.map((doc) => ({
       id: doc.id,

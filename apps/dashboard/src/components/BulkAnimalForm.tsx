@@ -347,8 +347,16 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
               onChange={(v) => setDefaults((d) => ({ ...d, gender: v }))}
               columns={2}
               options={[
-                { value: 'macho', label: 'Macho', icon: <Icon icon="male" className="w-4 h-4 inline" /> },
-                { value: 'hembra', label: 'Hembra', icon: <Icon icon="female" className="w-4 h-4 inline" /> },
+                {
+                  value: 'macho',
+                  label: 'Macho',
+                  icon: <Icon icon="male" className="w-4 h-4 inline" />,
+                },
+                {
+                  value: 'hembra',
+                  label: 'Hembra',
+                  icon: <Icon icon="female" className="w-4 h-4 inline" />,
+                },
               ]}
             />
           </div>

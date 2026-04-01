@@ -26,7 +26,13 @@ export function InputRadioCards<T extends string = string>({
   columns,
 }: InputRadioCardsProps<T>) {
   const cols = columns ?? Math.min(options.length, 4)
-  const GRID: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-5', 6: 'grid-cols-6' }
+  const GRID: Record<number, string> = {
+    2: 'grid-cols-2',
+    3: 'grid-cols-3',
+    4: 'grid-cols-4',
+    5: 'grid-cols-5',
+    6: 'grid-cols-6',
+  }
   const gridClass = GRID[cols] ?? 'grid-cols-4'
 
   return (

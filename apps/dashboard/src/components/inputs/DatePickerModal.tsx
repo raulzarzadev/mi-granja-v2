@@ -1,14 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  DatePickerButtons,
-  type DatePickerButtonsProps,
-} from '../buttons/date-picker-buttons'
+import { DatePickerButtons, type DatePickerButtonsProps } from '../buttons/date-picker-buttons'
 import { Modal } from '../Modal'
 
-interface DatePickerModalProps
-  extends Omit<DatePickerButtonsProps, 'label'> {
+interface DatePickerModalProps extends Omit<DatePickerButtonsProps, 'label'> {
   /** Label shown above the trigger button */
   label?: string
   /** Placeholder when no date is selected */
@@ -44,18 +40,14 @@ export function DatePickerModal({
   return (
     <>
       <div className={className}>
-        {label && (
-          <p className="text-sm font-medium text-gray-700 mb-2">{label}</p>
-        )}
+        {label && <p className="text-sm font-medium text-gray-700 mb-2">{label}</p>}
         <button
           type="button"
           disabled={disabled}
           onClick={() => setOpen(true)}
           className="px-3 py-2 border border-gray-300 rounded-md text-sm text-left whitespace-nowrap truncate hover:border-green-500 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {display || (
-            <span style={{ color: '#d1d5db' }}>{placeholder}</span>
-          )}
+          {display || <span style={{ color: '#d1d5db' }}>{placeholder}</span>}
         </button>
       </div>
 
@@ -67,12 +59,7 @@ export function DatePickerModal({
         contentClassName="!overflow-visible"
       >
         <div className="py-2 space-y-4">
-          <DatePickerButtons
-            value={value}
-            onChange={onChange}
-            showToday
-            {...pickerProps}
-          />
+          <DatePickerButtons value={value} onChange={onChange} showToday {...pickerProps} />
           <div className="flex gap-2">
             <button
               type="button"

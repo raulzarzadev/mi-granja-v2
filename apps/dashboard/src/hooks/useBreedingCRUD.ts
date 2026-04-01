@@ -122,14 +122,15 @@ export const useBreedingCRUD = () => {
       await addDoc(collection(db, 'breedingRecords'), docData)
 
       // Actualizar animales confirmados como embarazadas en un solo batch
-      const confirmedFemales = data.femaleBreedingInfo?.filter(
-        (info) => !!info.pregnancyConfirmedDate,
-      ) || []
+      const confirmedFemales =
+        data.femaleBreedingInfo?.filter((info) => !!info.pregnancyConfirmedDate) || []
       if (confirmedFemales.length > 0) {
         const batch = writeBatch(db)
         for (const info of confirmedFemales) {
           batch.update(doc(db, 'animals', info.femaleId), {
-            pregnantAt: Timestamp.fromDate(toLocalDateStart(new Date(info.pregnancyConfirmedDate!))),
+            pregnantAt: Timestamp.fromDate(
+              toLocalDateStart(new Date(info.pregnancyConfirmedDate!)),
+            ),
             birthedAt: null,
             weanedMotherAt: null,
             updatedAt: now,

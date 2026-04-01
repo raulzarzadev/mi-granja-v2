@@ -322,7 +322,11 @@ export function DatePickerButtons({
       </Popover>
 
       {/* Month picker */}
-      <Popover open={activePicker === 'month'} onClose={() => setActivePicker(null)} inline={inline}>
+      <Popover
+        open={activePicker === 'month'}
+        onClose={() => setActivePicker(null)}
+        inline={inline}
+      >
         <div className="grid grid-cols-4 gap-1 w-80">
           {MONTHS_SHORT.map((m, i) => (
             <button
@@ -405,7 +409,11 @@ export function DatePickerButtons({
 
       {/* Time picker */}
       {showTime && (
-        <Popover open={activePicker === 'time'} onClose={() => setActivePicker(null)} inline={inline}>
+        <Popover
+          open={activePicker === 'time'}
+          onClose={() => setActivePicker(null)}
+          inline={inline}
+        >
           <div className="w-60">
             <div className="flex flex-wrap gap-1 mb-2">
               {QUICK_HOURS.map((qh) => (

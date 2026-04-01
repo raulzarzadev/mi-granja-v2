@@ -45,7 +45,9 @@ const ModalEditBreeding: React.FC<ModalEditBreedingProps> = ({
 
   const handleDelete = async () => {
     if (!record || !onDelete) return
-    if (!window.confirm('¿Estás seguro de eliminar este empadre? Esta acción no se puede deshacer.'))
+    if (
+      !window.confirm('¿Estás seguro de eliminar este empadre? Esta acción no se puede deshacer.')
+    )
       return
     try {
       await onDelete(record.id)

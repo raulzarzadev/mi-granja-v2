@@ -64,8 +64,10 @@ export default function ModalBulkEdit({
     const updates: Partial<Animal> = {}
     if (fields.type.enabled && fields.type.value) updates.type = fields.type.value as AnimalType
     if (fields.breed.enabled) updates.breed = fields.breed.value
-    if (fields.gender.enabled && fields.gender.value) updates.gender = fields.gender.value as AnimalGender
-    if (fields.stage.enabled && fields.stage.value) updates.stage = fields.stage.value as AnimalStage
+    if (fields.gender.enabled && fields.gender.value)
+      updates.gender = fields.gender.value as AnimalGender
+    if (fields.stage.enabled && fields.stage.value)
+      updates.stage = fields.stage.value as AnimalStage
     if (fields.weight.enabled && fields.weight.value) {
       updates.weight = Math.round(parseFloat(fields.weight.value) * 1000)
     }
@@ -97,14 +99,24 @@ export default function ModalBulkEdit({
   const availableBreeds = [...new Set(selectedAnimals.map((a) => a.breed).filter(Boolean))]
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Editar ${selectedAnimals.length} animales`} size="sm">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Editar ${selectedAnimals.length} animales`}
+      size="sm"
+    >
       <div className="p-4 space-y-3">
         <p className="text-xs text-gray-500">
-          Selecciona los campos a modificar. Solo los campos activados se aplicaran a los {selectedAnimals.length} animales seleccionados.
+          Selecciona los campos a modificar. Solo los campos activados se aplicaran a los{' '}
+          {selectedAnimals.length} animales seleccionados.
         </p>
 
         {/* Especie */}
-        <FieldRow label="Especie" enabled={fields.type.enabled} onToggle={() => toggleField('type')}>
+        <FieldRow
+          label="Especie"
+          enabled={fields.type.enabled}
+          onToggle={() => toggleField('type')}
+        >
           <select
             value={fields.type.value}
             onChange={(e) => updateValue('type', e.target.value)}
@@ -112,7 +124,9 @@ export default function ModalBulkEdit({
           >
             <option value="">Seleccionar...</option>
             {animals_types.map((t) => (
-              <option key={t} value={t}>{animals_types_labels[t]}</option>
+              <option key={t} value={t}>
+                {animals_types_labels[t]}
+              </option>
             ))}
           </select>
         </FieldRow>
@@ -137,7 +151,11 @@ export default function ModalBulkEdit({
         </FieldRow>
 
         {/* Genero */}
-        <FieldRow label="Genero" enabled={fields.gender.enabled} onToggle={() => toggleField('gender')}>
+        <FieldRow
+          label="Genero"
+          enabled={fields.gender.enabled}
+          onToggle={() => toggleField('gender')}
+        >
           <select
             value={fields.gender.value}
             onChange={(e) => updateValue('gender', e.target.value)}
@@ -145,13 +163,19 @@ export default function ModalBulkEdit({
           >
             <option value="">Seleccionar...</option>
             {animals_genders.map((g) => (
-              <option key={g} value={g}>{animals_genders_labels[g]}</option>
+              <option key={g} value={g}>
+                {animals_genders_labels[g]}
+              </option>
             ))}
           </select>
         </FieldRow>
 
         {/* Etapa */}
-        <FieldRow label="Etapa" enabled={fields.stage.enabled} onToggle={() => toggleField('stage')}>
+        <FieldRow
+          label="Etapa"
+          enabled={fields.stage.enabled}
+          onToggle={() => toggleField('stage')}
+        >
           <select
             value={fields.stage.value}
             onChange={(e) => updateValue('stage', e.target.value)}
@@ -159,13 +183,19 @@ export default function ModalBulkEdit({
           >
             <option value="">Seleccionar...</option>
             {animals_stages.map((s) => (
-              <option key={s} value={s}>{animals_stages_labels[s]}</option>
+              <option key={s} value={s}>
+                {animals_stages_labels[s]}
+              </option>
             ))}
           </select>
         </FieldRow>
 
         {/* Peso */}
-        <FieldRow label="Peso (kg)" enabled={fields.weight.enabled} onToggle={() => toggleField('weight')}>
+        <FieldRow
+          label="Peso (kg)"
+          enabled={fields.weight.enabled}
+          onToggle={() => toggleField('weight')}
+        >
           <input
             type="number"
             value={fields.weight.value}
@@ -188,7 +218,9 @@ export default function ModalBulkEdit({
             disabled={enabledCount === 0 || saving}
             className="flex-1"
           >
-            {saving ? `Guardando ${progress.current}/${progress.total}...` : `Aplicar a ${selectedAnimals.length}`}
+            {saving
+              ? `Guardando ${progress.current}/${progress.total}...`
+              : `Aplicar a ${selectedAnimals.length}`}
           </Button>
         </div>
       </div>
@@ -208,7 +240,9 @@ function FieldRow({
   children: React.ReactNode
 }) {
   return (
-    <div className={`rounded-lg border p-3 transition-colors ${enabled ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+    <div
+      className={`rounded-lg border p-3 transition-colors ${enabled ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-gray-50'}`}
+    >
       <label className="flex items-center gap-2 cursor-pointer mb-2">
         <input
           type="checkbox"
@@ -216,7 +250,9 @@ function FieldRow({
           onChange={onToggle}
           className="h-4 w-4 rounded border-gray-300 text-green-600 cursor-pointer"
         />
-        <span className={`text-sm font-medium ${enabled ? 'text-gray-900' : 'text-gray-500'}`}>{label}</span>
+        <span className={`text-sm font-medium ${enabled ? 'text-gray-900' : 'text-gray-500'}`}>
+          {label}
+        </span>
       </label>
       {enabled && <div className="mt-1">{children}</div>}
     </div>

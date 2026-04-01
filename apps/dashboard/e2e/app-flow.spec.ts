@@ -11,9 +11,7 @@ import { login } from './helpers'
 
 test.describe('Complete Application Flow', () => {
   test.describe('Protected Routes', () => {
-    test('should show auth page or dashboard depending on session', async ({
-      page,
-    }) => {
+    test('should show auth page or dashboard depending on session', async ({ page }) => {
       await page.goto('/')
 
       // In emulators, session may persist — either auth page or dashboard is valid
@@ -23,9 +21,7 @@ test.describe('Complete Application Flow', () => {
       const isDashboard = !isAuth
 
       if (isAuth) {
-        await expect(
-          page.getByRole('textbox', { name: /correo electrónico/i }),
-        ).toBeVisible()
+        await expect(page.getByRole('textbox', { name: /correo electrónico/i })).toBeVisible()
       } else {
         // Dashboard loaded — session was active
         expect(isDashboard).toBe(true)
@@ -34,24 +30,18 @@ test.describe('Complete Application Flow', () => {
   })
 
   test.describe('Login Flow', () => {
-    test('should login with magic link and reach dashboard', async ({
-      page,
-    }) => {
+    test('should login with magic link and reach dashboard', async ({ page }) => {
       await login(page)
 
       // Should see the main dashboard with Animales tab
-      await expect(
-        page.getByRole('tab', { name: /animales/i }),
-      ).toBeVisible({ timeout: 10000 })
+      await expect(page.getByRole('tab', { name: /animales/i })).toBeVisible({ timeout: 10000 })
     })
 
     test('should show farm data after login', async ({ page }) => {
       await login(page)
 
       // Wait for dashboard to load
-      await expect(
-        page.getByRole('tab', { name: /animales/i }),
-      ).toBeVisible({ timeout: 10000 })
+      await expect(page.getByRole('tab', { name: /animales/i })).toBeVisible({ timeout: 10000 })
 
       // Should have navigation tabs visible
       const tabs = page.getByRole('tab')
@@ -93,9 +83,7 @@ test.describe('Complete Application Flow', () => {
     test('should load dashboard quickly after login', async ({ page }) => {
       const start = Date.now()
       await login(page)
-      await expect(
-        page.getByRole('tab', { name: /animales/i }),
-      ).toBeVisible({ timeout: 15000 })
+      await expect(page.getByRole('tab', { name: /animales/i })).toBeVisible({ timeout: 15000 })
       const duration = Date.now() - start
 
       // Login + dashboard load should be under 15s

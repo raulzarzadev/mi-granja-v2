@@ -1,4 +1,7 @@
-import { groupFemalesByStatus, sortFemalesByAnimalNumber } from '@/components/Dashboard/Animals/AnimalsSection'
+import {
+  groupFemalesByStatus,
+  sortFemalesByAnimalNumber,
+} from '@/components/Dashboard/Animals/AnimalsSection'
 import { Animal } from '@/types/animals'
 import { FemaleBreedingInfo, BreedingRecord } from '@/types/breedings'
 
@@ -24,17 +27,18 @@ const makeBreeding = (overrides: Partial<BreedingRecord> = {}): BreedingRecord =
   ...overrides,
 })
 
-const makeAnimal = (overrides: Partial<Animal> = {}): Animal => ({
-  id: `animal-${Math.random().toString(36).slice(2, 6)}`,
-  farmerId: 'farmer-1',
-  animalNumber: '001',
-  type: 'oveja',
-  stage: 'reproductor',
-  gender: 'hembra',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  ...overrides,
-} as Animal)
+const makeAnimal = (overrides: Partial<Animal> = {}): Animal =>
+  ({
+    id: `animal-${Math.random().toString(36).slice(2, 6)}`,
+    farmerId: 'farmer-1',
+    animalNumber: '001',
+    type: 'oveja',
+    stage: 'reproductor',
+    gender: 'hembra',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  }) as Animal
 
 // Simula la lógica de orderedBreedings del componente
 function classifyBreedings(records: BreedingRecord[]) {
@@ -60,9 +64,7 @@ function classifyBreedings(records: BreedingRecord[]) {
 }
 
 // Simula la lógica de nursingMotherIds
-function getNursingMotherIds(
-  allCrias: { motherId: string }[],
-): Set<string> {
+function getNursingMotherIds(allCrias: { motherId: string }[]): Set<string> {
   const ids = new Set<string>()
   for (const entry of allCrias) {
     if (entry.motherId) ids.add(entry.motherId)
@@ -76,9 +78,7 @@ function simulateRevertBirth(record: BreedingRecord, femaleId: string) {
   if (!femaleInfo) return null
 
   const updatedFemaleInfo = record.femaleBreedingInfo.map((fi) =>
-    fi.femaleId === femaleId
-      ? { ...fi, actualBirthDate: null, offspring: [] }
-      : fi,
+    fi.femaleId === femaleId ? { ...fi, actualBirthDate: null, offspring: [] } : fi,
   )
 
   const motherUpdates = {
@@ -192,10 +192,7 @@ describe('sortFemalesByAnimalNumber', () => {
   })
 
   it('no muta el array original', () => {
-    const females = [
-      makeFemale({ femaleId: 'a2' }),
-      makeFemale({ femaleId: 'a1' }),
-    ]
+    const females = [makeFemale({ femaleId: 'a2' }), makeFemale({ femaleId: 'a1' })]
     const animals = [
       makeAnimal({ id: 'a1', animalNumber: '1' }),
       makeAnimal({ id: 'a2', animalNumber: '2' }),
@@ -408,11 +405,7 @@ describe('madres amamantando — conteo', () => {
   })
 
   it('ignora crías sin madre (motherId vacío)', () => {
-    const crias = [
-      { motherId: 'mom-1' },
-      { motherId: '' },
-      { motherId: '' },
-    ]
+    const crias = [{ motherId: 'mom-1' }, { motherId: '' }, { motherId: '' }]
 
     const ids = getNursingMotherIds(crias)
 

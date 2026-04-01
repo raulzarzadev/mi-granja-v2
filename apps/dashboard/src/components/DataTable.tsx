@@ -415,7 +415,10 @@ function DataTable<T>({
                       </td>
                     )}
                     {columns.map((col) => (
-                      <td key={col.key} className={`px-2 py-1.5 text-sm whitespace-nowrap ${col.className ?? ''}`}>
+                      <td
+                        key={col.key}
+                        className={`px-2 py-1.5 text-sm whitespace-nowrap ${col.className ?? ''}`}
+                      >
                         {col.render(row)}
                       </td>
                     ))}

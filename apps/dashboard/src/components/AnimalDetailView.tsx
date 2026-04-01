@@ -32,9 +32,9 @@ interface AnimalDetailViewProps {
  */
 const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp }) => {
   const { animals: allAnimals } = useAnimalCRUD()
-  const animal = useSelector(
-    (state: RootState) => state.animals.animals.find((a) => a.id === animalProp.id),
-  ) ?? animalProp
+  const animal =
+    useSelector((state: RootState) => state.animals.animals.find((a) => a.id === animalProp.id)) ??
+    animalProp
 
   const getMother = () => {
     if (!animal.motherId) return null

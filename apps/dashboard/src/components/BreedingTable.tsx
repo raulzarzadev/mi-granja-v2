@@ -16,8 +16,16 @@ interface BreedingTableProps {
   onDelete: (recordIds: string[]) => void
   onConfirmPregnancy?: (record: BreedingRecord) => void
   toolbar?: React.ReactNode
-  renderCard?: (row: { record: BreedingRecord; male: Animal | undefined; status: ReturnType<typeof getBreedingStatus> }) => React.ReactNode
-  onView?: (row: { record: BreedingRecord; male: Animal | undefined; status: ReturnType<typeof getBreedingStatus> }) => React.ReactNode
+  renderCard?: (row: {
+    record: BreedingRecord
+    male: Animal | undefined
+    status: ReturnType<typeof getBreedingStatus>
+  }) => React.ReactNode
+  onView?: (row: {
+    record: BreedingRecord
+    male: Animal | undefined
+    status: ReturnType<typeof getBreedingStatus>
+  }) => React.ReactNode
 }
 
 function getBreedingStatus(record: BreedingRecord) {
@@ -285,7 +293,9 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
                 setBulkDeleteIds(new Set())
               }}
             >
-              {deleting ? `Eliminando ${deleteProgress.current}/${deleteProgress.total}...` : `Eliminar ${bulkDeleteIds.size}`}
+              {deleting
+                ? `Eliminando ${deleteProgress.current}/${deleteProgress.total}...`
+                : `Eliminar ${bulkDeleteIds.size}`}
             </Button>
           </div>
         </div>

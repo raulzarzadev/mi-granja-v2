@@ -28,9 +28,7 @@ test.describe('Ciclo de vida completo: borrega → monta → embarazo → parto 
 
     // ── 1. CREAR BORREGA REPRODUCTORA ──────────────────────────
     await page.getByRole('button', { name: /registrar animal/i }).click()
-    await expect(
-      page.getByRole('heading', { name: /registrar nuevo animal/i }),
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: /registrar nuevo animal/i })).toBeVisible()
 
     await page.getByRole('textbox', { name: /id del animal/i }).fill(ANIMAL_ID)
     await page.getByRole('textbox', { name: /nombre/i }).fill('E2E Borrega')
@@ -60,9 +58,7 @@ test.describe('Ciclo de vida completo: borrega → monta → embarazo → parto 
     await expect(page.getByRole('heading', { name: /montas/i })).toBeVisible()
 
     await page.getByRole('button', { name: /nueva monta/i }).click()
-    await expect(
-      page.getByRole('heading', { name: /registrar monta/i }),
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: /registrar monta/i })).toBeVisible()
 
     // Cambiar ID de monta para evitar duplicados
     const montaIdInput = page.getByRole('textbox', { name: /id de monta/i })
@@ -126,9 +122,7 @@ test.describe('Ciclo de vida completo: borrega → monta → embarazo → parto 
     await partoDialog.getByRole('button', { name: /agregar cría/i }).click()
 
     // Modal "Agregar cría"
-    await expect(
-      page.getByRole('heading', { name: 'Agregar cría' }),
-    ).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('heading', { name: 'Agregar cría' })).toBeVisible({ timeout: 5000 })
 
     // Rellenar datos de la cría (usar los inputs del modal más reciente)
     await page.getByPlaceholder('Ej: OV-001').fill(CRIA_ID)
@@ -146,9 +140,7 @@ test.describe('Ciclo de vida completo: borrega → monta → embarazo → parto 
     await registrarPartoBtn.click()
 
     // Modal de éxito "Parto Registrado" — cerrar con "Aceptar"
-    await expect(
-      page.getByText('Parto registrado exitosamente'),
-    ).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText('Parto registrado exitosamente')).toBeVisible({ timeout: 5000 })
     await page.getByRole('button', { name: /aceptar/i }).click()
     await page.waitForTimeout(1000)
 

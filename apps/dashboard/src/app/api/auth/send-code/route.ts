@@ -35,7 +35,8 @@ export async function POST(req: NextRequest) {
 
     // In dev/emulator mode, skip sending real email and return code directly
     const isEmulator =
-      (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' || !!process.env.FIREBASE_AUTH_EMULATOR_HOST) &&
+      (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' ||
+        !!process.env.FIREBASE_AUTH_EMULATOR_HOST) &&
       process.env.NODE_ENV === 'development'
     if (isEmulator) {
       console.log(`[DEV] Código de acceso para ${normalizedEmail}: ${code}`)

@@ -221,9 +221,7 @@ export const useAnimalCRUD = () => {
       orderBy('createdAt', 'desc'),
     )
     const snapshot = await getDocs(q)
-    return serializeObj(
-      snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Animal[],
-    )
+    return serializeObj(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Animal[])
   }
 
   const animalsStats = () => {

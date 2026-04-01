@@ -75,7 +75,12 @@ test.describe('Monta → Embarazo → Partos próximos', () => {
     expect(rowCount).toBeGreaterThan(0)
 
     // La primera fila debe tener fecha de parto esperado (no "—")
-    const partoText = await partosTable.locator('tbody tr').first().locator('td').nth(2).textContent()
+    const partoText = await partosTable
+      .locator('tbody tr')
+      .first()
+      .locator('td')
+      .nth(2)
+      .textContent()
     expect(partoText).not.toBe('—')
     expect(partoText).toMatch(/\d/)
   })

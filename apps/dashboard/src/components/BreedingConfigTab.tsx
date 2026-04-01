@@ -42,12 +42,8 @@ export default function BreedingConfigTab() {
                 <td className="py-2.5 pr-4 font-medium text-gray-900">
                   {animals_types_labels[config.type as AnimalType] || config.type}
                 </td>
-                <td className="py-2.5 px-3 text-center text-gray-600">
-                  {config.gestationDays}d
-                </td>
-                <td className="py-2.5 px-3 text-center text-gray-600">
-                  {config.weaningDays}d
-                </td>
+                <td className="py-2.5 px-3 text-center text-gray-600">{config.gestationDays}d</td>
+                <td className="py-2.5 px-3 text-center text-gray-600">{config.weaningDays}d</td>
                 <td className="py-2.5 px-3 text-center text-gray-600">
                   {formatMonths(config.minBreedingAge)}
                   {config.maxBreedingAge ? ` — ${formatMonths(config.maxBreedingAge)}` : ''}
@@ -65,11 +61,21 @@ export default function BreedingConfigTab() {
       </div>
 
       <div className="text-xs text-gray-400 space-y-1">
-        <p><strong>Gestación:</strong> días de embarazo estimados</p>
-        <p><strong>Destete:</strong> días recomendados para destetar crías</p>
-        <p><strong>Edad reprod.:</strong> edad mínima para reproducción</p>
-        <p><strong>Ciclo estral:</strong> duración del ciclo reproductivo</p>
-        <p><strong>Camada prom.:</strong> número promedio de crías por parto</p>
+        <p>
+          <strong>Gestación:</strong> días de embarazo estimados
+        </p>
+        <p>
+          <strong>Destete:</strong> días recomendados para destetar crías
+        </p>
+        <p>
+          <strong>Edad reprod.:</strong> edad mínima para reproducción
+        </p>
+        <p>
+          <strong>Ciclo estral:</strong> duración del ciclo reproductivo
+        </p>
+        <p>
+          <strong>Camada prom.:</strong> número promedio de crías por parto
+        </p>
       </div>
     </div>
   )

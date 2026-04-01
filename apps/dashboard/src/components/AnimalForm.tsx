@@ -390,8 +390,16 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
           disabled={isLoading}
           columns={2}
           options={[
-            { value: 'macho', label: 'Macho', icon: <Icon icon="male" className="w-4 h-4 inline" /> },
-            { value: 'hembra', label: 'Hembra', icon: <Icon icon="female" className="w-4 h-4 inline" /> },
+            {
+              value: 'macho',
+              label: 'Macho',
+              icon: <Icon icon="male" className="w-4 h-4 inline" />,
+            },
+            {
+              value: 'hembra',
+              label: 'Hembra',
+              icon: <Icon icon="female" className="w-4 h-4 inline" />,
+            },
           ]}
         />
       </div>

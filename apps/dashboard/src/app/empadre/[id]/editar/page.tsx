@@ -26,7 +26,9 @@ export default function EditarEmpadrePage() {
 
   const handleDelete = async () => {
     if (!record) return
-    if (!window.confirm('¿Estas seguro de eliminar este empadre? Esta accion no se puede deshacer.'))
+    if (
+      !window.confirm('¿Estas seguro de eliminar este empadre? Esta accion no se puede deshacer.')
+    )
       return
     await deleteBreedingRecord(record.id)
     router.back()

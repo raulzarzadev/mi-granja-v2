@@ -5,10 +5,7 @@ import { expect } from '@playwright/test'
  * El AuthForm auto-rellena y auto-verifica el código en modo emulador.
  * Si falla el auto-verify, interceptamos el devCode y lo completamos manualmente.
  */
-export async function login(
-  page: import('@playwright/test').Page,
-  email = 'admin@migranja.com',
-) {
+export async function login(page: import('@playwright/test').Page, email = 'admin@migranja.com') {
   // Interceptar la respuesta de send-code para obtener devCode
   let devCode: string | null = null
   await page.route('**/api/auth/send-code', async (route) => {
@@ -20,12 +17,8 @@ export async function login(
 
   // Ir a /auth y enviar código
   await page.goto('/auth')
-  await page
-    .getByRole('textbox', { name: /correo electrónico/i })
-    .fill(email)
-  await page
-    .getByRole('button', { name: /enviar código/i })
-    .click()
+  await page.getByRole('textbox', { name: /correo electrónico/i }).fill(email)
+  await page.getByRole('button', { name: /enviar código/i }).click()
 
   // Esperar a que el auto-verify complete (el AuthForm lo hace en 300ms)
   // Dar suficiente tiempo para que el flujo completo funcione

@@ -6,26 +6,16 @@ test.describe('Authentication Flow', () => {
       await page.goto('/auth')
 
       await expect(page.locator('img[alt*="Mi Granja"]')).toBeVisible()
-      await expect(
-        page.getByText('Te enviaremos un código de acceso a tu email'),
-      ).toBeVisible()
-      await expect(
-        page.getByRole('textbox', { name: /correo electrónico/i }),
-      ).toBeVisible()
-      await expect(
-        page.getByRole('button', { name: /enviar código de acceso/i }),
-      ).toBeVisible()
+      await expect(page.getByText('Te enviaremos un código de acceso a tu email')).toBeVisible()
+      await expect(page.getByRole('textbox', { name: /correo electrónico/i })).toBeVisible()
+      await expect(page.getByRole('button', { name: /enviar código de acceso/i })).toBeVisible()
     })
 
     test('should show beta banner', async ({ page }) => {
       await page.goto('/auth')
 
-      await expect(
-        page.getByText(/Mi Granja esta en fase de pruebas/),
-      ).toBeVisible()
-      await expect(
-        page.getByRole('link', { name: /feedback/i }),
-      ).toBeVisible()
+      await expect(page.getByText(/Mi Granja esta en fase de pruebas/)).toBeVisible()
+      await expect(page.getByRole('link', { name: /feedback/i })).toBeVisible()
     })
 
     test('should close beta banner', async ({ page }) => {
@@ -41,9 +31,7 @@ test.describe('Authentication Flow', () => {
     test('should validate empty email', async ({ page }) => {
       await page.goto('/auth')
 
-      await page
-        .getByRole('button', { name: /enviar código de acceso/i })
-        .click()
+      await page.getByRole('button', { name: /enviar código de acceso/i }).click()
 
       // Should show some validation (HTML5 required or custom)
       const emailInput = page.getByRole('textbox', {
@@ -55,12 +43,8 @@ test.describe('Authentication Flow', () => {
     test('should accept email and show confirmation', async ({ page }) => {
       await page.goto('/auth')
 
-      await page
-        .getByRole('textbox', { name: /correo electrónico/i })
-        .fill('admin@migranja.com')
-      await page
-        .getByRole('button', { name: /enviar código de acceso/i })
-        .click()
+      await page.getByRole('textbox', { name: /correo electrónico/i }).fill('admin@migranja.com')
+      await page.getByRole('button', { name: /enviar código de acceso/i }).click()
 
       // After sending, should show some confirmation or change state
       // Wait for either a success message or the button to change
@@ -104,14 +88,10 @@ test.describe('Authentication Flow', () => {
       await page.goto('/auth')
 
       await expect(page.locator('img[alt*="Mi Granja"]')).toBeVisible()
-      await expect(
-        page.getByRole('textbox', { name: /correo electrónico/i }),
-      ).toBeVisible()
+      await expect(page.getByRole('textbox', { name: /correo electrónico/i })).toBeVisible()
 
       // Form should be usable on mobile
-      await page
-        .getByRole('textbox', { name: /correo electrónico/i })
-        .fill('test@test.com')
+      await page.getByRole('textbox', { name: /correo electrónico/i }).fill('test@test.com')
       const submitBtn = page.getByRole('button', {
         name: /enviar código de acceso/i,
       })
@@ -122,9 +102,7 @@ test.describe('Authentication Flow', () => {
     test('should show emulator mode warning', async ({ page }) => {
       await page.goto('/auth')
 
-      await expect(
-        page.getByText(/running in emulator mode/i),
-      ).toBeVisible()
+      await expect(page.getByText(/running in emulator mode/i)).toBeVisible()
     })
   })
 
@@ -132,9 +110,7 @@ test.describe('Authentication Flow', () => {
     test('should load auth page quickly', async ({ page }) => {
       const start = Date.now()
       await page.goto('/auth')
-      await page
-        .getByRole('textbox', { name: /correo electrónico/i })
-        .waitFor()
+      await page.getByRole('textbox', { name: /correo electrónico/i }).waitFor()
       const duration = Date.now() - start
 
       expect(duration).toBeLessThan(5000)

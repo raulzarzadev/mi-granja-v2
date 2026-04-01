@@ -164,13 +164,7 @@ export const animals_types_labels: Record<AnimalType, string> = {
   otro: 'Otro',
 }
 
-export const animals_stages = [
-  'cria',
-  'juvenil',
-  'engorda',
-  'reproductor',
-  'descarte',
-] as const
+export const animals_stages = ['cria', 'juvenil', 'engorda', 'reproductor', 'descarte'] as const
 export const animals_stages_labels: Record<AnimalStage, string> = {
   cria: 'Cría',
   juvenil: 'Juvenil',
