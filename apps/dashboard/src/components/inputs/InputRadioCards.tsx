@@ -5,7 +5,7 @@ import React from 'react'
 export interface RadioCardOption<T extends string = string> {
   value: T
   label: string
-  icon?: string
+  icon?: React.ReactNode
 }
 
 interface InputRadioCardsProps<T extends string = string> {

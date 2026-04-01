@@ -111,14 +111,14 @@ export const animal_gender_config: Record<
 > = {
   macho: {
     label: 'Macho',
-    icon: 'M',
+    icon: '♂',
     iconName: 'male',
     color: 'text-blue-600',
     bgColor: 'bg-blue-100 text-blue-800',
   },
   hembra: {
     label: 'Hembra',
-    icon: 'H',
+    icon: '♀',
     iconName: 'female',
     color: 'text-pink-600',
     bgColor: 'bg-pink-100 text-pink-800',

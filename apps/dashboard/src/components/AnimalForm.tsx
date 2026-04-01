@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { useZodForm } from '@/hooks/useZodForm'
 import {
   Animal,
+  animal_gender_config,
   animal_icon,
   animal_stage_icons,
   animal_statuses,
@@ -17,6 +18,7 @@ import {
   breeding_animal_status,
   POST_WEAN_STAGES,
 } from '@/types/animals'
+import { Icon } from './Icon/icon'
 import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { BirthDateInput } from './inputs/BirthDateInput'
 import { Form } from './forms/Form'
@@ -388,8 +390,8 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
           disabled={isLoading}
           columns={2}
           options={[
-            { value: 'macho', label: 'Macho', icon: '♂' },
-            { value: 'hembra', label: 'Hembra', icon: '♀' },
+            { value: 'macho', label: 'Macho', icon: <Icon icon="male" className="w-4 h-4 inline" /> },
+            { value: 'hembra', label: 'Hembra', icon: <Icon icon="female" className="w-4 h-4 inline" /> },
           ]}
         />
       </div>

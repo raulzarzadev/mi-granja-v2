@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import Button from '@/components/buttons/Button'
+import { Icon } from '@/components/Icon/icon'
 import { toDate } from '@/lib/dates'
 import { BirthRecord, OffspringInfo } from '@/types'
 import { Animal, animal_icon } from '@/types/animals'
@@ -130,7 +131,7 @@ const OffspringFormModal: React.FC<{
                   onChange={() => setData((p) => ({ ...p, gender: g }))}
                   className="sr-only"
                 />
-                {g === 'hembra' ? '♀ Hembra' : '♂ Macho'}
+                <Icon icon={g === 'hembra' ? 'female' : 'male'} className="w-4 h-4 inline" /> {g === 'hembra' ? 'Hembra' : 'Macho'}
               </label>
             ))}
           </div>
