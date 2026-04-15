@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0fdf4"/>
+      <stop offset="100%" stop-color="#dcfce7"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#16a34a"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="1050" cy="120" r="180" fill="#86efac" opacity="0.25"/>
+  <circle cx="120" cy="560" r="220" fill="#4ade80" opacity="0.15"/>
+
+  <!-- Top accent bar -->
+  <rect x="0" y="0" width="1200" height="8" fill="url(#accent)"/>
+
+  <!-- Brand pill -->
+  <rect x="80" y="100" width="260" height="48" rx="24" fill="#16a34a"/>
+  <text x="210" y="132" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" fill="#ffffff" text-anchor="middle">MI GRANJA</text>
+
+  <!-- Title -->
+  <text x="80" y="240" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="800" fill="#111827">Gestiona tu granja</text>
+  <text x="80" y="320" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="800" fill="#16a34a">de forma inteligente</text>
+
+  <!-- Subtitle -->
+  <text x="80" y="390" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="400" fill="#374151">Software ganadero en español — animales,</text>
+  <text x="80" y="430" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="400" fill="#374151">reproducción, salud y colaboradores.</text>
+
+  <!-- Animal emoji strip -->
+  <text x="80" y="540" font-family="Apple Color Emoji, Segoe UI Emoji, sans-serif" font-size="56">🐄 🐑 🐐 🐷 🐔 🐴</text>
+
+  <!-- CTA pill -->
+  <rect x="840" y="500" width="280" height="70" rx="16" fill="#16a34a"/>
+  <text x="980" y="547" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="700" fill="#ffffff" text-anchor="middle">Plan gratuito</text>
+
+  <!-- URL -->
+  <text x="1120" y="600" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="600" fill="#16a34a" text-anchor="end">migranja.app</text>
+</svg>

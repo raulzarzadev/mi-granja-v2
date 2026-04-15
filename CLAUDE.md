@@ -116,58 +116,40 @@ Admins can impersonate users via `/api/admin/impersonate`. All impersonated acti
   2. `apps/dashboard/src/components/ModalRestoreBackup.tsx` — update the hardcoded JSON schema shown in "Ver formato requerido del archivo"
   This ensures backup export/import handles the new fields correctly and the UI documentation stays in sync.
 
-## Business Model & Roadmap
+## Business Model
 
-### Freemium Model
+### "Lugares" model — admin-managed (no automated payments)
 
-MiGranja operates under a **Freemium** pricing model:
+MiGranja uses a manual, admin-managed plan model. **No Stripe, Conekta, or MercadoPago** — payment integrations were evaluated and removed.
 
-- **Free plan**: 1 user, 1 farm, full feature access
-- **Paid plan**: $250 MXN/month per additional farm, $250 MXN/month per additional collaborator
-- Example: 3 farms + 2 collaborators = $1,000 MXN/month
-- Annual plan with discount (% TBD)
+- **Free plan**: 1 granja, 0 colaboradores, acceso completo a features
+- **Paid plan**: el admin asigna N `places` al usuario. Cada `place` vale por **1 granja extra** O **1 colaborador** — el usuario decide cómo gastarlos
+- Cobro y activación se gestionan fuera del sistema; el admin ajusta `places` manualmente desde el panel
 
-### Payment Integrations (planned)
+### Implementación actual
 
-| Platform     | Purpose                                         |
-|-------------|--------------------------------------------------|
-| **Stripe**       | Primary — cards, recurring subscriptions         |
-| **Conekta**      | Mexico — OXXO cash, SPEI bank transfers          |
-| **MercadoPago**  | Broad LATAM coverage                             |
+- **Tipos**: `packages/shared/src/types/billing.ts` — `SubscriptionStatus`, `PlanType`, `BillingSubscription` (campo `places: number`), `BillingUsage` (`totalPlaces`, `usedPlaces`), helpers `computeUsedPlaces`, `canAddFarm`, `canAddCollaborator`
+- **Redux**: `billingSlice.ts` — `subscription`, `usage`, `planType`, `status`, `isLoading`, `error`
+- **Hook**: `useBilling.ts` — `loadSubscription`, `loadUsage`, `canCreateFarm`, `canInviteCollaborator`
+- **API routes**: `/api/billing/subscription`, `/api/billing/usage`, `/api/admin/billing` (GET plan data, POST asigna places)
+- **Admin UI**: botón "Gestionar Plan" en tabla `AdminUsers` — modal muestra uso y asigna `places`. No hay tab "Facturación" separado
+- **User UI**: `BillingSection` y `ProfileSection` muestran plan/places/uso + mensaje "contacta al admin". `MigrationBanner` para usuarios que exceden límites free
+- **Enforcement**: `ModalCreateFarm` y `ModalInviteCollaborator` pre-chequean `usedPlaces < totalPlaces` con alert
+- **Firestore**: colección `subscriptions/{userId}` con campo `places`
 
-### Billing Rules
+## Pending Features
 
-- Monthly recurring subscription via Stripe
-- Charges based on active farms and collaborators at end of month
-- 3-day grace period on payment failure
-- Suspend access to extra farms/collaborators after non-payment
-- Webhook-driven activation/deactivation of farms and users
+El board de pendientes se migrará de Notion a **GitHub Projects** en el repo `raulzarzadev/mi-granja-v2`. Los siguientes tareas están pendientes:
 
-### Pending Features (from Notion board)
+| Feature              | Notes                                                      |
+|----------------------|------------------------------------------------------------|
+| Lost animal status   | Nuevo tipo de estado para animales perdidos                |
+| Collaborators UX     | Flujo propio de invitación/gestión de colaboradores        |
+| BackOffice           | Panel admin de plataforma (más allá del impersonate actual)|
+| SEO measurement      | Analytics y SEO en landing                                 |
 
-| Feature           | Status       | Notes                                              |
-|-------------------|--------------|----------------------------------------------------|
-| Stripe integration | Not started  | Checkout, portal, webhooks in dashboard API        |
-| Upgrade flow UI    | Not started  | In-app flow to add farms/collaborators             |
-| Annual plan discount | Not started | Define % and implement in billing                |
-| Conekta (OXXO)    | Not started  | Evaluate for cash payment support in Mexico        |
-| MercadoPago        | Not started  | LATAM expansion                                    |
-| Lost animal status | Not started  | New animal status type                             |
-| Collaborators UX   | Not started  | Own logic/flow for adding collaborators            |
-| BackOffice         | Not started  | Admin panel for platform management                |
-| SEO measurement    | Not started  | Analytics and SEO for landing page                 |
-| Landing pricing section | Not started | Update landing to show freemium tiers         |
-
-### Data Model Changes Needed for Billing
-
-The current Firestore model (`Farm`, `User`, `FarmCollaborator`) has **no billing fields**. Future work must add:
-- Subscription status and plan tier to `Farm` or a new `subscriptions` collection
-- Usage limits enforcement (farm count, collaborator count) in hooks
-- A `billingSlice` in Redux for subscription state
-- API routes: `/api/billing/checkout`, `/api/billing/webhook`, `/api/billing/portal`
+Ya completados (no incluir en el board nuevo): dead/sale animals, revertir parto, tab configuración de razas, edición masiva de animales, sistema de billing "Lugares", landing pricing section.
 
 ## Environment Variables
 
 Required in `apps/dashboard/.env.local`: `NEXT_PUBLIC_FIREBASE_CONFIG`, `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`, `BREVO_API_KEY`, `NEXT_PUBLIC_APP_URL`
-
-Future env vars for billing: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `CONEKTA_API_KEY` (when integrated)

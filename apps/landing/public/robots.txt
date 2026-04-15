@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://migranja.app/sitemap-index.xml
+Sitemap: https://www.migranja.app/sitemap-index.xml
