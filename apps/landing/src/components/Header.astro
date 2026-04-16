@@ -16,7 +16,14 @@ const navLinks = [
 
       <nav class="hidden md:flex items-center gap-8" aria-label="Navegación principal">
         {navLinks.map((link) => (
-          <a href={link.href} class="text-sm font-medium text-gray-600 hover:text-green-700 transition-colors">
+          <a
+            href={link.href}
+            class="text-sm font-medium text-gray-600 hover:text-green-700 transition-colors"
+            data-ph-event="nav_click"
+            data-ph-location="header"
+            data-ph-destination={link.href}
+            data-ph-label={link.label}
+          >
             {link.label}
           </a>
         ))}
@@ -26,12 +33,18 @@ const navLinks = [
         <a
           href="https://panel.migranja.app/auth"
           class="text-sm font-medium text-gray-600 hover:text-green-700 transition-colors"
+          data-ph-event="cta_click"
+          data-ph-location="header_login"
+          data-ph-label="Iniciar Sesión"
         >
           Iniciar Sesión
         </a>
         <a
           href="https://panel.migranja.app/auth"
           class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors"
+          data-ph-event="cta_click"
+          data-ph-location="header_signup"
+          data-ph-label="Registrarse Gratis"
         >
           Registrarse Gratis
         </a>

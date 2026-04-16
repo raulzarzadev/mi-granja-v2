@@ -68,8 +68,13 @@ const faqSchema = {
     </div>
 
     <div class="mx-auto mt-14 max-w-3xl divide-y divide-gray-200">
-      {faqs.map((faq) => (
-        <details class="group py-5">
+      {faqs.map((faq, index) => (
+        <details
+          class="group py-5"
+          data-ph-event="faq_opened"
+          data-ph-index={String(index)}
+          data-ph-question={faq.question}
+        >
           <summary class="flex cursor-pointer items-center justify-between text-left">
             <h3 class="text-base font-medium text-gray-900 group-open:text-green-700 transition-colors pr-4">
               {faq.question}

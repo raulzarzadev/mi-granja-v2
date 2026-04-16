@@ -10,12 +10,52 @@ const currentYear = new Date().getFullYear()
       </div>
 
       <nav class="flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm" aria-label="Navegación del pie de página">
-        <a href="#funcionalidades" class="text-gray-400 hover:text-white transition-colors">Funcionalidades</a>
-        <a href="#especies" class="text-gray-400 hover:text-white transition-colors">Especies</a>
-        <a href="#beneficios" class="text-gray-400 hover:text-white transition-colors">Beneficios</a>
-        <a href="#faq" class="text-gray-400 hover:text-white transition-colors">FAQ</a>
-        <a href="https://panel.migranja.app/auth" class="text-gray-400 hover:text-white transition-colors">Dashboard</a>
-        <a href="mailto:hola@migranja.app" class="text-gray-400 hover:text-white transition-colors">hola@migranja.app</a>
+        <a
+          href="#funcionalidades"
+          class="text-gray-400 hover:text-white transition-colors"
+          data-ph-event="nav_click"
+          data-ph-location="footer"
+          data-ph-destination="#funcionalidades"
+          data-ph-label="Funcionalidades"
+        >Funcionalidades</a>
+        <a
+          href="#especies"
+          class="text-gray-400 hover:text-white transition-colors"
+          data-ph-event="nav_click"
+          data-ph-location="footer"
+          data-ph-destination="#especies"
+          data-ph-label="Especies"
+        >Especies</a>
+        <a
+          href="#beneficios"
+          class="text-gray-400 hover:text-white transition-colors"
+          data-ph-event="nav_click"
+          data-ph-location="footer"
+          data-ph-destination="#beneficios"
+          data-ph-label="Beneficios"
+        >Beneficios</a>
+        <a
+          href="#faq"
+          class="text-gray-400 hover:text-white transition-colors"
+          data-ph-event="nav_click"
+          data-ph-location="footer"
+          data-ph-destination="#faq"
+          data-ph-label="FAQ"
+        >FAQ</a>
+        <a
+          href="https://panel.migranja.app/auth"
+          class="text-gray-400 hover:text-white transition-colors"
+          data-ph-event="cta_click"
+          data-ph-location="footer_dashboard"
+          data-ph-label="Dashboard"
+        >Dashboard</a>
+        <a
+          href="mailto:hola@migranja.app"
+          class="text-gray-400 hover:text-white transition-colors"
+          data-ph-event="contact_click"
+          data-ph-location="footer"
+          data-ph-method="email"
+        >hola@migranja.app</a>
       </nav>
     </div>
 
