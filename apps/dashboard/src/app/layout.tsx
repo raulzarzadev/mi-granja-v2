@@ -4,6 +4,7 @@ import './globals.css'
 import { BetaBanner } from '@/components/BetaBanner'
 import { OfflineBanner } from '@/components/OfflineBanner'
 import { ServiceWorkerRegistrar } from '@/components/ServiceWorkerRegistrar'
+import { PRICE_PER_PLACE_MXN } from '@/types/billing'
 import { Providers } from './providers'
 
 const geistSans = Geist({
@@ -43,9 +44,9 @@ const jsonLd = {
     },
     {
       '@type': 'Offer',
-      price: '250',
+      price: String(PRICE_PER_PLACE_MXN),
       priceCurrency: 'MXN',
-      description: 'Lugar adicional (granja o colaborador): $250 MXN/mes',
+      description: `Lugar adicional (granja o colaborador): $${PRICE_PER_PLACE_MXN} MXN/mes`,
     },
   ],
   creator: {

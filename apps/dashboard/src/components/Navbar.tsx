@@ -20,7 +20,6 @@ const Navbar: React.FC = () => {
     (state: RootState) => state.auth,
   )
   const billingPlanType = useSelector((s: RootState) => s.billing.planType)
-  const billingUsage = useSelector((s: RootState) => s.billing.usage)
   const { logout, stopImpersonation } = useAuth()
   const [showUserSelector, setShowUserSelector] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -121,6 +120,20 @@ const Navbar: React.FC = () => {
               </Link>
             )}
 
+            {/* Botón Plan — siempre visible para usuarios autenticados */}
+            {user && (
+              <Link
+                href="/plan"
+                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                  billingPlanType === 'pro'
+                    ? 'bg-green-500/20 hover:bg-green-500/30 text-green-100 border border-green-400/30'
+                    : 'bg-amber-400 hover:bg-amber-300 text-amber-900'
+                }`}
+              >
+                ⭐ {billingPlanType === 'pro' ? 'Plan Pro' : 'Pro'}
+              </Link>
+            )}
+
             {/* Botón abrir modal impersonación (solo admins, fuera del menú para rápido acceso) */}
             {user && isUserAdmin(user) && !impersonatingUser && (
               <button
@@ -177,47 +190,6 @@ const Navbar: React.FC = () => {
                       {user.farmName && (
                         <p className="text-gray-500 truncate text-xs">{user.farmName}</p>
                       )}
-                      <div className="mt-1.5 space-y-1">
-                        <span
-                          className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${
-                            billingPlanType === 'pro'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}
-                        >
-                          {billingPlanType === 'pro' ? 'Plan Pro' : 'Plan Gratis'}
-                        </span>
-                        {billingUsage && (
-                          <div className="text-[11px] text-gray-500 space-y-0.5">
-                            <p>
-                              {billingUsage.usedPlaces}/{billingUsage.totalPlaces} lugares usados
-                              {billingUsage.totalPlaces > 0 && (
-                                <>
-                                  {' '}
-                                  ({billingUsage.farmCount}{' '}
-                                  {billingUsage.farmCount === 1 ? 'granja' : 'granjas'},{' '}
-                                  {billingUsage.collaboratorCount}{' '}
-                                  {billingUsage.collaboratorCount === 1 ? 'colab.' : 'colabs.'})
-                                </>
-                              )}
-                            </p>
-                            {billingUsage.totalPlaces > billingUsage.usedPlaces && (
-                              <p className="text-green-600">
-                                {billingUsage.totalPlaces - billingUsage.usedPlaces}{' '}
-                                {billingUsage.totalPlaces - billingUsage.usedPlaces === 1
-                                  ? 'lugar libre'
-                                  : 'lugares libres'}{' '}
-                                para granjas o colaboradores
-                              </p>
-                            )}
-                            {billingUsage.totalPlaces === 0 && (
-                              <p className="text-gray-400">
-                                1 granja incluida. Contacta al admin para mas lugares.
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
                       {impersonatingUser && originalUser && (
                         <p className="mt-1 text-xs font-medium text-yellow-700 bg-yellow-100 rounded px-1 py-0.5">
                           🎭 Impersonando

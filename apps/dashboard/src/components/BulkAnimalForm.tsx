@@ -96,6 +96,7 @@ interface BulkAnimalFormProps {
   onCancel: () => void
   isLoading: boolean
   existingAnimals: Animal[]
+  isPaidUser?: boolean
 }
 
 const BATCH_SIZE = 5
@@ -110,6 +111,7 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
   onCancel,
   isLoading,
   existingAnimals,
+  isPaidUser = false,
 }) => {
   const saved = useMemo(() => loadState(), [])
   const [defaults, setDefaults] = useState<BulkDefaults>(saved?.defaults ?? defaultDefaults)
@@ -756,10 +758,11 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
           <button
             type="button"
             onClick={handleSubmitAll}
-            className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
-            disabled={!!submitProgress || animals.length === 0}
+            className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!!submitProgress || animals.length === 0 || !isPaidUser}
+            title={!isPaidUser ? 'Disponible solo en plan Pro' : undefined}
           >
-            Registrar {animals.length} animales
+            {!isPaidUser ? '🔒 Solo plan Pro' : `Registrar ${animals.length} animales`}
           </button>
         </div>
       )}

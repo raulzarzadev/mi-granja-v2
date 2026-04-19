@@ -8,6 +8,9 @@ export type SubscriptionStatus =
 
 export type PlanType = 'free' | 'pro'
 
+/** Precio por lugar adicional (granja o colaborador) en MXN/mes */
+export const PRICE_PER_PLACE_MXN = 255
+
 // --- Interfaces principales ---
 
 export interface BillingSubscription {

@@ -20,13 +20,14 @@ async function getAuthToken(): Promise<string> {
   return user.getIdToken()
 }
 
-async function billingFetch(path: string, options: RequestInit = {}) {
+async function billingFetch(path: string, impersonateUid?: string | null, options: RequestInit = {}) {
   const token = await getAuthToken()
   const res = await fetch(`/api/billing${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
+      ...(impersonateUid ? { 'x-impersonate-uid': impersonateUid } : {}),
       ...options.headers,
     },
   })
@@ -40,25 +41,27 @@ async function billingFetch(path: string, options: RequestInit = {}) {
 export function useBilling() {
   const dispatch = useDispatch<AppDispatch>()
   const billing = useSelector((state: RootState) => state.billing)
+  const impersonatingUser = useSelector((state: RootState) => state.auth.impersonatingUser)
+  const impersonateUid = impersonatingUser?.id ?? null
 
   const loadSubscription = useCallback(async () => {
     dispatch(setLoading(true))
     try {
-      const data = await billingFetch('/subscription')
+      const data = await billingFetch('/subscription', impersonateUid)
       dispatch(setSubscription(data.subscription))
     } catch (error) {
       dispatch(setError(error instanceof Error ? error.message : 'Error cargando suscripcion'))
     }
-  }, [dispatch])
+  }, [dispatch, impersonateUid])
 
   const loadUsage = useCallback(async () => {
     try {
-      const data: BillingUsage = await billingFetch('/usage')
+      const data: BillingUsage = await billingFetch('/usage', impersonateUid)
       dispatch(setUsage(data))
     } catch (error) {
       console.error('Error cargando uso:', error)
     }
-  }, [dispatch])
+  }, [dispatch, impersonateUid])
 
   const canCreateFarm = useCallback((): boolean => {
     if (!billing.usage) return false // Sin datos de uso, no permitir hasta que se carguen

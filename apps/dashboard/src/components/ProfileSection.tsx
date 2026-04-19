@@ -84,7 +84,7 @@ const ProfileSection: React.FC = () => {
   )
 }
 
-const PRICE_PER_PLACE = 250
+import { PRICE_PER_PLACE_MXN } from '@/types/billing'
 const FEEDBACK_EMAIL = 'hola@migranja.app'
 
 const PlanTab: React.FC<{
@@ -102,7 +102,7 @@ const PlanTab: React.FC<{
 
   const currentPlaces = usage?.totalPlaces ?? 0
   const newTotal = currentPlaces + addPlaces
-  const newMonthly = newTotal * PRICE_PER_PLACE
+  const newMonthly = newTotal * PRICE_PER_PLACE_MXN
 
   const buildMailtoLink = () => {
     const subject = encodeURIComponent('Solicitud de lugares adicionales - Mi Granja')
@@ -115,7 +115,7 @@ const PlanTab: React.FC<{
         `Nuevo total mensual: $${newMonthly.toLocaleString('es-MX')} MXN/mes\n\n` +
         `Detalle:\n` +
         `- Cada lugar = 1 granja adicional O 1 colaborador adicional\n` +
-        `- Precio por lugar: $${PRICE_PER_PLACE} MXN/mes\n\n` +
+        `- Precio por lugar: $${PRICE_PER_PLACE_MXN} MXN/mes\n\n` +
         `Quedo atento al enlace de pago.\n\nGracias.`,
     )
     return `mailto:${FEEDBACK_EMAIL}?subject=${subject}&body=${body}`
@@ -187,7 +187,7 @@ const PlanTab: React.FC<{
 
         {/* Precio */}
         <div className="border border-green-200 rounded-lg p-3 bg-green-50 flex items-baseline gap-1">
-          <span className="text-xl font-bold text-green-700">${PRICE_PER_PLACE}</span>
+          <span className="text-xl font-bold text-green-700">${PRICE_PER_PLACE_MXN}</span>
           <span className="text-sm text-green-600">MXN / lugar / mes</span>
         </div>
 
@@ -258,7 +258,7 @@ const PlanTab: React.FC<{
                   + {addPlaces} lugar{addPlaces > 1 ? 'es' : ''}
                 </span>
                 <span className="font-medium text-gray-900">
-                  + ${(addPlaces * PRICE_PER_PLACE).toLocaleString('es-MX')} MXN
+                  + ${(addPlaces * PRICE_PER_PLACE_MXN).toLocaleString('es-MX')} MXN
                 </span>
               </div>
               <div className="flex justify-between text-sm pt-1.5 border-t border-gray-200">

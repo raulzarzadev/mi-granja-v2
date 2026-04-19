@@ -137,6 +137,27 @@ MiGranja uses a manual, admin-managed plan model. **No Stripe, Conekta, or Merca
 - **Enforcement**: `ModalCreateFarm` y `ModalInviteCollaborator` pre-chequean `usedPlaces < totalPlaces` con alert
 - **Firestore**: colección `subscriptions/{userId}` con campo `places`
 
+
+
+Algunas funcionalidades son exclusivas del plan Pro. Al implementar gates de acceso, **siempre usar estos componentes canónicos**:
+
+- **`ModalUpgradePlan`** (`src/components/billing/ModalUpgradePlan.tsx`) — modal "Actualizar a Plan Pro". Muestra comparativa Free vs Pro, formulario (granjas, colaboradores, mensaje opcional) y envía 2 correos: al dueño (`raulzarza.dev@gmail.com`) y confirmación al usuario. **Usar este modal en TODOS los puntos de upgrade del sistema.**
+- **`ProFeatureBanner`** (`src/components/billing/ProFeatureBanner.tsx`) — banner inline para features bloqueadas (ej: formulario masivo). Muestra disclaimer + mismo formulario de solicitud integrado.
+- **Navbar** ya incluye botón "⭐ Actualizar Plan" visible cuando `planType === 'free'`, que abre `ModalUpgradePlan`.
+
+**Funcionalidades Pro actualmente gateadas:**
+- Registro masivo de animales (`/animal/nuevo` → tab Masivo — banner + botón deshabilitado)
+- Importación de datos (CSV) — pendiente de implementar gate
+- Respaldo y restauración — pendiente de implementar gate
+
+**Patrón para gatear una feature:**
+1. Leer `planType` de Redux: `const { planType } = useBilling()` → `isPaidUser = planType === 'pro'`
+2. Mostrar `<ProFeatureBanner>` si hay un formulario explorable
+3. O abrir `<ModalUpgradePlan>` directamente si es un botón de acción
+4. Deshabilitar el botón de submit con `disabled={!isPaidUser}`
+
+
+
 ## Pending Features
 
 El board de pendientes se migrará de Notion a **GitHub Projects** en el repo `raulzarzadev/mi-granja-v2`. Los siguientes tareas están pendientes:

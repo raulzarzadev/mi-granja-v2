@@ -56,12 +56,13 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
 
   //* ==================================== BILLING INITIALIZER
   const { loadSubscription, loadUsage } = useBilling()
+  const impersonatingUser = useSelector((state: RootState) => state.auth.impersonatingUser)
   useEffect(() => {
     if (user) {
       loadSubscription()
       loadUsage()
     }
-  }, [user])
+  }, [user?.id, impersonatingUser?.id])
 
   //* ==================================== FARM ANIMALS LISTENER
   const { getFarmAnimals } = useAnimalCRUD()

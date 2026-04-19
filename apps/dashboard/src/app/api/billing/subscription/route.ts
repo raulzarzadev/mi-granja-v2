@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isAuthError, verifyBillingAuth } from '@/lib/billing-auth'
+import { isAuthError, resolveEffectiveUid, verifyBillingAuth } from '@/lib/billing-auth'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import type { BillingSubscription } from '@/types/billing'
 
@@ -8,10 +8,11 @@ export async function GET(request: NextRequest) {
     const auth = await verifyBillingAuth(request)
     if (isAuthError(auth)) return auth
 
+    const uid = resolveEffectiveUid(auth, request)
     const firestore = getAdminFirestore()
 
     // Obtener suscripcion de Firestore
-    const subDoc = await firestore.doc(`subscriptions/${auth.uid}`).get()
+    const subDoc = await firestore.doc(`subscriptions/${uid}`).get()
 
     if (!subDoc.exists) {
       return NextResponse.json({

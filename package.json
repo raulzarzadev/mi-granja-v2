@@ -4,8 +4,7 @@
   "private": true,
   "packageManager": "pnpm@10.25.0",
   "scripts": {
-    "dev": "turbo run dev",
-    "dev:portless": "portless proxy start & sleep 1 && turbo run dev:portless",
+    "dev": "portless proxy start & sleep 1 && turbo run dev:portless",
     "emulators": "cd firebase && firebase emulators:start --import=data --export-on-exit=data",
     "emulators:kill": "lsof -ti :9299 -ti :8180 -ti :9399 -ti :4100 | xargs kill 2>/dev/null; echo '✅ Emuladores detenidos'",
     "review": "bash scripts/review.sh",

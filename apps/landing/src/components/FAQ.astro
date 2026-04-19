@@ -1,9 +1,10 @@
 ---
+import { PRICE_PER_PLACE_MXN } from '@mi-granja/shared'
 const faqs = [
   {
     question: '¿Cuánto cuesta Mi Granja?',
     answer:
-      'Mi Granja tiene un plan gratuito que incluye 1 granja con todas las funcionalidades: registro de animales, control de reproducción, historial de salud, recordatorios y respaldos. Si necesitas más granjas o colaboradores, el Plan Pro cuesta $250 MXN/mes por cada granja o colaborador adicional.',
+      `Mi Granja tiene un plan gratuito que incluye 1 granja con todas las funcionalidades: registro de animales, control de reproducción, historial de salud, recordatorios y respaldos. Si necesitas más granjas o colaboradores, el Plan Pro cuesta $${PRICE_PER_PLACE_MXN} MXN/mes por cada granja o colaborador adicional.`,
   },
   {
     question: '¿Qué tipos de animales puedo registrar?',
@@ -28,7 +29,7 @@ const faqs = [
   {
     question: '¿Puedo administrar varias granjas?',
     answer:
-      'Sí, puedes crear y administrar múltiples granjas desde una sola cuenta con el Plan Pro ($250 MXN/mes por granja adicional). También puedes ser invitado como colaborador en granjas de otros usuarios.',
+      `Sí, puedes crear y administrar múltiples granjas desde una sola cuenta con el Plan Pro ($${PRICE_PER_PLACE_MXN} MXN/mes por granja adicional). También puedes ser invitado como colaborador en granjas de otros usuarios.`,
   },
   {
     question: '¿Cómo funciona el control de reproducción?',

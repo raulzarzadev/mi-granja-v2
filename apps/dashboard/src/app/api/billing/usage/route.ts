@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isAuthError, verifyBillingAuth } from '@/lib/billing-auth'
+import { isAuthError, resolveEffectiveUid, verifyBillingAuth } from '@/lib/billing-auth'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { type BillingUsage, computeUsedPlaces } from '@/types/billing'
 
@@ -8,10 +8,11 @@ export async function GET(request: NextRequest) {
     const auth = await verifyBillingAuth(request)
     if (isAuthError(auth)) return auth
 
+    const uid = resolveEffectiveUid(auth, request)
     const firestore = getAdminFirestore()
 
     // Contar granjas del usuario (como dueno), excluyendo soft-deleted
-    const farmsSnap = await firestore.collection('farms').where('ownerId', '==', auth.uid).get()
+    const farmsSnap = await firestore.collection('farms').where('ownerId', '==', uid).get()
     const activeFarms = farmsSnap.docs.filter((d) => !d.data().deletedAt)
     const farmCount = activeFarms.length
 
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Obtener lugares asignados
-    const subDoc = await firestore.doc(`subscriptions/${auth.uid}`).get()
+    const subDoc = await firestore.doc(`subscriptions/${uid}`).get()
     const subData = subDoc.exists ? subDoc.data() : null
     // Free = 1 lugar (granja gratis). Pro = lugares asignados por admin
     const assignedPlaces = subData?.places ?? 0

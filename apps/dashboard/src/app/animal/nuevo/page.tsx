@@ -5,9 +5,11 @@ import { useState } from 'react'
 import { useSelector } from 'react-redux'
 import AnimalForm from '@/components/AnimalForm'
 import BulkAnimalForm from '@/components/BulkAnimalForm'
+import ProFeatureBanner from '@/components/billing/ProFeatureBanner'
 import PageShell from '@/components/PageShell'
 import { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useBilling } from '@/hooks/useBilling'
 import { Animal, AnimalRecord } from '@/types/animals'
 
 type RegistrationMode = 'individual' | 'masivo'
@@ -38,6 +40,8 @@ export default function NuevoAnimalPage() {
   const router = useRouter()
   const { create: createAnimal, isLoading, animals } = useAnimalCRUD()
   const { user } = useSelector((state: RootState) => state.auth)
+  const { planType } = useBilling()
+  const isPaidUser = planType === 'pro'
   const [mode, setMode] = useState<RegistrationMode>('individual')
 
   const handleSubmit = async (
@@ -95,13 +99,17 @@ export default function NuevoAnimalPage() {
           existingAnimals={animals}
         />
       ) : (
-        <BulkAnimalForm
-          onCreateOne={handleCreateOne}
-          onDone={() => router.back()}
-          onCancel={() => router.back()}
-          isLoading={isLoading}
-          existingAnimals={animals}
-        />
+        <>
+          {!isPaidUser && <ProFeatureBanner feature="Registro masivo" />}
+          <BulkAnimalForm
+            onCreateOne={handleCreateOne}
+            onDone={() => router.back()}
+            onCancel={() => router.back()}
+            isLoading={isLoading}
+            existingAnimals={animals}
+            isPaidUser={isPaidUser}
+          />
+        </>
       )}
     </PageShell>
   )
