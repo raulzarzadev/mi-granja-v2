@@ -267,7 +267,6 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   breedingRecord,
   animals,
   onSubmit,
-  isLoading = false,
   selectedFemaleId,
 }) => {
   const pregnantFemales =

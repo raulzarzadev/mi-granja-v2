@@ -17,7 +17,12 @@ const customJestConfig = {
     '!src/store/authSlice.ts', // Exclude Redux slices
     '!src/store/animalsSlice.ts', // Exclude Redux slices
   ],
-  modulePathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/', '<rootDir>/cypress/'],
+  modulePathIgnorePatterns: [
+    '<rootDir>/.next/',
+    '<rootDir>/node_modules/',
+    '<rootDir>/cypress/',
+    '<rootDir>/e2e/',
+  ],
   moduleNameMapper: {
     '^@mi-granja/shared/(.*)$': '<rootDir>/../../packages/shared/src/$1',
     '^@/(.*)$': '<rootDir>/src/$1',

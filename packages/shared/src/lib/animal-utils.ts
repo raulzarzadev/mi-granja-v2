@@ -203,10 +203,7 @@ export function computeAnimalEffectiveStage(
  * como id de Firestore o como animalNumber (legado). Usar siempre este helper
  * en lugar de comparar directamente por id.
  */
-export function findAnimalByRef(
-  animals: Animal[],
-  ref?: string | null,
-): Animal | undefined {
+export function findAnimalByRef(animals: Animal[], ref?: string | null): Animal | undefined {
   if (!ref) return undefined
   return animals.find((a) => a.id === ref || a.animalNumber === ref)
 }

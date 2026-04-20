@@ -5,6 +5,7 @@ import React, { useMemo } from 'react'
 import { Controller, UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
 import { useZodForm } from '@/hooks/useZodForm'
+import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import {
   Animal,
   animal_icon,
@@ -17,7 +18,6 @@ import {
   breeding_animal_status,
   POST_WEAN_STAGES,
 } from '@/types/animals'
-import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Form } from './forms/Form'
 import { TextField } from './forms/TextField'

@@ -1,15 +1,15 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
-import { Modal } from '@/components/Modal'
-import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
-import { animalAge, computeAnimalEffectiveStage } from '@/lib/animal-utils'
 import {
   type Animal,
   type AnimalStageKey,
   animal_stage_config,
 } from '@mi-granja/shared/types/animals'
+import React, { useMemo, useState } from 'react'
+import { Modal } from '@/components/Modal'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
+import { animalAge, computeAnimalEffectiveStage } from '@/lib/animal-utils'
 
 type GenderFilter = 'todos' | 'macho' | 'hembra'
 
@@ -185,11 +185,7 @@ interface AnimalPrintListModalProps {
   onClose: () => void
 }
 
-const AnimalPrintListModal: React.FC<AnimalPrintListModalProps> = ({
-  title,
-  animals,
-  onClose,
-}) => {
+const AnimalPrintListModal: React.FC<AnimalPrintListModalProps> = ({ title, animals, onClose }) => {
   const [checked, setChecked] = useState<Set<string>>(new Set())
   const sorted = useMemo(() => sortByAnimalNumber(animals), [animals])
 

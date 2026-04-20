@@ -111,7 +111,7 @@ describe('animalBreedingConfig', () => {
 
   describe('getWeaningDays', () => {
     it('should return default weaning days for a type string', () => {
-      expect(getWeaningDays('oveja')).toBe(60)
+      expect(getWeaningDays('oveja')).toBe(70)
       expect(getWeaningDays('vaca')).toBe(120)
       expect(getWeaningDays('cerdo')).toBe(28)
     })
@@ -123,7 +123,7 @@ describe('animalBreedingConfig', () => {
 
     it('should fall back to default if custom is not set', () => {
       const animal = { type: 'oveja' as const }
-      expect(getWeaningDays(animal)).toBe(60)
+      expect(getWeaningDays(animal)).toBe(70)
     })
   })
 })

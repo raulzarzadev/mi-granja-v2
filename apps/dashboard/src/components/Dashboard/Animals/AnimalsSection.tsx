@@ -8,6 +8,7 @@ import BreedingCard from '@/components/BreedingCard'
 import BreedingTable from '@/components/BreedingTable'
 import Button from '@/components/buttons/Button'
 import ButtonConfirm from '@/components/buttons/ButtonConfirm'
+import NumbersTab from '@/components/Dashboard/Animals/NumbersTab'
 import DataTable, { ColumnDef } from '@/components/DataTable'
 import { Icon } from '@/components/Icon/icon'
 import { Modal } from '@/components/Modal'
@@ -17,7 +18,6 @@ import ModalBreedingAnimalDetails from '@/components/ModalBreedingAnimalDetails'
 import ModalBulkEdit from '@/components/ModalBulkEdit'
 import ModalConfirmPregnancy from '@/components/ModalConfirmPregnancy'
 import ModalOnboarding from '@/components/onboarding/ModalOnboarding'
-import NumbersTab from '@/components/Dashboard/Animals/NumbersTab'
 import StatisticsTab from '@/components/StatisticsTab'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -1768,7 +1768,9 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       width: '14%',
       sortable: true,
       sortFn: (a, b) =>
-        (animal_stage_config[computeAnimalEffectiveStage(a, breedingRecords)].label || '').localeCompare(
+        (
+          animal_stage_config[computeAnimalEffectiveStage(a, breedingRecords)].label || ''
+        ).localeCompare(
           animal_stage_config[computeAnimalEffectiveStage(b, breedingRecords)].label || '',
           'es',
         ),
@@ -2065,8 +2067,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         size="xl"
       >
         <p className="text-sm text-gray-600 mb-3">
-          Estos animales están contados en más de una pestaña de Etapas. Cada uno se suma N veces
-          en el total general.
+          Estos animales están contados en más de una pestaña de Etapas. Cada uno se suma N veces en
+          el total general.
         </p>
         <div className="space-y-2 max-h-[60vh] overflow-y-auto">
           {crossTabDuplicates.map((d) => (
