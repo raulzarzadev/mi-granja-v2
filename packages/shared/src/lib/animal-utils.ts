@@ -181,7 +181,34 @@ export function computeAnimalEffectiveStage(
   }
 
   if (bestState) return bestState
+
+  // Fallback a campos directos del animal (cuando el breeding ya fue cerrado pero
+  // el animal todavía conserva el estado reproductivo).
+  if (animal.gender === 'hembra') {
+    if (animal.birthedAt) {
+      const birthDate = toDate(animal.birthedAt)
+      const daysSinceBirth = Math.floor(
+        (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24),
+      )
+      if (daysSinceBirth >= 0 && daysSinceBirth <= weaningDays) return 'crias_lactantes'
+    }
+    if (animal.pregnantAt) return 'embarazos'
+  }
+
   return computeAnimalStage(animal)
+}
+
+/**
+ * Resuelve un animal por id o animalNumber. motherId/fatherId pueden guardarse
+ * como id de Firestore o como animalNumber (legado). Usar siempre este helper
+ * en lugar de comparar directamente por id.
+ */
+export function findAnimalByRef(
+  animals: Animal[],
+  ref?: string | null,
+): Animal | undefined {
+  if (!ref) return undefined
+  return animals.find((a) => a.id === ref || a.animalNumber === ref)
 }
 
 /**

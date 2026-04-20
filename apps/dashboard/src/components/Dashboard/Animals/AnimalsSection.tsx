@@ -26,6 +26,7 @@ import {
   animalAge,
   computeAnimalEffectiveStage,
   computeAnimalStage,
+  findAnimalByRef,
   formatWeight,
 } from '@/lib/animal-utils'
 import { calculateExpectedBirthDate, getWeaningDays } from '@/lib/animalBreedingConfig'
@@ -504,12 +505,12 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         label: 'Madre',
         sortable: true,
         sortFn: (a, b) => {
-          const mA = animals.find((an) => an.id === a.motherId)?.animalNumber || ''
-          const mB = animals.find((an) => an.id === b.motherId)?.animalNumber || ''
+          const mA = findAnimalByRef(animals, a.motherId)?.animalNumber || ''
+          const mB = findAnimalByRef(animals, b.motherId)?.animalNumber || ''
           return mA.localeCompare(mB, 'es', { numeric: true })
         },
         render: (row) => {
-          const mother = animals.find((an) => an.id === row.motherId)
+          const mother = findAnimalByRef(animals, row.motherId)
           return mother ? (
             <ModalAnimalDetails
               animal={mother}
@@ -605,6 +606,13 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           if (!ids.has(fi.femaleId)) ids.add(fi.femaleId)
         }
       }
+    }
+    // Madres standalone: crías cuyo motherId apunta a un animal directamente
+    // (sin enlace en breeding records). Resolver por id o animalNumber.
+    for (const a of activeAnimals) {
+      if (computeAnimalStage(a) !== 'cria' || !a.motherId) continue
+      const mother = findAnimalByRef(activeAnimals, a.motherId)
+      if (mother) ids.add(mother.id)
     }
     return ids
   }, [
@@ -1380,6 +1388,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           }
           if (motherId) break
         }
+        // Fallback: usar el motherId guardado en el animal (puede ser id o animalNumber)
+        if (!motherId && a.motherId) motherId = a.motherId
         return { animal: a, motherId, record: record as any, weanDate, daysUntilWean }
       })
       .filter((entry) => {
@@ -1390,7 +1400,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         if (num.includes(q) || name.includes(q)) return true
         // Buscar también por número/nombre de madre
         if (entry.motherId) {
-          const mother = animals.find((an) => an.id === entry.motherId)
+          const mother = findAnimalByRef(animals, entry.motherId)
           const motherNum = mother?.animalNumber?.toLowerCase() || ''
           const motherName = mother?.name?.toLowerCase() || ''
           if (motherNum.includes(q) || motherName.includes(q)) return true
@@ -1404,10 +1414,13 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   const nursingMotherIds = useMemo(() => {
     const ids = new Set<string>()
     for (const entry of allCrias) {
-      if (entry.motherId) ids.add(entry.motherId)
+      if (!entry.motherId) continue
+      // Normalizar a doc id (entry.motherId puede ser id o animalNumber)
+      const mother = findAnimalByRef(animals, entry.motherId)
+      ids.add(mother?.id || entry.motherId)
     }
     return ids
-  }, [allCrias])
+  }, [allCrias, animals])
 
   // Cross-tab duplicates: animales contados en 2+ tabs de Etapas
   const crossTabDuplicates = useMemo(() => {
@@ -1572,7 +1585,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                   </span>
                   <div className="flex flex-wrap gap-1.5 mt-1">
                     {overdue.map((m) => {
-                      const mother = animals.find((a) => a.id === m.motherId)
+                      const mother = findAnimalByRef(animals, m.motherId)
                       return (
                         <ModalAnimalDetails
                           key={m.motherId}
@@ -1601,7 +1614,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                   </span>
                   <div className="flex flex-wrap gap-1.5 mt-1">
                     {upcoming.map((m) => {
-                      const mother = animals.find((a) => a.id === m.motherId)
+                      const mother = findAnimalByRef(animals, m.motherId)
                       return (
                         <ModalAnimalDetails
                           key={m.motherId}

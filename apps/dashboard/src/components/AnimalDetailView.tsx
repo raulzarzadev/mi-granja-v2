@@ -12,6 +12,7 @@ import {
   animalAge,
   computeAnimalEffectiveStage,
   computeAnimalStage,
+  findAnimalByRef,
   getLastWeight,
 } from '@/lib/animal-utils'
 import { formatDate, fromNow, toDate } from '@/lib/dates'
@@ -42,15 +43,8 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp 
     useSelector((state: RootState) => state.animals.animals.find((a) => a.id === animalProp.id)) ??
     animalProp
 
-  const getMother = () => {
-    if (!animal.motherId) return null
-    return allAnimals.find((a) => a.id === animal.motherId || a.animalNumber === animal.motherId)
-  }
-
-  const getFather = () => {
-    if (!animal.fatherId) return null
-    return allAnimals.find((a) => a.id === animal.fatherId || a.animalNumber === animal.fatherId)
-  }
+  const getMother = () => findAnimalByRef(allAnimals, animal.motherId) || null
+  const getFather = () => findAnimalByRef(allAnimals, animal.fatherId) || null
 
   const breedings = useSelector((state: RootState) => state.breeding.breedingRecords)
   const lastWeight = getLastWeight(animal)
