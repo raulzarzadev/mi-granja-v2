@@ -399,7 +399,7 @@ export const animal_stage_config: Record<
   // Breeding-derived stages
   empadre: { label: 'Empadre', icon: '🛏️', color: 'bg-amber-100 text-amber-800' },
   embarazos: { label: 'Embarazos', icon: '🤰', color: 'bg-pink-100 text-pink-800' },
-  crias_lactantes: { label: 'Crías', icon: '🍼', color: 'bg-cyan-100 text-cyan-800' },
+  crias_lactantes: { label: 'Lactando', icon: '🍼', color: 'bg-cyan-100 text-cyan-800' },
   // Animal stages
   cria: { label: 'Cría', icon: '👶', color: 'bg-blue-100 text-blue-800' },
   juvenil: { label: 'Juvenil', icon: '🌱', color: 'bg-teal-100 text-teal-800' },

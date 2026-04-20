@@ -17,6 +17,7 @@ import ModalBreedingAnimalDetails from '@/components/ModalBreedingAnimalDetails'
 import ModalBulkEdit from '@/components/ModalBulkEdit'
 import ModalConfirmPregnancy from '@/components/ModalConfirmPregnancy'
 import ModalOnboarding from '@/components/onboarding/ModalOnboarding'
+import NumbersTab from '@/components/Dashboard/Animals/NumbersTab'
 import StatisticsTab from '@/components/StatisticsTab'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -665,17 +666,52 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   )
 
   const empadresCount = orderedBreedings.needPregnancyConfirmation.length
-  const empadreFemalesCount = useMemo(
-    () =>
-      orderedBreedings.needPregnancyConfirmation.reduce(
-        (sum, r) =>
-          sum +
-          r.femaleBreedingInfo.filter((f) => !f.pregnancyConfirmedDate && !f.actualBirthDate)
-            .length,
-        0,
-      ),
-    [orderedBreedings.needPregnancyConfirmation],
-  )
+  const empadreFemalesCount = useMemo(() => {
+    const ids = new Set<string>()
+    for (const r of orderedBreedings.needPregnancyConfirmation) {
+      for (const f of r.femaleBreedingInfo) {
+        if (!f.pregnancyConfirmedDate && !f.actualBirthDate) ids.add(f.femaleId)
+      }
+    }
+    return ids.size
+  }, [orderedBreedings.needPregnancyConfirmation])
+
+  // Hembras presentes en más de un empadre activo (pendiente de confirmar)
+  const duplicateEmpadreFemales = useMemo(() => {
+    const map = new Map<string, BreedingRecord[]>()
+    for (const r of orderedBreedings.needPregnancyConfirmation) {
+      for (const f of r.femaleBreedingInfo) {
+        if (!f.pregnancyConfirmedDate && !f.actualBirthDate) {
+          const arr = map.get(f.femaleId) || []
+          arr.push(r)
+          map.set(f.femaleId, arr)
+        }
+      }
+    }
+    const dups: {
+      id: string
+      animalNumber: string
+      records: { id: string; label: string }[]
+    }[] = []
+    for (const [id, records] of map) {
+      if (records.length > 1) {
+        const a = animals.find((an) => an.id === id)
+        dups.push({
+          id,
+          animalNumber: a?.animalNumber || id.slice(0, 6),
+          records: records.map((r) => ({
+            id: r.id,
+            label: r.breedingId || r.id.slice(0, 6),
+          })),
+        })
+      }
+    }
+    return dups.sort((a, b) =>
+      (a.animalNumber || '').localeCompare(b.animalNumber || '', 'es', { numeric: true }),
+    )
+  }, [orderedBreedings.needPregnancyConfirmation, animals])
+
+  const [showCrossTabDups, setShowCrossTabDups] = useState(false)
 
   // --- Birth form submit handler ---
   const handleBirthSubmit = async (form: {
@@ -771,6 +807,40 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   const empadreContent = (
     <div>
       <ModalOnboarding isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
+      {duplicateEmpadreFemales.length > 0 && (
+        <div className="mb-3 p-3 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 text-sm">
+          <div className="font-semibold mb-2">
+            ⚠️ {duplicateEmpadreFemales.length} hembra
+            {duplicateEmpadreFemales.length !== 1 ? 's' : ''} en múltiples empadres activos
+          </div>
+          <div className="text-xs text-amber-800 mb-2">
+            Termina el empadre anterior o confirma embarazo para que no se cuenten dos veces.
+          </div>
+          <ul className="text-xs space-y-1">
+            {duplicateEmpadreFemales.map((d) => {
+              const recordsToShow = orderedBreedings.needPregnancyConfirmation.filter((r) =>
+                d.records.some((dr) => dr.id === r.id),
+              )
+              return (
+                <li key={d.id} className="flex flex-wrap items-center gap-1.5">
+                  <span className="font-semibold text-amber-900">{d.animalNumber}</span>
+                  <span className="text-amber-700">en</span>
+                  {recordsToShow.map((r) => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => setViewingBreedingRecord(r)}
+                      className="px-1.5 py-0.5 rounded bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 cursor-pointer"
+                    >
+                      {r.breedingId || r.id.slice(0, 6)}
+                    </button>
+                  ))}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
       <BreedingTable
         records={[...orderedBreedings.needPregnancyConfirmation]}
         animals={animals}
@@ -1339,6 +1409,63 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     return ids
   }, [allCrias])
 
+  // Cross-tab duplicates: animales contados en 2+ tabs de Etapas
+  const crossTabDuplicates = useMemo(() => {
+    const tabBuckets: Record<string, Set<string>> = {
+      Reproducción: new Set(reproductorAnimals.map((a) => a.id)),
+      Embarazos: new Set(pregnantFemales.map((e) => e.animal.id)),
+      Crías: new Set([
+        ...unweanedOffspring.map((e) => e.animal.id),
+        ...criaAnimals.map((a) => a.id),
+      ]),
+      Madres: new Set(nursingMotherIds),
+      Juvenil: new Set(juvenilAnimals.map((a) => a.id)),
+      Engorda: new Set(engordaAnimals.map((a) => a.id)),
+      Descarte: new Set(descarteAnimals.map((a) => a.id)),
+    }
+    const empadreSet = new Set<string>()
+    for (const r of orderedBreedings.needPregnancyConfirmation) {
+      for (const f of r.femaleBreedingInfo) {
+        if (!f.pregnancyConfirmedDate && !f.actualBirthDate) empadreSet.add(f.femaleId)
+      }
+    }
+    tabBuckets.Empadre = empadreSet
+
+    const memberships = new Map<string, string[]>()
+    for (const [tabName, ids] of Object.entries(tabBuckets)) {
+      for (const id of ids) {
+        const arr = memberships.get(id) || []
+        arr.push(tabName)
+        memberships.set(id, arr)
+      }
+    }
+    const dups: { id: string; animalNumber: string; tabs: string[] }[] = []
+    for (const [id, tabs] of memberships) {
+      if (tabs.length > 1) {
+        const a = animals.find((an) => an.id === id)
+        dups.push({
+          id,
+          animalNumber: a?.animalNumber || id.slice(0, 6),
+          tabs,
+        })
+      }
+    }
+    return dups.sort((a, b) =>
+      (a.animalNumber || '').localeCompare(b.animalNumber || '', 'es', { numeric: true }),
+    )
+  }, [
+    reproductorAnimals,
+    pregnantFemales,
+    unweanedOffspring,
+    criaAnimals,
+    nursingMotherIds,
+    juvenilAnimals,
+    engordaAnimals,
+    descarteAnimals,
+    orderedBreedings.needPregnancyConfirmation,
+    animals,
+  ])
+
   const destetesContent = (
     <div>
       <p className="text-xs text-gray-500 mb-2">Recién nacidos, en espera de destete.</p>
@@ -1884,9 +2011,29 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
               descarteAnimals.length
             }
           />
+          {crossTabDuplicates.length > 0 && (
+            <div className="p-2.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 text-xs flex items-center justify-between gap-2">
+              <span>
+                ⚠️ {crossTabDuplicates.length} animal
+                {crossTabDuplicates.length !== 1 ? 'es' : ''} contado
+                {crossTabDuplicates.length !== 1 ? 's' : ''} en más de una etapa.
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowCrossTabDups(true)}
+                className="px-2 py-1 rounded bg-white border border-amber-300 hover:bg-amber-100 cursor-pointer font-medium"
+              >
+                Ver duplicados
+              </button>
+            </div>
+          )}
           <Tabs tabs={etapasTabs} tabsId="animals-etapas" />
         </div>
       ),
+    },
+    {
+      label: 'Números',
+      content: <NumbersTab />,
     },
     {
       label: 'Estadísticas',
@@ -1897,6 +2044,37 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   return (
     <>
       <Tabs tabs={animalSubTabs} tabsId="animals-section" />
+
+      <Modal
+        isOpen={showCrossTabDups}
+        onClose={() => setShowCrossTabDups(false)}
+        title={`Animales en múltiples etapas (${crossTabDuplicates.length})`}
+        size="xl"
+      >
+        <p className="text-sm text-gray-600 mb-3">
+          Estos animales están contados en más de una pestaña de Etapas. Cada uno se suma N veces
+          en el total general.
+        </p>
+        <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+          {crossTabDuplicates.map((d) => (
+            <div
+              key={d.id}
+              className="flex flex-wrap items-center gap-2 p-2 border border-gray-200 rounded"
+            >
+              <span className="font-semibold text-gray-900">{d.animalNumber}</span>
+              <span className="text-xs text-gray-500">en</span>
+              {d.tabs.map((t) => (
+                <span
+                  key={t}
+                  className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </Modal>
 
       {/* Modals de bulk actions */}
       <ModalBulkEdit

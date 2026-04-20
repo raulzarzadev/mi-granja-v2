@@ -98,13 +98,26 @@ export function computeAnimalStage(animal: Animal): AnimalStage {
 
   const ageMonths = animalAge(animal, { format: 'months' })
   const config = ANIMAL_BREEDING_CONFIGS[animal.type]
-  const weaningMonths = Math.ceil((config?.weaningDays ?? 60) / 30)
+  const weaningDays = config?.weaningDays ?? 60
   const minBreedingAge = config?.minBreedingAge ?? 12
 
-  // Cría: no destetado Y edad menor al tiempo de destete
-  if (!animal.isWeaned && ageMonths < weaningMonths) return 'cria'
+  // Calcular edad en días para comparación precisa con weaningDays
+  let ageDays = 0
+  if (animal.birthDate) {
+    const birth = toDate(animal.birthDate)
+    ageDays = Math.floor((Date.now() - birth.getTime()) / (1000 * 60 * 60 * 24))
+  } else if (animal.age) {
+    // animal.age está en meses aproximados
+    ageDays = animal.age * 30
+  } else {
+    // Sin fecha ni edad → cría (recién nacido sin datos)
+    return 'cria'
+  }
 
-  // Si ya fue destetado o superó la edad de destete → ya no es cría
+  // Cría: edad menor al tiempo de destete de su especie.
+  // La edad manda sobre isWeaned (evita falsos destetes en bebés).
+  if (ageDays < weaningDays) return 'cria'
+
   // Juvenil: aún no alcanza edad reproductiva
   if (ageMonths < minBreedingAge) return 'juvenil'
 

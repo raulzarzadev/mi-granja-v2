@@ -17,6 +17,7 @@ import {
   breeding_animal_status,
   POST_WEAN_STAGES,
 } from '@/types/animals'
+import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Form } from './forms/Form'
 import { TextField } from './forms/TextField'
@@ -271,7 +272,21 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       return
     }
 
-    const isPostWean = POST_WEAN_STAGES.includes(values.stage)
+    // Solo marcar isWeaned=true si el animal ya superó la edad de destete de su especie.
+    // Evita falsos destetes para bebés creados con stage='juvenil' desde este form.
+    const weaningDays = getWeaningDays(values.type)
+    const birthDateForAge = values.birthDate
+      ? (() => {
+          const [y, m, d] = values.birthDate.split('-').map(Number)
+          return new Date(y, m - 1, d)
+        })()
+      : null
+    const ageDays = birthDateForAge
+      ? Math.floor((Date.now() - birthDateForAge.getTime()) / (1000 * 60 * 60 * 24))
+      : values.age
+        ? Number(values.age) * 30
+        : Number.POSITIVE_INFINITY
+    const isPostWean = POST_WEAN_STAGES.includes(values.stage) && ageDays >= weaningDays
 
     const transformed: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'> = {
       animalNumber: trimmedAnimalNumber,
