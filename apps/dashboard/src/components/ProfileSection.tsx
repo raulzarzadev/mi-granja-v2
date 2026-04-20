@@ -85,6 +85,7 @@ const ProfileSection: React.FC = () => {
 }
 
 import { PRICE_PER_PLACE_MXN } from '@/types/billing'
+
 const FEEDBACK_EMAIL = 'hola@migranja.app'
 
 const PlanTab: React.FC<{

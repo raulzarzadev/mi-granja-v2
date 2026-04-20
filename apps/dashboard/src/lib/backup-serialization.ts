@@ -279,6 +279,7 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     breedingDate: 'string (ISO 8601) | null',
     femaleBreedingInfo:
       '[ { femaleId: string, pregnancyConfirmedDate?: ISO 8601, expectedBirthDate?: ISO 8601, actualBirthDate?: ISO 8601, offspring?: string[] } ]',
+    status: "'active' | 'finished' | undefined (default: active)",
     notes: 'string | undefined',
     comments:
       '[ { id: string, content: string, urgency?: "none"|"low"|"medium"|"high", createdAt?: ISO 8601, createdBy?: string } ] | undefined',
@@ -355,6 +356,8 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
       'Solo hembras. pregnantAt=embarazada, birthedAt=parida, weanedMotherAt=destetó. Cada transición limpia el estado anterior: embarazo→parto limpia pregnantAt, parto→destete limpia birthedAt.',
     ids_de_referencia:
       'motherId, fatherId, maleId, femaleId, offspring[] — son IDs internos. Al importar se remapean automáticamente.',
+    peso_auto_sync:
+      'Si weight está presente pero weightRecords y records están vacíos, al importar se genera una entrada sintética con fecha=updatedAt (o createdAt) para mantener consistencia entre tabla y vista detalle.',
   },
   farm: {
     id: 'string',

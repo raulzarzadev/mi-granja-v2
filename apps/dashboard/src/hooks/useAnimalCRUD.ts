@@ -61,6 +61,27 @@ export const useAnimalCRUD = () => {
         updatedAt: now,
       }
 
+      // Sync initial weight → weightRecords + records (source of truth = history)
+      const initialWeight =
+        typeof newAnimal.weight === 'number' && newAnimal.weight > 0 ? newAnimal.weight : null
+      if (initialWeight && !newAnimal.weightRecords?.length) {
+        const weightKg = (initialWeight / 1000).toFixed(1)
+        const weightRecord: AnimalRecord = {
+          id: crypto.randomUUID(),
+          type: 'weight',
+          category: 'general',
+          title: `${weightKg} kg`,
+          date: now,
+          createdAt: now,
+          createdBy: user.id,
+        }
+        newAnimal = {
+          ...newAnimal,
+          weightRecords: [{ date: now, weight: initialWeight }],
+          records: [...(newAnimal.records || []), weightRecord],
+        }
+      }
+
       // Añadir metadata de admin si se está haciendo impersonación
       newAnimal = wrapWithAdminMetadata(newAnimal, 'Creación de animal')
 
@@ -87,9 +108,36 @@ export const useAnimalCRUD = () => {
     setIsLoading(true)
     try {
       const animalRef = doc(db, 'animals', animalId)
-      let updatedData = {
+      const now = new Date()
+      let updatedData: Partial<Animal> & { updatedAt: Date } = {
         ...updateData,
-        updatedAt: new Date(),
+        updatedAt: now,
+      }
+
+      // Sync weight → weightRecords + records if weight changed and caller didn't already push history
+      const hasWeightInUpdate = typeof updateData.weight === 'number' && updateData.weight > 0
+      const callerAlreadyPushedHistory =
+        updateData.weightRecords !== undefined || updateData.records !== undefined
+      if (hasWeightInUpdate && !callerAlreadyPushedHistory) {
+        const existing = animals.find((a) => a.id === animalId)
+        if (existing && existing.weight !== updateData.weight) {
+          const newWeight = updateData.weight as number
+          const weightKg = (newWeight / 1000).toFixed(1)
+          const weightRecord: AnimalRecord = {
+            id: crypto.randomUUID(),
+            type: 'weight',
+            category: 'general',
+            title: `${weightKg} kg`,
+            date: now,
+            createdAt: now,
+            createdBy: user.id,
+          }
+          updatedData = {
+            ...updatedData,
+            weightRecords: [...(existing.weightRecords || []), { date: now, weight: newWeight }],
+            records: [...(existing.records || []), weightRecord],
+          }
+        }
       }
 
       // Añadir metadata de admin si se está haciendo impersonación

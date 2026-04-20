@@ -399,6 +399,33 @@ export function useBackup() {
               if (remapped.motherId) remapped.motherId = remapAnimalId(remapped.motherId)
               if (remapped.fatherId) remapped.fatherId = remapAnimalId(remapped.fatherId)
 
+              // Auto-sync weight → weightRecords + records si faltan
+              const importedWeight = typeof remapped.weight === 'number' ? remapped.weight : null
+              const hasWeightHistory =
+                (Array.isArray(remapped.weightRecords) && remapped.weightRecords.length > 0) ||
+                (Array.isArray(remapped.records) &&
+                  (remapped.records as Record<string, unknown>[]).some((r) => r.type === 'weight'))
+              if (importedWeight && importedWeight > 0 && !hasWeightHistory) {
+                const syntheticDate =
+                  (remapped.updatedAt as Timestamp | undefined) ??
+                  (remapped.createdAt as Timestamp | undefined) ??
+                  Timestamp.now()
+                const kgLabel = (importedWeight / 1000).toFixed(1)
+                remapped.weightRecords = [{ date: syntheticDate, weight: importedWeight }]
+                remapped.records = [
+                  ...((remapped.records as Record<string, unknown>[]) || []),
+                  {
+                    id: crypto.randomUUID(),
+                    type: 'weight',
+                    category: 'general',
+                    title: `${kgLabel} kg`,
+                    date: syntheticDate,
+                    createdAt: syntheticDate,
+                    createdBy: user!.id,
+                  },
+                ]
+              }
+
               const newId = animalIdMap.get(oldId)
               if (newId) {
                 batch.set(doc(db, 'animals', newId), stripUndefined(remapped))

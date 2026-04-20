@@ -7,8 +7,8 @@ echo "🔍 [1/4] Tests..."
 turbo run test || { echo "❌ Tests fallaron"; FAILED=1; }
 echo ""
 
-echo "🔍 [2/4] Formato (Biome)..."
-biome format --write . || { echo "❌ Formato falló"; FAILED=1; }
+echo "🔍 [2/4] Formato + organize imports (Biome)..."
+biome check --write . || { echo "❌ Formato falló"; FAILED=1; }
 echo ""
 
 echo "🔍 [3/4] Tipos (TypeScript)..."
