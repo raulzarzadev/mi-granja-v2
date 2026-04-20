@@ -36,12 +36,7 @@ interface ModalRecordDetailProps {
 
 const clinicalCategories = ['illness', 'injury', 'treatment', 'surgery']
 
-const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({
-  isOpen,
-  onClose,
-  record,
-  animals,
-}) => {
+const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, record }) => {
   const { updateRecord, removeRecord, resolveRecord, reopenRecord, updateWeightRecord } =
     useAnimalCRUD()
   const { createReminder } = useReminders()

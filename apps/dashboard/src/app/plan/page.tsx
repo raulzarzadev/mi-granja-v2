@@ -113,9 +113,10 @@ export default function PlanPage() {
   return (
     <PageShell title="Tu Plan">
       <div className="max-w-2xl mx-auto space-y-6">
-
         {/* Plan actual */}
-        <div className={`rounded-xl border-2 p-5 flex items-center gap-4 ${isPro ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+        <div
+          className={`rounded-xl border-2 p-5 flex items-center gap-4 ${isPro ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-gray-50'}`}
+        >
           <div className={`text-3xl`}>{isPro ? '⭐' : '🌱'}</div>
           <div className="flex-1">
             <p className="font-semibold text-gray-900">{isPro ? 'Plan Pro' : 'Plan Gratis'}</p>
@@ -126,9 +127,7 @@ export default function PlanPage() {
                 {usage.collaboratorCount === 1 ? 'colaborador' : 'colaboradores'}
               </p>
             )}
-            {!isPro && (
-              <p className="text-sm text-gray-500 mt-0.5">1 granja incluida sin costo</p>
-            )}
+            {!isPro && <p className="text-sm text-gray-500 mt-0.5">1 granja incluida sin costo</p>}
           </div>
           {isPro && (
             <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
@@ -159,7 +158,9 @@ export default function PlanPage() {
               {PRO_FEATURES.map((f, i) => (
                 <li key={f} className="flex items-start gap-2 text-sm">
                   <Check />
-                  <span className={i === 0 ? 'text-green-700' : 'text-green-800 font-medium'}>{f}</span>
+                  <span className={i === 0 ? 'text-green-700' : 'text-green-800 font-medium'}>
+                    {f}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -190,11 +191,15 @@ export default function PlanPage() {
                   Agrega lugares y crece
                 </h3>
                 <p className="text-sm text-gray-500 -mt-2">
-                  Cada lugar te da acceso a una granja adicional o un colaborador. Trabaja en equipo y gestiona más desde un solo lugar.
+                  Cada lugar te da acceso a una granja adicional o un colaborador. Trabaja en equipo
+                  y gestiona más desde un solo lugar.
                 </p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="plan-granjas" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="plan-granjas"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Granjas adicionales
                     </label>
                     <input
@@ -209,7 +214,10 @@ export default function PlanPage() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="plan-colabs" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="plan-colabs"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Colaboradores
                     </label>
                     <input
@@ -226,24 +234,31 @@ export default function PlanPage() {
                 </div>
 
                 {/* Calculadora de precio */}
-                {(granjas + colaboradores) > 0 && (
+                {granjas + colaboradores > 0 && (
                   <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 flex items-center justify-between">
                     <div className="text-sm text-green-800">
-                      <span className="font-medium">{granjas + colaboradores} lugar{granjas + colaboradores !== 1 ? 'es' : ''}</span>
+                      <span className="font-medium">
+                        {granjas + colaboradores} lugar{granjas + colaboradores !== 1 ? 'es' : ''}
+                      </span>
                       <span className="text-green-600"> × ${PRICE_PER_PLACE_MXN} MXN/mes</span>
                     </div>
                     <div className="text-lg font-bold text-green-900">
-                      ${((granjas + colaboradores) * PRICE_PER_PLACE_MXN).toLocaleString('es-MX')} MXN/mes
+                      ${((granjas + colaboradores) * PRICE_PER_PLACE_MXN).toLocaleString('es-MX')}{' '}
+                      MXN/mes
                     </div>
                   </div>
                 )}
-                {(granjas + colaboradores) === 0 && (
+                {granjas + colaboradores === 0 && (
                   <p className="text-xs text-gray-500 text-center">
-                    Ajusta las cantidades para ver el precio estimado · ${PRICE_PER_PLACE_MXN} MXN por lugar/mes
+                    Ajusta las cantidades para ver el precio estimado · ${PRICE_PER_PLACE_MXN} MXN
+                    por lugar/mes
                   </p>
                 )}
                 <div>
-                  <label htmlFor="plan-mensaje" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="plan-mensaje"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     ¿Alguna duda o funcionalidad que quisieras ver?{' '}
                     <span className="text-gray-400 font-normal">(opcional)</span>
                   </label>
@@ -258,7 +273,10 @@ export default function PlanPage() {
                   />
                 </div>
                 {status === 'error' && (
-                  <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+                  <p
+                    role="alert"
+                    className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2"
+                  >
                     Hubo un error al enviar. Intenta de nuevo.
                   </p>
                 )}
@@ -269,9 +287,25 @@ export default function PlanPage() {
                 >
                   {status === 'loading' ? (
                     <>
-                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                      <svg
+                        className="w-4 h-4 animate-spin"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                        />
                       </svg>
                       Enviando…
                     </>

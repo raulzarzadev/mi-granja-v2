@@ -12,6 +12,8 @@ export interface AnimalBreedingConfig {
   maxBreedingAge?: number // En meses
   breedingCycleDays: number // Ciclo estral
   weaningDays: number // Días de destete recomendados
+  /** Peso objetivo de venta/sacrificio en kg (si aplica) */
+  targetWeightKg?: number
   description: string
 }
 //* Configuración de animales por empadre, tiempo de crianza, destete, lactancia, etc.
@@ -27,6 +29,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     maxBreedingAge: 96, // 8 años
     breedingCycleDays: 17,
     weaningDays: 70,
+    targetWeightKg: 50,
     description: 'Ovejas: gestación ~5 meses, temporada de abril a julio',
   },
   cabra: {
@@ -39,6 +42,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     maxBreedingAge: 84, // 7 años
     breedingCycleDays: 21,
     weaningDays: 60,
+    targetWeightKg: 40,
     description: 'Cabras: gestación ~5 meses, temporada de agosto a enero',
   },
   vaca: {
@@ -51,6 +55,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     maxBreedingAge: 180, // 15 años
     breedingCycleDays: 21,
     weaningDays: 120,
+    targetWeightKg: 600,
     description: 'Vacas lecheras: gestación ~9.3 meses, reproducción anual',
   },
   // vaca_engorda: {
@@ -74,6 +79,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     maxBreedingAge: 60, // 5 años
     breedingCycleDays: 21,
     weaningDays: 28,
+    targetWeightKg: 120,
     description: 'Cerdos: gestación ~3.8 meses, camadas grandes',
   },
   gallina: {
@@ -86,6 +92,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     maxBreedingAge: 36, // 3 años de producción óptima
     breedingCycleDays: 1, // postura casi diaria
     weaningDays: 0,
+    targetWeightKg: 2.5,
     description: 'Gallinas: incubación ~21 días, puesta regular durante todo el año',
   },
   perro: {

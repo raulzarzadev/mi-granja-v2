@@ -16,11 +16,11 @@ import ModalBirthForm from '@/components/ModalBirthForm'
 import ModalBreedingAnimalDetails from '@/components/ModalBreedingAnimalDetails'
 import ModalBulkEdit from '@/components/ModalBulkEdit'
 import ModalConfirmPregnancy from '@/components/ModalConfirmPregnancy'
+import ModalOnboarding from '@/components/onboarding/ModalOnboarding'
 import StatisticsTab from '@/components/StatisticsTab'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
-import { useLocalPreference } from '@/hooks/useLocalPreference'
 import { animalAge, computeAnimalStage, formatWeight } from '@/lib/animal-utils'
 import { calculateExpectedBirthDate, getWeaningDays } from '@/lib/animalBreedingConfig'
 import { formatDate, toDate } from '@/lib/dates'
@@ -760,56 +760,12 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   // ETAPAS SUB-TABS CONTENT
   // ========================
 
-  const [etapasGuideDismissed, setEtapasGuideDismissed] = useLocalPreference(
-    'etapas_guide_dismissed',
-    false,
-  )
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   // Tab: Empadre
   const empadreContent = (
     <div>
-      {!etapasGuideDismissed && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 mb-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-2">
-              <p className="font-semibold">Como funciona el flujo de etapas</p>
-              <ol className="list-decimal list-inside space-y-1 text-blue-700">
-                <li>
-                  <strong>Empadre</strong> — Registra el cruce entre un macho y una o varias
-                  hembras.
-                </li>
-                <li>
-                  <strong>Confirmar gestacion</strong> — Confirma que la hembra quedo preñada y se
-                  calcula la fecha estimada de parto.
-                </li>
-                <li>
-                  <strong>Parto</strong> — Registra el nacimiento de las crias. Se crean
-                  automaticamente como animales nuevos.
-                </li>
-                <li>
-                  <strong>Destete</strong> — Cuando la cria esta lista, la destetas a engorda o
-                  reproductor.
-                </li>
-                <li>
-                  <strong>Descarte</strong> — Cuando un animal termina su ciclo reproductivo, esta
-                  listo para venta, es muy viejo o tiene problemas de salud, se mueve a descarte.
-                </li>
-              </ol>
-              <p className="text-blue-600">
-                Empieza creando un empadre con el boton <strong>&quot;Nuevo Empadre&quot;</strong>.
-              </p>
-            </div>
-            <Button
-              size="xs"
-              variant="ghost"
-              color="primary"
-              icon="close"
-              onClick={() => setEtapasGuideDismissed(true)}
-              title="Cerrar guia"
-            />
-          </div>
-        </div>
-      )}
+      <ModalOnboarding isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
       <BreedingTable
         records={[...orderedBreedings.needPregnancyConfirmation]}
         animals={animals}
@@ -823,16 +779,14 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         }}
         toolbar={
           <div className="flex items-center gap-2">
-            {etapasGuideDismissed && (
-              <Button
-                size="xs"
-                variant="ghost"
-                color="primary"
-                icon="help"
-                onClick={() => setEtapasGuideDismissed(false)}
-                title="Ver guia de etapas"
-              />
-            )}
+            <Button
+              size="xs"
+              variant="ghost"
+              color="primary"
+              icon="help"
+              onClick={() => setShowOnboarding(true)}
+              title="Ver guia de primeros pasos"
+            />
             <Button
               size="xs"
               color="success"

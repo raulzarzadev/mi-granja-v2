@@ -26,7 +26,6 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
   breedingRecord,
   animals,
   onSubmit,
-  isLoading = false,
   selectedAnimal,
 }) => {
   // Obtener hembras que aún no tienen embarazo confirmado

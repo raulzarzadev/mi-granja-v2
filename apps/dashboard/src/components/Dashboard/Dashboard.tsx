@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
 import FarmAvatar from '@/components/FarmAvatar'
 import FarmSection from '@/components/FarmSection'
@@ -13,6 +13,8 @@ import { RootState } from '@/features/store'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useReminders } from '@/hooks/useReminders'
 import { AnimalType, animal_icon, animals_types_labels } from '@/types/animals'
+import ModalOnboarding from '../onboarding/ModalOnboarding'
+import OnboardingCard from '../onboarding/OnboardingCard'
 import RecordsTab from '../RecordsTab'
 import AnimalsSection from './Animals/AnimalsSection'
 import { useAnimalFilters } from './Animals/animals-filters'
@@ -27,6 +29,7 @@ const Dashboard: React.FC = () => {
 
   const { filters, setFilters, animals, availableTypes } = useAnimalFilters()
   const { getOverdueReminders } = useReminders()
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   if (!user) {
     return null
@@ -61,6 +64,8 @@ const Dashboard: React.FC = () => {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+        <OnboardingCard />
+
         {/* Titulo de la granja + filtro global por tipo */}
         {currentFarm && (
           <div className="flex items-center gap-3 mb-3">
@@ -124,7 +129,27 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* Si no hay granjas, priorizar creacion/seleccion */}
-        {farms.length === 0 ? <FarmSection /> : <Tabs tabs={tabs} tabsId="dashboard-main" />}
+        {farms.length === 0 ? (
+          <FarmSection />
+        ) : (
+          <Tabs
+            tabs={tabs}
+            tabsId="dashboard-main"
+            trailingAction={
+              <button
+                type="button"
+                onClick={() => setShowOnboarding(true)}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-sm font-bold cursor-pointer transition-colors"
+                title="Ver guia de primeros pasos"
+                aria-label="Ver guia de primeros pasos"
+              >
+                ?
+              </button>
+            }
+          />
+        )}
+
+        <ModalOnboarding isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
       </div>
     </div>
   )

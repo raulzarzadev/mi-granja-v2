@@ -229,8 +229,6 @@ export const AnimalsFilters = ({
   activeFilterCount,
   availableTypes,
   availableBreeds,
-  availableStages,
-  availableGenders,
   formatStatLabel,
   tabsTotal,
 }: AnimalsFiltersProps) => {

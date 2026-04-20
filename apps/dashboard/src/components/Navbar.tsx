@@ -8,6 +8,7 @@ import { RootState } from '@/features/store'
 import { useAuth } from '@/hooks/useAuth'
 import { isUserAdmin } from '@/lib/userUtils'
 import { Modal } from './Modal'
+import ModalOnboarding from './onboarding/ModalOnboarding'
 import UserImpersonationSelector from './UserImpersonationSelector'
 
 /**
@@ -22,6 +23,7 @@ const Navbar: React.FC = () => {
   const billingPlanType = useSelector((s: RootState) => s.billing.planType)
   const { logout, stopImpersonation } = useAuth()
   const [showUserSelector, setShowUserSelector] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
 
@@ -215,6 +217,17 @@ const Navbar: React.FC = () => {
                       >
                         🏠 Dashboard
                       </Link>
+                      <button
+                        type="button"
+                        className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 cursor-pointer"
+                        role="menuitem"
+                        onClick={() => {
+                          setShowOnboarding(true)
+                          setMenuOpen(false)
+                        }}
+                      >
+                        📘 Primeros pasos
+                      </button>
                       {isUserAdmin(user) && (
                         <>
                           <Link
@@ -276,6 +289,8 @@ const Navbar: React.FC = () => {
         >
           <UserImpersonationSelector onClose={() => setShowUserSelector(false)} />
         </Modal>
+
+        <ModalOnboarding isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
       </div>
     </nav>
   )

@@ -28,9 +28,7 @@ interface ProFeatureBannerProps {
  * Banner informativo para funciones exclusivas del plan Pro.
  * Incluye mini formulario que envía correo al dueño y confirmación al usuario.
  */
-const ProFeatureBanner: React.FC<ProFeatureBannerProps> = ({
-  feature = 'Esta función',
-}) => {
+const ProFeatureBanner: React.FC<ProFeatureBannerProps> = ({ feature = 'Esta función' }) => {
   const { user } = useSelector((s: RootState) => s.auth)
   const [granjas, setGranjas] = useState(0)
   const [colaboradores, setColaboradores] = useState(0)
@@ -103,7 +101,9 @@ const ProFeatureBanner: React.FC<ProFeatureBannerProps> = ({
       <div className="flex items-start gap-3">
         <span className="text-xl flex-shrink-0">⭐</span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-amber-800">{feature} es exclusiva del plan Pro</p>
+          <p className="text-sm font-semibold text-amber-800">
+            {feature} es exclusiva del plan Pro
+          </p>
           <p className="text-sm text-amber-700 mt-0.5 mb-3">
             Puedes explorar el formulario. Solicita tu período de prueba para guardar registros
             masivos.

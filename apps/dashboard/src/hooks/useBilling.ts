@@ -20,7 +20,11 @@ async function getAuthToken(): Promise<string> {
   return user.getIdToken()
 }
 
-async function billingFetch(path: string, impersonateUid?: string | null, options: RequestInit = {}) {
+async function billingFetch(
+  path: string,
+  impersonateUid?: string | null,
+  options: RequestInit = {},
+) {
   const token = await getAuthToken()
   const res = await fetch(`/api/billing${path}`, {
     ...options,

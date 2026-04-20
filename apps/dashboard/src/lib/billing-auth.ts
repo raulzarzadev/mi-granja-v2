@@ -11,10 +11,7 @@ export interface AuthenticatedUser {
  * Si el requester es admin y envía X-Impersonate-UID, usa ese UID.
  * De lo contrario usa el UID del token autenticado.
  */
-export function resolveEffectiveUid(
-  authUser: AuthenticatedUser,
-  request: NextRequest,
-): string {
+export function resolveEffectiveUid(authUser: AuthenticatedUser, request: NextRequest): string {
   const impersonateUid = request.headers.get('x-impersonate-uid')
   if (impersonateUid && isUserAdminEmail(authUser.email)) {
     return impersonateUid
@@ -23,7 +20,9 @@ export function resolveEffectiveUid(
 }
 
 function isUserAdminEmail(email: string): boolean {
-  const adminEmails = (process.env.ADMIN_EMAILS ?? 'raulzarza.dev@gmail.com').split(',').map(e => e.trim())
+  const adminEmails = (process.env.ADMIN_EMAILS ?? 'raulzarza.dev@gmail.com')
+    .split(',')
+    .map((e) => e.trim())
   return adminEmails.includes(email)
 }
 

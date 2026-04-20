@@ -15,6 +15,8 @@ type TabsProps = {
   tabsId?: string
   /** Si debe persistir el estado (por defecto true) */
   persistState?: boolean
+  /** Elemento opcional renderizado al final de la fila de tabs (ej. boton de ayuda) */
+  trailingAction?: ReactNode
 }
 
 /** Genera un slug a partir del label del tab, quitando emojis */
@@ -41,7 +43,13 @@ const setParam = (key: string, value: string) => {
   window.history.pushState({}, '', url)
 }
 
-const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persistState = true }) => {
+const Tabs: React.FC<TabsProps> = ({
+  tabs,
+  initialActiveTab = 0,
+  tabsId,
+  persistState = true,
+  trailingAction,
+}) => {
   const paramKey = tabsId || 'tab'
 
   const slugs = useMemo(
@@ -134,6 +142,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, initialActiveTab = 0, tabsId, persist
             </button>
           )
         })}
+        {trailingAction && <div className="flex items-center ml-1">{trailingAction}</div>}
       </div>
       <div
         id={`tab-panel-${slugs[activeTab]}`}

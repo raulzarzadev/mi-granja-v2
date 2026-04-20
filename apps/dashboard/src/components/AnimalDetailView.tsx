@@ -7,7 +7,13 @@ import AnimalRecordsSection from '@/components/AnimalRecordsSection'
 import Tabs from '@/components/Tabs'
 import { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { animalAge, computeAnimalStage } from '@/lib/animal-utils'
+import {
+  animal_stage_next_steps,
+  animalAge,
+  computeAnimalEffectiveStage,
+  computeAnimalStage,
+  getLastWeight,
+} from '@/lib/animal-utils'
 import { formatDate, fromNow, toDate } from '@/lib/dates'
 import {
   Animal,
@@ -46,40 +52,18 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp 
     return allAnimals.find((a) => a.id === animal.fatherId || a.animalNumber === animal.fatherId)
   }
 
-  /** Computes the most recent weight record across both record sources */
-  const getLastWeight = (): { kg: number; date: Date } | null => {
-    const weightFromRecords = [...(animal.records || [])]
-      .filter((r) => r.type === 'weight')
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
-
-    const weightFromEntries = [...(animal.weightRecords || [])].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    )[0]
-
-    if (weightFromRecords && weightFromEntries) {
-      const rDate = new Date(weightFromRecords.date).getTime()
-      const eDate = new Date(weightFromEntries.date).getTime()
-      if (rDate >= eDate) {
-        const match = weightFromRecords.title.match(/^([\d.]+)/)
-        if (match) return { kg: parseFloat(match[1]), date: new Date(weightFromRecords.date) }
-      } else {
-        return { kg: weightFromEntries.weight / 1000, date: new Date(weightFromEntries.date) }
-      }
-    } else if (weightFromRecords) {
-      const match = weightFromRecords.title.match(/^([\d.]+)/)
-      if (match) return { kg: parseFloat(match[1]), date: new Date(weightFromRecords.date) }
-    } else if (weightFromEntries) {
-      return { kg: weightFromEntries.weight / 1000, date: new Date(weightFromEntries.date) }
-    }
-
-    return null
-  }
-
-  const lastWeight = getLastWeight()
+  const breedings = useSelector((state: RootState) => state.breeding.breedingRecords)
+  const lastWeight = getLastWeight(animal)
   const mother = getMother()
   const father = getFather()
   const stageDesc = animal_stage_descriptions[animal.stage]
   const speciesInfo = stageDesc?.speciesInfo?.[animal.type]
+  const effectiveStage = computeAnimalEffectiveStage(animal, breedings)
+  const nextSteps = animal_stage_next_steps[effectiveStage]?.({
+    animal,
+    breedings,
+    animals: allAnimals,
+  })
   const effectiveStatus = animal.status ?? 'activo'
 
   /** Computes age label with optional end-date context for dead/sold animals */
@@ -110,10 +94,38 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp 
         <div className="space-y-4">
           {/* Stage description */}
           {stageDesc && (
-            <p className="text-sm text-gray-500 leading-relaxed">
-              {stageDesc.description}
-              {speciesInfo && <span className="ml-1 text-gray-400">— {speciesInfo}</span>}
-            </p>
+            <div className="rounded-md bg-gray-50 border border-gray-100 px-3 py-2 space-y-1">
+              <p className="text-sm text-gray-700 leading-relaxed break-words">
+                {stageDesc.description}
+              </p>
+              {speciesInfo && (
+                <p className="text-xs text-gray-500 leading-snug break-words">{speciesInfo}</p>
+              )}
+            </div>
+          )}
+
+          {/* Siguientes pasos */}
+          {nextSteps && nextSteps.length > 0 && (
+            <div className="rounded-md bg-blue-50 border border-blue-100 px-3 py-2 space-y-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-blue-700">
+                Siguientes pasos
+              </h3>
+              <ul className="space-y-2">
+                {nextSteps.map((step) => (
+                  <li key={step.text} className="flex gap-2 text-sm text-gray-700 leading-snug">
+                    <span className="text-blue-700 flex-shrink-0 mt-0.5">•</span>
+                    <div className="flex-1 min-w-0 break-words">
+                      <span>{step.text}</span>
+                      {step.detail && (
+                        <span className="block mt-0.5 text-xs text-blue-800 break-words">
+                          {step.detail}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
           {/* Datos section */}

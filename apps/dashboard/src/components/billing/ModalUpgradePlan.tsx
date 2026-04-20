@@ -254,7 +254,8 @@ const ModalUpgradePlan: React.FC<ModalUpgradePlanProps> = ({ isOpen, onClose }) 
               Agrega lugares y crece
             </h3>
             <p className="text-sm text-gray-500 -mt-2">
-              Cada lugar te da acceso a una granja adicional o un colaborador. Trabaja en equipo y gestiona más desde un solo lugar.
+              Cada lugar te da acceso a una granja adicional o un colaborador. Trabaja en equipo y
+              gestiona más desde un solo lugar.
             </p>
 
             {/* Number inputs row */}
@@ -305,19 +306,23 @@ const ModalUpgradePlan: React.FC<ModalUpgradePlanProps> = ({ isOpen, onClose }) 
             </div>
 
             {/* Calculadora de precio */}
-            {(granjas + colaboradores) > 0 ? (
+            {granjas + colaboradores > 0 ? (
               <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 flex items-center justify-between">
                 <div className="text-sm text-green-800">
-                  <span className="font-medium">{granjas + colaboradores} lugar{granjas + colaboradores !== 1 ? 'es' : ''}</span>
+                  <span className="font-medium">
+                    {granjas + colaboradores} lugar{granjas + colaboradores !== 1 ? 'es' : ''}
+                  </span>
                   <span className="text-green-600"> × ${PRICE_PER_PLACE_MXN} MXN/mes</span>
                 </div>
                 <div className="text-lg font-bold text-green-900">
-                  ${((granjas + colaboradores) * PRICE_PER_PLACE_MXN).toLocaleString('es-MX')} MXN/mes
+                  ${((granjas + colaboradores) * PRICE_PER_PLACE_MXN).toLocaleString('es-MX')}{' '}
+                  MXN/mes
                 </div>
               </div>
             ) : (
               <p className="text-xs text-gray-500 text-center">
-                Ajusta las cantidades para ver el precio estimado · ${PRICE_PER_PLACE_MXN} MXN por lugar/mes
+                Ajusta las cantidades para ver el precio estimado · ${PRICE_PER_PLACE_MXN} MXN por
+                lugar/mes
               </p>
             )}
 

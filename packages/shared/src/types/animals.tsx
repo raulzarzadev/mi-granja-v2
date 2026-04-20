@@ -468,6 +468,16 @@ export const animal_stage_descriptions: Record<AnimalStage, StageDescription> = 
   },
 }
 
+export interface NextStep {
+  text: string
+  /** Sufijo dinámico opcional renderizado como chip al lado del texto */
+  detail?: string
+}
+
+// El record `animal_stage_next_steps` y el tipo `NextStepsResolver` viven en
+// `lib/animal-utils.ts` para evitar dependencias circulares (los resolvers usan
+// helpers de breeding/peso que importan tipos desde aquí).
+
 export const animal_status_labels: Record<AnimalStatus, string> = {
   activo: 'Activo',
   muerto: 'Muerto',
