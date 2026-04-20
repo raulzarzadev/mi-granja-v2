@@ -21,7 +21,12 @@ import StatisticsTab from '@/components/StatisticsTab'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
-import { animalAge, computeAnimalStage, formatWeight } from '@/lib/animal-utils'
+import {
+  animalAge,
+  computeAnimalEffectiveStage,
+  computeAnimalStage,
+  formatWeight,
+} from '@/lib/animal-utils'
 import { calculateExpectedBirthDate, getWeaningDays } from '@/lib/animalBreedingConfig'
 import { formatDate, toDate } from '@/lib/dates'
 import {
@@ -1623,12 +1628,12 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       width: '14%',
       sortable: true,
       sortFn: (a, b) =>
-        (animal_stage_config[computeAnimalStage(a)].label || '').localeCompare(
-          animal_stage_config[computeAnimalStage(b)].label || '',
+        (animal_stage_config[computeAnimalEffectiveStage(a, breedingRecords)].label || '').localeCompare(
+          animal_stage_config[computeAnimalEffectiveStage(b, breedingRecords)].label || '',
           'es',
         ),
       render: (row) => {
-        const stage = computeAnimalStage(row)
+        const stage = computeAnimalEffectiveStage(row, breedingRecords)
         const cfg = animal_stage_config[stage]
         return (
           <span
@@ -1645,7 +1650,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     const cols = [...animalColumns]
     cols.splice(4, 0, stageCol)
     return cols
-  }, [animalColumns])
+  }, [animalColumns, breedingRecords])
 
   const etapasTabs = [
     {
