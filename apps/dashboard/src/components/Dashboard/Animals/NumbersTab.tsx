@@ -64,12 +64,12 @@ const NumbersTab: React.FC = () => {
   const stageGroups = useMemo(() => {
     const map = new Map<AnimalStageKey, Animal[]>()
     for (const a of genderFiltered) {
-      const s = computeAnimalEffectiveStage(a, breedingRecords)
+      const s = computeAnimalEffectiveStage(a, breedingRecords, new Date(), animals)
       if (!map.has(s)) map.set(s, [])
       map.get(s)?.push(a)
     }
     return map
-  }, [genderFiltered, breedingRecords])
+  }, [genderFiltered, breedingRecords, animals])
 
   const ageGroups = useMemo(
     () =>
