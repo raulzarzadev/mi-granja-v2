@@ -32,6 +32,18 @@ const createBreeding = (overrides: Partial<BreedingRecord> = {}): BreedingRecord
   ...overrides,
 })
 
+/** Cría viva y sin destetar */
+const createLiveCria = (overrides: Partial<Animal> = {}): Animal =>
+  createAnimal({
+    id: 'cria-1',
+    stage: 'cria',
+    isWeaned: false,
+    weanedAt: undefined,
+    status: undefined, // activo por defecto
+    gender: 'hembra',
+    ...overrides,
+  })
+
 describe('computeAnimalEffectiveStage', () => {
   it('returns base stage when no breedings', () => {
     const animal = createAnimal()
@@ -70,44 +82,151 @@ describe('computeAnimalEffectiveStage', () => {
     expect(computeAnimalEffectiveStage(female, breedings, NOW)).toBe('embarazos')
   })
 
-  it('returns crias_lactantes for female with recent birth (within weaning days)', () => {
-    const female = createAnimal({ id: 'f-1', type: 'oveja' })
+  describe('crias_lactantes detection', () => {
     const recentBirth = new Date(NOW)
     recentBirth.setDate(recentBirth.getDate() - 10)
-    const breedings = [
-      createBreeding({
-        femaleBreedingInfo: [{ femaleId: 'f-1', actualBirthDate: recentBirth }],
-      }),
-    ]
-    expect(computeAnimalEffectiveStage(female, breedings, NOW)).toBe('crias_lactantes')
+
+    it('returns crias_lactantes for female with recent birth (no animals list — fallback)', () => {
+      const female = createAnimal({ id: 'f-1', type: 'oveja' })
+      const breedings = [
+        createBreeding({
+          femaleBreedingInfo: [{ femaleId: 'f-1', actualBirthDate: recentBirth }],
+        }),
+      ]
+      // Sin lista de animales → fallback por fecha
+      expect(computeAnimalEffectiveStage(female, breedings, NOW)).toBe('crias_lactantes')
+    })
+
+    it('returns crias_lactantes when at least one offspring is alive and unweaned', () => {
+      const female = createAnimal({ id: 'f-1', type: 'oveja' })
+      const cria = createLiveCria({ id: 'cria-1', motherId: 'f-1' })
+      const breedings = [
+        createBreeding({
+          femaleBreedingInfo: [
+            { femaleId: 'f-1', actualBirthDate: recentBirth, offspring: ['cria-1'] },
+          ],
+        }),
+      ]
+      expect(computeAnimalEffectiveStage(female, breedings, NOW, [female, cria])).toBe(
+        'crias_lactantes',
+      )
+    })
+
+    it('returns base stage when all offspring are dead', () => {
+      const female = createAnimal({ id: 'f-1', type: 'oveja' })
+      const deadCria = createLiveCria({ id: 'cria-1', motherId: 'f-1', status: 'muerto' })
+      const breedings = [
+        createBreeding({
+          femaleBreedingInfo: [
+            { femaleId: 'f-1', actualBirthDate: recentBirth, offspring: ['cria-1'] },
+          ],
+        }),
+      ]
+      expect(computeAnimalEffectiveStage(female, breedings, NOW, [female, deadCria])).toBe(
+        'reproductor',
+      )
+    })
+
+    it('returns base stage when all offspring are weaned', () => {
+      const female = createAnimal({ id: 'f-1', type: 'oveja' })
+      const weanedCria = createLiveCria({
+        id: 'cria-1',
+        motherId: 'f-1',
+        isWeaned: true,
+        stage: 'juvenil',
+      })
+      const breedings = [
+        createBreeding({
+          femaleBreedingInfo: [
+            { femaleId: 'f-1', actualBirthDate: recentBirth, offspring: ['cria-1'] },
+          ],
+        }),
+      ]
+      expect(computeAnimalEffectiveStage(female, breedings, NOW, [female, weanedCria])).toBe(
+        'reproductor',
+      )
+    })
+
+    it('returns crias_lactantes when at least one offspring is alive even if others are dead', () => {
+      const female = createAnimal({ id: 'f-1', type: 'oveja' })
+      const deadCria = createLiveCria({ id: 'cria-1', motherId: 'f-1', status: 'muerto' })
+      const liveCria = createLiveCria({ id: 'cria-2', motherId: 'f-1' })
+      const breedings = [
+        createBreeding({
+          femaleBreedingInfo: [
+            {
+              femaleId: 'f-1',
+              actualBirthDate: recentBirth,
+              offspring: ['cria-1', 'cria-2'],
+            },
+          ],
+        }),
+      ]
+      expect(
+        computeAnimalEffectiveStage(female, breedings, NOW, [female, deadCria, liveCria]),
+      ).toBe('crias_lactantes')
+    })
+
+    it('returns base stage for female with old birth (past weaning)', () => {
+      const female = createAnimal({ id: 'f-1', type: 'oveja' })
+      const oldBirth = new Date(NOW)
+      oldBirth.setDate(oldBirth.getDate() - 200)
+      const cria = createLiveCria({ id: 'cria-1', motherId: 'f-1' })
+      const breedings = [
+        createBreeding({
+          femaleBreedingInfo: [
+            { femaleId: 'f-1', actualBirthDate: oldBirth, offspring: ['cria-1'] },
+          ],
+        }),
+      ]
+      expect(computeAnimalEffectiveStage(female, breedings, NOW, [female, cria])).toBe(
+        'reproductor',
+      )
+    })
+
+    it('prioritizes crias_lactantes over embarazos when in multiple breedings', () => {
+      const female = createAnimal({ id: 'f-1', type: 'oveja' })
+      const cria = createLiveCria({ id: 'cria-1', motherId: 'f-1' })
+      const breedings = [
+        createBreeding({
+          id: 'b-pregnant',
+          femaleBreedingInfo: [{ femaleId: 'f-1', pregnancyConfirmedDate: new Date('2026-02-01') }],
+        }),
+        createBreeding({
+          id: 'b-birthed',
+          femaleBreedingInfo: [
+            { femaleId: 'f-1', actualBirthDate: recentBirth, offspring: ['cria-1'] },
+          ],
+        }),
+      ]
+      expect(computeAnimalEffectiveStage(female, breedings, NOW, [female, cria])).toBe(
+        'crias_lactantes',
+      )
+    })
   })
 
-  it('returns base stage for female with old birth (past weaning)', () => {
-    const female = createAnimal({ id: 'f-1', type: 'oveja' })
-    const oldBirth = new Date(NOW)
-    oldBirth.setDate(oldBirth.getDate() - 200)
-    const breedings = [
-      createBreeding({
-        femaleBreedingInfo: [{ femaleId: 'f-1', actualBirthDate: oldBirth }],
-      }),
-    ]
-    expect(computeAnimalEffectiveStage(female, breedings, NOW)).toBe('reproductor')
-  })
+  describe('fallback via animal.birthedAt', () => {
+    it('returns crias_lactantes via birthedAt when no breeding record and animals not provided', () => {
+      const recentBirth = new Date(NOW)
+      recentBirth.setDate(recentBirth.getDate() - 10)
+      const female = createAnimal({ id: 'f-1', type: 'oveja', birthedAt: recentBirth })
+      expect(computeAnimalEffectiveStage(female, [], NOW)).toBe('crias_lactantes')
+    })
 
-  it('prioritizes crias_lactantes over embarazos when in multiple breedings', () => {
-    const female = createAnimal({ id: 'f-1', type: 'oveja' })
-    const recentBirth = new Date(NOW)
-    recentBirth.setDate(recentBirth.getDate() - 10)
-    const breedings = [
-      createBreeding({
-        id: 'b-pregnant',
-        femaleBreedingInfo: [{ femaleId: 'f-1', pregnancyConfirmedDate: new Date('2026-02-01') }],
-      }),
-      createBreeding({
-        id: 'b-birthed',
-        femaleBreedingInfo: [{ femaleId: 'f-1', actualBirthDate: recentBirth }],
-      }),
-    ]
-    expect(computeAnimalEffectiveStage(female, breedings, NOW)).toBe('crias_lactantes')
+    it('returns crias_lactantes via birthedAt when a live cria has motherId', () => {
+      const recentBirth = new Date(NOW)
+      recentBirth.setDate(recentBirth.getDate() - 10)
+      const female = createAnimal({ id: 'f-1', type: 'oveja', birthedAt: recentBirth })
+      const cria = createLiveCria({ id: 'cria-1', motherId: 'f-1' })
+      expect(computeAnimalEffectiveStage(female, [], NOW, [female, cria])).toBe('crias_lactantes')
+    })
+
+    it('returns base stage via birthedAt when all crias with motherId are dead', () => {
+      const recentBirth = new Date(NOW)
+      recentBirth.setDate(recentBirth.getDate() - 10)
+      const female = createAnimal({ id: 'f-1', type: 'oveja', birthedAt: recentBirth })
+      const deadCria = createLiveCria({ id: 'cria-1', motherId: 'f-1', status: 'muerto' })
+      expect(computeAnimalEffectiveStage(female, [], NOW, [female, deadCria])).toBe('reproductor')
+    })
   })
 })

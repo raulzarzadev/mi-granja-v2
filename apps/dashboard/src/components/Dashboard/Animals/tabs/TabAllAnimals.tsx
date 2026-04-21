@@ -23,7 +23,7 @@ interface Props {
   onBulkSale: (ids: string[], clear: () => void) => void
 }
 
-const TabTodos: React.FC<Props> = ({
+const TabAllAnimals: React.FC<Props> = ({
   filters,
   setFilters,
   filteredAnimals,
@@ -114,4 +114,4 @@ const TabTodos: React.FC<Props> = ({
   </>
 )
 
-export default TabTodos
+export default TabAllAnimals

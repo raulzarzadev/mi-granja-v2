@@ -142,13 +142,19 @@ export function isJuvenile(animal: Animal): boolean {
  *   - Macho activo → 'empadre'
  *   - Hembra sin gestación confirmada y sin parto → 'empadre'
  *   - Hembra con gestación confirmada y sin parto → 'embarazos'
- *   - Hembra con parto reciente (dentro del periodo de lactancia) → 'crias_lactantes'
+ *   - Hembra con parto reciente (dentro del periodo de lactancia) Y con al menos una
+ *     cría viva y sin destetar → 'crias_lactantes'
  * Si no, regresa el resultado de computeAnimalStage (AnimalStage base).
+ *
+ * @param animals - Lista completa de animales de la granja. Si se provee, se verifica
+ *   que la madre tenga al menos una cría viva y sin destetar para retornar
+ *   'crias_lactantes'. Sin este parámetro el check es solo por fecha (fallback).
  */
 export function computeAnimalEffectiveStage(
   animal: Animal,
   breedings: BreedingRecord[],
   now: Date = new Date(),
+  animals?: Animal[],
 ): AnimalStageKey {
   const activeBreedings = (breedings || []).filter((b) => b.status !== 'finished')
 
@@ -178,9 +184,11 @@ export function computeAnimalEffectiveStage(
         (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24),
       )
       if (daysSinceBirth <= weaningDays) {
-        bestState = 'crias_lactantes'
+        // Verificar que al menos una cría esté viva y sin destetar
+        const hasActiveCria = hasLivingUnweanedOffspring(info.offspring, animals, animal.id)
+        if (hasActiveCria) bestState = 'crias_lactantes'
       }
-      // si ya pasó destete, este empadre no aporta estado activo
+      // si ya pasó destete o no hay crías activas, este empadre no aporta estado activo
     } else if (info.pregnancyConfirmedDate) {
       // embarazos > empadre en prioridad
       if (bestState !== 'crias_lactantes') bestState = 'embarazos'
@@ -199,12 +207,50 @@ export function computeAnimalEffectiveStage(
       const daysSinceBirth = Math.floor(
         (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24),
       )
-      if (daysSinceBirth >= 0 && daysSinceBirth <= weaningDays) return 'crias_lactantes'
+      if (daysSinceBirth >= 0 && daysSinceBirth <= weaningDays) {
+        // Verificar crías vivas y sin destetar via motherId si tenemos el listado
+        const hasActiveCria = hasLivingUnweanedOffspring(undefined, animals, animal.id)
+        if (hasActiveCria) return 'crias_lactantes'
+      }
     }
     if (animal.pregnantAt) return 'embarazos'
   }
 
   return baseStage
+}
+
+/**
+ * Verifica si la madre tiene al menos una cría viva y sin destetar.
+ * Si no se dispone de la lista de animales, retorna `true` como fallback
+ * (se mantiene el comportamiento previo solo por fecha).
+ */
+function hasLivingUnweanedOffspring(
+  offspringIds: string[] | undefined,
+  animals: Animal[] | undefined,
+  motherId: string,
+): boolean {
+  if (!animals) return true // fallback: sin lista de animales, confiar en fecha
+
+  const isAlive = (a: Animal) => a.status !== 'muerto' && a.status !== 'vendido'
+  const isUnweaned = (a: Animal) => !a.isWeaned && !a.weanedAt
+
+  // Buscar por IDs de offspring del breeding record
+  if (offspringIds && offspringIds.length > 0) {
+    return offspringIds.some((id) => {
+      const cria = animals.find((a) => a.id === id)
+      return cria && isAlive(cria) && isUnweaned(cria)
+    })
+  }
+
+  // Fallback: buscar crías cuyo motherId apunta a esta madre (por id o animalNumber)
+  // motherId puede ser el id de Firestore o el animalNumber (legado)
+  const motherAnimal = animals.find((a) => a.id === motherId)
+  return animals.some(
+    (a) =>
+      (a.motherId === motherId || (motherAnimal && a.motherId === motherAnimal.animalNumber)) &&
+      isAlive(a) &&
+      isUnweaned(a),
+  )
 }
 
 /**

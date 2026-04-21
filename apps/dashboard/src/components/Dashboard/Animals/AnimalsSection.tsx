@@ -4,32 +4,18 @@ import { addDays, differenceInCalendarDays } from 'date-fns'
 import { doc, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import React, { useCallback, useMemo, useState } from 'react'
-import AnimalCard from '@/components/AnimalCard'
-import BreedingCard from '@/components/BreedingCard'
-import BreedingTable from '@/components/BreedingTable'
 import Button from '@/components/buttons/Button'
-import ButtonConfirm from '@/components/buttons/ButtonConfirm'
 import NumbersTab from '@/components/Dashboard/Animals/NumbersTab'
-import DataTable, { ColumnDef } from '@/components/DataTable'
-import { Icon } from '@/components/Icon/icon'
 import { Modal } from '@/components/Modal'
-import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import ModalBirthForm from '@/components/ModalBirthForm'
 import ModalBreedingAnimalDetails from '@/components/ModalBreedingAnimalDetails'
 import ModalBulkEdit from '@/components/ModalBulkEdit'
 import ModalConfirmPregnancy from '@/components/ModalConfirmPregnancy'
-import ModalOnboarding from '@/components/onboarding/ModalOnboarding'
 import StatisticsTab from '@/components/StatisticsTab'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
-import {
-  animalAge,
-  computeAnimalEffectiveStage,
-  computeAnimalStage,
-  findAnimalByRef,
-  formatWeight,
-} from '@/lib/animal-utils'
+import { computeAnimalStage, findAnimalByRef } from '@/lib/animal-utils'
 import { calculateExpectedBirthDate, getWeaningDays } from '@/lib/animalBreedingConfig'
 import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { formatDate, toDate } from '@/lib/dates'
@@ -37,70 +23,44 @@ import { db } from '@/lib/firebase'
 import {
   Animal,
   AnimalStageKey,
-  animal_gender_config,
   animal_stage_config,
-  animal_status_colors,
-  animal_status_labels,
   animals_types_labels,
 } from '@/types/animals'
-import { BreedingRecord, FemaleBreedingInfo } from '@/types/breedings'
+import { BreedingRecord } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 import ModalBulkHealthAction from '../../ModalBulkHealthAction'
 import ModalSaleForm from '../../ModalSaleForm'
-import { AnimalFilters, AnimalsFilters, useAnimalFilters } from './animals-filters'
+import { AnimalFilters, useAnimalFilters } from './animals-filters'
 import { buildAllAnimalColumns, buildAnimalColumns } from './columns/animalColumns'
 import { buildDestetesColumns, type UnweanedRow } from './columns/destetesColumns'
+import { buildNoursingColumns } from './columns/noursingMothersColumns'
 import { buildPartosColumns, type EnrichedPregnant } from './columns/partosColumns'
+import {
+  CHIP_COLORS,
+  groupFemalesByStatus,
+  sortFemalesByAnimalNumber,
+} from './helpers/breedingViewHelpers'
 import { useAnimalStages } from './hooks/useAnimalStages'
 import { useBreedingHandlers } from './hooks/useBreedingHandlers'
 import { usePregnantFemales } from './hooks/usePregnantFemales'
-import SimpleStageTab from './stages/SimpleStageTab'
+import TabStageEmpadre from './tabStages/TabStageEmpadre'
+import TabStagePregnant from './tabStages/TabStagePregnant'
+import TabStageCrias from './tabStages/TabStageCrias'
+import TabStageNoursingMothers from './tabStages/TabStageNoursingMothers'
+import TabStageRepro from './tabStages/TabStageRepro'
+import TabStageJuvenil from './tabStages/TabStageJuvenil'
+import TabStageEngorda from './tabStages/TabStageEngorda'
+import TabStageDescarte from './tabStages/TabStageDescarte'
+import TabAllAnimals from './tabs/TabAllAnimals'
 import TabEtapas from './tabs/TabEtapas'
-import TabTodos from './tabs/TabTodos'
-
-const ICON_GENDER_SIZE = 4
 
 interface AnimalsSectionProps {
   filters: AnimalFilters
   setFilters: React.Dispatch<React.SetStateAction<AnimalFilters>>
 }
 
-// --- Helpers para agrupación de hembras por status ---
-type FemaleGroup = {
-  key: 'empadre' | 'embarazada' | 'parida'
-  label: string
-  items: FemaleBreedingInfo[]
-}
-
-export function groupFemalesByStatus(females: FemaleBreedingInfo[]): FemaleGroup[] {
-  return [
-    {
-      key: 'empadre',
-      label: 'En empadre',
-      items: females.filter((fi) => !fi.pregnancyConfirmedDate && !fi.actualBirthDate),
-    },
-    {
-      key: 'embarazada',
-      label: 'Embarazada',
-      items: females.filter((fi) => fi.pregnancyConfirmedDate && !fi.actualBirthDate),
-    },
-    { key: 'parida', label: 'Parida', items: females.filter((fi) => fi.actualBirthDate) },
-  ]
-}
-
-const CHIP_COLORS: Record<FemaleGroup['key'], string> = {
-  empadre: 'bg-yellow-50 text-yellow-800 border-yellow-200',
-  embarazada: 'bg-blue-50 text-blue-800 border-blue-200',
-  parida: 'bg-green-50 text-green-800 border-green-200',
-}
-
-export function sortFemalesByAnimalNumber(items: FemaleBreedingInfo[], animals: Animal[]) {
-  return [...items].sort((a, b) => {
-    const numA = animals.find((an) => an.id === a.femaleId)?.animalNumber || ''
-    const numB = animals.find((an) => an.id === b.femaleId)?.animalNumber || ''
-    return numA.localeCompare(numB, 'es', { numeric: true })
-  })
-}
+// Re-exported for components that still import from here
+export { groupFemalesByStatus, sortFemalesByAnimalNumber, CHIP_COLORS }
 
 /**
  * Sección de Animales con sub-tabs: Todos, Etapas, Estadísticas
@@ -479,8 +439,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   ])
 
   // --- Etapas por computeAnimalEffectiveStage (una etapa por animal, sin duplicados) ---
-  const { engordaAnimals, juvenilAnimals, reproductorAnimals, criaAnimals, descarteAnimals } =
-    useAnimalStages({ activeAnimals, breedingRecords, matchesEtapasFilters })
+  const { engordaAnimals, juvenilAnimals, reproductorAnimals, criaAnimals, descarteAnimals, noursingMothersRows } =
+    useAnimalStages({ activeAnimals, animals, breedingRecords, matchesEtapasFilters })
 
   const empadresCount = orderedBreedings.needPregnancyConfirmation.length
   const empadreFemalesCount = useMemo(() => {
@@ -618,364 +578,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   // ETAPAS SUB-TABS CONTENT
   // ========================
 
-  const [showOnboarding, setShowOnboarding] = useState(false)
-
-  // Tab: Empadre
-  const empadreContent = (
-    <div>
-      <ModalOnboarding isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
-      {duplicateEmpadreFemales.length > 0 && (
-        <div className="mb-3 p-3 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 text-sm">
-          <div className="font-semibold mb-2">
-            ⚠️ {duplicateEmpadreFemales.length} hembra
-            {duplicateEmpadreFemales.length !== 1 ? 's' : ''} en múltiples empadres activos
-          </div>
-          <div className="text-xs text-amber-800 mb-2">
-            Termina el empadre anterior o confirma embarazo para que no se cuenten dos veces.
-          </div>
-          <ul className="text-xs space-y-1">
-            {duplicateEmpadreFemales.map((d) => {
-              const recordsToShow = orderedBreedings.needPregnancyConfirmation.filter((r) =>
-                d.records.some((dr) => dr.id === r.id),
-              )
-              return (
-                <li key={d.id} className="flex flex-wrap items-center gap-1.5">
-                  <span className="font-semibold text-amber-900">{d.animalNumber}</span>
-                  <span className="text-amber-700">en</span>
-                  {recordsToShow.map((r) => (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => setViewingBreedingRecord(r)}
-                      className="px-1.5 py-0.5 rounded bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 cursor-pointer"
-                    >
-                      {r.breedingId || r.id.slice(0, 6)}
-                    </button>
-                  ))}
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      )}
-      <BreedingTable
-        records={[...orderedBreedings.needPregnancyConfirmation]}
-        animals={animals}
-        onSelect={(record) => setViewingBreedingRecord(record)}
-        onDelete={async (ids) => {
-          for (const id of ids) await deleteBreedingRecord(id)
-        }}
-        onConfirmPregnancy={(record) => {
-          setConfirmPregnancyRecord(record)
-          setSelectedAnimal(null)
-        }}
-        toolbar={
-          <div className="flex items-center gap-2">
-            <Button
-              size="xs"
-              variant="ghost"
-              color="primary"
-              icon="help"
-              onClick={() => setShowOnboarding(true)}
-              title="Ver guia de primeros pasos"
-            />
-            <Button
-              size="xs"
-              color="success"
-              icon="add"
-              onClick={() => router.push('/empadre/nueva')}
-            >
-              Nuevo Empadre
-            </Button>
-          </div>
-        }
-        renderCard={(row) => (
-          <BreedingCard
-            record={row.record}
-            animals={animals}
-            onEdit={editRecord}
-            onAddBirth={handleOpenAddBirth}
-            onConfirmPregnancy={(record, femaleId) => handleOpenConfirmPregnancy(record, femaleId)}
-            onUnconfirmPregnancy={handleUnconfirmPregnancy}
-            onDelete={(rec) => deleteBreedingRecord(rec.id)}
-            onRemoveFromBreeding={handleRemoveFromBreeding}
-            onDeleteBirth={handleRevertBirth}
-          />
-        )}
-        onView={(row) => {
-          const r = row.record
-          const male = animals.find((a) => a.id === r.maleId)
-          const ViewModal = () => {
-            const [open, setOpen] = useState(false)
-            const [confirming, setConfirming] = useState(false)
-            return (
-              <>
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  color="primary"
-                  icon="view"
-                  onClick={() => setOpen(true)}
-                >
-                  Ver
-                </Button>
-                <Modal
-                  isOpen={open}
-                  onClose={() => setOpen(false)}
-                  title={`Empadre ${r.breedingId || ''}`}
-                >
-                  <div className="p-4 space-y-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Fecha</span>
-                      <span className="font-medium">
-                        {r.breedingDate ? formatDate(r.breedingDate, 'dd MMM yyyy') : '—'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Macho</span>
-                      <span className="font-medium">
-                        {male?.animalNumber || '?'}{' '}
-                        <span className="text-xs text-gray-400">
-                          {male ? animals_types_labels[male.type] : ''}
-                        </span>
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">
-                        Hembras ({r.femaleBreedingInfo.length})
-                      </p>
-                      <div className="space-y-3">
-                        {groupFemalesByStatus(r.femaleBreedingInfo).map((g) => (
-                          <div key={g.key}>
-                            <span
-                              className={`text-xs font-semibold ${g.items.length === 0 ? 'text-gray-400' : 'text-gray-600'}`}
-                            >
-                              {g.label} ({g.items.length})
-                            </span>
-                            {g.items.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5 mt-1">
-                                {sortFemalesByAnimalNumber(g.items, animals).map((fi) => {
-                                  const fem = animals.find((a) => a.id === fi.femaleId)
-                                  return (
-                                    <span
-                                      key={fi.femaleId}
-                                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${CHIP_COLORS[g.key]}`}
-                                    >
-                                      {fem?.animalNumber || fi.femaleId}
-                                    </span>
-                                  )
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    {r.status === 'finished' && (
-                      <div className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 text-center">
-                        Empadre terminado
-                      </div>
-                    )}
-                    {confirming ? (
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-3">
-                        <p className="text-sm text-amber-800">
-                          Las hembras pendientes (en empadre) quedarán disponibles para nuevos
-                          empadres. Las que amamantan seguirán ocupadas hasta el destete.
-                        </p>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            color="neutral"
-                            onClick={() => setConfirming(false)}
-                            className="flex-1"
-                          >
-                            Cancelar
-                          </Button>
-                          <Button
-                            size="sm"
-                            color="warning"
-                            icon="check_circle"
-                            className="flex-1"
-                            onClick={async () => {
-                              await updateBreedingRecord(r.id, { status: 'finished' })
-                              setOpen(false)
-                              setConfirming(false)
-                            }}
-                          >
-                            Confirmar
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          size="sm"
-                          color="primary"
-                          icon="edit"
-                          onClick={() => {
-                            setOpen(false)
-                            editRecord(r)
-                          }}
-                          className="flex-1"
-                        >
-                          Editar
-                        </Button>
-                        {r.status !== 'finished' ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            color="warning"
-                            icon="check_circle"
-                            className="flex-1"
-                            onClick={() => setConfirming(true)}
-                          >
-                            Terminar
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            color="success"
-                            className="flex-1"
-                            icon="check_circle"
-                            onClick={async () => {
-                              await updateBreedingRecord(r.id, { status: 'active' })
-                              setOpen(false)
-                            }}
-                          >
-                            Reactivar
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </Modal>
-              </>
-            )
-          }
-          return <ViewModal />
-        }}
-      />
-      {orderedBreedings.terminated.length > 0 && (
-        <details className="mt-6">
-          <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700 flex items-center gap-2 py-2">
-            Empadres terminados ({orderedBreedings.terminated.length})
-          </summary>
-          <div className="mt-2">
-            <BreedingTable
-              records={orderedBreedings.terminated}
-              animals={animals}
-              onSelect={(record) => setViewingBreedingRecord(record)}
-              onDelete={async (ids) => {
-                for (const id of ids) await deleteBreedingRecord(id)
-              }}
-              onView={(row) => {
-                const r = row.record
-                const male = animals.find((a) => a.id === r.maleId)
-                const ViewModal = () => {
-                  const [open, setOpen] = useState(false)
-                  return (
-                    <>
-                      <Button
-                        size="xs"
-                        variant="ghost"
-                        color="primary"
-                        icon="view"
-                        onClick={() => setOpen(true)}
-                      >
-                        Ver
-                      </Button>
-                      <Modal
-                        isOpen={open}
-                        onClose={() => setOpen(false)}
-                        title={`Empadre ${r.breedingId || ''}`}
-                      >
-                        <div className="p-4 space-y-4">
-                          <div className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 text-center">
-                            Empadre terminado
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-500">Fecha</span>
-                            <span className="font-medium">
-                              {r.breedingDate ? formatDate(r.breedingDate, 'dd MMM yyyy') : '—'}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-500">Macho</span>
-                            <span className="font-medium">{male?.animalNumber || '?'}</span>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500 mb-2">
-                              Hembras ({r.femaleBreedingInfo.length})
-                            </p>
-                            <div className="space-y-3">
-                              {groupFemalesByStatus(r.femaleBreedingInfo).map((g) => (
-                                <div key={g.key}>
-                                  <span
-                                    className={`text-xs font-semibold ${g.items.length === 0 ? 'text-gray-400' : 'text-gray-600'}`}
-                                  >
-                                    {g.label} ({g.items.length})
-                                  </span>
-                                  {g.items.length > 0 && (
-                                    <div className="flex flex-wrap gap-1.5 mt-1">
-                                      {sortFemalesByAnimalNumber(g.items, animals).map((fi) => {
-                                        const fem = animals.find((a) => a.id === fi.femaleId)
-                                        return (
-                                          <span
-                                            key={fi.femaleId}
-                                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${CHIP_COLORS[g.key]}`}
-                                          >
-                                            {fem?.animalNumber || fi.femaleId}
-                                          </span>
-                                        )
-                                      })}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="flex gap-2 pt-2">
-                            <Button
-                              size="sm"
-                              color="primary"
-                              icon="edit"
-                              onClick={() => {
-                                setOpen(false)
-                                editRecord(r)
-                              }}
-                              className="flex-1"
-                            >
-                              Editar
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              color="success"
-                              className="flex-1"
-                              icon="check_circle"
-                              onClick={async () => {
-                                await updateBreedingRecord(r.id, { status: 'active' })
-                                setOpen(false)
-                              }}
-                            >
-                              Reactivar
-                            </Button>
-                          </div>
-                        </div>
-                      </Modal>
-                    </>
-                  )
-                }
-                return <ViewModal />
-              }}
-            />
-          </div>
-        </details>
-      )}
-    </div>
-  )
+  // Tab: Empadre — see TabStageEmpadre
 
   // Partos ordenados por días restantes (atrasados primero, luego más próximos)
   const enrichedPregnantFemales: EnrichedPregnant[] = useMemo(
@@ -997,76 +600,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
 
   const partosColumns = useMemo(() => buildPartosColumns(), [])
 
-  // Tab: Embarazos
-  const partosContent = (
-    <div>
-      <p className="text-xs text-gray-500 mb-2">
-        Hembras con embarazo confirmado, en espera de parto.
-      </p>
-      <DataTable
-        title={`${animal_stage_config.embarazos.icon} Embarazos`}
-        data={enrichedPregnantFemales}
-        columns={partosColumns}
-        rowKey={(row) => row.animal.id}
-        defaultSortKey="expected"
-        sessionStorageKey="mg_last_parto_id"
-        selectable
-        emptyMessage="No hay partos próximos."
-        onView={(row) => (
-          <ModalAnimalDetails
-            animal={row.animal}
-            triggerComponent={
-              <Button size="xs" variant="ghost" color="primary" icon="view">
-                Ver
-              </Button>
-            }
-          />
-        )}
-        renderActions={(row) => (
-          <>
-            {row.record && (
-              <Button
-                size="xs"
-                color="success"
-                icon="baby"
-                onClick={() => {
-                  setBirthRecord(row.record!)
-                  setBirthFemaleId(row.animal.id)
-                }}
-              >
-                Parto
-              </Button>
-            )}
-            {row.record && (
-              <Button
-                size="xs"
-                variant="ghost"
-                color="primary"
-                icon="edit"
-                onClick={() => editRecord(row.record!)}
-              >
-                Empadre
-              </Button>
-            )}
-            <ButtonConfirm
-              openProps={{ size: 'xs', variant: 'ghost', color: 'error', icon: 'close' }}
-              confirmProps={{ color: 'error' }}
-              openLabel="Desconfirmar"
-              confirmText={`¿Desconfirmar embarazo de ${row.animal.animalNumber}?`}
-              confirmLabel="Desconfirmar"
-              onConfirm={async () => {
-                if (row.record) {
-                  await handleUnconfirmPregnancy(row.record, row.animal.id)
-                } else {
-                  await update(row.animal.id, { pregnantAt: null, pregnantBy: null })
-                }
-              }}
-            />
-          </>
-        )}
-      />
-    </div>
-  )
+  // Tab: Embarazos — see TabStagePregnant
 
   // Tab: Crías — recién nacidos en espera de destete
   const allCrias: UnweanedRow[] = useMemo(() => {
@@ -1122,18 +656,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     return [...fromBreeding, ...allStandalone]
   }, [unweanedOffspring, activeAnimals, breedingRecords, animals, filters])
 
-  // Madres únicas de las crías mostradas (consistente con filtros de búsqueda)
-  const nursingMotherIds = useMemo(() => {
-    const ids = new Set<string>()
-    for (const entry of allCrias) {
-      if (!entry.motherId) continue
-      // Normalizar a doc id (entry.motherId puede ser id o animalNumber)
-      const mother = findAnimalByRef(animals, entry.motherId)
-      ids.add(mother?.id || entry.motherId)
-    }
-    return ids
-  }, [allCrias, animals])
-
   // Cross-tab duplicates: animales contados en 2+ tabs de Etapas
   const crossTabDuplicates = useMemo(() => {
     const tabBuckets: Record<string, Set<string>> = {
@@ -1143,7 +665,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         ...unweanedOffspring.map((e) => e.animal.id),
         ...criaAnimals.map((a) => a.id),
       ]),
-      Madres: new Set(nursingMotherIds),
+      Madres: new Set(noursingMothersRows.map((r) => r.animal.id)),
       Juvenil: new Set(juvenilAnimals.map((a) => a.id)),
       Engorda: new Set(engordaAnimals.map((a) => a.id)),
       Descarte: new Set(descarteAnimals.map((a) => a.id)),
@@ -1183,7 +705,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     pregnantFemales,
     unweanedOffspring,
     criaAnimals,
-    nursingMotherIds,
+    noursingMothersRows,
     juvenilAnimals,
     engordaAnimals,
     descarteAnimals,
@@ -1191,156 +713,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     animals,
   ])
 
-  const destetesContent = (
-    <div>
-      <p className="text-xs text-gray-500 mb-2">Recién nacidos, en espera de destete.</p>
-      <DataTable
-        title={`${animal_stage_config.crias_lactantes.icon} Crías`}
-        data={allCrias}
-        columns={destetesColumns}
-        rowKey={(row) => row.animal.id}
-        defaultSortKey="weanDate"
-        sessionStorageKey="mg_last_destete_id"
-        selectable
-        renderBulkActions={(ids) => (
-          <>
-            <Button size="xs" color="warning" onClick={() => openBulkWean('engorda', ids)}>
-              {animal_stage_config.engorda.icon} Engorda ({ids.size})
-            </Button>
-            <Button size="xs" color="error" onClick={() => openBulkWean('reproductor', ids)}>
-              {animal_stage_config.reproductor.icon} Reproductor ({ids.size})
-            </Button>
-          </>
-        )}
-        onView={(row) => (
-          <ModalAnimalDetails
-            animal={row.animal}
-            triggerComponent={
-              <Button size="xs" variant="ghost" color="primary" icon="view">
-                Ver
-              </Button>
-            }
-          />
-        )}
-        renderActions={(row) => (
-          <>
-            <ButtonConfirm
-              openLabel={`${animal_stage_config.engorda.icon} Engorda`}
-              confirmLabel="Destetar a Engorda"
-              confirmText={`¿Destetar a #${row.animal.animalNumber} y moverlo a Engorda?`}
-              onConfirm={() => weanAndUpdateMother(row.animal.id, { stageDecision: 'engorda' })}
-              openProps={{ size: 'xs', variant: 'ghost', color: 'warning' }}
-              confirmProps={{ color: 'warning' }}
-            />
-            <ButtonConfirm
-              openLabel={`${animal_stage_config.reproductor.icon} Reproductor`}
-              confirmLabel="Destetar a Reproductor"
-              confirmText={`¿Destetar a #${row.animal.animalNumber} y moverlo a Reproductor?`}
-              onConfirm={() => weanAndUpdateMother(row.animal.id, { stageDecision: 'reproductor' })}
-              openProps={{ size: 'xs', variant: 'ghost', color: 'error' }}
-              confirmProps={{ color: 'error' }}
-            />
-          </>
-        )}
-        emptyMessage="No hay crías pendientes de destete."
-      />
-      {nursingMotherIds.size > 0 &&
-        (() => {
-          // Agrupar crías por madre y calcular el destete más urgente por madre
-          const motherMap = new Map<string, { motherId: string; minDaysUntilWean: number | null }>()
-          for (const entry of allCrias) {
-            if (!entry.motherId) continue
-            const existing = motherMap.get(entry.motherId)
-            if (!existing) {
-              motherMap.set(entry.motherId, {
-                motherId: entry.motherId,
-                minDaysUntilWean: entry.daysUntilWean,
-              })
-            } else if (
-              entry.daysUntilWean !== null &&
-              (existing.minDaysUntilWean === null ||
-                entry.daysUntilWean < existing.minDaysUntilWean)
-            ) {
-              existing.minDaysUntilWean = entry.daysUntilWean
-            }
-          }
-          const overdue = [...motherMap.values()]
-            .filter((m) => m.minDaysUntilWean !== null && m.minDaysUntilWean < 0)
-            .sort((a, b) => (a.minDaysUntilWean ?? 0) - (b.minDaysUntilWean ?? 0))
-          const upcoming = [...motherMap.values()]
-            .filter((m) => m.minDaysUntilWean === null || m.minDaysUntilWean >= 0)
-            .sort((a, b) => (a.minDaysUntilWean ?? 999) - (b.minDaysUntilWean ?? 999))
-
-          return (
-            <div className="mt-4 space-y-2">
-              <p className="text-xs font-semibold text-gray-600">
-                Madres amamantando ({motherMap.size})
-              </p>
-              {overdue.length > 0 && (
-                <div>
-                  <span className="text-xs font-semibold text-red-600">
-                    Destetes atrasados ({overdue.length})
-                  </span>
-                  <div className="flex flex-wrap gap-1.5 mt-1">
-                    {overdue.map((m) => {
-                      const mother = findAnimalByRef(animals, m.motherId)
-                      return (
-                        <ModalAnimalDetails
-                          key={m.motherId}
-                          animal={mother!}
-                          triggerComponent={
-                            <button
-                              type="button"
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border cursor-pointer transition-all hover:shadow-sm bg-red-50 text-red-800 border-red-200 hover:bg-red-100"
-                            >
-                              {mother?.animalNumber || m.motherId}
-                              <span className="text-[10px] opacity-70">
-                                ({Math.abs(m.minDaysUntilWean!)}d)
-                              </span>
-                            </button>
-                          }
-                        />
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-              {upcoming.length > 0 && (
-                <div>
-                  <span className="text-xs font-semibold text-gray-500">
-                    Destetes próximos ({upcoming.length})
-                  </span>
-                  <div className="flex flex-wrap gap-1.5 mt-1">
-                    {upcoming.map((m) => {
-                      const mother = findAnimalByRef(animals, m.motherId)
-                      return (
-                        <ModalAnimalDetails
-                          key={m.motherId}
-                          animal={mother!}
-                          triggerComponent={
-                            <button
-                              type="button"
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border cursor-pointer transition-all hover:shadow-sm bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
-                            >
-                              {mother?.animalNumber || m.motherId}
-                              {m.minDaysUntilWean !== null && (
-                                <span className="text-[10px] opacity-70">
-                                  ({m.minDaysUntilWean}d)
-                                </span>
-                              )}
-                            </button>
-                          }
-                        />
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )
-        })()}
-    </div>
-  )
+  // Tab: Crías — see TabStageCrias
+  // Tab: Madres Lactantes — see TabStageNoursingMothers
 
   // ========================
   // SUB-TABS DE ETAPAS
@@ -1352,68 +726,85 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
 
   const animalColumns = useMemo(() => buildAnimalColumns(), [])
   const allAnimalColumns = useMemo(() => buildAllAnimalColumns(breedingRecords), [breedingRecords])
+  const noursingMothersColumns = useMemo(() => buildNoursingColumns(animals), [animals])
 
   const etapasTabs = [
     {
       label: etapaLabel('reproductor', reproductorAnimals.length),
-      content: (
-        <SimpleStageTab
-          title={`${animal_stage_config.reproductor.icon} Reproducción`}
-          data={reproductorAnimals}
-          columns={animalColumns}
-          sessionStorageKey="mg_last_reproductor_id"
-          emptyMessage="No hay animales en reproducción."
-        />
-      ),
+      content: <TabStageRepro animals={reproductorAnimals} columns={animalColumns} />,
     },
     {
       label: etapaLabel('empadre', empadreFemalesCount),
       badgeCount: empadresCount,
-      content: empadreContent,
+      content: (
+        <TabStageEmpadre
+          orderedBreedings={orderedBreedings}
+          animals={animals}
+          duplicateEmpadreFemales={duplicateEmpadreFemales}
+          onSelectRecord={(r) => setViewingBreedingRecord(r)}
+          onDeleteRecord={async (id) => deleteBreedingRecord(id)}
+          onConfirmPregnancy={(r) => {
+            setConfirmPregnancyRecord(r)
+            setSelectedAnimal(null)
+          }}
+          onAddBirth={handleOpenAddBirth}
+          onUnconfirmPregnancy={handleUnconfirmPregnancy}
+          onRemoveFromBreeding={handleRemoveFromBreeding}
+          onDeleteBirth={handleRevertBirth}
+          onEditRecord={editRecord}
+          onNewEmpadre={() => router.push('/empadre/nueva')}
+          updateBreedingRecord={updateBreedingRecord}
+        />
+      ),
     },
     {
       label: etapaLabel('embarazos', pregnantFemales.length),
-      content: partosContent,
+      content: (
+        <TabStagePregnant
+          enrichedPregnantFemales={enrichedPregnantFemales}
+          columns={partosColumns}
+          onAddBirth={(record, femaleId) => {
+            setBirthRecord(record)
+            setBirthFemaleId(femaleId)
+          }}
+          onEditRecord={editRecord}
+          onUnconfirmPregnancy={handleUnconfirmPregnancy}
+          onUpdateAnimal={update}
+        />
+      ),
     },
     {
-      label: `${animal_stage_config.crias_lactantes.icon} Crías (${unweanedOffspring.length + criaAnimals.length}) Madres (${nursingMotherIds.size})`,
-      content: destetesContent,
+      label: etapaLabel('cria', unweanedOffspring.length + criaAnimals.length),
+      content: (
+        <TabStageCrias
+          allCrias={allCrias}
+          columns={destetesColumns}
+          openBulkWean={openBulkWean}
+          weanAndUpdateMother={weanAndUpdateMother}
+        />
+      ),
+    },
+    {
+      label: etapaLabel('crias_lactantes', noursingMothersRows.length),
+      content: (
+        <TabStageNoursingMothers
+          noursingMothersRows={noursingMothersRows}
+          columns={noursingMothersColumns}
+          animals={animals}
+        />
+      ),
     },
     {
       label: etapaLabel('juvenil', juvenilAnimals.length),
-      content: (
-        <SimpleStageTab
-          title={`${animal_stage_config.juvenil.icon} Juvenil`}
-          data={juvenilAnimals}
-          columns={animalColumns}
-          sessionStorageKey="mg_last_juvenil_id"
-          emptyMessage="No hay animales juveniles."
-        />
-      ),
+      content: <TabStageJuvenil animals={juvenilAnimals} columns={animalColumns} />,
     },
     {
       label: etapaLabel('engorda', engordaAnimals.length),
-      content: (
-        <SimpleStageTab
-          title={`${animal_stage_config.engorda.icon} Engorda`}
-          data={engordaAnimals}
-          columns={animalColumns}
-          sessionStorageKey="mg_last_engorda_id"
-          emptyMessage="No hay animales en engorda."
-        />
-      ),
+      content: <TabStageEngorda animals={engordaAnimals} columns={animalColumns} />,
     },
     {
       label: etapaLabel('descarte', descarteAnimals.length),
-      content: (
-        <SimpleStageTab
-          title={`${animal_stage_config.descarte.icon} Descarte`}
-          data={descarteAnimals}
-          columns={animalColumns}
-          sessionStorageKey="mg_last_descarte_id"
-          emptyMessage="No hay animales en descarte."
-        />
-      ),
+      content: <TabStageDescarte animals={descarteAnimals} columns={animalColumns} />,
     },
   ]
 
@@ -1424,7 +815,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     {
       label: 'Todos',
       content: (
-        <TabTodos
+        <TabAllAnimals
           filters={filters}
           setFilters={setFilters}
           filteredAnimals={filteredAnimals}
@@ -1474,7 +865,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
             pregnantFemales.length +
             unweanedOffspring.length +
             criaAnimals.length +
-            nursingMotherIds.size +
+            noursingMothersRows.length +
             juvenilAnimals.length +
             engordaAnimals.length +
             descarteAnimals.length

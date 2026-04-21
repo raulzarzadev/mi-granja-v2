@@ -6,18 +6,19 @@ import { findAnimalByRef } from '@/lib/animal-utils'
 import { toDate } from '@/lib/dates'
 import { type Animal, animal_gender_config } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
+import  AnimalBadge  from '@/components/AnimalBadges'
 
-export type UnweanedRow = {
+
+export type NoursingMotherRow = {
   animal: Animal
-  motherId: string
-  record: BreedingRecord
-  weanDate: Date | null
+  crias: Animal[]
+  unweanDate: Date | null
   daysUntilWean: number | null
 }
 
 const ICON_GENDER_SIZE = 4
 
-export const buildDestetesColumns = (animals: Animal[]): ColumnDef<UnweanedRow>[] => [
+export const buildNoursingColumns = (animals: Animal[]): ColumnDef<NoursingMotherRow>[] => [
   {
     key: 'number',
     label: '#',
@@ -57,48 +58,34 @@ export const buildDestetesColumns = (animals: Animal[]): ColumnDef<UnweanedRow>[
     className: 'whitespace-nowrap',
   },
   {
-    key: 'mother',
-    label: 'Madre',
+    key: 'crias',
+    label: 'Crias',
     sortable: true,
     sortFn: (a, b) => {
-      const mA = findAnimalByRef(animals, a.motherId)?.animalNumber || ''
-      const mB = findAnimalByRef(animals, b.motherId)?.animalNumber || ''
+      const mA = findAnimalByRef(animals, a.crias[0]?.id)?.animalNumber || ''
+      const mB = findAnimalByRef(animals, b.crias[0]?.id)?.animalNumber || ''
       return mA.localeCompare(mB, 'es', { numeric: true })
     },
     render: (row) => {
-      const mother = findAnimalByRef(animals, row.motherId)
-      return mother ? (
-        <ModalAnimalDetails
-          animal={mother}
-          triggerComponent={
-            <span className="text-gray-700 cursor-pointer hover:text-green-700 transition-colors">
-              {mother.animalNumber}
-            </span>
-          }
-        />
+      // Show crias AnimalBadge
+      //
+      const motherCrias = row.crias.map((cria) => (
+        <AnimalBadge key={cria.id} label={cria.animalNumber} />
+      ))
+      return motherCrias.length ? (
+        <div>
+          <span className="text-gray-700">{row.animal.animalNumber}</span>
+          <div className="flex gap-1">{motherCrias}</div>
+        </div>
       ) : (
         <span className="text-gray-400">—</span>
       )
     },
     className: 'whitespace-nowrap',
   },
+
   {
-    key: 'age',
-    label: 'Edad',
-    sortable: true,
-    sortFn: (a, b) =>
-      (a.animal.birthDate ? toDate(a.animal.birthDate).getTime() : 0) -
-      (b.animal.birthDate ? toDate(b.animal.birthDate).getTime() : 0),
-    render: (row) => {
-      if (!row.animal.birthDate) return <span className="text-gray-400">—</span>
-      const days = differenceInCalendarDays(new Date(), toDate(row.animal.birthDate))
-      const months = Math.floor(days / 30)
-      return <span className="text-gray-600">{months > 0 ? `${months}m` : `${days}d`}</span>
-    },
-    className: 'whitespace-nowrap',
-  },
-  {
-    key: 'weanDate',
+    key: 'unweanDate',
     label: 'Destete',
     sortable: true,
     sortFn: (a, b) => {
