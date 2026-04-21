@@ -109,8 +109,7 @@ export const buildDestetesColumns = (animals: Animal[]): ColumnDef<UnweanedRow>[
     },
     render: (row) => {
       const isOverdue = row.daysUntilWean !== null && row.daysUntilWean < 0
-      const isSoon =
-        row.daysUntilWean !== null && row.daysUntilWean >= 0 && row.daysUntilWean <= 7
+      const isSoon = row.daysUntilWean !== null && row.daysUntilWean >= 0 && row.daysUntilWean <= 7
       return (
         <span
           className={`inline-flex px-1.5 py-0.5 rounded-full text-xs font-medium ${

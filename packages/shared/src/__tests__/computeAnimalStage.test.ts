@@ -83,9 +83,9 @@ describe('computeAnimalStage — juvenil', () => {
     expect(computeAnimalStage(animal)).toBe('juvenil')
   })
 
-  it('oveja destetada temprano edad 1m → juvenil (destete manda sobre edad)', () => {
+  it('oveja destetada temprano edad 1m → cria (edad < weaningDays gate)', () => {
     const animal = makeAnimal({ isWeaned: true, birthDate: monthsAgo(1) })
-    expect(computeAnimalStage(animal)).toBe('juvenil')
+    expect(computeAnimalStage(animal)).toBe('cria')
   })
 
   // Vaca: minBreedingAge = 15
@@ -154,9 +154,9 @@ describe('computeAnimalStage — regla destete vs edad', () => {
     expect(computeAnimalStage(animal)).toBe('cria')
   })
 
-  it('destete marcado explícito adelanta a juvenil aunque edad sea baja', () => {
+  it('isWeaned=true pero edad < weaningDays → cria (gate doble)', () => {
     const animal = makeAnimal({ isWeaned: true, birthDate: monthsAgo(1) })
-    expect(computeAnimalStage(animal)).toBe('juvenil')
+    expect(computeAnimalStage(animal)).toBe('cria')
   })
 
   it('stage "reproductor" en Firestore pero !isWeaned → se recalcula a cria', () => {
@@ -188,9 +188,9 @@ describe('computeAnimalStage — edad aproximada', () => {
     expect(computeAnimalStage(animal)).toBe('reproductor')
   })
 
-  it('sin birthDate, age=1, oveja destetada → juvenil (destete gana)', () => {
+  it('sin birthDate, age=1, oveja destetada → cria (30d < 70d weaningDays)', () => {
     const animal = makeAnimal({ birthDate: undefined, age: 1, isWeaned: true })
-    expect(computeAnimalStage(animal)).toBe('juvenil')
+    expect(computeAnimalStage(animal)).toBe('cria')
   })
 })
 

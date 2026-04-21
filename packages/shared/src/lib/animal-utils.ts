@@ -88,33 +88,44 @@ const MANUAL_STAGES = new Set<AnimalStage>(['engorda', 'descarte'])
 /**
  * Calcula el stage de un animal basándose en sus parámetros.
  *
- * Regla canónica (NO auto-avance por edad):
+ * Regla canónica — cría requiere ambas condiciones para salir:
  *  - engorda / descarte: asignación manual, se respeta
- *  - !isWeaned  → 'cria' (permanece cría hasta que el usuario registra destete)
- *  - isWeaned + edad < minBreedingAge → 'juvenil'
- *  - isWeaned + edad >= minBreedingAge → 'reproductor'
+ *  - !isWeaned → 'cria' (sin destete registrado)
+ *  - ageDays < weaningDays → 'cria' (edad mínima de destete de la especie)
+ *  - isWeaned + ageDays >= weaningDays + ageMonths < minBreedingAge → 'juvenil'
+ *  - isWeaned + ageDays >= weaningDays + ageMonths >= minBreedingAge → 'reproductor'
  *
- * Nota: los animales NO avanzan a juvenil/reproductor solo por edad.
- * El destete (isWeaned=true) es el evento que marca la salida de la etapa cría,
- * y el destino (engorda/reproducción-juvenil) lo decide el usuario en ese momento.
+ * Gate doble: ni el destete prematuro ni la edad sola sacan de cría.
+ * Ambos deben cumplirse (evita que un bebé de 6 días marcado erróneamente
+ * como destetado aparezca en juvenil).
  */
 export function computeAnimalStage(animal: Animal): AnimalStage {
   // Stages manuales: el usuario los asignó explícitamente
   if (MANUAL_STAGES.has(animal.stage)) return animal.stage
 
-  // El destete es el evento que saca al animal de 'cria'.
-  // Sin destete registrado → permanece cría (la edad NO lo avanza sola).
   const isWeaned = animal.isWeaned === true || !!animal.weanedAt
   if (!isWeaned) return 'cria'
 
-  const ageMonths = animalAge(animal, { format: 'months' })
   const config = ANIMAL_BREEDING_CONFIGS[animal.type]
+  const weaningDays = animal.customWeaningDays ?? config?.weaningDays ?? 60
   const minBreedingAge = config?.minBreedingAge ?? 12
 
-  // Destetado pero aún no alcanza edad reproductiva → juvenil
+  // Edad en días: cría si menor a weaningDays incluso si marcado como destetado
+  let ageDays = 0
+  if (animal.birthDate) {
+    const birth = toDate(animal.birthDate)
+    ageDays = Math.floor((Date.now() - birth.getTime()) / (1000 * 60 * 60 * 24))
+  } else if (animal.age) {
+    ageDays = animal.age * 30
+  } else {
+    return 'cria'
+  }
+
+  if (ageDays < weaningDays) return 'cria'
+
+  const ageMonths = animalAge(animal, { format: 'months' })
   if (ageMonths < minBreedingAge) return 'juvenil'
 
-  // Destetado y en edad reproductiva → reproductor
   return 'reproductor'
 }
 

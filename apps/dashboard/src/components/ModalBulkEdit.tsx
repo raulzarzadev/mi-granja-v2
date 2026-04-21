@@ -78,9 +78,11 @@ export default function ModalBulkEdit({
     setSaving(true)
     setProgress({ current: 0, total: ids.length })
     try {
-      for (let i = 0; i < ids.length; i++) {
-        setProgress({ current: i + 1, total: ids.length })
-        await onSave([ids[i]], updates)
+      const CHUNK = 400
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        const slice = ids.slice(i, i + CHUNK)
+        await onSave(slice, updates)
+        setProgress({ current: Math.min(i + CHUNK, ids.length), total: ids.length })
       }
       onClose()
       setFields({

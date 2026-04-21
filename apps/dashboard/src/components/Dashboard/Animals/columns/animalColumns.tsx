@@ -39,10 +39,7 @@ export const buildAnimalColumns = (): ColumnDef<Animal>[] => [
     width: '10%',
     sortable: true,
     sortFn: (a, b) =>
-      (animals_types_labels[a.type] || '').localeCompare(
-        animals_types_labels[b.type] || '',
-        'es',
-      ),
+      (animals_types_labels[a.type] || '').localeCompare(animals_types_labels[b.type] || '', 'es'),
     render: (row) => <span className="text-gray-700">{animals_types_labels[row.type]}</span>,
   },
   {

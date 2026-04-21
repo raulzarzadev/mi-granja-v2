@@ -1,6 +1,7 @@
 'use client'
 
 import { addDays, differenceInCalendarDays } from 'date-fns'
+import { doc, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import React, { useCallback, useMemo, useState } from 'react'
 import AnimalCard from '@/components/AnimalCard'
@@ -30,7 +31,9 @@ import {
   formatWeight,
 } from '@/lib/animal-utils'
 import { calculateExpectedBirthDate, getWeaningDays } from '@/lib/animalBreedingConfig'
+import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { formatDate, toDate } from '@/lib/dates'
+import { db } from '@/lib/firebase'
 import {
   Animal,
   AnimalStageKey,
@@ -143,6 +146,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     decision: 'engorda' | 'reproductor'
   } | null>(null)
   const [isWeaning, setIsWeaning] = useState(false)
+  const [weanProgress, setWeanProgress] = useState<{ current: number; total: number } | null>(null)
   const [weanSuccess, setWeanSuccess] = useState<{
     animalNumbers: string[]
     decision: 'engorda' | 'reproductor'
@@ -154,16 +158,20 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
 
   const editRecord = (record: BreedingRecord) => router.push(`/empadre/${record.id}/editar`)
 
-  const { handleRemoveFromBreeding, handleUnconfirmPregnancy, handleRevertBirth, weanAndUpdateMother } =
-    useBreedingHandlers({
-      animals,
-      update,
-      remove,
-      wean,
-      addRecord,
-      updateBreedingRecord,
-      deleteBreedingRecord,
-    })
+  const {
+    handleRemoveFromBreeding,
+    handleUnconfirmPregnancy,
+    handleRevertBirth,
+    weanAndUpdateMother,
+  } = useBreedingHandlers({
+    animals,
+    update,
+    remove,
+    wean,
+    addRecord,
+    updateBreedingRecord,
+    deleteBreedingRecord,
+  })
 
   // --- Breeding modal triggers ---
   const handleOpenAddBirth: BreedingActionHandlers['onAddBirth'] = (record, femaleId) => {
@@ -181,27 +189,57 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   const handleWeanConfirm = async () => {
     if (!weanConfirm) return
     setIsWeaning(true)
+    const total = weanConfirm.animals.length
+    setWeanProgress({ current: 0, total })
     try {
-      const mothersToCheck = new Set<string>()
-      for (const a of weanConfirm.animals) {
-        await wean(a.id, { stageDecision: weanConfirm.decision })
-        const animal = animals.find((an) => an.id === a.id)
-        if (animal?.motherId) mothersToCheck.add(animal.motherId)
-      }
-      // Verificar si las madres ya no tienen crías sin destetar
-      for (const motherId of mothersToCheck) {
-        const remainingCrias = animals.filter(
-          (an) =>
-            an.motherId === motherId &&
-            an.stage === 'cria' &&
-            an.status !== 'muerto' &&
-            an.status !== 'vendido' &&
-            !weanConfirm.animals.some((w) => w.id === an.id),
-        )
-        if (remainingCrias.length === 0) {
-          await update(motherId, { weanedMotherAt: new Date(), birthedAt: null })
+      const nextStage = weanConfirm.decision === 'engorda' ? 'engorda' : 'juvenil'
+      const weanedAt = Timestamp.fromDate(new Date())
+      const weanedIds = new Set(weanConfirm.animals.map((a) => a.id))
+
+      // Batch wean writes en chunks de 400 (límite Firestore = 500)
+      const CHUNK = 400
+      for (let i = 0; i < weanConfirm.animals.length; i += CHUNK) {
+        const chunk = weanConfirm.animals.slice(i, i + CHUNK)
+        const batch = writeBatch(db)
+        for (const a of chunk) {
+          batch.update(doc(db, 'animals', a.id), {
+            isWeaned: true,
+            weanedAt,
+            stage: nextStage,
+            weaningDestination: weanConfirm.decision,
+            updatedAt: serverTimestamp(),
+          })
         }
+        await batch.commit()
+        setWeanProgress({ current: Math.min(i + CHUNK, total), total })
       }
+
+      // Detectar madres cuyas últimas crías fueron destetadas en esta tanda
+      const mothersToClose: string[] = []
+      const byMother = new Map<string, Set<string>>()
+      for (const a of animals) {
+        if (a.stage !== 'cria' || a.status === 'muerto' || a.status === 'vendido') continue
+        if (!a.motherId) continue
+        if (!byMother.has(a.motherId)) byMother.set(a.motherId, new Set())
+        byMother.get(a.motherId)!.add(a.id)
+      }
+      for (const [motherId, criaIds] of byMother) {
+        const remaining = [...criaIds].filter((id) => !weanedIds.has(id))
+        if (remaining.length === 0) mothersToClose.push(motherId)
+      }
+      if (mothersToClose.length > 0) {
+        const batch = writeBatch(db)
+        const weanedMotherAt = Timestamp.fromDate(new Date())
+        for (const motherId of mothersToClose) {
+          batch.update(doc(db, 'animals', motherId), {
+            weanedMotherAt,
+            birthedAt: null,
+            updatedAt: serverTimestamp(),
+          })
+        }
+        await batch.commit()
+      }
+
       setWeanSuccess({
         animalNumbers: weanConfirm.animals.map((a) => a.number),
         decision: weanConfirm.decision,
@@ -212,6 +250,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       console.error(e)
     } finally {
       setIsWeaning(false)
+      setWeanProgress(null)
     }
   }
 
@@ -224,9 +263,9 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     })
   }
 
-  const openBulkWean = (decision: 'engorda' | 'reproductor') => {
-    const selected = unweanedOffspring
-      .filter(({ animal: a }) => selectedWeanIds.has(a.id))
+  const openBulkWean = (decision: 'engorda' | 'reproductor', ids: Set<string>) => {
+    const selected = allCrias
+      .filter(({ animal: a }) => ids.has(a.id))
       .map(({ animal: a }) => ({ id: a.id, number: a.animalNumber }))
     if (selected.length === 0) return
     setWeanConfirm({ animals: selected, decision })
@@ -235,20 +274,20 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   // --- Filtro compartido para etapas (usa los mismos filters de useAnimalFilters) ---
   const matchesEtapasFilters = useCallback(
     (animal: Animal | undefined, { skipSearch = false }: { skipSearch?: boolean } = {}) => {
-    if (!animal) return false
-    if (filters.type && animal.type !== filters.type) return false
-    if (filters.breed && animal.breed !== filters.breed) return false
-    if (filters.gender && animal.gender !== filters.gender) return false
-    if (!skipSearch) {
-      const q = filters.search.trim().toLowerCase()
-      if (q) {
-        const num = animal.animalNumber?.toLowerCase() || ''
-        const name = animal.name?.toLowerCase() || ''
-        const notes = animal.notes?.toLowerCase() || ''
-        if (!num.includes(q) && !name.includes(q) && !notes.includes(q)) return false
+      if (!animal) return false
+      if (filters.type && animal.type !== filters.type) return false
+      if (filters.breed && animal.breed !== filters.breed) return false
+      if (filters.gender && animal.gender !== filters.gender) return false
+      if (!skipSearch) {
+        const q = filters.search.trim().toLowerCase()
+        if (q) {
+          const num = animal.animalNumber?.toLowerCase() || ''
+          const name = animal.name?.toLowerCase() || ''
+          const notes = animal.notes?.toLowerCase() || ''
+          if (!num.includes(q) && !name.includes(q) && !notes.includes(q)) return false
+        }
       }
-    }
-    return true
+      return true
     },
     [filters],
   )
@@ -440,13 +479,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   ])
 
   // --- Etapas por computeAnimalEffectiveStage (una etapa por animal, sin duplicados) ---
-  const {
-    engordaAnimals,
-    juvenilAnimals,
-    reproductorAnimals,
-    criaAnimals,
-    descarteAnimals,
-  } = useAnimalStages({ activeAnimals, breedingRecords, matchesEtapasFilters })
+  const { engordaAnimals, juvenilAnimals, reproductorAnimals, criaAnimals, descarteAnimals } =
+    useAnimalStages({ activeAnimals, breedingRecords, matchesEtapasFilters })
 
   const empadresCount = orderedBreedings.needPregnancyConfirmation.length
   const empadreFemalesCount = useMemo(() => {
@@ -961,7 +995,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     [pregnantFemales],
   )
 
-
   const partosColumns = useMemo(() => buildPartosColumns(), [])
 
   // Tab: Embarazos
@@ -1171,24 +1204,10 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         selectable
         renderBulkActions={(ids) => (
           <>
-            <Button
-              size="xs"
-              color="warning"
-              onClick={() => {
-                setSelectedWeanIds(ids)
-                openBulkWean('engorda')
-              }}
-            >
+            <Button size="xs" color="warning" onClick={() => openBulkWean('engorda', ids)}>
               {animal_stage_config.engorda.icon} Engorda ({ids.size})
             </Button>
-            <Button
-              size="xs"
-              color="error"
-              onClick={() => {
-                setSelectedWeanIds(ids)
-                openBulkWean('reproductor')
-              }}
-            >
+            <Button size="xs" color="error" onClick={() => openBulkWean('reproductor', ids)}>
               {animal_stage_config.reproductor.icon} Reproductor ({ids.size})
             </Button>
           </>
@@ -1521,9 +1540,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         }}
         selectedAnimals={animals.filter((a) => bulkSelectedAnimals.includes(a.id))}
         onSave={async (ids, updates) => {
-          for (const id of ids) {
-            await update(id, updates)
-          }
+          await batchUpdateAnimals(ids, updates)
         }}
       />
       <ModalBulkHealthAction
@@ -1832,7 +1849,9 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                 {isWeaning ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                    Destetando...
+                    {weanProgress
+                      ? `Destetando ${weanProgress.current}/${weanProgress.total}...`
+                      : 'Destetando...'}
                   </>
                 ) : (
                   `Destetar${weanConfirm.animals.length > 1 ? ` (${weanConfirm.animals.length})` : ''} a ${weanConfirm.decision === 'engorda' ? 'Engorda' : 'Reproductor'}`

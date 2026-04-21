@@ -349,7 +349,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
                   return new Date(y, m - 1, d)
                 })()
               : null,
-            pregnantBy: values.pregnantAt ? (values.pregnantBy?.trim() || null) : null,
+            pregnantBy: values.pregnantAt ? values.pregnantBy?.trim() || null : null,
             birthedAt: values.birthedAt
               ? (() => {
                   const [y, m, d] = values.birthedAt.split('-').map(Number)

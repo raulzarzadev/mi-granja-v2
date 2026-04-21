@@ -17,6 +17,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { setSales } from '@/features/sales/salesSlice'
 import { RootState } from '@/features/store'
+import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { toDate, toLocalDateStart } from '@/lib/dates'
 import { db } from '@/lib/firebase'
 import { isSaleComplete, Sale, SaleStatus } from '@/types/sales'
@@ -172,7 +173,10 @@ export const useSalesCRUD = () => {
     }
   }
 
-  const completeSale = async (id: string) => {
+  const completeSale = async (
+    id: string,
+    opts?: { onProgress?: (current: number, total: number) => void },
+  ) => {
     const sale = sales.find((s) => s.id === id)
     if (!sale) throw new Error('Venta no encontrada')
 
@@ -192,23 +196,27 @@ export const useSalesCRUD = () => {
       const pricePerKg = sale.pricePerKg || 0 // centavos/kg
       const saleDate = sale.date ? new Date(sale.date) : new Date()
 
-      // Marcar cada animal como vendido
-      for (const entry of sale.animals) {
-        // price = pricePerKg (centavos/kg) * weight (gramos) / 1000
-        const animalPrice = Math.round((pricePerKg * (entry.weight || 0)) / 1000)
-        await markStatus(entry.animalId, {
-          status: 'vendido',
-          statusAt: saleDate,
-          soldInfo: {
-            date: saleDate,
-            buyer: sale.buyer,
-            weight: entry.weight,
-            price: animalPrice,
-          },
-        })
-      }
+      const entryById = new Map(sale.animals.map((e) => [e.animalId, e]))
+      const ids = sale.animals.map((e) => e.animalId)
+      await batchUpdateAnimals(
+        ids,
+        ({ id: animalId }) => {
+          const entry = entryById.get(animalId)!
+          const animalPrice = Math.round((pricePerKg * (entry.weight || 0)) / 1000)
+          return {
+            status: 'vendido',
+            statusAt: saleDate,
+            soldInfo: {
+              date: saleDate,
+              buyer: sale.buyer,
+              weight: entry.weight,
+              price: animalPrice,
+            },
+          }
+        },
+        { onProgress: opts?.onProgress },
+      )
 
-      // Actualizar status de la venta
       await updateSale(id, { status: 'completed' as SaleStatus })
     } catch (error) {
       console.error('Error completing sale:', error)
@@ -226,12 +234,10 @@ export const useSalesCRUD = () => {
     setIsSubmitting(true)
     try {
       // Revertir cada animal a activo
-      for (const entry of sale.animals) {
-        await markStatus(entry.animalId, {
-          status: 'activo',
-          statusNotes: 'Venta revertida',
-        })
-      }
+      await batchUpdateAnimals(
+        sale.animals.map((e) => e.animalId),
+        { status: 'activo', statusNotes: 'Venta revertida' },
+      )
 
       // Volver la venta a pendiente
       await updateSale(id, { status: 'pending' as SaleStatus })

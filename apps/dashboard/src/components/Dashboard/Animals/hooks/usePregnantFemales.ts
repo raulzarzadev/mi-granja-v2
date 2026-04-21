@@ -42,9 +42,7 @@ export const usePregnantFemales = ({
       if (!record) {
         record =
           breedingRecords.find((r) =>
-            r.femaleBreedingInfo.some(
-              (f) => f.femaleId === animal.id && f.pregnancyConfirmedDate,
-            ),
+            r.femaleBreedingInfo.some((f) => f.femaleId === animal.id && f.pregnancyConfirmedDate),
           ) ?? null
       }
       const info = record?.femaleBreedingInfo.find((f) => f.femaleId === animal.id)
