@@ -22,6 +22,7 @@ import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Form } from './forms/Form'
 import { TextField } from './forms/TextField'
 import { Icon } from './Icon/icon'
+import AnimalSelector from './inputs/AnimalSelector'
 import { BirthDateInput } from './inputs/BirthDateInput'
 import { InputRadioCards } from './inputs/InputRadioCards'
 import { WeightField } from './inputs/WeightInput'
@@ -87,6 +88,7 @@ const schema = z
     notes: z.string().optional(),
     status: z.enum([...animal_statuses, ...breeding_animal_status] as const).default('activo'),
     pregnantAt: z.string().optional(),
+    pregnantBy: z.string().optional(),
     birthedAt: z.string().optional(),
     weanedMotherAt: z.string().optional(),
   })
@@ -122,8 +124,12 @@ const reproOptions: {
 const ReproductiveStatusField: React.FC<{
   form: UseFormReturn<FormSchema>
   isLoading?: boolean
-}> = ({ form, isLoading }) => {
+  existingAnimals?: Animal[]
+  currentAnimalId?: string
+  animalType?: Animal['type']
+}> = ({ form, isLoading, existingAnimals = [], currentAnimalId, animalType }) => {
   const pregnantAt = form.watch('pregnantAt')
+  const pregnantBy = form.watch('pregnantBy')
   const birthedAt = form.watch('birthedAt')
   const weanedMotherAt = form.watch('weanedMotherAt')
 
@@ -141,6 +147,7 @@ const ReproductiveStatusField: React.FC<{
   const handleSelect = (state: ReproductiveState) => {
     // Limpiar todos
     form.setValue('pregnantAt', '')
+    form.setValue('pregnantBy', '')
     form.setValue('birthedAt', '')
     form.setValue('weanedMotherAt', '')
 
@@ -176,6 +183,27 @@ const ReproductiveStatusField: React.FC<{
             />
           )}
         />
+      )}
+      {selected === 'embarazada' && (
+        <div>
+          <AnimalSelector
+            label="Padre (macho que la embarazó)"
+            animals={existingAnimals}
+            selectedIds={pregnantBy ? [pregnantBy] : []}
+            onAdd={(id) => form.setValue('pregnantBy', id)}
+            onRemove={() => form.setValue('pregnantBy', '')}
+            mode="single"
+            placeholder="Buscar macho..."
+            filterFn={(a) =>
+              a.gender === 'macho' &&
+              a.id !== currentAnimalId &&
+              (!animalType || a.type === animalType)
+            }
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Opcional. Recomendado para rastrear la genealogía de las crías.
+          </p>
+        </div>
       )}
       {!selected && (
         <p className="text-xs text-gray-400">
@@ -234,6 +262,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
           })()
         : '',
+      pregnantBy: initialData?.pregnantBy ?? '',
       birthedAt: initialData?.birthedAt
         ? (() => {
             const d = toDate(initialData.birthedAt)
@@ -320,6 +349,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
                   return new Date(y, m - 1, d)
                 })()
               : null,
+            pregnantBy: values.pregnantAt ? values.pregnantBy?.trim() || null : null,
             birthedAt: values.birthedAt
               ? (() => {
                   const [y, m, d] = values.birthedAt.split('-').map(Number)
@@ -458,7 +488,15 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       />
 
       {/* Fila 6: Estado reproductivo (solo hembras) */}
-      {selectedGender === 'hembra' && <ReproductiveStatusField form={form} isLoading={isLoading} />}
+      {selectedGender === 'hembra' && (
+        <ReproductiveStatusField
+          form={form}
+          isLoading={isLoading}
+          existingAnimals={existingAnimals}
+          currentAnimalId={initialData?.id}
+          animalType={selectedType}
+        />
+      )}
 
       {/* Campos secundarios colapsados */}
       <div className="border-t border-gray-100 pt-4 space-y-4">

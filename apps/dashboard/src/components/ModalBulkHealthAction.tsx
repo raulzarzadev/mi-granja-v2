@@ -50,6 +50,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null)
 
   const resetForm = () => {
     setFormData({
@@ -101,7 +102,10 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
       const recordData = buildRecordFromForm(formData)
 
       const animalIds = selectedAnimals.map((animal) => animal.id)
-      await addBulkRecord(animalIds, recordData)
+      setProgress({ current: 0, total: animalIds.length })
+      await addBulkRecord(animalIds, recordData, {
+        onProgress: (current, total) => setProgress({ current, total }),
+      })
 
       if (formData.createReminder && formData.reminderDate) {
         const [y, m, d] = formData.reminderDate.split('-').map(Number)
@@ -123,6 +127,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
       alert('Error al aplicar el evento. Inténtalo de nuevo.')
     } finally {
       setIsSubmitting(false)
+      setProgress(null)
     }
   }
 
@@ -189,7 +194,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
             {isSubmitting ? (
               <>
                 <span className="inline-block animate-spin mr-2">⏳</span>
-                Aplicando...
+                {progress ? `Aplicando ${progress.current}/${progress.total}...` : 'Aplicando...'}
               </>
             ) : (
               <>� Aplicar a {selectedAnimals.length} Animales</>

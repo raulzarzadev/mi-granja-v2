@@ -54,6 +54,10 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
   const [selectedAnimalIds, setSelectedAnimalIds] = useState<string[]>([])
   const [animalWeights, setAnimalWeights] = useState<Record<string, number | null>>({}) // gramos
   const [error, setError] = useState('')
+  const [completeProgress, setCompleteProgress] = useState<{
+    current: number
+    total: number
+  } | null>(null)
 
   const isEditing = !!sale
 
@@ -144,12 +148,17 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
   const handleComplete = async () => {
     if (!sale) return
     setError('')
+    setCompleteProgress({ current: 0, total: sale.animals.length })
     try {
       await updateSale(sale.id, buildSaleData())
-      await completeSale(sale.id)
+      await completeSale(sale.id, {
+        onProgress: (current, total) => setCompleteProgress({ current, total }),
+      })
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al completar venta')
+    } finally {
+      setCompleteProgress(null)
     }
   }
 
@@ -390,7 +399,9 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
                   disabled={isSubmitting}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
-                  Finalizar Venta
+                  {completeProgress
+                    ? `Finalizando ${completeProgress.current}/${completeProgress.total}...`
+                    : 'Finalizar Venta'}
                 </button>
               )}
 

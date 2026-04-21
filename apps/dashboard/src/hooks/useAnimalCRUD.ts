@@ -21,6 +21,7 @@ import { serializeObj } from '@/features/libs/serializeObj'
 import { RootState } from '@/features/store'
 import { useAdminActions } from '@/lib/adminActions'
 import { computeAnimalStage } from '@/lib/animal-utils'
+import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { db } from '@/lib/firebase'
 import { Animal, AnimalRecord, AnimalStatus, WeanNextStage } from '@/types/animals'
 
@@ -527,6 +528,7 @@ export const useAnimalCRUD = () => {
       AnimalRecord,
       'id' | 'createdAt' | 'createdBy' | 'appliedToAnimals' | 'isBulkApplication'
     >,
+    opts?: { onProgress?: (current: number, total: number) => void },
   ) => {
     if (!user?.id) {
       dispatch(setError('Usuario no autenticado'))
@@ -549,16 +551,19 @@ export const useAnimalCRUD = () => {
       createdBy: user.id,
     })
 
-    // Aplicar el registro a todos los animales seleccionados
-    const updatePromises = animalIds.map(async (animalId) => {
-      const animal = animals.find((a) => a.id === animalId)
-      if (animal) {
-        const updatedRecords = [...(animal.records || []), newRecord]
-        await update(animalId, { records: updatedRecords })
-      }
-    })
+    const existingRecordsById = new Map<string, AnimalRecord[]>()
+    for (const id of animalIds) {
+      const animal = animals.find((a) => a.id === id)
+      if (animal) existingRecordsById.set(id, animal.records || [])
+    }
 
-    await Promise.all(updatePromises)
+    await batchUpdateAnimals(
+      animalIds.filter((id) => existingRecordsById.has(id)),
+      ({ id }) => ({
+        records: [...(existingRecordsById.get(id) || []), newRecord],
+      }),
+      { onProgress: opts?.onProgress },
+    )
     console.log('Registro masivo aplicado a:', animalIds.length, 'animales')
   }
 

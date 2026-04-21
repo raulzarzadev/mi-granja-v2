@@ -16,6 +16,7 @@ const createAnimal = (overrides: Partial<Animal> = {}): Animal => ({
   gender: 'hembra',
   stage: 'reproductor',
   birthDate: new Date('2024-01-01'),
+  isWeaned: true,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,
