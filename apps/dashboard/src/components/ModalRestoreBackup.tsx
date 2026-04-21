@@ -743,6 +743,7 @@ const BACKUP_SCHEMA_JSON = `{
       "records": "[{ id, type, category, title, date, severity?, isResolved?, resolvedDate?, treatment?, nextDueDate?, batch?, veterinarian?, cost?, notes?, appliedToAnimals?, isBulkApplication?, createdAt, createdBy, updatedAt? }] (opcional)",
       "customWeaningDays": "number (override días de destete, opcional)",
       "pregnantAt": "ISO 8601 | null (fecha confirmación embarazo, solo hembras)",
+      "pregnantBy": "string | null (ID del macho que la preñó, solo hembras)",
       "birthedAt": "ISO 8601 | null (fecha de parto como madre, solo hembras)",
       "weanedMotherAt": "ISO 8601 | null (fecha en que destetó sus crías, solo hembras)",
       "adminAction": "{ performedByAdmin, adminEmail?, adminId?, originalTimestamp, impersonationReason? } (opcional)",

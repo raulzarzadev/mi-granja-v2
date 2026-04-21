@@ -88,6 +88,8 @@ export interface Animal {
   customWeaningDays?: number
   /** Fecha de confirmación de embarazo (hembras). Se limpia al registrar parto. */
   pregnantAt?: Date | null
+  /** ID del macho que preñó a la hembra (se setea al confirmar embarazo). */
+  pregnantBy?: string | null
   /** Fecha de parto como madre (hembras). Se limpia al destetar todas las crías. */
   birthedAt?: Date | null
   /** Fecha en que destetó a sus crías (hembras). Se limpia al iniciar nuevo empadre. */

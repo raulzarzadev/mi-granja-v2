@@ -261,6 +261,8 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     customWeaningDays: 'number | undefined (override de días de destete recomendados)',
     pregnantAt:
       'string (ISO 8601) | null | undefined. Fecha de confirmación de embarazo (hembras). Se limpia al registrar parto.',
+    pregnantBy:
+      'string | null | undefined. ID del macho que preñó a la hembra. Se setea al confirmar embarazo y se limpia junto con pregnantAt.',
     birthedAt:
       'string (ISO 8601) | null | undefined. Fecha de parto como madre (hembras). Se limpia al destetar todas las crías.',
     weanedMotherAt:

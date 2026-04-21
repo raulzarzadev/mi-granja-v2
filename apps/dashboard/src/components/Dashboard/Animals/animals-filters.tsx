@@ -192,7 +192,7 @@ export const useAnimalFilters = (externalState?: {
 }
 
 // Props para el componente AnimalsFilters
-interface AnimalsFiltersProps {
+export interface AnimalsFiltersProps {
   filters: AnimalFilters
   setFilters: React.Dispatch<React.SetStateAction<AnimalFilters>>
   filteredCount: number

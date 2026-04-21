@@ -131,6 +131,7 @@ export const useBreedingCRUD = () => {
             pregnantAt: Timestamp.fromDate(
               toLocalDateStart(new Date(info.pregnancyConfirmedDate!)),
             ),
+            pregnantBy: data.maleId,
             birthedAt: null,
             weanedMotherAt: null,
             updatedAt: now,
