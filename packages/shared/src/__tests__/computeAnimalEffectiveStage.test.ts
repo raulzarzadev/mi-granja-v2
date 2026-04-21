@@ -167,7 +167,9 @@ describe('computeAnimalEffectiveStage', () => {
       ).toBe('crias_lactantes')
     })
 
-    it('returns base stage for female with old birth (past weaning)', () => {
+    it('returns crias_lactantes even with old birth when cría is still unweaned (date window ignored when animals provided)', () => {
+      // Con la lista de animales, la existencia real de una cría sin destetar
+      // supera la ventana temporal — si el usuario no la ha destetado, la madre sigue lactando.
       const female = createAnimal({ id: 'f-1', type: 'oveja' })
       const oldBirth = new Date(NOW)
       oldBirth.setDate(oldBirth.getDate() - 200)
@@ -180,8 +182,59 @@ describe('computeAnimalEffectiveStage', () => {
         }),
       ]
       expect(computeAnimalEffectiveStage(female, breedings, NOW, [female, cria])).toBe(
+        'crias_lactantes',
+      )
+    })
+
+    it('returns base stage when offspring are all weaned even with old birth', () => {
+      const female = createAnimal({ id: 'f-1', type: 'oveja' })
+      const oldBirth = new Date(NOW)
+      oldBirth.setDate(oldBirth.getDate() - 200)
+      const weanedCria = createLiveCria({ id: 'cria-1', motherId: 'f-1', isWeaned: true })
+      const breedings = [
+        createBreeding({
+          femaleBreedingInfo: [
+            { femaleId: 'f-1', actualBirthDate: oldBirth, offspring: ['cria-1'] },
+          ],
+        }),
+      ]
+      expect(computeAnimalEffectiveStage(female, breedings, NOW, [female, weanedCria])).toBe(
         'reproductor',
       )
+    })
+
+    it('returns crias_lactantes from finished breeding when cría is still unweaned', () => {
+      // Bug original: los breeding records con status=finished no se revisaban.
+      // Ahora sí se revisan cuando se proporciona la lista de animales.
+      const female = createAnimal({ id: 'f-1', type: 'oveja' })
+      const recentBirth = new Date(NOW)
+      recentBirth.setDate(recentBirth.getDate() - 10)
+      const cria = createLiveCria({ id: 'cria-1', motherId: 'f-1' })
+      const breedings = [
+        createBreeding({
+          status: 'finished', // ← breeding cerrado tras el parto
+          femaleBreedingInfo: [
+            { femaleId: 'f-1', actualBirthDate: recentBirth, offspring: ['cria-1'] },
+          ],
+        }),
+      ]
+      expect(computeAnimalEffectiveStage(female, breedings, NOW, [female, cria])).toBe(
+        'crias_lactantes',
+      )
+    })
+
+    it('does NOT return empadre/embarazos from finished breeding', () => {
+      // Un empadre cerrado no debe seguir clasificando a la hembra como en empadre
+      const female = createAnimal({ id: 'f-1', type: 'oveja' })
+      const breedings = [
+        createBreeding({
+          status: 'finished',
+          femaleBreedingInfo: [
+            { femaleId: 'f-1', pregnancyConfirmedDate: new Date('2026-01-01') },
+          ],
+        }),
+      ]
+      expect(computeAnimalEffectiveStage(female, breedings, NOW)).toBe('reproductor')
     })
 
     it('prioritizes crias_lactantes over embarazos when in multiple breedings', () => {
@@ -221,12 +274,22 @@ describe('computeAnimalEffectiveStage', () => {
       expect(computeAnimalEffectiveStage(female, [], NOW, [female, cria])).toBe('crias_lactantes')
     })
 
-    it('returns base stage via birthedAt when all crias with motherId are dead', () => {
+    it('returns crias_lactantes via birthedAt when all crias with motherId are dead', () => {
       const recentBirth = new Date(NOW)
       recentBirth.setDate(recentBirth.getDate() - 10)
       const female = createAnimal({ id: 'f-1', type: 'oveja', birthedAt: recentBirth })
       const deadCria = createLiveCria({ id: 'cria-1', motherId: 'f-1', status: 'muerto' })
       expect(computeAnimalEffectiveStage(female, [], NOW, [female, deadCria])).toBe('reproductor')
+    })
+
+    it('returns crias_lactantes via birthedAt with old birth when cría is still unweaned', () => {
+      // Sin breeding record, fecha de parto antigua pero la cría no fue destetada aún.
+      // Con animals provisto, la fecha no importa — los datos reales mandan.
+      const oldBirth = new Date(NOW)
+      oldBirth.setDate(oldBirth.getDate() - 200)
+      const female = createAnimal({ id: 'f-1', type: 'oveja', birthedAt: oldBirth })
+      const cria = createLiveCria({ id: 'cria-1', motherId: 'f-1' })
+      expect(computeAnimalEffectiveStage(female, [], NOW, [female, cria])).toBe('crias_lactantes')
     })
   })
 })

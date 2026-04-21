@@ -170,47 +170,63 @@ export function computeAnimalEffectiveStage(
     return baseStage
   }
 
-  // Hembra: revisar femaleBreedingInfo de empadres activos
+  // Hembra: revisar breeding records.
+  // Para crias_lactantes revisamos TODOS los records (activos y cerrados) cuando
+  // tenemos la lista de animales — el empadre puede haberse cerrado tras el parto.
+  // Para empadre/embarazos solo usamos records activos.
   let bestState: AnimalStageKey | null = null
   const weaningDays = getWeaningDays(animal)
+  const breedingsToCheck = animals ? breedings || [] : activeBreedings
 
-  for (const breeding of activeBreedings) {
+  for (const breeding of breedingsToCheck) {
     const info = breeding.femaleBreedingInfo?.find((f) => f.femaleId === animal.id)
     if (!info) continue
 
     if (info.actualBirthDate) {
-      const birthDate = toDate(info.actualBirthDate)
-      const daysSinceBirth = Math.floor(
-        (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24),
-      )
-      if (daysSinceBirth <= weaningDays) {
-        // Verificar que al menos una cría esté viva y sin destetar
+      if (animals) {
+        // Con la lista de animales verificamos directamente si hay crías vivas sin destetar.
+        // No usamos ventana temporal — la existencia de crías activas es la prueba real.
         const hasActiveCria = hasLivingUnweanedOffspring(info.offspring, animals, animal.id)
-        if (hasActiveCria) bestState = 'crias_lactantes'
+        if (hasActiveCria) {
+          bestState = 'crias_lactantes'
+          break // máxima prioridad, no hay nada mejor
+        }
+      } else if (breeding.status !== 'finished') {
+        // Sin lista de animales, usar ventana temporal como proxy (solo en activos)
+        const birthDate = toDate(info.actualBirthDate)
+        const daysSinceBirth = Math.floor(
+          (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24),
+        )
+        if (daysSinceBirth <= weaningDays) {
+          bestState = 'crias_lactantes'
+        }
       }
-      // si ya pasó destete o no hay crías activas, este empadre no aporta estado activo
-    } else if (info.pregnancyConfirmedDate) {
-      // embarazos > empadre en prioridad
-      if (bestState !== 'crias_lactantes') bestState = 'embarazos'
-    } else {
-      if (bestState === null) bestState = 'empadre'
+    } else if (breeding.status !== 'finished') {
+      // empadre/embarazos solo aplican a records activos
+      if (info.pregnancyConfirmedDate) {
+        if (bestState !== 'crias_lactantes') bestState = 'embarazos'
+      } else {
+        if (bestState === null) bestState = 'empadre'
+      }
     }
   }
 
   if (bestState) return bestState
 
-  // Fallback a campos directos del animal (cuando el breeding ya fue cerrado pero
-  // el animal todavía conserva el estado reproductivo).
+  // Fallback a campos directos del animal (cuando no hay breeding record con parto)
   if (animal.gender === 'hembra') {
     if (animal.birthedAt) {
-      const birthDate = toDate(animal.birthedAt)
-      const daysSinceBirth = Math.floor(
-        (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24),
-      )
-      if (daysSinceBirth >= 0 && daysSinceBirth <= weaningDays) {
-        // Verificar crías vivas y sin destetar via motherId si tenemos el listado
+      if (animals) {
+        // Con lista de animales: verificar crías activas sin importar la fecha de parto
         const hasActiveCria = hasLivingUnweanedOffspring(undefined, animals, animal.id)
         if (hasActiveCria) return 'crias_lactantes'
+      } else {
+        // Sin lista: ventana temporal como proxy
+        const birthDate = toDate(animal.birthedAt)
+        const daysSinceBirth = Math.floor(
+          (now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24),
+        )
+        if (daysSinceBirth >= 0 && daysSinceBirth <= weaningDays) return 'crias_lactantes'
       }
     }
     if (animal.pregnantAt) return 'embarazos'
@@ -245,6 +261,7 @@ function hasLivingUnweanedOffspring(
   // Fallback: buscar crías cuyo motherId apunta a esta madre (por id o animalNumber)
   // motherId puede ser el id de Firestore o el animalNumber (legado)
   const motherAnimal = animals.find((a) => a.id === motherId)
+
   return animals.some(
     (a) =>
       (a.motherId === motherId || (motherAnimal && a.motherId === motherAnimal.animalNumber)) &&
