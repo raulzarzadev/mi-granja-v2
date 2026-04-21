@@ -17,9 +17,7 @@ export default function TabStageNoursingMothers({ noursingMothersRows, columns, 
   const overdue = noursingMothersRows.filter(
     (r) => r.daysUntilWean !== null && r.daysUntilWean < 0,
   )
-  const upcoming = noursingMothersRows.filter(
-    (r) => r.daysUntilWean === null || r.daysUntilWean >= 0,
-  )
+
 
   return (
     <div>
@@ -44,32 +42,6 @@ export default function TabStageNoursingMothers({ noursingMothersRows, columns, 
                         <span className="text-[10px] opacity-70">
                           ({Math.abs(r.daysUntilWean!)}d)
                         </span>
-                      </button>
-                    }
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-          {upcoming.length > 0 && (
-            <div>
-              <span className="text-xs font-semibold text-gray-500">
-                Destetes próximos ({upcoming.length})
-              </span>
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                {upcoming.map((r) => (
-                  <ModalAnimalDetails
-                    key={r.animal.id}
-                    animal={r.animal}
-                    triggerComponent={
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border cursor-pointer transition-all hover:shadow-sm bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
-                      >
-                        {r.animal.animalNumber}
-                        {r.daysUntilWean !== null && (
-                          <span className="text-[10px] opacity-70">({r.daysUntilWean}d)</span>
-                        )}
                       </button>
                     }
                   />

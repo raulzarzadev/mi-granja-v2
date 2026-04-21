@@ -41,7 +41,7 @@ export const buildNoursingColumns = (animals: Animal[]): ColumnDef<NoursingMothe
   },
   {
     key: 'gender',
-    label: 'Gen',
+    label: 'Genero',
     sortable: true,
     sortFn: (a, b) => (a.animal.gender || '').localeCompare(b.animal.gender || ''),
     render: (row) => {
