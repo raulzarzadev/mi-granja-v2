@@ -91,6 +91,7 @@ const schema = z
     pregnantBy: z.string().optional(),
     birthedAt: z.string().optional(),
     weanedMotherAt: z.string().optional(),
+    weanedAt: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.birthDate) {
@@ -275,6 +276,12 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
           })()
         : '',
+      weanedAt: initialData?.weanedAt
+        ? (() => {
+            const d = toDate(initialData.weanedAt)
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+          })()
+        : '',
     }
   }, [initialData])
 
@@ -317,13 +324,29 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
         : Number.POSITIVE_INFINITY
     const isPostWean = POST_WEAN_STAGES.includes(values.stage) && ageDays >= weaningDays
 
+    // Calcular weanedAt: usar el valor explícito del form, o estimar como birthDate + weaningDays
+    const explicitWeanedAt = values.weanedAt
+      ? (() => {
+          const [y, m, d] = values.weanedAt.split('-').map(Number)
+          return new Date(y, m - 1, d)
+        })()
+      : null
+    const estimatedWeanedAt =
+      isPostWean && !explicitWeanedAt
+        ? birthDateForAge
+          ? new Date(birthDateForAge.getTime() + weaningDays * 24 * 60 * 60 * 1000)
+          : new Date()
+        : null
+    const weanedAtDate = explicitWeanedAt ?? estimatedWeanedAt
+
     const transformed: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'> = {
       animalNumber: trimmedAnimalNumber,
       ...(values.name?.trim() ? { name: values.name.trim() } : {}),
       type: values.type,
       stage: values.stage,
       gender: values.gender,
-      ...(isPostWean ? { isWeaned: true } : {}),
+      ...(isPostWean ? { isWeaned: true, weanedAt: weanedAtDate ?? undefined } : {}),
+      ...(explicitWeanedAt && !isPostWean ? { weanedAt: explicitWeanedAt } : {}),
       breed: values.breed?.trim() ?? '',
       status: values.status as Animal['status'],
       ...(values.weight ? { weight: Math.round(Number(values.weight) * 1000) } : {}),
@@ -450,12 +473,34 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
 
       {/* Fila 4: Peso + Fecha nac / Edad */}
       <div className="grid grid-cols-2 gap-4">
-        <WeightField name="weight" label="Peso" disabled={isLoading} />
         <Controller
           control={form.control}
           name="birthDate"
           render={({ field, fieldState }) => (
             <BirthDateInput
+              label="Fecha de nacimiento"
+              value={field.value ?? ''}
+              onChange={(val) => {
+                field.onChange(val)
+                if (val) {
+                  const [y2, m2] = val.split('-').map(Number)
+                  const now = new Date()
+                  const diff = (now.getFullYear() - y2) * 12 + (now.getMonth() + 1 - m2)
+                  form.setValue('age', Math.max(0, diff).toString())
+                }
+              }}
+              disabled={isLoading}
+              error={fieldState.error?.message}
+            />
+          )}
+        />
+        <Controller
+          control={form.control}
+          name="weanedAt"
+          render={({ field, fieldState }) => (
+            <BirthDateInput
+              showAge={false}
+              label="Fecha de destete"
               value={field.value ?? ''}
               onChange={(val) => {
                 field.onChange(val)

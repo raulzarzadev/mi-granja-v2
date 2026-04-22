@@ -191,7 +191,12 @@ describe('computeAnimalEffectiveStage', () => {
       const female = createAnimal({ id: 'f-1', type: 'oveja' })
       const oldBirth = new Date(NOW)
       oldBirth.setDate(oldBirth.getDate() - 200)
-      const weanedCria = createLiveCria({ id: 'cria-1', motherId: 'f-1', isWeaned: true, weanedAt: new Date(NOW.getTime() - 5 * 24 * 60 * 60 * 1000) })
+      const weanedCria = createLiveCria({
+        id: 'cria-1',
+        motherId: 'f-1',
+        isWeaned: true,
+        weanedAt: new Date(NOW.getTime() - 5 * 24 * 60 * 60 * 1000),
+      })
       const breedings = [
         createBreeding({
           femaleBreedingInfo: [
@@ -230,9 +235,7 @@ describe('computeAnimalEffectiveStage', () => {
       const breedings = [
         createBreeding({
           status: 'finished',
-          femaleBreedingInfo: [
-            { femaleId: 'f-1', pregnancyConfirmedDate: new Date('2026-01-01') },
-          ],
+          femaleBreedingInfo: [{ femaleId: 'f-1', pregnancyConfirmedDate: new Date('2026-01-01') }],
         }),
       ]
       expect(computeAnimalEffectiveStage(female, breedings, NOW)).toBe('reproductor')

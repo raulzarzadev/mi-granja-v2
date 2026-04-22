@@ -36,6 +36,7 @@ interface BirthDateInputProps {
   placeholder?: string
   disabled?: boolean
   error?: string
+  showAge?: boolean
 }
 
 export function BirthDateInput({
@@ -45,11 +46,12 @@ export function BirthDateInput({
   placeholder = 'Opcional',
   disabled,
   error,
+  showAge = true,
 }: BirthDateInputProps) {
   const age = computeAge(value)
   return (
     <div className="space-y-1">
-      <p className="text-sm font-medium text-gray-700 mb-2">{label}</p>
+      <p className="text-sm font-medium text-gray-700 mb-1">{label}</p>
       <div className="flex items-center gap-2">
         <DatePickerModal
           value={value}
@@ -57,7 +59,7 @@ export function BirthDateInput({
           placeholder={placeholder}
           disabled={disabled}
         />
-        {age && (
+        {showAge && age && (
           <span className="font-bold text-sm text-green-700 bg-green-50 px-1.5 py-0.5 rounded whitespace-nowrap">
             Edad: {age}
           </span>
