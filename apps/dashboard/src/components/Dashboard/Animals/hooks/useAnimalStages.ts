@@ -3,6 +3,7 @@
 import { addDays, differenceInCalendarDays } from 'date-fns'
 import { useMemo } from 'react'
 import { getWeaningDays } from '@/lib/animalBreedingConfig'
+import { activeUnweanedOffspring } from '@/lib/animal-utils'
 import { toDate } from '@/lib/dates'
 import type { Animal } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
@@ -15,12 +16,7 @@ interface Params {
   matchesEtapasFilters: (animal: Animal | undefined, opts?: { skipSearch?: boolean }) => boolean
 }
 
-export const useAnimalStages = ({
-  activeAnimals,
-  animals,
-  breedingRecords,
-  matchesEtapasFilters,
-}: Params) => {
+export const useAnimalStages = ({ activeAnimals, animals, matchesEtapasFilters }: Params) => {
   const engordaAnimals = useMemo(
     () => activeAnimals.filter((a) => a.computedStage === 'engorda' && matchesEtapasFilters(a)),
     [activeAnimals, matchesEtapasFilters],
@@ -57,51 +53,17 @@ export const useAnimalStages = ({
 
   /** Rows enriquecidos para la tabla de madres lactantes */
   const noursingMothersRows = useMemo<NoursingMotherRow[]>(() => {
-    const isAlive = (a: Animal) => a.status !== 'muerto' && a.status !== 'vendido'
-    // weanedAt es el indicador definitivo de destete explícito; isWeaned puede ser inferido por edad
-    const isUnweaned = (a: Animal) => !a.weanedAt
-
     return noursingMothersAnimals.map((mother) => {
-      // Recopilar IDs de crías desde los breeding records
-      const criaIdsFromBreeding = new Set<string>()
-      for (const r of breedingRecords) {
-        const info = r.femaleBreedingInfo?.find((f) => f.femaleId === mother.id)
-        if (info?.offspring) {
-          for (const id of info.offspring) criaIdsFromBreeding.add(id)
-        }
-      }
+      // Crías activas sin destetar (mismo criterio que hasLivingUnweanedOffspring)
+      const crias = activeUnweanedOffspring({ farmAnimals: animals, motherId: mother.id })
 
-      // Resolver crías: desde breeding records primero, luego por motherId
-      let crias: Animal[] = []
-      if (criaIdsFromBreeding.size > 0) {
-        crias = animals.filter(
-          (a) =>
-            criaIdsFromBreeding.has(a.id) &&
-            isAlive(a) &&
-            isUnweaned(a) &&
-            a.computedStage === 'cria',
-        )
-      }
-      // Fallback: crías cuyo motherId apunta a esta madre
-      if (crias.length === 0) {
-        const motherAnimal = animals.find((a) => a.id === mother.id)
-        crias = animals.filter(
-          (a) =>
-            (a.motherId === mother.id ||
-              (motherAnimal && a.motherId === motherAnimal.animalNumber)) &&
-            isAlive(a) &&
-            isUnweaned(a) &&
-            a.computedStage === 'cria',
-        )
-      }
-
-      // Destete más próximo entre las crías
+      // Fecha de destete más próxima según birthDate de la cría + weaningDays de su especie
       let minDaysUntilWean: number | null = null
       let earliestUnweanDate: Date | null = null
       for (const cria of crias) {
         if (cria.birthDate) {
           const days = getWeaningDays(cria)
-          const weanDate = addDays(toDate(cria.birthDate), days)
+          const weanDate = addDays(toDate(cria.birthDate)!, days)
           const daysUntil = differenceInCalendarDays(weanDate, new Date())
           if (minDaysUntilWean === null || daysUntil < minDaysUntilWean) {
             minDaysUntilWean = daysUntil
@@ -117,7 +79,13 @@ export const useAnimalStages = ({
         daysUntilWean: minDaysUntilWean,
       }
     })
-  }, [noursingMothersAnimals, animals, breedingRecords])
+  }, [noursingMothersAnimals, animals])
+
+  /** Animales perdidos (status === 'perdido') */
+  const perdidoAnimals = useMemo(
+    () => animals.filter((a) => a.status === 'perdido' && matchesEtapasFilters(a)),
+    [animals, matchesEtapasFilters],
+  )
 
   return {
     engordaAnimals,
@@ -128,5 +96,6 @@ export const useAnimalStages = ({
     empadreAnimals,
     noursingMothersAnimals,
     noursingMothersRows,
+    perdidoAnimals,
   }
 }

@@ -3,7 +3,7 @@
 import { addDays, differenceInCalendarDays } from 'date-fns'
 import { doc, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Button from '@/components/buttons/Button'
 import NumbersTab from '@/components/Dashboard/Animals/NumbersTab'
 import { Modal } from '@/components/Modal'
@@ -46,6 +46,7 @@ import TabStageRepro from './tabStages/TabStageRepro'
 import TabStageJuvenil from './tabStages/TabStageJuvenil'
 import TabStageEngorda from './tabStages/TabStageEngorda'
 import TabStageDescarte from './tabStages/TabStageDescarte'
+import TabStagePerdidos from './tabStages/TabStagePerdidos'
 import TabAllAnimals from './tabs/TabAllAnimals'
 import TabEtapas from './tabs/TabEtapas'
 
@@ -70,6 +71,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     addRecord,
     update,
     remove,
+    queryAnimalsByStatus,
   } = useAnimalCRUD()
   const { breedingRecords, updateBreedingRecord, deleteBreedingRecord, getBirthsWindow } =
     useBreedingCRUD()
@@ -252,6 +254,21 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     () => animals.filter((a) => (a.status ?? 'activo') === 'activo'),
     [animals],
   )
+
+  // --- Animales perdidos ---
+  // Merge del store (farmId) + query directa (cubre animales sin farmId guardados por farmerId)
+  const [extraPerdidos, setExtraPerdidos] = useState<Animal[]>([])
+  useEffect(() => {
+    queryAnimalsByStatus('perdido').then((list) => {
+      setExtraPerdidos(list)
+    })
+  }, [queryAnimalsByStatus])
+  const perdidosAnimals = useMemo(() => {
+    const fromStore = animals.filter((a) => a.status === 'perdido')
+    const storeIds = new Set(fromStore.map((a) => a.id))
+    const extra = extraPerdidos.filter((a) => !storeIds.has(a.id))
+    return [...fromStore, ...extra]
+  }, [animals, extraPerdidos])
 
   // --- Empadres filtrados por tipo/raza/género/búsqueda ---
   const filteredBreedingRecords = useMemo(() => {
@@ -442,6 +459,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     descarteAnimals,
     empadreAnimals,
     noursingMothersRows,
+    perdidoAnimals,
   } = useAnimalStages({ activeAnimals, animals, breedingRecords, matchesEtapasFilters })
 
   const empadresCount = orderedBreedings.needPregnancyConfirmation.length
@@ -808,6 +826,10 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       label: etapaLabel('descarte', descarteAnimals.length),
       content: <TabStageDescarte animals={descarteAnimals} columns={animalColumns} />,
     },
+    {
+      label: `❓ Perdidos (${perdidoAnimals.length})`,
+      content: <TabStagePerdidos animals={perdidoAnimals} />,
+    },
   ]
 
   // ========================
@@ -869,7 +891,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
             noursingMothersRows.length +
             juvenilAnimals.length +
             engordaAnimals.length +
-            descarteAnimals.length
+            descarteAnimals.length +
+            perdidoAnimals.length
           }
           crossTabDuplicatesCount={crossTabDuplicates.length}
           onShowDuplicates={() => setShowCrossTabDups(true)}

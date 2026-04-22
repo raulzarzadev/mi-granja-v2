@@ -501,8 +501,8 @@ export const AnimalsFilters = ({
           )}
         </div>
         <span className="text-xs text-gray-500 whitespace-nowrap flex items-center gap-1">
-          <span className="font-semibold text-gray-700">{filteredCount}</span>{' '}
-          {filteredCount === 1 ? 'animal' : 'animales'}
+          <span>Animales totales: </span>
+          <span className="font-semibold text-gray-700">{filteredCount}</span>
           {typeof tabsTotal === 'number' &&
             (tabsTotal === filteredCount ? (
               <svg
