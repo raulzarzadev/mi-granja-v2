@@ -891,8 +891,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
             noursingMothersRows.length +
             juvenilAnimals.length +
             engordaAnimals.length +
-            descarteAnimals.length +
-            perdidoAnimals.length
+            descarteAnimals.length
           }
           crossTabDuplicatesCount={crossTabDuplicates.length}
           onShowDuplicates={() => setShowCrossTabDups(true)}
