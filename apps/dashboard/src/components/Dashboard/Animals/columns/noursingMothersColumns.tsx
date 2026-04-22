@@ -1,13 +1,10 @@
-import { differenceInCalendarDays } from 'date-fns'
 import type { ColumnDef } from '@/components/DataTable'
 import { Icon } from '@/components/Icon/icon'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import { findAnimalByRef } from '@/lib/animal-utils'
-import { toDate } from '@/lib/dates'
 import { type Animal, animal_gender_config } from '@/types/animals'
-import type { BreedingRecord } from '@/types/breedings'
-import  AnimalBadge  from '@/components/AnimalBadges'
-
+import AnimalBadge from '@/components/AnimalBadges'
+import AnimalTag from '@/components/AnimalTag'
 
 export type NoursingMotherRow = {
   animal: Animal
@@ -69,13 +66,24 @@ export const buildNoursingColumns = (animals: Animal[]): ColumnDef<NoursingMothe
     render: (row) => {
       // Show crias AnimalBadge
       //
-      const motherCrias = row.crias.map((cria) => (
-        <AnimalBadge key={cria.id} label={cria.animalNumber} />
-      ))
-      return motherCrias.length ? (
+      const motherOffspring = animals.filter(
+        (a) =>
+          //is offspring
+          a.motherId === row.animal.id &&
+          // is alive
+          a.status === 'activo' &&
+          // is unweaned
+          (!a.weanedAt || !a.isWeaned),
+      )
+
+      return motherOffspring?.length ? (
         <div>
           <span className="text-gray-700">{row.animal.animalNumber}</span>
-          <div className="flex gap-1">{motherCrias}</div>
+          <div className="flex gap-1">
+            {motherOffspring?.map((cria) => (
+              <AnimalTag animal={cria} key={cria.id} />
+            ))}
+          </div>
         </div>
       ) : (
         <span className="text-gray-400">—</span>
@@ -96,8 +104,7 @@ export const buildNoursingColumns = (animals: Animal[]): ColumnDef<NoursingMothe
     },
     render: (row) => {
       const isOverdue = row.daysUntilWean !== null && row.daysUntilWean < 0
-      const isSoon =
-        row.daysUntilWean !== null && row.daysUntilWean >= 0 && row.daysUntilWean <= 7
+      const isSoon = row.daysUntilWean !== null && row.daysUntilWean >= 0 && row.daysUntilWean <= 7
       return (
         <span
           className={`inline-flex px-1.5 py-0.5 rounded-full text-xs font-medium ${
