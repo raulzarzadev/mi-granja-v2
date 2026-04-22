@@ -89,29 +89,25 @@ const MANUAL_STAGES = new Set<AnimalStage>(['engorda', 'descarte'])
 /**
  * Calcula el stage de un animal basándose en sus parámetros.
  *
- * Regla canónica — cría requiere ambas condiciones para salir:
+ * Regla canónica — la edad manda (cría = recién nacido hasta destete):
  *  - engorda / descarte: asignación manual, se respeta
- *  - !isWeaned → 'cria' (sin destete registrado)
- *  - ageDays < weaningDays → 'cria' (edad mínima de destete de la especie)
- *  - isWeaned + ageDays >= weaningDays + ageMonths < minBreedingAge → 'juvenil'
- *  - isWeaned + ageDays >= weaningDays + ageMonths >= minBreedingAge → 'reproductor'
+ *  - ageDays < weaningDays → 'cria' (aún lactando por edad)
+ *  - ageDays >= weaningDays + ageMonths < minBreedingAge → 'juvenil'
+ *  - ageDays >= weaningDays + ageMonths >= minBreedingAge → 'reproductor'
+ *  - sin birthDate y sin age → 'cria' (fallback conservador)
  *
- * Gate doble: ni el destete prematuro ni la edad sola sacan de cría.
- * Ambos deben cumplirse (evita que un bebé de 6 días marcado erróneamente
- * como destetado aparezca en juvenil).
+ * La edad es el criterio base: un animal viejo sin registro de destete no
+ * puede seguir siendo cría (datos legacy). El age-gate también protege contra
+ * isWeaned=true prematuro en animales muy jóvenes.
  */
 export function computeAnimalStage(animal: Animal): AnimalStage {
   // Stages manuales: el usuario los asignó explícitamente
   if (MANUAL_STAGES.has(animal.stage)) return animal.stage
 
-  const isWeaned = animal.isWeaned === true || !!animal.weanedAt
-  if (!isWeaned) return 'cria'
-
   const config = ANIMAL_BREEDING_CONFIGS[animal.type]
   const weaningDays = animal.customWeaningDays ?? config?.weaningDays ?? 60
   const minBreedingAge = config?.minBreedingAge ?? 12
 
-  // Edad en días: cría si menor a weaningDays incluso si marcado como destetado
   let ageDays = 0
   if (animal.birthDate) {
     const birth = toDate(animal.birthDate)
@@ -213,14 +209,14 @@ export function computeAnimalEffectiveStage(
   }
 
   if (bestState) return bestState
-
+  // Con lista de animales: verificar crías activas sin importar la fecha de parto
+  const hasActiveCria = hasLivingUnweanedOffspring(undefined, animals, animal.id)
+  if (hasActiveCria) return 'crias_lactantes'
   // Fallback a campos directos del animal (cuando no hay breeding record con parto)
   if (animal.gender === 'hembra') {
     if (animal.birthedAt) {
       if (animals) {
-        // Con lista de animales: verificar crías activas sin importar la fecha de parto
-        const hasActiveCria = hasLivingUnweanedOffspring(undefined, animals, animal.id)
-        if (hasActiveCria) return 'crias_lactantes'
+
       } else {
         // Sin lista: ventana temporal como proxy
         const birthDate = toDate(animal.birthedAt)
@@ -237,24 +233,26 @@ export function computeAnimalEffectiveStage(
 }
 
 /**
- * Un animal se considera «sin destetar» si:
- *  - No tiene weanedAt registrado, Y
- *  - No tiene isWeaned: true … O si lo tiene pero aún es demasiado joven (age-gate igual que computeAnimalStage)
+ * Un animal se considera «sin destetar» si aún es lactante por edad.
  *
- * El age-gate evita que animales registrados como juveniles/reproductores
- * (con isWeaned:true sin weanedAt) cuenten como crías activas de la madre.
+ *  - weanedAt registrado → destetado
+ *  - ageDays >= weaningDays → ya pasó la etapa lactante (aunque no haya registro)
+ *  - ageDays < weaningDays → sigue lactando
+ *
+ * La edad es el criterio autoritativo: animales viejos sin registro de destete
+ * no siguen "amamantando" aunque falte el flag. Sin birthDate ni age cae a
+ * lactante (fallback conservador) salvo que esté explícitamente destetado.
  */
 function isUnweanedAnimal(a: Animal): boolean {
-  if (a.weanedAt) return false // definitivamente destetado
-  if (a.isWeaned !== true) return true // nunca marcado como destetado → sigue siendo cría
-  // isWeaned:true pero sin weanedAt — respetar el age-gate de computeAnimalStage
+  if (a.weanedAt) return false
   const weaningDays = getWeaningDays(a)
   const ageDays = a.birthDate
     ? Math.floor((Date.now() - toDate(a.birthDate).getTime()) / (1000 * 60 * 60 * 24))
-    : a.age
+    : typeof a.age === 'number'
       ? a.age * 30
-      : Infinity
-  return ageDays < weaningDays // aún joven → sigue lactando
+      : null
+  if (ageDays === null) return a.isWeaned !== true
+  return ageDays < weaningDays
 }
 
 /**
@@ -268,26 +266,8 @@ function hasLivingUnweanedOffspring(
   animals: Animal[] | undefined,
   motherId: string,
 ): boolean {
-  if (!animals) return true
-  const isAlive = (a: Animal) => a.status !== 'muerto' && a.status !== 'vendido'
-
-  // Verificar por IDs de offspring del breeding record
-  if (offspringIds && offspringIds.length > 0) {
-    const found = offspringIds.some((id) => {
-      const cria = animals.find((a) => a.id === id)
-      return cria && isAlive(cria) && isUnweanedAnimal(cria)
-    })
-    if (found) return true
-  }
-
-  // Fallback por motherId (id o animalNumber legado)
-  const motherAnimal = animals.find((a) => a.id === motherId)
-  return animals.some(
-    (a) =>
-      (a.motherId === motherId || (motherAnimal && a.motherId === motherAnimal.animalNumber)) &&
-      isAlive(a) &&
-      isUnweanedAnimal(a),
-  )
+  const offspring = activeUnweanedOffspring({ farmAnimals: animals ?? [], motherId })
+  return !!offspring?.length
 }
 
 export function activeUnweanedOffspring({
@@ -297,11 +277,14 @@ export function activeUnweanedOffspring({
   farmAnimals: Animal[]
   motherId: string
 }): Animal[] {
-  const isActive = (a: Animal) => a.status === 'activo'
-  const motherAnimal = farmAnimals.find((a) => a.id === motherId)
+  const isActive = (a: Animal) =>
+    a.status === 'activo' || a.status === undefined || a.status === null
+  const isOffspring = (a: Animal) => a.motherId === motherId
+
+  // Retorna los animales que son hijas de la madre y están activos y sin destetar
   return farmAnimals.filter(
     (a) =>
-      (a.motherId === motherId || (motherAnimal && a.motherId === motherAnimal.animalNumber)) &&
+      isOffspring(a) &&
       isActive(a) &&
       isUnweanedAnimal(a),
   )

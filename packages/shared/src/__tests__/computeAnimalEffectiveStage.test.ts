@@ -32,15 +32,19 @@ const createBreeding = (overrides: Partial<BreedingRecord> = {}): BreedingRecord
   ...overrides,
 })
 
-/** Cría viva y sin destetar */
+/** Cría viva y sin destetar. birthDate reciente (10 días) para que el age-gate
+ * la cuente como lactante. */
+const recentCriaBirth = new Date(NOW)
+recentCriaBirth.setDate(recentCriaBirth.getDate() - 10)
 const createLiveCria = (overrides: Partial<Animal> = {}): Animal =>
   createAnimal({
     id: 'cria-1',
     stage: 'cria',
     isWeaned: false,
     weanedAt: undefined,
-    status: undefined, // activo por defecto
+    status: undefined,
     gender: 'hembra',
+    birthDate: recentCriaBirth,
     ...overrides,
   })
 
