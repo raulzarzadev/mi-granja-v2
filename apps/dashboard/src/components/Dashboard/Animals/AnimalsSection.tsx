@@ -440,6 +440,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     reproductorAnimals,
     criaAnimals,
     descarteAnimals,
+    empadreAnimals,
     noursingMothersRows,
   } = useAnimalStages({ activeAnimals, animals, breedingRecords, matchesEtapasFilters })
 
@@ -775,7 +776,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       ),
     },
     {
-      label: etapaLabel('cria', unweanedOffspring.length + criaAnimals.length),
+      label: etapaLabel('cria', allCrias.length),
       content: (
         <TabStageCrias
           allCrias={allCrias}
@@ -862,10 +863,9 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           formatStatLabel={formatStatLabel}
           tabsTotal={
             reproductorAnimals.length +
-            empadreFemalesCount +
+            empadreAnimals.length +
             pregnantFemales.length +
-            unweanedOffspring.length +
-            criaAnimals.length +
+            allCrias.length +
             noursingMothersRows.length +
             juvenilAnimals.length +
             engordaAnimals.length +

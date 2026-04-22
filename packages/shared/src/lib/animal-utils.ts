@@ -249,25 +249,29 @@ function hasLivingUnweanedOffspring(
   if (!animals) return true // fallback: sin lista de animales, confiar en fecha
 
   const isAlive = (a: Animal) => a.status !== 'muerto' && a.status !== 'vendido'
-  const isUnweaned = (a: Animal) => !a.isWeaned && !a.weanedAt
+  // Un animal está sin destetar si NO tiene fecha de destete explícita (weanedAt).
+  // isWeaned puede ser inferido por edad en el formulario sin reflejar un destete real.
+  const isUnweaned = (a: Animal) => !a.weanedAt
 
   // Buscar por IDs de offspring del breeding record
   if (offspringIds && offspringIds.length > 0) {
-    return offspringIds.some((id) => {
+    const foundInBreeding = offspringIds.some((id) => {
       const cria = animals.find((a) => a.id === id)
       return cria && isAlive(cria) && isUnweaned(cria)
     })
+    if (foundInBreeding) return true
+    // aunque offspringIds no tenga crías activas, revisamos por motherId como fallback
   }
 
   // Fallback: buscar crías cuyo motherId apunta a esta madre (por id o animalNumber)
   // motherId puede ser el id de Firestore o el animalNumber (legado)
   const motherAnimal = animals.find((a) => a.id === motherId)
-  // consultar a las crias de este animal
-  const motherOffsprings = animals.filter((a) => a.motherId === motherId)
-
-  const aliveUnweanedOffspring = motherOffsprings.some((a) => isAlive(a) && isUnweaned(a))
-
-  return aliveUnweanedOffspring
+  return animals.some(
+    (a) =>
+      (a.motherId === motherId || (motherAnimal && a.motherId === motherAnimal.animalNumber)) &&
+      isAlive(a) &&
+      isUnweaned(a),
+  )
 }
 
 /**

@@ -27,10 +27,7 @@ export const usePregnantFemales = ({
 }: Params): PregnantFemaleEntry[] => {
   return useMemo(() => {
     const pregnant = activeAnimals.filter(
-      (a) =>
-        a.gender === 'hembra' &&
-        a.computedStage === 'embarazos' &&
-        matchesEtapasFilters(a),
+      (a) => a.gender === 'hembra' && a.computedStage === 'embarazos' && matchesEtapasFilters(a),
     )
     return pregnant.map<PregnantFemaleEntry>((animal) => {
       let record =

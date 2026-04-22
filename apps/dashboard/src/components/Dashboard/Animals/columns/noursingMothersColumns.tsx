@@ -63,25 +63,10 @@ export const buildNoursingColumns = (animals: Animal[]): ColumnDef<NoursingMothe
       return mA.localeCompare(mB, 'es', { numeric: true })
     },
     render: (row) => {
-      // Show crias AnimalBadge
-      //
-      const motherOffspring = animals.filter(
-        (a) =>
-          //is offspring
-          a.motherId === row.animal.id &&
-          // is alive
-          a.status === 'activo' &&
-          // is unweaned (neither flag set nor date recorded)
-          !a.weanedAt &&
-          // still a cría by stage
-          a.computedStage === 'cria',
-      )
-
-      return motherOffspring?.length ? (
+      return row.crias?.length ? (
         <div>
-          <span className="text-gray-700"></span>
           <div className="flex gap-1">
-            {motherOffspring?.map((cria) => (
+            {row.crias.map((cria) => (
               <AnimalTag animal={cria} key={cria.id} showModalOnClick showAge />
             ))}
           </div>
@@ -106,9 +91,27 @@ export const buildNoursingColumns = (animals: Animal[]): ColumnDef<NoursingMothe
     render: (row) => {
       const isOverdue = row.daysUntilWean !== null && row.daysUntilWean < 0
       const isSoon = row.daysUntilWean !== null && row.daysUntilWean >= 0 && row.daysUntilWean <= 7
+
+      const dateStr = row.unweanDate
+        ? row.unweanDate.toLocaleDateString('es-MX', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          })
+        : null
+
+      const relativeStr =
+        row.daysUntilWean !== null
+          ? row.daysUntilWean === 0
+            ? 'Hoy'
+            : row.daysUntilWean > 0
+              ? `En ${row.daysUntilWean}d`
+              : `Hace ${Math.abs(row.daysUntilWean)}d`
+          : null
+
       return (
         <span
-          className={`inline-flex px-1.5 py-0.5 rounded-full text-xs font-medium ${
+          className={`inline-flex flex-col px-1.5 py-0.5 rounded-md text-xs font-medium ${
             isOverdue
               ? 'bg-red-100 text-red-700'
               : isSoon
@@ -116,13 +119,8 @@ export const buildNoursingColumns = (animals: Animal[]): ColumnDef<NoursingMothe
                 : 'bg-gray-100 text-gray-600'
           }`}
         >
-          {row.daysUntilWean !== null
-            ? row.daysUntilWean === 0
-              ? 'Hoy'
-              : row.daysUntilWean > 0
-                ? `En ${row.daysUntilWean}d`
-                : `Hace ${Math.abs(row.daysUntilWean)}d`
-            : 'Sin fecha'}
+          {dateStr ?? 'Sin fecha'}
+          {relativeStr && <span className="text-[10px] opacity-70 font-normal">{relativeStr}</span>}
         </span>
       )
     },

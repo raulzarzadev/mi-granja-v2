@@ -42,6 +42,12 @@ export const useAnimalStages = ({
     [activeAnimals, matchesEtapasFilters],
   )
 
+  /** Machos (y hembras) actualmente en un empadre activo */
+  const empadreAnimals = useMemo(
+    () => activeAnimals.filter((a) => a.computedStage === 'empadre' && matchesEtapasFilters(a)),
+    [activeAnimals, matchesEtapasFilters],
+  )
+
   /** Madres lactantes: computedStage ya fue calculado con lista completa de animales */
   const noursingMothersAnimals = useMemo(
     () =>
@@ -52,7 +58,8 @@ export const useAnimalStages = ({
   /** Rows enriquecidos para la tabla de madres lactantes */
   const noursingMothersRows = useMemo<NoursingMotherRow[]>(() => {
     const isAlive = (a: Animal) => a.status !== 'muerto' && a.status !== 'vendido'
-    const isUnweaned = (a: Animal) => !a.isWeaned && !a.weanedAt
+    // weanedAt es el indicador definitivo de destete explícito; isWeaned puede ser inferido por edad
+    const isUnweaned = (a: Animal) => !a.weanedAt
 
     return noursingMothersAnimals.map((mother) => {
       // Recopilar IDs de crías desde los breeding records
@@ -67,7 +74,13 @@ export const useAnimalStages = ({
       // Resolver crías: desde breeding records primero, luego por motherId
       let crias: Animal[] = []
       if (criaIdsFromBreeding.size > 0) {
-        crias = animals.filter((a) => criaIdsFromBreeding.has(a.id) && isAlive(a) && isUnweaned(a))
+        crias = animals.filter(
+          (a) =>
+            criaIdsFromBreeding.has(a.id) &&
+            isAlive(a) &&
+            isUnweaned(a) &&
+            a.computedStage === 'cria',
+        )
       }
       // Fallback: crías cuyo motherId apunta a esta madre
       if (crias.length === 0) {
@@ -77,7 +90,8 @@ export const useAnimalStages = ({
             (a.motherId === mother.id ||
               (motherAnimal && a.motherId === motherAnimal.animalNumber)) &&
             isAlive(a) &&
-            isUnweaned(a),
+            isUnweaned(a) &&
+            a.computedStage === 'cria',
         )
       }
 
@@ -111,6 +125,7 @@ export const useAnimalStages = ({
     reproductorAnimals,
     criaAnimals,
     descarteAnimals,
+    empadreAnimals,
     noursingMothersAnimals,
     noursingMothersRows,
   }
