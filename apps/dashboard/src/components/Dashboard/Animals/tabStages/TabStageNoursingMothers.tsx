@@ -13,11 +13,12 @@ interface Props {
   animals: Animal[]
 }
 
-export default function TabStageNoursingMothers({ noursingMothersRows, columns, animals: _animals }: Props) {
-  const overdue = noursingMothersRows.filter(
-    (r) => r.daysUntilWean !== null && r.daysUntilWean < 0,
-  )
-
+export default function TabStageNoursingMothers({
+  noursingMothersRows,
+  columns,
+  animals: _animals,
+}: Props) {
+  const overdue = noursingMothersRows.filter((r) => r.daysUntilWean !== null && r.daysUntilWean < 0)
 
   return (
     <div>

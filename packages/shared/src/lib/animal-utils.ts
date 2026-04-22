@@ -249,8 +249,8 @@ function hasLivingUnweanedOffspring(
   if (!animals) return true // fallback: sin lista de animales, confiar en fecha
 
   const isAlive = (a: Animal) => a.status !== 'muerto' && a.status !== 'vendido'
-  // Un animal está sin destetar si NO tiene fecha de destete explícita (weanedAt).
-  // isWeaned puede ser inferido por edad en el formulario sin reflejar un destete real.
+  // weanedAt es el único indicador definitivo de destete. isWeaned puede estar en true
+  // por registro manual sin fecha; solo weanedAt garantiza que la cría fue destetada.
   const isUnweaned = (a: Animal) => !a.weanedAt
 
   // Buscar por IDs de offspring del breeding record
