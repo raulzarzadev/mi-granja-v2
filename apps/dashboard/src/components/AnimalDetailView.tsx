@@ -10,7 +10,6 @@ import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import {
   animal_stage_next_steps,
   animalAge,
-  computeAnimalEffectiveStage,
   computeAnimalStage,
   findAnimalByRef,
   getLastWeight,
@@ -39,9 +38,7 @@ interface AnimalDetailViewProps {
  */
 const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp }) => {
   const { animals: allAnimals } = useAnimalCRUD()
-  const animal =
-    useSelector((state: RootState) => state.animals.animals.find((a) => a.id === animalProp.id)) ??
-    animalProp
+  const animal = allAnimals.find((a) => a.id === animalProp.id) ?? animalProp
 
   const getMother = () => findAnimalByRef(allAnimals, animal.motherId) || null
   const getFather = () => findAnimalByRef(allAnimals, animal.fatherId) || null
@@ -52,7 +49,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp 
   const father = getFather()
   const stageDesc = animal_stage_descriptions[animal.stage]
   const speciesInfo = stageDesc?.speciesInfo?.[animal.type]
-  const effectiveStage = computeAnimalEffectiveStage(animal, breedings)
+  const effectiveStage = animal.computedStage ?? computeAnimalStage(animal)
   const nextSteps = animal_stage_next_steps[effectiveStage]?.({
     animal,
     breedings,
@@ -330,7 +327,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp 
     },
   ]
 
-  const stageCfg = animal_stage_config[computeAnimalStage(animal)]
+  const stageCfg = animal_stage_config[animal.computedStage ?? computeAnimalStage(animal)]
   const genderCfg = animal_gender_config[animal.gender]
 
   return (

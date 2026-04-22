@@ -2,7 +2,6 @@
 
 import { addDays, differenceInCalendarDays } from 'date-fns'
 import { useMemo } from 'react'
-import { computeAnimalEffectiveStage } from '@/lib/animal-utils'
 import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import { toDate } from '@/lib/dates'
 import type { Animal } from '@/types/animals'
@@ -23,56 +22,31 @@ export const useAnimalStages = ({
   matchesEtapasFilters,
 }: Params) => {
   const engordaAnimals = useMemo(
-    () =>
-      activeAnimals.filter(
-        (a) =>
-          computeAnimalEffectiveStage(a, breedingRecords) === 'engorda' && matchesEtapasFilters(a),
-      ),
-    [activeAnimals, breedingRecords, matchesEtapasFilters],
+    () => activeAnimals.filter((a) => a.computedStage === 'engorda' && matchesEtapasFilters(a)),
+    [activeAnimals, matchesEtapasFilters],
   )
   const juvenilAnimals = useMemo(
-    () =>
-      activeAnimals.filter(
-        (a) =>
-          computeAnimalEffectiveStage(a, breedingRecords) === 'juvenil' && matchesEtapasFilters(a),
-      ),
-    [activeAnimals, breedingRecords, matchesEtapasFilters],
+    () => activeAnimals.filter((a) => a.computedStage === 'juvenil' && matchesEtapasFilters(a)),
+    [activeAnimals, matchesEtapasFilters],
   )
   const reproductorAnimals = useMemo(
-    () =>
-      activeAnimals.filter(
-        (a) =>
-          computeAnimalEffectiveStage(a, breedingRecords) === 'reproductor' &&
-          matchesEtapasFilters(a),
-      ),
-    [activeAnimals, breedingRecords, matchesEtapasFilters],
+    () => activeAnimals.filter((a) => a.computedStage === 'reproductor' && matchesEtapasFilters(a)),
+    [activeAnimals, matchesEtapasFilters],
   )
   const criaAnimals = useMemo(
-    () =>
-      activeAnimals.filter(
-        (a) =>
-          computeAnimalEffectiveStage(a, breedingRecords) === 'cria' && matchesEtapasFilters(a),
-      ),
-    [activeAnimals, breedingRecords, matchesEtapasFilters],
+    () => activeAnimals.filter((a) => a.computedStage === 'cria' && matchesEtapasFilters(a)),
+    [activeAnimals, matchesEtapasFilters],
   )
   const descarteAnimals = useMemo(
-    () =>
-      activeAnimals.filter(
-        (a) =>
-          computeAnimalEffectiveStage(a, breedingRecords) === 'descarte' && matchesEtapasFilters(a),
-      ),
-    [activeAnimals, breedingRecords, matchesEtapasFilters],
+    () => activeAnimals.filter((a) => a.computedStage === 'descarte' && matchesEtapasFilters(a)),
+    [activeAnimals, matchesEtapasFilters],
   )
 
-  /** Madres lactantes: stage efectivo es crias_lactantes + al menos 1 cría viva/sin destetar */
+  /** Madres lactantes: computedStage ya fue calculado con lista completa de animales */
   const noursingMothersAnimals = useMemo(
     () =>
-      activeAnimals.filter(
-        (a) =>
-          computeAnimalEffectiveStage(a, breedingRecords, new Date(), animals) ===
-            'crias_lactantes' && matchesEtapasFilters(a),
-      ),
-    [activeAnimals, animals, breedingRecords, matchesEtapasFilters],
+      activeAnimals.filter((a) => a.computedStage === 'crias_lactantes' && matchesEtapasFilters(a)),
+    [activeAnimals, matchesEtapasFilters],
   )
 
   /** Rows enriquecidos para la tabla de madres lactantes */
@@ -93,9 +67,7 @@ export const useAnimalStages = ({
       // Resolver crías: desde breeding records primero, luego por motherId
       let crias: Animal[] = []
       if (criaIdsFromBreeding.size > 0) {
-        crias = animals.filter(
-          (a) => criaIdsFromBreeding.has(a.id) && isAlive(a) && isUnweaned(a),
-        )
+        crias = animals.filter((a) => criaIdsFromBreeding.has(a.id) && isAlive(a) && isUnweaned(a))
       }
       // Fallback: crías cuyo motherId apunta a esta madre
       if (crias.length === 0) {

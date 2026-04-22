@@ -15,17 +15,12 @@ import StatisticsTab from '@/components/StatisticsTab'
 import Tabs from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
-import { computeAnimalStage, findAnimalByRef } from '@/lib/animal-utils'
+import { findAnimalByRef } from '@/lib/animal-utils'
 import { calculateExpectedBirthDate, getWeaningDays } from '@/lib/animalBreedingConfig'
 import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { formatDate, toDate } from '@/lib/dates'
 import { db } from '@/lib/firebase'
-import {
-  Animal,
-  AnimalStageKey,
-  animal_stage_config,
-  animals_types_labels,
-} from '@/types/animals'
+import { Animal, AnimalStageKey, animal_stage_config, animals_types_labels } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 import ModalBulkHealthAction from '../../ModalBulkHealthAction'
@@ -413,7 +408,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     for (const entry of unweanedOffspring) ids.add(entry.animal.id)
     // Madres amamantando (por offspring en stage cria)
     const activeCriaIds = new Set(
-      activeAnimals.filter((a) => computeAnimalStage(a) === 'cria').map((a) => a.id),
+      activeAnimals.filter((a) => a.computedStage === 'cria').map((a) => a.id),
     )
     for (const r of breedingRecords) {
       for (const fi of r.femaleBreedingInfo) {
@@ -425,7 +420,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     // Madres standalone: crías cuyo motherId apunta a un animal directamente
     // (sin enlace en breeding records). Resolver por id o animalNumber.
     for (const a of activeAnimals) {
-      if (computeAnimalStage(a) !== 'cria' || !a.motherId) continue
+      if (a.computedStage !== 'cria' || !a.motherId) continue
       const mother = findAnimalByRef(activeAnimals, a.motherId)
       if (mother) ids.add(mother.id)
     }
@@ -438,9 +433,15 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     breedingRecords,
   ])
 
-  // --- Etapas por computeAnimalEffectiveStage (una etapa por animal, sin duplicados) ---
-  const { engordaAnimals, juvenilAnimals, reproductorAnimals, criaAnimals, descarteAnimals, noursingMothersRows } =
-    useAnimalStages({ activeAnimals, animals, breedingRecords, matchesEtapasFilters })
+  // --- Etapas por computedStage (una etapa por animal, sin duplicados) ---
+  const {
+    engordaAnimals,
+    juvenilAnimals,
+    reproductorAnimals,
+    criaAnimals,
+    descarteAnimals,
+    noursingMothersRows,
+  } = useAnimalStages({ activeAnimals, animals, breedingRecords, matchesEtapasFilters })
 
   const empadresCount = orderedBreedings.needPregnancyConfirmation.length
   const empadreFemalesCount = useMemo(() => {
@@ -610,7 +611,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     const allStandalone = activeAnimals
       .filter(
         (a) =>
-          computeAnimalStage(a) === 'cria' &&
+          a.computedStage === 'cria' &&
           !breedingCriaIds.has(a.id) &&
           matchesEtapasFilters(a, { skipSearch: true }),
       )
@@ -725,7 +726,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   }
 
   const animalColumns = useMemo(() => buildAnimalColumns(), [])
-  const allAnimalColumns = useMemo(() => buildAllAnimalColumns(breedingRecords), [breedingRecords])
+  const allAnimalColumns = useMemo(() => buildAllAnimalColumns(), [])
   const noursingMothersColumns = useMemo(() => buildNoursingColumns(animals), [animals])
 
   const etapasTabs = [

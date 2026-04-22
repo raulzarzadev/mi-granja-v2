@@ -102,6 +102,13 @@ export interface Animal {
     originalTimestamp: Date
     impersonationReason?: string
   }
+  /**
+   * Etapa efectiva calculada en tiempo real — no se persiste en Firestore.
+   * Se computa con `computeAnimalEffectiveStage(animal, breedingRecords, now, allAnimals)`
+   * vía el selector `selectAnimalsWithComputedStage` y se inyecta en el store derivado.
+   * Incluye estados de crianza: 'empadre', 'embarazos', 'crias_lactantes'.
+   */
+  computedStage?: AnimalStageKey
 }
 
 export const animals_genders = ['macho', 'hembra'] as const

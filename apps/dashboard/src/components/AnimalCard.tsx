@@ -35,7 +35,7 @@ const getBgClass = (colorStr: string) => colorStr.split(' ')[0]
 
 const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
   const weight = formatWeight(animal.weight)
-  const stageCfg = animal_stage_config[computeAnimalStage(animal)]
+  const stageCfg = animal_stage_config[animal.computedStage ?? computeAnimalStage(animal)]
   const genderCfg = animal_gender_config[animal.gender]
   const isActive = !animal.status || animal.status === 'activo'
   const accentBorder = stageAccentBorder[getBgClass(stageCfg.color)] ?? 'border-l-gray-300'

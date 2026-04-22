@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@/components/DataTable'
 import { Icon } from '@/components/Icon/icon'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
-import { animalAge, computeAnimalEffectiveStage, formatWeight } from '@/lib/animal-utils'
+import { animalAge, formatWeight } from '@/lib/animal-utils'
 import {
   type Animal,
   animal_gender_config,
@@ -10,7 +10,6 @@ import {
   animal_status_labels,
   animals_types_labels,
 } from '@/types/animals'
-import type { BreedingRecord } from '@/types/breedings'
 
 const ICON_GENDER_SIZE = 4
 
@@ -116,21 +115,19 @@ export const buildAnimalColumns = (): ColumnDef<Animal>[] => [
   },
 ]
 
-export const buildAllAnimalColumns = (breedingRecords: BreedingRecord[]): ColumnDef<Animal>[] => {
+export const buildAllAnimalColumns = (): ColumnDef<Animal>[] => {
   const stageCol: ColumnDef<Animal> = {
     key: 'stage',
     label: 'Etapa',
     width: '14%',
     sortable: true,
     sortFn: (a, b) =>
-      (
-        animal_stage_config[computeAnimalEffectiveStage(a, breedingRecords)].label || ''
-      ).localeCompare(
-        animal_stage_config[computeAnimalEffectiveStage(b, breedingRecords)].label || '',
+      (animal_stage_config[a.computedStage ?? a.stage].label || '').localeCompare(
+        animal_stage_config[b.computedStage ?? b.stage].label || '',
         'es',
       ),
     render: (row) => {
-      const stage = computeAnimalEffectiveStage(row, breedingRecords)
+      const stage = row.computedStage ?? row.stage
       const cfg = animal_stage_config[stage]
       return (
         <span

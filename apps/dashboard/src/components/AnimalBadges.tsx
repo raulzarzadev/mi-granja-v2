@@ -5,7 +5,7 @@ import {
   Animal,
   animal_gender_config,
   animal_icon,
-  animal_stage_icons,
+  animal_stage_config,
   animal_status_icons,
 } from '@/types/animals'
 import { Icon, IconName } from './Icon/icon'
@@ -65,8 +65,8 @@ const AnimalBadges: React.FC<AnimalBadgesProps> = ({ animal, ageFormat = 'full' 
       {animal.status && animal.status !== 'activo' ? (
         <span title={animal.status}>{animal_status_icons[animal.status]}</span>
       ) : (
-        <span title={computeAnimalStage(animal)}>
-          {animal_stage_icons[computeAnimalStage(animal)]}
+        <span title={animal.computedStage ?? computeAnimalStage(animal)}>
+          {animal_stage_config[animal.computedStage ?? computeAnimalStage(animal)].icon}
         </span>
       )}
       <span className="text-xs text-gray-500 w-10 text-left tabular-nums" title="Edad">

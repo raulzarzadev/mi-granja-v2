@@ -42,7 +42,7 @@ const AnimalTag: React.FC<AnimalTagProps> = ({
     return animalAge(animal, { format: 'short' })
   })()
 
-  const stageCfg = animal_stage_config[computeAnimalStage(animal)]
+  const stageCfg = animal_stage_config[animal.computedStage ?? computeAnimalStage(animal)]
   const genderCfg = animal_gender_config[animal.gender]
   const Tag = onClick ? 'button' : 'span'
 

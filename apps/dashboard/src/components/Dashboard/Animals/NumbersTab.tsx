@@ -8,8 +8,7 @@ import {
 import React, { useMemo, useState } from 'react'
 import { Modal } from '@/components/Modal'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
-import { animalAge, computeAnimalEffectiveStage } from '@/lib/animal-utils'
+import { animalAge } from '@/lib/animal-utils'
 
 type GenderFilter = 'todos' | 'macho' | 'hembra'
 
@@ -47,7 +46,6 @@ function sortByAnimalNumber(list: Animal[]): Animal[] {
 
 const NumbersTab: React.FC = () => {
   const { animals } = useAnimalCRUD()
-  const { breedingRecords } = useBreedingCRUD()
   const [gender, setGender] = useState<GenderFilter>('todos')
   const [modalData, setModalData] = useState<{ title: string; animals: Animal[] } | null>(null)
 
@@ -64,12 +62,12 @@ const NumbersTab: React.FC = () => {
   const stageGroups = useMemo(() => {
     const map = new Map<AnimalStageKey, Animal[]>()
     for (const a of genderFiltered) {
-      const s = computeAnimalEffectiveStage(a, breedingRecords, new Date(), animals)
+      const s = a.computedStage ?? a.stage
       if (!map.has(s)) map.set(s, [])
       map.get(s)?.push(a)
     }
     return map
-  }, [genderFiltered, breedingRecords, animals])
+  }, [genderFiltered])
 
   const ageGroups = useMemo(
     () =>

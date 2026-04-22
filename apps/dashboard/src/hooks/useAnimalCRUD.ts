@@ -16,6 +16,7 @@ import {
 import { useCallback, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { setAnimals } from '@/features/animals/animalsSlice'
+import { selectAnimalsWithComputedStage } from '@/features/animals/animalsSelectors'
 import { setError } from '@/features/auth/authSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { RootState } from '@/features/store'
@@ -33,9 +34,10 @@ import { Animal, AnimalRecord, AnimalStatus, WeanNextStage } from '@/types/anima
 export const useAnimalCRUD = () => {
   const dispatch = useDispatch()
   const { user } = useSelector((state: RootState) => state.auth)
-  const { animals } = useSelector((state: RootState) => state.animals)
   const { currentFarm } = useSelector((state: RootState) => state.farm)
   const { wrapWithAdminMetadata } = useAdminActions()
+  // Animales con `computedStage` pre-calculado (usa breedingRecords + lista completa)
+  const animals = useSelector(selectAnimalsWithComputedStage)
 
   const [isLoading, setIsLoading] = useState(false)
 

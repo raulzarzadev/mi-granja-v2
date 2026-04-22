@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { computeAnimalEffectiveStage, findAnimalByRef } from '@/lib/animal-utils'
+import { findAnimalByRef } from '@/lib/animal-utils'
 import type { Animal } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
 
@@ -29,7 +29,7 @@ export const usePregnantFemales = ({
     const pregnant = activeAnimals.filter(
       (a) =>
         a.gender === 'hembra' &&
-        computeAnimalEffectiveStage(a, breedingRecords) === 'embarazos' &&
+        a.computedStage === 'embarazos' &&
         matchesEtapasFilters(a),
     )
     return pregnant.map<PregnantFemaleEntry>((animal) => {

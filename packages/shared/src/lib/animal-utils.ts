@@ -6,7 +6,7 @@ import {
   getAnimalBreedingConfig,
   getWeaningDays,
 } from './animalBreedingConfig'
-import { collectionGroup } from 'firebase/firestore/lite';
+import { collectionGroup } from 'firebase/firestore/lite'
 
 /**
  * Calcula la edad de un animal en meses
@@ -249,7 +249,7 @@ function hasLivingUnweanedOffspring(
   if (!animals) return true // fallback: sin lista de animales, confiar en fecha
 
   const isAlive = (a: Animal) => a.status !== 'muerto' && a.status !== 'vendido'
-  const isUnweaned = (a: Animal) => !a.isWeaned || !a.weanedAt
+  const isUnweaned = (a: Animal) => !a.isWeaned && !a.weanedAt
 
   // Buscar por IDs de offspring del breeding record
   if (offspringIds && offspringIds.length > 0) {
@@ -263,13 +263,9 @@ function hasLivingUnweanedOffspring(
   // motherId puede ser el id de Firestore o el animalNumber (legado)
   const motherAnimal = animals.find((a) => a.id === motherId)
   // consultar a las crias de este animal
-  const motherOffsprings = animals.filter(a => a.motherId === motherId)
+  const motherOffsprings = animals.filter((a) => a.motherId === motherId)
 
-  const aliveUnweanedOffspring = motherOffsprings.some(
-    (a) =>
-      isAlive(a) &&
-      isUnweaned(a),
-  )
+  const aliveUnweanedOffspring = motherOffsprings.some((a) => isAlive(a) && isUnweaned(a))
 
   return aliveUnweanedOffspring
 }
