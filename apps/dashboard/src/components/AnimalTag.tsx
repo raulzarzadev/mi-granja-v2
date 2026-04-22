@@ -2,14 +2,10 @@
 
 import React from 'react'
 import { animalAge } from '@/lib/animal-utils'
-import {
-  Animal,
-  AnimalStage,
-  AnimalStatus,
-  animal_stage_icons,
-  gender_colors,
-  gender_icon,
-} from '@/types/animals'
+import { Animal, AnimalStatus, animal_gender_config, animal_stage_config } from '@/types/animals'
+import { computeAnimalStage } from '@/lib/animal-utils'
+import { Icon, IconName } from './Icon/icon'
+import ModalAnimalDetails from './ModalAnimalDetails'
 
 const statusIcon: Record<string, string> = {
   muerto: '💀',
@@ -20,11 +16,18 @@ const statusIcon: Record<string, string> = {
 interface AnimalTagProps {
   animal: Animal
   onClick?: () => void
-  active?: boolean
+  active?: boolean // para destacar el tag (ej: en la ficha del animal, para mostrar que es el mismo)
   showAge?: boolean
+  showModalOnClick?: boolean // si true, onClick abrirá el modal de detalles del animal
 }
 
-const AnimalTag: React.FC<AnimalTagProps> = ({ animal, onClick, active, showAge = false }) => {
+const AnimalTag: React.FC<AnimalTagProps> = ({
+  animal,
+  onClick,
+  active,
+  showAge = false,
+  showModalOnClick = false,
+}) => {
   const status = (animal.status || 'activo') as AnimalStatus
   const inactive = status !== 'activo'
   const sIcon = statusIcon[status]
@@ -39,9 +42,11 @@ const AnimalTag: React.FC<AnimalTagProps> = ({ animal, onClick, active, showAge 
     return animalAge(animal, { format: 'short' })
   })()
 
+  const stageCfg = animal_stage_config[computeAnimalStage(animal)]
+  const genderCfg = animal_gender_config[animal.gender]
   const Tag = onClick ? 'button' : 'span'
 
-  return (
+  const tagEl = (
     <Tag
       type={onClick ? 'button' : undefined}
       onClick={onClick}
@@ -51,19 +56,15 @@ const AnimalTag: React.FC<AnimalTagProps> = ({ animal, onClick, active, showAge 
           : inactive
             ? 'bg-gray-100 text-gray-500 border border-gray-200'
             : 'bg-white text-gray-800 border border-gray-200'
-      } ${onClick ? 'cursor-pointer hover:shadow-sm' : ''} ${
-        onClick && !active && !inactive ? 'hover:border-green-400' : ''
+      } ${onClick || showModalOnClick ? 'cursor-pointer hover:shadow-sm' : ''} ${
+        (onClick || showModalOnClick) && !active && !inactive ? 'hover:border-green-400' : ''
       }`}
     >
       <span className="font-bold">#{animal.animalNumber}</span>
-      <span className={`font-bold ${active ? '' : gender_colors[animal.gender]}`}>
-        {gender_icon[animal.gender]}
+      <span className={`font-bold ${active ? '' : genderCfg.color}`} title={genderCfg.label}>
+        <Icon icon={genderCfg.iconName as IconName} size={3} />
       </span>
-      {sIcon ? (
-        <span>{sIcon}</span>
-      ) : (
-        <span className="text-[10px]">{animal_stage_icons[animal.stage as AnimalStage] || ''}</span>
-      )}
+      {sIcon ? <span>{sIcon}</span> : <span className="text-[10px]">{stageCfg?.icon || ''}</span>}
       {age && age !== 'No registrado' && (
         <span className={`text-[10px] ${active ? 'text-green-100' : 'text-gray-400'}`}>
           {age}
@@ -72,6 +73,12 @@ const AnimalTag: React.FC<AnimalTagProps> = ({ animal, onClick, active, showAge 
       )}
     </Tag>
   )
+
+  if (showModalOnClick) {
+    return <ModalAnimalDetails animal={animal} triggerComponent={tagEl} />
+  }
+
+  return tagEl
 }
 
 export default AnimalTag

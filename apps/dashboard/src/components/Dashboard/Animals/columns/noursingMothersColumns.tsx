@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@/components/DataTable'
 import { Icon } from '@/components/Icon/icon'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
-import { findAnimalByRef } from '@/lib/animal-utils'
+import { computeAnimalStage, findAnimalByRef } from '@/lib/animal-utils'
 import { type Animal, animal_gender_config } from '@/types/animals'
 import AnimalBadge from '@/components/AnimalBadges'
 import AnimalTag from '@/components/AnimalTag'
@@ -72,16 +72,20 @@ export const buildNoursingColumns = (animals: Animal[]): ColumnDef<NoursingMothe
           a.motherId === row.animal.id &&
           // is alive
           a.status === 'activo' &&
-          // is unweaned
-          (!a.weanedAt || !a.isWeaned),
+          // is unweaned (neither flag set nor date recorded)
+          !a.weanedAt &&
+          // still a cría by age (guards against animals with missing weanedAt)
+          computeAnimalStage(a) === 'cria',
       )
+
+      console.log({ motherOffspring })
 
       return motherOffspring?.length ? (
         <div>
-          <span className="text-gray-700">{row.animal.animalNumber}</span>
+          <span className="text-gray-700"></span>
           <div className="flex gap-1">
             {motherOffspring?.map((cria) => (
-              <AnimalTag animal={cria} key={cria.id} />
+              <AnimalTag animal={cria} key={cria.id} showModalOnClick showAge />
             ))}
           </div>
         </div>
