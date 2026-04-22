@@ -25,7 +25,6 @@ import { Icon } from './Icon/icon'
 import AnimalSelector from './inputs/AnimalSelector'
 import { BirthDateInput } from './inputs/BirthDateInput'
 import { InputRadioCards } from './inputs/InputRadioCards'
-import { WeightField } from './inputs/WeightInput'
 
 interface AnimalFormProps {
   onSubmit: (animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>) => void

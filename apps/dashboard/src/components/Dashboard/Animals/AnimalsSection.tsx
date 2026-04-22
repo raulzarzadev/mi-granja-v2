@@ -38,15 +38,15 @@ import {
 import { useAnimalStages } from './hooks/useAnimalStages'
 import { useBreedingHandlers } from './hooks/useBreedingHandlers'
 import { usePregnantFemales } from './hooks/usePregnantFemales'
-import TabStageEmpadre from './tabStages/TabStageEmpadre'
-import TabStagePregnant from './tabStages/TabStagePregnant'
 import TabStageCrias from './tabStages/TabStageCrias'
-import TabStageNoursingMothers from './tabStages/TabStageNoursingMothers'
-import TabStageRepro from './tabStages/TabStageRepro'
-import TabStageJuvenil from './tabStages/TabStageJuvenil'
-import TabStageEngorda from './tabStages/TabStageEngorda'
 import TabStageDescarte from './tabStages/TabStageDescarte'
+import TabStageEmpadre from './tabStages/TabStageEmpadre'
+import TabStageEngorda from './tabStages/TabStageEngorda'
+import TabStageJuvenil from './tabStages/TabStageJuvenil'
+import TabStageNoursingMothers from './tabStages/TabStageNoursingMothers'
 import TabStagePerdidos from './tabStages/TabStagePerdidos'
+import TabStagePregnant from './tabStages/TabStagePregnant'
+import TabStageRepro from './tabStages/TabStageRepro'
 import TabAllAnimals from './tabs/TabAllAnimals'
 import TabEtapas from './tabs/TabEtapas'
 
@@ -108,7 +108,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     animalNumbers: string[]
     decision: 'engorda' | 'reproductor'
   } | null>(null)
-  const [selectedWeanIds, setSelectedWeanIds] = useState<Set<string>>(new Set())
+  const [_selectedWeanIds, setSelectedWeanIds] = useState<Set<string>>(new Set())
   const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
   const [viewingBreedingRecord, setViewingBreedingRecord] = useState<BreedingRecord | null>(null)
   const [viewingConfirming, setViewingConfirming] = useState(false)
@@ -257,18 +257,12 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
 
   // --- Animales perdidos ---
   // Merge del store (farmId) + query directa (cubre animales sin farmId guardados por farmerId)
-  const [extraPerdidos, setExtraPerdidos] = useState<Animal[]>([])
+  const [_, setExtraPerdidos] = useState<Animal[]>([])
   useEffect(() => {
     queryAnimalsByStatus('perdido').then((list) => {
       setExtraPerdidos(list)
     })
   }, [queryAnimalsByStatus])
-  const perdidosAnimals = useMemo(() => {
-    const fromStore = animals.filter((a) => a.status === 'perdido')
-    const storeIds = new Set(fromStore.map((a) => a.id))
-    const extra = extraPerdidos.filter((a) => !storeIds.has(a.id))
-    return [...fromStore, ...extra]
-  }, [animals, extraPerdidos])
 
   // --- Empadres filtrados por tipo/raza/género/búsqueda ---
   const filteredBreedingRecords = useMemo(() => {
@@ -409,46 +403,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   const destetesColumns = useMemo(() => buildDestetesColumns(animals), [animals])
 
   // Madres únicas amamantando — se calcula después de allCrias para ser consistente con filtros
-
-  // IDs de animales ya contados en tabs de breeding (Empadre, Embarazos, Crías)
-  const breedingTabIds = useMemo(() => {
-    const ids = new Set<string>()
-    // Hembras en empadre (pendientes de confirmar embarazo)
-    for (const r of orderedBreedings.needPregnancyConfirmation) {
-      for (const f of r.femaleBreedingInfo) {
-        if (!f.pregnancyConfirmedDate && !f.actualBirthDate) ids.add(f.femaleId)
-      }
-    }
-    // Hembras embarazadas
-    for (const entry of pregnantFemales) ids.add(entry.animal.id)
-    // Crías en destete
-    for (const entry of unweanedOffspring) ids.add(entry.animal.id)
-    // Madres amamantando (por offspring en stage cria)
-    const activeCriaIds = new Set(
-      activeAnimals.filter((a) => a.computedStage === 'cria').map((a) => a.id),
-    )
-    for (const r of breedingRecords) {
-      for (const fi of r.femaleBreedingInfo) {
-        if (fi.offspring?.some((offId) => activeCriaIds.has(offId))) {
-          if (!ids.has(fi.femaleId)) ids.add(fi.femaleId)
-        }
-      }
-    }
-    // Madres standalone: crías cuyo motherId apunta a un animal directamente
-    // (sin enlace en breeding records). Resolver por id o animalNumber.
-    for (const a of activeAnimals) {
-      if (a.computedStage !== 'cria' || !a.motherId) continue
-      const mother = findAnimalByRef(activeAnimals, a.motherId)
-      if (mother) ids.add(mother.id)
-    }
-    return ids
-  }, [
-    orderedBreedings.needPregnancyConfirmation,
-    pregnantFemales,
-    unweanedOffspring,
-    activeAnimals,
-    breedingRecords,
-  ])
 
   // --- Etapas por computedStage (una etapa por animal, sin duplicados) ---
   const {

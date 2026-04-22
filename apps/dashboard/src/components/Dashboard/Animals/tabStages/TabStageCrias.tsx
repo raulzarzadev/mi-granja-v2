@@ -11,10 +11,18 @@ interface Props {
   allCrias: UnweanedRow[]
   columns: ColumnDef<UnweanedRow>[]
   openBulkWean: (decision: 'engorda' | 'reproductor', ids: Set<string>) => void
-  weanAndUpdateMother: (id: string, opts: { stageDecision: 'engorda' | 'reproductor' }) => Promise<void>
+  weanAndUpdateMother: (
+    id: string,
+    opts: { stageDecision: 'engorda' | 'reproductor' },
+  ) => Promise<void>
 }
 
-export default function TabStageCrias({ allCrias, columns, openBulkWean, weanAndUpdateMother }: Props) {
+export default function TabStageCrias({
+  allCrias,
+  columns,
+  openBulkWean,
+  weanAndUpdateMother,
+}: Props) {
   return (
     <div>
       <p className="text-xs text-gray-500 mb-2">Recién nacidos, en espera de destete.</p>

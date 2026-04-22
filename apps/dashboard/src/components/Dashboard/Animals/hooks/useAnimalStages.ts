@@ -2,8 +2,8 @@
 
 import { addDays, differenceInCalendarDays } from 'date-fns'
 import { useMemo } from 'react'
-import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import { activeUnweanedOffspring } from '@/lib/animal-utils'
+import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import { toDate } from '@/lib/dates'
 import type { Animal } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'

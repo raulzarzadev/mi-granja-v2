@@ -6,7 +6,6 @@ import {
   getAnimalBreedingConfig,
   getWeaningDays,
 } from './animalBreedingConfig'
-import { collectionGroup } from 'firebase/firestore/lite'
 
 /**
  * Calcula la edad de un animal en meses
@@ -216,7 +215,6 @@ export function computeAnimalEffectiveStage(
   if (animal.gender === 'hembra') {
     if (animal.birthedAt) {
       if (animals) {
-
       } else {
         // Sin lista: ventana temporal como proxy
         const birthDate = toDate(animal.birthedAt)
@@ -262,7 +260,7 @@ function isUnweanedAnimal(a: Animal): boolean {
  * Si no se dispone de la lista de animales, retorna `true` como fallback.
  */
 function hasLivingUnweanedOffspring(
-  offspringIds: string[] | undefined,
+  _offspringIds: string[] | undefined,
   animals: Animal[] | undefined,
   motherId: string,
 ): boolean {
@@ -282,12 +280,7 @@ export function activeUnweanedOffspring({
   const isOffspring = (a: Animal) => a.motherId === motherId
 
   // Retorna los animales que son hijas de la madre y están activos y sin destetar
-  return farmAnimals.filter(
-    (a) =>
-      isOffspring(a) &&
-      isActive(a) &&
-      isUnweanedAnimal(a),
-  )
+  return farmAnimals.filter((a) => isOffspring(a) && isActive(a) && isUnweanedAnimal(a))
 }
 
 /**

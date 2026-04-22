@@ -1,9 +1,8 @@
 'use client'
 
 import React from 'react'
-import { animalAge } from '@/lib/animal-utils'
+import { animalAge, computeAnimalStage } from '@/lib/animal-utils'
 import { Animal, AnimalStatus, animal_gender_config, animal_stage_config } from '@/types/animals'
-import { computeAnimalStage } from '@/lib/animal-utils'
 import { Icon, IconName } from './Icon/icon'
 import ModalAnimalDetails from './ModalAnimalDetails'
 

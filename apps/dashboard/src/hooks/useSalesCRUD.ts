@@ -28,7 +28,6 @@ export const useSalesCRUD = () => {
   const { user } = useSelector((state: RootState) => state.auth)
   const { currentFarm } = useSelector((state: RootState) => state.farm)
   const { sales } = useSelector((state: RootState) => state.sales)
-  const { markStatus } = useAnimalCRUD()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const getFarmSales = () => {

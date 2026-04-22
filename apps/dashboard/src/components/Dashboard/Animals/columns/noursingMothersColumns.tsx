@@ -1,9 +1,9 @@
+import AnimalTag from '@/components/AnimalTag'
 import type { ColumnDef } from '@/components/DataTable'
 import { Icon } from '@/components/Icon/icon'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import { findAnimalByRef } from '@/lib/animal-utils'
 import { type Animal, animal_gender_config } from '@/types/animals'
-import AnimalTag from '@/components/AnimalTag'
 
 export type NoursingMotherRow = {
   animal: Animal

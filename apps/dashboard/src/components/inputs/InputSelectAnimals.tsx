@@ -46,7 +46,6 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   filterFn,
   renderOption,
   secondaryLabel,
-  showOmitButton = false,
   disabled = false,
 }) => {
   const [query, setQuery] = useState('')

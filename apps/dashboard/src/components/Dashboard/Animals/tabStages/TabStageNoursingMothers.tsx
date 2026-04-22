@@ -1,10 +1,10 @@
 'use client'
 
+import Button from '@/components/buttons/Button'
 import DataTable, { type ColumnDef } from '@/components/DataTable'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
-import Button from '@/components/buttons/Button'
-import { animal_stage_config } from '@/types/animals'
 import type { Animal } from '@/types/animals'
+import { animal_stage_config } from '@/types/animals'
 import type { NoursingMotherRow } from '../columns/noursingMothersColumns'
 
 interface Props {
