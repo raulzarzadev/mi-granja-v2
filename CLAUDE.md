@@ -1,176 +1,39 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Entry point for Claude Code (claude.ai/code) and other LLM agents.
 
-## Project Overview
+## Canonical documentation
 
-Mi Granja is a Spanish-language farm management app (multi-tenant) built with Next.js App Router. It tracks animals, breeding records, reminders, and farm collaborators. All UI text, type field names, comments, and domain logic use Spanish.
+**All project documentation lives in [`docs/`](./docs/README.md)** and is indexed by [`llms.txt`](./llms.txt) at the root. Start there.
 
-## Monorepo Structure
+## Quick links
 
-This is a **pnpm workspaces + Turborepo** monorepo with the following packages:
+- [docs/README.md](./docs/README.md) — Documentation index
+- [docs/architecture.md](./docs/architecture.md) — Stack, monorepo layout, data flow
+- [docs/conventions.md](./docs/conventions.md) — Code style, backup sync rule, language
+- [docs/commands.md](./docs/commands.md) — pnpm/turbo commands
+- [docs/GLOSSARY.md](./docs/GLOSSARY.md) — Spanish ganadero vocabulary
+- [docs/roadmap.md](./docs/roadmap.md) — Pending / done / dropped
+- [docs/features/](./docs/features/) — Per-feature specs (auth, billing, animals, etc.)
+- [docs/decisions/](./docs/decisions/) — ADRs (monorepo, no-Stripe Lugares, Biome, Redux, shared pkg)
+- [docs/agents/ux-ganadero.md](./docs/agents/ux-ganadero.md) — UX reviewer sub-agent
 
-```
-mi-granja-2/
-├── apps/
-│   ├── dashboard/          ← main app (dashboard.migranja.app)
-│   │   ├── src/
-│   │   ├── cypress/
-│   │   ├── public/
-│   │   ├── package.json
-│   │   └── next.config.ts
-│   └── landing/            ← landing page (migranja.app)
-│       ├── src/app/
-│       ├── public/
-│       └── package.json
-├── packages/
-│   └── shared/             ← @mi-granja/shared
-│       ├── src/types/      ← domain types (animals, farm, breedings, etc.)
-│       ├── src/lib/        ← shared utilities (firebase, dates, serializeObj, etc.)
-│       └── src/index.ts    ← barrel export
-├── pnpm-workspace.yaml
-├── turbo.json
-├── tsconfig.base.json
-└── package.json
-```
+## Project summary
 
-## Commands
+Mi Granja — Spanish-language farm management app (multi-tenant). Next.js 16 App Router + Firebase + Redux Toolkit + Tailwind CSS 4. pnpm + Turborepo monorepo (`apps/dashboard`, `apps/landing`, `packages/shared`). All UI, type field names, and domain logic in Spanish. Business model: admin-managed "Lugares" (no payment integrations).
 
-```bash
-# Monorepo-wide (from root)
-pnpm install              # Install all deps
-pnpm build                # Build everything (shared → dashboard + landing)
-pnpm dev                  # Dev all apps
-pnpm lint                 # Lint all packages
-pnpm type-check           # TypeScript check all packages
-pnpm test                 # Run all tests
+## Hard rules (read the full conventions doc before coding)
 
-# Filtered (from root)
-pnpm dev:dashboard        # Dev dashboard on port 3000
-pnpm dev:landing          # Dev landing on port 3001
-pnpm build:dashboard      # Build dashboard only
-pnpm build:landing        # Build landing only
+- Client components: `'use client'` directive required
+- Dates: never raw `new Date()` for user input — use `DateTimeInput` + `dateUtils`
+- Firestore Timestamps: serialize with `serializeObj()` before dispatching to Redux
+- Animal picker: always use `AnimalSelector` (`apps/dashboard/src/components/inputs/AnimalSelector.tsx`)
+- Pro gates: use `ModalUpgradePlan` and `ProFeatureBanner` — no custom upgrade UI
+- Shared types: add to `packages/shared/` and export from `src/index.ts`
+- **Backup sync (CRITICAL)**: modifying types in `packages/shared/src/types/` requires updating `apps/dashboard/src/lib/backup-serialization.ts` AND `apps/dashboard/src/components/ModalRestoreBackup.tsx` — see [docs/features/backups.md](./docs/features/backups.md)
+- API errors: never expose details to client — log server-side, return generic messages
 
-# From within apps/dashboard/
-pnpm test                 # Jest unit tests
-pnpm test -- --testPathPattern="path/to/test"  # Single test
-pnpm test:watch           # Jest watch mode
-pnpm test:e2e             # Cypress headless
-pnpm test:e2e:dev         # Cypress interactive
-```
+## Environment variables
 
-Package manager: **pnpm** (workspaces)
-
-## Architecture
-
-**Stack**: Next.js 16 (App Router) + TypeScript + Firebase (Firestore/Auth) + Redux Toolkit + Tailwind CSS 4
-
-### Shared package (`packages/shared/`)
-
-Contains domain types and pure utilities shared across apps:
-- **`src/types/`** — TypeScript interfaces: `animals.tsx`, `farm.ts`, `breedings.ts`, `collaborators.ts`, `comment.tsx`, `date.ts`, `records.ts`
-- **`src/lib/`** — Utilities: `firebase.ts`, `dateUtils.ts`, `dates.ts`, `serializeObj.ts`, `animalBreedingConfig.ts`, `animal-utils.ts`, `records.ts`, `catchError.ts`
-
-### Dashboard app (`apps/dashboard/`)
-
-**Path alias**: `@/*` maps to `./src/*`
-
-Re-export proxies in `src/types/` and `src/lib/` forward to `@mi-granja/shared`, so existing `@/types/*` and `@/lib/*` imports work without changes.
-
-- **`src/app/`** — Next.js App Router pages and API routes. Root layout wraps everything in `<Providers>` (Redux store + `AuthInitializer`).
-- **`src/features/`** — Redux Toolkit slices organized by domain: `auth`, `animals`, `breeding`, `reminders`, `farm`. Each slice has standard CRUD reducers. `store.ts` combines all slices.
-- **`src/hooks/`** — Custom hooks that bridge Redux state and Firestore. Each domain has a CRUD hook (e.g., `useAnimalCRUD`, `useBreedingCRUD`, `useFarmCRUD`). Hooks dispatch Redux actions and call Firestore directly.
-- **`src/components/`** — UI components. Modal system uses a base `Modal.tsx` + domain-specific wrappers (e.g., `ModalAnimalForm`). Forms use react-hook-form + Zod schemas. **`AnimalSelector`** (`src/components/inputs/AnimalSelector.tsx`) is the unified component for searching and selecting animals — use it everywhere an animal picker is needed (supports `single`/`multi` mode, chips, search dropdown, `fixedIds`, `filterFn`).
-- **`src/lib/`** — Dashboard-specific utilities: `adminActions.ts`, `userUtils.ts`, `migrateBreedings.ts`. Other lib files are re-export proxies from shared.
-
-### Data flow
-
-1. Component calls a hook function (e.g., `createAnimal(data)`)
-2. Hook calls Firestore and dispatches Redux action
-3. Redux state updates, component re-renders via `useSelector`
-
-Firestore Timestamps are serialized to plain objects via `serializeObj()` from `@mi-granja/shared` before dispatching to Redux.
-
-### Auth
-
-Firebase Auth with two methods: email/password and passwordless magic link (completes at `/auth/complete`). `AuthInitializer` in `providers.tsx` subscribes to `onAuthStateChanged` and loads user + farm data into Redux on login.
-
-### Permissions
-
-Collaborator roles: admin, manager, caretaker, veterinarian, viewer. Permissions are per-module (animals, breeding, reminders, areas, collaborators, reports, invitations). Check with `hasPermissions(module, action)` from `useFarmPermissions`.
-
-### Admin impersonation
-
-Admins can impersonate users via `/api/admin/impersonate`. All impersonated actions are tracked with `wrapWithAdminMetadata()` from `lib/adminActions.ts`.
-
-## Code Conventions
-
-- ESLint: `@typescript-eslint/no-explicit-any` is off; `react-hooks/exhaustive-deps` is off; unused vars prefixed with `_` are allowed
-- All client components must have `'use client'` directive
-- Date handling: use `DateTimeInput` component and utilities from `lib/dateUtils.ts` — never use raw `new Date()` for user input (timezone issues documented in `MEJORAS_FECHAS.md`)
-- Firebase config loaded from `NEXT_PUBLIC_FIREBASE_CONFIG` env var (JSON string)
-- Email service uses Brevo via `/api/send` route
-- When adding new shared types or utilities, add them to `packages/shared/` and create re-export proxies in the dashboard if needed
-- **Backup sync**: When modifying types in `packages/shared/src/types/` (adding/removing/renaming fields on `Animal`, `BreedingRecord`, `Reminder`, `Sale`, etc.), also update:
-  1. `apps/dashboard/src/lib/backup-serialization.ts` — add date fields to `DATE_FIELDS_BY_COLLECTION` and `KNOWN_DATE_FIELD_NAMES`, update `BACKUP_SCHEMA` descriptions
-  2. `apps/dashboard/src/components/ModalRestoreBackup.tsx` — update the hardcoded JSON schema shown in "Ver formato requerido del archivo"
-  This ensures backup export/import handles the new fields correctly and the UI documentation stays in sync.
-
-## Business Model
-
-### "Lugares" model — admin-managed (no automated payments)
-
-MiGranja uses a manual, admin-managed plan model. **No Stripe, Conekta, or MercadoPago** — payment integrations were evaluated and removed.
-
-- **Free plan**: 1 granja, 0 colaboradores, acceso completo a features
-- **Paid plan**: el admin asigna N `places` al usuario. Cada `place` vale por **1 granja extra** O **1 colaborador** — el usuario decide cómo gastarlos
-- Cobro y activación se gestionan fuera del sistema; el admin ajusta `places` manualmente desde el panel
-
-### Implementación actual
-
-- **Tipos**: `packages/shared/src/types/billing.ts` — `SubscriptionStatus`, `PlanType`, `BillingSubscription` (campo `places: number`), `BillingUsage` (`totalPlaces`, `usedPlaces`), helpers `computeUsedPlaces`, `canAddFarm`, `canAddCollaborator`
-- **Redux**: `billingSlice.ts` — `subscription`, `usage`, `planType`, `status`, `isLoading`, `error`
-- **Hook**: `useBilling.ts` — `loadSubscription`, `loadUsage`, `canCreateFarm`, `canInviteCollaborator`
-- **API routes**: `/api/billing/subscription`, `/api/billing/usage`, `/api/admin/billing` (GET plan data, POST asigna places)
-- **Admin UI**: botón "Gestionar Plan" en tabla `AdminUsers` — modal muestra uso y asigna `places`. No hay tab "Facturación" separado
-- **User UI**: `BillingSection` y `ProfileSection` muestran plan/places/uso + mensaje "contacta al admin". `MigrationBanner` para usuarios que exceden límites free
-- **Enforcement**: `ModalCreateFarm` y `ModalInviteCollaborator` pre-chequean `usedPlaces < totalPlaces` con alert
-- **Firestore**: colección `subscriptions/{userId}` con campo `places`
-
-
-
-Algunas funcionalidades son exclusivas del plan Pro. Al implementar gates de acceso, **siempre usar estos componentes canónicos**:
-
-- **`ModalUpgradePlan`** (`src/components/billing/ModalUpgradePlan.tsx`) — modal "Actualizar a Plan Pro". Muestra comparativa Free vs Pro, formulario (granjas, colaboradores, mensaje opcional) y envía 2 correos: al dueño (`raulzarza.dev@gmail.com`) y confirmación al usuario. **Usar este modal en TODOS los puntos de upgrade del sistema.**
-- **`ProFeatureBanner`** (`src/components/billing/ProFeatureBanner.tsx`) — banner inline para features bloqueadas (ej: formulario masivo). Muestra disclaimer + mismo formulario de solicitud integrado.
-- **Navbar** ya incluye botón "⭐ Actualizar Plan" visible cuando `planType === 'free'`, que abre `ModalUpgradePlan`.
-
-**Funcionalidades Pro actualmente gateadas:**
-- Registro masivo de animales (`/animal/nuevo` → tab Masivo — banner + botón deshabilitado)
-- Importación de datos (CSV) — pendiente de implementar gate
-- Respaldo y restauración — pendiente de implementar gate
-
-**Patrón para gatear una feature:**
-1. Leer `planType` de Redux: `const { planType } = useBilling()` → `isPaidUser = planType === 'pro'`
-2. Mostrar `<ProFeatureBanner>` si hay un formulario explorable
-3. O abrir `<ModalUpgradePlan>` directamente si es un botón de acción
-4. Deshabilitar el botón de submit con `disabled={!isPaidUser}`
-
-
-
-## Pending Features
-
-El board de pendientes se migrará de Notion a **GitHub Projects** en el repo `raulzarzadev/mi-granja-v2`. Los siguientes tareas están pendientes:
-
-| Feature              | Notes                                                      |
-|----------------------|------------------------------------------------------------|
-| Lost animal status   | Nuevo tipo de estado para animales perdidos                |
-| Collaborators UX     | Flujo propio de invitación/gestión de colaboradores        |
-| BackOffice           | Panel admin de plataforma (más allá del impersonate actual)|
-| SEO measurement      | Analytics y SEO en landing                                 |
-
-Ya completados (no incluir en el board nuevo): dead/sale animals, revertir parto, tab configuración de razas, edición masiva de animales, sistema de billing "Lugares", landing pricing section.
-
-## Environment Variables
-
-Required in `apps/dashboard/.env.local`: `NEXT_PUBLIC_FIREBASE_CONFIG`, `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`, `BREVO_API_KEY`, `NEXT_PUBLIC_APP_URL`
+Required in `apps/dashboard/.env.local`:
+`NEXT_PUBLIC_FIREBASE_CONFIG`, `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`, `BREVO_API_KEY`, `NEXT_PUBLIC_APP_URL`

@@ -1,0 +1,43 @@
+# Mi Granja
+
+> Spanish-language farm management app (multi-tenant). Next.js 16 App Router + Firebase + Redux Toolkit + Tailwind CSS 4. pnpm + Turborepo monorepo.
+
+Mi Granja tracks animals, breeding, reminders, sales, and farm collaborators. Apps: `dashboard` (Next.js 16) and `landing` (Astro 5). Shared types/utils in `@mi-granja/shared`. Business model is admin-managed "Lugares" (no payment integrations).
+
+## Documentation
+
+- [Docs index](docs/README.md): Entry point for all documentation
+- [Architecture](docs/architecture.md): Monorepo layout, stack, data flow
+- [Conventions](docs/conventions.md): Linter, imports, client directives, backup sync
+- [Commands](docs/commands.md): pnpm/turbo commands
+- [Glossary](docs/GLOSSARY.md): Spanish ganadero vocabulary
+- [Roadmap](docs/roadmap.md): Pending, done, dropped
+
+## Features
+
+- [Auth](docs/features/auth.md): Email/password + magic link + admin impersonation
+- [Permissions](docs/features/permissions.md): Role × module matrix, hasPermissions helper
+- [Farms](docs/features/farms.md): Multi-tenant farms + invitation lifecycle
+- [Animals](docs/features/animals.md): Animal CRUD, stages, AnimalSelector
+- [Billing](docs/features/billing.md): Lugares model, Pro gates, ModalUpgradePlan
+- [Modals](docs/features/modals.md): Modal system + useModal hook
+- [Emails](docs/features/emails.md): Brevo integration
+- [Backups](docs/features/backups.md): Export/import + sync rule
+- [Dates](docs/features/dates.md): DateTimeInput, timezone safety
+
+## Decisions (ADRs)
+
+- [001 Monorepo](docs/decisions/001-monorepo.md): pnpm + Turborepo
+- [002 No Stripe / Lugares](docs/decisions/002-no-stripe-lugares.md): Admin-managed plans
+- [003 Biome](docs/decisions/003-biome-over-eslint.md): Biome replaces ESLint + Prettier
+- [004 Redux Toolkit](docs/decisions/004-redux-over-context.md): Redux over Context
+- [005 Shared package](docs/decisions/005-shared-package.md): @mi-granja/shared
+
+## Agents
+
+- [ux-ganadero](docs/agents/ux-ganadero.md): UX reviewer for ganadero users
+
+## Optional
+
+- [README](README.md): Legacy README (historical overview)
+- [CLAUDE.md](CLAUDE.md): Claude Code entry point (points to docs/)
