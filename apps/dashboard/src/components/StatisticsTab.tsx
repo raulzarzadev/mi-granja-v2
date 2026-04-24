@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
-import { AnimalType, animal_icon, animals_types_labels } from '@/types/animals'
+import { Animal, AnimalType, animal_icon, animals_types_labels } from '@/types/animals'
 import { getTotalAmount, getTotalWeight } from './SaleCard'
 
 const formatPrice = (centavos: number) =>
@@ -55,43 +55,34 @@ const Bar: React.FC<{ value: number; max: number; label: string; color?: string 
 }
 
 interface StatisticsTabProps {
-  typeFilter?: AnimalType | ''
+  animals?: Animal[]
 }
 
-const StatisticsTab: React.FC<StatisticsTabProps> = ({ typeFilter = '' }) => {
+const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) => {
   const allAnimals = useSelector((state: RootState) => state.animals.animals)
   const allSales = useSelector((state: RootState) => state.sales.sales)
   const allBreedings = useSelector((state: RootState) => state.breeding.breedingRecords)
 
-  const animals = useMemo(
-    () => (typeFilter ? allAnimals.filter((a) => a.type === typeFilter) : allAnimals),
-    [allAnimals, typeFilter],
-  )
+  const animals = animalsProp ?? allAnimals
+  const isFiltered = animalsProp !== undefined
+  const allowedIds = useMemo(() => new Set(animals.map((a) => a.id)), [animals])
+
   const sales = useMemo(
     () =>
-      typeFilter
-        ? allSales.filter((s) =>
-            s.animals?.some((sa) => {
-              const a = allAnimals.find((an) => an.id === sa.animalId)
-              return a && a.type === typeFilter
-            }),
-          )
+      isFiltered
+        ? allSales.filter((s) => s.animals?.some((sa) => allowedIds.has(sa.animalId)))
         : allSales,
-    [allSales, allAnimals, typeFilter],
+    [allSales, allowedIds, isFiltered],
   )
   const breedings = useMemo(
     () =>
-      typeFilter
+      isFiltered
         ? allBreedings.filter((b) => {
-            const male = allAnimals.find((a) => a.id === b.maleId)
-            if (male && male.type === typeFilter) return true
-            return b.femaleBreedingInfo.some((f) => {
-              const fem = allAnimals.find((a) => a.id === f.femaleId)
-              return fem && fem.type === typeFilter
-            })
+            if (allowedIds.has(b.maleId)) return true
+            return b.femaleBreedingInfo.some((f) => allowedIds.has(f.femaleId))
           })
         : allBreedings,
-    [allBreedings, allAnimals, typeFilter],
+    [allBreedings, allowedIds, isFiltered],
   )
 
   const months = useMemo(() => getLast6Months(), [])

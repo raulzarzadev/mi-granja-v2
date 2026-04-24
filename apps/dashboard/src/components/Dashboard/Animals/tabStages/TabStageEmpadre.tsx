@@ -215,7 +215,6 @@ export default function TabStageEmpadre({
   updateBreedingRecord,
 }: Props) {
 
-  console.log({orderedBreedings})
   const [showOnboarding, setShowOnboarding] = useState(false)
 
   return (
@@ -291,14 +290,9 @@ export default function TabStageEmpadre({
             onDeleteBirth={onDeleteBirth}
           />
         )}
-        onView={(row) => (
-          <BreedingViewModal
-            record={row.record}
-            animals={animals}
-            onEditRecord={onEditRecord}
-            updateBreedingRecord={updateBreedingRecord}
-          />
-        )}
+        onFinish={async (r) => {
+          await updateBreedingRecord(r.id, { status: 'finished' })
+        }}
       />
       {orderedBreedings.terminated.length > 0 && (
         <details className="mt-6">
@@ -313,14 +307,6 @@ export default function TabStageEmpadre({
               onDelete={async (ids) => {
                 for (const id of ids) await onDeleteRecord(id)
               }}
-              onView={(row) => (
-                <BreedingViewModal
-                  record={row.record}
-                  animals={animals}
-                  onEditRecord={onEditRecord}
-                  updateBreedingRecord={updateBreedingRecord}
-                />
-              )}
             />
           </div>
         </details>

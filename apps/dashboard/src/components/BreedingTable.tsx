@@ -15,13 +15,9 @@ interface BreedingTableProps {
   onSelect: (record: BreedingRecord) => void
   onDelete: (recordIds: string[]) => void
   onConfirmPregnancy?: (record: BreedingRecord) => void
+  onFinish?: (record: BreedingRecord) => void | Promise<void>
   toolbar?: React.ReactNode
   renderCard?: (row: {
-    record: BreedingRecord
-    male: Animal | undefined
-    status: ReturnType<typeof getBreedingStatus>
-  }) => React.ReactNode
-  onView?: (row: {
     record: BreedingRecord
     male: Animal | undefined
     status: ReturnType<typeof getBreedingStatus>
@@ -75,9 +71,9 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
   onSelect,
   onDelete,
   onConfirmPregnancy,
+  onFinish,
   toolbar,
   renderCard,
-  onView,
 }) => {
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
   const [bulkDeleteIds, setBulkDeleteIds] = useState<Set<string>>(new Set())
@@ -203,7 +199,6 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
         toolbar={toolbar}
         renderCard={renderCard}
         viewModeKey="empadres_view_mode"
-        onView={onView}
         renderBulkActions={(selectedIds, _clearSelection) => (
           <Button
             size="xs"
@@ -219,15 +214,6 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
         )}
         renderActions={(row) => (
           <>
-            <Button
-              size="xs"
-              variant="ghost"
-              color="primary"
-              icon="edit"
-              onClick={() => onSelect(row.record)}
-            >
-              Editar
-            </Button>
             {onConfirmPregnancy && row.status.pending > 0 && (
               <Button
                 size="xs"
@@ -238,6 +224,16 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
               >
                 Embarazo
               </Button>
+            )}
+            {onFinish && row.record.status !== 'finished' && (
+              <ButtonConfirm
+                openLabel="Terminar"
+                openProps={{ size: 'xs', variant: 'ghost', color: 'warning', icon: 'check_circle' }}
+                confirmProps={{ color: 'warning' }}
+                confirmText={`¿Terminar empadre ${row.record.breedingId || row.record.id}?`}
+                confirmLabel="Terminar"
+                onConfirm={() => onFinish(row.record)}
+              />
             )}
             <ButtonConfirm
               openLabel="Eliminar"

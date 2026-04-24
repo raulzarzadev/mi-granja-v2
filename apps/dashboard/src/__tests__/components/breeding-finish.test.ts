@@ -48,15 +48,8 @@ function classifyBreedings(records: BreedingRecord[]) {
   records.forEach((r) => {
     if (r.status === 'finished') {
       terminated.push(r)
-      return
-    }
-    const hasPending = r.femaleBreedingInfo.some(
-      (f) => !f.pregnancyConfirmedDate && !f.actualBirthDate,
-    )
-    if (hasPending) {
-      needPregnancyConfirmation.push(r)
     } else {
-      terminated.push(r)
+      needPregnancyConfirmation.push(r)
     }
   })
 
@@ -225,7 +218,7 @@ describe('terminar empadre — clasificación de records', () => {
     expect(terminated).toHaveLength(0)
   })
 
-  it('empadre activo sin pendientes (todas confirmadas) va a terminados', () => {
+  it('empadre activo con todas confirmadas sigue en needPregnancyConfirmation', () => {
     const record = makeBreeding({
       status: 'active',
       femaleBreedingInfo: [
@@ -235,8 +228,8 @@ describe('terminar empadre — clasificación de records', () => {
     })
     const { needPregnancyConfirmation, terminated } = classifyBreedings([record])
 
-    expect(needPregnancyConfirmation).toHaveLength(0)
-    expect(terminated).toHaveLength(1)
+    expect(needPregnancyConfirmation).toHaveLength(1)
+    expect(terminated).toHaveLength(0)
   })
 
   it('al terminar, embarazadas y paridas conservan sus datos', () => {

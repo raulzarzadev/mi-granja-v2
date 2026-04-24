@@ -44,8 +44,13 @@ function sortByAnimalNumber(list: Animal[]): Animal[] {
   )
 }
 
-const NumbersTab: React.FC = () => {
-  const { animals } = useAnimalCRUD()
+interface NumbersTabProps {
+  animals?: Animal[]
+}
+
+const NumbersTab: React.FC<NumbersTabProps> = ({ animals: animalsProp }) => {
+  const { animals: storeAnimals } = useAnimalCRUD()
+  const animals = animalsProp ?? storeAnimals
   const [gender, setGender] = useState<GenderFilter>('todos')
   const [modalData, setModalData] = useState<{ title: string; animals: Animal[] } | null>(null)
 

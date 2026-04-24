@@ -26,7 +26,7 @@ import { BreedingRecord } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 import ModalBulkHealthAction from '../../ModalBulkHealthAction'
 import ModalSaleForm from '../../ModalSaleForm'
-import { AnimalFilters, useAnimalFilters } from './animals-filters'
+import { AnimalFilters, AnimalsFilters, useAnimalFilters } from './animals-filters'
 import { buildAllAnimalColumns, buildAnimalColumns } from './columns/animalColumns'
 import { buildDestetesColumns, type UnweanedRow } from './columns/destetesColumns'
 import { buildNoursingColumns } from './columns/noursingMothersColumns'
@@ -297,16 +297,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     filteredBreedingRecords.forEach((r) => {
       if (r.status === 'finished') {
         terminated.push(r)
-        return
-      }
-      const hasPendingPregnancyConfirm = r.femaleBreedingInfo.some(
-        (f) => !f.pregnancyConfirmedDate && !f.actualBirthDate,
-      )
-      if (hasPendingPregnancyConfirm) {
-        needPregnancyConfirmation.push(r)
       } else {
-        // Todas confirmadas o paridas — empadre terminado
-        terminated.push(r)
+        needPregnancyConfirmation.push(r)
       }
     })
 
@@ -421,6 +413,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   const empadreFemalesCount = useMemo(() => {
     const ids = new Set<string>()
     for (const r of orderedBreedings.needPregnancyConfirmation) {
+      if (r.maleId) ids.add(r.maleId)
       for (const f of r.femaleBreedingInfo) {
         if (!f.pregnancyConfirmedDate && !f.actualBirthDate) ids.add(f.femaleId)
       }
@@ -810,23 +803,25 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   // ========================
   // SUB-TABS PRINCIPALES
   // ========================
+  const tabsTotal =
+    reproductorAnimals.length +
+    empadreAnimals.length +
+    pregnantFemales.length +
+    allCrias.length +
+    noursingMothersRows.length +
+    juvenilAnimals.length +
+    engordaAnimals.length +
+    descarteAnimals.length
+
   const animalSubTabs = [
     {
       label: 'Todos',
       content: (
         <TabAllAnimals
-          filters={filters}
-          setFilters={setFilters}
           filteredAnimals={filteredAnimals}
           allAnimals={allAnimals}
           columns={allAnimalColumns}
           isLoadingAnimals={isLoadingAnimals}
-          activeFilterCount={activeFilterCount}
-          availableTypes={availableTypes}
-          availableBreeds={availableBreeds}
-          availableStages={availableStages}
-          availableGenders={availableGenders}
-          formatStatLabel={formatStatLabel}
           onBulkEdit={(ids, clear) => {
             setBulkSelectedAnimals(ids)
             setBulkClearFn(() => clear)
@@ -851,25 +846,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       label: 'Etapas',
       content: (
         <TabEtapas
-          filters={filters}
-          setFilters={setFilters}
-          filteredCount={filteredAnimals.length}
-          activeFilterCount={activeFilterCount}
-          availableTypes={availableTypes}
-          availableBreeds={availableBreeds}
-          availableStages={availableStages}
-          availableGenders={availableGenders}
-          formatStatLabel={formatStatLabel}
-          tabsTotal={
-            reproductorAnimals.length +
-            empadreAnimals.length +
-            pregnantFemales.length +
-            allCrias.length +
-            noursingMothersRows.length +
-            juvenilAnimals.length +
-            engordaAnimals.length +
-            descarteAnimals.length
-          }
           crossTabDuplicatesCount={crossTabDuplicates.length}
           onShowDuplicates={() => setShowCrossTabDups(true)}
           etapasTabs={etapasTabs}
@@ -878,16 +854,28 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     },
     {
       label: 'Números',
-      content: <NumbersTab />,
+      content: <NumbersTab animals={filteredAnimals} />,
     },
     {
       label: 'Estadísticas',
-      content: <StatisticsTab typeFilter={filters.type} />,
+      content: <StatisticsTab animals={filteredAnimals} />,
     },
   ]
 
   return (
     <>
+      <AnimalsFilters
+        filters={filters}
+        setFilters={setFilters}
+        filteredCount={filteredAnimals.length}
+        activeFilterCount={activeFilterCount}
+        availableTypes={availableTypes}
+        availableBreeds={availableBreeds}
+        availableStages={availableStages}
+        availableGenders={availableGenders}
+        formatStatLabel={formatStatLabel}
+        tabsTotal={tabsTotal}
+      />
       <Tabs tabs={animalSubTabs} tabsId="animals-section" />
 
       <Modal

@@ -3,21 +3,12 @@ import Button from '@/components/buttons/Button'
 import DataTable, { type ColumnDef } from '@/components/DataTable'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import type { Animal } from '@/types/animals'
-import { AnimalFilters, AnimalsFilters, type AnimalsFiltersProps } from '../animals-filters'
 
 interface Props {
-  filters: AnimalFilters
-  setFilters: React.Dispatch<React.SetStateAction<AnimalFilters>>
   filteredAnimals: Animal[]
   allAnimals: Animal[]
   columns: ColumnDef<Animal>[]
   isLoadingAnimals: boolean
-  activeFilterCount: number
-  availableTypes: string[]
-  availableBreeds: string[]
-  availableStages: string[]
-  availableGenders: string[]
-  formatStatLabel: AnimalsFiltersProps['formatStatLabel']
   onBulkEdit: (ids: string[], clear: () => void) => void
   onBulkHealth: (ids: string[], clear: () => void) => void
   onBulkSale: (ids: string[], clear: () => void) => void
@@ -26,18 +17,10 @@ interface Props {
 }
 
 const TabAllAnimals: React.FC<Props> = ({
-  filters,
-  setFilters,
   filteredAnimals,
   allAnimals,
   columns,
   isLoadingAnimals,
-  activeFilterCount,
-  availableTypes,
-  availableBreeds,
-  availableStages,
-  availableGenders,
-  formatStatLabel,
   onBulkEdit,
   onBulkHealth,
   onBulkSale,
@@ -45,17 +28,6 @@ const TabAllAnimals: React.FC<Props> = ({
   onShowDuplicateNumbers,
 }) => (
   <>
-    <AnimalsFilters
-      filters={filters}
-      setFilters={setFilters}
-      filteredCount={filteredAnimals.length}
-      activeFilterCount={activeFilterCount}
-      availableTypes={availableTypes}
-      availableBreeds={availableBreeds}
-      availableStages={availableStages}
-      availableGenders={availableGenders}
-      formatStatLabel={formatStatLabel}
-    />
     {duplicateNumbersCount > 0 && (
       <div className="mt-2 p-2.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 text-xs flex items-center justify-between gap-2">
         <span>
