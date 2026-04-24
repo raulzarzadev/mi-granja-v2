@@ -9,6 +9,7 @@ import { WeightInput } from '@/components/inputs/WeightInput'
 import { Modal } from '@/components/Modal'
 import { RootState } from '@/features/store'
 import { useSalesCRUD } from '@/hooks/useSalesCRUD'
+import { isAvailableToSale } from '@/lib/animal-utils'
 import { Animal } from '@/types/animals'
 import {
   Sale,
@@ -73,7 +74,8 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
         const animalStatus = a.status ?? 'activo'
         if (animalStatus !== 'activo') return false
         if (currentSaleAnimalIds.has(a.id)) return true
-        return !animalsInActiveSales.has(a.id)
+        if (animalsInActiveSales.has(a.id)) return false
+        return isAvailableToSale(a)
       }),
     [animals, animalsInActiveSales, currentSaleAnimalIds],
   )
@@ -288,22 +290,29 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
 
         {/* Animal selector */}
         {!isReadOnly && (
-          <AnimalSelector
-            animals={availableAnimals}
-            selectedIds={selectedAnimalIds}
-            onAdd={(id) => setSelectedAnimalIds((prev) => [...prev, id])}
-            onRemove={(id) => {
-              setSelectedAnimalIds((prev) => prev.filter((x) => x !== id))
-              setAnimalWeights((prev) => {
-                const next = { ...prev }
-                delete next[id]
-                return next
-              })
-            }}
-            mode="multi"
-            label="Animales para venta"
-            placeholder="Buscar animales para la venta..."
-          />
+          <>
+            {availableAnimals.length === 0 && selectedAnimalIds.length === 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded text-sm">
+                No hay animales listos para venta. Márcalos desde el tab Ventas.
+              </div>
+            )}
+            <AnimalSelector
+              animals={availableAnimals}
+              selectedIds={selectedAnimalIds}
+              onAdd={(id) => setSelectedAnimalIds((prev) => [...prev, id])}
+              onRemove={(id) => {
+                setSelectedAnimalIds((prev) => prev.filter((x) => x !== id))
+                setAnimalWeights((prev) => {
+                  const next = { ...prev }
+                  delete next[id]
+                  return next
+                })
+              }}
+              mode="multi"
+              label="Animales para venta"
+              placeholder="Buscar animales para la venta..."
+            />
+          </>
         )}
 
         {/* Pesos individuales */}

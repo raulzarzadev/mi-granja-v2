@@ -21,6 +21,8 @@ const DATE_FIELDS_BY_COLLECTION: Record<string, string[]> = {
     'pregnantAt',
     'birthedAt',
     'weanedMotherAt',
+    // Marcado como candidato a venta
+    'availableToSaleAt',
     // Admin action
     'adminAction.originalTimestamp',
   ],
@@ -59,6 +61,7 @@ const KNOWN_DATE_FIELD_NAMES = new Set([
   'pregnantAt',
   'birthedAt',
   'weanedMotherAt',
+  'availableToSaleAt',
   'timestamp',
   'dueDate',
   'expiresAt',
@@ -267,6 +270,8 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
       'string (ISO 8601) | null | undefined. Fecha de parto como madre (hembras). Se limpia al destetar todas las crías.',
     weanedMotherAt:
       'string (ISO 8601) | null | undefined. Fecha en que destetó a sus crías (hembras). Se limpia al iniciar nuevo empadre.',
+    availableToSaleAt:
+      'string (ISO 8601) | null | undefined. Marcado por el usuario como candidato a venta. Se limpia al completarse la venta.',
     adminAction:
       '{ performedByAdmin: boolean, adminEmail?: string, adminId?: string, originalTimestamp: ISO 8601, impersonationReason?: string } | undefined',
     createdAt: 'string (ISO 8601)',

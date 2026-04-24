@@ -746,6 +746,7 @@ const BACKUP_SCHEMA_JSON = `{
       "pregnantBy": "string | null (ID del macho que la preñó, solo hembras)",
       "birthedAt": "ISO 8601 | null (fecha de parto como madre, solo hembras)",
       "weanedMotherAt": "ISO 8601 | null (fecha en que destetó sus crías, solo hembras)",
+      "availableToSaleAt": "ISO 8601 | null (marcado como listo para venta, se limpia al completarse la venta)",
       "adminAction": "{ performedByAdmin, adminEmail?, adminId?, originalTimestamp, impersonationReason? } (opcional)",
       "createdAt": "ISO 8601",
       "updatedAt": "ISO 8601"

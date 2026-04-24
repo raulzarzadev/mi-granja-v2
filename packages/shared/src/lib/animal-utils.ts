@@ -7,6 +7,9 @@ import {
   getWeaningDays,
 } from './animalBreedingConfig'
 
+export const isAvailableToSale = (a: Animal): boolean =>
+  !!a.availableToSaleAt && (a.status ?? 'activo') === 'activo'
+
 /**
  * Calcula la edad de un animal en meses
  * @param animal - El animal del que se quiere calcular la edad

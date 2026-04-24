@@ -70,6 +70,8 @@ export interface Animal {
   status?: AnimalStatus // default lógico: 'activo'
   statusAt?: Date
   statusNotes?: string
+  /** Marcado por usuario como candidato a venta. Se limpia al completarse o cancelarse. */
+  availableToSaleAt?: Date | null
   soldInfo?: {
     date: Date
     buyer?: string

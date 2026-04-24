@@ -13,6 +13,7 @@ import {
   computeAnimalStage,
   findAnimalByRef,
   getLastWeight,
+  isAvailableToSale,
 } from '@/lib/animal-utils'
 import { formatDate, fromNow, toDate } from '@/lib/dates'
 import {
@@ -39,7 +40,7 @@ interface AnimalDetailViewProps {
  * Vista detallada de un animal individual
  */
 const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp, onDeleted }) => {
-  const { animals: allAnimals, remove } = useAnimalCRUD()
+  const { animals: allAnimals, remove, update } = useAnimalCRUD()
   const animal = allAnimals.find((a) => a.id === animalProp.id) ?? animalProp
 
   const getMother = () => findAnimalByRef(allAnimals, animal.motherId) || null
@@ -352,6 +353,28 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {effectiveStatus === 'activo' && (
+              <button
+                type="button"
+                onClick={() =>
+                  update(animal.id, {
+                    availableToSaleAt: isAvailableToSale(animal) ? null : new Date(),
+                  })
+                }
+                className={`px-2.5 py-1 text-xs rounded border transition-colors ${
+                  isAvailableToSale(animal)
+                    ? 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+                title={
+                  isAvailableToSale(animal)
+                    ? 'Quitar marca de listo para venta'
+                    : 'Marcar listo para venta'
+                }
+              >
+                {isAvailableToSale(animal) ? '💲 Quitar de venta' : '💲 Marcar listo para venta'}
+              </button>
+            )}
             <ModalEditAnimal animal={animal} />
             <ButtonConfirm
               openLabel="Eliminar"

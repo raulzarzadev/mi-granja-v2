@@ -1,9 +1,14 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { useSelector } from 'react-redux'
+import AnimalSelector from '@/components/inputs/AnimalSelector'
 import ModalSaleForm from '@/components/ModalSaleForm'
 import SaleCard, { getTotalAmount, getTotalWeight } from '@/components/SaleCard'
+import { RootState } from '@/features/store'
+import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useSalesCRUD } from '@/hooks/useSalesCRUD'
+import { animalAge, findAnimalByRef, getLastWeight, isAvailableToSale } from '@/lib/animal-utils'
 import {
   Sale,
   SaleStatus,
@@ -32,6 +37,8 @@ const formatWeight = (grams: number) => {
 
 const SalesTab: React.FC = () => {
   const { sales, getFarmSales } = useSalesCRUD()
+  const { animals } = useSelector((state: RootState) => state.animals)
+  const { update } = useAnimalCRUD()
   const [statusFilter, setStatusFilter] = useState<SaleStatus | ''>('')
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -41,6 +48,16 @@ const SalesTab: React.FC = () => {
     const unsub = getFarmSales()
     return () => unsub?.()
   }, [])
+
+  const activeAnimals = useMemo(
+    () => animals.filter((a) => (a.status ?? 'activo') === 'activo'),
+    [animals],
+  )
+  const readyForSale = useMemo(() => animals.filter(isAvailableToSale), [animals])
+  const readyForSaleIds = useMemo(() => readyForSale.map((a) => a.id), [readyForSale])
+
+  const markAvailable = (id: string) => update(id, { availableToSaleAt: new Date() })
+  const unmarkAvailable = (id: string) => update(id, { availableToSaleAt: null })
 
   const filteredSales = statusFilter ? sales.filter((s) => s.status === statusFilter) : sales
 
@@ -122,6 +139,94 @@ const SalesTab: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Listos para venta */}
+      <section className="bg-white border border-gray-200 rounded-lg p-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-900">
+            💲 Listos para venta ({readyForSale.length})
+          </h3>
+        </div>
+
+        <AnimalSelector
+          animals={activeAnimals}
+          selectedIds={readyForSaleIds}
+          onAdd={markAvailable}
+          onRemove={unmarkAvailable}
+          mode="multi"
+          label="Marcar animales como listos para venta"
+          placeholder="Buscar animales para marcar como listos..."
+        />
+
+        {readyForSale.length === 0 ? (
+          <p className="text-xs text-gray-500">
+            Marca animales como listos antes de crear una venta.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Arete</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                    Último peso
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                    Fecha peso
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Edad</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Madre</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Padre</th>
+                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {readyForSale.map((a) => {
+                  const lw = getLastWeight(a)
+                  const mother = findAnimalByRef(animals, a.motherId)
+                  const father = findAnimalByRef(animals, a.fatherId)
+                  return (
+                    <tr key={a.id}>
+                      <td className="px-3 py-2 font-medium text-gray-900 whitespace-nowrap">
+                        {a.animalNumber}
+                        {a.name && <span className="text-gray-400 ml-1">{a.name}</span>}
+                      </td>
+                      <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
+                        {lw
+                          ? `${lw.kg.toLocaleString('es-MX', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg`
+                          : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
+                        {lw ? formatDate(lw.date) : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
+                        {animalAge(a, { format: 'short' })}
+                      </td>
+                      <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
+                        {mother?.animalNumber || '—'}
+                      </td>
+                      <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
+                        {father?.animalNumber || '—'}
+                      </td>
+                      <td className="px-3 py-2 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => unmarkAvailable(a.id)}
+                          className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                          title="Quitar marca de listo para venta"
+                        >
+                          Descargar para venta
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       {/* Filtro por status */}
       <div className="flex flex-wrap gap-2">

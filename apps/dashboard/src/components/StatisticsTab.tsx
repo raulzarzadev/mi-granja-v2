@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
+import { isAvailableToSale } from '@/lib/animal-utils'
 import { Animal, AnimalType, animal_icon, animals_types_labels } from '@/types/animals'
 import { getTotalAmount, getTotalWeight } from './SaleCard'
 
@@ -192,10 +193,16 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
       <h2 className="text-lg font-semibold text-gray-900">Estadísticas</h2>
 
       {/* Resumen rápido */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-xs text-gray-500">Animales activos</p>
           <p className="text-2xl font-bold text-gray-900">{weightStats.activeCount}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4">
+          <p className="text-xs text-gray-500">Listos para venta</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {animals.filter(isAvailableToSale).length}
+          </p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-xs text-gray-500">Ventas completadas</p>

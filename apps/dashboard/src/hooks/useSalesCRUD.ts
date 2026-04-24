@@ -21,7 +21,6 @@ import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { toDate, toLocalDateStart } from '@/lib/dates'
 import { db } from '@/lib/firebase'
 import { isSaleComplete, Sale, SaleStatus } from '@/types/sales'
-import { useAnimalCRUD } from './useAnimalCRUD'
 
 export const useSalesCRUD = () => {
   const dispatch = useDispatch()
@@ -205,6 +204,7 @@ export const useSalesCRUD = () => {
           return {
             status: 'vendido',
             statusAt: saleDate,
+            availableToSaleAt: null,
             soldInfo: {
               date: saleDate,
               buyer: sale.buyer,

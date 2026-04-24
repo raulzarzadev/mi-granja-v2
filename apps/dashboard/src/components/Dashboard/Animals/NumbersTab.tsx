@@ -8,7 +8,7 @@ import {
 import React, { useMemo, useState } from 'react'
 import { Modal } from '@/components/Modal'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { animalAge } from '@/lib/animal-utils'
+import { animalAge, isAvailableToSale } from '@/lib/animal-utils'
 
 type GenderFilter = 'todos' | 'macho' | 'hembra'
 
@@ -85,6 +85,8 @@ const NumbersTab: React.FC<NumbersTabProps> = ({ animals: animalsProp }) => {
       }),
     [genderFiltered],
   )
+
+  const availableToSale = useMemo(() => genderFiltered.filter(isAvailableToSale), [genderFiltered])
 
   return (
     <div className="mt-2 space-y-6">
@@ -168,6 +170,24 @@ const NumbersTab: React.FC<NumbersTabProps> = ({ animals: animalsProp }) => {
               <p className="text-2xl font-bold text-gray-900">{g.animals.length}</p>
             </button>
           ))}
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-lg font-semibold text-gray-900">Venta</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <button
+            type="button"
+            onClick={() => setModalData({ title: 'Listos para venta', animals: availableToSale })}
+            disabled={availableToSale.length === 0}
+            className="bg-white rounded-lg shadow p-4 text-left hover:shadow-md transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow ring-1 ring-yellow-200"
+          >
+            <p className="text-xs text-gray-500 flex items-center gap-1">
+              <span>💲</span>
+              <span>Listos para venta</span>
+            </p>
+            <p className="text-2xl font-bold text-gray-900">{availableToSale.length}</p>
+          </button>
         </div>
       </section>
 

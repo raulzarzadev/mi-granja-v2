@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { computeAnimalStage, formatWeight } from '@/lib/animal-utils'
+import { computeAnimalStage, formatWeight, isAvailableToSale } from '@/lib/animal-utils'
 import {
   Animal,
   animal_gender_config,
@@ -88,6 +88,16 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
             >
               <span aria-hidden="true">{animal_status_icons[animal.status!]}</span>
               <span>{animal_status_labels[animal.status!]}</span>
+            </span>
+          )}
+
+          {isAvailableToSale(animal) && (
+            <span
+              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-yellow-50 text-yellow-700 border border-yellow-200"
+              title="Marcado como listo para venta"
+            >
+              <span aria-hidden="true">💲</span>
+              <span>Listo</span>
             </span>
           )}
         </div>
