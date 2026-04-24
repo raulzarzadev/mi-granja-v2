@@ -20,7 +20,6 @@ const Navbar: React.FC = () => {
   const { user, isLoading, impersonatingUser, originalUser } = useSelector(
     (state: RootState) => state.auth,
   )
-  const billingPlanType = useSelector((s: RootState) => s.billing.planType)
   const { logout, stopImpersonation } = useAuth()
   const [showUserSelector, setShowUserSelector] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -119,20 +118,6 @@ const Navbar: React.FC = () => {
                 className="bg-white/10 hover:bg-white/20 backdrop-blur px-4 py-2 rounded-md text-sm font-medium transition-colors border border-white/20"
               >
                 Iniciar sesión
-              </Link>
-            )}
-
-            {/* Botón Plan — siempre visible para usuarios autenticados */}
-            {user && (
-              <Link
-                href="/plan"
-                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                  billingPlanType === 'pro'
-                    ? 'bg-green-500/20 hover:bg-green-500/30 text-green-100 border border-green-400/30'
-                    : 'bg-amber-400 hover:bg-amber-300 text-amber-900'
-                }`}
-              >
-                ⭐ {billingPlanType === 'pro' ? 'Plan Pro' : 'Pro'}
               </Link>
             )}
 

@@ -18,6 +18,7 @@ import OnboardingCard from '../onboarding/OnboardingCard'
 import RecordsTab from '../RecordsTab'
 import AnimalsSection from './Animals/AnimalsSection'
 import { useAnimalFilters } from './Animals/animals-filters'
+import FarmSwitcherBar from '../FarmSwitcherBar'
 
 /**
  * Dashboard principal de la aplicación
@@ -69,11 +70,8 @@ const Dashboard: React.FC = () => {
         {/* Titulo de la granja + filtro global por tipo */}
         {currentFarm && (
           <div className="flex items-center gap-3 mb-3">
-            <FarmAvatar name={currentFarm.name} photoURL={currentFarm.photoURL} size="md" />
-            <div className="flex flex-col justify-center items-start">
-              <h1 className="text-lg font-semibold text-gray-900">{currentFarm.name}</h1>
-              <MyRole farm={currentFarm} />
-            </div>
+
+            <FarmSwitcherBar/>
 
             {availableTypes.length > 1 && (
               <div className="flex items-center gap-2">

@@ -18,7 +18,6 @@ import BackupSection from './BackupSection'
 import BreedingConfigTab from './BreedingConfigTab'
 import MigrationBanner from './billing/MigrationBanner'
 import CollaboratorCard from './CollaboratorCard'
-import FarmSwitcherBar from './FarmSwitcherBar'
 import ModalCreateArea from './ModalCreateArea'
 import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditCollaborator from './ModalEditCollaborator'
@@ -448,8 +447,8 @@ const FarmSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
+
       <MigrationBanner />
-      <FarmSwitcherBar />
 
       {currentFarm && <Tabs tabs={farmTabs} tabsId="farm-tabs" />}
 
