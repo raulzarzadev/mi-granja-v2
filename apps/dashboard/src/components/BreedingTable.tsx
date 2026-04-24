@@ -232,7 +232,7 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
                 confirmProps={{ color: 'warning' }}
                 confirmText={`¿Terminar empadre ${row.record.breedingId || row.record.id}?`}
                 confirmLabel="Terminar"
-                onConfirm={async() => onFinish(row.record)}
+                onConfirm={async () => onFinish(row.record)}
               />
             )}
             <ButtonConfirm
