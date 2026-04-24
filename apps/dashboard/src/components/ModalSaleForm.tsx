@@ -282,7 +282,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
             type="text"
             value={buyer}
             onChange={(e) => setBuyer(e.target.value)}
-            placeholder="Nombre del comprador"
+            placeholder="Nombre del comprador (opcional)"
             disabled={isReadOnly}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
           />

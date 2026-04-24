@@ -447,7 +447,6 @@ const FarmSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
-
       <MigrationBanner />
 
       {currentFarm && <Tabs tabs={farmTabs} tabsId="farm-tabs" />}

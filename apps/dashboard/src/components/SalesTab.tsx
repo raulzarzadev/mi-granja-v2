@@ -35,6 +35,19 @@ const formatWeight = (grams: number) => {
   return `${(grams / 1000).toLocaleString('es-MX', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg`
 }
 
+type SortKey = 'status' | 'date' | 'animals' | 'pricePerKg' | 'weight' | 'total' | 'buyer'
+type SortDir = 'asc' | 'desc'
+
+const sort_labels: Record<SortKey, string> = {
+  status: 'Estado',
+  date: 'Fecha',
+  animals: 'Animales',
+  pricePerKg: '$/kg',
+  weight: 'Peso',
+  total: 'Total',
+  buyer: 'Comprador',
+}
+
 const SalesTab: React.FC = () => {
   const { sales, getFarmSales } = useSalesCRUD()
   const { animals } = useSelector((state: RootState) => state.animals)
@@ -43,6 +56,17 @@ const SalesTab: React.FC = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedSale, setSelectedSale] = useState<Sale | undefined>()
+  const [sortKey, setSortKey] = useState<SortKey>('date')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortDir('desc')
+    }
+  }
 
   useEffect(() => {
     const unsub = getFarmSales()
@@ -59,7 +83,35 @@ const SalesTab: React.FC = () => {
   const markAvailable = (id: string) => update(id, { availableToSaleAt: new Date() })
   const unmarkAvailable = (id: string) => update(id, { availableToSaleAt: null })
 
-  const filteredSales = statusFilter ? sales.filter((s) => s.status === statusFilter) : sales
+  const filteredSales = useMemo(() => {
+    const base = statusFilter ? sales.filter((s) => s.status === statusFilter) : sales
+    const dir = sortDir === 'asc' ? 1 : -1
+    const getVal = (s: Sale): number | string => {
+      switch (sortKey) {
+        case 'status':
+          return s.status
+        case 'date':
+          return s.date ? new Date(s.date).getTime() : 0
+        case 'animals':
+          return s.animals.length
+        case 'pricePerKg':
+          return s.pricePerKg || 0
+        case 'weight':
+          return getTotalWeight(s)
+        case 'total':
+          return getTotalAmount(s)
+        case 'buyer':
+          return (s.buyer || '').toLowerCase()
+      }
+    }
+    return [...base].sort((a, b) => {
+      const va = getVal(a)
+      const vb = getVal(b)
+      if (va < vb) return -1 * dir
+      if (va > vb) return 1 * dir
+      return 0
+    })
+  }, [sales, statusFilter, sortKey, sortDir])
 
   const handleOpenCreate = () => {
     setSelectedSale(undefined)
@@ -160,7 +212,8 @@ const SalesTab: React.FC = () => {
 
         {readyForSale.length === 0 ? (
           <p className="text-xs text-gray-500">
-            Marca animales como listos antes de crear una venta. Esta lista te ayudara a planificar las ventas.
+            Marca animales como listos antes de crear una venta. Esta lista te ayudara a planificar
+            las ventas.
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -274,29 +327,101 @@ const SalesTab: React.FC = () => {
           </p>
         </div>
       ) : viewMode === 'cards' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filteredSales.map((sale) => (
-            <SaleCard key={sale.id} sale={sale} onClick={() => handleOpenEdit(sale)} />
-          ))}
-        </div>
+        <>
+          <div className="flex items-center gap-2 text-xs text-gray-600">
+            <label htmlFor="sales-sort-key" className="font-medium">
+              Ordenar por:
+            </label>
+            <select
+              id="sales-sort-key"
+              value={sortKey}
+              onChange={(e) => setSortKey(e.target.value as SortKey)}
+              className="px-2 py-1 border border-gray-300 rounded bg-white cursor-pointer"
+            >
+              {(Object.keys(sort_labels) as SortKey[]).map((k) => (
+                <option key={k} value={k}>
+                  {sort_labels[k]}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
+              className="px-2 py-1 border border-gray-300 rounded bg-white hover:bg-gray-50 cursor-pointer"
+              title={sortDir === 'asc' ? 'Ascendente' : 'Descendente'}
+            >
+              {sortDir === 'asc' ? '↑ Asc' : '↓ Desc'}
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {filteredSales.map((sale) => (
+              <SaleCard key={sale.id} sale={sale} onClick={() => handleOpenEdit(sale)} />
+            ))}
+          </div>
+        </>
       ) : (
         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Estado</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Fecha</th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">
-                    Animales
-                  </th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">$/kg</th>
+                  <SortableTh
+                    label="Estado"
+                    sortKey="status"
+                    currentKey={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="left"
+                  />
+                  <SortableTh
+                    label="Fecha"
+                    sortKey="date"
+                    currentKey={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="left"
+                  />
+                  <SortableTh
+                    label="Animales"
+                    sortKey="animals"
+                    currentKey={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="right"
+                  />
+                  <SortableTh
+                    label="$/kg"
+                    sortKey="pricePerKg"
+                    currentKey={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="right"
+                  />
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Tipo</th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">Peso</th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">Total</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
-                    Comprador
-                  </th>
+                  <SortableTh
+                    label="Peso"
+                    sortKey="weight"
+                    currentKey={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="right"
+                  />
+                  <SortableTh
+                    label="Total"
+                    sortKey="total"
+                    currentKey={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="right"
+                  />
+                  <SortableTh
+                    label="Comprador"
+                    sortKey="buyer"
+                    currentKey={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="left"
+                  />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -347,6 +472,41 @@ const SalesTab: React.FC = () => {
       {/* Modal */}
       <ModalSaleForm isOpen={isModalOpen} onClose={handleClose} sale={selectedSale} />
     </div>
+  )
+}
+
+interface SortableThProps {
+  label: string
+  sortKey: SortKey
+  currentKey: SortKey
+  dir: SortDir
+  onClick: (key: SortKey) => void
+  align?: 'left' | 'right'
+}
+
+const SortableTh: React.FC<SortableThProps> = ({
+  label,
+  sortKey,
+  currentKey,
+  dir,
+  onClick,
+  align = 'left',
+}) => {
+  const active = currentKey === sortKey
+  const arrow = active ? (dir === 'asc' ? '↑' : '↓') : ''
+  return (
+    <th
+      className={`px-3 py-2 ${align === 'right' ? 'text-right' : 'text-left'} text-xs font-medium text-gray-500 select-none`}
+    >
+      <button
+        type="button"
+        onClick={() => onClick(sortKey)}
+        className={`inline-flex items-center gap-1 cursor-pointer hover:text-gray-700 ${active ? 'text-gray-900' : ''}`}
+      >
+        <span>{label}</span>
+        <span className="w-3 text-gray-400">{arrow}</span>
+      </button>
+    </th>
   )
 }
 

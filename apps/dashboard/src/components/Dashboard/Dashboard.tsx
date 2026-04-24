@@ -13,12 +13,12 @@ import { RootState } from '@/features/store'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useReminders } from '@/hooks/useReminders'
 import { AnimalType, animal_icon, animals_types_labels } from '@/types/animals'
+import FarmSwitcherBar from '../FarmSwitcherBar'
 import ModalOnboarding from '../onboarding/ModalOnboarding'
 import OnboardingCard from '../onboarding/OnboardingCard'
 import RecordsTab from '../RecordsTab'
 import AnimalsSection from './Animals/AnimalsSection'
 import { useAnimalFilters } from './Animals/animals-filters'
-import FarmSwitcherBar from '../FarmSwitcherBar'
 
 /**
  * Dashboard principal de la aplicación
@@ -70,8 +70,7 @@ const Dashboard: React.FC = () => {
         {/* Titulo de la granja + filtro global por tipo */}
         {currentFarm && (
           <div className="flex items-center gap-3 mb-3">
-
-            <FarmSwitcherBar/>
+            <FarmSwitcherBar />
 
             {availableTypes.length > 1 && (
               <div className="flex items-center gap-2">
