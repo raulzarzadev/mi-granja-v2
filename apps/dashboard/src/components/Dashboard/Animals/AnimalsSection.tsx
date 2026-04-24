@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Button from '@/components/buttons/Button'
 import NumbersTab from '@/components/Dashboard/Animals/NumbersTab'
 import { Modal } from '@/components/Modal'
+import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import ModalBirthForm from '@/components/ModalBirthForm'
 import ModalBreedingAnimalDetails from '@/components/ModalBreedingAnimalDetails'
 import ModalBulkEdit from '@/components/ModalBulkEdit'
@@ -463,6 +464,26 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   }, [orderedBreedings.needPregnancyConfirmation, animals])
 
   const [showCrossTabDups, setShowCrossTabDups] = useState(false)
+  const [showDuplicateNumbers, setShowDuplicateNumbers] = useState(false)
+
+  // Duplicados por animalNumber: misma "etiqueta" en docs distintos
+  const duplicateAnimalNumbers = useMemo(() => {
+    const byNumber = new Map<string, Animal[]>()
+    for (const a of activeAnimals) {
+      const num = (a.animalNumber || '').trim()
+      if (!num) continue
+      const arr = byNumber.get(num) || []
+      arr.push(a)
+      byNumber.set(num, arr)
+    }
+    const dups: { animalNumber: string; animals: Animal[] }[] = []
+    for (const [num, list] of byNumber) {
+      if (list.length > 1) dups.push({ animalNumber: num, animals: list })
+    }
+    return dups.sort((a, b) =>
+      a.animalNumber.localeCompare(b.animalNumber, 'es', { numeric: true }),
+    )
+  }, [activeAnimals])
 
   // --- Birth form submit handler ---
   const handleBirthSubmit = async (form: {
@@ -821,6 +842,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
             setBulkClearFn(() => clear)
             setIsSaleModalOpen(true)
           }}
+          duplicateNumbersCount={duplicateAnimalNumbers.length}
+          onShowDuplicateNumbers={() => setShowDuplicateNumbers(true)}
         />
       ),
     },
@@ -893,6 +916,68 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                   {t}
                 </span>
               ))}
+            </div>
+          ))}
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={showDuplicateNumbers}
+        onClose={() => setShowDuplicateNumbers(false)}
+        title={`Números de animal duplicados (${duplicateAnimalNumbers.length})`}
+        size="xl"
+      >
+        <p className="text-sm text-gray-600 mb-3">
+          Estos números están repetidos en más de un animal activo. Revisa y renumera para evitar
+          confusiones.
+        </p>
+        <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+          {duplicateAnimalNumbers.map((d) => (
+            <div key={d.animalNumber} className="p-2 border border-gray-200 rounded">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-semibold text-gray-900">{d.animalNumber}</span>
+                <span className="text-xs text-gray-500">× {d.animals.length}</span>
+              </div>
+              <div className="space-y-1.5">
+                {d.animals.map((a) => (
+                  <div
+                    key={a.id}
+                    className="flex items-center justify-between gap-2 p-1.5 rounded bg-amber-50 border border-amber-200"
+                  >
+                    <span className="text-xs text-amber-900">
+                      {animals_types_labels[a.type] || a.type} · {a.gender === 'macho' ? '♂' : '♀'}{' '}
+                      · {a.id.slice(0, 6)}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <ModalAnimalDetails
+                        animal={a}
+                        triggerComponent={
+                          <Button size="xs" variant="ghost" color="primary" icon="edit">
+                            Ver/Editar
+                          </Button>
+                        }
+                      />
+                      <Button
+                        size="xs"
+                        color="error"
+                        variant="ghost"
+                        icon="delete"
+                        onClick={async () => {
+                          if (
+                            !confirm(
+                              `¿Eliminar animal ${a.animalNumber} (${a.id.slice(0, 6)})? Esta acción no se puede deshacer.`,
+                            )
+                          )
+                            return
+                          await remove(a.id)
+                        }}
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>

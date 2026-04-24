@@ -21,6 +21,8 @@ interface Props {
   onBulkEdit: (ids: string[], clear: () => void) => void
   onBulkHealth: (ids: string[], clear: () => void) => void
   onBulkSale: (ids: string[], clear: () => void) => void
+  duplicateNumbersCount: number
+  onShowDuplicateNumbers: () => void
 }
 
 const TabAllAnimals: React.FC<Props> = ({
@@ -39,6 +41,8 @@ const TabAllAnimals: React.FC<Props> = ({
   onBulkEdit,
   onBulkHealth,
   onBulkSale,
+  duplicateNumbersCount,
+  onShowDuplicateNumbers,
 }) => (
   <>
     <AnimalsFilters
@@ -52,6 +56,22 @@ const TabAllAnimals: React.FC<Props> = ({
       availableGenders={availableGenders}
       formatStatLabel={formatStatLabel}
     />
+    {duplicateNumbersCount > 0 && (
+      <div className="mt-2 p-2.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 text-xs flex items-center justify-between gap-2">
+        <span>
+          ⚠️ {duplicateNumbersCount} número
+          {duplicateNumbersCount !== 1 ? 's' : ''} de animal repetido
+          {duplicateNumbersCount !== 1 ? 's' : ''} en más de un registro.
+        </span>
+        <button
+          type="button"
+          onClick={onShowDuplicateNumbers}
+          className="px-2 py-1 rounded bg-white border border-amber-300 hover:bg-amber-100 cursor-pointer font-medium"
+        >
+          Ver duplicados
+        </button>
+      </div>
+    )}
     {isLoadingAnimals ? (
       <div className="bg-white rounded-lg shadow flex justify-center items-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />

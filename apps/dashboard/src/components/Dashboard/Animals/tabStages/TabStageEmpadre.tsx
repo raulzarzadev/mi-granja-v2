@@ -214,6 +214,8 @@ export default function TabStageEmpadre({
   onNewEmpadre,
   updateBreedingRecord,
 }: Props) {
+
+  console.log({orderedBreedings})
   const [showOnboarding, setShowOnboarding] = useState(false)
 
   return (

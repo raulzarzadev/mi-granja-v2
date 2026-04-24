@@ -26,18 +26,20 @@ import {
   animal_status_labels,
   animals_types_labels,
 } from '@/types/animals'
+import ButtonConfirm from './buttons/ButtonConfirm'
 import { Icon } from './Icon/icon'
 import ModalEditAnimal from './ModalEditAnimal'
 
 interface AnimalDetailViewProps {
   animal: Animal
+  onDeleted?: () => void
 }
 
 /**
  * Vista detallada de un animal individual
  */
-const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp }) => {
-  const { animals: allAnimals } = useAnimalCRUD()
+const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp, onDeleted }) => {
+  const { animals: allAnimals, remove } = useAnimalCRUD()
   const animal = allAnimals.find((a) => a.id === animalProp.id) ?? animalProp
 
   const getMother = () => findAnimalByRef(allAnimals, animal.motherId) || null
@@ -349,7 +351,20 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp 
               {animal.name && <p className="text-xs text-gray-400 truncate">{animal.name}</p>}
             </div>
           </div>
-          <ModalEditAnimal animal={animal} />
+          <div className="flex items-center gap-2">
+            <ModalEditAnimal animal={animal} />
+            <ButtonConfirm
+              openLabel="Eliminar"
+              confirmLabel="Eliminar"
+              confirmText={`¿Eliminar animal ${animal.animalNumber}? Esta acción no se puede deshacer.`}
+              openProps={{ size: 'sm', color: 'error', variant: 'outline', icon: 'delete' }}
+              confirmProps={{ color: 'error' }}
+              onConfirm={async () => {
+                await remove(animal.id)
+                onDeleted?.()
+              }}
+            />
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 mt-2">

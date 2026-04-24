@@ -263,17 +263,20 @@ export const useAnimalCRUD = () => {
    * Query one-time para animales por status (muerto, vendido, perdido).
    * No afecta el store global — retorna resultados directamente.
    */
-  const queryAnimalsByStatus = async (status: AnimalStatus): Promise<Animal[]> => {
-    if (!currentFarm?.id) return []
-    const q = query(
-      collection(db, 'animals'),
-      where('farmId', '==', currentFarm.id),
-      where('status', '==', status),
-      orderBy('createdAt', 'desc'),
-    )
-    const snapshot = await getDocs(q)
-    return serializeObj(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Animal[])
-  }
+  const queryAnimalsByStatus = useCallback(
+    async (status: AnimalStatus): Promise<Animal[]> => {
+      if (!currentFarm?.id) return []
+      const q = query(
+        collection(db, 'animals'),
+        where('farmId', '==', currentFarm.id),
+        where('status', '==', status),
+        orderBy('createdAt', 'desc'),
+      )
+      const snapshot = await getDocs(q)
+      return serializeObj(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Animal[])
+    },
+    [currentFarm?.id],
+  )
 
   const animalsStats = () => {
     const stats = {
