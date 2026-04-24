@@ -160,7 +160,7 @@ const SalesTab: React.FC = () => {
 
         {readyForSale.length === 0 ? (
           <p className="text-xs text-gray-500">
-            Marca animales como listos antes de crear una venta.
+            Marca animales como listos antes de crear una venta. Esta lista te ayudara a planificar las ventas.
           </p>
         ) : (
           <div className="overflow-x-auto">
