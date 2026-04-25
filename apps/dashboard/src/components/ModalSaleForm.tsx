@@ -203,19 +203,6 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({ isOpen, onClose, sale }) 
     }
   }
 
-  const canComplete = useMemo(() => {
-    return (
-      date !== null &&
-      pricePerKg !== null &&
-      pricePerKg > 0 &&
-      selectedAnimalIds.length > 0 &&
-      selectedAnimalIds.every((id) => {
-        const w = animalWeights[id]
-        return w != null && w > 0
-      })
-    )
-  }, [date, pricePerKg, selectedAnimalIds, animalWeights])
-
   const isCompleted = sale?.status === 'completed'
   const isCancelled = sale?.status === 'cancelled'
   const isReadOnly = isCompleted || isCancelled

@@ -39,7 +39,7 @@ interface AnimalDetailViewProps {
  * Vista detallada de un animal individual
  */
 const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp, onDeleted }) => {
-  const { animals: allAnimals, remove, update } = useAnimalCRUD()
+  const { animals: allAnimals, remove } = useAnimalCRUD()
   const animal = allAnimals.find((a) => a.id === animalProp.id) ?? animalProp
 
   const getMother = () => findAnimalByRef(allAnimals, animal.motherId) || null

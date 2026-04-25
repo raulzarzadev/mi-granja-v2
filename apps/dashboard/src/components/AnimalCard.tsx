@@ -90,7 +90,6 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
               <span>{animal_status_labels[animal.status!]}</span>
             </span>
           )}
-
         </div>
       </div>
 
