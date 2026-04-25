@@ -1002,7 +1002,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           bulkClearFn?.()
           setBulkSelectedAnimals([])
         }}
-        preSelectedAnimals={filteredAnimals.filter((a) => bulkSelectedAnimals.includes(a.id))}
       />
 
       {/* Modals de breeding */}

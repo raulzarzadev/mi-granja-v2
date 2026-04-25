@@ -173,10 +173,12 @@ export const useSalesCRUD = () => {
 
   const completeSale = async (
     id: string,
-    opts?: { onProgress?: (current: number, total: number) => void },
+    opts?: { onProgress?: (current: number, total: number) => void; overrideData?: Partial<Sale> },
   ) => {
-    const sale = sales.find((s) => s.id === id)
-    if (!sale) throw new Error('Venta no encontrada')
+    const saleFromRedux = sales.find((s) => s.id === id)
+    if (!saleFromRedux) throw new Error('Venta no encontrada')
+
+    const sale = opts?.overrideData ? { ...saleFromRedux, ...opts.overrideData } : saleFromRedux
 
     // Reconstruir sale con Date objects para isSaleComplete
     const saleForValidation = {

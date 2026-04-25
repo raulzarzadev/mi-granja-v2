@@ -9,7 +9,6 @@ import { WeightInput } from '@/components/inputs/WeightInput'
 import { Modal } from '@/components/Modal'
 import { RootState } from '@/features/store'
 import { useSalesCRUD } from '@/hooks/useSalesCRUD'
-import { isAvailableToSale } from '@/lib/animal-utils'
 import { Animal } from '@/types/animals'
 import {
   Sale,
@@ -26,15 +25,9 @@ interface ModalSaleFormProps {
   isOpen: boolean
   onClose: () => void
   sale?: Sale
-  preSelectedAnimals?: Animal[]
 }
 
-const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
-  isOpen,
-  onClose,
-  sale,
-  preSelectedAnimals,
-}) => {
+const ModalSaleForm: React.FC<ModalSaleFormProps> = ({ isOpen, onClose, sale }) => {
   const { animals } = useSelector((state: RootState) => state.animals)
   const {
     createSale,
@@ -47,7 +40,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
   } = useSalesCRUD()
 
   const [status, setStatus] = useState<SaleStatus>('scheduled')
-  const [date, setDate] = useState<Date | null>(null)
+  const [date, setDate] = useState<Date | null>(new Date())
   const [pricePerKg, setPricePerKg] = useState<number | null>(null) // centavos
   const [priceType, setPriceType] = useState<SalePriceType>('en_pie')
   const [buyer, setBuyer] = useState('')
@@ -75,7 +68,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
         if (animalStatus !== 'activo') return false
         if (currentSaleAnimalIds.has(a.id)) return true
         if (animalsInActiveSales.has(a.id)) return false
-        return isAvailableToSale(a)
+        return true
       }),
     [animals, animalsInActiveSales, currentSaleAnimalIds],
   )
@@ -83,7 +76,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
   useEffect(() => {
     if (sale) {
       setStatus(sale.status)
-      setDate(sale.date ? new Date(sale.date) : null)
+      setDate(sale.date ? new Date(sale.date) : new Date())
       setPricePerKg(sale.pricePerKg || null)
       setPriceType(sale.priceType || 'en_pie')
       setBuyer(sale.buyer || '')
@@ -96,16 +89,16 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
       setAnimalWeights(weights)
     } else {
       setStatus('scheduled')
-      setDate(null)
+      setDate(new Date())
       setPricePerKg(null)
       setPriceType('en_pie')
       setBuyer('')
       setNotes('')
-      setSelectedAnimalIds(preSelectedAnimals?.map((a) => a.id) || [])
+      setSelectedAnimalIds([])
       setAnimalWeights({})
     }
     setError('')
-  }, [sale, preSelectedAnimals, isOpen])
+  }, [sale, isOpen])
 
   const buildAnimalsEntries = (): SaleAnimalEntry[] => {
     return selectedAnimalIds.map((id) => {
@@ -150,11 +143,34 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
   const handleComplete = async () => {
     if (!sale) return
     setError('')
+    if (selectedAnimalIds.length === 0) {
+      setError('Selecciona al menos un animal')
+      return
+    }
+    if (!date) {
+      setError('Ingresa la fecha de venta')
+      return
+    }
+    if (!pricePerKg || pricePerKg <= 0) {
+      setError('Ingresa el precio por kg')
+      return
+    }
+    const missingWeight = selectedAnimalIds.find((id) => {
+      const w = animalWeights[id]
+      return w == null || w <= 0
+    })
+    if (missingWeight) {
+      const animal = animals.find((a) => a.id === missingWeight)
+      setError(`Ingresa el peso del animal ${animal?.animalNumber || missingWeight}`)
+      return
+    }
     setCompleteProgress({ current: 0, total: sale.animals.length })
+    const saleData = buildSaleData()
     try {
-      await updateSale(sale.id, buildSaleData())
+      await updateSale(sale.id, saleData)
       await completeSale(sale.id, {
         onProgress: (current, total) => setCompleteProgress({ current, total }),
+        overrideData: saleData,
       })
       onClose()
     } catch (err) {
@@ -234,7 +250,6 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
                   {sale_status_labels[s]}
                 </option>
               ))}
-            {isCompleted && <option value="completed">{sale_status_labels.completed}</option>}
           </select>
         </div>
 
@@ -290,29 +305,22 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
 
         {/* Animal selector */}
         {!isReadOnly && (
-          <>
-            {availableAnimals.length === 0 && selectedAnimalIds.length === 0 && (
-              <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded text-sm">
-                No hay animales listos para venta. Márcalos desde el tab Ventas.
-              </div>
-            )}
-            <AnimalSelector
-              animals={availableAnimals}
-              selectedIds={selectedAnimalIds}
-              onAdd={(id) => setSelectedAnimalIds((prev) => [...prev, id])}
-              onRemove={(id) => {
-                setSelectedAnimalIds((prev) => prev.filter((x) => x !== id))
-                setAnimalWeights((prev) => {
-                  const next = { ...prev }
-                  delete next[id]
-                  return next
-                })
-              }}
-              mode="multi"
-              label="Animales para venta"
-              placeholder="Buscar animales para la venta..."
-            />
-          </>
+          <AnimalSelector
+            animals={availableAnimals}
+            selectedIds={selectedAnimalIds}
+            onAdd={(id) => setSelectedAnimalIds((prev) => [...prev, id])}
+            onRemove={(id) => {
+              setSelectedAnimalIds((prev) => prev.filter((x) => x !== id))
+              setAnimalWeights((prev) => {
+                const next = { ...prev }
+                delete next[id]
+                return next
+              })
+            }}
+            mode="multi"
+            label="Animales para venta"
+            placeholder="Buscar animales para la venta..."
+          />
         )}
 
         {/* Pesos individuales */}
@@ -402,7 +410,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
                 {isEditing ? 'Guardar Cambios' : 'Crear Venta'}
               </button>
 
-              {isEditing && canComplete && (
+              {isEditing && (
                 <button
                   onClick={handleComplete}
                   disabled={isSubmitting}
@@ -410,7 +418,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
                 >
                   {completeProgress
                     ? `Finalizando ${completeProgress.current}/${completeProgress.total}...`
-                    : 'Finalizar Venta'}
+                    : '✅ Finalizar Venta'}
                 </button>
               )}
 
@@ -425,13 +433,6 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
               )}
             </>
           )}
-
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors ml-auto"
-          >
-            Cerrar
-          </button>
         </div>
       </div>
     </Modal>
