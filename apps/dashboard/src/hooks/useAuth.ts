@@ -14,8 +14,8 @@ import {
 } from '@/features/auth/authSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { RootState } from '@/features/store'
-import { auth } from '@/lib/firebase'
 import { trackLoginCompleted, trackLogout } from '@/lib/analytics/track'
+import { auth } from '@/lib/firebase'
 import { User } from '@/types'
 
 /**

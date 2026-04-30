@@ -1,12 +1,12 @@
 'use client'
 
 import {
-  APP_DOMAIN,
   ANALYTICS_EVENTS,
   type AnalyticsEvent,
+  APP_DOMAIN,
+  PH_DID_PARAM,
   POSTHOG_DEFAULT_OPTIONS,
   readDistinctIdFromUrl,
-  PH_DID_PARAM,
 } from '@mi-granja/shared'
 import posthog, { type PostHog } from 'posthog-js'
 
@@ -61,10 +61,7 @@ export function track(event: AnalyticsEvent, properties?: Record<string, unknown
   ph.capture(event, properties)
 }
 
-export function identifyUser(
-  userId: string,
-  personProperties?: Record<string, unknown>,
-) {
+export function identifyUser(userId: string, personProperties?: Record<string, unknown>) {
   const ph = getPosthog()
   if (!ph) return
   ph.identify(userId, personProperties)

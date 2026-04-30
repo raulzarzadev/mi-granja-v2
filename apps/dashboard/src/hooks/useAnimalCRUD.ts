@@ -21,14 +21,10 @@ import { setError } from '@/features/auth/authSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { RootState } from '@/features/store'
 import { useAdminActions } from '@/lib/adminActions'
+import { trackAnimalCreated, trackAnimalDeleted, trackAnimalUpdated } from '@/lib/analytics/track'
 import { computeAnimalStage } from '@/lib/animal-utils'
 import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { db } from '@/lib/firebase'
-import {
-  trackAnimalCreated,
-  trackAnimalDeleted,
-  trackAnimalUpdated,
-} from '@/lib/analytics/track'
 import { Animal, AnimalRecord, AnimalStatus, WeanNextStage } from '@/types/animals'
 
 /**

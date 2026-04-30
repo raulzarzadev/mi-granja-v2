@@ -1,12 +1,12 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import posthog from 'posthog-js'
 import { useEffect, useMemo, useRef } from 'react'
 import { useSelector } from 'react-redux'
+import { RootState } from '@/features/store'
 import { getPosthog, identifyUser, resetIdentity } from '@/lib/analytics/posthog'
 import { trackPageViewed } from '@/lib/analytics/track'
-import { RootState } from '@/features/store'
-import posthog from 'posthog-js'
 
 /**
  * Mounts inside <Providers>. Initializes PostHog, identifies the Firebase
@@ -25,7 +25,10 @@ export function PostHogProvider() {
 
   // Stable signature for species set so we don't re-run on every animals slice change.
   const speciesKey = useMemo(
-    () => Array.from(new Set(animalTypes.filter(Boolean))).sort().join('|'),
+    () =>
+      Array.from(new Set(animalTypes.filter(Boolean)))
+        .sort()
+        .join('|'),
     [animalTypes],
   )
 

@@ -40,12 +40,12 @@ const safeToDate = (val: unknown): Date | null => {
   return null
 }
 
-import { db } from '@/lib/firebase'
 import {
   trackGestationTracked,
   trackReproductionEventCreated,
   trackReproductionEventUpdated,
 } from '@/lib/analytics/track'
+import { db } from '@/lib/firebase'
 import { BreedingRecord } from '@/types/breedings'
 import { Comment, NewCommentInput } from '@/types/comment'
 import { getBreedingUpcomingBirths } from './libs/breeding-helpers'
@@ -222,11 +222,7 @@ export const useBreedingCRUD = () => {
       const hasBirth = updates.femaleBreedingInfo?.some((i) => i.actualBirthDate)
       const eventType = hasBirth ? 'parto' : 'breeding'
       trackReproductionEventUpdated({ type: eventType })
-      if (
-        updates.femaleBreedingInfo?.some(
-          (i) => i.pregnancyConfirmedDate && !i.actualBirthDate,
-        )
-      ) {
+      if (updates.femaleBreedingInfo?.some((i) => i.pregnancyConfirmedDate && !i.actualBirthDate)) {
         trackGestationTracked()
       }
     } catch (error) {

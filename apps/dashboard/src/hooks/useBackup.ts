@@ -16,6 +16,7 @@ import {
 import { useCallback, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
+import { trackExportRequested } from '@/lib/analytics/track'
 import {
   BACKUP_TYPE_DESCRIPTIONS,
   BackupFile,
@@ -26,7 +27,6 @@ import {
   validateBackupFile,
 } from '@/lib/backup-serialization'
 import { db } from '@/lib/firebase'
-import { trackExportRequested } from '@/lib/analytics/track'
 
 export interface BackupProgress {
   phase: string
