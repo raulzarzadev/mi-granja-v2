@@ -7,10 +7,10 @@ import BrandLogo from '@/components/BrandLogo'
 import { RootState } from '@/features/store'
 import { useAuth } from '@/hooks/useAuth'
 import { isUserAdmin } from '@/lib/userUtils'
+import { PlanBanner } from './FarmSwitcherBar'
 import { Modal } from './Modal'
 import ModalOnboarding from './onboarding/ModalOnboarding'
 import UserImpersonationSelector from './UserImpersonationSelector'
-import { PlanBanner } from './FarmSwitcherBar'
 
 /**
  * Componente de navegación principal
