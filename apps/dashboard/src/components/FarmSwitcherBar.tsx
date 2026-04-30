@@ -92,10 +92,12 @@ const FarmSwitcherBar: React.FC = () => {
                 photoURL={currentFarm?.photoURL}
                 size="sm"
               />
-              <span className="font-medium text-gray-900 truncate max-w-[180px]">
-                {currentFarm?.name || 'Seleccionar granja'}
-              </span>
-              {currentFarm && <MyRole farm={currentFarm} />}
+              <div className="grid gap-1">
+                <span className="font-medium text-gray-900 truncate max-w-[180px]">
+                  {currentFarm?.name || 'Seleccionar granja'}
+                </span>
+                {currentFarm && <MyRole farm={currentFarm} />}
+              </div>
               <svg
                 className={`h-4 w-4 text-gray-400 transition-transform flex-shrink-0 ${dropdownOpen ? 'rotate-180' : ''}`}
                 viewBox="0 0 20 20"
