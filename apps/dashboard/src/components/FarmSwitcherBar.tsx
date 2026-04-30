@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import { useBilling } from '@/hooks/useBilling'
@@ -14,7 +14,7 @@ import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditFarm from './ModalEditFarm'
 import MyRole from './MyRole'
 
-const FarmSwitcherBar: React.FC = () => {
+const FarmSwitcherBar = ({ children }: { children?: ReactNode }) => {
   const {
     currentFarm,
     switchFarm,
@@ -211,6 +211,7 @@ const FarmSwitcherBar: React.FC = () => {
             />
           )}
         </div>
+        {children}
         {/* Nueva granja */}
         {/*   TODO agregar este boton mas arriba */}
         <div className="flex gap-2">

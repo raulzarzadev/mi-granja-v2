@@ -70,9 +70,7 @@ const Dashboard: React.FC = () => {
         {/* Titulo de la granja + filtro global por tipo */}
         {currentFarm && (
           <div className="flex items-center gap-3 mb-3">
-            <FarmSwitcherBar />
-
-            {availableTypes.length > 1 && (
+            <FarmSwitcherBar>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -121,7 +119,7 @@ const Dashboard: React.FC = () => {
                   )
                 })}
               </div>
-            )}
+            </FarmSwitcherBar>
           </div>
         )}
 
