@@ -28,10 +28,8 @@ const FarmSwitcherBar = ({ children }: { children?: ReactNode }) => {
 
   const myInv = useMyInvitations()
   const { acceptInvitation } = useFarmMembers(undefined)
-  const { usage } = useBilling()
 
   const { user } = useSelector((s: RootState) => s.auth)
-  const billingPlanType = useSelector((s: RootState) => s.billing.planType)
   const [selectedInvitationId, setSelectedInvitationId] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -69,13 +67,11 @@ const FarmSwitcherBar = ({ children }: { children?: ReactNode }) => {
     [switchFarm],
   )
 
-  const isPro = billingPlanType === 'pro'
-
   if (allFarms.length === 0) return null
 
   return (
     <div className="w-full">
-      <div className="md:flex justify-between w-full gap-3 my-2 items-center ">
+      <div className="grid gap-4 mb-2 justify-between md:flex content-center ">
         {/* Farm switcher dropdown */}
         <div className="flex gap-2">
           <div className="relative" ref={dropdownRef}>
@@ -147,6 +143,27 @@ const FarmSwitcherBar = ({ children }: { children?: ReactNode }) => {
                         <MyRole farm={farm} />
                       </button>
                     ))}
+                    {/* Button create new farm. show modal. Show disclaimer in the modal to limit if current plan is not enough  */}
+                    <button
+                      onClick={() => {
+                        setShowCreateModal(true)
+                        setDropdownOpen(false)
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors text-gray-700"
+                    >
+                      <svg
+                        className="h-4 w-4 text-gray-400 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span>Nueva granja</span>
+                    </button>
                   </>
                 )}
 
@@ -211,10 +228,11 @@ const FarmSwitcherBar = ({ children }: { children?: ReactNode }) => {
             />
           )}
         </div>
+        {/* Children */}
         {children}
         {/* Nueva granja */}
         {/*   TODO agregar este boton mas arriba */}
-        <div className="flex gap-2">
+        {/* <div className="flex gap-2">
           <Button
             size="xs"
             variant="outline"
@@ -224,55 +242,7 @@ const FarmSwitcherBar = ({ children }: { children?: ReactNode }) => {
           >
             Nueva granja
           </Button>
-
-          {/* Indicador de plan y uso */}
-          {usage && (
-            /*
-          //TODO: Al hacer click en este   boton. debera abrir un modal con el detalle del plan y uso.
-          // así como un boton -> form para solicitar cambio de plan.
-          */
-            <div className="ml-auto flex items-center gap-2">
-              <div
-                className={`inline-flex flex-col items-end px-3 py-1.5 text-xs rounded-lg border ${
-                  usage.usedPlaces > usage.totalPlaces
-                    ? 'bg-red-50 text-red-700 border-red-200'
-                    : isPro
-                      ? 'bg-green-50 text-green-700 border-green-200'
-                      : 'bg-gray-50 text-gray-500 border-gray-200'
-                }`}
-              >
-                {isPro ? (
-                  <>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-semibold">Pro</span>
-                      <span className="opacity-30">|</span>
-                      <span>
-                        {usage.usedPlaces}/{usage.totalPlaces} lugares ocupados
-                      </span>
-                    </div>
-                    {/*n
-                  <div className="flex items-center gap-2 text-[10px] opacity-70">
-                    <span>
-                      {usage.farmCount} {usage.farmCount === 1 ? 'granja' : 'granjas'}
-                    </span>
-                    <span>·</span>
-                    <span>
-                      {usage.collaboratorCount}{' '}
-                      {usage.collaboratorCount === 1 ? 'colaborador' : 'colaboradores'}
-                    </span>
-                  </div> */}
-                  </>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold">Free</span>
-                    <span className="opacity-30">|</span>
-                    <span>1 lugar gratis</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+        </div> */}
 
         {/* Banner de invitacion pendiente */}
         {selectedInvitationId && (
@@ -399,3 +369,61 @@ const FarmSwitcherBar = ({ children }: { children?: ReactNode }) => {
 }
 
 export default FarmSwitcherBar
+
+export const PlanBanner = () => {
+  const { usage } = useBilling()
+  const billingPlanType = useSelector((s: RootState) => s.billing.planType)
+
+  const isPro = billingPlanType === 'pro'
+  return (
+    <div>
+      {/* Indicador de plan y uso */}
+      {usage && (
+        /*
+          //TODO: Al hacer click en este   boton. debera abrir un modal con el detalle del plan y uso.
+          // así como un boton -> form para solicitar cambio de plan.
+          */
+        <div className="ml-auto flex items-center gap-2">
+          <div
+            className={`inline-flex flex-col items-end px-3 py-1.5 text-xs rounded-lg border ${
+              usage.usedPlaces > usage.totalPlaces
+                ? 'bg-red-50 text-red-700 border-red-200'
+                : isPro
+                  ? 'bg-green-50 text-green-700 border-green-200'
+                  : 'bg-gray-50 text-gray-500 border-gray-200'
+            }`}
+          >
+            {isPro ? (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold">Pro</span>
+                  <span className="opacity-30">|</span>
+                  <span>
+                    {usage.usedPlaces}/{usage.totalPlaces} lugares ocupados
+                  </span>
+                </div>
+                {/*n
+                  <div className="flex items-center gap-2 text-[10px] opacity-70">
+                    <span>
+                      {usage.farmCount} {usage.farmCount === 1 ? 'granja' : 'granjas'}
+                    </span>
+                    <span>·</span>
+                    <span>
+                      {usage.collaboratorCount}{' '}
+                      {usage.collaboratorCount === 1 ? 'colaborador' : 'colaboradores'}
+                    </span>
+                  </div> */}
+              </>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold">Free</span>
+                <span className="opacity-30">|</span>
+                <span>1 lugar gratis</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
