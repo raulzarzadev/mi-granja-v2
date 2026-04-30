@@ -20,6 +20,10 @@ export function getPosthog(): PostHog | null {
   if (typeof window === 'undefined') return null
   if (!KEY) return null
   if (!initialized) {
+    // cross_subdomain_cookie: true sets cookies on the current eTLD+1.
+    // Works for migranja.app ↔ panel.migranja.app. Fails on Vercel preview
+    // URLs (*.vercel.app is on the public suffix list); the ?ph_did= URL
+    // fallback below stitches identity for that case.
     posthog.init(KEY, {
       ...POSTHOG_DEFAULT_OPTIONS,
       api_host: HOST,
@@ -30,14 +34,14 @@ export function getPosthog(): PostHog | null {
     })
     // Cross-domain bridge: if landing forwarded a distinct_id, adopt it
     // before the user identifies (so the funnel stitches together).
+    // Switch the dashboard's distinct_id to the landing's id; subsequent
+    // posthog.identify(userId) will then merge anon-landing → known-user.
     const incoming = readDistinctIdFromUrl()
     if (incoming) {
       const current = posthog.get_distinct_id()
       if (current && current !== incoming) {
-        // anon → forwarded anon: alias so server-side person merges
-        posthog.alias(incoming, current)
+        posthog.identify(incoming)
       }
-      // Strip the param so it doesn't pollute internal navigation.
       try {
         const url = new URL(window.location.href)
         url.searchParams.delete(PH_DID_PARAM)

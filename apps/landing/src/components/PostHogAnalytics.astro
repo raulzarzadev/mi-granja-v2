@@ -34,26 +34,18 @@ const appVersion = import.meta.env.PUBLIC_APP_VERSION || '0.0.0'
         page_name: window.location.pathname,
       })
 
-      // Cross-domain bridge: rewrite outbound links to panel.migranja.app
-      // so they carry ?ph_did=<distinct_id>. The dashboard adopts that id
-      // on init; cookies on .migranja.app handle the same-root case, but
-      // ITP/sandboxed previews can drop them — URL param is defensive.
-      function bridgeOutboundLinks() {
-        const did = posthog.get_distinct_id()
-        if (!did) return
-        document.querySelectorAll('a[href]').forEach((a) => {
-          const href = a.getAttribute('href')
-          if (!href) return
-          if (
-            href.startsWith('https://panel.migranja.app') ||
-            href.startsWith('https://dashboard.migranja.app')
-          ) {
-            a.setAttribute('href', appendDistinctIdToUrl(href, did))
-          }
-        })
+      // Cross-domain bridge: any anchor pointing at panel/dashboard gets
+      // ?ph_did=<distinct_id> appended at click time. Click-time rewrite
+      // (vs upfront DOM sweep) covers anchors added later by view
+      // transitions or dynamic content. Cookies on .migranja.app handle
+      // the same-root case; this URL param is the fallback for ITP /
+      // Vercel preview hosts where the shared cookie can't be set.
+      function isCrossDomainPanelLink(href) {
+        return (
+          href.startsWith('https://panel.migranja.app') ||
+          href.startsWith('https://dashboard.migranja.app')
+        )
       }
-      // Run after PostHog has had a tick to assign distinct_id.
-      setTimeout(bridgeOutboundLinks, 0)
 
       // Read all data-ph-* attributes (except the event name) as event properties.
       function readProps(el) {
@@ -73,18 +65,27 @@ const appVersion = import.meta.env.PUBLIC_APP_VERSION || '0.0.0'
       }
 
       // Delegated click tracking — any element with [data-ph-event] fires a capture.
+      // Also rewrites outbound panel links with ?ph_did at click time.
       document.addEventListener(
         'click',
         (e) => {
-          const target = (e.target instanceof Element ? e.target : null)?.closest(
-            '[data-ph-event]',
-          )
+          const eventTarget = e.target instanceof Element ? e.target : null
+          // Outbound link rewrite — any anchor regardless of data-ph-event.
+          const anchor = eventTarget?.closest('a[href]')
+          if (anchor) {
+            const href = anchor.getAttribute('href')
+            const did = posthog.get_distinct_id()
+            if (href && did && isCrossDomainPanelLink(href)) {
+              anchor.setAttribute('href', appendDistinctIdToUrl(href, did))
+            }
+          }
+
+          const target = eventTarget?.closest('[data-ph-event]')
           if (!target) return
           const raw = target.getAttribute('data-ph-event')
           if (!raw) return
           const eventName = EVENT_ALIAS[raw] || raw
           const props = readProps(target)
-          // Normalize cta_clicked props: text + location
           if (eventName === ANALYTICS_EVENTS.cta_clicked) {
             props.cta_text = props.label || target.textContent?.trim() || ''
             props.cta_location = props.location || ''
@@ -92,11 +93,18 @@ const appVersion = import.meta.env.PUBLIC_APP_VERSION || '0.0.0'
           posthog.capture(eventName, props)
 
           // Auto-derive funnel events from CTAs that link to /auth.
+          // Skip if the markup already declared signup_started/login_clicked
+          // explicitly (avoid double-fire).
           const href = target.getAttribute && target.getAttribute('href')
           if (href && /panel\.migranja\.app\/auth/.test(href)) {
-            posthog.capture(ANALYTICS_EVENTS.signup_started, {
-              source_location: props.location || props.cta_location || '',
-            })
+            const location = props.location || props.cta_location || ''
+            const isLoginCta = /login/i.test(location) || /sesi[oó]n/i.test(props.label || '')
+            const derivedEvent = isLoginCta
+              ? ANALYTICS_EVENTS.login_clicked
+              : ANALYTICS_EVENTS.signup_started
+            if (eventName !== derivedEvent) {
+              posthog.capture(derivedEvent, { source_location: location })
+            }
           }
         },
         { capture: true },
