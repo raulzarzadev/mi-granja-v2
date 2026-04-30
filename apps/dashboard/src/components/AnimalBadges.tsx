@@ -49,9 +49,9 @@ const AnimalBadges: React.FC<AnimalBadgesProps> = ({ animal, ageFormat = 'full' 
   const age = getAgeLabel(animal, ageFormat)
 
   return (
-    <span className="inline-flex items-center gap-1.5 text-sm">
-      <div className="w-12 text-right">
-        <span className="font-bold text-xs truncate text-gray-900 shrink-0">
+    <span className="inline-flex items-center gap-1.5 text-sm ">
+      <div className="w-12 text-left">
+        <span className="font-bold text-xs truncate text-gray-900 shrink-0 ">
           {animal.animalNumber}
         </span>
       </div>

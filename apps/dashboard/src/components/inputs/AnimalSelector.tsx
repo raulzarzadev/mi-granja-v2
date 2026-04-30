@@ -202,9 +202,6 @@ const AnimalSelector: React.FC<AnimalSelectorProps> = ({
                   >
                     <AnimalBadges animal={animal} />
                     <div className="min-w-0 flex-1">
-                      <span className="font-semibold text-sm text-gray-900">
-                        #{animal.animalNumber}
-                      </span>
                       {animal.name && (
                         <span className="text-sm text-gray-500 ml-1.5">{animal.name}</span>
                       )}

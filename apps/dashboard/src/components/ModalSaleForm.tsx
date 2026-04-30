@@ -246,6 +246,18 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({ isOpen, onClose, sale }) 
           <DateTimeInput value={date} onChange={setDate} disabled={isReadOnly} />
         </div>
 
+        {/* Comprador */}
+        {/* <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Comprador</label>
+          <input
+            type="text"
+            value={buyer}
+            onChange={(e) => setBuyer(e.target.value)}
+            placeholder="Nombre del comprador (opcional)"
+            disabled={isReadOnly}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
+          />
+        </div> */}
         {/* Precio por kg + tipo */}
         <div>
           <div className="flex items-end gap-3">
@@ -275,19 +287,6 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({ isOpen, onClose, sale }) 
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Comprador */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Comprador</label>
-          <input
-            type="text"
-            value={buyer}
-            onChange={(e) => setBuyer(e.target.value)}
-            placeholder="Nombre del comprador (opcional)"
-            disabled={isReadOnly}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
-          />
         </div>
 
         {/* Animal selector */}
@@ -365,7 +364,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({ isOpen, onClose, sale }) 
         )}
 
         {/* Notas */}
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
           <textarea
             value={notes}
@@ -375,10 +374,10 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({ isOpen, onClose, sale }) 
             placeholder="Notas adicionales..."
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
           />
-        </div>
+        </div> */}
 
         {/* Acciones */}
-        <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
+        <div className="flex flex-wrap gap-2 pt-2 ">
           {isCompleted ? (
             <button
               onClick={handleRevert}
