@@ -24,6 +24,11 @@ import { useAdminActions } from '@/lib/adminActions'
 import { computeAnimalStage } from '@/lib/animal-utils'
 import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { db } from '@/lib/firebase'
+import {
+  trackAnimalCreated,
+  trackAnimalDeleted,
+  trackAnimalUpdated,
+} from '@/lib/analytics/track'
 import { Animal, AnimalRecord, AnimalStatus, WeanNextStage } from '@/types/animals'
 
 /**
@@ -89,6 +94,7 @@ export const useAnimalCRUD = () => {
       newAnimal = wrapWithAdminMetadata(newAnimal, 'Creación de animal')
 
       const docRef = await addDoc(collection(db, 'animals'), newAnimal)
+      trackAnimalCreated({ species: newAnimal.type, breed: newAnimal.breed })
       return docRef.id
     } catch (error) {
       console.error('Error creating animal:', error, { animalData })
@@ -147,6 +153,11 @@ export const useAnimalCRUD = () => {
       updatedData = wrapWithAdminMetadata(updatedData, 'Actualización de animal')
 
       await updateDoc(animalRef, updatedData)
+      const fieldsChanged = Object.keys(updateData)
+      trackAnimalUpdated({
+        field_changed: fieldsChanged[0],
+        fields_changed: fieldsChanged,
+      })
     } catch (error) {
       console.error('Error actualizando animal:', error)
       dispatch(setError('Error actualizando animal'))
@@ -164,7 +175,9 @@ export const useAnimalCRUD = () => {
 
     setIsLoading(true)
     try {
+      const animal = animals.find((a) => a.id === animalId)
       await deleteDoc(doc(db, 'animals', animalId))
+      trackAnimalDeleted({ species: animal?.type })
     } catch (error) {
       console.error('Error deleting animal:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error al eliminar el animal'

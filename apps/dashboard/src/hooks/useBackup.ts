@@ -26,6 +26,7 @@ import {
   validateBackupFile,
 } from '@/lib/backup-serialization'
 import { db } from '@/lib/firebase'
+import { trackExportRequested } from '@/lib/analytics/track'
 
 export interface BackupProgress {
   phase: string
@@ -57,6 +58,7 @@ export function useBackup() {
     }
 
     setIsExporting(true)
+    trackExportRequested({ data_type: 'farm_backup' })
     setProgress({ phase: 'export', percent: 0, message: 'Iniciando exportación...' })
 
     try {

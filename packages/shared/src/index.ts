@@ -1,5 +1,6 @@
 // Types
 
+export * from './lib/analytics'
 export * from './lib/animal-utils'
 export * from './lib/animalBreedingConfig'
 export { default as catchError } from './lib/catchError'

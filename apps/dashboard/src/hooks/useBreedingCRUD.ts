@@ -41,6 +41,11 @@ const safeToDate = (val: unknown): Date | null => {
 }
 
 import { db } from '@/lib/firebase'
+import {
+  trackGestationTracked,
+  trackReproductionEventCreated,
+  trackReproductionEventUpdated,
+} from '@/lib/analytics/track'
 import { BreedingRecord } from '@/types/breedings'
 import { Comment, NewCommentInput } from '@/types/comment'
 import { getBreedingUpcomingBirths } from './libs/breeding-helpers'
@@ -120,11 +125,13 @@ export const useBreedingCRUD = () => {
       }
 
       await addDoc(collection(db, 'breedingRecords'), docData)
+      trackReproductionEventCreated({ type: 'breeding' })
 
       // Actualizar animales confirmados como embarazadas en un solo batch
       const confirmedFemales =
         data.femaleBreedingInfo?.filter((info) => !!info.pregnancyConfirmedDate) || []
       if (confirmedFemales.length > 0) {
+        trackGestationTracked()
         const batch = writeBatch(db)
         for (const info of confirmedFemales) {
           batch.update(doc(db, 'animals', info.femaleId), {
@@ -211,6 +218,17 @@ export const useBreedingCRUD = () => {
       }
 
       await updateDoc(docRef, updateData)
+      // birth registered = parto type; confirmed pregnancy = gestation
+      const hasBirth = updates.femaleBreedingInfo?.some((i) => i.actualBirthDate)
+      const eventType = hasBirth ? 'parto' : 'breeding'
+      trackReproductionEventUpdated({ type: eventType })
+      if (
+        updates.femaleBreedingInfo?.some(
+          (i) => i.pregnancyConfirmedDate && !i.actualBirthDate,
+        )
+      ) {
+        trackGestationTracked()
+      }
     } catch (error) {
       console.error('Error updating breeding record:', error)
       throw error

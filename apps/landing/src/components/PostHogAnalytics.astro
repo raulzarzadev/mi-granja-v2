@@ -2,25 +2,62 @@
 // Only renders when PUBLIC_POSTHOG_KEY is set. The script below is a module;
 // Vite statically inlines import.meta.env.PUBLIC_* at build time.
 const hasKey = !!import.meta.env.PUBLIC_POSTHOG_KEY
+const appVersion = import.meta.env.PUBLIC_APP_VERSION || '0.0.0'
 ---
 
 {
   hasKey && (
-    <script>
+    <script define:vars={{ appVersion }}>
       import posthog from 'posthog-js'
+      import {
+        APP_DOMAIN,
+        ANALYTICS_EVENTS,
+        POSTHOG_DEFAULT_OPTIONS,
+        PH_DID_PARAM,
+        appendDistinctIdToUrl,
+      } from '@mi-granja/shared'
 
       const key = import.meta.env.PUBLIC_POSTHOG_KEY
-      const host = import.meta.env.PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
+      const host = import.meta.env.PUBLIC_POSTHOG_HOST || POSTHOG_DEFAULT_OPTIONS.api_host
 
       posthog.init(key, {
+        ...POSTHOG_DEFAULT_OPTIONS,
         api_host: host,
-        person_profiles: 'identified_only',
-        defaults: '2025-05-24',
+      })
+      posthog.register({
+        app_domain: APP_DOMAIN.LANDING,
+        app_version: appVersion,
       })
 
+      // page_viewed (manual — capture_pageview is off in shared defaults).
+      posthog.capture(ANALYTICS_EVENTS.page_viewed, {
+        page_name: window.location.pathname,
+      })
+
+      // Cross-domain bridge: rewrite outbound links to panel.migranja.app
+      // so they carry ?ph_did=<distinct_id>. The dashboard adopts that id
+      // on init; cookies on .migranja.app handle the same-root case, but
+      // ITP/sandboxed previews can drop them — URL param is defensive.
+      function bridgeOutboundLinks() {
+        const did = posthog.get_distinct_id()
+        if (!did) return
+        document.querySelectorAll('a[href]').forEach((a) => {
+          const href = a.getAttribute('href')
+          if (!href) return
+          if (
+            href.startsWith('https://panel.migranja.app') ||
+            href.startsWith('https://dashboard.migranja.app')
+          ) {
+            a.setAttribute('href', appendDistinctIdToUrl(href, did))
+          }
+        })
+      }
+      // Run after PostHog has had a tick to assign distinct_id.
+      setTimeout(bridgeOutboundLinks, 0)
+
       // Read all data-ph-* attributes (except the event name) as event properties.
-      function readProps(el: Element) {
-        const props: Record<string, string> = {}
+      function readProps(el) {
+        const props = {}
         for (const { name, value } of Array.from(el.attributes)) {
           if (name.startsWith('data-ph-') && name !== 'data-ph-event') {
             props[name.slice('data-ph-'.length).replace(/-/g, '_')] = value
@@ -29,15 +66,38 @@ const hasKey = !!import.meta.env.PUBLIC_POSTHOG_KEY
         return props
       }
 
+      // Map well-known data-ph-event values to the canonical event names.
+      // Existing CTAs use 'cta_click' — alias to 'cta_clicked'.
+      const EVENT_ALIAS = {
+        cta_click: ANALYTICS_EVENTS.cta_clicked,
+      }
+
       // Delegated click tracking — any element with [data-ph-event] fires a capture.
       document.addEventListener(
         'click',
         (e) => {
-          const target = (e.target as Element | null)?.closest('[data-ph-event]')
+          const target = (e.target instanceof Element ? e.target : null)?.closest(
+            '[data-ph-event]',
+          )
           if (!target) return
-          const eventName = target.getAttribute('data-ph-event')
-          if (!eventName) return
-          posthog.capture(eventName, readProps(target))
+          const raw = target.getAttribute('data-ph-event')
+          if (!raw) return
+          const eventName = EVENT_ALIAS[raw] || raw
+          const props = readProps(target)
+          // Normalize cta_clicked props: text + location
+          if (eventName === ANALYTICS_EVENTS.cta_clicked) {
+            props.cta_text = props.label || target.textContent?.trim() || ''
+            props.cta_location = props.location || ''
+          }
+          posthog.capture(eventName, props)
+
+          // Auto-derive funnel events from CTAs that link to /auth.
+          const href = target.getAttribute && target.getAttribute('href')
+          if (href && /panel\.migranja\.app\/auth/.test(href)) {
+            posthog.capture(ANALYTICS_EVENTS.signup_started, {
+              source_location: props.location || props.cta_location || '',
+            })
+          }
         },
         { capture: true },
       )
@@ -45,16 +105,35 @@ const hasKey = !!import.meta.env.PUBLIC_POSTHOG_KEY
       // FAQ: track when a <details data-ph-event="faq_opened"> is opened (not closed).
       document.querySelectorAll('details[data-ph-event]').forEach((el) => {
         el.addEventListener('toggle', () => {
-          if ((el as HTMLDetailsElement).open) {
+          if (el.open) {
             const eventName = el.getAttribute('data-ph-event') || 'faq_opened'
             posthog.capture(eventName, readProps(el))
           }
         })
       })
 
+      // pricing_viewed — fire once when the #pricing section enters the viewport.
+      const pricingEl = document.getElementById('precios') || document.getElementById('pricing')
+      if (pricingEl && 'IntersectionObserver' in window) {
+        let pricingFired = false
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting && !pricingFired) {
+                pricingFired = true
+                posthog.capture(ANALYTICS_EVENTS.pricing_viewed)
+                io.disconnect()
+              }
+            }
+          },
+          { threshold: 0.3 },
+        )
+        io.observe(pricingEl)
+      }
+
       // Scroll depth milestones — fire each threshold once per page load.
       const thresholds = [25, 50, 75, 100]
-      const fired = new Set<number>()
+      const fired = new Set()
       function checkScrollDepth() {
         const scrollTop = window.scrollY
         const docHeight = document.documentElement.scrollHeight - window.innerHeight

@@ -15,6 +15,7 @@ import {
 import { serializeObj } from '@/features/libs/serializeObj'
 import { RootState } from '@/features/store'
 import { auth } from '@/lib/firebase'
+import { trackLoginCompleted, trackLogout } from '@/lib/analytics/track'
 import { User } from '@/types'
 
 /**
@@ -91,6 +92,7 @@ export const useAuth = () => {
 
       // Sign in with the custom token from the server
       await signInWithCustomToken(auth, data.token)
+      trackLoginCompleted('email')
 
       // AuthInitializer will handle setUser when it detects auth change
       dispatch(setLoading(false))
@@ -106,6 +108,7 @@ export const useAuth = () => {
   // Cerrar sesión
   const handleLogout = async () => {
     try {
+      trackLogout()
       await signOut(auth)
       dispatch(logout())
     } catch (error: unknown) {
