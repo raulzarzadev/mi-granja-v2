@@ -217,6 +217,16 @@ const Navbar: React.FC = () => {
                         >
                           📘 Primeros pasos
                         </button>
+                        <a
+                          href="https://whatsapp.com/channel/0029Vb7yj5l9Bb61XqL21i2x"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700"
+                          role="menuitem"
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          💬 Comunidad WhatsApp
+                        </a>
                         {isUserAdmin(user) && (
                           <>
                             <Link

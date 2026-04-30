@@ -4,6 +4,7 @@ import './globals.css'
 import { BetaBanner } from '@/components/BetaBanner'
 import { OfflineBanner } from '@/components/OfflineBanner'
 import { ServiceWorkerRegistrar } from '@/components/ServiceWorkerRegistrar'
+import WhatsAppCommunityFab from '@/components/WhatsAppCommunityFab'
 import { PRICE_PER_PLACE_MXN } from '@/types/billing'
 import { Providers } from './providers'
 
@@ -102,6 +103,7 @@ export default function RootLayout({
         <OfflineBanner />
         <BetaBanner />
         <Providers>{children}</Providers>
+        <WhatsAppCommunityFab />
       </body>
     </html>
   )
