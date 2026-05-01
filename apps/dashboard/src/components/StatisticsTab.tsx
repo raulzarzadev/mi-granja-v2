@@ -115,10 +115,7 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
     }
 
     // Por especie (mira el animal vendido)
-    const bySpecies = new Map<
-      AnimalType,
-      { amount: number; kg: number; animals: number }
-    >()
+    const bySpecies = new Map<AnimalType, { amount: number; kg: number; animals: number }>()
     const animalById = new Map(allAnimals.map((a) => [a.id, a]))
     for (const s of completed) {
       const totalSaleKg = getTotalWeight(s) / 1000
@@ -146,9 +143,7 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
       entry.count++
       byBuyer.set(buyer, entry)
     }
-    const topBuyers = [...byBuyer.entries()]
-      .sort((a, b) => b[1].amount - a[1].amount)
-      .slice(0, 5)
+    const topBuyers = [...byBuyer.entries()].sort((a, b) => b[1].amount - a[1].amount).slice(0, 5)
 
     return {
       totalAmount,
@@ -240,10 +235,7 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
   const maxBirthMonth = Math.max(...[...birthStats.byMonth.values()], 1)
   const maxDeathMonth = Math.max(...[...deathStats.byMonth.values()], 1)
   const maxTypeWeight = Math.max(...[...weightStats.byType.values()].map((v) => v.totalWeight), 1)
-  const maxSpeciesAmount = Math.max(
-    ...[...salesStats.bySpecies.values()].map((v) => v.amount),
-    1,
-  )
+  const maxSpeciesAmount = Math.max(...[...salesStats.bySpecies.values()].map((v) => v.amount), 1)
   const maxBuyerAmount = Math.max(...salesStats.topBuyers.map(([, v]) => v.amount), 1)
 
   return (
@@ -296,7 +288,9 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
           </div>
           <div>
             <p className="text-xs text-gray-500">Ingresos</p>
-            <p className="text-xl font-bold text-green-600">{formatPrice(salesStats.totalAmount)}</p>
+            <p className="text-xl font-bold text-green-600">
+              {formatPrice(salesStats.totalAmount)}
+            </p>
           </div>
           <div>
             <p className="text-xs text-gray-500">Precio promedio / kg</p>
