@@ -12,6 +12,7 @@ import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBilling } from '@/hooks/useBilling'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import { useSalesCRUD } from '@/hooks/useSalesCRUD'
 import { auth, db } from '@/lib/firebase'
 import { User } from '@/types'
 
@@ -80,6 +81,15 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
   useEffect(() => {
     if (currentFarm) {
       const unsub = getFarmBreedings()
+      return () => unsub?.()
+    }
+  }, [currentFarm?.id])
+
+  //* ==================================== SALES LISTENER
+  const { getFarmSales } = useSalesCRUD()
+  useEffect(() => {
+    if (currentFarm) {
+      const unsub = getFarmSales()
       return () => unsub?.()
     }
   }, [currentFarm?.id])

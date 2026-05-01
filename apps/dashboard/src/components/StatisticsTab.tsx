@@ -93,9 +93,14 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
     const completed = sales.filter((s) => s.status === 'completed')
     const totalAmount = completed.reduce((sum, s) => sum + getTotalAmount(s), 0)
     const totalKg = completed.reduce((sum, s) => sum + getTotalWeight(s), 0)
+    const totalAnimals = completed.reduce((sum, s) => sum + (s.animals?.length || 0), 0)
+    const avgPricePerKg = totalKg > 0 ? totalAmount / (totalKg / 1000) : 0
 
-    const byMonth = new Map<string, { amount: number; count: number }>()
-    for (const m of months) byMonth.set(m.key, { amount: 0, count: 0 })
+    const byMonth = new Map<
+      string,
+      { amount: number; count: number; kg: number; animals: number }
+    >()
+    for (const m of months) byMonth.set(m.key, { amount: 0, count: 0, kg: 0, animals: 0 })
     for (const s of completed) {
       if (!s.date) continue
       const d = new Date(s.date)
@@ -103,12 +108,59 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
       const entry = byMonth.get(key)
       if (entry) {
         entry.amount += getTotalAmount(s)
+        entry.kg += getTotalWeight(s) / 1000
         entry.count++
+        entry.animals += s.animals?.length || 0
       }
     }
 
-    return { totalAmount, totalKg, byMonth, count: completed.length }
-  }, [sales, months])
+    // Por especie (mira el animal vendido)
+    const bySpecies = new Map<
+      AnimalType,
+      { amount: number; kg: number; animals: number }
+    >()
+    const animalById = new Map(allAnimals.map((a) => [a.id, a]))
+    for (const s of completed) {
+      const totalSaleKg = getTotalWeight(s) / 1000
+      const totalSaleAmount = getTotalAmount(s)
+      for (const sa of s.animals || []) {
+        const animal = animalById.get(sa.animalId)
+        const type = animal?.type
+        if (!type) continue
+        const wKg = (sa.weight || 0) / 1000
+        const ratio = totalSaleKg > 0 ? wKg / totalSaleKg : 1 / (s.animals?.length || 1)
+        const entry = bySpecies.get(type) || { amount: 0, kg: 0, animals: 0 }
+        entry.amount += totalSaleAmount * ratio
+        entry.kg += wKg
+        entry.animals++
+        bySpecies.set(type, entry)
+      }
+    }
+
+    // Top compradores
+    const byBuyer = new Map<string, { amount: number; count: number }>()
+    for (const s of completed) {
+      const buyer = (s.buyer || '').trim() || 'Sin nombre'
+      const entry = byBuyer.get(buyer) || { amount: 0, count: 0 }
+      entry.amount += getTotalAmount(s)
+      entry.count++
+      byBuyer.set(buyer, entry)
+    }
+    const topBuyers = [...byBuyer.entries()]
+      .sort((a, b) => b[1].amount - a[1].amount)
+      .slice(0, 5)
+
+    return {
+      totalAmount,
+      totalKg,
+      totalAnimals,
+      avgPricePerKg,
+      byMonth,
+      bySpecies,
+      topBuyers,
+      count: completed.length,
+    }
+  }, [sales, months, allAnimals])
 
   // ── Nacimientos ──
   const birthStats = useMemo(() => {
@@ -184,9 +236,15 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
   }, [animals])
 
   const maxSalesMonth = Math.max(...[...salesStats.byMonth.values()].map((v) => v.amount), 1)
+  const maxKgMonth = Math.max(...[...salesStats.byMonth.values()].map((v) => v.kg), 1)
   const maxBirthMonth = Math.max(...[...birthStats.byMonth.values()], 1)
   const maxDeathMonth = Math.max(...[...deathStats.byMonth.values()], 1)
   const maxTypeWeight = Math.max(...[...weightStats.byType.values()].map((v) => v.totalWeight), 1)
+  const maxSpeciesAmount = Math.max(
+    ...[...salesStats.bySpecies.values()].map((v) => v.amount),
+    1,
+  )
+  const maxBuyerAmount = Math.max(...salesStats.topBuyers.map(([, v]) => v.amount), 1)
 
   return (
     <div className="space-y-4">
@@ -224,36 +282,140 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
         </div>
       </div>
 
-      {/* Ventas por mes */}
+      {/* KPIs ventas */}
       <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="text-sm font-medium text-gray-700 mb-1">Ventas por mes</h3>
-        <p className="text-xs text-gray-400 mb-3">
-          Total: {formatPrice(salesStats.totalAmount)} · {formatWeight(salesStats.totalKg)} vendidos
-        </p>
-        <div className="space-y-1.5">
+        <h3 className="text-sm font-medium text-gray-700 mb-3">Resumen de ventas</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div>
+            <p className="text-xs text-gray-500">Animales vendidos</p>
+            <p className="text-xl font-bold text-gray-900">{salesStats.totalAnimals}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Kg vendidos</p>
+            <p className="text-xl font-bold text-gray-900">{formatWeight(salesStats.totalKg)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Ingresos</p>
+            <p className="text-xl font-bold text-green-600">{formatPrice(salesStats.totalAmount)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Precio promedio / kg</p>
+            <p className="text-xl font-bold text-gray-900">
+              {formatPrice(salesStats.avgPricePerKg)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Ventas por mes — kg vs $ */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <h3 className="text-sm font-medium text-gray-700 mb-1">Ventas por mes — kg vs $</h3>
+        <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-3 h-3 rounded-sm bg-amber-400" /> kg
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-3 h-3 rounded-sm bg-green-500" /> $
+          </span>
+        </div>
+        <div className="space-y-2">
           {months.map((m) => {
-            const data = salesStats.byMonth.get(m.key) || { amount: 0, count: 0 }
+            const data = salesStats.byMonth.get(m.key) || {
+              amount: 0,
+              count: 0,
+              kg: 0,
+              animals: 0,
+            }
+            const kgPct = (data.kg / maxKgMonth) * 100
+            const amountPct = (data.amount / maxSalesMonth) * 100
             return (
               <div key={m.key} className="flex items-center gap-2">
                 <span className="text-xs text-gray-500 w-16 text-right shrink-0">
                   {monthLabel(m.month, m.year)}
                 </span>
-                <div className="flex-1 bg-gray-100 rounded-full h-5 relative overflow-hidden">
-                  <div
-                    className="bg-green-500 h-full rounded-full transition-all"
-                    style={{
-                      width: `${Math.max((data.amount / maxSalesMonth) * 100, data.amount > 0 ? 2 : 0)}%`,
-                    }}
-                  />
+                <div className="flex-1 space-y-1">
+                  <div className="bg-gray-100 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="bg-amber-400 h-full rounded-full transition-all"
+                      style={{ width: `${Math.max(kgPct, data.kg > 0 ? 2 : 0)}%` }}
+                    />
+                  </div>
+                  <div className="bg-gray-100 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="bg-green-500 h-full rounded-full transition-all"
+                      style={{ width: `${Math.max(amountPct, data.amount > 0 ? 2 : 0)}%` }}
+                    />
+                  </div>
                 </div>
-                <span className="text-xs font-medium text-gray-700 w-24 shrink-0 text-right">
-                  {data.amount > 0 ? formatPrice(data.amount) : '—'}
-                </span>
+                <div className="w-28 shrink-0 text-right">
+                  <p className="text-xs font-medium text-gray-700">
+                    {data.amount > 0 ? formatPrice(data.amount) : '—'}
+                  </p>
+                  <p className="text-[10px] text-gray-400">
+                    {data.kg > 0 ? formatWeight(data.kg * 1000) : '—'} · {data.animals} an.
+                  </p>
+                </div>
               </div>
             )
           })}
         </div>
       </div>
+
+      {/* Ventas por especie */}
+      {salesStats.bySpecies.size > 0 && (
+        <div className="bg-white rounded-lg shadow p-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Ventas por especie</h3>
+          <div className="space-y-1.5">
+            {[...salesStats.bySpecies.entries()]
+              .sort((a, b) => b[1].amount - a[1].amount)
+              .map(([type, data]) => (
+                <div key={type} className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 w-24 text-right shrink-0">
+                    {animal_icon[type]} {animals_types_labels[type]}
+                  </span>
+                  <div className="flex-1 bg-gray-100 rounded-full h-5 relative overflow-hidden">
+                    <div
+                      className="bg-green-500 h-full rounded-full transition-all"
+                      style={{ width: `${(data.amount / maxSpeciesAmount) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-medium text-gray-700 w-24 shrink-0 text-right">
+                    {formatPrice(data.amount)}
+                  </span>
+                  <span className="text-[10px] text-gray-400 w-24 shrink-0">
+                    {data.animals} an. · {formatWeight(data.kg * 1000)}
+                  </span>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Top compradores */}
+      {salesStats.topBuyers.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Top compradores</h3>
+          <div className="space-y-1.5">
+            {salesStats.topBuyers.map(([buyer, data]) => (
+              <div key={buyer} className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 w-32 text-right shrink-0 truncate">
+                  {buyer}
+                </span>
+                <div className="flex-1 bg-gray-100 rounded-full h-5 relative overflow-hidden">
+                  <div
+                    className="bg-indigo-500 h-full rounded-full transition-all"
+                    style={{ width: `${(data.amount / maxBuyerAmount) * 100}%` }}
+                  />
+                </div>
+                <span className="text-xs font-medium text-gray-700 w-24 shrink-0 text-right">
+                  {formatPrice(data.amount)}
+                </span>
+                <span className="text-[10px] text-gray-400 w-12 shrink-0">{data.count} v.</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Nacimientos y muertes por mes */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
