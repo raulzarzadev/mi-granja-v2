@@ -79,6 +79,10 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
   const [bulkDeleteIds, setBulkDeleteIds] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
   const [deleteProgress, setDeleteProgress] = useState({ current: 0, total: 0 })
+  const [showBulkFinishModal, setShowBulkFinishModal] = useState(false)
+  const [bulkFinishIds, setBulkFinishIds] = useState<Set<string>>(new Set())
+  const [finishing, setFinishing] = useState(false)
+  const [finishProgress, setFinishProgress] = useState({ current: 0, total: 0 })
 
   const enriched: EnrichedBreeding[] = useMemo(
     () =>
@@ -199,19 +203,44 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
         toolbar={toolbar}
         renderCard={renderCard}
         viewModeKey="empadres_view_mode"
-        renderBulkActions={(selectedIds, _clearSelection) => (
-          <Button
-            size="xs"
-            color="error"
-            icon="delete"
-            onClick={() => {
-              setBulkDeleteIds(selectedIds)
-              setShowBulkDeleteModal(true)
-            }}
-          >
-            Eliminar
-          </Button>
-        )}
+        renderBulkActions={(selectedIds, _clearSelection) => {
+          const finishableIds = onFinish
+            ? new Set(
+                Array.from(selectedIds).filter((id) => {
+                  const rec = records.find((r) => r.id === id)
+                  return rec && rec.status !== 'finished'
+                }),
+              )
+            : new Set<string>()
+          return (
+            <>
+              {onFinish && finishableIds.size > 0 && (
+                <Button
+                  size="xs"
+                  color="warning"
+                  icon="check_circle"
+                  onClick={() => {
+                    setBulkFinishIds(finishableIds)
+                    setShowBulkFinishModal(true)
+                  }}
+                >
+                  Terminar
+                </Button>
+              )}
+              <Button
+                size="xs"
+                color="error"
+                icon="delete"
+                onClick={() => {
+                  setBulkDeleteIds(selectedIds)
+                  setShowBulkDeleteModal(true)
+                }}
+              >
+                Eliminar
+              </Button>
+            </>
+          )
+        }}
         renderActions={(row) => (
           <>
             {onConfirmPregnancy && row.status.pending > 0 && (
@@ -292,6 +321,53 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
               {deleting
                 ? `Eliminando ${deleteProgress.current}/${deleteProgress.total}...`
                 : `Eliminar ${bulkDeleteIds.size}`}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={showBulkFinishModal}
+        onClose={() => setShowBulkFinishModal(false)}
+        title="Terminar empadres"
+      >
+        <div className="p-4 space-y-4">
+          <p className="text-sm text-gray-700">
+            ¿Terminar {bulkFinishIds.size} empadre{bulkFinishIds.size !== 1 ? 's' : ''}?
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              color="neutral"
+              disabled={finishing}
+              onClick={() => setShowBulkFinishModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              color="warning"
+              icon="check_circle"
+              disabled={finishing || !onFinish}
+              onClick={async () => {
+                if (!onFinish) return
+                const ids = Array.from(bulkFinishIds)
+                setFinishing(true)
+                setFinishProgress({ current: 0, total: ids.length })
+                for (let i = 0; i < ids.length; i++) {
+                  setFinishProgress({ current: i + 1, total: ids.length })
+                  const rec = records.find((r) => r.id === ids[i])
+                  if (rec) await onFinish(rec)
+                }
+                setFinishing(false)
+                setFinishProgress({ current: 0, total: 0 })
+                setShowBulkFinishModal(false)
+                setBulkFinishIds(new Set())
+              }}
+            >
+              {finishing
+                ? `Terminando ${finishProgress.current}/${finishProgress.total}...`
+                : `Terminar ${bulkFinishIds.size}`}
             </Button>
           </div>
         </div>
