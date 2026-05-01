@@ -11,12 +11,23 @@ interface Props {
   noursingMothersRows: NoursingMotherRow[]
   columns: ColumnDef<NoursingMotherRow>[]
   animals: Animal[]
+  openBulkWean: (decision: 'engorda' | 'reproductor', ids: Set<string>) => void
+}
+
+const collectCriaIds = (rows: NoursingMotherRow[], motherIds: Set<string>): Set<string> => {
+  const ids = new Set<string>()
+  for (const r of rows) {
+    if (!motherIds.has(r.animal.id)) continue
+    for (const c of r.crias) ids.add(c.id)
+  }
+  return ids
 }
 
 export default function TabStageNoursingMothers({
   noursingMothersRows,
   columns,
   animals: _animals,
+  openBulkWean,
 }: Props) {
   const overdue = noursingMothersRows.filter((r) => r.daysUntilWean !== null && r.daysUntilWean < 0)
 
@@ -52,7 +63,9 @@ export default function TabStageNoursingMothers({
           )}
         </div>
       )}
-      <p className="text-xs text-gray-500 mb-2">Madres en lactancia.</p>
+      <p className="text-xs text-gray-500 mb-2">
+        Madres en lactancia. Destetar destetará a sus crías.
+      </p>
       <DataTable
         title={`${animal_stage_config.crias_lactantes.icon} Madres Lactantes`}
         data={noursingMothersRows}
@@ -61,6 +74,28 @@ export default function TabStageNoursingMothers({
         defaultSortKey="unweanDate"
         sessionStorageKey="mg_last_noursing_id"
         selectable
+        renderBulkActions={(ids) => {
+          const criaIds = collectCriaIds(noursingMothersRows, ids)
+          if (criaIds.size === 0) return null
+          return (
+            <>
+              <Button
+                size="xs"
+                color="warning"
+                onClick={() => openBulkWean('engorda', criaIds)}
+              >
+                {animal_stage_config.engorda.icon} Destetar a Engorda ({criaIds.size})
+              </Button>
+              <Button
+                size="xs"
+                color="error"
+                onClick={() => openBulkWean('reproductor', criaIds)}
+              >
+                {animal_stage_config.reproductor.icon} Destetar a Reproductor ({criaIds.size})
+              </Button>
+            </>
+          )
+        }}
         onView={(row) => (
           <ModalAnimalDetails
             animal={row.animal}
@@ -71,6 +106,30 @@ export default function TabStageNoursingMothers({
             }
           />
         )}
+        renderActions={(row) => {
+          const criaIds = new Set(row.crias.map((c) => c.id))
+          if (criaIds.size === 0) return null
+          return (
+            <>
+              <Button
+                size="xs"
+                variant="ghost"
+                color="warning"
+                onClick={() => openBulkWean('engorda', criaIds)}
+              >
+                {animal_stage_config.engorda.icon} Destetar Engorda
+              </Button>
+              <Button
+                size="xs"
+                variant="ghost"
+                color="error"
+                onClick={() => openBulkWean('reproductor', criaIds)}
+              >
+                {animal_stage_config.reproductor.icon} Destetar Reproductor
+              </Button>
+            </>
+          )
+        }}
         emptyMessage="No hay madres en lactancia."
       />
     </div>

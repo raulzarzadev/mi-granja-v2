@@ -107,8 +107,19 @@ export function computeAnimalStage(animal: Animal): AnimalStage {
   if (MANUAL_STAGES.has(animal.stage)) return animal.stage
 
   const config = ANIMAL_BREEDING_CONFIGS[animal.type]
-  const weaningDays = animal.customWeaningDays ?? config?.weaningDays ?? 60
   const minBreedingAge = config?.minBreedingAge ?? 12
+
+  // Destete explícito a reproductor por el usuario: nunca 'cria'.
+  // weaningDestination solo se setea por la acción "Destetar a Reproductor" en UI;
+  // override autoritativo sobre la regla de edad (a diferencia de isWeaned, que es
+  // solo un flag y puede setearse prematuramente — el age-gate sigue protegiendo
+  // contra eso para crías sin destino explícito).
+  if (animal.weaningDestination === 'reproductor') {
+    const ageMonths = animalAge(animal, { format: 'months' })
+    return ageMonths < minBreedingAge ? 'juvenil' : 'reproductor'
+  }
+
+  const weaningDays = animal.customWeaningDays ?? config?.weaningDays ?? 60
 
   let ageDays = 0
   if (animal.birthDate) {

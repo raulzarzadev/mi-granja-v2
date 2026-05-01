@@ -1,7 +1,6 @@
 'use client'
 
 import Button from '@/components/buttons/Button'
-import ButtonConfirm from '@/components/buttons/ButtonConfirm'
 import DataTable, { type ColumnDef } from '@/components/DataTable'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import { animal_stage_config } from '@/types/animals'
@@ -11,18 +10,9 @@ interface Props {
   allCrias: UnweanedRow[]
   columns: ColumnDef<UnweanedRow>[]
   openBulkWean: (decision: 'engorda' | 'reproductor', ids: Set<string>) => void
-  weanAndUpdateMother: (
-    id: string,
-    opts: { stageDecision: 'engorda' | 'reproductor' },
-  ) => Promise<void>
 }
 
-export default function TabStageCrias({
-  allCrias,
-  columns,
-  openBulkWean,
-  weanAndUpdateMother,
-}: Props) {
+export default function TabStageCrias({ allCrias, columns, openBulkWean }: Props) {
   return (
     <div>
       <p className="text-xs text-gray-500 mb-2">Recién nacidos, en espera de destete.</p>
@@ -56,22 +46,22 @@ export default function TabStageCrias({
         )}
         renderActions={(row) => (
           <>
-            <ButtonConfirm
-              openLabel={`${animal_stage_config.engorda.icon} Engorda`}
-              confirmLabel="Destetar a Engorda"
-              confirmText={`¿Destetar a #${row.animal.animalNumber} y moverlo a Engorda?`}
-              onConfirm={() => weanAndUpdateMother(row.animal.id, { stageDecision: 'engorda' })}
-              openProps={{ size: 'xs', variant: 'ghost', color: 'warning' }}
-              confirmProps={{ color: 'warning' }}
-            />
-            <ButtonConfirm
-              openLabel={`${animal_stage_config.reproductor.icon} Reproductor`}
-              confirmLabel="Destetar a Reproductor"
-              confirmText={`¿Destetar a #${row.animal.animalNumber} y moverlo a Reproductor?`}
-              onConfirm={() => weanAndUpdateMother(row.animal.id, { stageDecision: 'reproductor' })}
-              openProps={{ size: 'xs', variant: 'ghost', color: 'error' }}
-              confirmProps={{ color: 'error' }}
-            />
+            <Button
+              size="xs"
+              variant="ghost"
+              color="warning"
+              onClick={() => openBulkWean('engorda', new Set([row.animal.id]))}
+            >
+              {animal_stage_config.engorda.icon} Engorda
+            </Button>
+            <Button
+              size="xs"
+              variant="ghost"
+              color="error"
+              onClick={() => openBulkWean('reproductor', new Set([row.animal.id]))}
+            >
+              {animal_stage_config.reproductor.icon} Reproductor
+            </Button>
           </>
         )}
         emptyMessage="No hay crías pendientes de destete."

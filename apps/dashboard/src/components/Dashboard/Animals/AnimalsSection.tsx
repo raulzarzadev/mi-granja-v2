@@ -116,20 +116,16 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
 
   const editRecord = (record: BreedingRecord) => router.push(`/empadre/${record.id}/editar`)
 
-  const {
-    handleRemoveFromBreeding,
-    handleUnconfirmPregnancy,
-    handleRevertBirth,
-    weanAndUpdateMother,
-  } = useBreedingHandlers({
-    animals,
-    update,
-    remove,
-    wean,
-    addRecord,
-    updateBreedingRecord,
-    deleteBreedingRecord,
-  })
+  const { handleRemoveFromBreeding, handleUnconfirmPregnancy, handleRevertBirth } =
+    useBreedingHandlers({
+      animals,
+      update,
+      remove,
+      wean,
+      addRecord,
+      updateBreedingRecord,
+      deleteBreedingRecord,
+    })
 
   // --- Breeding modal triggers ---
   const handleOpenAddBirth: BreedingActionHandlers['onAddBirth'] = (record, femaleId) => {
@@ -768,7 +764,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           allCrias={allCrias}
           columns={destetesColumns}
           openBulkWean={openBulkWean}
-          weanAndUpdateMother={weanAndUpdateMother}
         />
       ),
     },
@@ -779,6 +774,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           noursingMothersRows={noursingMothersRows}
           columns={noursingMothersColumns}
           animals={animals}
+          openBulkWean={openBulkWean}
         />
       ),
     },
