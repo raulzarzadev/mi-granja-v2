@@ -1,5 +1,6 @@
 'use client'
 
+import { WHATSAPP_COMMUNITY_URL } from '@mi-granja/shared'
 import { useLocalPreference } from '@/hooks/useLocalPreference'
 
 const FEEDBACK_EMAIL = 'hola@migranja.app'
@@ -20,7 +21,17 @@ export function BetaBanner() {
             className="underline font-medium hover:text-amber-900 transition-colors"
           >
             Enviar feedback o sugerencias
+          </a>{' '}
+          o{' '}
+          <a
+            href={WHATSAPP_COMMUNITY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline font-medium hover:text-amber-900 transition-colors"
+          >
+            únete a la comunidad de WhatsApp
           </a>
+          .
         </p>
         <button
           onClick={() => setDismissed(true)}

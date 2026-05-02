@@ -1,5 +1,6 @@
 'use client'
 
+import { WHATSAPP_COMMUNITY_URL } from '@mi-granja/shared'
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -218,7 +219,7 @@ const Navbar: React.FC = () => {
                           📘 Primeros pasos
                         </button>
                         <a
-                          href="https://whatsapp.com/channel/0029Vb7yj5l9Bb61XqL21i2x"
+                          href={WHATSAPP_COMMUNITY_URL}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700"

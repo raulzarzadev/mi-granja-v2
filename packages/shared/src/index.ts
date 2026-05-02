@@ -4,6 +4,7 @@ export * from './lib/analytics'
 export * from './lib/animal-utils'
 export * from './lib/animalBreedingConfig'
 export { default as catchError } from './lib/catchError'
+export * from './lib/constants'
 export * from './lib/dates'
 // Lib
 export * from './lib/dateUtils'
