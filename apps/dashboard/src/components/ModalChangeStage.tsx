@@ -236,9 +236,7 @@ const ModalChangeStage: React.FC<Props> = ({
                 </Button>
               )}
               {!onRegisterBirth && !onUnconfirmPregnancy && (
-                <p className="text-xs text-gray-500">
-                  Acciones no disponibles desde esta vista.
-                </p>
+                <p className="text-xs text-gray-500">Acciones no disponibles desde esta vista.</p>
               )}
             </div>
           </div>
@@ -404,49 +402,53 @@ const ModalChangeStage: React.FC<Props> = ({
         )}
 
         {/* Bloque madre lactante: crías a destetar */}
-        {!isPregnantSingle && target && single && family?.isNursingMother && family.crias.length > 0 && (
-          <div className="border-t border-gray-200 pt-4 space-y-2">
-            <p className="text-xs font-medium text-gray-500 uppercase">Crías lactando</p>
-            <p className="text-sm text-amber-700 bg-amber-50 p-2 rounded">
-              Esta madre tiene {family.crias.length} cría
-              {family.crias.length !== 1 ? 's' : ''} lactando. Para mover la madre, se destetarán
-              primero.
-            </p>
-            <div className="space-y-1">
-              {family.crias.map((c) => (
-                <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={motherCriaWeanIds.has(c.id)}
-                    onChange={() => toggleMotherCria(c.id)}
-                    disabled={applying}
-                  />
-                  <AnimalTag animal={c} showAge />
-                </label>
-              ))}
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Destetar crías a:</p>
-              <div className="flex gap-2">
-                {(['engorda', 'reproductor'] as const).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setMotherCriaTarget(t)}
-                    className={`px-3 py-1 rounded text-sm border ${
-                      motherCriaTarget === t
-                        ? 'bg-green-600 text-white border-green-700'
-                        : 'bg-white text-gray-700 border-gray-300'
-                    }`}
-                    disabled={applying}
-                  >
-                    {animal_stage_config[t].icon} {animal_stage_config[t].label}
-                  </button>
+        {!isPregnantSingle &&
+          target &&
+          single &&
+          family?.isNursingMother &&
+          family.crias.length > 0 && (
+            <div className="border-t border-gray-200 pt-4 space-y-2">
+              <p className="text-xs font-medium text-gray-500 uppercase">Crías lactando</p>
+              <p className="text-sm text-amber-700 bg-amber-50 p-2 rounded">
+                Esta madre tiene {family.crias.length} cría
+                {family.crias.length !== 1 ? 's' : ''} lactando. Para mover la madre, se destetarán
+                primero.
+              </p>
+              <div className="space-y-1">
+                {family.crias.map((c) => (
+                  <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={motherCriaWeanIds.has(c.id)}
+                      onChange={() => toggleMotherCria(c.id)}
+                      disabled={applying}
+                    />
+                    <AnimalTag animal={c} showAge />
+                  </label>
                 ))}
               </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Destetar crías a:</p>
+                <div className="flex gap-2">
+                  {(['engorda', 'reproductor'] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setMotherCriaTarget(t)}
+                      className={`px-3 py-1 rounded text-sm border ${
+                        motherCriaTarget === t
+                          ? 'bg-green-600 text-white border-green-700'
+                          : 'bg-white text-gray-700 border-gray-300'
+                      }`}
+                      disabled={applying}
+                    >
+                      {animal_stage_config[t].icon} {animal_stage_config[t].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Bulk warning si hay madres lactantes */}
         {!isIndividual && target && <BulkFamilyWarning animals={animals} allAnimals={allAnimals} />}

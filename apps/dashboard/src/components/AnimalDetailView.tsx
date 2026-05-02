@@ -333,9 +333,6 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
     },
   ]
 
-  const stageCfg = animal_stage_config[animal.computedStage ?? computeAnimalStage(animal)]
-  const genderCfg = animal_gender_config[animal.gender]
-
   return (
     <div className="bg-white w-full h-auto">
       {/* Header */}
