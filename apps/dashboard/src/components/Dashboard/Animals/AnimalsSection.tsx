@@ -11,6 +11,7 @@ import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import ModalBirthForm from '@/components/ModalBirthForm'
 import ModalBreedingAnimalDetails from '@/components/ModalBreedingAnimalDetails'
 import ModalBulkEdit from '@/components/ModalBulkEdit'
+import ModalChangeStage from '@/components/ModalChangeStage'
 import ModalConfirmPregnancy from '@/components/ModalConfirmPregnancy'
 import StatisticsTab from '@/components/StatisticsTab'
 import Tabs from '@/components/Tabs'
@@ -87,6 +88,10 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     availableStages,
     availableGenders,
   } = useAnimalFilters({ filters, setFilters })
+
+  // Change-stage modal (individual + bulk)
+  const [changeStageAnimals, setChangeStageAnimals] = useState<Animal[] | null>(null)
+  const openChangeStage = (list: Animal[]) => setChangeStageAnimals(list)
 
   // Bulk actions state
   const [isBulkHealthModalOpen, setIsBulkHealthModalOpen] = useState(false)
@@ -715,7 +720,13 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   const etapasTabs = [
     {
       label: etapaLabel('reproductor', reproductorAnimals.length),
-      content: <TabStageRepro animals={reproductorAnimals} columns={animalColumns} />,
+      content: (
+        <TabStageRepro
+          animals={reproductorAnimals}
+          columns={animalColumns}
+          onChangeStage={openChangeStage}
+        />
+      ),
     },
     {
       label: etapaLabel('empadre', empadreFemalesCount),
@@ -754,6 +765,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           onEditRecord={editRecord}
           onUnconfirmPregnancy={handleUnconfirmPregnancy}
           onUpdateAnimal={update}
+          onChangeStage={openChangeStage}
         />
       ),
     },
@@ -764,6 +776,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           allCrias={allCrias}
           columns={destetesColumns}
           openBulkWean={openBulkWean}
+          onChangeStage={openChangeStage}
         />
       ),
     },
@@ -775,24 +788,43 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           columns={noursingMothersColumns}
           animals={animals}
           openBulkWean={openBulkWean}
+          onChangeStage={openChangeStage}
         />
       ),
     },
     {
       label: etapaLabel('juvenil', juvenilAnimals.length),
-      content: <TabStageJuvenil animals={juvenilAnimals} columns={animalColumns} />,
+      content: (
+        <TabStageJuvenil
+          animals={juvenilAnimals}
+          columns={animalColumns}
+          onChangeStage={openChangeStage}
+        />
+      ),
     },
     {
       label: etapaLabel('engorda', engordaAnimals.length),
-      content: <TabStageEngorda animals={engordaAnimals} columns={animalColumns} />,
+      content: (
+        <TabStageEngorda
+          animals={engordaAnimals}
+          columns={animalColumns}
+          onChangeStage={openChangeStage}
+        />
+      ),
     },
     {
       label: etapaLabel('descarte', descarteAnimals.length),
-      content: <TabStageDescarte animals={descarteAnimals} columns={animalColumns} />,
+      content: (
+        <TabStageDescarte
+          animals={descarteAnimals}
+          columns={animalColumns}
+          onChangeStage={openChangeStage}
+        />
+      ),
     },
     {
       label: `❓ Perdidos (${perdidoAnimals.length})`,
-      content: <TabStagePerdidos animals={perdidoAnimals} />,
+      content: <TabStagePerdidos animals={perdidoAnimals} onChangeStage={openChangeStage} />,
     },
   ]
 
@@ -1376,6 +1408,36 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           </div>
         )}
       </Modal>
+
+      <ModalChangeStage
+        isOpen={!!changeStageAnimals}
+        onClose={() => setChangeStageAnimals(null)}
+        animals={changeStageAnimals ?? []}
+        allAnimals={animals}
+        onUnconfirmPregnancy={(animal) => {
+          const record = breedingRecords.find((r) =>
+            r.femaleBreedingInfo?.some(
+              (f) => f.femaleId === animal.id && f.pregnancyConfirmedDate && !f.actualBirthDate,
+            ),
+          )
+          if (record) {
+            void handleUnconfirmPregnancy(record, animal.id)
+          } else {
+            void update(animal.id, { pregnantAt: null, pregnantBy: null })
+          }
+        }}
+        onRegisterBirth={(animal) => {
+          const record = breedingRecords.find((r) =>
+            r.femaleBreedingInfo?.some(
+              (f) => f.femaleId === animal.id && f.pregnancyConfirmedDate && !f.actualBirthDate,
+            ),
+          )
+          if (record) {
+            setBirthRecord(record)
+            setBirthFemaleId(animal.id)
+          }
+        }}
+      />
     </>
   )
 }

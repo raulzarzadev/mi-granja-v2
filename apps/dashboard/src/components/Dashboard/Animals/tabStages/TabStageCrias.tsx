@@ -3,6 +3,7 @@
 import Button from '@/components/buttons/Button'
 import DataTable, { type ColumnDef } from '@/components/DataTable'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
+import type { Animal } from '@/types/animals'
 import { animal_stage_config } from '@/types/animals'
 import type { UnweanedRow } from '../columns/destetesColumns'
 
@@ -10,9 +11,10 @@ interface Props {
   allCrias: UnweanedRow[]
   columns: ColumnDef<UnweanedRow>[]
   openBulkWean: (decision: 'engorda' | 'reproductor', ids: Set<string>) => void
+  onChangeStage?: (animals: Animal[]) => void
 }
 
-export default function TabStageCrias({ allCrias, columns, openBulkWean }: Props) {
+export default function TabStageCrias({ allCrias, columns, openBulkWean, onChangeStage }: Props) {
   return (
     <div>
       <p className="text-xs text-gray-500 mb-2">Recién nacidos, en espera de destete.</p>
@@ -32,6 +34,17 @@ export default function TabStageCrias({ allCrias, columns, openBulkWean }: Props
             <Button size="xs" color="error" onClick={() => openBulkWean('reproductor', ids)}>
               {animal_stage_config.reproductor.icon} Reproductor ({ids.size})
             </Button>
+            {onChangeStage && (
+              <Button
+                size="xs"
+                color="primary"
+                onClick={() =>
+                  onChangeStage(allCrias.filter((r) => ids.has(r.animal.id)).map((r) => r.animal))
+                }
+              >
+                ⇄ Cambiar etapa ({ids.size})
+              </Button>
+            )}
           </>
         )}
         onView={(row) => (
@@ -62,6 +75,16 @@ export default function TabStageCrias({ allCrias, columns, openBulkWean }: Props
             >
               {animal_stage_config.reproductor.icon} Reproductor
             </Button>
+            {onChangeStage && (
+              <Button
+                size="xs"
+                variant="ghost"
+                color="primary"
+                onClick={() => onChangeStage([row.animal])}
+              >
+                ⇄ Cambiar etapa
+              </Button>
+            )}
           </>
         )}
         emptyMessage="No hay crías pendientes de destete."

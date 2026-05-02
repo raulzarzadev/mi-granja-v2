@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
 import AnimalFamilyTree from '@/components/AnimalFamilyTree'
 import AnimalRecordsSection from '@/components/AnimalRecordsSection'
@@ -26,10 +26,12 @@ import {
   animal_status_labels,
   animals_types_labels,
 } from '@/types/animals'
+import AnimalTag from './AnimalTag'
+import Button from './buttons/Button'
 import ButtonConfirm from './buttons/ButtonConfirm'
 import { Icon } from './Icon/icon'
+import ModalChangeStage from './ModalChangeStage'
 import ModalEditAnimal from './ModalEditAnimal'
-import AnimalTag from './AnimalTag'
 
 interface AnimalDetailViewProps {
   animal: Animal
@@ -42,6 +44,7 @@ interface AnimalDetailViewProps {
 const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp, onDeleted }) => {
   const { animals: allAnimals, remove } = useAnimalCRUD()
   const animal = allAnimals.find((a) => a.id === animalProp.id) ?? animalProp
+  const [changeStageOpen, setChangeStageOpen] = useState(false)
 
   const getMother = () => findAnimalByRef(allAnimals, animal.motherId) || null
   const getFather = () => findAnimalByRef(allAnimals, animal.fatherId) || null
@@ -341,6 +344,14 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
           <AnimalTag animal={animal} variant="header" />
 
           <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              color="primary"
+              onClick={() => setChangeStageOpen(true)}
+            >
+              ⇄ Cambiar etapa
+            </Button>
             <ModalEditAnimal animal={animal} />
             <ButtonConfirm
               openLabel="Eliminar"
@@ -359,6 +370,13 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
 
       {/* Tabs */}
       <Tabs tabs={tabs} tabsId={`animal-detail-${animal.id}`} />
+
+      <ModalChangeStage
+        isOpen={changeStageOpen}
+        onClose={() => setChangeStageOpen(false)}
+        animals={[animal]}
+        allAnimals={allAnimals}
+      />
     </div>
   )
 }

@@ -9,6 +9,8 @@ interface Props {
   columns: ColumnDef<Animal>[]
   sessionStorageKey: string
   emptyMessage: string
+  /** Si se provee, agrega botón ⇄ Cambiar etapa (individual + bulk). */
+  onChangeStage?: (animals: Animal[]) => void
 }
 
 const SimpleStageTab: React.FC<Props> = ({
@@ -17,6 +19,7 @@ const SimpleStageTab: React.FC<Props> = ({
   columns,
   sessionStorageKey,
   emptyMessage,
+  onChangeStage,
 }) => (
   <DataTable
     title={title}
@@ -26,6 +29,20 @@ const SimpleStageTab: React.FC<Props> = ({
     defaultSortKey="animalNumber"
     sessionStorageKey={sessionStorageKey}
     emptyMessage={emptyMessage}
+    selectable={!!onChangeStage}
+    renderBulkActions={
+      onChangeStage
+        ? (selectedIds) => {
+            const selected = data.filter((a) => selectedIds.has(a.id))
+            if (selected.length === 0) return null
+            return (
+              <Button size="xs" color="primary" onClick={() => onChangeStage(selected)}>
+                ⇄ Cambiar etapa ({selected.length})
+              </Button>
+            )
+          }
+        : undefined
+    }
     onView={(row) => (
       <ModalAnimalDetails
         animal={row}
@@ -36,6 +53,21 @@ const SimpleStageTab: React.FC<Props> = ({
         }
       />
     )}
+    renderActions={
+      onChangeStage
+        ? (row) => (
+            <Button
+              size="xs"
+              variant="ghost"
+              color="primary"
+              onClick={() => onChangeStage([row])}
+              title="Cambiar etapa"
+            >
+              ⇄ Cambiar etapa
+            </Button>
+          )
+        : undefined
+    }
   />
 )
 

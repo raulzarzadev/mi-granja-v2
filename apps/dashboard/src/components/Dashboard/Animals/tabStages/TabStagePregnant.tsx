@@ -16,6 +16,7 @@ interface Props {
   onEditRecord: (record: BreedingRecord) => void
   onUnconfirmPregnancy: (record: BreedingRecord, femaleId: string) => Promise<void>
   onUpdateAnimal: (id: string, data: Partial<Animal>) => Promise<void>
+  onChangeStage?: (animals: Animal[]) => void
 }
 
 export default function TabStagePregnant({
@@ -25,6 +26,7 @@ export default function TabStagePregnant({
   onEditRecord,
   onUnconfirmPregnancy,
   onUpdateAnimal,
+  onChangeStage,
 }: Props) {
   return (
     <div>
@@ -40,6 +42,21 @@ export default function TabStagePregnant({
         sessionStorageKey="mg_last_parto_id"
         selectable
         emptyMessage="No hay partos próximos."
+        renderBulkActions={
+          onChangeStage
+            ? (selectedIds) => {
+                const selected = enrichedPregnantFemales
+                  .filter((r) => selectedIds.has(r.animal.id))
+                  .map((r) => r.animal)
+                if (selected.length === 0) return null
+                return (
+                  <Button size="xs" color="primary" onClick={() => onChangeStage(selected)}>
+                    ⇄ Cambiar etapa ({selected.length})
+                  </Button>
+                )
+              }
+            : undefined
+        }
         onView={(row) => (
           <ModalAnimalDetails
             animal={row.animal}
@@ -87,6 +104,16 @@ export default function TabStagePregnant({
                 }
               }}
             />
+            {onChangeStage && (
+              <Button
+                size="xs"
+                variant="ghost"
+                color="primary"
+                onClick={() => onChangeStage([row.animal])}
+              >
+                ⇄ Cambiar etapa
+              </Button>
+            )}
           </>
         )}
       />

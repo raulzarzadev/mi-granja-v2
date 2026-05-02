@@ -12,6 +12,7 @@ interface Props {
   columns: ColumnDef<NoursingMotherRow>[]
   animals: Animal[]
   openBulkWean: (decision: 'engorda' | 'reproductor', ids: Set<string>) => void
+  onChangeStage?: (animals: Animal[]) => void
 }
 
 const collectCriaIds = (rows: NoursingMotherRow[], motherIds: Set<string>): Set<string> => {
@@ -28,6 +29,7 @@ export default function TabStageNoursingMothers({
   columns,
   animals: _animals,
   openBulkWean,
+  onChangeStage,
 }: Props) {
   const overdue = noursingMothersRows.filter((r) => r.daysUntilWean !== null && r.daysUntilWean < 0)
 
@@ -76,23 +78,35 @@ export default function TabStageNoursingMothers({
         selectable
         renderBulkActions={(ids) => {
           const criaIds = collectCriaIds(noursingMothersRows, ids)
-          if (criaIds.size === 0) return null
+          const selectedMothers = noursingMothersRows
+            .filter((r) => ids.has(r.animal.id))
+            .map((r) => r.animal)
+          if (criaIds.size === 0 && selectedMothers.length === 0) return null
           return (
             <>
-              <Button
-                size="xs"
-                color="warning"
-                onClick={() => openBulkWean('engorda', criaIds)}
-              >
-                {animal_stage_config.engorda.icon} Destetar a Engorda ({criaIds.size})
-              </Button>
-              <Button
-                size="xs"
-                color="error"
-                onClick={() => openBulkWean('reproductor', criaIds)}
-              >
-                {animal_stage_config.reproductor.icon} Destetar a Reproductor ({criaIds.size})
-              </Button>
+              {criaIds.size > 0 && (
+                <>
+                  <Button
+                    size="xs"
+                    color="warning"
+                    onClick={() => openBulkWean('engorda', criaIds)}
+                  >
+                    {animal_stage_config.engorda.icon} Destetar a Engorda ({criaIds.size})
+                  </Button>
+                  <Button
+                    size="xs"
+                    color="error"
+                    onClick={() => openBulkWean('reproductor', criaIds)}
+                  >
+                    {animal_stage_config.reproductor.icon} Destetar a Reproductor ({criaIds.size})
+                  </Button>
+                </>
+              )}
+              {onChangeStage && selectedMothers.length > 0 && (
+                <Button size="xs" color="primary" onClick={() => onChangeStage(selectedMothers)}>
+                  ⇄ Cambiar etapa ({selectedMothers.length})
+                </Button>
+              )}
             </>
           )
         }}
@@ -108,25 +122,38 @@ export default function TabStageNoursingMothers({
         )}
         renderActions={(row) => {
           const criaIds = new Set(row.crias.map((c) => c.id))
-          if (criaIds.size === 0) return null
           return (
             <>
-              <Button
-                size="xs"
-                variant="ghost"
-                color="warning"
-                onClick={() => openBulkWean('engorda', criaIds)}
-              >
-                {animal_stage_config.engorda.icon} Destetar Engorda
-              </Button>
-              <Button
-                size="xs"
-                variant="ghost"
-                color="error"
-                onClick={() => openBulkWean('reproductor', criaIds)}
-              >
-                {animal_stage_config.reproductor.icon} Destetar Reproductor
-              </Button>
+              {criaIds.size > 0 && (
+                <>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    color="warning"
+                    onClick={() => openBulkWean('engorda', criaIds)}
+                  >
+                    {animal_stage_config.engorda.icon} Destetar Engorda
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    color="error"
+                    onClick={() => openBulkWean('reproductor', criaIds)}
+                  >
+                    {animal_stage_config.reproductor.icon} Destetar Reproductor
+                  </Button>
+                </>
+              )}
+              {onChangeStage && (
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  color="primary"
+                  onClick={() => onChangeStage([row.animal])}
+                >
+                  ⇄ Cambiar etapa
+                </Button>
+              )}
             </>
           )
         }}

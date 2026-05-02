@@ -11,9 +11,10 @@ import { buildAnimalColumns } from '../columns/animalColumns'
 
 interface Props {
   animals: Animal[]
+  onChangeStage?: (animals: Animal[]) => void
 }
 
-const TabStagePerdidos: React.FC<Props> = ({ animals }) => {
+const TabStagePerdidos: React.FC<Props> = ({ animals, onChangeStage }) => {
   const { markFound } = useAnimalCRUD()
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
@@ -54,6 +55,20 @@ const TabStagePerdidos: React.FC<Props> = ({ animals }) => {
       defaultSortKey="animalNumber"
       sessionStorageKey="mg_last_perdido_id"
       emptyMessage="No hay animales marcados como perdidos."
+      selectable={!!onChangeStage}
+      renderBulkActions={
+        onChangeStage
+          ? (selectedIds) => {
+              const selected = animals.filter((a) => selectedIds.has(a.id))
+              if (selected.length === 0) return null
+              return (
+                <Button size="xs" color="primary" onClick={() => onChangeStage(selected)}>
+                  ⇄ Cambiar etapa ({selected.length})
+                </Button>
+              )
+            }
+          : undefined
+      }
       onView={(row) => (
         <div className="flex items-center gap-2">
           <ModalAnimalDetails
@@ -73,6 +88,11 @@ const TabStagePerdidos: React.FC<Props> = ({ animals }) => {
           >
             {loadingId === row.id ? '...' : '✓ Encontrado'}
           </Button>
+          {onChangeStage && (
+            <Button size="xs" variant="ghost" color="primary" onClick={() => onChangeStage([row])}>
+              ⇄ Cambiar etapa
+            </Button>
+          )}
         </div>
       )}
     />
