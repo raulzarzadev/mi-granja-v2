@@ -18,12 +18,7 @@ import { formatDate, fromNow, toDate } from '@/lib/dates'
 import {
   Animal,
   animal_gender_config,
-  animal_icon,
-  animal_stage_config,
   animal_stage_descriptions,
-  animal_status_colors,
-  animal_status_icons,
-  animal_status_labels,
   animals_types_labels,
 } from '@/types/animals'
 import AnimalTag from './AnimalTag'
