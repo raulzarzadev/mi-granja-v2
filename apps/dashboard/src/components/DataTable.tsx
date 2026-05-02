@@ -423,7 +423,7 @@ function DataTable<T>({
                       </td>
                     ))}
                     {(renderActions || onView) && !isSelectionMode && (
-                      <td className="px-2 py-1.5 text-right whitespace-nowrap">
+                      <td className="px-2 py-1.5  whitespace-nowrap">
                         <div
                           className="inline-flex items-center gap-1"
                           onClick={(e) => e.stopPropagation()}

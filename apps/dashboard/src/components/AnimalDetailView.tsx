@@ -29,6 +29,7 @@ import {
 import ButtonConfirm from './buttons/ButtonConfirm'
 import { Icon } from './Icon/icon'
 import ModalEditAnimal from './ModalEditAnimal'
+import AnimalTag from './AnimalTag'
 
 interface AnimalDetailViewProps {
   animal: Animal
@@ -337,20 +338,8 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
       {/* Header */}
       <div className="px-4 pb-3 border-b border-gray-100">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="text-2xl">{animal_icon[animal.type]}</span>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-gray-900 truncate">{animal.animalNumber}</h2>
-                <span
-                  className={`inline-flex items-center justify-center w-5 h-5 rounded-full ${genderCfg.bgColor}`}
-                >
-                  <Icon icon={genderCfg.iconName as any} size={3} />
-                </span>
-              </div>
-              {animal.name && <p className="text-xs text-gray-400 truncate">{animal.name}</p>}
-            </div>
-          </div>
+          <AnimalTag animal={animal} variant="header" />
+
           <div className="flex items-center gap-2">
             <ModalEditAnimal animal={animal} />
             <ButtonConfirm
@@ -365,19 +354,6 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
               }}
             />
           </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5 mt-2">
-          <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${stageCfg.color}`}
-          >
-            {stageCfg.icon} {stageCfg.label}
-          </span>
-          <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${animal_status_colors[effectiveStatus]}`}
-          >
-            {animal_status_icons[effectiveStatus]} {animal_status_labels[effectiveStatus]}
-          </span>
         </div>
       </div>
 
