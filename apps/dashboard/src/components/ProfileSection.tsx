@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import { useBilling } from '@/hooks/useBilling'
+import NotificationsTab from './NotificationsTab'
 import Tabs from './Tabs'
 
 /**
@@ -60,6 +61,10 @@ const ProfileSection: React.FC = () => {
     {
       label: '💳 Mi Plan',
       content: <PlanTab isFreePlan={isFreePlan} usage={usage} userEmail={user.email} />,
+    },
+    {
+      label: '🔔 Notificaciones',
+      content: <NotificationsTab />,
     },
   ]
 

@@ -46,7 +46,26 @@ export interface Reminder {
   completionByAnimal?: Record<string, boolean>
   priority: 'low' | 'medium' | 'high'
   type: 'medical' | 'breeding' | 'feeding' | 'weight' | 'other'
+  /** IDs de usuarios que reciben aviso. Si vacío o undefined, se notifica al farmerId */
+  assigneeIds?: string[]
+  /** Última vez que se envió notificación digest del día */
+  notifiedAt?: Date
+  /** Última vez que se envió escalado por overdue 7d */
+  lastOverdueNotifiedAt?: Date
   createdAt: Date
+  updatedAt: Date
+}
+
+/**
+ * Preferencias de notificación por usuario.
+ * Documento en Firestore: notificationPreferences/{userId}
+ */
+export interface NotificationPreferences {
+  userId: string
+  pushEnabled: boolean
+  emailEnabled: boolean
+  /** Tokens FCM registrados (un user puede tener varios dispositivos) */
+  fcmTokens: string[]
   updatedAt: Date
 }
 

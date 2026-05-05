@@ -782,6 +782,9 @@ const BACKUP_SCHEMA_JSON = `{
       "completionByAnimal": "{ animalNumber: true/false } estado por animal (opcional)",
       "priority": "low | medium | high",
       "type": "medical | breeding | feeding | weight | other",
+      "assigneeIds": "[string] IDs de usuarios que reciben aviso (opcional)",
+      "notifiedAt": "ISO 8601 último envío de digest (opcional)",
+      "lastOverdueNotifiedAt": "ISO 8601 último escalado overdue 7d (opcional)",
       "createdAt": "ISO 8601",
       "updatedAt": "ISO 8601"
     },

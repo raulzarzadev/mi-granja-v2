@@ -22,6 +22,7 @@ export * from './types/genetics'
 export type {
   BirthRecord,
   MilkProduction,
+  NotificationPreferences,
   OffspringInfo,
   Reminder,
   User,

@@ -4,6 +4,7 @@ import { authReducer } from './auth/authSlice'
 import { billingReducer } from './billing/billingSlice'
 import { breedingReducer } from './breeding/breedingSlice'
 import { farmReducer } from './farm/farmSlice'
+import { notificationPreferencesReducer } from './notifications/notificationPreferencesSlice'
 import { remindersReducer } from './reminders/remindersSlice'
 import { salesReducer } from './sales/salesSlice'
 
@@ -15,6 +16,7 @@ export const store = configureStore({
     breeding: breedingReducer,
     reminders: remindersReducer,
     farm: farmReducer,
+    notificationPreferences: notificationPreferencesReducer,
     sales: salesReducer,
   },
   middleware: (getDefaultMiddleware) =>

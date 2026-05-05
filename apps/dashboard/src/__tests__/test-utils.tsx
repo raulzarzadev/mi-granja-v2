@@ -7,6 +7,7 @@ import { authReducer } from '@/features/auth/authSlice'
 import { billingReducer } from '@/features/billing/billingSlice'
 import { breedingReducer } from '@/features/breeding/breedingSlice'
 import { farmReducer } from '@/features/farm/farmSlice'
+import { notificationPreferencesReducer } from '@/features/notifications/notificationPreferencesSlice'
 import { remindersReducer } from '@/features/reminders/remindersSlice'
 import { salesReducer } from '@/features/sales/salesSlice'
 import { User } from '@/types'
@@ -30,6 +31,7 @@ export const createMockStore = (initialAuthState = {}) => {
       breeding: breedingReducer,
       reminders: remindersReducer,
       farm: farmReducer,
+      notificationPreferences: notificationPreferencesReducer,
       sales: salesReducer,
     },
     preloadedState: {

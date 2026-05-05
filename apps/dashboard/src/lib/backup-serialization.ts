@@ -37,7 +37,7 @@ const DATE_FIELDS_BY_COLLECTION: Record<string, string[]> = {
     // Dentro de comments[]
     'timestamp',
   ],
-  reminders: ['createdAt', 'updatedAt', 'dueDate'],
+  reminders: ['createdAt', 'updatedAt', 'dueDate', 'notifiedAt', 'lastOverdueNotifiedAt'],
   weightRecords: ['date'],
   farmInvitations: ['createdAt', 'updatedAt', 'expiresAt'],
   sales: ['createdAt', 'updatedAt', 'date'],
@@ -70,6 +70,8 @@ const KNOWN_DATE_FIELD_NAMES = new Set([
   'originalTimestamp',
   'lostAt',
   'foundAt',
+  'notifiedAt',
+  'lastOverdueNotifiedAt',
 ])
 
 /**
@@ -307,6 +309,10 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
       'Record<string, boolean> | undefined (estado por animal: { animalNumber: true/false })',
     priority: "'low' | 'medium' | 'high'",
     type: "'medical' | 'breeding' | 'feeding' | 'weight' | 'other'",
+    assigneeIds:
+      'string[] | undefined (IDs de usuarios que reciben aviso. Si vacío, se notifica al farmerId)',
+    notifiedAt: 'string (ISO 8601) | undefined (último envío de digest)',
+    lastOverdueNotifiedAt: 'string (ISO 8601) | undefined (último escalado overdue 7d)',
     createdAt: 'string (ISO 8601)',
     updatedAt: 'string (ISO 8601)',
   },

@@ -12,6 +12,7 @@ import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBilling } from '@/hooks/useBilling'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
 import { useSalesCRUD } from '@/hooks/useSalesCRUD'
 import { auth, db } from '@/lib/firebase'
 import { User } from '@/types'
@@ -84,6 +85,9 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
       return () => unsub?.()
     }
   }, [currentFarm?.id])
+
+  //* ==================================== NOTIFICATION PREFS LISTENER
+  useNotificationPreferences()
 
   //* ==================================== SALES LISTENER
   const { getFarmSales } = useSalesCRUD()
