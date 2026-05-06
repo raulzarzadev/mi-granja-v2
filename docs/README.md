@@ -28,6 +28,7 @@ Spanish-language farm management app (multi-tenant). Next.js App Router + Fireba
 - [features/billing.md](./features/billing.md) — "Lugares" model, Pro gates
 - [features/modals.md](./features/modals.md) — Modal system
 - [features/emails.md](./features/emails.md) — Brevo email service
+- [features/reminders.md](./features/reminders.md) — Recordatorios + notificaciones (FCM push, email digest, escalado overdue)
 - [features/backups.md](./features/backups.md) — Backup export/import sync rules
 - [features/dates.md](./features/dates.md) — Date handling conventions
 

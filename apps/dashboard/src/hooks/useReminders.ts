@@ -35,7 +35,7 @@ export const useReminders = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Cargar recordatorios
+  // Cargar recordatorios — owned (farmerId==me) ∪ assigned (assigneeIds contains me)
   useEffect(() => {
     if (!user) {
       setReminders([])
@@ -43,36 +43,88 @@ export const useReminders = () => {
       return
     }
 
-    const constraints = [where('farmerId', '==', user.id)]
-    if (currentFarm?.id) constraints.push(where('farmId', '==', currentFarm.id))
-    const q = query(collection(db, 'reminders'), ...constraints, orderBy('dueDate', 'asc'))
+    const remindersCol = collection(db, 'reminders')
+    const farmConstraint = currentFarm?.id ? [where('farmId', '==', currentFarm.id)] : []
+    const ownedQ = query(
+      remindersCol,
+      ...farmConstraint,
+      where('farmerId', '==', user.id),
+      orderBy('dueDate', 'asc'),
+    )
+    const assignedQ = query(
+      remindersCol,
+      ...farmConstraint,
+      where('assigneeIds', 'array-contains', user.id),
+      orderBy('dueDate', 'asc'),
+    )
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const remindersData: Reminder[] = []
-      snapshot.forEach((d) => {
-        const data = d.data()
-        const animalNumbers = normalizeAnimalNumbers(data)
-        remindersData.push({
-          id: d.id,
-          farmerId: data.farmerId,
-          animalNumber: data.animalNumber,
-          animalNumbers,
-          title: data.title,
-          description: data.description || '',
-          dueDate: toLocalDateStart(data.dueDate),
-          completed: data.completed || false,
-          completionByAnimal: data.completionByAnimal || {},
-          priority: data.priority || 'medium',
-          type: data.type || 'other',
-          createdAt: toDate(data.createdAt),
-          updatedAt: toDate(data.updatedAt),
-        })
+    const ownedMap = new Map<string, Reminder>()
+    const assignedMap = new Map<string, Reminder>()
+
+    const mapDoc = (d: { id: string; data: () => Record<string, unknown> }): Reminder => {
+      const data = d.data() as Record<string, any>
+      const animalNumbers = normalizeAnimalNumbers(data)
+      return {
+        id: d.id,
+        farmerId: data.farmerId,
+        animalNumber: data.animalNumber,
+        animalNumbers,
+        title: data.title,
+        description: data.description || '',
+        dueDate: toLocalDateStart(data.dueDate),
+        completed: data.completed || false,
+        completionByAnimal: data.completionByAnimal || {},
+        priority: data.priority || 'medium',
+        type: data.type || 'other',
+        assigneeIds: Array.isArray(data.assigneeIds) ? data.assigneeIds : undefined,
+        notifiedAt: data.notifiedAt ? toDate(data.notifiedAt) : undefined,
+        lastOverdueNotifiedAt: data.lastOverdueNotifiedAt
+          ? toDate(data.lastOverdueNotifiedAt)
+          : undefined,
+        createdAt: toDate(data.createdAt),
+        updatedAt: toDate(data.updatedAt),
+      }
+    }
+
+    const merge = () => {
+      const merged = new Map<string, Reminder>(ownedMap)
+      assignedMap.forEach((value, key) => {
+        if (!merged.has(key)) merged.set(key, value)
       })
-      setReminders(remindersData)
+      const list = Array.from(merged.values()).sort(
+        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
+      )
+      setReminders(list)
       setIsLoading(false)
-    })
+    }
 
-    return () => unsubscribe()
+    const unsubOwned = onSnapshot(
+      ownedQ,
+      (snapshot) => {
+        ownedMap.clear()
+        snapshot.forEach((d) => {
+          ownedMap.set(d.id, mapDoc(d))
+        })
+        merge()
+      },
+      (err) => console.error('owned reminders error:', err),
+    )
+    const unsubAssigned = onSnapshot(
+      assignedQ,
+      (snapshot) => {
+        assignedMap.clear()
+        snapshot.forEach((d) => {
+          assignedMap.set(d.id, mapDoc(d))
+        })
+        merge()
+      },
+      (err) => console.error('assigned reminders error:', err),
+    )
+
+    return () => {
+      unsubOwned()
+      unsubAssigned()
+    }
   }, [user, currentFarm?.id])
 
   // Crear recordatorio
@@ -93,7 +145,7 @@ export const useReminders = () => {
         completionByAnimal[num] = false
       }
 
-      const docData = {
+      const docData: Record<string, unknown> = {
         farmerId: user.id,
         farmId: currentFarm.id,
         animalNumber: animalNumbers[0] || null, // compatibilidad legacy
@@ -107,6 +159,9 @@ export const useReminders = () => {
         type: data.type || 'other',
         createdAt: now,
         updatedAt: now,
+      }
+      if (data.assigneeIds && data.assigneeIds.length > 0) {
+        docData.assigneeIds = data.assigneeIds
       }
 
       await addDoc(collection(db, 'reminders'), docData)
@@ -139,6 +194,12 @@ export const useReminders = () => {
       if (updates.type !== undefined) updateData.type = updates.type
       if (updates.animalNumber !== undefined) updateData.animalNumber = updates.animalNumber
       if (updates.animalNumbers !== undefined) updateData.animalNumbers = updates.animalNumbers
+      if (updates.assigneeIds !== undefined) {
+        updateData.assigneeIds =
+          Array.isArray(updates.assigneeIds) && updates.assigneeIds.length > 0
+            ? updates.assigneeIds
+            : null
+      }
 
       if (updates.dueDate) {
         updateData.dueDate = Timestamp.fromDate(new Date(updates.dueDate))
@@ -272,6 +333,18 @@ export const useReminders = () => {
     }
   }
 
+  // Recordatorios asignados al usuario actual
+  const getRemindersAssignedToMe = () => {
+    if (!user) return []
+    return reminders.filter((r) => {
+      if (r.assigneeIds && r.assigneeIds.length > 0) return r.assigneeIds.includes(user.id)
+      return r.farmerId === user.id
+    })
+  }
+
+  // Conteo total para badge: hoy + atrasados (no completados)
+  const getBadgeCount = () => getOverdueReminders().length + getTodayReminders().length
+
   return {
     reminders,
     isLoading,
@@ -286,6 +359,8 @@ export const useReminders = () => {
     getOverdueReminders,
     getTodayReminders,
     getUpcomingReminders,
+    getRemindersAssignedToMe,
+    getBadgeCount,
     getStats,
   }
 }

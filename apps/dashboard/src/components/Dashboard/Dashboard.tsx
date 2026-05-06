@@ -29,7 +29,7 @@ const Dashboard: React.FC = () => {
   const { farms, currentFarm } = useFarmCRUD()
 
   const { filters, setFilters, animals, availableTypes } = useAnimalFilters()
-  const { getOverdueReminders } = useReminders()
+  const { getBadgeCount } = useReminders()
   const [showOnboarding, setShowOnboarding] = useState(false)
 
   if (!user) {
@@ -43,7 +43,7 @@ const Dashboard: React.FC = () => {
     },
     {
       label: '📆 Recordatorios',
-      badgeCount: getOverdueReminders().length,
+      badgeCount: getBadgeCount(),
       content: <RemindersTab speciesFilter={filters.type} />,
     },
     {

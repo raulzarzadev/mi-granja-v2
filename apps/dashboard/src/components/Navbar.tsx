@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { isUserAdmin } from '@/lib/userUtils'
 import { PlanBanner } from './FarmSwitcherBar'
 import { Modal } from './Modal'
+import NotificationsBell from './NotificationsBell'
 import ModalOnboarding from './onboarding/ModalOnboarding'
 import UserImpersonationSelector from './UserImpersonationSelector'
 
@@ -137,6 +138,7 @@ const Navbar: React.FC = () => {
             {user && (
               <div className="flex items-center gap-3" ref={menuRef}>
                 <PlanBanner />
+                <NotificationsBell />
 
                 <div className="relative">
                   <button

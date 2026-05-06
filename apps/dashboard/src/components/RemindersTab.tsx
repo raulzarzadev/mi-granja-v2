@@ -2,9 +2,11 @@
 
 import { useRouter } from 'next/navigation'
 import React, { useMemo, useState } from 'react'
+import { useSelector } from 'react-redux'
 import HealthRemindersCard from '@/components/HealthRemindersCard'
 import ReminderCard from '@/components/ReminderCard'
 import Tabs from '@/components/Tabs'
+import type { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useReminders } from '@/hooks/useReminders'
 import { Reminder } from '@/types'
@@ -30,6 +32,8 @@ const RemindersTab: React.FC<RemindersTabProps> = ({ speciesFilter = '' }) => {
 
   const [showCompleted, setShowCompleted] = useState(false)
   const [search, setSearch] = useState('')
+  const [onlyMine, setOnlyMine] = useState(false)
+  const currentUserId = useSelector((s: RootState) => s.auth.user?.id)
 
   // Build a set of animal numbers that match the species filter
   const speciesAnimalNumbers = useMemo(() => {
@@ -54,6 +58,14 @@ const RemindersTab: React.FC<RemindersTabProps> = ({ speciesFilter = '' }) => {
       })
     }
 
+    // Apply "asignado a mí" filter
+    if (onlyMine && currentUserId) {
+      result = result.filter((r) => {
+        if (r.assigneeIds && r.assigneeIds.length > 0) return r.assigneeIds.includes(currentUserId)
+        return r.farmerId === currentUserId
+      })
+    }
+
     // Apply search filter
     const q = search.trim().toLowerCase()
     if (!q) return result
@@ -66,7 +78,7 @@ const RemindersTab: React.FC<RemindersTabProps> = ({ speciesFilter = '' }) => {
       ]
       return parts.join(' ').toLowerCase().includes(q)
     })
-  }, [reminders, animals, search, speciesAnimalNumbers])
+  }, [reminders, animals, search, speciesAnimalNumbers, onlyMine, currentUserId])
 
   const pendingReminders = filteredReminders.filter((r) => !r.completed)
   const completedReminders = filteredReminders.filter((r) => r.completed)
@@ -243,14 +255,26 @@ const RemindersTab: React.FC<RemindersTabProps> = ({ speciesFilter = '' }) => {
             </svg>
           </button>
         </div>
-        {search && (
-          <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between">
+        <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setOnlyMine((v) => !v)}
+            aria-pressed={onlyMine}
+            className={`text-xs px-3 py-1 rounded-full border cursor-pointer transition-colors ${
+              onlyMine
+                ? 'bg-green-600 border-green-600 text-white'
+                : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            {onlyMine ? '✓ Asignados a mí' : 'Asignados a mí'}
+          </button>
+          {search && (
             <span className="text-xs text-gray-500">
               <span className="font-semibold text-gray-700">{filteredReminders.length}</span> de{' '}
               {reminders.length} recordatorios
             </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       <Tabs tabs={tabs} tabsId="reminders-tabs" />
     </div>

@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
         const { success } = await sendPushToUser(userId, prefs.fcmTokens, {
           title,
           body,
-          url: '/recordatorios',
+          url: '/?dashboard-main=recordatorios',
         })
         pushesSent += success
       }

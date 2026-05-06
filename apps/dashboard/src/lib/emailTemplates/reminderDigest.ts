@@ -88,7 +88,7 @@ export function buildReminderDigestEmail(data: DigestData): {
       ${renderSection('🗓 Próximos 3 días', data.upcoming, '#2563eb')}
 
       <div style="margin-top:32px;text-align:center">
-        <a href="${data.appUrl}/recordatorios"
+        <a href="${data.appUrl}/?dashboard-main=recordatorios"
            style="display:inline-block;background:#16a34a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">
           Ver en Mi Granja
         </a>
@@ -96,7 +96,7 @@ export function buildReminderDigestEmail(data: DigestData): {
     </div>
     <div style="background:#fafafa;padding:16px;text-align:center;color:#999;font-size:12px;border-top:1px solid #eee">
       Recibes este correo porque tienes activadas las notificaciones por email.
-      <br><a href="${data.appUrl}/perfil" style="color:#666">Cambiar preferencias</a>
+      <br><a href="${data.appUrl}/?dashboard-main=perfil" style="color:#666">Cambiar preferencias</a>
     </div>
   </div>
 </body>

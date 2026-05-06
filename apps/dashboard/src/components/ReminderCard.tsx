@@ -213,6 +213,13 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
         </p>
       )}
 
+      {/* Asignados */}
+      {reminder.assigneeIds && reminder.assigneeIds.length > 0 && (
+        <div className="flex items-center gap-1 mb-3 text-xs text-gray-600">
+          <span>👥 Asignado a {reminder.assigneeIds.length}</span>
+        </div>
+      )}
+
       {/* Fecha y estado */}
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm">

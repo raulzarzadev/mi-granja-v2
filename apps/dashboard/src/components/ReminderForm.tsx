@@ -1,7 +1,9 @@
 'use client'
 
 import React, { useState } from 'react'
+import InputRadioChip, { type InputRadioChipOption } from '@/components/inputs/InputRadioChip'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
+import InputSelectAssignees from '@/components/inputs/InputSelectAssignees'
 import { Animal } from '@/types/animals'
 import DateTimeInput from './inputs/DateTimeInput'
 
@@ -15,6 +17,7 @@ interface Reminder {
   completed: boolean
   priority: 'low' | 'medium' | 'high'
   type: 'medical' | 'breeding' | 'feeding' | 'weight' | 'other'
+  assigneeIds?: string[]
   createdAt: Date
 }
 
@@ -26,6 +29,20 @@ interface ReminderFormProps {
   isLoading?: boolean
   initialData?: Partial<Reminder>
 }
+
+const TYPE_OPTIONS: InputRadioChipOption<Reminder['type']>[] = [
+  { value: 'medical', label: '🏥 Médico' },
+  { value: 'breeding', label: '🐣 Reproducción' },
+  { value: 'feeding', label: '🌾 Alimentación' },
+  { value: 'weight', label: '⚖️ Peso' },
+  { value: 'other', label: '📝 Otro' },
+]
+
+const PRIORITY_OPTIONS: InputRadioChipOption<Reminder['priority']>[] = [
+  { value: 'low', label: '🟢 Baja', activeBg: 'bg-green-600' },
+  { value: 'medium', label: '🟡 Media', activeBg: 'bg-yellow-500' },
+  { value: 'high', label: '🔴 Alta', activeBg: 'bg-red-600' },
+]
 
 /**
  * Formulario para crear/editar recordatorios
@@ -50,6 +67,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
   }
 
   const [selectedAnimalIds, setSelectedAnimalIds] = useState<string[]>(resolveInitialAnimalIds)
+  const [assigneeIds, setAssigneeIds] = useState<string[]>(initialData?.assigneeIds || [])
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     description: initialData?.description || '',
@@ -94,6 +112,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
         ...base,
         animalNumber: animalNumbers[0] || undefined,
         animalNumbers: animalNumbers.length > 0 ? animalNumbers : undefined,
+        assigneeIds: assigneeIds.length > 0 ? assigneeIds : undefined,
       })
 
       onSuccess?.()
@@ -133,7 +152,6 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
         />
       </div>
-
       {/* Selector de animales */}
       <InputSelectAnimals
         animals={animals}
@@ -143,47 +161,29 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
         label={isEditing ? 'Animal (opcional)' : 'Animales (opcional)'}
         placeholder="Buscar animal..."
       />
-
-      <div className="grid grid-cols-2 gap-3">
-        {/* Tipo */}
-        <div>
-          <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-            Tipo
-          </label>
-          <select
-            id="type"
-            name="type"
-            value={formData.type}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-          >
-            <option value="medical">🏥 Medico</option>
-            <option value="breeding">🐣 Reproduccion</option>
-            <option value="feeding">🌾 Alimentacion</option>
-            <option value="weight">⚖️ Peso</option>
-            <option value="other">📝 Otro</option>
-          </select>
-        </div>
-
-        {/* Prioridad */}
-        <div>
-          <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
-            Prioridad
-          </label>
-          <select
-            id="priority"
-            name="priority"
-            value={formData.priority}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-          >
-            <option value="low">Baja</option>
-            <option value="medium">Media</option>
-            <option value="high">Alta</option>
-          </select>
-        </div>
+      {/* Asignar a colaboradores */}
+      <InputSelectAssignees
+        value={assigneeIds}
+        onChange={setAssigneeIds}
+        label="Asignar a (opcional)"
+        helpText="Si dejas en blanco, sólo se notifica al dueño de la granja."
+      />
+      <div className="grid grid-cols-1 gap-3">
+        <InputRadioChip
+          name="type"
+          label="Tipo"
+          value={formData.type}
+          onChange={(v) => setFormData((prev) => ({ ...prev, type: v }))}
+          options={TYPE_OPTIONS}
+        />
+        <InputRadioChip
+          name="priority"
+          label="Prioridad"
+          value={formData.priority}
+          onChange={(v) => setFormData((prev) => ({ ...prev, priority: v }))}
+          options={PRIORITY_OPTIONS}
+        />
       </div>
-
       {/* Fecha */}
       <div>
         <DateTimeInput
@@ -199,7 +199,6 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
           required
         />
       </div>
-
       {/* Descripcion */}
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
@@ -215,7 +214,6 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
         />
       </div>
-
       {/* Completado (solo si es edicion) */}
       {isEditing && (
         <div className="flex items-center">
@@ -232,7 +230,6 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
           </label>
         </div>
       )}
-
       {/* Botones */}
       <div className="flex gap-3 pt-4">
         <button
