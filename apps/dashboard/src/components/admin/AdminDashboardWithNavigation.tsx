@@ -62,6 +62,8 @@ interface TableRow {
 interface TableView {
   columns: TableColumn[]
   data: TableRow[]
+  defaultSortKey?: string
+  defaultSortDir?: 'asc' | 'desc'
 }
 
 function formatDate(raw: any): string {
@@ -399,6 +401,8 @@ export default function AdminDashboard() {
         return {
           title: `Usuarios (${users.length})`,
           table: {
+            defaultSortKey: 'createdAt',
+            defaultSortDir: 'desc' as const,
             columns: [
               { key: 'email', label: 'Email', sortable: true },
               { key: 'plan', label: 'Plan', sortable: true },
@@ -406,11 +410,18 @@ export default function AdminDashboard() {
               { key: 'farms', label: 'Granjas', align: 'right' as const, sortable: true },
               { key: 'animals', label: 'Animales', align: 'right' as const, sortable: true },
               { key: 'createdAt', label: 'Registro', sortable: true },
-              { key: 'updatedAt', label: 'Actualizado', sortable: true },
+              { key: 'lastActivity', label: 'Último movimiento', sortable: true },
             ],
             data: users.map((u: any) => {
               const userFarms = farms.filter((f: any) => f.ownerId === u.id).length
-              const userAnimals = animals.filter((a: any) => a.farmerId === u.id).length
+              const userAnimals = animals.filter((a: any) => a.farmerId === u.id)
+              const latestAnimal = userAnimals.reduce((max: any, a: any) => {
+                const aDate = a.updatedAt?.toDate?.() || a.updatedAt
+                const maxDate = max?.updatedAt?.toDate?.() || max?.updatedAt
+                if (!maxDate) return a
+                if (!aDate) return max
+                return aDate > maxDate ? a : max
+              }, null)
               return {
                 key: u.id,
                 drillable: true,
@@ -421,9 +432,9 @@ export default function AdminDashboard() {
                   plan: u.planType === 'pro' ? 'Pro' : 'Free',
                   places: u.places > 0 ? u.places : '—',
                   farms: userFarms,
-                  animals: userAnimals,
+                  animals: userAnimals.length,
                   createdAt: formatDate(u.createdAt),
-                  updatedAt: formatDate(u.updatedAt),
+                  lastActivity: latestAnimal ? formatDate(latestAnimal.updatedAt) : '—',
                 },
               }
             }),
@@ -1264,8 +1275,8 @@ function SortableTable({
   onDrill?: (item: BreadcrumbItem) => void
 }) {
   const [search, setSearch] = useState('')
-  const [sortKey, setSortKey] = useState<string | null>(null)
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [sortKey, setSortKey] = useState<string | null>(table.defaultSortKey ?? null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>(table.defaultSortDir ?? 'asc')
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
