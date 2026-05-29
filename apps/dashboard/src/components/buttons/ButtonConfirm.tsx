@@ -54,10 +54,10 @@ export default function ButtonConfirm({
         {openLabel}
         <span className="sr-only">Abrir modal de confirmación</span>
       </Button>
-      <Modal {...modal} size="sm">
+      <Modal {...modal} size="xl">
         <div className="space-y-4">
           <p className="text-sm text-gray-700">{confirmText}</p>
-          {children}
+          <div>{children}</div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" color="neutral" onClick={modal.onClose} disabled={isLoading}>
               {closeLabel}

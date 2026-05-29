@@ -32,11 +32,11 @@ const variantIcons: Record<Variant, React.ElementType> = {
 export default function InfoNote({ children, variant = 'info' }: InfoNoteProps) {
   const IconComponent = variantIcons[variant]
   return (
-    <p
-      className={`w-full text-xs px-2 py-1.5 rounded border flex gap-1.5 items-center overflow-hidden ${variantStyles[variant]}`}
+    <div
+      className={`text-xs px-2 py-1.5 rounded border break-words min-w-0 ${variantStyles[variant]}`}
     >
-      <IconComponent className="shrink-0 text-[14px]" />
-      <span className="min-w-0 wrap-break-word">{children}</span>
-    </p>
+      <IconComponent className="inline-block shrink-0 text-[12px] mr-1.5 relative -top-px" />
+      {children}
+    </div>
   )
 }

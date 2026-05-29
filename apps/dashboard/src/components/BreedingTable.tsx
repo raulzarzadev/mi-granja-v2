@@ -264,9 +264,9 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
                 confirmLabel="Terminar"
                 onConfirm={async () => onFinish(row.record)}
               >
-                <InfoNote variant="warning">
-                  Este empadre tiene hembras con embarazo confirmado. Al terminarlo se marcarán como
-                  paridas.
+                <InfoNote>
+                  Al terminar un empadre, las hembras, sin embarazos y los machos regresan al estado
+                  de reproducción
                 </InfoNote>
               </ButtonConfirm>
             )}

@@ -119,7 +119,7 @@ export const Modal: React.FC<ModalProps> = ({
           {/* Header fijo */}
 
           {(title || showCloseButton) && (
-            <div className="flex items-center justify-between p-3 py-3 border-b border-gray-200 bg-white flex-shrink-0">
+            <div className="flex items-center justify-between p-3 py-3 border-b border-gray-200 bg-white shrink-0">
               {title && (
                 <div className="flex items-center gap-2">
                   {icon && <Icon icon={icon} className={iconClassName} />}
@@ -139,7 +139,7 @@ export const Modal: React.FC<ModalProps> = ({
 
           {/* Contenido scrolleable */}
           <div
-            className={`flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 ${contentClassName || ''}`}
+            className={`flex-1 overflow-y-auto p-3 sm:p-4 ${contentClassName || ''}`}
             style={{
               WebkitOverflowScrolling: 'touch',
             }}
