@@ -109,9 +109,9 @@ export const Modal: React.FC<ModalProps> = ({
         <div
           className={`
             bg-white w-full h-full rounded-none
-            sm:rounded-lg sm:w-auto sm:h-auto sm:max-h-[90vh] sm:min-w-96 ${sizeClasses[size]}
+            sm:rounded-lg sm:w-auto sm:h-auto sm:max-h-[90vh] sm:min-w-96
             shadow-none sm:shadow-xl animate-in zoom-in-95 duration-200 
-            flex flex-col max-w-none
+            flex flex-col ${sizeClasses[size]}
             ${className}
           `}
           onClick={(e) => e.stopPropagation()}
@@ -139,7 +139,7 @@ export const Modal: React.FC<ModalProps> = ({
 
           {/* Contenido scrolleable */}
           <div
-            className={`flex-1 overflow-y-auto p-3 sm:p-4 ${contentClassName || ''}`}
+            className={`flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 ${contentClassName || ''}`}
             style={{
               WebkitOverflowScrolling: 'touch',
             }}

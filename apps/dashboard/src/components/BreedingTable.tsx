@@ -8,6 +8,7 @@ import { Modal } from '@/components/Modal'
 import { formatDate } from '@/lib/dates'
 import { Animal, animals_types_labels } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
+import InfoNote from './InfoNote'
 
 interface BreedingTableProps {
   records: BreedingRecord[]
@@ -262,7 +263,12 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
                 confirmText={`¿Terminar empadre ${row.record.breedingId || row.record.id}?`}
                 confirmLabel="Terminar"
                 onConfirm={async () => onFinish(row.record)}
-              />
+              >
+                <InfoNote variant="warning">
+                  Este empadre tiene hembras con embarazo confirmado. Al terminarlo se marcarán como
+                  paridas.
+                </InfoNote>
+              </ButtonConfirm>
             )}
             <ButtonConfirm
               openLabel="Eliminar"

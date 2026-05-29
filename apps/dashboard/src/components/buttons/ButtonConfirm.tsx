@@ -11,6 +11,7 @@ export default function ButtonConfirm({
   onConfirm,
   openProps,
   confirmProps,
+  children,
 }: {
   openLabel?: string
   closeLabel?: string
@@ -19,6 +20,7 @@ export default function ButtonConfirm({
   onConfirm?: () => undefined | Promise<unknown>
   openProps?: ButtonProps
   confirmProps?: ButtonProps
+  children?: React.ReactNode
 }) {
   const modal = useModal({
     title: 'Confirmación',
@@ -55,6 +57,7 @@ export default function ButtonConfirm({
       <Modal {...modal} size="sm">
         <div className="space-y-4">
           <p className="text-sm text-gray-700">{confirmText}</p>
+          {children}
           <div className="flex justify-end gap-2">
             <Button variant="outline" color="neutral" onClick={modal.onClose} disabled={isLoading}>
               {closeLabel}

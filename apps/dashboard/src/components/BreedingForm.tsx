@@ -15,6 +15,7 @@ import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Form } from './forms/Form'
 import { TextField } from './forms/TextField'
 
+import InfoNote from './InfoNote'
 import InputSelectAnimals from './inputs/InputSelectAnimals'
 
 interface BreedingFormProps {
@@ -440,6 +441,10 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
       {males.length === 0 ? (
         <p className="text-sm text-gray-600 font-medium">No hay machos reproductores disponibles</p>
       ) : null}
+      <InfoNote>
+        Solo aparecen machos sin empadre activo. Un macho solo puede estar con un grupo de hembras a
+        la vez.
+      </InfoNote>
 
       {selectedMale ? (
         <>
