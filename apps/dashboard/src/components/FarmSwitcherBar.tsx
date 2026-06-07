@@ -1,6 +1,6 @@
 'use client'
 
-import React, { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import { useBilling } from '@/hooks/useBilling'
@@ -14,7 +14,13 @@ import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditFarm from './ModalEditFarm'
 import MyRole from './MyRole'
 
-const FarmSwitcherBar = ({ children }: { children?: ReactNode }) => {
+const FarmSwitcherBar = ({
+  children,
+  trailingAction,
+}: {
+  children?: ReactNode
+  trailingAction?: ReactNode
+}) => {
   const {
     currentFarm,
     switchFarm,
@@ -71,9 +77,9 @@ const FarmSwitcherBar = ({ children }: { children?: ReactNode }) => {
 
   return (
     <div className="w-full">
-      <div className="grid gap-4 mb-2 justify-between md:flex content-center ">
+      <div className="mb-2 flex flex-wrap items-center gap-3">
         {/* Farm switcher dropdown */}
-        <div className="flex gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen((p) => !p)}
@@ -227,9 +233,10 @@ const FarmSwitcherBar = ({ children }: { children?: ReactNode }) => {
               className="!h-8 !w-8"
             />
           )}
+          {trailingAction}
         </div>
         {/* Children */}
-        {children}
+        {children && <div className="min-w-0 flex-1">{children}</div>}
         {/* Nueva granja */}
         {/*   TODO agregar este boton mas arriba */}
         {/* <div className="flex gap-2">

@@ -2,9 +2,8 @@
 
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
-import FarmAvatar from '@/components/FarmAvatar'
+import AiAssistant from '@/components/AiAssistant'
 import FarmSection from '@/components/FarmSection'
-import MyRole from '@/components/MyRole'
 import Navbar from '@/components/Navbar'
 import ProfileSection from '@/components/ProfileSection'
 import RemindersTab from '@/components/RemindersTab'
@@ -69,9 +68,9 @@ const Dashboard: React.FC = () => {
 
         {/* Titulo de la granja + filtro global por tipo */}
         {currentFarm && (
-          <div className="flex items-center gap-3 mb-3">
-            <FarmSwitcherBar>
-              <div className="flex items-center gap-2">
+          <div className="mb-3">
+            <FarmSwitcherBar trailingAction={<AiAssistant />}>
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
                 <button
                   type="button"
                   onClick={() => setFilters((prev) => ({ ...prev, type: '' }))}

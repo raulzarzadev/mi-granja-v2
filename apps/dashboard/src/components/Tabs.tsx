@@ -61,8 +61,12 @@ const Tabs: React.FC<TabsProps> = ({
     if (typeof window === 'undefined') return initialActiveTab
     const paramValue = getParam(paramKey)
     if (paramValue) {
+      // Exact match first
       const idx = slugs.indexOf(paramValue)
       if (idx >= 0) return idx
+      // Prefix match — allows stable links when slugs include dynamic counts (e.g. "empadre-5")
+      const prefixIdx = slugs.findIndex((s) => s === paramValue || s.startsWith(`${paramValue}-`))
+      if (prefixIdx >= 0) return prefixIdx
     }
     return initialActiveTab
   }, [paramKey, slugs, initialActiveTab])
