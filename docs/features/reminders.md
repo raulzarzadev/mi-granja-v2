@@ -74,6 +74,12 @@ Ambos protegidos con `Authorization: Bearer ${CRON_SECRET}` (Vercel inyecta auto
    - Si `pushEnabled` y `fcmTokens.length > 0`: envía push (título según count, body con primeros 3 títulos)
 4. Marca `notifiedAt = now` en reminders del día (batch de 500)
 
+Diagnóstico protegido con `CRON_SECRET`:
+
+- `?dryRun=1` calcula destinatarios elegibles sin enviar email/push y sin marcar `notifiedAt`
+- `?debug=1` agrega detalle por destinatario con email enmascarado, acción (`sent`, `failed`, `would_send`, `skipped`) y razón de skip/falla
+- La respuesta incluye contadores como `remindersFound`, `eligibleRecipients`, `emailsAttempted`, `emailsSent`, `emailsFailed` y `skipped`
+
 ### Escalado overdue — `/api/cron/reminders/overdue-escalation` (08:00 CDMX / 14:00 UTC)
 
 1. Query: `completed == false` y `dueDate < now-7d`
@@ -131,6 +137,10 @@ Los nuevos campos del `Reminder` (`assigneeIds`, `notifiedAt`, `lastOverdueNotif
 # 3. Disparar cron manual (curl) — local
 curl -H "Authorization: Bearer $CRON_SECRET" \
      http://localhost:3000/api/cron/reminders/digest
+
+# Diagnostico sin enviar ni marcar notifiedAt
+curl -H "Authorization: Bearer $CRON_SECRET" \
+     "http://localhost:3000/api/cron/reminders/digest?dryRun=1&debug=1"
 
 # 4. Backdate reminder a -8 días → cron escalación
 curl -H "Authorization: Bearer $CRON_SECRET" \
