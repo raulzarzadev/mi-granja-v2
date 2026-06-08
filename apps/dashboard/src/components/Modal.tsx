@@ -121,18 +121,22 @@ export const Modal: React.FC<ModalProps> = ({
           {(title || showCloseButton) && (
             <div className="flex items-center justify-between p-3 py-3 border-b border-gray-200 bg-white shrink-0">
               {title && (
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
                   {icon && <Icon icon={icon} className={iconClassName} />}
                   <h2
                     id="modal-title"
-                    className="text-xl font-semibold text-gray-900 truncate pr-4"
+                    className="min-w-0 truncate pr-2 text-xl font-semibold text-gray-900"
                   >
                     {title}
                   </h2>
                 </div>
               )}
               {showCloseButton && (
-                <ButtonClose onClick={onClose} title="cerrar modal" className="text-gray-800" />
+                <ButtonClose
+                  onClick={onClose}
+                  title="cerrar modal"
+                  className="shrink-0 text-gray-800"
+                />
               )}
             </div>
           )}

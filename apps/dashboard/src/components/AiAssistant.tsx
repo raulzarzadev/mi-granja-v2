@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
+import Button from '@/components/buttons/Button'
 import { Modal } from '@/components/Modal'
 import { RootState } from '@/features/store'
 import { auth } from '@/lib/firebase'
@@ -86,6 +87,8 @@ const SUGERENCIAS = [
   '¿Qué pendientes hay hoy?',
   '¿Cuántos animales tengo?',
   '¿Cómo registro un parto?',
+  '¿Cómo registrar embarazo?',
+  '¿Qué partos puedo registrar?',
   '¿Cómo crear un empadre?',
   '¿Cómo agregar un animal nuevo?',
   '¿Qué hembras están embarazadas?',
@@ -177,21 +180,23 @@ export default function AiAssistant() {
 
   return (
     <>
-      <button
+      <Button
         type="button"
         onClick={() => setOpen(true)}
         disabled={!currentFarm}
-        className="inline-flex h-10 min-w-[112px] shrink-0 items-center justify-center gap-2 rounded-lg px-3 text-sm font-bold shadow-sm ring-2 ring-green-800/20 hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-        style={{ backgroundColor: '#15803d', color: '#ffffff' }}
+        variant="filled"
+        color="success"
+        icon="comments"
+        className="h-11 min-w-[160px] shrink-0 rounded-full border border-emerald-900/10 bg-emerald-600 px-5 text-base font-bold shadow-lg shadow-emerald-900/20 hover:bg-emerald-700"
         title="Abrir asistente IA"
       >
-        <span>Asistente IA</span>
+        Asistente IA
         {usage && (
-          <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">
+          <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold">
             {usage.isUnlimited ? usage.used : `${usage.remaining}/3`}
           </span>
         )}
-      </button>
+      </Button>
 
       <Modal isOpen={open} onClose={() => setOpen(false)} title="Asistente" size="lg">
         <div className="flex h-[70vh] flex-col gap-3">

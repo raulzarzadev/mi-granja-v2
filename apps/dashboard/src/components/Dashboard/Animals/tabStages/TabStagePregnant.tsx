@@ -12,6 +12,9 @@ import type { EnrichedPregnant } from '../columns/partosColumns'
 interface Props {
   enrichedPregnantFemales: EnrichedPregnant[]
   columns: ColumnDef<EnrichedPregnant>[]
+  pendingPregnancyCount: number
+  onRegisterPregnancy?: () => void
+  onRegisterBirth?: () => void
   onAddBirth: (record: BreedingRecord, femaleId: string) => void
   onEditRecord: (record: BreedingRecord) => void
   onUnconfirmPregnancy: (record: BreedingRecord, femaleId: string) => Promise<void>
@@ -22,6 +25,9 @@ interface Props {
 export default function TabStagePregnant({
   enrichedPregnantFemales,
   columns,
+  pendingPregnancyCount,
+  onRegisterPregnancy,
+  onRegisterBirth,
   onAddBirth,
   onEditRecord,
   onUnconfirmPregnancy,
@@ -42,6 +48,24 @@ export default function TabStagePregnant({
         sessionStorageKey="mg_last_parto_id"
         selectable
         emptyMessage="No hay partos próximos."
+        toolbar={
+          <div className="flex flex-wrap items-center gap-2">
+            {onRegisterBirth && (
+              <Button size="xs" color="success" icon="baby" onClick={onRegisterBirth}>
+                {enrichedPregnantFemales.length > 1
+                  ? `Registrar parto (${enrichedPregnantFemales.length})`
+                  : 'Registrar parto'}
+              </Button>
+            )}
+            {onRegisterPregnancy && (
+              <Button size="xs" color="success" icon="pregnant" onClick={onRegisterPregnancy}>
+                {pendingPregnancyCount > 1
+                  ? `Registrar embarazo (${pendingPregnancyCount})`
+                  : 'Registrar embarazo'}
+              </Button>
+            )}
+          </div>
+        }
         renderBulkActions={
           onChangeStage
             ? (selectedIds) => {

@@ -54,7 +54,7 @@ IMPORTANTE: Cuando menciones una sección de la app, incluye un enlace de navega
 - [Animales](/?dashboard-main=animales) — lista de animales
 - [Animales > Etapas](/?dashboard-main=animales&animals-section=etapas) — sub-tabs por etapa
 - [Ver Empadres](/?dashboard-main=animales&animals-section=etapas&animals-etapas=empadre) — hembras en monta
-- [Ver Embarazadas](/?dashboard-main=animales&animals-section=etapas&animals-etapas=embarazos) — hembras preñadas
+- [Ver Embarazadas](/?dashboard-main=animales&animals-section=etapas&animals-etapas=embarazos) — hembras preñadas; contiene los botones "Registrar parto" y "Registrar embarazo"
 - [Ver Crías](/?dashboard-main=animales&animals-section=etapas&animals-etapas=cria) — crías activas
 - [Ver Reproductores](/?dashboard-main=animales&animals-section=etapas&animals-etapas=reproductor) — reproductores
 - [Ver Engorda](/?dashboard-main=animales&animals-section=etapas&animals-etapas=engorda) — engorda
@@ -75,11 +75,14 @@ ANIMALES:
 EMPADRE (MONTA):
 - Crear empadre: [Animales > Etapas > Empadre](/?dashboard-main=animales&animals-section=etapas&animals-etapas=empadre) → botón "Nuevo empadre" → seleccionar macho → agregar hembras → indicar fecha de inicio → Guardar.
 - Agregar hembra a empadre existente: En la tarjeta del empadre → botón "Agregar hembra" → buscar y seleccionar.
-- Confirmar embarazo: En el empadre → en la hembra → botón "Confirmar embarazo" → indicar fecha.
+- Confirmar embarazo desde Empadre: En el empadre → en la hembra → botón "Confirmar embarazo" → indicar fecha.
+- Registrar embarazo desde Embarazos: [Ver Embarazadas](/?dashboard-main=animales&animals-section=etapas&animals-etapas=embarazos) → botón "Registrar embarazo" en el encabezado → se abre el modal de confirmar embarazo del primer empadre pendiente → elegir hembras → indicar fecha de confirmación → Guardar. Si no hay hembras pendientes, el botón sigue visible y muestra un aviso: no hay hembras en reproducción pendientes; para registrar otro embarazo primero se crea un empadre.
 - Quitar hembra del empadre: En el empadre → en la hembra → botón "Sacar del empadre".
 
 PARTOS:
-- Registrar parto: [Ver Embarazadas](/?dashboard-main=animales&animals-section=etapas&animals-etapas=embarazos) → en la hembra embarazada → botón "Registrar parto" → ingresar fecha, número de crías, arete, sexo y peso de cada cría → Guardar. El sistema crea automáticamente los animales de las crías.
+- Registrar parto desde la fila: [Ver Embarazadas](/?dashboard-main=animales&animals-section=etapas&animals-etapas=embarazos) → en la hembra embarazada → botón "Parto" → ingresar fecha, arete, sexo y peso de cada cría → Guardar. El sistema crea automáticamente los animales de las crías.
+- Registrar parto desde selector: [Ver Embarazadas](/?dashboard-main=animales&animals-section=etapas&animals-etapas=embarazos) → botón "Registrar parto" en el encabezado → se abre un selector simple de partos previstos ordenado por urgencia → elegir hembra → botón "Registrar" → llenar el modal de parto → Guardar. Si no hay partos previstos, el modal indica que primero debe confirmarse un embarazo desde un empadre.
+- Si el usuario pregunta "qué partos puedo registrar", usa contexto.reproductiveFlows.registrarParto.proximosPartos y menciona hembra, macho, empadre y fecha esperada sin mostrar IDs internos.
 
 DESTETE:
 - Destetar crías: [Ver Crías](/?dashboard-main=animales&animals-section=etapas&animals-etapas=cria) → seleccionar crías → botón "Destetar" → elegir si van a engorda o reproductor.

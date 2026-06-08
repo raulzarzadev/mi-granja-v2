@@ -30,6 +30,13 @@ const Dashboard: React.FC = () => {
   const { filters, setFilters, animals, availableTypes } = useAnimalFilters()
   const { getBadgeCount } = useReminders()
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const totalFilteredAnimals = animals.filter(
+    (a) => (a.status ?? 'activo') === filters.status,
+  ).length
+  const getTypeCount = (type: AnimalType | string) =>
+    animals.filter((a) => a.type === type && (a.status ?? 'activo') === filters.status).length
+  const onlyTypeCount = availableTypes.length === 1 ? getTypeCount(availableTypes[0]) : 0
+  const showAllTypeFilter = !(availableTypes.length === 1 && onlyTypeCount === totalFilteredAnimals)
 
   if (!user) {
     return null
@@ -70,25 +77,29 @@ const Dashboard: React.FC = () => {
         {currentFarm && (
           <div className="mb-3">
             <FarmSwitcherBar trailingAction={<AiAssistant />}>
-              <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                <button
-                  type="button"
-                  onClick={() => setFilters((prev) => ({ ...prev, type: '' }))}
-                  className={`px-3 h-11 rounded-full text-xs font-medium transition-all duration-200 ${
-                    filters.type === ''
-                      ? 'bg-green-100 ring-2 ring-green-500 text-green-800'
-                      : 'bg-gray-100 text-gray-500 hover:bg-green-50 hover:text-green-700'
-                  }`}
-                >
-                  Todos
-                </button>
+              <div className="flex items-center justify-start gap-2 overflow-x-auto py-1 md:justify-end">
+                {showAllTypeFilter && (
+                  <button
+                    type="button"
+                    onClick={() => setFilters((prev) => ({ ...prev, type: '' }))}
+                    className={`flex h-12 min-w-[58px] flex-col items-center justify-center rounded-full border-2 px-2 text-xs font-semibold transition-all duration-200 ${
+                      filters.type === ''
+                        ? 'border-green-500 bg-green-100 text-green-800'
+                        : 'border-transparent bg-gray-100 text-gray-500 hover:border-green-200 hover:bg-green-50 hover:text-green-700'
+                    }`}
+                    title={`Todos (${totalFilteredAnimals})`}
+                  >
+                    <span>Todos</span>
+                    <span className="text-[10px] font-bold leading-none">
+                      {totalFilteredAnimals}
+                    </span>
+                  </button>
+                )}
                 {availableTypes.map((t) => {
                   const typeKey = t as AnimalType
-                  const isSelected = filters.type === t
+                  const isSelected = filters.type === t || !showAllTypeFilter
                   const hasFilter = filters.type !== ''
-                  const count = animals.filter(
-                    (a) => a.type === t && (a.status ?? 'activo') === filters.status,
-                  ).length
+                  const count = getTypeCount(t)
                   return (
                     <button
                       key={t}
@@ -99,21 +110,19 @@ const Dashboard: React.FC = () => {
                           type: prev.type === t ? '' : (t as AnimalType),
                         }))
                       }
-                      className={`relative flex items-center justify-center w-11 h-11 rounded-full text-xl transition-all duration-200 ${
+                      className={`flex h-12 min-w-[52px] flex-col items-center justify-center rounded-full border-2 px-2 text-lg transition-all duration-200 ${
                         isSelected
-                          ? 'bg-green-100 ring-2 ring-green-500 shadow-sm scale-110'
+                          ? 'border-green-500 bg-green-100 shadow-sm'
                           : hasFilter
-                            ? 'bg-gray-100 opacity-40 grayscale hover:opacity-70 hover:grayscale-0'
-                            : 'bg-gray-100 hover:bg-green-50 hover:ring-1 hover:ring-green-300'
+                            ? 'border-transparent bg-gray-100 opacity-40 grayscale hover:opacity-70 hover:grayscale-0'
+                            : 'border-transparent bg-gray-100 hover:border-green-200 hover:bg-green-50'
                       }`}
                       title={`${animals_types_labels[typeKey] || t} (${count})`}
                     >
-                      {animal_icon[typeKey] || '🐾'}
-                      {isSelected && (
-                        <span className="absolute -bottom-1 -right-1 bg-green-600 text-white text-[9px] font-bold min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center">
-                          {count}
-                        </span>
-                      )}
+                      <span className="leading-none">{animal_icon[typeKey] || '🐾'}</span>
+                      <span className="mt-0.5 text-[10px] font-bold leading-none text-gray-700">
+                        {count}
+                      </span>
                     </button>
                   )
                 })}

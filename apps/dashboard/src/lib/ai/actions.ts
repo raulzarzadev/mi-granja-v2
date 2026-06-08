@@ -381,6 +381,7 @@ export async function buildAiContext(farmId: string) {
     firestore.collection('breedingRecords').where('farmId', '==', farmId).limit(40).get(),
   ])
 
+  const today = new Date()
   const animals = animalsSnap.docs.map((doc) => {
     const data = doc.data()
     return {
@@ -409,15 +410,64 @@ export async function buildAiContext(farmId: string) {
     }
   })
 
+  const pregnancyCandidates: {
+    empadre: string
+    macho: string
+    hembrasPendientes: string[]
+  }[] = []
+  const expectedBirths: {
+    hembra: string
+    macho: string
+    empadre: string
+    fechaEsperada: string | null
+    diasRestantes: number | null
+  }[] = []
+
   const breedingRecords = breedingSnap.docs.map((doc) => {
     const data = doc.data()
     const male = animals.find((animal) => animal.id === data.maleId)
+    const breedingLabel = data.breedingId || doc.id
+    const femaleInfos = data.femaleBreedingInfo || []
+    const pendingFemales = femaleInfos
+      .filter(
+        (info: Record<string, unknown>) => !info.pregnancyConfirmedDate && !info.actualBirthDate,
+      )
+      .map(
+        (info: Record<string, unknown>) =>
+          animals.find((animal) => animal.id === info.femaleId)?.numero || 'sin numero visible',
+      )
+    if ((data.status || 'active') !== 'finished' && pendingFemales.length > 0) {
+      pregnancyCandidates.push({
+        empadre: breedingLabel,
+        macho: male?.numero || 'sin macho visible',
+        hembrasPendientes: pendingFemales,
+      })
+    }
+
+    for (const info of femaleInfos) {
+      if (!info.pregnancyConfirmedDate || info.actualBirthDate) continue
+      const expectedDate =
+        (info.expectedBirthDate as Timestamp | undefined)?.toDate?.() ??
+        (info.pregnancyConfirmedDate as Timestamp | undefined)?.toDate?.() ??
+        null
+      expectedBirths.push({
+        hembra:
+          animals.find((animal) => animal.id === info.femaleId)?.numero || 'sin numero visible',
+        macho: male?.numero || 'sin macho visible',
+        empadre: breedingLabel,
+        fechaEsperada: expectedDate?.toISOString().slice(0, 10) || null,
+        diasRestantes: expectedDate
+          ? Math.round((expectedDate.getTime() - today.getTime()) / 86400000)
+          : null,
+      })
+    }
+
     return {
-      id: data.breedingId || doc.id,
+      id: breedingLabel,
       estado: data.status || 'active',
       macho: male?.numero || 'sin macho visible',
       fecha: data.breedingDate?.toDate?.()?.toISOString().slice(0, 10) || null,
-      hembras: (data.femaleBreedingInfo || []).map((info: Record<string, unknown>) => ({
+      hembras: femaleInfos.map((info: Record<string, unknown>) => ({
         hembra:
           animals.find((animal) => animal.id === info.femaleId)?.numero || 'sin numero visible',
         embarazoConfirmado: Boolean(info.pregnancyConfirmedDate),
@@ -434,5 +484,35 @@ export async function buildAiContext(farmId: string) {
     }
   })
 
-  return { animals, reminders, breedingRecords }
+  const pregnancyPendingFemales = pregnancyCandidates.reduce(
+    (total, record) => total + record.hembrasPendientes.length,
+    0,
+  )
+  const sortedExpectedBirths = expectedBirths.sort(
+    (a, b) => (a.diasRestantes ?? 9999) - (b.diasRestantes ?? 9999),
+  )
+
+  return {
+    animals,
+    reminders,
+    breedingRecords,
+    reproductiveFlows: {
+      embarazadas: expectedBirths.length,
+      registrarEmbarazo: {
+        botonVisibleEn: 'Animales > Etapas > Embarazos',
+        hembrasPendientes: pregnancyPendingFemales,
+        empadresDisponibles: pregnancyCandidates.length,
+        candidatos: pregnancyCandidates.slice(0, 10),
+        siNoHayPendientes:
+          'El boton sigue visible; al abrirlo informa que no hay hembras en reproduccion pendientes de confirmar y sugiere crear un empadre.',
+      },
+      registrarParto: {
+        botonVisibleEn: 'Animales > Etapas > Embarazos',
+        partosPrevistos: expectedBirths.length,
+        proximosPartos: sortedExpectedBirths.slice(0, 20),
+        siNoHayPartos:
+          'El boton abre un selector simple; si no hay partos previstos, indica que primero debe confirmarse un embarazo desde un empadre.',
+      },
+    },
+  }
 }

@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
-import { Animal } from '@/types/animals'
-import { BreedingRecord } from '@/types/breedings'
+import { type Animal, animals_types_labels } from '@/types/animals'
+import type { BreedingRecord } from '@/types/breedings'
 import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Modal } from './Modal'
 
@@ -28,10 +28,22 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
   onSubmit,
   selectedAnimal,
 }) => {
+  const male = breedingRecord ? animals.find((animal) => animal.id === breedingRecord.maleId) : null
+  const maleLabel = male
+    ? [
+        male.animalNumber ? `#${male.animalNumber}` : null,
+        male.name || null,
+        animals_types_labels[male.type] || male.type,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : 'macho no encontrado'
+  const hasBreedingFemales = Boolean(breedingRecord?.femaleBreedingInfo?.length)
+
   // Obtener hembras que aún no tienen embarazo confirmado
   const unconfirmedFemales =
     breedingRecord?.femaleBreedingInfo
-      ?.filter((info) => !info.pregnancyConfirmedDate)
+      ?.filter((info) => !info.pregnancyConfirmedDate && !info.actualBirthDate)
       .map((info) => {
         const animal = animals.find((a) => a.id === info.femaleId)
         return animal ? { ...animal, breedingInfo: info } : null
@@ -114,10 +126,30 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
       title={`Confirmar Embarazos — Empadre ${breedingRecord?.breedingId || ''}`}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-900">
+          {hasBreedingFemales ? (
+            <>
+              <p>
+                <span className="font-semibold">Empadre actual:</span> estas hembras están
+                registradas con el macho {maleLabel}.
+              </p>
+              <p className="mt-1 text-green-800">
+                Selecciona sólo las hembras cuyo embarazo ya confirmaste.
+              </p>
+            </>
+          ) : (
+            <p>
+              Para registrar un embarazo necesitas crear primero un empadre con macho y hembras.
+            </p>
+          )}
+        </div>
+
         {unconfirmedFemales.length === 0 ? (
           <div className="text-center py-8">
             <div className="text-gray-500 mb-2">
-              ✓ Todas las hembras ya tienen embarazo confirmado
+              {hasBreedingFemales
+                ? '✓ Todas las hembras ya tienen embarazo confirmado'
+                : 'No hay hembras en empadre para confirmar.'}
             </div>
             <button
               type="button"

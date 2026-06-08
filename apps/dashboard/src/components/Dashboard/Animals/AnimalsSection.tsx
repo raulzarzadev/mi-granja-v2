@@ -102,8 +102,10 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   // Breeding modals state
   const [birthRecord, setBirthRecord] = useState<BreedingRecord | null>(null)
   const [birthFemaleId, setBirthFemaleId] = useState<string | null>(null)
+  const [showBirthPicker, setShowBirthPicker] = useState(false)
   const [confirmPregnancyRecord, setConfirmPregnancyRecord] = useState<BreedingRecord | null>(null)
   const [selectedAnimal, setSelectedAnimal] = useState<null | string>(null)
+  const [showNoPregnancyCandidates, setShowNoPregnancyCandidates] = useState(false)
   const [weanConfirm, setWeanConfirm] = useState<{
     animals: { id: string; number: string }[]
     decision: 'engorda' | 'reproductor'
@@ -421,6 +423,32 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     }
     return ids.size
   }, [orderedBreedings.needPregnancyConfirmation])
+
+  const pendingPregnancyRegistration = useMemo(() => {
+    const records = orderedBreedings.needPregnancyConfirmation.filter((r) =>
+      r.femaleBreedingInfo.some((f) => !f.pregnancyConfirmedDate && !f.actualBirthDate),
+    )
+    const count = records.reduce(
+      (total, r) =>
+        total +
+        r.femaleBreedingInfo.filter((f) => !f.pregnancyConfirmedDate && !f.actualBirthDate).length,
+      0,
+    )
+
+    return {
+      count,
+      firstRecord: records[0] ?? null,
+    }
+  }, [orderedBreedings.needPregnancyConfirmation])
+
+  const handleRegisterPregnancyFromPregnantTab = useCallback(() => {
+    if (!pendingPregnancyRegistration.firstRecord) {
+      setShowNoPregnancyCandidates(true)
+      return
+    }
+    setConfirmPregnancyRecord(pendingPregnancyRegistration.firstRecord)
+    setSelectedAnimal(null)
+  }, [pendingPregnancyRegistration.firstRecord])
 
   // Hembras presentes en más de un empadre activo (pendiente de confirmar)
   const duplicateEmpadreFemales = useMemo(() => {
@@ -758,6 +786,9 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         <TabStagePregnant
           enrichedPregnantFemales={enrichedPregnantFemales}
           columns={partosColumns}
+          pendingPregnancyCount={pendingPregnancyRegistration.count}
+          onRegisterPregnancy={handleRegisterPregnancyFromPregnantTab}
+          onRegisterBirth={() => setShowBirthPicker(true)}
           onAddBirth={(record, femaleId) => {
             setBirthRecord(record)
             setBirthFemaleId(femaleId)
@@ -1031,6 +1062,111 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           setBulkSelectedAnimals([])
         }}
       />
+      <Modal
+        isOpen={showNoPregnancyCandidates}
+        onClose={() => setShowNoPregnancyCandidates(false)}
+        title="Registrar embarazo"
+        size="md"
+      >
+        <div className="space-y-3">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            No hay hembras en reproducción pendientes de confirmar. Hay{' '}
+            <span className="font-semibold">{pregnantFemales.length}</span> hembra
+            {pregnantFemales.length !== 1 ? 's' : ''} embarazada
+            {pregnantFemales.length !== 1 ? 's' : ''}.
+          </div>
+          <p className="text-sm text-gray-600">
+            Para registrar otro embarazo, primero crea un empadre con macho y hembras desde la
+            pestaña Empadre.
+          </p>
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              color="success"
+              onClick={() => {
+                setShowNoPregnancyCandidates(false)
+                router.push('/empadre/nueva')
+              }}
+            >
+              Crear empadre
+            </Button>
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={showBirthPicker}
+        onClose={() => setShowBirthPicker(false)}
+        title="Registrar parto"
+        size="lg"
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-gray-600">
+            Elige una hembra embarazada para registrar su parto.
+          </p>
+          {enrichedPregnantFemales.length === 0 ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              No hay partos previstos. Primero confirma un embarazo desde un empadre.
+            </div>
+          ) : (
+            <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+              {[...enrichedPregnantFemales]
+                .sort((a, b) => (a.daysLeft ?? 9999) - (b.daysLeft ?? 9999))
+                .map((row) => {
+                  const canRegister = Boolean(row.record)
+                  return (
+                    <div
+                      key={row.animal.id}
+                      className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-gray-900">
+                            #{row.animal.animalNumber}
+                          </span>
+                          {row.daysLeft !== null && row.daysLeft < 0 && (
+                            <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-700">
+                              Atrasado {Math.abs(row.daysLeft)}d
+                            </span>
+                          )}
+                          {row.daysLeft !== null && row.daysLeft >= 0 && (
+                            <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700">
+                              {row.daysLeft === 0 ? 'Hoy' : `En ${row.daysLeft}d`}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 text-xs text-gray-500">
+                          Macho {row.father?.animalNumber || row.animal.pregnantBy || 'sin dato'} ·
+                          Empadre {row.record?.breedingId || 'sin empadre'} · Esperado{' '}
+                          {row.expected ? row.expected.toLocaleDateString('es-MX') : 'sin fecha'}
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        size="xs"
+                        color="success"
+                        icon="baby"
+                        disabled={!canRegister}
+                        title={
+                          canRegister
+                            ? 'Registrar parto'
+                            : 'Este parto no tiene empadre asociado para registrar crías'
+                        }
+                        onClick={() => {
+                          if (!row.record) return
+                          setShowBirthPicker(false)
+                          setBirthRecord(row.record)
+                          setBirthFemaleId(row.animal.id)
+                        }}
+                      >
+                        Registrar
+                      </Button>
+                    </div>
+                  )
+                })}
+            </div>
+          )}
+        </div>
+      </Modal>
 
       {/* Modals de breeding */}
       <ModalBirthForm

@@ -77,122 +77,63 @@ const FarmSwitcherBar = ({
 
   return (
     <div className="w-full">
-      <div className="mb-2 flex flex-wrap items-center gap-3">
-        {/* Farm switcher dropdown */}
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setDropdownOpen((p) => !p)}
-              className={`flex items-center gap-2 pl-1.5 pr-2 py-1 rounded-lg text-sm transition-colors  ${
-                dropdownOpen
-                  ? 'border-green-400 bg-green-50 ring-1 ring-green-200'
-                  : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
-              }`}
-            >
-              <FarmAvatar
-                name={currentFarm?.name || 'G'}
-                photoURL={currentFarm?.photoURL}
-                size="sm"
-              />
-              <div className="grid gap-1">
-                <span className="font-medium text-gray-900 truncate max-w-[180px]">
-                  {currentFarm?.name || 'Seleccionar granja'}
-                </span>
-                {currentFarm && <MyRole farm={currentFarm} />}
-              </div>
-              <svg
-                className={`h-4 w-4 text-gray-400 transition-transform flex-shrink-0 ${dropdownOpen ? 'rotate-180' : ''}`}
-                viewBox="0 0 20 20"
-                fill="currentColor"
+      <div className="mb-2 flex flex-col gap-2">
+        <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[minmax(240px,1fr)_auto_minmax(180px,1fr)]">
+          {/* Farm switcher dropdown */}
+          <div className="flex min-w-0 items-center gap-2 md:justify-self-start">
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownOpen((p) => !p)}
+                className={`flex items-center gap-2 rounded-lg border px-2 py-1 text-sm transition-colors ${
+                  dropdownOpen
+                    ? 'border-green-400 bg-green-50 ring-1 ring-green-200'
+                    : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                }`}
               >
-                <path
-                  fillRule="evenodd"
-                  d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z"
-                  clipRule="evenodd"
+                <FarmAvatar
+                  name={currentFarm?.name || 'G'}
+                  photoURL={currentFarm?.photoURL}
+                  size="sm"
                 />
-              </svg>
-            </button>
+                <div className="grid gap-1 text-left">
+                  <span className="max-w-[180px] truncate font-medium text-gray-900">
+                    {currentFarm?.name || 'Seleccionar granja'}
+                  </span>
+                  {currentFarm && <MyRole farm={currentFarm} />}
+                </div>
+                <svg
+                  className={`h-4 w-4 flex-shrink-0 text-gray-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
 
-            {dropdownOpen && (
-              <div className="absolute top-full left-0 mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1 max-h-80 overflow-y-auto">
-                {myFarms?.length > 0 && (
-                  <>
-                    <p className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
-                      Mis Granjas
-                    </p>
-                    {myFarms.map((farm: Farm) => (
-                      <button
-                        key={farm.id}
-                        onClick={() => handleFarmSelect({ ...farm, _type: 'owned' })}
-                        className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors ${
-                          currentFarm?.id === farm.id
-                            ? 'bg-green-50 text-green-700'
-                            : 'text-gray-700'
-                        }`}
-                      >
-                        {currentFarm?.id === farm.id ? (
-                          <svg
-                            className="h-4 w-4 text-green-600 flex-shrink-0"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        ) : (
-                          <span className="w-4" />
-                        )}
-                        <span className="truncate">{farm.name}</span>
-                        <MyRole farm={farm} />
-                      </button>
-                    ))}
-                    {/* Button create new farm. show modal. Show disclaimer in the modal to limit if current plan is not enough  */}
-                    <button
-                      onClick={() => {
-                        setShowCreateModal(true)
-                        setDropdownOpen(false)
-                      }}
-                      className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors text-gray-700"
-                    >
-                      <svg
-                        className="h-4 w-4 text-gray-400 flex-shrink-0"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      <span>Nueva granja</span>
-                    </button>
-                  </>
-                )}
-
-                {invitationFarms?.length > 0 && (
-                  <>
-                    <div className="border-t border-gray-100 my-1" />
-                    <p className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
-                      Invitaciones
-                    </p>
-                    {invitationFarms.map((farm: Farm) => {
-                      const pending = farm.invitationMeta?.status === 'pending'
-                      const isSelected = !pending && currentFarm?.id === farm.id
-                      return (
+              {dropdownOpen && (
+                <div className="absolute top-full left-0 z-50 mt-1 max-h-80 w-72 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                  {myFarms?.length > 0 && (
+                    <>
+                      <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                        Mis Granjas
+                      </p>
+                      {myFarms.map((farm: Farm) => (
                         <button
                           key={farm.id}
-                          onClick={() => handleFarmSelect({ ...farm, _type: 'invited' })}
-                          className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors ${
-                            isSelected ? 'bg-green-50 text-green-700' : 'text-gray-700'
+                          onClick={() => handleFarmSelect({ ...farm, _type: 'owned' })}
+                          className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${
+                            currentFarm?.id === farm.id
+                              ? 'bg-green-50 text-green-700'
+                              : 'text-gray-700'
                           }`}
                         >
-                          {isSelected ? (
+                          {currentFarm?.id === farm.id ? (
                             <svg
-                              className="h-4 w-4 text-green-600 flex-shrink-0"
+                              className="h-4 w-4 flex-shrink-0 text-green-600"
                               fill="currentColor"
                               viewBox="0 0 20 20"
                             >
@@ -207,36 +148,101 @@ const FarmSwitcherBar = ({
                           )}
                           <span className="truncate">{farm.name}</span>
                           <MyRole farm={farm} />
-                          {pending && (
-                            <span className="ml-auto text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-600 rounded font-medium">
-                              Pendiente
-                            </span>
-                          )}
                         </button>
-                      )
-                    })}
-                  </>
-                )}
-              </div>
+                      ))}
+                      {/* Button create new farm. show modal. Show disclaimer in the modal to limit if current plan is not enough  */}
+                      <button
+                        onClick={() => {
+                          setShowCreateModal(true)
+                          setDropdownOpen(false)
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
+                      >
+                        <svg
+                          className="h-4 w-4 flex-shrink-0 text-gray-400"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span>Nueva granja</span>
+                      </button>
+                    </>
+                  )}
+
+                  {invitationFarms?.length > 0 && (
+                    <>
+                      <div className="my-1 border-t border-gray-100" />
+                      <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                        Invitaciones
+                      </p>
+                      {invitationFarms.map((farm: Farm) => {
+                        const pending = farm.invitationMeta?.status === 'pending'
+                        const isSelected = !pending && currentFarm?.id === farm.id
+                        return (
+                          <button
+                            key={farm.id}
+                            onClick={() => handleFarmSelect({ ...farm, _type: 'invited' })}
+                            className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${
+                              isSelected ? 'bg-green-50 text-green-700' : 'text-gray-700'
+                            }`}
+                          >
+                            {isSelected ? (
+                              <svg
+                                className="h-4 w-4 flex-shrink-0 text-green-600"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            ) : (
+                              <span className="w-4" />
+                            )}
+                            <span className="truncate">{farm.name}</span>
+                            <MyRole farm={farm} />
+                            {pending && (
+                              <span className="ml-auto rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-600">
+                                Pendiente
+                              </span>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Editar granja (icon) */}
+            {currentFarm && user?.id === currentFarm.ownerId && (
+              <Button
+                size="icon"
+                variant="ghost"
+                color="primary"
+                icon="edit"
+                onClick={() => setShowEditModal(true)}
+                title="Editar granja"
+                className="!h-9 !w-9 shrink-0 rounded-full border border-blue-200 bg-blue-50 text-blue-700 shadow-none hover:bg-blue-100"
+              />
             )}
           </div>
 
-          {/* Editar granja (icon) */}
-          {currentFarm && user?.id === currentFarm.ownerId && (
-            <Button
-              size="icon"
-              variant="ghost"
-              color="primary"
-              icon="edit"
-              onClick={() => setShowEditModal(true)}
-              title="Editar granja"
-              className="!h-8 !w-8"
-            />
+          {trailingAction && (
+            <div className="flex shrink-0 justify-start md:justify-center md:justify-self-center">
+              {trailingAction}
+            </div>
           )}
-          {trailingAction}
+          {children && <div className="min-w-0 md:justify-self-end">{children}</div>}
         </div>
-        {/* Children */}
-        {children && <div className="min-w-0 flex-1">{children}</div>}
         {/* Nueva granja */}
         {/*   TODO agregar este boton mas arriba */}
         {/* <div className="flex gap-2">
