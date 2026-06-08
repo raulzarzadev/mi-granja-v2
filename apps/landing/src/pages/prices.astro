@@ -1,0 +1,126 @@
+---
+import { PRICE_PER_PLACE_MXN } from '@mi-granja/shared'
+import Layout from '../layouts/Layout.astro'
+import Header from '../components/Header.astro'
+import Pricing from '../components/Pricing.astro'
+import FAQ from '../components/FAQ.astro'
+import CTA from '../components/CTA.astro'
+import Footer from '../components/Footer.astro'
+
+const pricingSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: 'Mi Granja',
+  description:
+    'Software ganadero con asistente IA para gestionar animales, reproducción, partos, salud, recordatorios y colaboradores.',
+  brand: {
+    '@type': 'Brand',
+    name: 'Mi Granja',
+  },
+  offers: [
+    {
+      '@type': 'Offer',
+      name: 'Plan Gratis',
+      price: '0',
+      priceCurrency: 'MXN',
+      availability: 'https://schema.org/InStock',
+    },
+    {
+      '@type': 'Offer',
+      name: 'Plan Pro',
+      price: String(PRICE_PER_PLACE_MXN),
+      priceCurrency: 'MXN',
+      availability: 'https://schema.org/InStock',
+      priceSpecification: {
+        '@type': 'UnitPriceSpecification',
+        price: PRICE_PER_PLACE_MXN,
+        priceCurrency: 'MXN',
+        unitText: 'lugar al mes',
+      },
+    },
+  ],
+}
+---
+
+<Layout
+  title={`Precios de Mi Granja | Plan gratis y Pro desde $${PRICE_PER_PLACE_MXN} MXN/mes`}
+  description={`Consulta los precios de Mi Granja, software ganadero con asistente IA. Plan gratis con animales ilimitados y plan Pro desde $${PRICE_PER_PLACE_MXN} MXN/mes por granja o colaborador adicional.`}
+  canonicalURL="https://www.migranja.app/prices"
+  keywords="precios software ganadero, plan gratis ganadero, software ganadero con IA, Mi Granja precios, gestion ganadera precio"
+  extraJsonLd={pricingSchema}
+>
+  <Header />
+  <main>
+    <section class="bg-gradient-to-br from-green-50 via-white to-white pt-28 pb-14 sm:pt-36 sm:pb-20">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-3xl text-center">
+          <p class="mb-4 inline-flex rounded-full bg-green-100 px-4 py-1.5 text-sm font-semibold text-green-800">
+            Precios claros para crecer sin sorpresas
+          </p>
+          <h1 class="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
+            Plan gratis, animales ilimitados y asistente IA incluido
+          </h1>
+          <p class="mt-6 text-lg leading-8 text-gray-600">
+            Mi Granja te permite empezar sin pagar: registra animales, empadres,
+            embarazos, partos, salud y recordatorios. Cuando tu operación crece,
+            pagas sólo por granjas o colaboradores adicionales.
+          </p>
+        </div>
+
+        <div class="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-3">
+          <div class="rounded-xl border border-green-100 bg-white p-5 text-center shadow-sm">
+            <p class="text-3xl font-extrabold text-green-700">$0</p>
+            <p class="mt-1 text-sm text-gray-600">para iniciar</p>
+          </div>
+          <div class="rounded-xl border border-green-100 bg-white p-5 text-center shadow-sm">
+            <p class="text-3xl font-extrabold text-green-700">IA</p>
+            <p class="mt-1 text-sm text-gray-600">para preguntas y flujos</p>
+          </div>
+          <div class="rounded-xl border border-green-100 bg-white p-5 text-center shadow-sm">
+            <p class="text-3xl font-extrabold text-green-700">${PRICE_PER_PLACE_MXN}</p>
+            <p class="mt-1 text-sm text-gray-600">MXN por lugar/mes</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <Pricing />
+
+    <section class="bg-white py-16">
+      <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div class="rounded-2xl border border-green-100 bg-green-50 p-8">
+          <h2 class="text-2xl font-bold tracking-tight text-gray-900">
+            ¿Qué incluye el asistente IA?
+          </h2>
+          <div class="mt-6 grid gap-4 md:grid-cols-3">
+            <div class="rounded-xl bg-white p-5 shadow-sm">
+              <h3 class="font-semibold text-gray-900">Partos y embarazos</h3>
+              <p class="mt-2 text-sm leading-6 text-gray-600">
+                Pregunta qué partos puedes registrar, qué hembras están embarazadas
+                o cómo confirmar un embarazo desde Embarazos.
+              </p>
+            </div>
+            <div class="rounded-xl bg-white p-5 shadow-sm">
+              <h3 class="font-semibold text-gray-900">Guía dentro de la app</h3>
+              <p class="mt-2 text-sm leading-6 text-gray-600">
+                Recibe pasos concretos y enlaces a las secciones correctas:
+                Empadre, Embarazos, Crías, Recordatorios o Animales.
+              </p>
+            </div>
+            <div class="rounded-xl bg-white p-5 shadow-sm">
+              <h3 class="font-semibold text-gray-900">Contexto de tu granja</h3>
+              <p class="mt-2 text-sm leading-6 text-gray-600">
+                La IA usa tus datos visibles para contestar sobre animales,
+                empadres, recordatorios y pendientes reales.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <FAQ />
+    <CTA />
+  </main>
+  <Footer />
+</Layout>

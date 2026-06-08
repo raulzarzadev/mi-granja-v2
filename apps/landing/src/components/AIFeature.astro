@@ -1,0 +1,96 @@
+---
+const prompts = [
+  '¿Qué partos puedo registrar hoy?',
+  '¿Qué hembras están embarazadas?',
+  '¿Cómo registrar embarazo?',
+  '¿Qué pendientes hay esta semana?',
+]
+
+const capabilities = [
+  {
+    title: 'Ve tus flujos reproductivos',
+    description:
+      'Consulta partos previstos, empadres pendientes y hembras con embarazo confirmado sin revisar tabla por tabla.',
+  },
+  {
+    title: 'Te guía dentro de la app',
+    description:
+      'Recibe enlaces directos a Animales, Embarazos, Empadres, Recordatorios y otras secciones clave.',
+  },
+  {
+    title: 'Responde con tus datos reales',
+    description:
+      'El asistente usa el contexto de tu granja actual para hablar de animales, partos y pendientes visibles.',
+  },
+]
+---
+
+<section id="asistente-ia" class="bg-gray-950 py-20 text-white sm:py-28">
+  <div class="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
+    <div class="flex flex-col justify-center">
+      <p class="mb-4 inline-flex w-fit rounded-full bg-green-500/15 px-4 py-1.5 text-sm font-semibold text-green-300">
+        Asistente IA incluido
+      </p>
+      <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">
+        Pregúntale a Mi Granja antes de abrir mil pantallas
+      </h2>
+      <p class="mt-5 text-lg leading-8 text-gray-300">
+        El nuevo asistente IA entiende tus animales, reproducción, partos previstos,
+        recordatorios y flujos de trabajo. Te dice dónde entrar y qué acción tomar.
+      </p>
+
+      <div class="mt-8 grid gap-4">
+        {capabilities.map((item) => (
+          <article class="rounded-xl border border-white/10 bg-white/5 p-4">
+            <h3 class="text-base font-semibold text-white">{item.title}</h3>
+            <p class="mt-1 text-sm leading-6 text-gray-300">{item.description}</p>
+          </article>
+        ))}
+      </div>
+
+      <div class="mt-8">
+        <a
+          href="https://panel.migranja.app/auth"
+          class="inline-flex rounded-xl bg-green-500 px-6 py-3 text-base font-bold text-gray-950 shadow-lg shadow-green-500/20 transition-colors hover:bg-green-400"
+          data-ph-event="cta_click"
+          data-ph-location="ai_feature"
+          data-ph-label="Probar Asistente IA"
+        >
+          Probar Asistente IA
+        </a>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-white/10 bg-white p-3 text-gray-900 shadow-2xl shadow-black/30">
+      <div class="rounded-xl border border-gray-200 bg-gray-50">
+        <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+          <div>
+            <p class="text-sm font-bold text-gray-900">Asistente IA</p>
+            <p class="text-xs text-gray-500">Granja actual · respuestas en español</p>
+          </div>
+          <span class="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
+            Nuevo
+          </span>
+        </div>
+
+        <div class="space-y-3 p-4">
+          <div class="ml-auto max-w-[82%] rounded-lg bg-green-700 px-3 py-2 text-sm text-white">
+            ¿Qué partos puedo registrar?
+          </div>
+          <div class="max-w-[90%] rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm leading-6 text-gray-700">
+            Tienes partos previstos en <strong>Embarazos</strong>. Revisa primero las hembras con
+            parto atrasado, confirma el empadre y usa el botón <strong>Registrar parto</strong>.
+          </div>
+
+          <div class="grid gap-2 pt-2 sm:grid-cols-2">
+            {prompts.map((prompt) => (
+              <div class="rounded-full border border-green-200 bg-white px-3 py-2 text-xs font-medium text-green-800">
+                {prompt}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
