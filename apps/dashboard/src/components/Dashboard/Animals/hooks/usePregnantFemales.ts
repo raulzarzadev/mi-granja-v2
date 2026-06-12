@@ -42,6 +42,10 @@ export const usePregnantFemales = ({
             r.femaleBreedingInfo.some((f) => f.femaleId === animal.id && f.pregnancyConfirmedDate),
           ) ?? null
       }
+      // Hembra removida del empadre: ubicar el record por la referencia guardada en el animal
+      if (!record && animal.pregnantBreedingRecordId) {
+        record = breedingRecords.find((r) => r.id === animal.pregnantBreedingRecordId) ?? null
+      }
       const info = record?.femaleBreedingInfo.find((f) => f.femaleId === animal.id)
       const fatherFromPregnantBy = animal.pregnantBy
         ? findAnimalByRef(animals, animal.pregnantBy)

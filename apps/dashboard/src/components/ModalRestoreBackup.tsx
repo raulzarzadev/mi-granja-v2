@@ -744,6 +744,8 @@ const BACKUP_SCHEMA_JSON = `{
       "customWeaningDays": "number (override días de destete, opcional)",
       "pregnantAt": "ISO 8601 | null (fecha confirmación embarazo, solo hembras)",
       "pregnantBy": "string | null (ID del macho que la preñó, solo hembras)",
+      "pregnantBreedingRecordId": "string | null (ID Firestore del empadre del embarazo activo, solo hembras)",
+      "pregnantBreedingId": "string | null (código legible del empadre, ej: 10-10-25-01, solo hembras)",
       "birthedAt": "ISO 8601 | null (fecha de parto como madre, solo hembras)",
       "weanedMotherAt": "ISO 8601 | null (fecha en que destetó sus crías, solo hembras)",
       "availableToSaleAt": "ISO 8601 | null (marcado como listo para venta, se limpia al completarse la venta)",

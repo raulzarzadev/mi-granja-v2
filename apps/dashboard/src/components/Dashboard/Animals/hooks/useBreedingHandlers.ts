@@ -25,9 +25,37 @@ export const useBreedingHandlers = ({
   updateBreedingRecord,
   deleteBreedingRecord,
 }: Params) => {
+  // Conserva embarazo, padre y referencia al empadre en el animal cuando se le
+  // saca del empadre con embarazo confirmado, para poder registrar el parto después.
+  const preservePregnancyOnRemoval = useCallback(
+    async (record: BreedingRecord, info: BreedingRecord['femaleBreedingInfo'][number]) => {
+      const animal = animals.find((a) => a.id === info.femaleId)
+      await update(info.femaleId, {
+        pregnantAt: animal?.pregnantAt ?? info.pregnancyConfirmedDate ?? null,
+        pregnantBy: animal?.pregnantBy ?? record.maleId,
+        pregnantBreedingRecordId: record.id,
+        pregnantBreedingId: record.breedingId ?? null,
+      })
+      await addRecord(info.femaleId, {
+        type: 'note',
+        category: 'general',
+        title: 'Removida del empadre',
+        description: `Se removió del empadre ${record.breedingId || record.id} conservando el embarazo.`,
+        date: new Date(),
+      })
+    },
+    [addRecord, animals, update],
+  )
+
   const handleRemoveFromBreeding = useCallback(
     async (record: BreedingRecord, animalId: string) => {
       if (record.maleId === animalId) {
+        const pregnantInfos = record.femaleBreedingInfo.filter(
+          (i) => i.pregnancyConfirmedDate && !i.actualBirthDate,
+        )
+        for (const info of pregnantInfos) {
+          await preservePregnancyOnRemoval(record, info)
+        }
         await deleteBreedingRecord(record.id)
         return
       }
@@ -39,10 +67,10 @@ export const useBreedingHandlers = ({
         await updateBreedingRecord(record.id, { femaleBreedingInfo: updatedFemaleInfo })
       }
       if (removedInfo?.pregnancyConfirmedDate && !removedInfo.actualBirthDate) {
-        await update(animalId, { pregnantAt: null, pregnantBy: null })
+        await preservePregnancyOnRemoval(record, removedInfo)
       }
     },
-    [deleteBreedingRecord, update, updateBreedingRecord],
+    [deleteBreedingRecord, preservePregnancyOnRemoval, updateBreedingRecord],
   )
 
   const handleUnconfirmPregnancy = useCallback(
@@ -56,6 +84,8 @@ export const useBreedingHandlers = ({
       await update(femaleId, {
         pregnantAt: null,
         pregnantBy: null,
+        pregnantBreedingRecordId: null,
+        pregnantBreedingId: null,
         birthedAt: null,
         weanedMotherAt: null,
       })
@@ -83,6 +113,8 @@ export const useBreedingHandlers = ({
         birthedAt: null,
         pregnantAt: femaleInfo.pregnancyConfirmedDate ?? null,
         pregnantBy: femaleInfo.pregnancyConfirmedDate ? record.maleId : null,
+        pregnantBreedingRecordId: femaleInfo.pregnancyConfirmedDate ? record.id : null,
+        pregnantBreedingId: femaleInfo.pregnancyConfirmedDate ? (record.breedingId ?? null) : null,
       })
 
       const mother = animals.find((a) => a.id === femaleId)

@@ -92,6 +92,10 @@ export interface Animal {
   pregnantAt?: Date | null
   /** ID del macho que preñó a la hembra (se setea al confirmar embarazo). */
   pregnantBy?: string | null
+  /** ID Firestore del empadre donde se confirmó el embarazo. Se conserva aunque la hembra sea removida del empadre; se limpia junto con pregnantAt/pregnantBy. */
+  pregnantBreedingRecordId?: string | null
+  /** Código legible del empadre (ej. "10-10-25-01") para mostrar en UI aunque el registro se borre. */
+  pregnantBreedingId?: string | null
   /** Fecha de parto como madre (hembras). Se limpia al destetar todas las crías. */
   birthedAt?: Date | null
   /** Fecha en que destetó a sus crías (hembras). Se limpia al iniciar nuevo empadre. */

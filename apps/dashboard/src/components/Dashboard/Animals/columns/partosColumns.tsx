@@ -73,14 +73,19 @@ export const buildPartosColumns = (): ColumnDef<EnrichedPregnant>[] => [
     label: 'Empadre',
     sortable: true,
     sortFn: (a, b) =>
-      (a.record?.breedingId || '').localeCompare(b.record?.breedingId || '', 'es', {
-        numeric: true,
-      }),
-    render: (row) => (
-      <span className={row.record ? 'text-gray-600' : 'text-gray-400 italic'}>
-        {row.record?.breedingId || 'Sin empadre'}
-      </span>
-    ),
+      (a.record?.breedingId || a.animal.pregnantBreedingId || '').localeCompare(
+        b.record?.breedingId || b.animal.pregnantBreedingId || '',
+        'es',
+        { numeric: true },
+      ),
+    render: (row) => {
+      const label = row.record?.breedingId || row.animal.pregnantBreedingId
+      return (
+        <span className={label ? 'text-gray-600' : 'text-gray-400 italic'}>
+          {label || 'Sin empadre'}
+        </span>
+      )
+    },
     className: 'whitespace-nowrap',
   },
   {

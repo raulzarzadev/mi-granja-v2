@@ -268,6 +268,10 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
       'string (ISO 8601) | null | undefined. Fecha de confirmación de embarazo (hembras). Se limpia al registrar parto.',
     pregnantBy:
       'string | null | undefined. ID del macho que preñó a la hembra. Se setea al confirmar embarazo y se limpia junto con pregnantAt.',
+    pregnantBreedingRecordId:
+      'string | null | undefined. ID Firestore del empadre donde se confirmó el embarazo. Se conserva aunque la hembra sea removida del empadre; se limpia junto con pregnantAt/pregnantBy.',
+    pregnantBreedingId:
+      'string | null | undefined. Código legible del empadre (ej. "10-10-25-01"). Se limpia junto con pregnantAt/pregnantBy.',
     birthedAt:
       'string (ISO 8601) | null | undefined. Fecha de parto como madre (hembras). Se limpia al destetar todas las crías.',
     weanedMotherAt:
@@ -366,7 +370,7 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
       'Al destetar una cría: isWeaned=true, weanedAt=fecha, stage cambia según destino. Para engorda→stage="engorda". Para reproductor→stage="juvenil".',
     nacimiento_muerto: 'Si una cría nace muerta: status="muerto", statusAt=fecha del parto',
     estado_reproductivo:
-      'Solo hembras. pregnantAt=embarazada, birthedAt=parida, weanedMotherAt=destetó. Cada transición limpia el estado anterior: embarazo→parto limpia pregnantAt, parto→destete limpia birthedAt.',
+      'Solo hembras. pregnantAt=embarazada, birthedAt=parida, weanedMotherAt=destetó. Cada transición limpia el estado anterior: embarazo→parto limpia pregnantAt, parto→destete limpia birthedAt. pregnantBy/pregnantBreedingRecordId/pregnantBreedingId conservan padre y empadre incluso si la hembra fue removida del empadre, y se limpian al registrar parto o desconfirmar.',
     ids_de_referencia:
       'motherId, fatherId, maleId, femaleId, offspring[] — son IDs internos. Al importar se remapean automáticamente.',
     peso_auto_sync:

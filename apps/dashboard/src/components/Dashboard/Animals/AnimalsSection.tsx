@@ -524,7 +524,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     }[]
   }) => {
     try {
-      if (!birthRecord) return
       const mother = animals.find((a) => a.id === form.animalId)
       if (!mother) throw new Error('Madre no encontrada')
 
@@ -555,25 +554,34 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           birthDate: actualDate,
           gender: off.gender,
           motherId: mother.id,
-          fatherId: birthRecord.maleId,
+          fatherId: birthRecord?.maleId ?? mother.pregnantBy ?? undefined,
           ...(notesParts.length > 0 && { notes: notesParts.join(' · ') }),
           ...(isDead && { status: 'muerto' as const, statusAt: actualDate }),
         })
         if (createdId) offspringIds.push(createdId)
       }
 
-      const updatedFemaleInfo = birthRecord.femaleBreedingInfo.map((fi) =>
-        fi.femaleId === form.animalId
-          ? {
-              ...fi,
-              actualBirthDate: actualDate,
-              offspring: [...(fi.offspring || []), ...offspringIds],
-            }
-          : fi,
-      )
-      await updateBreedingRecord(birthRecord.id, { femaleBreedingInfo: updatedFemaleInfo })
+      // Actualizar el empadre solo si existe y aún rastrea a esta hembra
+      if (birthRecord?.femaleBreedingInfo.some((fi) => fi.femaleId === form.animalId)) {
+        const updatedFemaleInfo = birthRecord.femaleBreedingInfo.map((fi) =>
+          fi.femaleId === form.animalId
+            ? {
+                ...fi,
+                actualBirthDate: actualDate,
+                offspring: [...(fi.offspring || []), ...offspringIds],
+              }
+            : fi,
+        )
+        await updateBreedingRecord(birthRecord.id, { femaleBreedingInfo: updatedFemaleInfo })
+      }
       // Actualizar estado reproductivo de la madre
-      await update(form.animalId, { birthedAt: actualDate, pregnantAt: null, pregnantBy: null })
+      await update(form.animalId, {
+        birthedAt: actualDate,
+        pregnantAt: null,
+        pregnantBy: null,
+        pregnantBreedingRecordId: null,
+        pregnantBreedingId: null,
+      })
 
       const offspringSummary = form.offspring
         .map((o) => `#${o.animalNumber} (${o.gender}${o.weight ? `, ${o.weight}kg` : ''})`)
@@ -1112,7 +1120,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
               {[...enrichedPregnantFemales]
                 .sort((a, b) => (a.daysLeft ?? 9999) - (b.daysLeft ?? 9999))
                 .map((row) => {
-                  const canRegister = Boolean(row.record)
+                  const canRegister = Boolean(row.record) || Boolean(row.animal.pregnantBy)
                   return (
                     <div
                       key={row.animal.id}
@@ -1136,7 +1144,9 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                         </div>
                         <div className="mt-1 text-xs text-gray-500">
                           Macho {row.father?.animalNumber || row.animal.pregnantBy || 'sin dato'} ·
-                          Empadre {row.record?.breedingId || 'sin empadre'} · Esperado{' '}
+                          Empadre{' '}
+                          {row.record?.breedingId || row.animal.pregnantBreedingId || 'sin empadre'}{' '}
+                          · Esperado{' '}
                           {row.expected ? row.expected.toLocaleDateString('es-MX') : 'sin fecha'}
                         </div>
                       </div>
@@ -1152,9 +1162,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                             : 'Este parto no tiene empadre asociado para registrar crías'
                         }
                         onClick={() => {
-                          if (!row.record) return
                           setShowBirthPicker(false)
-                          setBirthRecord(row.record)
+                          setBirthRecord(row.record ?? null)
                           setBirthFemaleId(row.animal.id)
                         }}
                       >
@@ -1170,12 +1179,12 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
 
       {/* Modals de breeding */}
       <ModalBirthForm
-        isOpen={!!birthRecord}
+        isOpen={!!birthFemaleId}
         onClose={() => {
           setBirthRecord(null)
           setBirthFemaleId(null)
         }}
-        breedingRecord={birthRecord as BreedingRecord}
+        breedingRecord={birthRecord}
         animals={animals}
         selectedFemaleId={birthFemaleId || undefined}
         onSubmit={handleBirthSubmit}
@@ -1198,6 +1207,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
               await update(fi.femaleId, {
                 pregnantAt: fi.pregnancyConfirmedDate,
                 pregnantBy: r.maleId,
+                pregnantBreedingRecordId: r.id,
+                pregnantBreedingId: r.breedingId ?? null,
                 birthedAt: null,
                 weanedMotherAt: null,
               })

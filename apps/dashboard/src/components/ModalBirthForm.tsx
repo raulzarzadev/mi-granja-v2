@@ -13,7 +13,8 @@ import { Modal } from './Modal'
 interface ModalBirthFormProps {
   isOpen: boolean
   onClose: () => void
-  breedingRecord: BreedingRecord
+  /** Empadre asociado. Puede ser null si la hembra fue removida del empadre (se usa pregnantBy). */
+  breedingRecord?: BreedingRecord | null
   animals: Animal[]
   onSubmit: (birthRecord: BirthRecord) => Promise<void>
   isLoading?: boolean
@@ -457,7 +458,9 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
               })()}
             </div>
             {(() => {
-              const male = animals.find((a) => a.id === breedingRecord?.maleId)
+              const fatherId =
+                breedingRecord?.maleId ?? animals.find((a) => a.id === selectedFemaleId)?.pregnantBy
+              const male = animals.find((a) => a.id === fatherId)
               if (!male) return null
               return (
                 <div className="p-3 border border-blue-300 rounded-md bg-blue-50 flex items-center gap-3 flex-1">

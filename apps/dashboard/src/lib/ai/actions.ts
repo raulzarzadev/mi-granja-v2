@@ -245,6 +245,8 @@ async function registerBirth(
     birthedAt: Timestamp.fromDate(birthDate),
     pregnantAt: null,
     pregnantBy: null,
+    pregnantBreedingRecordId: null,
+    pregnantBreedingId: null,
     records: [
       ...(mother.records || []),
       {

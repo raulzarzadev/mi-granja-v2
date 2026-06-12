@@ -124,7 +124,7 @@ export const useBreedingCRUD = () => {
         updatedAt: now,
       }
 
-      await addDoc(collection(db, 'breedingRecords'), docData)
+      const docRef = await addDoc(collection(db, 'breedingRecords'), docData)
       trackReproductionEventCreated({ type: 'breeding' })
 
       // Actualizar animales confirmados como embarazadas en un solo batch
@@ -139,6 +139,8 @@ export const useBreedingCRUD = () => {
               toLocalDateStart(new Date(info.pregnancyConfirmedDate!)),
             ),
             pregnantBy: data.maleId,
+            pregnantBreedingRecordId: docRef.id,
+            pregnantBreedingId: breedingId,
             birthedAt: null,
             weanedMotherAt: null,
             updatedAt: now,

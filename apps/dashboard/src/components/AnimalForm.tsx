@@ -372,6 +372,10 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
                 })()
               : null,
             pregnantBy: values.pregnantAt ? values.pregnantBy?.trim() || null : null,
+            // Al quitar el embarazo manualmente, limpiar también la referencia al empadre
+            ...(values.pregnantAt
+              ? {}
+              : { pregnantBreedingRecordId: null, pregnantBreedingId: null }),
             birthedAt: values.birthedAt
               ? (() => {
                   const [y, m, d] = values.birthedAt.split('-').map(Number)

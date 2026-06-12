@@ -297,7 +297,7 @@ export async function applyChangeStage(
       }
 
       const { addDoc, collection } = await import('firebase/firestore')
-      await addDoc(collection(db, 'breedingRecords'), docData)
+      const docRef = await addDoc(collection(db, 'breedingRecords'), docData)
 
       // Actualizar animales
       await batchUpdateAnimals(
@@ -305,6 +305,8 @@ export async function applyChangeStage(
         {
           pregnantAt: dateTs,
           pregnantBy: maleId,
+          pregnantBreedingRecordId: docRef.id,
+          pregnantBreedingId: breedingId,
           birthedAt: null,
           weanedMotherAt: null,
         } as unknown as Partial<Animal>,

@@ -15,7 +15,7 @@ interface Props {
   pendingPregnancyCount: number
   onRegisterPregnancy?: () => void
   onRegisterBirth?: () => void
-  onAddBirth: (record: BreedingRecord, femaleId: string) => void
+  onAddBirth: (record: BreedingRecord | null, femaleId: string) => void
   onEditRecord: (record: BreedingRecord) => void
   onUnconfirmPregnancy: (record: BreedingRecord, femaleId: string) => Promise<void>
   onUpdateAnimal: (id: string, data: Partial<Animal>) => Promise<void>
@@ -93,12 +93,12 @@ export default function TabStagePregnant({
         )}
         renderActions={(row) => (
           <>
-            {row.record && (
+            {(row.record || row.animal.pregnantBy) && (
               <Button
                 size="xs"
                 color="success"
                 icon="baby"
-                onClick={() => onAddBirth(row.record!, row.animal.id)}
+                onClick={() => onAddBirth(row.record ?? null, row.animal.id)}
               >
                 Parto
               </Button>
@@ -124,7 +124,12 @@ export default function TabStagePregnant({
                 if (row.record) {
                   await onUnconfirmPregnancy(row.record, row.animal.id)
                 } else {
-                  await onUpdateAnimal(row.animal.id, { pregnantAt: null, pregnantBy: null })
+                  await onUpdateAnimal(row.animal.id, {
+                    pregnantAt: null,
+                    pregnantBy: null,
+                    pregnantBreedingRecordId: null,
+                    pregnantBreedingId: null,
+                  })
                 }
               }}
             />
