@@ -1,16 +1,16 @@
 ---
 title: Auth + Impersonation
-description: Email/password + passwordless magic link. Admin impersonation with tracked metadata.
+description: Email code + Google sign-in. Admin impersonation with tracked metadata.
 audience: llm+human
-last_updated: 2026-04-23
+last_updated: 2026-06-12
 ---
 
 # Auth + Impersonation
 
 ## Methods
 
-1. **Email + password** — standard Firebase Auth
-2. **Passwordless magic link** — completes at `/auth/complete`
+1. **Email code** — `/api/auth/send-code` sends a 6-digit code and `/api/auth/verify-code` returns a Firebase custom token.
+2. **Google** — client uses Firebase `GoogleAuthProvider`; `/api/auth/ensure-user` creates the Firestore user profile when needed.
 
 ## Hook — `useAuth`
 
@@ -19,12 +19,10 @@ last_updated: 2026-04-23
   user,
   isLoading,
   error,
-  login,
-  register,
   logout,
-  loginWithEmailLink,
-  completeEmailLinkSignIn,
-  isEmailLinkSignIn,
+  sendCode,
+  verifyCode,
+  loginWithGoogle,
   startImpersonation,
   stopImpersonation
 }

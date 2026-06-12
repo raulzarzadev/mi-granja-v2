@@ -42,6 +42,7 @@ export function useNotificationPreferences() {
             userId,
             pushEnabled: Boolean(data.pushEnabled),
             emailEnabled: data.emailEnabled !== false,
+            marketingEmailEnabled: data.marketingEmailEnabled !== false,
             fcmTokens: Array.isArray(data.fcmTokens) ? data.fcmTokens : [],
             updatedAt: data.updatedAt instanceof Date ? data.updatedAt : new Date(),
           }),
@@ -78,6 +79,18 @@ export function useNotificationPreferences() {
     [userId],
   )
 
+  const setMarketingEmailEnabled = useCallback(
+    async (enabled: boolean) => {
+      if (!userId) return
+      await setDoc(
+        doc(db, 'notificationPreferences', userId),
+        { userId, marketingEmailEnabled: enabled, updatedAt: serverTimestamp() },
+        { merge: true },
+      )
+    },
+    [userId],
+  )
+
   const removeFcmToken = useCallback(
     async (token: string) => {
       if (!userId) return
@@ -90,5 +103,12 @@ export function useNotificationPreferences() {
     [userId],
   )
 
-  return { prefs, isLoading, setPushEnabled, setEmailEnabled, removeFcmToken }
+  return {
+    prefs,
+    isLoading,
+    setPushEnabled,
+    setEmailEnabled,
+    setMarketingEmailEnabled,
+    removeFcmToken,
+  }
 }

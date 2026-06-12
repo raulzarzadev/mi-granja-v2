@@ -66,6 +66,33 @@ interface TableView {
   defaultSortDir?: 'asc' | 'desc'
 }
 
+type MarketingTemplate = 'basic' | 'app_updates'
+
+function getMarketingTemplateDefaults(template: MarketingTemplate) {
+  if (template === 'app_updates') {
+    return {
+      subject: 'Nuevas actualizaciones en Mi Granja',
+      message: [
+        'Hola, seguimos mejorando Mi Granja para que administres tu operación con menos trabajo manual.',
+        '',
+        '- Inicio de sesión con Google para entrar más rápido.',
+        '- Mejoras en el asistente para consultar información de tu granja.',
+        '- Nuevas herramientas administrativas para comunicar avisos importantes.',
+      ].join('\n'),
+      ctaText: 'Ver actualizaciones',
+      ctaUrl: 'https://dashboard.migranja.app',
+    }
+  }
+
+  return {
+    subject: 'Mensaje de Mi Granja',
+    message:
+      'Hola,\n\nQueremos compartirte una actualización importante de Mi Granja.\n\nGracias por seguir usando la app para administrar tu granja.',
+    ctaText: 'Abrir Mi Granja',
+    ctaUrl: 'https://dashboard.migranja.app',
+  }
+}
+
 function formatDate(raw: any): string {
   const d = raw?.toDate?.() || raw
   if (d instanceof Date && !Number.isNaN(d.getTime())) {
@@ -96,6 +123,15 @@ export default function AdminDashboard() {
   const [placesInput, setPlacesInput] = useState(0)
   const [isSavingPlan, setIsSavingPlan] = useState(false)
   const [isLoadingPlan, setIsLoadingPlan] = useState(false)
+  const [isMarketingModalOpen, setIsMarketingModalOpen] = useState(false)
+  const [marketingUser, setMarketingUser] = useState<any | null>(null)
+  const [marketingSubject, setMarketingSubject] = useState('')
+  const [marketingMessage, setMarketingMessage] = useState('')
+  const [marketingCtaText, setMarketingCtaText] = useState('')
+  const [marketingCtaUrl, setMarketingCtaUrl] = useState('')
+  const [marketingTemplate, setMarketingTemplate] = useState<MarketingTemplate>('basic')
+  const [isSendingMarketingEmail, setIsSendingMarketingEmail] = useState(false)
+  const [marketingResult, setMarketingResult] = useState<string | null>(null)
 
   // Hard delete modal
   const [deleteFarm, setDeleteFarm] = useState<any>(null)
@@ -114,6 +150,7 @@ export default function AdminDashboard() {
         invitationsSnap,
         salesSnap,
         subsSnap,
+        campaignsSnap,
       ] = await Promise.all([
         getDocs(collection(db, 'users')),
         getDocs(collection(db, 'animals')),
@@ -123,6 +160,7 @@ export default function AdminDashboard() {
         getDocs(collection(db, 'farmInvitations')),
         getDocs(collection(db, 'sales')),
         getDocs(collection(db, 'subscriptions')),
+        getDocs(collection(db, 'marketingEmailCampaigns')),
       ])
 
       const mapSnap = (snap: any) => snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
@@ -148,6 +186,7 @@ export default function AdminDashboard() {
         reminders: mapSnap(remindersSnap),
         invitations: mapSnap(invitationsSnap),
         sales: mapSnap(salesSnap),
+        campaigns: mapSnap(campaignsSnap),
       })
       setIsLoading(false)
     }
@@ -209,6 +248,82 @@ export default function AdminDashboard() {
       alert('Error al guardar el plan')
     } finally {
       setIsSavingPlan(false)
+    }
+  }
+
+  const openMarketingModal = useCallback((targetUser?: any) => {
+    const defaults = getMarketingTemplateDefaults('basic')
+    setIsMarketingModalOpen(true)
+    setMarketingUser(targetUser || null)
+    setMarketingSubject(defaults.subject)
+    setMarketingMessage(defaults.message)
+    setMarketingCtaText(defaults.ctaText)
+    setMarketingCtaUrl(defaults.ctaUrl)
+    setMarketingTemplate('basic')
+    setMarketingResult(null)
+  }, [])
+
+  const closeMarketingModal = () => {
+    if (isSendingMarketingEmail) return
+    setIsMarketingModalOpen(false)
+    setMarketingUser(null)
+    setMarketingSubject('')
+    setMarketingMessage('')
+    setMarketingCtaText('')
+    setMarketingCtaUrl('')
+    setMarketingTemplate('basic')
+    setMarketingResult(null)
+  }
+
+  const applyMarketingTemplate = (template: MarketingTemplate) => {
+    const defaults = getMarketingTemplateDefaults(template)
+    setMarketingTemplate(template)
+    setMarketingResult(null)
+    setMarketingSubject(defaults.subject)
+    setMarketingMessage(defaults.message)
+    setMarketingCtaText(defaults.ctaText)
+    setMarketingCtaUrl(defaults.ctaUrl)
+  }
+
+  const handleSendMarketingEmail = async () => {
+    if (!marketingSubject.trim() || !marketingMessage.trim()) {
+      alert('Completa asunto y mensaje')
+      return
+    }
+
+    setIsSendingMarketingEmail(true)
+    setMarketingResult(null)
+    try {
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) {
+        alert('No hay sesión activa')
+        return
+      }
+
+      const res = await fetch('/api/admin/marketing-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          recipientMode: marketingUser ? 'userIds' : 'all',
+          userIds: marketingUser ? [marketingUser.id] : undefined,
+          subject: marketingSubject,
+          message: marketingMessage,
+          ctaText: marketingCtaText || undefined,
+          ctaUrl: marketingCtaUrl || undefined,
+          template: marketingTemplate,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data.error || 'Error enviando email marketing')
+        return
+      }
+      setMarketingResult(`Enviados: ${data.sent} de ${data.recipients}. Fallidos: ${data.failed}.`)
+    } catch (err) {
+      console.error('Error enviando email marketing:', err)
+      alert('Error enviando email marketing')
+    } finally {
+      setIsSendingMarketingEmail(false)
     }
   }
 
@@ -293,6 +408,7 @@ export default function AdminDashboard() {
       reminders = [],
       invitations = [],
       sales = [],
+      campaigns = [],
     } = rawData
 
     const activeReminders = reminders.filter((r: any) => !r.completed).length
@@ -353,6 +469,14 @@ export default function AdminDashboard() {
         value: sales.length,
         bg: 'bg-indigo-50',
         text: 'text-indigo-700',
+      },
+      {
+        key: 'marketing',
+        label: 'Email marketing',
+        icon: '📣',
+        value: campaigns.length,
+        bg: 'bg-teal-50',
+        text: 'text-teal-700',
       },
     ]
     if (deletedCount > 0) {
@@ -894,7 +1018,7 @@ export default function AdminDashboard() {
       {/* Summary cards — always visible */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
             {cards.map((card) => {
               const isActive = activeRoot === card.key
               return (
@@ -902,6 +1026,10 @@ export default function AdminDashboard() {
                   key={card.key}
                   type="button"
                   onClick={() => {
+                    if (card.key === 'marketing') {
+                      openMarketingModal()
+                      return
+                    }
                     if (isActive) {
                       goTo(0)
                     } else {
@@ -1069,6 +1197,13 @@ export default function AdminDashboard() {
                 >
                   Gestionar Plan
                 </button>
+                <button
+                  onClick={() => openMarketingModal(u)}
+                  className="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors"
+                  type="button"
+                >
+                  Enviar email
+                </button>
               </div>
             )
           })()}
@@ -1177,6 +1312,180 @@ export default function AdminDashboard() {
               >
                 {isSavingPlan ? 'Guardando...' : 'Guardar'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isMarketingModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 p-6">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Enviar email marketing</h3>
+                <p className="text-sm text-gray-500">
+                  {marketingUser
+                    ? `Destinatario: ${marketingUser.email}`
+                    : `Destinatarios: todos los usuarios (${rawData.users?.length || 0})`}
+                </p>
+              </div>
+              <button
+                onClick={closeMarketingModal}
+                className="text-gray-400 hover:text-gray-600"
+                type="button"
+                disabled={isSendingMarketingEmail}
+              >
+                ✕
+              </button>
+            </div>
+
+            {marketingResult ? (
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+                {marketingResult}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <fieldset>
+                  <legend className="block text-sm font-medium text-gray-700 mb-2">
+                    Plantilla
+                  </legend>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => applyMarketingTemplate('basic')}
+                      disabled={isSendingMarketingEmail}
+                      className={`min-h-14 rounded-md border px-3 py-2 text-left transition-colors ${
+                        marketingTemplate === 'basic'
+                          ? 'border-green-500 bg-green-50 text-green-900'
+                          : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold">Correo básico</span>
+                      <span className="block text-xs text-gray-500">Aviso simple con CTA</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyMarketingTemplate('app_updates')}
+                      disabled={isSendingMarketingEmail}
+                      className={`min-h-14 rounded-md border px-3 py-2 text-left transition-colors ${
+                        marketingTemplate === 'app_updates'
+                          ? 'border-green-500 bg-green-50 text-green-900'
+                          : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold">Actualizaciones</span>
+                      <span className="block text-xs text-gray-500">Lista de mejoras nuevas</span>
+                    </button>
+                  </div>
+                </fieldset>
+
+                <div>
+                  <label
+                    htmlFor="marketing-subject"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Asunto
+                  </label>
+                  <input
+                    id="marketing-subject"
+                    type="text"
+                    maxLength={120}
+                    value={marketingSubject}
+                    onChange={(e) => setMarketingSubject(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="Nueva mejora disponible en Mi Granja"
+                    disabled={isSendingMarketingEmail}
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="marketing-message"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Mensaje
+                  </label>
+                  <textarea
+                    id="marketing-message"
+                    value={marketingMessage}
+                    onChange={(e) => setMarketingMessage(e.target.value)}
+                    rows={7}
+                    maxLength={4000}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder={
+                      marketingTemplate === 'app_updates'
+                        ? 'Escribe una intro y luego mejoras con guion, una por línea.'
+                        : 'Escribe el contenido del correo. Usa saltos de línea para separar párrafos.'
+                    }
+                    disabled={isSendingMarketingEmail}
+                  />
+                  {marketingTemplate === 'app_updates' && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      Las líneas que empiezan con guion se mostrarán como mejoras destacadas.
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label
+                      htmlFor="marketing-cta-text"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Texto del botón
+                    </label>
+                    <input
+                      id="marketing-cta-text"
+                      type="text"
+                      value={marketingCtaText}
+                      onChange={(e) => setMarketingCtaText(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="Abrir Mi Granja"
+                      disabled={isSendingMarketingEmail}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="marketing-cta-url"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      URL del botón
+                    </label>
+                    <input
+                      id="marketing-cta-url"
+                      type="url"
+                      value={marketingCtaUrl}
+                      onChange={(e) => setMarketingCtaUrl(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="https://dashboard.migranja.app"
+                      disabled={isSendingMarketingEmail}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={closeMarketingModal}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+                type="button"
+                disabled={isSendingMarketingEmail}
+              >
+                {marketingResult ? 'Cerrar' : 'Cancelar'}
+              </button>
+              {!marketingResult && (
+                <button
+                  onClick={handleSendMarketingEmail}
+                  disabled={
+                    isSendingMarketingEmail || !marketingSubject.trim() || !marketingMessage.trim()
+                  }
+                  className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                  type="button"
+                >
+                  {isSendingMarketingEmail ? 'Enviando...' : 'Enviar campaña'}
+                </button>
+              )}
             </div>
           </div>
         </div>

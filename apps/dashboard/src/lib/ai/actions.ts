@@ -1,8 +1,10 @@
 import { Timestamp } from 'firebase-admin/firestore'
+import { activeUnweanedOffspring, computeAnimalEffectiveStage } from '@/lib/animal-utils'
+import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { Reminder } from '@/types'
-import { Animal } from '@/types/animals'
-import { BreedingRecord } from '@/types/breedings'
+import { Animal, type AnimalStageKey } from '@/types/animals'
+import { BreedingRecord, type FemaleBreedingInfo } from '@/types/breedings'
 import type { FarmPermission } from '@/types/farm'
 import { hasPermission } from './server'
 import { AiAction } from './types'
@@ -70,6 +72,75 @@ async function getFarmBreedingRecords(farmId: string): Promise<BreedingRecord[]>
   const firestore = getAdminFirestore()
   const snap = await firestore.collection('breedingRecords').where('farmId', '==', farmId).get()
   return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as BreedingRecord)
+}
+
+function asDate(value: unknown): Date | null {
+  if (!value) return null
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+  if (typeof value === 'object' && typeof (value as { toDate?: unknown }).toDate === 'function') {
+    const date = (value as { toDate: () => Date }).toDate()
+    return Number.isNaN(date.getTime()) ? null : date
+  }
+  if (typeof value === 'string' || typeof value === 'number') {
+    const date = new Date(value)
+    return Number.isNaN(date.getTime()) ? null : date
+  }
+  return null
+}
+
+function dateKey(value: unknown): string | null {
+  return asDate(value)?.toISOString().slice(0, 10) ?? null
+}
+
+function normalizeAnimal(doc: FirebaseFirestore.QueryDocumentSnapshot): Animal {
+  const data = doc.data()
+  return {
+    id: doc.id,
+    ...data,
+    birthDate: asDate(data.birthDate) ?? undefined,
+    createdAt: asDate(data.createdAt) ?? new Date(0),
+    updatedAt: asDate(data.updatedAt) ?? new Date(0),
+    statusAt: asDate(data.statusAt) ?? undefined,
+    availableToSaleAt: asDate(data.availableToSaleAt),
+    pregnantAt: asDate(data.pregnantAt),
+    birthedAt: asDate(data.birthedAt),
+    weanedAt: asDate(data.weanedAt) ?? undefined,
+    weanedMotherAt: asDate(data.weanedMotherAt),
+  } as Animal
+}
+
+function normalizeBreedingRecord(doc: FirebaseFirestore.QueryDocumentSnapshot): BreedingRecord {
+  const data = doc.data()
+  return {
+    id: doc.id,
+    ...data,
+    breedingDate: asDate(data.breedingDate),
+    femaleBreedingInfo: ((data.femaleBreedingInfo || []) as Record<string, unknown>[]).map(
+      (info) =>
+        ({
+          ...info,
+          pregnancyConfirmedDate: asDate(info.pregnancyConfirmedDate),
+          expectedBirthDate: asDate(info.expectedBirthDate),
+          actualBirthDate: asDate(info.actualBirthDate),
+        }) as FemaleBreedingInfo,
+    ),
+    createdAt: asDate(data.createdAt) ?? undefined,
+    updatedAt: asDate(data.updatedAt) ?? undefined,
+  } as BreedingRecord
+}
+
+function countBy<T extends string>(items: T[]): Record<T, number> {
+  return items.reduce(
+    (acc, item) => {
+      acc[item] = (acc[item] || 0) + 1
+      return acc
+    },
+    {} as Record<T, number>,
+  )
+}
+
+function daysUntil(from: Date, to: Date): number {
+  return Math.round((to.getTime() - from.getTime()) / 86400000)
 }
 
 async function createAnimal(
@@ -373,29 +444,39 @@ export async function executeAiAction(params: ExecuteParams) {
 export async function buildAiContext(farmId: string) {
   const firestore = getAdminFirestore()
   const [animalsSnap, remindersSnap, breedingSnap] = await Promise.all([
-    firestore.collection('animals').where('farmId', '==', farmId).limit(500).get(),
+    firestore.collection('animals').where('farmId', '==', farmId).limit(1000).get(),
     firestore
       .collection('reminders')
       .where('farmId', '==', farmId)
       .where('completed', '==', false)
       .limit(40)
       .get(),
-    firestore.collection('breedingRecords').where('farmId', '==', farmId).limit(40).get(),
+    firestore.collection('breedingRecords').where('farmId', '==', farmId).limit(200).get(),
   ])
 
   const today = new Date()
-  const animals = animalsSnap.docs.map((doc) => {
-    const data = doc.data()
+  const farmAnimals = animalsSnap.docs.map(normalizeAnimal)
+  const farmBreedingRecords = breedingSnap.docs.map(normalizeBreedingRecord)
+  const animalsWithComputedStage = farmAnimals.map((animal) => ({
+    ...animal,
+    computedStage: computeAnimalEffectiveStage(animal, farmBreedingRecords, today, farmAnimals),
+  }))
+  const activeAnimals = animalsWithComputedStage.filter(
+    (animal) => animal.status === 'activo' || animal.status === undefined || animal.status === null,
+  )
+  const animals = animalsWithComputedStage.map((animal) => {
     return {
-      id: doc.id,
-      numero: data.animalNumber,
-      nombre: data.name || '',
-      especie: data.type,
-      genero: data.gender,
-      etapa: data.stage,
-      estado: data.status || 'activo',
-      fechaEmbarazo: data.pregnantAt?.toDate?.()?.toISOString().slice(0, 10) || null,
-      fechaParto: data.birthedAt?.toDate?.()?.toISOString().slice(0, 10) || null,
+      id: animal.id,
+      numero: animal.animalNumber,
+      nombre: animal.name || '',
+      especie: animal.type,
+      genero: animal.gender,
+      etapa: animal.stage,
+      etapaCalculada: animal.computedStage,
+      estado: animal.status || 'activo',
+      fechaNacimiento: dateKey(animal.birthDate),
+      fechaEmbarazo: dateKey(animal.pregnantAt),
+      fechaParto: dateKey(animal.birthedAt),
     }
   })
 
@@ -425,20 +506,17 @@ export async function buildAiContext(farmId: string) {
     diasRestantes: number | null
   }[] = []
 
-  const breedingRecords = breedingSnap.docs.map((doc) => {
-    const data = doc.data()
-    const male = animals.find((animal) => animal.id === data.maleId)
-    const breedingLabel = data.breedingId || doc.id
-    const femaleInfos = data.femaleBreedingInfo || []
+  const breedingRecords = farmBreedingRecords.map((record) => {
+    const male = animals.find((animal) => animal.id === record.maleId)
+    const breedingLabel = record.breedingId || record.id
+    const femaleInfos = record.femaleBreedingInfo || []
     const pendingFemales = femaleInfos
-      .filter(
-        (info: Record<string, unknown>) => !info.pregnancyConfirmedDate && !info.actualBirthDate,
-      )
+      .filter((info: FemaleBreedingInfo) => !info.pregnancyConfirmedDate && !info.actualBirthDate)
       .map(
-        (info: Record<string, unknown>) =>
+        (info: FemaleBreedingInfo) =>
           animals.find((animal) => animal.id === info.femaleId)?.numero || 'sin numero visible',
       )
-    if ((data.status || 'active') !== 'finished' && pendingFemales.length > 0) {
+    if ((record.status || 'active') !== 'finished' && pendingFemales.length > 0) {
       pregnancyCandidates.push({
         empadre: breedingLabel,
         macho: male?.numero || 'sin macho visible',
@@ -448,10 +526,7 @@ export async function buildAiContext(farmId: string) {
 
     for (const info of femaleInfos) {
       if (!info.pregnancyConfirmedDate || info.actualBirthDate) continue
-      const expectedDate =
-        (info.expectedBirthDate as Timestamp | undefined)?.toDate?.() ??
-        (info.pregnancyConfirmedDate as Timestamp | undefined)?.toDate?.() ??
-        null
+      const expectedDate = info.expectedBirthDate ?? info.pregnancyConfirmedDate ?? null
       expectedBirths.push({
         hembra:
           animals.find((animal) => animal.id === info.femaleId)?.numero || 'sin numero visible',
@@ -466,25 +541,53 @@ export async function buildAiContext(farmId: string) {
 
     return {
       id: breedingLabel,
-      estado: data.status || 'active',
+      estado: record.status || 'active',
       macho: male?.numero || 'sin macho visible',
-      fecha: data.breedingDate?.toDate?.()?.toISOString().slice(0, 10) || null,
-      hembras: femaleInfos.map((info: Record<string, unknown>) => ({
+      fecha: dateKey(record.breedingDate),
+      hembras: femaleInfos.map((info: FemaleBreedingInfo) => ({
         hembra:
           animals.find((animal) => animal.id === info.femaleId)?.numero || 'sin numero visible',
         embarazoConfirmado: Boolean(info.pregnancyConfirmedDate),
-        fechaEsperada:
-          (info.expectedBirthDate as Timestamp | undefined)
-            ?.toDate?.()
-            ?.toISOString()
-            .slice(0, 10) || null,
+        fechaEsperada: dateKey(info.expectedBirthDate),
         parto: Boolean(info.actualBirthDate),
-        fechaParto:
-          (info.actualBirthDate as Timestamp | undefined)?.toDate?.()?.toISOString().slice(0, 10) ||
-          null,
+        fechaParto: dateKey(info.actualBirthDate),
       })),
     }
   })
+
+  const pendingWeaningRows = activeAnimals
+    .filter((animal) => animal.computedStage === 'cria')
+    .map((animal) => {
+      const birthDate = asDate(animal.birthDate)
+      const weaningDays = getWeaningDays(animal)
+      const weanDate = birthDate
+        ? new Date(birthDate.getTime() + weaningDays * 24 * 60 * 60 * 1000)
+        : null
+      const mother = farmAnimals.find(
+        (candidate) =>
+          candidate.id === animal.motherId || candidate.animalNumber === animal.motherId,
+      )
+      return {
+        numero: animal.animalNumber,
+        madre: mother?.animalNumber || null,
+        especie: animal.type,
+        fechaNacimiento: dateKey(animal.birthDate),
+        fechaDesteteEstimada: dateKey(weanDate),
+        diasRestantes: weanDate ? daysUntil(today, weanDate) : null,
+      }
+    })
+    .sort((a, b) => (a.diasRestantes ?? 9999) - (b.diasRestantes ?? 9999))
+
+  const nursingMothers = activeAnimals
+    .filter((animal) => animal.computedStage === 'crias_lactantes')
+    .map((mother) => {
+      const offspring = activeUnweanedOffspring({ farmAnimals, motherId: mother.id })
+      return {
+        numero: mother.animalNumber,
+        criasPendientes: offspring.length,
+        crias: offspring.map((animal) => animal.animalNumber),
+      }
+    })
 
   const pregnancyPendingFemales = pregnancyCandidates.reduce(
     (total, record) => total + record.hembrasPendientes.length,
@@ -494,7 +597,51 @@ export async function buildAiContext(farmId: string) {
     (a, b) => (a.diasRestantes ?? 9999) - (b.diasRestantes ?? 9999),
   )
 
+  const summary = {
+    animales: {
+      totalRegistrados: farmAnimals.length,
+      activos: activeAnimals.length,
+      inactivos: farmAnimals.length - activeAnimals.length,
+      porEstado: countBy(farmAnimals.map((animal) => animal.status || 'activo')),
+      porEspecie: countBy(activeAnimals.map((animal) => animal.type)),
+      porGenero: countBy(activeAnimals.map((animal) => animal.gender)),
+      porEtapaCalculada: countBy(
+        activeAnimals.map((animal) => animal.computedStage || animal.stage) as AnimalStageKey[],
+      ),
+    },
+    reproduccion: {
+      empadresActivos: farmBreedingRecords.filter(
+        (record) => (record.status || 'active') !== 'finished',
+      ).length,
+      embarazosPendientesParto: expectedBirths.length,
+      hembrasPendientesConfirmarEmbarazo: pregnancyPendingFemales,
+      madresLactantes: nursingMothers.length,
+    },
+    destetes: {
+      pendientes: pendingWeaningRows.length,
+      vencidos: pendingWeaningRows.filter(
+        (row) => row.diasRestantes !== null && row.diasRestantes < 0,
+      ).length,
+      proximos7Dias: pendingWeaningRows.filter(
+        (row) => row.diasRestantes !== null && row.diasRestantes >= 0 && row.diasRestantes <= 7,
+      ).length,
+      sinFechaNacimiento: pendingWeaningRows.filter((row) => row.fechaNacimiento === null).length,
+      proximos: pendingWeaningRows.slice(0, 20),
+      madres: nursingMothers.slice(0, 20),
+    },
+    recordatorios: {
+      pendientes: reminders.length,
+      vencidos: reminders.filter((reminder) => new Date(reminder.fecha) < today).length,
+      proximos7Dias: reminders.filter((reminder) => {
+        const dueDate = new Date(reminder.fecha)
+        const days = daysUntil(today, dueDate)
+        return days >= 0 && days <= 7
+      }).length,
+    },
+  }
+
   return {
+    resumen: summary,
     animals,
     reminders,
     breedingRecords,

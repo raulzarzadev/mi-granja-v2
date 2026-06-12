@@ -57,6 +57,10 @@ describe('useAuth', () => {
       throw new Error('verifyCode should be a function')
     }
 
+    if (typeof result.current.loginWithGoogle !== 'function') {
+      throw new Error('loginWithGoogle should be a function')
+    }
+
     if (typeof result.current.logout !== 'function') {
       throw new Error('logout should be a function')
     }

@@ -62,6 +62,7 @@ export function useFcmRegistration() {
           userId,
           pushEnabled: true,
           emailEnabled: true,
+          marketingEmailEnabled: true,
           fcmTokens: [fcmToken],
           updatedAt: serverTimestamp(),
         })

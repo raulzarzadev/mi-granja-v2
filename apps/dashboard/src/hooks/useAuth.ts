@@ -1,6 +1,6 @@
 'use client'
 
-import { signInWithCustomToken, signOut } from 'firebase/auth'
+import { GoogleAuthProvider, signInWithCustomToken, signInWithPopup, signOut } from 'firebase/auth'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   clearEmailLinkState,
@@ -11,12 +11,30 @@ import {
   setError,
   setImpersonating,
   setLoading,
+  setUser,
 } from '@/features/auth/authSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { RootState } from '@/features/store'
 import { trackLoginCompleted, trackLogout } from '@/lib/analytics/track'
 import { auth } from '@/lib/firebase'
 import { User } from '@/types'
+
+const getGoogleLoginErrorMessage = (error: unknown) => {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code?: unknown }).code)
+      : ''
+
+  if (code === 'auth/popup-closed-by-user') return 'Inicio con Google cancelado.'
+  if (code === 'auth/popup-blocked') {
+    return 'El navegador bloqueó la ventana de Google. Permite popups e intenta de nuevo.'
+  }
+  if (code === 'auth/account-exists-with-different-credential') {
+    return 'Ya existe una cuenta con ese correo usando otro método de acceso.'
+  }
+
+  return error instanceof Error ? error.message : 'Error iniciando sesión con Google'
+}
 
 /**
  * Hook personalizado para el manejo de autenticación
@@ -105,6 +123,46 @@ export const useAuth = () => {
     }
   }
 
+  const loginWithGoogle = async () => {
+    try {
+      dispatch(setLoading(true))
+      dispatch(clearError())
+
+      const provider = new GoogleAuthProvider()
+      provider.setCustomParameters({ prompt: 'select_account' })
+
+      const result = await signInWithPopup(auth, provider)
+      const token = await result.user.getIdToken()
+
+      const res = await fetch('/api/auth/ensure-user', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        await signOut(auth)
+        dispatch(setError(data.error || 'Error preparando tu cuenta de Google'))
+        dispatch(setLoading(false))
+        return false
+      }
+
+      trackLoginCompleted('google')
+      dispatch(clearEmailLinkState())
+      dispatch(setUser(data.user))
+      dispatch(setLoading(false))
+      return true
+    } catch (error: unknown) {
+      dispatch(setError(getGoogleLoginErrorMessage(error)))
+      dispatch(setLoading(false))
+      return false
+    }
+  }
+
   // Cerrar sesión
   const handleLogout = async () => {
     try {
@@ -138,6 +196,7 @@ export const useAuth = () => {
     originalUser,
     sendCode,
     verifyCode,
+    loginWithGoogle,
     logout: handleLogout,
     clearError: clearAuthError,
     clearEmailLink,

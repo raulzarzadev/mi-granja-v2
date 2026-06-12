@@ -19,12 +19,14 @@ const AuthForm: React.FC = () => {
   const [email, setEmail] = useState('')
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(''))
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [authAction, setAuthAction] = useState<'code' | 'google' | null>(null)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const {
     user,
     sendCode,
     verifyCode,
+    loginWithGoogle,
     clearError,
     clearEmailLink,
     isLoading,
@@ -59,13 +61,18 @@ const AuthForm: React.FC = () => {
     e.preventDefault()
     if (!validateEmail()) return
     if (error) clearError()
-    const devCode = await sendCode(email)
-    // En desarrollo, auto-rellenar el código sin enviar email real
-    if (devCode) {
-      const digits = devCode.split('')
-      setCode(digits)
-      // Auto-submit después de un breve delay para que el UI se actualice
-      setTimeout(() => handleVerify(devCode), 300)
+    setAuthAction('code')
+    try {
+      const devCode = await sendCode(email)
+      // En desarrollo, auto-rellenar el código sin enviar email real
+      if (devCode) {
+        const digits = devCode.split('')
+        setCode(digits)
+        // Auto-submit después de un breve delay para que el UI se actualice
+        setTimeout(() => handleVerify(devCode), 300)
+      }
+    } finally {
+      setAuthAction(null)
     }
   }
 
@@ -123,9 +130,14 @@ const AuthForm: React.FC = () => {
     if (finalCode.length !== CODE_LENGTH) return
 
     const targetEmail = emailForCode || email
-    const success = await verifyCode(targetEmail, finalCode)
-    if (success) {
-      router.push('/')
+    setAuthAction('code')
+    try {
+      const success = await verifyCode(targetEmail, finalCode)
+      if (success) {
+        router.push('/')
+      }
+    } finally {
+      setAuthAction(null)
     }
   }
 
@@ -133,11 +145,16 @@ const AuthForm: React.FC = () => {
     setCode(Array(CODE_LENGTH).fill(''))
     clearEmailLink()
     clearError()
-    const devCode = await sendCode(emailForCode || email)
-    if (devCode) {
-      const digits = devCode.split('')
-      setCode(digits)
-      setTimeout(() => handleVerify(devCode), 300)
+    setAuthAction('code')
+    try {
+      const devCode = await sendCode(emailForCode || email)
+      if (devCode) {
+        const digits = devCode.split('')
+        setCode(digits)
+        setTimeout(() => handleVerify(devCode), 300)
+      }
+    } finally {
+      setAuthAction(null)
     }
   }
 
@@ -151,6 +168,19 @@ const AuthForm: React.FC = () => {
     setEmail(testEmail)
     setFormErrors({})
     if (error) clearError()
+  }
+
+  const handleGoogleLogin = async () => {
+    if (error) clearError()
+    setAuthAction('google')
+    try {
+      const success = await loginWithGoogle()
+      if (success) {
+        router.push('/')
+      }
+    } finally {
+      setAuthAction(null)
+    }
   }
 
   const showTestAccounts = process.env.NODE_ENV === 'development'
@@ -246,8 +276,50 @@ const AuthForm: React.FC = () => {
               disabled={isLoading}
               className="group relative w-full flex justify-center gap-2 py-3 px-4 border border-transparent text-sm font-semibold rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed shadow"
             >
-              {isLoading && <LoadingSpinner size="sm" text="" />}
+              {authAction === 'code' && <LoadingSpinner size="sm" text="" />}
               {isLoading ? 'Enviando código...' : 'Enviar código de acceso'}
+            </button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-gray-50 px-3 text-xs font-medium uppercase text-gray-500">
+                  O usa Google
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={isLoading}
+              className="mx-auto flex min-h-10 w-full max-w-xs items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {authAction === 'google' ? (
+                <LoadingSpinner size="sm" text="" />
+              ) : (
+                <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06L5.84 9.9C6.71 7.3 9.14 5.38 12 5.38z"
+                  />
+                </svg>
+              )}
+              {authAction === 'google' ? 'Abriendo Google...' : 'Continuar con Google'}
             </button>
           </form>
         )}
@@ -294,7 +366,7 @@ const AuthForm: React.FC = () => {
               disabled={isLoading || code.join('').length !== CODE_LENGTH}
               className="w-full flex justify-center gap-2 py-3 px-4 border border-transparent text-sm font-semibold rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed shadow"
             >
-              {isLoading && <LoadingSpinner size="sm" text="" />}
+              {authAction === 'code' && <LoadingSpinner size="sm" text="" />}
               {isLoading ? 'Verificando...' : 'Verificar código'}
             </button>
 

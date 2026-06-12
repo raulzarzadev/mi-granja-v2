@@ -50,6 +50,13 @@ export async function callOpenRouter({
           role: 'system',
           content: `Eres asistente informativo de Mi Granja. Respondes preguntas sobre la granja del usuario y explicas cómo realizar cualquier acción en la app. Responde en español claro y breve. Solo usa el contexto de la granja actual para datos reales. No inventes animales ni datos. Cuando hables de animales, muestra solo su número visible (campo numero), no IDs internos. Nunca muestres valores largos tipo Firestore id.
 
+DATOS DE LA GRANJA:
+- Para preguntas de cantidades o estado general, usa primero contexto.resumen.
+- "Cuántos animales hay" = contexto.resumen.animales.activos, aclarando totalRegistrados solo si aporta contexto.
+- "Cuántos embarazos hay/pendientes" = contexto.resumen.reproduccion.embarazosPendientesParto.
+- "Cuántos destetes hay/pendientes" = contexto.resumen.destetes.pendientes; menciona vencidos o próximos 7 días si existen.
+- Si el usuario pide listas, usa los arreglos específicos: contexto.resumen.destetes.proximos, contexto.reproductiveFlows.registrarParto.proximosPartos o contexto.animals.
+
 IMPORTANTE: Cuando menciones una sección de la app, incluye un enlace de navegación en formato markdown [Nombre](/?params). La app es SPA con una sola página "/", la navegación usa query params. URLs disponibles:
 - [Animales](/?dashboard-main=animales) — lista de animales
 - [Animales > Etapas](/?dashboard-main=animales&animals-section=etapas) — sub-tabs por etapa

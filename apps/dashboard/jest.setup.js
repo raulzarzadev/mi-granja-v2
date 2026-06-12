@@ -58,6 +58,8 @@ const mockAuth = {
   sendSignInLinkToEmail: jest.fn(),
   isSignInWithEmailLink: jest.fn(),
   signInWithEmailLink: jest.fn(),
+  signInWithCustomToken: jest.fn(),
+  signInWithPopup: jest.fn(),
 }
 
 const mockFirestore = {
@@ -102,6 +104,11 @@ jest.mock('firebase/auth', () => ({
   sendSignInLinkToEmail: (...args) => global.mockAuth.sendSignInLinkToEmail(...args),
   isSignInWithEmailLink: (...args) => global.mockAuth.isSignInWithEmailLink(...args),
   signInWithEmailLink: (...args) => global.mockAuth.signInWithEmailLink(...args),
+  signInWithCustomToken: (...args) => global.mockAuth.signInWithCustomToken(...args),
+  signInWithPopup: (...args) => global.mockAuth.signInWithPopup(...args),
+  GoogleAuthProvider: jest.fn().mockImplementation(() => ({
+    setCustomParameters: jest.fn(),
+  })),
 }))
 
 jest.mock('firebase/firestore', () => ({

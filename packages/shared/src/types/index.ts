@@ -64,6 +64,7 @@ export interface NotificationPreferences {
   userId: string
   pushEnabled: boolean
   emailEnabled: boolean
+  marketingEmailEnabled?: boolean
   /** Tokens FCM registrados (un user puede tener varios dispositivos) */
   fcmTokens: string[]
   updatedAt: Date
