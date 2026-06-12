@@ -82,7 +82,10 @@ export const metadata: Metadata = {
     title: 'Mi Granja',
   },
   icons: {
-    icon: [{ url: '/logo/logo-migranja-verde.svg', type: 'image/svg+xml' }],
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+    ],
     apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
   },
 }

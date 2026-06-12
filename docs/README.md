@@ -19,6 +19,7 @@ Spanish-language farm management app (multi-tenant). Next.js App Router + Fireba
 - [commands.md](./commands.md) — pnpm/turbo commands
 - [GLOSSARY.md](./GLOSSARY.md) — Domain vocabulary (Spanish ganadero)
 - [roadmap.md](./roadmap.md) — Pending features, done, dropped
+- [seo-plan.md](./seo-plan.md) — SEO strategy and phased roadmap for the landing
 
 ### Features
 - [features/auth.md](./features/auth.md) — Auth (email/password + magic link) + impersonation

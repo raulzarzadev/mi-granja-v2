@@ -3,7 +3,7 @@ const APP_URL =
     ? window.location.origin
     : process.env.NEXT_PUBLIC_APP_URL || 'https://dashboard.migranja.app'
 
-const LOGO_URL = `${APP_URL}/logo/logo-migranja-verde.png`
+const LOGO_URL = `${APP_URL}/logo/logo-migranja.png`
 
 /**
  * Template base para todos los emails de Mi Granja
