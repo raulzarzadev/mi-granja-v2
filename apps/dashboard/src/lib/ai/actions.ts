@@ -441,7 +441,22 @@ export async function executeAiAction(params: ExecuteParams) {
   }
 }
 
-export async function buildAiContext(farmId: string) {
+// Decide qué detalle crudo incluir según la pregunta, para no volcar
+// cientos de registros en cada llamada (degrada la precisión del modelo).
+function selectRelevance(message: string, animals: { numero?: string }[]) {
+  const msg = (message || '').toLowerCase()
+  const wantsAnimalList =
+    /\b(lista|listar|listado|cu[aá]l|cu[aá]les|mu[eé]stra|mostrar|dame|ens[eé][ñn]a|todos|todas|qu[eé] animales|machos|hembras|crías|crias)\b/.test(
+      msg,
+    )
+  const wantsBreeding = /empadre|monta|parto|embaraz|preñ|gestaci|destet|reproduc/.test(msg)
+  const referencedAnimals = animals.filter(
+    (a) => a.numero && msg.includes(String(a.numero).toLowerCase()),
+  )
+  return { wantsAnimalList, wantsBreeding, referencedAnimals }
+}
+
+export async function buildAiContext(farmId: string, message = '') {
   const firestore = getAdminFirestore()
   const [animalsSnap, remindersSnap, breedingSnap] = await Promise.all([
     firestore.collection('animals').where('farmId', '==', farmId).limit(1000).get(),
@@ -640,11 +655,24 @@ export async function buildAiContext(farmId: string) {
     },
   }
 
+  // Recorte por relevancia: el resumen (autoritativo) va siempre; los arreglos
+  // crudos solo cuando la pregunta los necesita.
+  const { wantsAnimalList, wantsBreeding, referencedAnimals } = selectRelevance(message, animals)
+  const animalsForContext = referencedAnimals.length
+    ? referencedAnimals
+    : wantsAnimalList
+      ? animals.slice(0, 150)
+      : []
+  const animalsOmitidos = animals.length - animalsForContext.length
+
   return {
+    nota: 'Las cifras y conteos provienen SIEMPRE de resumen.*; no cuentes los arreglos manualmente. Si la lista de animales no viene incluida (animalsIncluidos=false), responde con los conteos del resumen y ofrece abrir la sección correspondiente; no inventes datos.',
     resumen: summary,
-    animals,
+    animalsIncluidos: animalsForContext.length > 0,
+    animalsOmitidos: animalsOmitidos > 0 ? animalsOmitidos : 0,
+    animals: animalsForContext,
     reminders,
-    breedingRecords,
+    breedingRecords: wantsBreeding ? breedingRecords : [],
     reproductiveFlows: {
       embarazadas: expectedBirths.length,
       registrarEmbarazo: {

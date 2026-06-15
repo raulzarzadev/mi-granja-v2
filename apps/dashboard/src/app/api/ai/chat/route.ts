@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         { status: 429 },
       )
     }
-    const context = await buildAiContext(farmId)
+    const context = await buildAiContext(farmId, message)
     const ai = await callOpenRouter({ message, farmName: access.farmName, context, history })
 
     const usage = await consumeDailyAiUse(auth.uid, ai.usage)
