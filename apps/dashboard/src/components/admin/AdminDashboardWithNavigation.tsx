@@ -1,5 +1,6 @@
 'use client'
 
+import { computeUsageMetrics } from '@mi-granja/shared'
 import {
   collection,
   deleteDoc,
@@ -10,7 +11,7 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import { auth, db } from '@/lib/firebase'
@@ -444,6 +445,9 @@ export default function AdminDashboard() {
 
   // ── Summary cards (always visible) ──
 
+  // Métricas de uso derivadas (sin tracking nuevo). Recalcula al cambiar los datos.
+  const usage = useMemo(() => computeUsageMetrics(rawData, new Date()), [rawData])
+
   const summaryCards = useCallback((): CardItem[] => {
     const {
       users = [],
@@ -523,6 +527,14 @@ export default function AdminDashboard() {
         bg: 'bg-teal-50',
         text: 'text-teal-700',
       },
+      {
+        key: 'usage',
+        label: 'Uso (activos 30d)',
+        icon: '📊',
+        value: `${usage.activity.active30}/${usage.totalUsers}`,
+        bg: 'bg-cyan-50',
+        text: 'text-cyan-700',
+      },
     ]
     if (deletedCount > 0) {
       result.push({
@@ -535,7 +547,7 @@ export default function AdminDashboard() {
       })
     }
     return result
-  }, [rawData])
+  }, [rawData, usage])
 
   // ── Resolve current view based on path ──
 
@@ -1155,6 +1167,187 @@ export default function AdminDashboard() {
             ))}
           </nav>
         )}
+
+        {/* Uso / métricas */}
+        {activeRoot === 'usage' &&
+          (() => {
+            const pct = (n: number) =>
+              usage.totalUsers ? Math.round((n / usage.totalUsers) * 100) : 0
+            const maxMonth = Math.max(1, ...usage.growth.monthly.map((m) => m.signups))
+            const fmtDate = (d: Date | null) => (d ? formatDate(d) : '—')
+            const StatTile = ({
+              label,
+              value,
+              sub,
+            }: {
+              label: string
+              value: string | number
+              sub?: string
+            }) => (
+              <div className="bg-white border border-gray-200 rounded-lg p-3">
+                <p className="text-[11px] font-medium text-gray-500">{label}</p>
+                <p className="text-xl font-bold text-gray-900 leading-tight">{value}</p>
+                {sub && <p className="text-[11px] text-gray-400 mt-0.5">{sub}</p>}
+              </div>
+            )
+            return (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-1">Uso de la plataforma</h2>
+                  <p className="text-xs text-gray-400 mb-3">
+                    Derivado de la actividad real en datos (escrituras). No incluye logins/lecturas.{' '}
+                    {usage.totalUsers} usuarios.
+                  </p>
+                  {/* Actividad */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <StatTile
+                      label="Activos 7 días"
+                      value={usage.activity.active7}
+                      sub={`${pct(usage.activity.active7)}% del total`}
+                    />
+                    <StatTile
+                      label="Activos 30 días"
+                      value={usage.activity.active30}
+                      sub={`${pct(usage.activity.active30)}% del total`}
+                    />
+                    <StatTile
+                      label="Dormidos (>30d)"
+                      value={usage.activity.dormant}
+                      sub={`${pct(usage.activity.dormant)}% del total`}
+                    />
+                    <StatTile
+                      label="Sin actividad"
+                      value={usage.activity.never}
+                      sub={`${pct(usage.activity.never)}% del total`}
+                    />
+                  </div>
+                </div>
+
+                {/* Crecimiento */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                    Registros por mes
+                    <span className="ml-2 text-xs font-normal text-gray-400">
+                      ({usage.growth.last30} en últimos 30 días)
+                    </span>
+                  </h3>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-end gap-3 h-36">
+                    {usage.growth.monthly.map((m) => (
+                      <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
+                        <span className="text-xs font-medium text-gray-600">{m.signups}</span>
+                        <div
+                          className="w-full bg-cyan-500 rounded-t transition-all"
+                          style={{ height: `${(m.signups / maxMonth) * 100}%`, minHeight: 2 }}
+                        />
+                        <span className="text-[10px] text-gray-400">{m.month.slice(5)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Profundidad + Adopción */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2">Profundidad de uso</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <StatTile label="Animales / usuario (prom.)" value={usage.depth.avgAnimals} />
+                      <StatTile label="Granjas / usuario (prom.)" value={usage.depth.avgFarms} />
+                      <StatTile
+                        label="Con ≥1 animal"
+                        value={usage.depth.withAnimals}
+                        sub={`${pct(usage.depth.withAnimals)}% del total`}
+                      />
+                      <StatTile
+                        label="Power users (≥20)"
+                        value={usage.depth.powerUsers}
+                        sub={`máx ${usage.depth.maxAnimals} animales`}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                      Adopción de features
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <StatTile
+                        label="Usan reproducciones"
+                        value={`${pct(usage.adoption.breedings)}%`}
+                        sub={`${usage.adoption.breedings} usuarios`}
+                      />
+                      <StatTile
+                        label="Usan ventas"
+                        value={`${pct(usage.adoption.sales)}%`}
+                        sub={`${usage.adoption.sales} usuarios`}
+                      />
+                      <StatTile
+                        label="Usan recordatorios"
+                        value={`${pct(usage.adoption.reminders)}%`}
+                        sub={`${usage.adoption.reminders} usuarios`}
+                      />
+                      <StatTile
+                        label="Con colaboradores"
+                        value={`${pct(usage.adoption.collaborators)}%`}
+                        sub={`${usage.adoption.collaborators} usuarios`}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ranking por actividad reciente */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                    Usuarios por actividad reciente
+                  </h3>
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="max-h-[50vh] overflow-y-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50 text-gray-500 text-xs sticky top-0">
+                          <tr>
+                            <th className="text-left font-medium px-3 py-2">Usuario</th>
+                            <th className="text-right font-medium px-3 py-2">Última act.</th>
+                            <th className="text-right font-medium px-3 py-2">Animales</th>
+                            <th className="text-right font-medium px-3 py-2">Granjas</th>
+                            <th className="text-right font-medium px-3 py-2">Repr.</th>
+                            <th className="text-right font-medium px-3 py-2">Ventas</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {usage.rows.map((r) => (
+                            <tr
+                              key={r.id}
+                              className="border-t border-gray-100 hover:bg-gray-50 cursor-pointer"
+                              onClick={() =>
+                                setPath([
+                                  { key: 'users', label: 'Usuarios', icon: '👥' },
+                                  { key: r.id, label: r.email, icon: '👤' },
+                                ])
+                              }
+                            >
+                              <td className="px-3 py-2 text-gray-900 truncate max-w-[200px]">
+                                {r.email}
+                              </td>
+                              <td className="px-3 py-2 text-right text-gray-500 whitespace-nowrap">
+                                {r.daysSinceActivity === null
+                                  ? 'nunca'
+                                  : r.daysSinceActivity === 0
+                                    ? 'hoy'
+                                    : `${r.daysSinceActivity}d`}
+                                <span className="text-gray-300"> · {fmtDate(r.lastActivity)}</span>
+                              </td>
+                              <td className="px-3 py-2 text-right text-gray-700">{r.animals}</td>
+                              <td className="px-3 py-2 text-right text-gray-700">{r.farms}</td>
+                              <td className="px-3 py-2 text-right text-gray-700">{r.breedings}</td>
+                              <td className="px-3 py-2 text-right text-gray-700">{r.sales}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
 
         {/* Table view */}
         {view.table && (
