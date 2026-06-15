@@ -132,6 +132,7 @@ export default function AdminDashboard() {
   const [marketingTemplate, setMarketingTemplate] = useState<MarketingTemplate>('basic')
   const [isSendingMarketingEmail, setIsSendingMarketingEmail] = useState(false)
   const [marketingResult, setMarketingResult] = useState<string | null>(null)
+  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(false)
 
   // Hard delete modal
   const [deleteFarm, setDeleteFarm] = useState<any>(null)
@@ -251,9 +252,21 @@ export default function AdminDashboard() {
     }
   }
 
-  const openMarketingModal = useCallback((targetUser?: any) => {
+  const loadCampaigns = useCallback(async () => {
+    setIsLoadingCampaigns(true)
+    try {
+      const snap = await getDocs(collection(db, 'marketingEmailCampaigns'))
+      const campaigns = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+      setRawData((prev: any) => ({ ...prev, campaigns }))
+    } catch (err) {
+      console.error('Error cargando campañas:', err)
+    } finally {
+      setIsLoadingCampaigns(false)
+    }
+  }, [])
+
+  const resetMarketingForm = useCallback((targetUser?: any) => {
     const defaults = getMarketingTemplateDefaults('basic')
-    setIsMarketingModalOpen(true)
     setMarketingUser(targetUser || null)
     setMarketingSubject(defaults.subject)
     setMarketingMessage(defaults.message)
@@ -262,6 +275,19 @@ export default function AdminDashboard() {
     setMarketingTemplate('basic')
     setMarketingResult(null)
   }, [])
+
+  const openMarketingModal = useCallback(
+    (targetUser?: any) => {
+      resetMarketingForm(targetUser)
+      setIsMarketingModalOpen(true)
+    },
+    [resetMarketingForm],
+  )
+
+  // Recarga real del historial al entrar a la pestaña Email marketing
+  useEffect(() => {
+    if (path[0]?.key === 'marketing') loadCampaigns()
+  }, [path, loadCampaigns])
 
   const closeMarketingModal = () => {
     if (isSendingMarketingEmail) return
@@ -319,6 +345,25 @@ export default function AdminDashboard() {
         return
       }
       setMarketingResult(`Enviados: ${data.sent} de ${data.recipients}. Fallidos: ${data.failed}.`)
+      // Reflejar la campaña recién enviada en el historial sin recargar
+      setRawData((prev: any) => ({
+        ...prev,
+        campaigns: [
+          {
+            id: `local-${data.sent}-${data.recipients}-${data.failed}`,
+            subject: marketingSubject,
+            template: marketingTemplate,
+            recipientMode: marketingUser ? 'userIds' : 'all',
+            requestedRecipients: data.recipients,
+            sent: data.sent,
+            failed: data.failed,
+            dryRun: false,
+            createdByEmail: user?.email,
+            createdAt: new Date(),
+          },
+          ...(prev.campaigns || []),
+        ],
+      }))
     } catch (err) {
       console.error('Error enviando email marketing:', err)
       alert('Error enviando email marketing')
@@ -508,6 +553,7 @@ export default function AdminDashboard() {
       reminders = [],
       invitations = [],
       sales = [],
+      campaigns = [],
     } = rawData
 
     const userMap = new Map(users.map((u: any) => [u.id, u]))
@@ -958,6 +1004,37 @@ export default function AdminDashboard() {
       }
     }
 
+    // ── Email marketing ──
+    if (root === 'marketing') {
+      const sorted = [...campaigns].sort((a: any, b: any) => {
+        const da = a.createdAt?.toDate?.() || new Date(a.createdAt || 0)
+        const dbb = b.createdAt?.toDate?.() || new Date(b.createdAt || 0)
+        return dbb.getTime() - da.getTime()
+      })
+      return {
+        title: `Campañas enviadas (${campaigns.length})`,
+        rows: sorted.map((c: any) => {
+          const templateLabel = c.template === 'app_updates' ? 'Actualizaciones' : 'Correo básico'
+          const recipientLabel =
+            c.recipientMode === 'all'
+              ? 'Todos'
+              : c.recipientMode === 'userIds'
+                ? 'Usuario específico'
+                : 'Correos manuales'
+          return {
+            key: c.id,
+            label: c.subject || '(sin asunto)',
+            value: `${c.sent ?? 0} enviados${(c.failed ?? 0) > 0 ? ` · ${c.failed} fallidos` : ''}`,
+            meta: {
+              campaignInfo: `${templateLabel} · ${recipientLabel} · ${formatDate(c.createdAt)}${
+                c.createdByEmail ? ` · ${c.createdByEmail}` : ''
+              }${c.dryRun ? ' · prueba' : ''}`,
+            },
+          }
+        }),
+      }
+    }
+
     // ── Deletions ──
     if (root === 'deletions') {
       const deletedFarmsList = farms.filter((f: any) => f.deletedAt)
@@ -1026,10 +1103,6 @@ export default function AdminDashboard() {
                   key={card.key}
                   type="button"
                   onClick={() => {
-                    if (card.key === 'marketing') {
-                      openMarketingModal()
-                      return
-                    }
                     if (isActive) {
                       goTo(0)
                     } else {
@@ -1096,9 +1169,23 @@ export default function AdminDashboard() {
         {/* Detail rows */}
         {view.rows && !view.table && (
           <div>
-            {view.title && (
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">{view.title}</h2>
-            )}
+            <div className="flex items-center justify-between mb-3">
+              {view.title && <h2 className="text-lg font-semibold text-gray-900">{view.title}</h2>}
+              {activeRoot === 'marketing' && (
+                <div className="flex items-center gap-3">
+                  {isLoadingCampaigns && (
+                    <span className="text-xs text-gray-400">Actualizando…</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => openMarketingModal()}
+                    className="px-3 py-2 text-sm font-medium bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors cursor-pointer"
+                  >
+                    + Nueva campaña
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
               <div className="max-h-[60vh] overflow-y-auto">
                 {view.rows.map((row) => (
@@ -1135,6 +1222,11 @@ export default function AdminDashboard() {
                         <span className="text-xs text-red-500">
                           Eliminada: {String(row.meta.deletedDate)} · Expira:{' '}
                           {String(row.meta.scheduledDate)}
+                        </span>
+                      )}
+                      {row.meta?.campaignInfo && (
+                        <span className="text-xs text-gray-400 truncate">
+                          {String(row.meta.campaignInfo)}
                         </span>
                       )}
                     </div>
