@@ -760,12 +760,25 @@ export const useAnimalCRUD = () => {
     })
   }
 
+  // Asignar (o quitar) el área física actual de un animal.
+  // areaId null/'' => sin área. No-op si ya está en esa área.
+  const assignArea = async (animalId: string, areaId: string | null) => {
+    const nextAreaId = areaId || null
+    const animal = animals.find((a) => a.id === animalId)
+    if (animal && (animal.currentAreaId ?? null) === nextAreaId) return
+    await update(animalId, {
+      currentAreaId: nextAreaId,
+      currentAreaAssignedAt: nextAreaId ? new Date() : null,
+    })
+  }
+
   return {
     animals,
     isLoading,
     create,
     update,
     remove,
+    assignArea,
     get,
     getFarmAnimals,
     queryAnimalsByStatus,

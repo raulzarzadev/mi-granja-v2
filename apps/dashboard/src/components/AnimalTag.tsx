@@ -22,6 +22,7 @@ interface AnimalTagProps {
   showAge?: boolean
   showModalOnClick?: boolean // si true, onClick abrirá el modal de detalles del animal
   variant?: 'chip' | 'header'
+  trailing?: React.ReactNode // contenido extra dentro del chip (ej: menú de acciones)
 }
 
 const AnimalTag: React.FC<AnimalTagProps> = ({
@@ -31,6 +32,7 @@ const AnimalTag: React.FC<AnimalTagProps> = ({
   showAge = false,
   showModalOnClick = false,
   variant = 'chip',
+  trailing,
 }) => {
   const status = (animal.status || 'activo') as AnimalStatus
   const inactive = status !== 'activo'
@@ -66,7 +68,7 @@ const AnimalTag: React.FC<AnimalTagProps> = ({
             }`
           : `inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
               active
-                ? 'bg-green-600 text-white shadow'
+                ? 'bg-green-50 text-gray-900 border border-green-500 shadow-sm'
                 : inactive
                   ? 'bg-gray-100 text-gray-500 border border-gray-200'
                   : 'bg-white text-gray-800 border border-gray-200'
@@ -88,27 +90,47 @@ const AnimalTag: React.FC<AnimalTagProps> = ({
             {speciesIcon}
           </span>
         )}
+        {!isHeader && stageCfg ? (
+          <span title={stageCfg.label} className="text-sm">
+            {stageCfg.icon}
+          </span>
+        ) : null}
+        {!isHeader ? (
+          <span
+            className={`inline-flex items-center justify-center rounded-full font-bold ${
+              animal.gender === 'macho' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'
+            } w-4 h-4`}
+            title={genderCfg.label}
+          >
+            <Icon icon={genderCfg.iconName as IconName} size={3} />
+          </span>
+        ) : null}
         <span className="font-bold">#{animal.animalNumber}</span>
-        <span
-          className={`inline-flex items-center justify-center rounded-full font-bold ${
-            animal.gender === 'macho' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'
-          } ${isHeader ? 'w-7 h-7' : 'w-4 h-4'}`}
-          title={genderCfg.label}
-        >
-          <Icon icon={genderCfg.iconName as IconName} size={isHeader ? 5 : 3} />
-        </span>
+        {isHeader && (
+          <span
+            className={`inline-flex items-center justify-center rounded-full font-bold ${
+              animal.gender === 'macho' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'
+            } w-7 h-7`}
+            title={genderCfg.label}
+          >
+            <Icon icon={genderCfg.iconName as IconName} size={5} />
+          </span>
+        )}
         {!isHeader && (
-          <span title={statusLabel} className="text-sm">
+          <span title={statusLabel} className="sr-only">
             {statusEmoji}
           </span>
         )}
         {age && age !== 'No registrado' && (
           <span
-            className={`${isHeader ? 'text-sm' : 'text-[10px]'} ${active ? 'text-green-100' : 'text-gray-400'}`}
+            className={`${isHeader ? 'text-sm' : 'text-[10px]'} ${active ? 'text-gray-500' : 'text-gray-400'}`}
           >
             {age}
           </span>
         )}
+        {!isHeader && trailing ? (
+          <span className="inline-flex items-center">{trailing}</span>
+        ) : null}
       </span>
       {isHeader && (
         <span className="inline-flex items-center gap-2">

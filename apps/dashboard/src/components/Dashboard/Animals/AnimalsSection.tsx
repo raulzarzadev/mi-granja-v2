@@ -4,6 +4,7 @@ import { addDays, differenceInCalendarDays } from 'date-fns'
 import { doc, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSelector } from 'react-redux'
 import Button from '@/components/buttons/Button'
 import NumbersTab from '@/components/Dashboard/Animals/NumbersTab'
 import { Modal } from '@/components/Modal'
@@ -15,6 +16,7 @@ import ModalChangeStage from '@/components/ModalChangeStage'
 import ModalConfirmPregnancy from '@/components/ModalConfirmPregnancy'
 import StatisticsTab from '@/components/StatisticsTab'
 import Tabs from '@/components/Tabs'
+import type { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { findAnimalByRef } from '@/lib/animal-utils'
@@ -50,6 +52,7 @@ import TabStagePerdidos from './tabStages/TabStagePerdidos'
 import TabStagePregnant from './tabStages/TabStagePregnant'
 import TabStageRepro from './tabStages/TabStageRepro'
 import TabAllAnimals from './tabs/TabAllAnimals'
+import TabAreas from './tabs/TabAreas'
 import TabEtapas from './tabs/TabEtapas'
 
 interface AnimalsSectionProps {
@@ -65,6 +68,7 @@ export { groupFemalesByStatus, sortFemalesByAnimalNumber, CHIP_COLORS }
  */
 const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) => {
   const router = useRouter()
+  const currentFarm = useSelector((state: RootState) => state.farm.currentFarm)
   const {
     animals,
     isLoading: isLoadingAnimals,
@@ -918,6 +922,10 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           etapasTabs={etapasTabs}
         />
       ),
+    },
+    {
+      label: '📍 Áreas',
+      content: <TabAreas animals={filteredAnimals} areas={currentFarm?.areas || []} />,
     },
     {
       label: 'Números',

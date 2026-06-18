@@ -58,6 +58,13 @@ export interface FarmArea {
   description?: string
   type: 'pasture' | 'barn' | 'feeding' | 'storage' | 'medical' | 'other'
   capacity?: number | null
+  layout?: {
+    kind: 'rect' | 'polygon'
+    /** Coordenadas normalizadas 0–1 (fracción del viewBox del lienzo), no píxeles. */
+    coordinateSystem: 'normalized'
+    points: { x: number; y: number }[]
+    color?: string
+  }
   isActive: boolean
   notes?: string
   createdAt: AppDate

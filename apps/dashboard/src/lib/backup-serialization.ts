@@ -23,6 +23,8 @@ const DATE_FIELDS_BY_COLLECTION: Record<string, string[]> = {
     'weanedMotherAt',
     // Marcado como candidato a venta
     'availableToSaleAt',
+    // Ubicación física dentro de la granja
+    'currentAreaAssignedAt',
     // Admin action
     'adminAction.originalTimestamp',
   ],
@@ -62,6 +64,7 @@ const KNOWN_DATE_FIELD_NAMES = new Set([
   'birthedAt',
   'weanedMotherAt',
   'availableToSaleAt',
+  'currentAreaAssignedAt',
   'timestamp',
   'dueDate',
   'expiresAt',

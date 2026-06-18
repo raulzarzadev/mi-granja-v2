@@ -37,14 +37,17 @@ interface AnimalDetailViewProps {
  * Vista detallada de un animal individual
  */
 const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp, onDeleted }) => {
-  const { animals: allAnimals, remove } = useAnimalCRUD()
+  const { animals: allAnimals, remove, assignArea } = useAnimalCRUD()
   const animal = allAnimals.find((a) => a.id === animalProp.id) ?? animalProp
   const [changeStageOpen, setChangeStageOpen] = useState(false)
+  const [isUpdatingArea, setIsUpdatingArea] = useState(false)
+  const [areaError, setAreaError] = useState<string | null>(null)
 
   const getMother = () => findAnimalByRef(allAnimals, animal.motherId) || null
   const getFather = () => findAnimalByRef(allAnimals, animal.fatherId) || null
 
   const breedings = useSelector((state: RootState) => state.breeding.breedingRecords)
+  const currentFarm = useSelector((state: RootState) => state.farm.currentFarm)
   const lastWeight = getLastWeight(animal)
   const mother = getMother()
   const father = getFather()
@@ -57,6 +60,24 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
     animals: allAnimals,
   })
   const effectiveStatus = animal.status ?? 'activo'
+  const activeAreas = (currentFarm?.areas || []).filter((area) => area.isActive)
+  const currentArea = activeAreas.find((area) => area.id === animal.currentAreaId) || null
+
+  const handleAreaChange = async (areaId: string) => {
+    const nextAreaId = areaId || null
+    if ((animal.currentAreaId ?? null) === nextAreaId) return
+
+    setAreaError(null)
+    setIsUpdatingArea(true)
+    try {
+      await assignArea(animal.id, nextAreaId)
+    } catch (error) {
+      console.error('Error updating animal area:', error)
+      setAreaError('No se pudo actualizar el área. Intenta de nuevo.')
+    } finally {
+      setIsUpdatingArea(false)
+    }
+  }
 
   /** Computes age label with optional end-date context for dead/sold animals */
   const getAgeLabel = (): React.ReactNode => {
@@ -164,6 +185,61 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
               />
               {animal.batch && <InfoCell label="Lote" value={animal.batch} />}
             </div>
+          </section>
+
+          {/* Ubicación física */}
+          <section
+            aria-labelledby="ubicacion-heading"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-3 space-y-3"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div className="min-w-0">
+                <h3
+                  id="ubicacion-heading"
+                  className="text-xs font-semibold uppercase tracking-wider text-gray-400"
+                >
+                  Ubicación
+                </h3>
+                <p className="mt-1 text-sm text-gray-700">
+                  {currentArea ? (
+                    <>
+                      Área actual:{' '}
+                      <span className="font-semibold text-gray-900">{currentArea.name}</span>
+                    </>
+                  ) : (
+                    'Este animal no tiene área asignada.'
+                  )}
+                </p>
+                {animal.currentAreaAssignedAt && currentArea ? (
+                  <p className="mt-0.5 text-xs text-gray-500">
+                    Desde {formatDate(animal.currentAreaAssignedAt)}
+                  </p>
+                ) : null}
+              </div>
+
+              <label className="block w-full sm:max-w-xs">
+                <span className="block text-sm font-medium text-gray-700">Área actual</span>
+                <select
+                  value={currentArea?.id || ''}
+                  onChange={(event) => handleAreaChange(event.target.value)}
+                  disabled={isUpdatingArea}
+                  className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-60"
+                >
+                  <option value="">Sin área</option>
+                  {activeAreas.map((area) => (
+                    <option key={area.id} value={area.id}>
+                      {area.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {areaError ? (
+              <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {areaError}
+              </p>
+            ) : null}
           </section>
 
           {/* Genealogía section */}

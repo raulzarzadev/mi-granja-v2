@@ -59,6 +59,10 @@ export interface Animal {
   motherId?: string
   fatherId?: string
   batch?: string // Lote al que pertenece el animal
+  /** Área física actual dentro de la granja (corral, potrero, establo, etc.). */
+  currentAreaId?: string | null
+  /** Fecha desde la que el animal está asignado al área actual. */
+  currentAreaAssignedAt?: Date | null
   notes?: string
   createdAt: Date
   updatedAt: Date

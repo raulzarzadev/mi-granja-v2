@@ -733,6 +733,8 @@ const BACKUP_SCHEMA_JSON = `{
       "motherId": "string ID animal madre (opcional)",
       "fatherId": "string ID animal padre (opcional)",
       "batch": "string (lote, opcional)",
+      "currentAreaId": "string | null (ID del área física actual dentro de la granja, opcional)",
+      "currentAreaAssignedAt": "ISO 8601 | null (fecha de asignación al área actual, opcional)",
       "notes": "string (opcional)",
       "isWeaned": "true | false (opcional)",
       "weanedAt": "ISO 8601 (opcional)",
@@ -815,6 +817,7 @@ const BACKUP_SCHEMA_JSON = `{
       "description": "string (opcional)",
       "ownerId": "string",
       "location": "{ address?, city?, state?, country?, coordinates?: { lat, lng } } (opcional)",
+      "areas": "[{ id, name, description?, type, capacity?, layout?: { kind: 'rect'|'polygon', coordinateSystem: 'normalized', points: [{x,y}], color? }, isActive, notes?, createdAt, updatedAt }] (opcional)",
       "createdAt": "ISO 8601",
       "updatedAt": "ISO 8601"
     },
