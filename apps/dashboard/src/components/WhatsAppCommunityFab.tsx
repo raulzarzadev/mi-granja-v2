@@ -1,7 +1,11 @@
 'use client'
 
 import { WHATSAPP_COMMUNITY_URL } from '@mi-granja/shared'
+import { useEffect, useState } from 'react'
 import { useLocalPreference } from '@/hooks/useLocalPreference'
+
+// Tiempo visible del FAB expandido antes de colapsar a su versión mini.
+const AUTO_MINIMIZE_MS = 6000
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -12,33 +16,68 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
 export default function WhatsAppCommunityFab() {
   const [hidden, setHidden] = useLocalPreference('wa_fab_hidden', false)
   const [minimized, setMinimized] = useLocalPreference('wa_fab_minimized', false)
+  const [isHovered, setIsHovered] = useState(false)
+
+  // Colapsa solo a la versión mini tras unos segundos; el hover pausa el timer.
+  useEffect(() => {
+    if (hidden || minimized || isHovered) return
+    const timer = setTimeout(() => setMinimized(true), AUTO_MINIMIZE_MS)
+    return () => clearTimeout(timer)
+  }, [hidden, minimized, isHovered, setMinimized])
 
   if (hidden) return null
 
+  // Colapsar a icono. Usa pointerdown + stopPropagation por si algún handler global
+  // se traga el evento click.
+  const minimize = (event: React.SyntheticEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    setMinimized(true)
+  }
+  const hide = (event: React.SyntheticEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    setHidden(true)
+  }
+
   if (minimized) {
     return (
-      <a
-        href={WHATSAPP_COMMUNITY_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Comunidad WhatsApp"
-        title="Comunidad WhatsApp · click derecho para ocultar"
-        onContextMenu={(e) => {
-          e.preventDefault()
-          setHidden(true)
-        }}
-        className="fixed bottom-3 right-3 z-40 inline-flex items-center justify-center rounded-full bg-[#25D366] hover:bg-[#1da851] text-white shadow-lg ring-1 ring-black/10 h-9 w-9 transition-all cursor-pointer print:hidden"
-        data-ph-event="cta_click"
-        data-ph-location="dashboard_fab_whatsapp_min"
-        data-ph-label="Comunidad WhatsApp (mini)"
-      >
-        <WhatsAppIcon className="h-5 w-5" />
-      </a>
+      <div className="fixed bottom-3 right-3 z-40 print:hidden">
+        <a
+          href={WHATSAPP_COMMUNITY_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Comunidad WhatsApp"
+          title="Comunidad WhatsApp"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg ring-1 ring-black/10 transition-all cursor-pointer hover:bg-[#1da851]"
+          data-ph-event="cta_click"
+          data-ph-location="dashboard_fab_whatsapp_min"
+          data-ph-label="Comunidad WhatsApp (mini)"
+        >
+          <WhatsAppIcon className="h-5 w-5" />
+        </a>
+        <button
+          type="button"
+          onPointerDown={hide}
+          onClick={hide}
+          aria-label="Ocultar"
+          title="Ocultar"
+          className="absolute -right-1 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-gray-700 text-white shadow cursor-pointer hover:bg-gray-900"
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
+            <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+          </svg>
+        </button>
+      </div>
     )
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 print:hidden">
+    <div
+      className="fixed bottom-4 right-4 z-40 print:hidden"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div className="relative inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1da851] text-white font-semibold shadow-2xl ring-1 ring-black/10 transition-all">
         <a
           href={WHATSAPP_COMMUNITY_URL}
@@ -60,25 +99,10 @@ export default function WhatsAppCommunityFab() {
         <div className="flex items-center gap-1 pr-2 border-l border-white/30 ml-1 pl-1">
           <button
             type="button"
-            onClick={() => setMinimized(true)}
-            aria-label="Minimizar"
-            title="Minimizar"
-            className="rounded-full hover:bg-white/20 p-1 cursor-pointer transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-4 h-4"
-            >
-              <path d="M4 10a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1z" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={() => setHidden(true)}
-            aria-label="Ocultar"
-            title="Ocultar"
+            onPointerDown={minimize}
+            onClick={minimize}
+            aria-label="Minimizar a icono"
+            title="Minimizar a icono"
             className="rounded-full hover:bg-white/20 p-1 cursor-pointer transition-colors"
           >
             <svg
