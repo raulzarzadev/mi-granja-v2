@@ -126,6 +126,43 @@ const getBounds = (points: Point[]) => {
   }
 }
 
+const isFinitePoint = (point: unknown): point is Point => {
+  if (!point || typeof point !== 'object') return false
+  const candidate = point as Partial<Point>
+  return typeof candidate.x === 'number' && typeof candidate.y === 'number'
+}
+
+const normalizeLayoutPoints = (points: unknown): Point[] | null => {
+  if (!Array.isArray(points) || points.length < 3 || !points.every(isFinitePoint)) return null
+
+  const hasPixelCoordinates = points.some((point) => point.x > 1 || point.y > 1)
+  const normalized = points.map((point) => ({
+    x: clamp01(hasPixelCoordinates ? point.x / VIEWBOX_WIDTH : point.x),
+    y: clamp01(hasPixelCoordinates ? point.y / VIEWBOX_HEIGHT : point.y),
+  }))
+  const bounds = getBounds(normalized)
+
+  if (bounds.width <= 0.001 || bounds.height <= 0.001) return null
+  return normalized
+}
+
+const normalizeStoredLayout = (
+  layout: FarmArea['layout'] | undefined,
+  fallback: AreaLayout,
+): AreaLayout => {
+  if (!layout) return fallback
+
+  const normalizedPoints = normalizeLayoutPoints(layout.points)
+  if (!normalizedPoints) return fallback
+
+  return {
+    kind: layout.kind === 'polygon' ? 'polygon' : 'rect',
+    coordinateSystem: 'normalized',
+    color: layout.color || fallback.color,
+    points: normalizedPoints,
+  }
+}
+
 const createFallbackLayout = (index: number, total: number, color: string): AreaLayout => {
   const columns = Math.min(3, Math.max(1, Math.ceil(Math.sqrt(total || 1))))
   const rows = Math.max(1, Math.ceil((total || 1) / columns))
@@ -198,10 +235,10 @@ export default function FarmMapEditor({
     () =>
       activeAreas.map((area, index) => {
         const color = area.layout?.color || AREA_COLORS[index % AREA_COLORS.length]
+        const fallbackLayout = createFallbackLayout(index, activeAreas.length, color)
         const layout =
           localLayouts.get(area.id) ||
-          area.layout ||
-          createFallbackLayout(index, activeAreas.length, color)
+          normalizeStoredLayout(area.layout, fallbackLayout)
 
         return { area, layout }
       }),
@@ -660,6 +697,7 @@ export default function FarmMapEditor({
   }
 
   const selectedArea = activeAreas.find((area) => area.id === selectedAreaId)
+  const selectedDisplayedArea = displayedAreas.find((item) => item.area.id === selectedAreaId)
   const selectedAreaHasAnimals = selectedAreaId
     ? (animalsByArea.get(selectedAreaId) ?? []).length > 0
     : false
@@ -678,7 +716,7 @@ export default function FarmMapEditor({
       type: selectedArea.type,
       capacity: selectedArea.capacity ? String(selectedArea.capacity) : '',
       description: selectedArea.description || '',
-      color: selectedArea.layout?.color || AREA_COLORS[0],
+      color: selectedDisplayedArea?.layout.color || AREA_COLORS[0],
     })
     setError(null)
     setAssignAnimalSearch('')
@@ -707,8 +745,8 @@ export default function FarmMapEditor({
         type: areaEditForm.type,
         capacity: areaEditForm.capacity ? Number(areaEditForm.capacity) : null,
         description: areaEditForm.description.trim(),
-        ...(selectedArea.layout
-          ? { layout: { ...selectedArea.layout, color: areaEditForm.color } }
+        ...(selectedDisplayedArea?.layout
+          ? { layout: { ...selectedDisplayedArea.layout, color: areaEditForm.color } }
           : {}),
       })
       setIsAreaEditorOpen(false)
