@@ -21,6 +21,10 @@ const UNASSIGNED_AREA_ID = '__unassigned__'
 
 const AREA_COLORS = ['#16a34a', '#0f766e', '#d97706', '#2563eb', '#9333ea', '#dc2626']
 
+// Cursor lápiz para el modo dibujo (crosshair como fallback). Hotspot en la punta.
+const PENCIL_CURSOR =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23111827' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z'/%3E%3C/svg%3E\") 2 22, crosshair"
+
 const areaTypeLabels: Record<FarmArea['type'], string> = {
   pasture: 'Pastizal',
   barn: 'Establo',
@@ -37,6 +41,31 @@ const areaTypeIcons: Record<FarmArea['type'], string> = {
   storage: '📦',
   medical: '🏥',
   other: '📍',
+}
+
+function ColorSwatches({ value, onChange }: { value: string; onChange: (color: string) => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {AREA_COLORS.map((color) => {
+        const selected = value.toLowerCase() === color.toLowerCase()
+        return (
+          <button
+            key={color}
+            type="button"
+            aria-label={`Color ${color}`}
+            aria-pressed={selected}
+            onClick={() => onChange(color)}
+            style={{ backgroundColor: color }}
+            className={`h-7 w-7 cursor-pointer rounded-full transition ${
+              selected
+                ? 'ring-2 ring-gray-900 ring-offset-2'
+                : 'ring-1 ring-black/10 hover:ring-gray-400'
+            }`}
+          />
+        )
+      })}
+    </div>
+  )
 }
 
 interface FarmMapEditorProps {
@@ -152,12 +181,14 @@ export default function FarmMapEditor({
     type: 'pasture' as FarmArea['type'],
     capacity: '',
     description: '',
+    color: AREA_COLORS[0],
   })
   const [areaEditForm, setAreaEditForm] = useState({
     name: '',
     type: 'pasture' as FarmArea['type'],
     capacity: '',
     description: '',
+    color: AREA_COLORS[0],
   })
   const [assignAnimalSearch, setAssignAnimalSearch] = useState('')
 
@@ -205,7 +236,13 @@ export default function FarmMapEditor({
 
   const openCreateModal = (layout: AreaLayout) => {
     setPendingLayout(layout)
-    setAreaForm({ name: '', type: 'pasture', capacity: '', description: '' })
+    setAreaForm({
+      name: '',
+      type: 'pasture',
+      capacity: '',
+      description: '',
+      color: layout.color || AREA_COLORS[0],
+    })
   }
 
   const finishPolygon = () => {
@@ -387,7 +424,7 @@ export default function FarmMapEditor({
         description: areaForm.description.trim(),
         isActive: true,
         notes: '',
-        layout: pendingLayout,
+        layout: { ...pendingLayout, color: areaForm.color },
       })
       setPendingLayout(null)
       setSelectedAreaId(createdArea.id)
@@ -598,7 +635,9 @@ export default function FarmMapEditor({
           event.dataTransfer.effectAllowed = 'move'
         }}
         className={`relative inline-flex h-6 max-w-full cursor-grab items-center gap-0.5 rounded-md border bg-white py-0.5 pl-1 pr-1.5 leading-none shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 ${
-          selectedAnimalId === animal.id ? 'border-green-500 ring-1 ring-green-500' : 'border-gray-200'
+          selectedAnimalId === animal.id
+            ? 'border-green-500 ring-1 ring-green-500'
+            : 'border-gray-200'
         } ${isSaving ? 'opacity-50' : ''} ${isDimmed ? 'opacity-25' : ''}`}
       >
         <span aria-hidden="true" className="text-xs">
@@ -639,10 +678,21 @@ export default function FarmMapEditor({
       type: selectedArea.type,
       capacity: selectedArea.capacity ? String(selectedArea.capacity) : '',
       description: selectedArea.description || '',
+      color: selectedArea.layout?.color || AREA_COLORS[0],
     })
     setError(null)
     setAssignAnimalSearch('')
     setIsAreaEditorOpen(true)
+  }
+
+  // Saca todos los animales del área seleccionada a "Pendientes de asignar".
+  const emptySelectedArea = async () => {
+    if (!selectedArea) return
+    const group = animalsByArea.get(selectedArea.id) ?? []
+    setError(null)
+    for (const animal of group) {
+      await onMoveAnimal(animal.id, UNASSIGNED_AREA_ID)
+    }
   }
 
   const handleSaveAreaDetails = async (event: FormEvent<HTMLFormElement>) => {
@@ -657,6 +707,9 @@ export default function FarmMapEditor({
         type: areaEditForm.type,
         capacity: areaEditForm.capacity ? Number(areaEditForm.capacity) : null,
         description: areaEditForm.description.trim(),
+        ...(selectedArea.layout
+          ? { layout: { ...selectedArea.layout, color: areaEditForm.color } }
+          : {}),
       })
       setIsAreaEditorOpen(false)
     } catch (err) {
@@ -858,6 +911,7 @@ export default function FarmMapEditor({
             aria-label="Lienzo de áreas de la granja"
             viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
             className="block h-[520px] w-full touch-none select-none"
+            style={isCreating ? { cursor: PENCIL_CURSOR } : undefined}
             onPointerDown={handleCanvasPointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -1099,6 +1153,13 @@ export default function FarmMapEditor({
               placeholder="Notas visibles dentro del lienzo"
             />
           </div>
+          <div>
+            <span className="mb-2 block text-sm font-medium text-gray-700">Color</span>
+            <ColorSwatches
+              value={areaForm.color}
+              onChange={(color) => setAreaForm((prev) => ({ ...prev, color }))}
+            />
+          </div>
           <div className="flex justify-end gap-3 border-t border-gray-200 pt-4">
             <Button
               type="button"
@@ -1207,12 +1268,33 @@ export default function FarmMapEditor({
             </div>
           </div>
 
+          <div>
+            <span className="mb-2 block text-sm font-medium text-gray-700">Color</span>
+            <ColorSwatches
+              value={areaEditForm.color}
+              onChange={(color) => setAreaEditForm((prev) => ({ ...prev, color }))}
+            />
+          </div>
+
           <section className="border-t border-gray-200 pt-4">
             <div className="mb-2 flex items-center justify-between gap-2">
               <h3 className="text-sm font-semibold text-gray-900">Animales en el corral</h3>
-              <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700">
-                {selectedAreaAnimals.length}
-              </span>
+              <div className="flex items-center gap-2">
+                {selectedAreaAnimals.length > 0 ? (
+                  <Button
+                    type="button"
+                    size="xs"
+                    color="neutral"
+                    variant="outline"
+                    onClick={emptySelectedArea}
+                  >
+                    Sacar todos a pendientes
+                  </Button>
+                ) : null}
+                <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700">
+                  {selectedAreaAnimals.length}
+                </span>
+              </div>
             </div>
             <div className="max-h-56 space-y-2 overflow-y-auto rounded-md border border-gray-200 bg-gray-50 p-2">
               {selectedAreaAnimals.length === 0 ? (
