@@ -121,6 +121,10 @@ export default function AdminPricing({ onTiersChange }: AdminPricingProps) {
           Define el nombre, capacidad y precio mensual de cada plan. Los rangos se mantienen
           consecutivos automáticamente para evitar huecos o traslapes.
         </p>
+        <p className="mt-2 max-w-3xl text-sm text-gray-600">
+          Para retirar un plan, archívalo desactivando “Ofrecer”. Se conservará para el historial,
+          pero no aparecerá al contratar y los planes disponibles cerrarán el rango automáticamente.
+        </p>
         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
           El Price ID determina el cobro real en Stripe. Si cambias un precio, registra también el
           nuevo Price ID antes de guardar.
@@ -160,7 +164,7 @@ export default function AdminPricing({ onTiersChange }: AdminPricingProps) {
                   </span>
                   {!tier.isVisible && (
                     <span className="rounded-full bg-gray-200 px-2 py-1 text-xs font-semibold text-gray-700">
-                      Oculto
+                      Archivado
                     </span>
                   )}
                 </div>
@@ -171,7 +175,7 @@ export default function AdminPricing({ onTiersChange }: AdminPricingProps) {
                     onChange={(event) => updateTier(tier.id, { isVisible: event.target.checked })}
                     className="h-5 w-5 rounded border-gray-300 text-green-700 focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2"
                   />
-                  Visible
+                  Ofrecer
                 </label>
               </div>
 

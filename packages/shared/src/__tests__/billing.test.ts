@@ -4,6 +4,7 @@ import {
   canAddAnimals,
   getPriceForAnimalCount,
   getTierForAnimalCount,
+  getVisiblePlanTiers,
   isOverLimit,
   PLAN_TIERS,
   planTypeForTier,
@@ -40,6 +41,24 @@ describe('getTierForAnimalCount', () => {
   it('trata valores invalidos o negativos como 0', () => {
     expect(getTierForAnimalCount(-5).id).toBe('free')
     expect(getTierForAnimalCount(Number.NaN).id).toBe('free')
+  })
+})
+
+describe('getVisiblePlanTiers', () => {
+  it('elimina huecos causados por planes archivados', () => {
+    const tiers = PLAN_TIERS.map((tier) => ({
+      ...tier,
+      maxAnimals: tier.id === 'free' ? 50 : tier.maxAnimals,
+      isVisible: ['free', 'pro', 'rancho'].includes(tier.id),
+    }))
+
+    const visible = getVisiblePlanTiers(tiers)
+
+    expect(visible.map((tier) => tier.id)).toEqual(['free', 'pro', 'rancho'])
+    expect(visible.find((tier) => tier.id === 'pro')?.minAnimals).toBe(51)
+    expect(visible.find((tier) => tier.id === 'pro')?.description).toBe('De 51 a 500 animales')
+    expect(getTierForAnimalCount(51, tiers).id).toBe('pro')
+    expect(getTierForAnimalCount(200, tiers).id).toBe('pro')
   })
 })
 

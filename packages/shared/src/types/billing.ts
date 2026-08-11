@@ -157,17 +157,44 @@ export function getTierById(id: PlanTierId, tiers: PlanTier[] = PLAN_TIERS): Pla
   return tiers.find((t) => t.id === id) ?? tiers[0] ?? FREE_TIER
 }
 
+function tierRangeDescription(minAnimals: number, maxAnimals: number | null): string {
+  if (maxAnimals === null) return `Mas de ${minAnimals - 1} animales — precio a convenir`
+  if (minAnimals === 0) return `Hasta ${maxAnimals} animales`
+  return `De ${minAnimals} a ${maxAnimals} animales`
+}
+
+/**
+ * Planes que pueden contratarse, con rangos consecutivos. Los planes ocultos se
+ * conservan para suscripciones historicas, pero no dejan huecos en la oferta.
+ */
+export function getVisiblePlanTiers(tiers: PlanTier[] = PLAN_TIERS): PlanTier[] {
+  let minAnimals = 0
+  return tiers
+    .filter((tier) => tier.isVisible)
+    .map((tier) => {
+      const visibleTier = {
+        ...tier,
+        minAnimals,
+        description: tierRangeDescription(minAnimals, tier.maxAnimals),
+      }
+      if (tier.maxAnimals !== null) minAnimals = tier.maxAnimals + 1
+      return visibleTier
+    })
+}
+
 /** Tier minimo que cubre `animalCount` animales */
 export function getTierForAnimalCount(
   animalCount: number,
   tiers: PlanTier[] = PLAN_TIERS,
 ): PlanTier {
   const safeCount = Number.isFinite(animalCount) && animalCount > 0 ? Math.floor(animalCount) : 0
+  const visibleTiers = getVisiblePlanTiers(tiers)
+  const availableTiers = visibleTiers.length > 0 ? visibleTiers : tiers
   return (
-    tiers.find(
+    availableTiers.find(
       (t) => safeCount >= t.minAnimals && (t.maxAnimals === null || safeCount <= t.maxAnimals),
     ) ??
-    tiers[tiers.length - 1] ??
+    availableTiers[availableTiers.length - 1] ??
     FREE_TIER
   )
 }

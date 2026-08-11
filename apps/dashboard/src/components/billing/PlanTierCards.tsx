@@ -1,6 +1,6 @@
 'use client'
 
-import { PLAN_TIERS, type PlanTier, type PlanTierId } from '@/types/billing'
+import { getVisiblePlanTiers, type PlanTier, type PlanTierId } from '@/types/billing'
 
 interface PlanTierCardsProps {
   currentTierId: PlanTierId
@@ -13,13 +13,38 @@ interface PlanTierCardsProps {
 export function PlanTierCards({
   currentTierId,
   requiredTierId = 'free',
-  tiers = PLAN_TIERS,
+  tiers,
   isLoading = false,
   onSelect,
 }: PlanTierCardsProps) {
+  if (!tiers) {
+    return (
+      <div
+        aria-busy="true"
+        aria-label="Cargando planes disponibles"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        {[0, 1, 2].map((item) => (
+          <div
+            key={item}
+            className="h-64 animate-pulse rounded-xl border border-gray-200 bg-gray-100 motion-reduce:animate-none"
+          />
+        ))}
+      </div>
+    )
+  }
+
   const currentTierIndex = tiers.findIndex((tier) => tier.id === currentTierId)
   const requiredTierIndex = tiers.findIndex((tier) => tier.id === requiredTierId)
-  const visibleTiers = tiers.filter((tier) => tier.isVisible)
+  const visibleTiers = getVisiblePlanTiers(tiers)
+
+  if (visibleTiers.length === 0) {
+    return (
+      <p role="status" className="rounded-xl border border-gray-200 bg-white px-4 py-6 text-sm text-gray-600">
+        No hay planes disponibles por el momento.
+      </p>
+    )
+  }
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
