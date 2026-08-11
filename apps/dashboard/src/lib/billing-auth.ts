@@ -19,11 +19,24 @@ export function resolveEffectiveUid(authUser: AuthenticatedUser, request: NextRe
   return authUser.uid
 }
 
-function isUserAdminEmail(email: string): boolean {
-  const adminEmails = (process.env.ADMIN_EMAILS ?? 'raulzarza.dev@gmail.com')
+const DEFAULT_ADMIN_EMAILS = [
+  'admin@migranja.com',
+  'zarza@admin.com',
+  'zarza@migranja.app',
+  'raulzarza.dev@gmail.com',
+]
+
+export function isUserAdminEmail(email: string): boolean {
+  const configuredEmails = (process.env.ADMIN_EMAILS ?? '')
     .split(',')
-    .map((e) => e.trim())
-  return adminEmails.includes(email)
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean)
+  const adminEmails = new Set([...DEFAULT_ADMIN_EMAILS, ...configuredEmails])
+  return adminEmails.has(email.trim().toLowerCase())
+}
+
+export function isAuthenticatedUserAdmin(email: string, roles?: unknown): boolean {
+  return (Array.isArray(roles) && roles.includes('admin')) || isUserAdminEmail(email)
 }
 
 /** En dev sin service account, decodifica el JWT sin verificar para no bloquear el flujo */

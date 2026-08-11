@@ -12,11 +12,14 @@ import {
 } from 'firebase/firestore'
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import { auth, db } from '@/lib/firebase'
 import { animal_icon, animal_status_labels, animals_types_labels } from '@/types/animals'
+import { PLAN_TIERS, type PlanTier, type PlanTierId } from '@/types/billing'
 import { sale_status_labels } from '@/types/sales'
+import AdminPricing from './AdminPricing'
 import AdminUserActions from './AdminUserActions'
 
 // ── Types ──
@@ -106,6 +109,7 @@ function formatDate(raw: any): string {
 // ── Main Component ──
 
 export default function AdminDashboard() {
+  const { notify } = useAppFeedback()
   const { user, logout } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [rawData, setRawData] = useState<Record<string, any[]>>({})
@@ -115,13 +119,15 @@ export default function AdminDashboard() {
   const [actionUser, setActionUser] = useState<any>(null)
   const [planUser, setPlanUser] = useState<any>(null)
   const [planData, setPlanData] = useState<{
-    places: number
+    tierId: PlanTierId
     planType: string
+    animalCount: number
+    requiredTierId: PlanTierId
+    animalLimit: number | null
     actualFarmCount: number
     actualCollaboratorCount: number
-    usedPlaces: number
   } | null>(null)
-  const [placesInput, setPlacesInput] = useState(0)
+  const [tierInput, setTierInput] = useState<PlanTierId>('free')
   const [isSavingPlan, setIsSavingPlan] = useState(false)
   const [isLoadingPlan, setIsLoadingPlan] = useState(false)
   const [isMarketingModalOpen, setIsMarketingModalOpen] = useState(false)
@@ -134,6 +140,7 @@ export default function AdminDashboard() {
   const [isSendingMarketingEmail, setIsSendingMarketingEmail] = useState(false)
   const [marketingResult, setMarketingResult] = useState<string | null>(null)
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(false)
+  const [billingTiers, setBillingTiers] = useState<PlanTier[]>(PLAN_TIERS)
 
   // Hard delete modal
   const [deleteFarm, setDeleteFarm] = useState<any>(null)
@@ -167,17 +174,17 @@ export default function AdminDashboard() {
 
       const mapSnap = (snap: any) => snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
 
-      // Build places map from subscriptions
-      const subsMap = new Map<string, number>()
+      // Build tier map from subscriptions
+      const subsMap = new Map<string, PlanTierId>()
       subsSnap.docs.forEach((d: any) => {
         const data = d.data()
-        subsMap.set(data.userId ?? d.id, data.places ?? 0)
+        subsMap.set(data.userId ?? d.id, data.tierId ?? 'free')
       })
 
-      // Inject places into users
+      // Inject billing tier into users
       const usersWithPlaces = mapSnap(usersSnap).map((u: any) => ({
         ...u,
-        places: subsMap.get(u.id) ?? 0,
+        tierId: subsMap.get(u.id) ?? 'free',
       }))
 
       setRawData({
@@ -208,7 +215,7 @@ export default function AdminDashboard() {
   const openPlanModal = useCallback(async (u: any) => {
     setPlanUser(u)
     setPlanData(null)
-    setPlacesInput(0)
+    setTierInput('free')
     setIsLoadingPlan(true)
     try {
       const token = await auth.currentUser?.getIdToken()
@@ -219,7 +226,7 @@ export default function AdminDashboard() {
       if (res.ok) {
         const data = await res.json()
         setPlanData(data)
-        setPlacesInput(data.places)
+        setTierInput(data.tierId)
       }
     } catch (err) {
       console.error('Error cargando plan:', err)
@@ -237,17 +244,18 @@ export default function AdminDashboard() {
       const res = await fetch('/api/admin/billing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ userId: planUser.id, places: placesInput }),
+        body: JSON.stringify({ userId: planUser.id, tierId: tierInput }),
       })
       if (res.ok) {
         setPlanUser(null)
+        notify('Plan actualizado correctamente', 'success')
       } else {
         const data = await res.json()
-        alert(data.error || 'Error al guardar')
+        notify(data.error || 'Error al guardar')
       }
     } catch (err) {
       console.error('Error guardando plan:', err)
-      alert('Error al guardar el plan')
+      notify('Error al guardar el plan')
     } finally {
       setIsSavingPlan(false)
     }
@@ -314,7 +322,7 @@ export default function AdminDashboard() {
 
   const handleSendMarketingEmail = async () => {
     if (!marketingSubject.trim() || !marketingMessage.trim()) {
-      alert('Completa asunto y mensaje')
+      notify('Completa asunto y mensaje', 'info')
       return
     }
 
@@ -323,7 +331,7 @@ export default function AdminDashboard() {
     try {
       const token = await auth.currentUser?.getIdToken()
       if (!token) {
-        alert('No hay sesión activa')
+        notify('No hay sesión activa')
         return
       }
 
@@ -342,10 +350,11 @@ export default function AdminDashboard() {
       })
       const data = await res.json()
       if (!res.ok) {
-        alert(data.error || 'Error enviando email marketing')
+        notify(data.error || 'Error enviando email marketing')
         return
       }
       setMarketingResult(`Enviados: ${data.sent} de ${data.recipients}. Fallidos: ${data.failed}.`)
+      notify('Campaña enviada correctamente', 'success')
       // Reflejar la campaña recién enviada en el historial sin recargar
       setRawData((prev: any) => ({
         ...prev,
@@ -367,7 +376,7 @@ export default function AdminDashboard() {
       }))
     } catch (err) {
       console.error('Error enviando email marketing:', err)
-      alert('Error enviando email marketing')
+      notify('Error enviando email marketing')
     } finally {
       setIsSendingMarketingEmail(false)
     }
@@ -404,7 +413,7 @@ export default function AdminDashboard() {
       setRawData((prev) => ({ ...prev, farms: mapSnap(farmsSnap) }))
     } catch (err) {
       console.error('Error eliminando granja:', err)
-      alert('Error al eliminar la granja')
+      notify('Error al eliminar la granja')
     } finally {
       setIsDeletingFarm(false)
     }
@@ -528,6 +537,14 @@ export default function AdminDashboard() {
         text: 'text-teal-700',
       },
       {
+        key: 'pricing',
+        label: 'Precios',
+        icon: '💳',
+        value: billingTiers.length,
+        bg: 'bg-lime-50',
+        text: 'text-lime-800',
+      },
+      {
         key: 'usage',
         label: 'Uso (activos 30d)',
         icon: '📊',
@@ -547,7 +564,7 @@ export default function AdminDashboard() {
       })
     }
     return result
-  }, [rawData, usage])
+  }, [billingTiers.length, rawData, usage])
 
   // ── Resolve current view based on path ──
 
@@ -588,7 +605,7 @@ export default function AdminDashboard() {
             columns: [
               { key: 'email', label: 'Email', sortable: true },
               { key: 'plan', label: 'Plan', sortable: true },
-              { key: 'places', label: 'Lugares', align: 'right' as const, sortable: true },
+              { key: 'tier', label: 'Tier', sortable: true },
               { key: 'farms', label: 'Granjas', align: 'right' as const, sortable: true },
               { key: 'animals', label: 'Animales', align: 'right' as const, sortable: true },
               { key: 'createdAt', label: 'Registro', sortable: true },
@@ -612,7 +629,7 @@ export default function AdminDashboard() {
                 cells: {
                   email: u.email || '',
                   plan: u.planType === 'pro' ? 'Pro' : 'Free',
-                  places: u.places > 0 ? u.places : '—',
+                  tier: u.tierId ?? 'free',
                   farms: userFarms,
                   animals: userAnimals.length,
                   createdAt: formatDate(u.createdAt),
@@ -1168,6 +1185,8 @@ export default function AdminDashboard() {
           </nav>
         )}
 
+        {activeRoot === 'pricing' && <AdminPricing onTiersChange={setBillingTiers} />}
+
         {/* Uso / métricas */}
         {activeRoot === 'usage' &&
           (() => {
@@ -1539,12 +1558,8 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
-                      <span className="text-gray-500">Lugares en uso:</span>
-                      <span
-                        className={`font-bold ${planData.usedPlaces > planData.places ? 'text-red-600' : 'text-gray-900'}`}
-                      >
-                        {planData.usedPlaces} de {planData.places}
-                      </span>
+                      <span className="text-gray-500">Animales activos:</span>
+                      <span className="font-bold text-gray-900">{planData.animalCount}</span>
                     </div>
                     <p className="text-xs text-gray-400">
                       1 granja incluida gratis. Cada granja extra o colaborador usa 1 lugar.
@@ -1554,30 +1569,26 @@ export default function AdminDashboard() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Lugares asignados
+                    Tier asignado
                   </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={placesInput}
-                    onChange={(e) => setPlacesInput(parseInt(e.target.value, 10) || 0)}
+                  <select
+                    value={tierInput}
+                    onChange={(e) => setTierInput(e.target.value as PlanTierId)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  />
+                  >
+                    {billingTiers.map((tier) => (
+                      <option key={tier.id} value={tier.id}>
+                        {tier.label} — {tier.description}
+                      </option>
+                    ))}
+                  </select>
                   <p className="text-xs text-gray-500 mt-1">
-                    {placesInput === 0
-                      ? 'Plan Free: 1 granja, sin colaboradores'
-                      : `Plan Pro: el usuario puede usar ${placesInput} ${placesInput === 1 ? 'lugar' : 'lugares'} para granjas extra o colaboradores`}
+                    Tier requerido por inventario: {planData?.requiredTierId ?? 'free'}.
                   </p>
                 </div>
 
-                <div className={`rounded-md p-3 ${placesInput > 0 ? 'bg-green-50' : 'bg-gray-50'}`}>
-                  <p
-                    className={`text-sm font-medium ${placesInput > 0 ? 'text-green-800' : 'text-gray-600'}`}
-                  >
-                    {placesInput > 0
-                      ? `Pro — ${placesInput} ${placesInput === 1 ? 'lugar' : 'lugares'}`
-                      : 'Free — sin lugares extra'}
-                  </p>
+                <div className="rounded-md bg-green-50 p-3">
+                  <p className="text-sm font-medium capitalize text-green-800">{tierInput}</p>
                 </div>
               </div>
             )}

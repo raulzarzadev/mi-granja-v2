@@ -1,4 +1,6 @@
 ---
+import { DASHBOARD_AUTH_URL } from '../lib/urls'
+
 const prompts = [
   '¿Qué partos puedo registrar hoy?',
   '¿Qué hembras están embarazadas?',
@@ -50,7 +52,7 @@ const capabilities = [
 
       <div class="mt-8">
         <a
-          href="https://panel.migranja.app/auth"
+          href={DASHBOARD_AUTH_URL}
           class="inline-flex rounded-xl bg-green-500 px-6 py-3 text-base font-bold text-gray-950 shadow-lg shadow-green-500/20 transition-colors hover:bg-green-400"
           data-ph-event="cta_click"
           data-ph-location="ai_feature"

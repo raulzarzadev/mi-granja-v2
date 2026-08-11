@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { RootState } from '@/features/store'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useModal } from '@/hooks/useModal'
@@ -25,6 +26,7 @@ const ModalEditFarm: React.FC<ModalEditFarmProps> = ({
   farm,
   onUpdated,
 }) => {
+  const { notify } = useAppFeedback()
   const modal = useModal()
   const isOpen = open ?? modal.isOpen
   const openModal = modal.openModal
@@ -81,7 +83,7 @@ const ModalEditFarm: React.FC<ModalEditFarmProps> = ({
     if (!formData.name.trim()) return
 
     if (user?.id && farm.ownerId !== user.id) {
-      alert('Solo el propietario puede editar esta granja (por ahora).')
+      notify('Solo el propietario puede editar esta granja por ahora.', 'info')
       return
     }
 

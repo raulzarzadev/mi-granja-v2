@@ -25,7 +25,7 @@ last_updated: 2026-04-23
 - Revertir parto
 - Tab configuración de razas
 - Edición masiva de animales
-- Billing "Lugares" model (admin-managed, no Stripe)
+- Billing con Stripe y tiers por cantidad de animales activos
 - Landing pricing section
 - Fix old version migration
 - Monorepo migration (pnpm + Turborepo, Feb 2026)
@@ -33,7 +33,7 @@ last_updated: 2026-04-23
 
 ## Dropped
 
-- **Stripe / Conekta / MercadoPago** — payment integrations evaluated and removed. Replaced by admin-managed "Lugares" model. See [decisions/002-no-stripe-lugares.md](./decisions/002-no-stripe-lugares.md).
+- **Conekta / MercadoPago** — no integrados. Stripe es el procesador elegido; ver [ADR-006](./decisions/006-stripe-animal-tiers.md).
 
 ## Related
 

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { db } from '@/lib/firebase'
 import { User } from '@/types'
 import { AnimalType } from '@/types/animals'
+import type { PlanTierId } from '@/types/billing'
 
 export interface AdminFarm {
   id: string
@@ -21,7 +22,7 @@ export interface AdminAnimalSummary {
 }
 
 export interface AdminUser extends User {
-  places: number
+  tierId: PlanTierId
   farms: AdminFarm[]
   animalsByFarm: Map<string, AdminAnimalSummary[]>
   totalAnimals: number
@@ -53,11 +54,11 @@ export const useAdminUsers = (): UseAdminUsersReturn => {
       ])
 
       // Mapear suscripciones por userId
-      const subsMap = new Map<string, number>()
+      const subsMap = new Map<string, PlanTierId>()
       subsSnapshot.forEach((doc) => {
         const data = doc.data()
         const userId = data.userId ?? doc.id
-        subsMap.set(userId, data.places ?? 0)
+        subsMap.set(userId, data.tierId ?? 'free')
       })
 
       // Mapear granjas por ownerId
@@ -122,7 +123,7 @@ export const useAdminUsers = (): UseAdminUsersReturn => {
           createdAt: data.createdAt?.toDate() || new Date(),
           planType: data.planType,
           subscriptionStatus: data.subscriptionStatus,
-          places: subsMap.get(userId) ?? 0,
+          tierId: subsMap.get(userId) ?? 'free',
           farms: userFarms,
           animalsByFarm,
           totalAnimals: animalCountByOwner.get(userId) || 0,

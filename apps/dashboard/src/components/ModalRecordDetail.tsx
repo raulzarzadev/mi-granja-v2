@@ -3,6 +3,7 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import React, { useState } from 'react'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { Modal } from '@/components/Modal'
 import RecordForm, { RecordFormState } from '@/components/RecordForm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -37,6 +38,7 @@ interface ModalRecordDetailProps {
 const clinicalCategories = ['illness', 'injury', 'treatment', 'surgery']
 
 const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, record }) => {
+  const { confirmAction, notify } = useAppFeedback()
   const { updateRecord, removeRecord, resolveRecord, reopenRecord, updateWeightRecord } =
     useAnimalCRUD()
   const { createReminder } = useReminders()
@@ -99,11 +101,11 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
     // Validar según tipo
     if (form.type === 'weight') {
       if (!form.weight || parseFloat(form.weight) <= 0) {
-        alert('Ingresa un peso valido')
+        notify('Ingresa un peso válido', 'info')
         return
       }
     } else if (!form.title.trim()) {
-      alert('El titulo es requerido')
+      notify('El título es requerido', 'info')
       return
     }
 
@@ -158,14 +160,20 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
       handleClose()
     } catch (error) {
       console.error('Error al actualizar registro:', error)
-      alert('Error al actualizar el registro.')
+      notify('Error al actualizar el registro.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleDelete = async () => {
-    if (!confirm('¿Eliminar este registro?')) return
+    const confirmed = await confirmAction({
+      title: 'Eliminar registro',
+      message: '¿Eliminar este registro?',
+      confirmLabel: 'Eliminar',
+      danger: true,
+    })
+    if (!confirmed) return
     setIsSubmitting(true)
     try {
       if (isGrouped && record.__isGrouped) {
@@ -176,7 +184,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
       handleClose()
     } catch (error) {
       console.error('Error al eliminar registro:', error)
-      alert('Error al eliminar el registro.')
+      notify('Error al eliminar el registro.')
     } finally {
       setIsSubmitting(false)
     }

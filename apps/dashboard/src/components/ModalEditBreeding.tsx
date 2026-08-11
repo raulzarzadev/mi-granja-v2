@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { Animal } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 import BreedingForm from './BreedingForm'
@@ -29,6 +30,7 @@ const ModalEditBreeding: React.FC<ModalEditBreedingProps> = ({
   onClose,
   isLoading = false,
 }) => {
+  const { confirmAction } = useAppFeedback()
   const handleSubmit = async (
     data: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>,
   ) => {
@@ -45,10 +47,13 @@ const ModalEditBreeding: React.FC<ModalEditBreedingProps> = ({
 
   const handleDelete = async () => {
     if (!record || !onDelete) return
-    if (
-      !window.confirm('¿Estás seguro de eliminar este empadre? Esta acción no se puede deshacer.')
-    )
-      return
+    const confirmed = await confirmAction({
+      title: 'Eliminar empadre',
+      message: '¿Estás seguro de eliminar este empadre? Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      danger: true,
+    })
+    if (!confirmed) return
     try {
       await onDelete(record.id)
       onClose()

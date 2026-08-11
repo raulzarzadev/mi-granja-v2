@@ -26,7 +26,7 @@ Spanish-language farm management app (multi-tenant). Next.js App Router + Fireba
 - [features/permissions.md](./features/permissions.md) — Roles, modules, `hasPermissions`
 - [features/farms.md](./features/farms.md) — Farms, invitations, FarmSwitcherBar
 - [features/animals.md](./features/animals.md) — Animals CRUD, stages, AnimalSelector
-- [features/billing.md](./features/billing.md) — "Lugares" model, Pro gates
+- [features/billing.md](./features/billing.md) — Stripe y tiers por animales activos
 - [features/modals.md](./features/modals.md) — Modal system
 - [features/emails.md](./features/emails.md) — Brevo email service
 - [features/reminders.md](./features/reminders.md) — Recordatorios + notificaciones (FCM push, email digest, escalado overdue)
@@ -38,7 +38,8 @@ Spanish-language farm management app (multi-tenant). Next.js App Router + Fireba
 
 ### Decisions (ADRs)
 - [decisions/001-monorepo.md](./decisions/001-monorepo.md) — Adopt pnpm + Turborepo monorepo
-- [decisions/002-no-stripe-lugares.md](./decisions/002-no-stripe-lugares.md) — No payment integrations; admin-managed "Lugares"
+- [decisions/002-no-stripe-lugares.md](./decisions/002-no-stripe-lugares.md) — Modelo anterior (superseded)
+- [decisions/006-stripe-animal-tiers.md](./decisions/006-stripe-animal-tiers.md) — Stripe y precios por animales
 - [decisions/003-biome-over-eslint.md](./decisions/003-biome-over-eslint.md) — Replace ESLint with Biome
 - [decisions/004-redux-over-context.md](./decisions/004-redux-over-context.md) — Redux Toolkit over Context API
 - [decisions/005-shared-package.md](./decisions/005-shared-package.md) — Extract `@mi-granja/shared` for types/utils

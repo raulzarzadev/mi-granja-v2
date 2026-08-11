@@ -1,100 +1,73 @@
 'use client'
 
-import React from 'react'
+import { useState } from 'react'
 import { useBilling } from '@/hooks/useBilling'
+import { getTierById } from '@/types/billing'
 
-/**
- * Seccion de billing que muestra el plan actual y uso de lugares.
- * Los lugares son asignados por el admin — no hay pagos ni facturas.
- */
-const BillingSection: React.FC = () => {
-  const { usage, planType, isLoading } = useBilling()
+export default function BillingSection() {
+  const { usage, subscription, isLoading, openBillingPortal } = useBilling()
+  const [error, setError] = useState<string | null>(null)
+  const [isOpeningPortal, setIsOpeningPortal] = useState(false)
 
-  if (isLoading) {
-    return (
-      <div className="animate-pulse space-y-4">
-        <div className="h-6 w-48 bg-gray-200 rounded" />
-        <div className="h-32 bg-gray-200 rounded-lg" />
-      </div>
-    )
+  if (isLoading) return <div className="h-32 animate-pulse rounded-lg bg-gray-200" />
+
+  const tier = getTierById(usage?.currentTierId ?? subscription?.tierId ?? 'free', usage?.tiers)
+
+  async function handlePortal() {
+    setError(null)
+    setIsOpeningPortal(true)
+    try {
+      await openBillingPortal()
+    } catch (portalError) {
+      setError(portalError instanceof Error ? portalError.message : 'No se pudo abrir Stripe')
+      setIsOpeningPortal(false)
+    }
   }
 
-  const isFreePlan = planType === 'free'
-
   return (
-    <div className="space-y-6">
-      {/* Plan actual */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Plan Actual</h3>
-          <span
-            className={`px-3 py-1 rounded-full text-sm font-medium ${
-              isFreePlan ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700'
-            }`}
-          >
-            {isFreePlan ? 'Gratuito' : 'Pro'}
+    <div className="space-y-5">
+      <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm text-gray-500">Plan actual</p>
+            <h3 className="text-xl font-semibold text-gray-900">{tier.label}</h3>
+            <p className="mt-1 text-sm text-gray-600">{tier.description}</p>
+          </div>
+          <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
+            {subscription?.status ?? 'none'}
           </span>
         </div>
-
-        {isFreePlan ? (
-          <div>
-            <p className="text-gray-600 mb-2">
-              Estas en el plan gratuito. Incluye 1 granja y tu usuario.
-            </p>
-            <p className="text-sm text-gray-500">
-              Contacta al administrador para obtener mas lugares (granjas o colaboradores).
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Lugares asignados</span>
-              <span className="font-medium text-gray-900">{usage?.totalPlaces ?? 0}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Lugares en uso</span>
-              <span className="font-medium text-gray-900">{usage?.usedPlaces ?? 0}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Disponibles</span>
-              <span className="font-medium text-green-600">
-                {(usage?.totalPlaces ?? 0) - (usage?.usedPlaces ?? 0)}
-              </span>
-            </div>
-          </div>
+        {subscription?.stripeCustomerId && (
+          <button
+            type="button"
+            disabled={isOpeningPortal}
+            onClick={handlePortal}
+            className="mt-4 rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50 disabled:opacity-60"
+          >
+            Administrar facturación
+          </button>
         )}
       </div>
 
-      {/* Uso actual */}
       {usage && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Detalle de uso</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-3xl font-bold text-green-700">{usage.farmCount}</p>
-              <p className="text-sm text-gray-600 mt-1">
-                {usage.farmCount === 1 ? 'Granja' : 'Granjas'}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">1 incluida gratis</p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[
+            ['Animales activos', usage.animalCount],
+            ['Granjas', usage.farmCount],
+            ['Colaboradores', usage.collaboratorCount],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-lg bg-gray-50 p-4 text-center">
+              <p className="text-3xl font-bold text-green-700">{value}</p>
+              <p className="mt-1 text-sm text-gray-600">{label}</p>
             </div>
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-3xl font-bold text-blue-700">{usage.collaboratorCount}</p>
-              <p className="text-sm text-gray-600 mt-1">
-                {usage.collaboratorCount === 1 ? 'Colaborador' : 'Colaboradores'}
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
       )}
-
-      {/* Mensaje de contacto */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-800">
-          Para cambiar tu plan o agregar lugares, contacta al administrador de la plataforma.
+      {error && (
+        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          {error}
         </p>
-      </div>
+      )}
     </div>
   )
 }
-
-export default BillingSection

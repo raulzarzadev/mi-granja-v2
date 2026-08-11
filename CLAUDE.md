@@ -15,12 +15,12 @@ Entry point for Claude Code (claude.ai/code) and other LLM agents.
 - [docs/GLOSSARY.md](./docs/GLOSSARY.md) — Spanish ganadero vocabulary
 - [docs/roadmap.md](./docs/roadmap.md) — Pending / done / dropped
 - [docs/features/](./docs/features/) — Per-feature specs (auth, billing, animals, etc.)
-- [docs/decisions/](./docs/decisions/) — ADRs (monorepo, no-Stripe Lugares, Biome, Redux, shared pkg)
+- [docs/decisions/](./docs/decisions/) — ADRs (monorepo, Stripe por animales, Biome, Redux, shared pkg)
 - [docs/agents/ux-ganadero.md](./docs/agents/ux-ganadero.md) — UX reviewer sub-agent
 
 ## Project summary
 
-Mi Granja — Spanish-language farm management app (multi-tenant). Next.js 16 App Router + Firebase + Redux Toolkit + Tailwind CSS 4. pnpm + Turborepo monorepo (`apps/dashboard`, `apps/landing`, `packages/shared`). All UI, type field names, and domain logic in Spanish. Business model: admin-managed "Lugares" (no payment integrations).
+Mi Granja — Spanish-language farm management app (multi-tenant). Next.js 16 App Router + Firebase + Redux Toolkit + Tailwind CSS 4. pnpm + Turborepo monorepo (`apps/dashboard`, `apps/landing`, `packages/shared`). All UI, type field names, and domain logic in Spanish. Business model: Stripe subscriptions tiered by active animal count; farms and collaborators are not billed separately.
 
 ## Hard rules (read the full conventions doc before coding)
 

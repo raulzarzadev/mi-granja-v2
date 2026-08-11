@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { Modal } from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
@@ -35,6 +36,7 @@ const ActionButton = ({
   loadingLabel?: string
   confirm?: string
 }) => {
+  const { confirmAction } = useAppFeedback()
   const [loading, setLoading] = useState(false)
 
   const colors = {
@@ -45,7 +47,16 @@ const ActionButton = ({
   }
 
   const handleClick = async () => {
-    if (confirmMsg && !window.confirm(confirmMsg)) return
+    if (
+      confirmMsg &&
+      !(await confirmAction({
+        title: 'Confirmar acción',
+        message: confirmMsg,
+        confirmLabel: 'Continuar',
+        danger: variant === 'danger',
+      }))
+    )
+      return
     setLoading(true)
     try {
       await onClick()

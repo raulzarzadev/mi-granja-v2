@@ -1,5 +1,5 @@
 ---
-
+import { DASHBOARD_AUTH_URL } from '../lib/urls'
 ---
 
 <section class="py-20 sm:py-28 bg-green-700">
@@ -14,7 +14,7 @@
       </p>
       <div class="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
         <a
-          href="https://panel.migranja.app/auth"
+          href={DASHBOARD_AUTH_URL}
           class="w-full rounded-xl bg-white px-8 py-4 text-lg font-bold text-green-700 shadow-lg hover:bg-green-50 transition-colors sm:w-auto"
           data-ph-event="cta_click"
           data-ph-location="final_signup"
@@ -23,7 +23,7 @@
           Crear Cuenta Gratis
         </a>
         <a
-          href="https://panel.migranja.app/auth"
+          href={DASHBOARD_AUTH_URL}
           class="w-full rounded-xl border-2 border-white/30 px-8 py-4 text-lg font-semibold text-white hover:bg-white/10 transition-colors sm:w-auto"
           data-ph-event="cta_click"
           data-ph-location="final_login"

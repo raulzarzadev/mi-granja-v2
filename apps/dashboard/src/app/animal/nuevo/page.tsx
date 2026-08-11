@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import AnimalForm from '@/components/AnimalForm'
 import BulkAnimalForm from '@/components/BulkAnimalForm'
@@ -40,13 +40,21 @@ export default function NuevoAnimalPage() {
   const router = useRouter()
   const { create: createAnimal, isLoading, animals } = useAnimalCRUD()
   const { user } = useSelector((state: RootState) => state.auth)
-  const { planType } = useBilling()
+  const { planType, canCreateAnimals } = useBilling()
   const isPaidUser = planType === 'pro'
   const [mode, setMode] = useState<RegistrationMode>('individual')
+  const [billingError, setBillingError] = useState<string | null>(null)
+  const createdInBatch = useRef(0)
 
   const handleSubmit = async (
     animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>,
   ) => {
+    if (!canCreateAnimals()) {
+      setBillingError(
+        'Alcanzaste el límite de animales de tu plan. Elige un tier con mayor capacidad.',
+      )
+      return
+    }
     try {
       const record = makeCreationRecord(user!.id, animalData.animalNumber, 'individual')
       await createAnimal({ ...animalData, records: [record] })
@@ -59,12 +67,25 @@ export default function NuevoAnimalPage() {
   const handleCreateOne = async (
     animalData: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'>,
   ) => {
+    if (!canCreateAnimals(createdInBatch.current + 1)) {
+      setBillingError('El lote supera el límite de animales de tu plan.')
+      throw new Error('Límite de animales alcanzado')
+    }
     const record = makeCreationRecord(user!.id, animalData.animalNumber, 'masivo', animalData.batch)
     await createAnimal({ ...animalData, records: [record] })
+    createdInBatch.current += 1
   }
 
   return (
     <PageShell title="Registrar Nuevo Animal">
+      {billingError && (
+        <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          {billingError}{' '}
+          <a href="/plan" className="font-semibold underline">
+            Revisar planes
+          </a>
+        </div>
+      )}
       {/* Toggle Individual / Masivo */}
       <div className="flex items-center justify-center gap-1 bg-gray-100 rounded-lg p-1 mb-6">
         <button

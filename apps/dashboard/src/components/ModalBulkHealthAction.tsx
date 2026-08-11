@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { Modal } from '@/components/Modal'
 import RecordForm, { RecordFormState } from '@/components/RecordForm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -23,6 +24,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
   onSuccess,
   onRemoveAnimal,
 }) => {
+  const { notify } = useAppFeedback()
   const { addBulkRecord } = useAnimalCRUD()
   const { createReminder } = useReminders()
 
@@ -86,12 +88,12 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
     e.preventDefault()
 
     if (!formData.title.trim()) {
-      alert('El título del registro es requerido')
+      notify('El título del registro es requerido', 'info')
       return
     }
 
     if (selectedAnimals.length === 0) {
-      alert('No hay animales seleccionados')
+      notify('No hay animales seleccionados', 'info')
       return
     }
 
@@ -124,7 +126,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
       handleClose()
     } catch (error) {
       console.error('Error al aplicar evento masivo de salud:', error)
-      alert('Error al aplicar el evento. Inténtalo de nuevo.')
+      notify('Error al aplicar el evento. Inténtalo de nuevo.')
     } finally {
       setIsSubmitting(false)
       setProgress(null)

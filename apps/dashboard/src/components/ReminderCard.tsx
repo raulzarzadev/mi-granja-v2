@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { Reminder } from '@/types'
 
 interface ReminderCardProps {
@@ -20,6 +21,7 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
   onCompleteAnimal,
   onDelete,
 }) => {
+  const { confirmAction } = useAppFeedback()
   const [expanded, setExpanded] = useState(false)
 
   const formatDate = (date: Date) => {
@@ -266,8 +268,14 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
 
         {onDelete && (
           <button
-            onClick={() => {
-              if (confirm('¿Eliminar este recordatorio?')) onDelete(reminder)
+            onClick={async () => {
+              const confirmed = await confirmAction({
+                title: 'Eliminar recordatorio',
+                message: '¿Eliminar este recordatorio?',
+                confirmLabel: 'Eliminar',
+                danger: true,
+              })
+              if (confirmed) onDelete(reminder)
             }}
             className="px-3 py-1 border border-red-300 text-red-700 rounded text-sm hover:bg-red-50 transition-colors"
           >

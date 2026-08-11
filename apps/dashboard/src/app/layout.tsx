@@ -5,7 +5,6 @@ import { BetaBanner } from '@/components/BetaBanner'
 import { OfflineBanner } from '@/components/OfflineBanner'
 import { ServiceWorkerRegistrar } from '@/components/ServiceWorkerRegistrar'
 import WhatsAppCommunityFab from '@/components/WhatsAppCommunityFab'
-import { PRICE_PER_PLACE_MXN } from '@/types/billing'
 import { Providers } from './providers'
 
 const geistSans = Geist({
@@ -45,9 +44,9 @@ const jsonLd = {
     },
     {
       '@type': 'Offer',
-      price: String(PRICE_PER_PLACE_MXN),
-      priceCurrency: 'MXN',
-      description: `Lugar adicional (granja o colaborador): $${PRICE_PER_PLACE_MXN} MXN/mes`,
+      price: '2.50',
+      priceCurrency: 'USD',
+      description: 'Planes desde 2.50 USD/mes según la cantidad de animales activos',
     },
   ],
   creator: {
@@ -83,10 +82,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico?v=2', sizes: 'any' },
-      { url: '/favicon-32x32.png?v=2', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon.ico?v=3', sizes: 'any' },
+      { url: '/favicon-32x32.png?v=3', type: 'image/png', sizes: '32x32' },
     ],
-    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
+    apple: [{ url: '/icons/apple-touch-icon.png?v=3', sizes: '180x180' }],
   },
 }
 

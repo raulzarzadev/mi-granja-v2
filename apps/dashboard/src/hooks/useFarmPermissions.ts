@@ -14,7 +14,7 @@ export const useFarmPermissions = () => {
   const { collaborators } = useFarmMembers(currentFarm?.id)
 
   // Cuando no hay suscripcion activa, solo la primera granja propia tiene acceso completo
-  const isSuspended = false // Ya no hay estado 'suspended' — admin maneja lugares
+  const isSuspended = false // La suspensión de billing no bloquea permisos de la granja
   const isExtraFarm = useMemo(() => {
     if (!isSuspended || !currentFarm || !user) return false
     // La primera granja propia (por orden de creación) mantiene acceso completo

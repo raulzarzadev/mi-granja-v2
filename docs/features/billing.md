@@ -1,124 +1,66 @@
 ---
-title: Billing — "Lugares" Model
-description: Admin-managed plan model. No Stripe. Free = 1 farm, 0 collab. Pro = N "places" (each = 1 extra farm OR 1 collaborator).
+title: Billing por cantidad de animales
+description: Suscripciones Stripe con tiers definidos por animales activos.
 audience: llm+human
-last_updated: 2026-04-23
+last_updated: 2026-08-10
 ---
 
-# Billing — "Lugares" Model
+# Billing por cantidad de animales
 
-## Model
+## Modelo
 
-**Admin-managed, no automated payments.** Stripe/Conekta/MercadoPago evaluated and removed (see [decisions/002-no-stripe-lugares.md](../decisions/002-no-stripe-lugares.md)).
+El precio depende únicamente de la cantidad de animales activos en las granjas propiedad del usuario. Los animales con estado `muerto` o `vendido` no cuentan. Granjas y colaboradores no consumen cuota ni agregan cargos.
 
-| Plan | Limits                                           |
-|------|--------------------------------------------------|
-| Free | 1 granja, 0 colaboradores, full feature access   |
-| Pro  | Admin assigns N `places`. User spends each as 1 extra granja OR 1 colaborador (their choice) |
+| Tier | Animales | USD/mes |
+|---|---:|---:|
+| Gratis | 0–10 | $0 |
+| Inicial | 11–50 | $2.50 |
+| Básico | 51–100 | $5 |
+| Pro | 101–500 | $20 |
+| Rancho | 501–1000 | $40 |
+| Empresarial | 1001+ | A convenir |
 
-Payment and activation handled **outside** the system. Admin manually adjusts `places` from admin panel.
+`packages/shared/src/types/billing.ts` (`PLAN_TIERS`) contiene los valores por defecto. La configuración vigente puede sobrescribir nombres, precios, límites y Price IDs desde `settings/billing`.
 
-## Types
+## Stripe
 
-`packages/shared/src/types/billing.ts`:
-- `SubscriptionStatus`
-- `PlanType` — `'free' | 'pro'`
-- `BillingSubscription` — has `places: number`
-- `BillingUsage` — `{ totalPlaces, usedPlaces }`
-- Helpers: `computeUsedPlaces`, `canAddFarm`, `canAddCollaborator`
+- `POST /api/billing/checkout`: crea una Checkout Session de suscripción para un tier pagado.
+- `POST /api/billing/portal`: crea una sesión corta del Customer Portal.
+- `POST /api/billing/webhook`: verifica `stripe-signature` y sincroniza Checkout y eventos `customer.subscription.*`.
+- `GET /api/billing/subscription`: devuelve la suscripción sincronizada.
+- `GET /api/billing/usage`: calcula animales activos, tier contratado y tier requerido.
 
-## Redux — `billingSlice`
+Variables requeridas en dashboard:
 
-Fields: `subscription`, `usage`, `planType`, `status`, `isLoading`, `error`.
-
-## Hook — `useBilling`
-
-```ts
-const {
-  planType,           // 'free' | 'pro'
-  subscription,
-  usage,
-  loadSubscription,
-  loadUsage,
-  canCreateFarm,
-  canInviteCollaborator
-} = useBilling()
-
-const isPaidUser = planType === 'pro'
+```dotenv
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PRICE_INICIAL=
+STRIPE_PRICE_BASICO=
+STRIPE_PRICE_PRO=
+STRIPE_PRICE_RANCHO=
+NEXT_PUBLIC_APP_URL=https://panel.migranja.app
 ```
 
-## API routes
-
-- `GET /api/billing/subscription` — user's subscription
-- `GET /api/billing/usage` — user's usage
-- `GET /api/admin/billing` — admin fetches user plan data
-- `POST /api/admin/billing` — admin assigns `places`
+El webhook es la autoridad para estado, price y fechas de la suscripción. Checkout incluye `userId` y `tierId` tanto en la sesión como en la metadata de la suscripción.
 
 ## Firestore
 
-Collection: `subscriptions/{userId}`. Field: `places: number` (not `farmQuantity` / `collaboratorQuantity` — those were dropped).
+Documento `subscriptions/{userId}`:
 
-## UI — Admin
+- `status`, `planType`, `tierId`
+- `stripeCustomerId`, `stripeSubscriptionId`, `stripePriceId`
+- `currentPeriodEnd`, `cancelAtPeriodEnd`
+- `createdAt`, `updatedAt`
 
-- "Gestionar Plan" button in `AdminUsers` table.
-- Modal shows usage + input to assign `places`.
-- No separate "Facturación" tab.
+`planType` se conserva como compatibilidad para compuertas de funciones: cualquier tier pagado se proyecta como `pro`.
 
-## UI — User
+## Admin y migración
 
-- `BillingSection` and `ProfileSection` show plan/places/usage + "contacta al admin".
-- `MigrationBanner` for users exceeding free limits.
+El tab **Precios** del panel administrativo permite editar los planes. Los límites se recalculan como rangos consecutivos; el último plan siempre queda sin límite superior. El documento persistido es `settings/billing` y `GET/PUT /api/admin/billing-config` está restringido a administradores.
 
-## Enforcement
+El precio visible y el cobro de Stripe se vinculan mediante `stripePriceId`. Al cambiar un importe debe registrarse el Price ID correspondiente; si no existe una configuración persistida, se usan las variables `STRIPE_PRICE_*` como fallback.
 
-`ModalCreateFarm` and `ModalInviteCollaborator` pre-check `usedPlaces < totalPlaces` with alert before submitting.
+El admin también puede asignar un `tierId` manualmente a un usuario para soporte. Esta asignación puede ser sobrescrita por un webhook posterior de Stripe. El antiguo campo `places` ya no forma parte del contrato de billing.
 
-## Gated features
-
-Canonical components to use for ALL Pro gates:
-
-### `ModalUpgradePlan`
-Path: `apps/dashboard/src/components/billing/ModalUpgradePlan.tsx`
-
-"Actualizar a Plan Pro" modal. Shows Free vs Pro comparison, form (granjas, colaboradores, mensaje opcional). Sends 2 emails:
-1. Owner: `raulzarza.dev@gmail.com`
-2. User confirmation
-
-**Use this modal at EVERY upgrade point in the system.**
-
-### `ProFeatureBanner`
-Path: `apps/dashboard/src/components/billing/ProFeatureBanner.tsx`
-
-Inline banner for blocked features (e.g., mass animal form). Shows disclaimer + same request form integrated.
-
-### Navbar button
-"⭐ Actualizar Plan" visible when `planType === 'free'`. Opens `ModalUpgradePlan`.
-
-## Gating pattern
-
-```tsx
-const { planType } = useBilling()
-const isPaidUser = planType === 'pro'
-
-// For explorable forms:
-{!isPaidUser && <ProFeatureBanner />}
-<button disabled={!isPaidUser}>Guardar</button>
-
-// For action buttons:
-{!isPaidUser ? (
-  <button onClick={() => setUpgradeOpen(true)}>...</button>
-) : (
-  <ActionButton />
-)}
-```
-
-## Currently gated features
-
-- ✅ Registro masivo de animales (`/animal/nuevo` → tab Masivo — banner + disabled submit)
-- ⏳ Importación de datos (CSV) — pending gate
-- ⏳ Respaldo y restauración — pending gate
-
-## Related
-
-- [decisions/002-no-stripe-lugares.md](../decisions/002-no-stripe-lugares.md)
-- [features/farms.md](./farms.md)
+Véase [ADR-006](../decisions/006-stripe-animal-tiers.md).

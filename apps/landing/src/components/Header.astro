@@ -1,4 +1,6 @@
 ---
+import { DASHBOARD_AUTH_URL } from '../lib/urls'
+
 const navLinks = [
   { label: 'Funcionalidades', href: '/#funcionalidades' },
   { label: 'Asistente IA', href: '/#asistente-ia' },
@@ -11,7 +13,7 @@ const navLinks = [
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <div class="flex h-16 items-center justify-between">
       <a href="/" class="flex items-center gap-2" aria-label="Mi Granja - Inicio">
-        <img src="/logo/logo-migranja.png" alt="Mi Granja" class="h-10 w-auto" width="480" height="334" />
+        <img src="/logo/logo-migranja.webp" alt="Mi Granja" class="h-10 w-auto" width="960" height="796" />
       </a>
 
       <nav class="hidden md:flex items-center gap-8" aria-label="Navegación principal">
@@ -31,7 +33,7 @@ const navLinks = [
 
       <div class="flex items-center gap-3">
         <a
-          href="https://panel.migranja.app/auth"
+          href={DASHBOARD_AUTH_URL}
           class="text-sm font-medium text-gray-600 hover:text-green-700 transition-colors"
           data-ph-event="cta_click"
           data-ph-location="header_login"
@@ -40,7 +42,7 @@ const navLinks = [
           Iniciar Sesión
         </a>
         <a
-          href="https://panel.migranja.app/auth"
+          href={DASHBOARD_AUTH_URL}
           class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors"
           data-ph-event="cta_click"
           data-ph-location="header_signup"

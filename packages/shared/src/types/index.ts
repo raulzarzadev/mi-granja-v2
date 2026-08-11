@@ -10,6 +10,7 @@ export interface User {
   // Campos de billing (desnormalizados desde subscriptions collection)
   subscriptionStatus?: import('./billing').SubscriptionStatus
   planType?: import('./billing').PlanType
+  billingTierId?: import('./billing').PlanTierId
 }
 
 export interface WeightRecord {

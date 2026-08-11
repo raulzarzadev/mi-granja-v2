@@ -8,7 +8,7 @@ import BrandLogo from '@/components/BrandLogo'
 import { RootState } from '@/features/store'
 import { useAuth } from '@/hooks/useAuth'
 import { isUserAdmin } from '@/lib/userUtils'
-import { PlanBanner } from './FarmSwitcherBar'
+import { PlanMenuSection } from './billing/PlanMenuSection'
 import { Modal } from './Modal'
 import NotificationsBell from './NotificationsBell'
 import ModalOnboarding from './onboarding/ModalOnboarding'
@@ -137,7 +137,6 @@ const Navbar: React.FC = () => {
             {/* Si hay usuario mostrar avatar y menú */}
             {user && (
               <div className="flex items-center gap-3" ref={menuRef}>
-                <PlanBanner />
                 <NotificationsBell />
 
                 <div className="relative">
@@ -176,7 +175,7 @@ const Navbar: React.FC = () => {
                   </button>
                   {menuOpen && (
                     <div
-                      className="absolute right-0 mt-2 w-56 origin-top-right rounded-lg shadow-lg bg-white ring-1 ring-black/5 focus:outline-none divide-y divide-gray-100 z-50"
+                      className="absolute right-0 mt-2 w-72 origin-top-right divide-y divide-gray-100 rounded-lg bg-white shadow-lg ring-1 ring-black/5 focus:outline-none z-50"
                       role="menu"
                     >
                       <div className="px-4 py-3 text-sm">
@@ -190,6 +189,7 @@ const Navbar: React.FC = () => {
                           </p>
                         )}
                       </div>
+                      <PlanMenuSection onNavigate={() => setMenuOpen(false)} />
                       <div className="py-1" role="none">
                         <button
                           className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700"

@@ -12,8 +12,8 @@ type BrandLogoProps = {
 }
 
 const paths: Record<'verde' | 'blanco' | 'negro', string> = {
-  verde: '/logo/logo-migranja.png',
-  blanco: '/logo/logo-migranja-blanco-v2.png',
+  verde: '/logo/logo-migranja.webp',
+  blanco: '/logo/logo-migranja-icon-white.webp',
   negro: '/logo/logo-migranja-negro-nuevo.png',
 }
 

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import Button from '@/components/buttons/Button'
 import { Icon } from '@/components/Icon/icon'
 import { toDate } from '@/lib/dates'
@@ -270,6 +271,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   onSubmit,
   selectedFemaleId,
 }) => {
+  const { notify } = useAppFeedback()
   const pregnantFemales =
     breedingRecord?.femaleBreedingInfo
       ?.filter((info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate)
@@ -310,21 +312,21 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
 
     const hasEmptyIds = formData.offspring.some((o) => !o.animalNumber.trim())
     if (hasEmptyIds) {
-      alert('Todas las crías deben tener un número de identificación')
+      notify('Todas las crías deben tener un número de identificación', 'info')
       return
     }
 
     const offspringNumbers = formData.offspring.map((o) => o.animalNumber.trim())
     const duplicatesInForm = offspringNumbers.filter((n, i) => offspringNumbers.indexOf(n) !== i)
     if (duplicatesInForm.length > 0) {
-      alert(`Hay números duplicados entre las crías: ${duplicatesInForm.join(', ')}`)
+      notify(`Hay números duplicados entre las crías: ${duplicatesInForm.join(', ')}`, 'info')
       return
     }
 
     const existingNumbers = animals.map((a) => a.animalNumber)
     const conflicting = offspringNumbers.filter((n) => existingNumbers.includes(n))
     if (conflicting.length > 0) {
-      alert(`Los siguientes números ya existen en la granja: ${conflicting.join(', ')}`)
+      notify(`Los siguientes números ya existen en la granja: ${conflicting.join(', ')}`, 'info')
       return
     }
 

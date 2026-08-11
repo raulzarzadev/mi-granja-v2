@@ -35,7 +35,7 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
   const openModal = modal.openModal
   const closeModal = onClose ?? modal.closeModal
   const { createFarm } = useFarmCRUD()
-  const { canCreateFarm, usage, planType } = useBilling()
+  const { canCreateFarm, usage } = useBilling()
   const { user } = useSelector((s: RootState) => s.auth)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -127,15 +127,11 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
             <div className="text-center">
               <span className="text-4xl">🚜</span>
               <h3 className="text-lg font-semibold text-gray-900 mt-2">
-                No tienes lugares disponibles
+                Alcanzaste el límite de animales
               </h3>
               <p className="text-sm text-gray-600 mt-1">
-                Tu plan actual solo incluye{' '}
-                <strong>
-                  {usage?.totalPlaces ?? 0} {(usage?.totalPlaces ?? 0) === 1 ? 'lugar' : 'lugares'}
-                </strong>{' '}
-                y {usage?.usedPlaces === 1 ? 'esta usando' : 'estan usando'}{' '}
-                <strong>{usage?.usedPlaces ?? 0}</strong>.
+                Tu plan permite <strong>{usage?.animalLimit ?? 0} animales</strong> y actualmente
+                tienes <strong>{usage?.animalCount ?? 0}</strong>.
               </p>
               {usage && (
                 <p className="text-xs text-gray-400 mt-1">
@@ -147,13 +143,12 @@ const ModalCreateFarm: React.FC<ModalCreateFarmProps> = ({
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-              <p className="font-medium mb-1">Necesitas mas lugares?</p>
+              <p className="font-medium mb-1">¿Necesitas más capacidad?</p>
               <p>
-                Cada lugar extra te permite agregar una granja o un colaborador. Solicita mas
-                lugares enviando un correo a{' '}
+                Puedes cambiar de plan según la cantidad de animales que administras. Escríbenos a{' '}
                 <a
-                  href={`mailto:hola@migranja.app?subject=${encodeURIComponent('Agregar mas lugares a mi plan')}&body=${encodeURIComponent(
-                    `Hola, me gustaria agregar mas lugares a mi plan.\n\n¿Cuantos lugares te gustaria agregar?\nR: \n\n--- Datos de mi cuenta ---\nEmail: ${user?.email || '—'}\nID: ${user?.id || '—'}\nPlan actual: ${planType || 'free'}\nLugares: ${usage?.usedPlaces ?? 0}/${usage?.totalPlaces ?? 0} ocupados\nGranjas: ${usage?.farmCount ?? 0}\nColaboradores: ${usage?.collaboratorCount ?? 0}\n`,
+                  href={`mailto:hola@migranja.app?subject=${encodeURIComponent('Cambiar mi plan')}&body=${encodeURIComponent(
+                    `Hola, necesito cambiar mi plan.\n\nEmail: ${user?.email || '—'}\nID: ${user?.id || '—'}\nAnimales: ${usage?.animalCount ?? 0}\n`,
                   )}`}
                   className="font-semibold underline hover:text-blue-900"
                 >

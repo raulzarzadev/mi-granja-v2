@@ -1,13 +1,16 @@
 ---
+import { DASHBOARD_URL } from '../lib/urls'
+
 // Only renders when PUBLIC_POSTHOG_KEY is set. The script below is a module;
 // Vite statically inlines import.meta.env.PUBLIC_* at build time.
 const hasKey = !!import.meta.env.PUBLIC_POSTHOG_KEY
 const appVersion = import.meta.env.PUBLIC_APP_VERSION || '0.0.0'
+const dashboardUrl = DASHBOARD_URL
 ---
 
 {
   hasKey && (
-    <script define:vars={{ appVersion }}>
+    <script define:vars={{ appVersion, dashboardUrl }}>
       import posthog from 'posthog-js'
       import {
         APP_DOMAIN,
@@ -42,9 +45,19 @@ const appVersion = import.meta.env.PUBLIC_APP_VERSION || '0.0.0'
       // Vercel preview hosts where the shared cookie can't be set.
       function isCrossDomainPanelLink(href) {
         return (
+          href.startsWith(dashboardUrl) ||
           href.startsWith('https://panel.migranja.app') ||
           href.startsWith('https://dashboard.migranja.app')
         )
+      }
+
+      function isDashboardAuthLink(href) {
+        if (!isCrossDomainPanelLink(href)) return false
+        try {
+          return new URL(href).pathname.startsWith('/auth')
+        } catch {
+          return false
+        }
       }
 
       // Read all data-ph-* attributes (except the event name) as event properties.
@@ -96,7 +109,7 @@ const appVersion = import.meta.env.PUBLIC_APP_VERSION || '0.0.0'
           // Skip if the markup already declared signup_started/login_clicked
           // explicitly (avoid double-fire).
           const href = target.getAttribute && target.getAttribute('href')
-          if (href && /panel\.migranja\.app\/auth/.test(href)) {
+          if (href && isDashboardAuthLink(href)) {
             const location = props.location || props.cta_location || ''
             const isLoginCta = /login/i.test(location) || /sesi[oó]n/i.test(props.label || '')
             const derivedEvent = isLoginCta

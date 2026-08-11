@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import InventoryTab from '@/components/InventoryTab'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import SalesTab from '@/components/SalesTab'
@@ -24,6 +25,7 @@ import ModalEditCollaborator from './ModalEditCollaborator'
 import ModalInviteCollaborator from './ModalInviteCollaborator'
 
 const FarmSection: React.FC = () => {
+  const { confirmAction, notify } = useAppFeedback()
   const { farms, currentFarm, isLoading: farmsLoading, loadAndSwitchFarm } = useFarmCRUD()
 
   const { areas, isLoading: areasLoading, getAreaStats } = useFarmAreasCRUD()
@@ -110,7 +112,7 @@ const FarmSection: React.FC = () => {
                           await loadAndSwitchFarm(inv.farmId)
                         } catch (e) {
                           console.error(e)
-                          alert('No se pudo cambiar a la granja')
+                          notify('No se pudo cambiar a la granja')
                         }
                       }}
                     >
@@ -316,7 +318,13 @@ const FarmSection: React.FC = () => {
                           <button
                             className="text-xs px-3 py-1 rounded-md border border-blue-300 text-blue-700 hover:bg-blue-50"
                             onClick={async () => {
-                              if (confirm(`Reenviar invitacion a ${invitation.email}?`)) {
+                              if (
+                                await confirmAction({
+                                  title: 'Reenviar invitación',
+                                  message: `¿Reenviar invitación a ${invitation.email}?`,
+                                  confirmLabel: 'Reenviar',
+                                })
+                              ) {
                                 try {
                                   handleResendInvitation({ invitation })
                                 } catch (e) {
@@ -331,12 +339,13 @@ const FarmSection: React.FC = () => {
                             <button
                               className="text-xs px-3 py-1 rounded-md border border-amber-300 text-amber-800 hover:bg-amber-50"
                               onClick={async () => {
-                                if (
-                                  !confirm(
-                                    `Revocar la invitacion a ${invitation.email}? No podra usarse mas.`,
-                                  )
-                                )
-                                  return
+                                const confirmed = await confirmAction({
+                                  title: 'Revocar invitación',
+                                  message: `¿Revocar la invitación a ${invitation.email}? Ya no podrá usarse.`,
+                                  confirmLabel: 'Revocar',
+                                  danger: true,
+                                })
+                                if (!confirmed) return
                                 try {
                                   await revokeInvitation(invitation.id)
                                 } catch (e) {
@@ -352,9 +361,12 @@ const FarmSection: React.FC = () => {
                               className="text-xs px-3 py-1 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
                               onClick={async () => {
                                 if (
-                                  confirm(
-                                    `Eliminar definitivamente la invitacion a ${invitation.email}? Esta accion no se puede deshacer.`,
-                                  )
+                                  await confirmAction({
+                                    title: 'Eliminar invitación',
+                                    message: `¿Eliminar definitivamente la invitación a ${invitation.email}? Esta acción no se puede deshacer.`,
+                                    confirmLabel: 'Eliminar',
+                                    danger: true,
+                                  })
                                 ) {
                                   try {
                                     await deleteInvitation(invitation.id)
@@ -390,9 +402,13 @@ const FarmSection: React.FC = () => {
                         }}
                         onRevoke={async (id) => {
                           if (
-                            confirm(
-                              'Revocar acceso de este colaborador? Podras reactivarlo mas adelante.',
-                            )
+                            await confirmAction({
+                              title: 'Revocar acceso',
+                              message:
+                                '¿Revocar acceso de este colaborador? Podrás reactivarlo más adelante.',
+                              confirmLabel: 'Revocar',
+                              danger: true,
+                            })
                           ) {
                             try {
                               await updateCollaborator(id, { isActive: false })
@@ -412,9 +428,13 @@ const FarmSection: React.FC = () => {
                           canDeleteInvitations
                             ? async (id) => {
                                 if (
-                                  confirm(
-                                    'Eliminar definitivamente este colaborador? Esto borrara la invitacion / registro asociado.',
-                                  )
+                                  await confirmAction({
+                                    title: 'Eliminar colaborador',
+                                    message:
+                                      '¿Eliminar definitivamente este colaborador? Esto borrará la invitación o registro asociado.',
+                                    confirmLabel: 'Eliminar',
+                                    danger: true,
+                                  })
                                 ) {
                                   try {
                                     await deleteInvitation(id)

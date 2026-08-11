@@ -5,6 +5,7 @@ import { doc, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import Button from '@/components/buttons/Button'
 import NumbersTab from '@/components/Dashboard/Animals/NumbersTab'
 import { Modal } from '@/components/Modal'
@@ -67,6 +68,7 @@ export { groupFemalesByStatus, sortFemalesByAnimalNumber, CHIP_COLORS }
  * Sección de Animales con sub-tabs: Todos, Etapas, Estadísticas
  */
 const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) => {
+  const { confirmAction } = useAppFeedback()
   const router = useRouter()
   const currentFarm = useSelector((state: RootState) => state.farm.currentFarm)
   const {
@@ -1026,12 +1028,13 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                         variant="ghost"
                         icon="delete"
                         onClick={async () => {
-                          if (
-                            !confirm(
-                              `¿Eliminar animal ${a.animalNumber} (${a.id.slice(0, 6)})? Esta acción no se puede deshacer.`,
-                            )
-                          )
-                            return
+                          const confirmed = await confirmAction({
+                            title: 'Eliminar animal',
+                            message: `¿Eliminar animal ${a.animalNumber} (${a.id.slice(0, 6)})? Esta acción no se puede deshacer.`,
+                            confirmLabel: 'Eliminar',
+                            danger: true,
+                          })
+                          if (!confirmed) return
                           await remove(a.id)
                         }}
                       >

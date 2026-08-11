@@ -1,6 +1,6 @@
 ---
 title: "ADR-002: No payment integrations — admin-managed Lugares model"
-status: accepted
+status: superseded
 date: 2026-03-15
 description: Stripe/Conekta/MercadoPago removed. Admin manually assigns "places" to users.
 ---
@@ -8,7 +8,7 @@ description: Stripe/Conekta/MercadoPago removed. Admin manually assigns "places"
 # ADR-002: No payment integrations — admin-managed "Lugares"
 
 ## Status
-Accepted — implemented March 2026. Supersedes earlier billing experiments.
+Superseded on 2026-08-10 by [ADR-006](./006-stripe-animal-tiers.md). This document remains as historical context for the former model.
 
 ## Context
 

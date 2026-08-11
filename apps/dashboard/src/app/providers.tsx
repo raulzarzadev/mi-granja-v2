@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import React, { useEffect } from 'react'
 import { Provider, useDispatch, useSelector } from 'react-redux'
+import { AppFeedbackProvider } from '@/components/AppFeedbackProvider'
 import { PostHogProvider } from '@/components/PostHogProvider'
 import { setUser } from '@/features/auth/authSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
@@ -109,7 +110,9 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
 export const Providers: React.FC<ProvidersProps> = ({ children }) => {
   return (
     <Provider store={store}>
-      <AuthInitializer>{children}</AuthInitializer>
+      <AppFeedbackProvider>
+        <AuthInitializer>{children}</AuthInitializer>
+      </AppFeedbackProvider>
     </Provider>
   )
 }

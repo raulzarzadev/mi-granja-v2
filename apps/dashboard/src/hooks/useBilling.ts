@@ -11,8 +11,7 @@ import {
 } from '@/features/billing/billingSlice'
 import type { AppDispatch, RootState } from '@/features/store'
 import { auth } from '@/lib/firebase'
-import type { BillingUsage } from '@/types/billing'
-import { canAddCollaborator, canAddFarm } from '@/types/billing'
+import { type BillingUsage, canAddAnimals, type PlanTierId } from '@/types/billing'
 
 async function getAuthToken(): Promise<string> {
   const user = auth.currentUser
@@ -68,14 +67,37 @@ export function useBilling() {
   }, [dispatch, impersonateUid])
 
   const canCreateFarm = useCallback((): boolean => {
-    if (!billing.usage) return false // Sin datos de uso, no permitir hasta que se carguen
-    return canAddFarm(billing.usage)
-  }, [billing.usage])
+    return true
+  }, [])
 
   const canInviteCollaborator = useCallback((): boolean => {
-    if (!billing.usage) return false
-    return canAddCollaborator(billing.usage)
-  }, [billing.usage])
+    return true
+  }, [])
+
+  const canCreateAnimals = useCallback(
+    (count = 1): boolean => Boolean(billing.usage && canAddAnimals(billing.usage, count)),
+    [billing.usage],
+  )
+
+  const startCheckout = useCallback(
+    async (tierId: PlanTierId) => {
+      if (impersonateUid) throw new Error('No puedes abrir Stripe mientras impersonas a un usuario')
+      const data = await billingFetch('/checkout', impersonateUid, {
+        method: 'POST',
+        body: JSON.stringify({ tierId }),
+      })
+      if (!data.url) throw new Error('Stripe no devolvio una URL de checkout')
+      window.location.assign(data.url)
+    },
+    [impersonateUid],
+  )
+
+  const openBillingPortal = useCallback(async () => {
+    if (impersonateUid) throw new Error('No puedes abrir Stripe mientras impersonas a un usuario')
+    const data = await billingFetch('/portal', impersonateUid, { method: 'POST' })
+    if (!data.url) throw new Error('Stripe no devolvio una URL del portal')
+    window.location.assign(data.url)
+  }, [impersonateUid])
 
   const reset = useCallback(() => {
     dispatch(clearBilling())
@@ -92,6 +114,9 @@ export function useBilling() {
     // Limit checks
     canCreateFarm,
     canInviteCollaborator,
+    canCreateAnimals,
+    startCheckout,
+    openBillingPortal,
 
     // Reset
     reset,

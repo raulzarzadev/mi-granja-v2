@@ -21,7 +21,7 @@ last_updated: 2026-04-23
 ## Farm creation
 
 - Component: `ModalCreateFarm`
-- Pre-checks billing: `usedPlaces < totalPlaces` (Free plan limited to 1 farm).
+- Crear granjas no consume cuota de billing; el cobro se basa en animales activos.
 - See [features/billing.md](./billing.md) for quota enforcement.
 
 ## Invitations
@@ -54,7 +54,7 @@ Icons: ⏳ pendiente, ✅ aceptada. Shows role per farm.
 
 ## Invitation flow component
 
-`ModalInviteCollaborator` — pre-checks `usedPlaces < totalPlaces` before sending.
+`ModalInviteCollaborator` — invita por correo; los colaboradores no consumen cuota de billing.
 
 ## Pending
 

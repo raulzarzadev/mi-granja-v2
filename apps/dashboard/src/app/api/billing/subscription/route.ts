@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAuthError, resolveEffectiveUid, verifyBillingAuth } from '@/lib/billing-auth'
 import { getAdminFirestore } from '@/lib/firebase-admin'
-import type { BillingSubscription } from '@/types/billing'
+import {
+  type BillingSubscription,
+  PAID_STATUSES,
+  type PlanTierId,
+  planTypeForTier,
+} from '@/types/billing'
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,15 +24,22 @@ export async function GET(request: NextRequest) {
         subscription: null,
         planType: 'free',
         status: 'none',
+        tierId: 'free',
       })
     }
 
-    const subscription = { id: subDoc.id, ...subDoc.data() } as BillingSubscription
+    const storedSubscription = { id: subDoc.id, ...subDoc.data() } as BillingSubscription
+    const tierId = (storedSubscription.tierId ?? 'free') as PlanTierId
+    const planType = PAID_STATUSES.includes(storedSubscription.status)
+      ? planTypeForTier(tierId)
+      : 'free'
+    const subscription = { ...storedSubscription, tierId, planType }
 
     return NextResponse.json({
       subscription,
-      planType: subscription.planType,
+      planType,
       status: subscription.status,
+      tierId,
     })
   } catch (error) {
     console.error('Error obteniendo suscripcion:', error)

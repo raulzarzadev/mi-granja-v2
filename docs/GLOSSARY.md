@@ -73,5 +73,5 @@ All UI text uses Spanish (Mexico/LatAm) with ganadero vocabulary. Use these term
 ## Plans
 
 - **Free** — 1 granja, 0 colaboradores
-- **Pro** — admin asigna N `places` (cada uno = 1 granja extra O 1 colaborador)
-- **Lugares** — unidad de capacidad en plan Pro
+- **Pro** — tier de pago para inventarios de 101 a 500 animales activos
+- **Tier de animales** — nivel de suscripción determinado por la cantidad de animales activos

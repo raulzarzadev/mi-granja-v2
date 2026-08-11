@@ -3,27 +3,32 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import React, { useCallback, useState } from 'react'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { type AdminUser, useAdminUsers } from '@/hooks/admin/useAdminUsers'
 import { auth } from '@/lib/firebase'
 import { animal_icon, animals_types_labels } from '@/types/animals'
+import { PLAN_TIERS, type PlanTierId } from '@/types/billing'
 import AdminUserActions from './AdminUserActions'
 
 interface UserPlanData {
-  places: number
+  tierId: PlanTierId
   planType: string
+  animalCount: number
+  requiredTierId: PlanTierId
+  animalLimit: number | null
   actualFarmCount: number
   actualCollaboratorCount: number
-  usedPlaces: number
 }
 
 export default function AdminUsers() {
+  const { notify } = useAppFeedback()
   const { users, isLoading, error, refreshUsers } = useAdminUsers()
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null)
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null)
   const [planUser, setPlanUser] = useState<AdminUser | null>(null)
   const [planData, setPlanData] = useState<UserPlanData | null>(null)
-  const [placesInput, setPlacesInput] = useState(0)
+  const [tierInput, setTierInput] = useState<PlanTierId>('free')
   const [isSavingPlan, setIsSavingPlan] = useState(false)
   const [isLoadingPlan, setIsLoadingPlan] = useState(false)
 
@@ -40,7 +45,7 @@ export default function AdminUsers() {
       if (res.ok) {
         const data: UserPlanData = await res.json()
         setPlanData(data)
-        setPlacesInput(data.places)
+        setTierInput(data.tierId)
       }
     } catch (err) {
       console.error('Error cargando plan:', err)
@@ -53,7 +58,7 @@ export default function AdminUsers() {
     (user: AdminUser) => {
       setPlanUser(user)
       setPlanData(null)
-      setPlacesInput(0)
+      setTierInput('free')
       loadPlanData(user.id)
     },
     [loadPlanData],
@@ -74,20 +79,21 @@ export default function AdminUsers() {
         },
         body: JSON.stringify({
           userId: planUser.id,
-          places: placesInput,
+          tierId: tierInput,
         }),
       })
 
       if (res.ok) {
         setPlanUser(null)
         await refreshUsers()
+        notify('Plan actualizado correctamente', 'success')
       } else {
         const data = await res.json()
-        alert(data.error || 'Error al guardar')
+        notify(data.error || 'Error al guardar')
       }
     } catch (err) {
       console.error('Error guardando plan:', err)
-      alert('Error al guardar el plan')
+      notify('Error al guardar el plan')
     } finally {
       setIsSavingPlan(false)
     }
@@ -136,7 +142,7 @@ export default function AdminUsers() {
                 Plan
               </th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Lugares
+                Tier
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Fecha de Registro
@@ -207,11 +213,7 @@ export default function AdminUsers() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
-                      {user.places > 0 ? (
-                        <span className="font-medium text-gray-900">{user.places}</span>
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
+                      <span className="font-medium capitalize text-gray-900">{user.tierId}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {format(user.createdAt, 'PP', { locale: es })}
@@ -381,47 +383,40 @@ export default function AdminUsers() {
                       </div>
                     </div>
                     <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
-                      <span className="text-gray-500">Lugares en uso:</span>
-                      <span
-                        className={`font-bold ${planData.usedPlaces > planData.places ? 'text-red-600' : 'text-gray-900'}`}
-                      >
-                        {planData.usedPlaces} de {planData.places}
-                      </span>
+                      <span className="text-gray-500">Animales activos:</span>
+                      <span className="font-bold text-gray-900">{planData.animalCount}</span>
                     </div>
                     <p className="text-xs text-gray-400">
-                      1 granja incluida gratis. Cada granja extra o colaborador usa 1 lugar.
+                      Tier requerido por inventario: {planData.requiredTierId}.
                     </p>
                   </div>
                 )}
 
-                {/* Asignar lugares */}
+                {/* Asignar tier */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Lugares asignados
+                    Tier asignado
                   </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={placesInput}
-                    onChange={(e) => setPlacesInput(parseInt(e.target.value, 10) || 0)}
+                  <select
+                    value={tierInput}
+                    onChange={(e) => setTierInput(e.target.value as PlanTierId)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  />
+                  >
+                    {PLAN_TIERS.map((tier) => (
+                      <option key={tier.id} value={tier.id}>
+                        {tier.label} — {tier.description}
+                      </option>
+                    ))}
+                  </select>
                   <p className="text-xs text-gray-500 mt-1">
-                    {placesInput === 0
-                      ? 'Plan Free: 1 granja, sin colaboradores'
-                      : `Plan Pro: el usuario puede usar ${placesInput} ${placesInput === 1 ? 'lugar' : 'lugares'} para granjas extra o colaboradores`}
+                    La asignación manual es para soporte; Stripe seguirá sincronizando suscripciones
+                    pagadas.
                   </p>
                 </div>
 
                 {/* Preview */}
-                <div className={`rounded-md p-3 ${placesInput > 0 ? 'bg-green-50' : 'bg-gray-50'}`}>
-                  <p
-                    className={`text-sm font-medium ${placesInput > 0 ? 'text-green-800' : 'text-gray-600'}`}
-                  >
-                    {placesInput > 0
-                      ? `Pro — ${placesInput} ${placesInput === 1 ? 'lugar' : 'lugares'}`
-                      : 'Free — sin lugares extra'}
-                  </p>
+                <div className="rounded-md bg-green-50 p-3">
+                  <p className="text-sm font-medium capitalize text-green-800">{tierInput}</p>
                 </div>
               </div>
             )}

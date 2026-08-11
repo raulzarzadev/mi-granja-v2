@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isAuthError, verifyBillingAuth } from '@/lib/billing-auth'
+import { isAuthError, isAuthenticatedUserAdmin, verifyBillingAuth } from '@/lib/billing-auth'
+import { getBillingTiers } from '@/lib/billing-config'
+import { buildBillingUsage } from '@/lib/billing-usage'
 import { getAdminFirestore } from '@/lib/firebase-admin'
-import { computeUsedPlaces } from '@/types/billing'
+import { getTierById, PLAN_TIER_IDS, type PlanTierId, planTypeForTier } from '@/types/billing'
 
 async function verifyAdmin(request: NextRequest) {
   const auth = await verifyBillingAuth(request)
@@ -10,27 +12,13 @@ async function verifyAdmin(request: NextRequest) {
   const firestore = getAdminFirestore()
   const userDoc = await firestore.doc(`users/${auth.uid}`).get()
   const userData = userDoc.data()
-  const isAdmin = userData?.roles?.includes('admin') || auth.email === 'zarza@migranja.app'
+  const isAdmin = isAuthenticatedUserAdmin(auth.email, userData?.roles)
 
   if (!isAdmin) {
     return { error: NextResponse.json({ error: 'Acceso denegado' }, { status: 403 }) }
   }
 
   return { auth, firestore }
-}
-
-async function getUserCounts(firestore: FirebaseFirestore.Firestore, userId: string) {
-  const farmsSnap = await firestore.collection('farms').where('ownerId', '==', userId).get()
-  const actualFarmCount = farmsSnap.size
-
-  let actualCollaboratorCount = 0
-  for (const farmDoc of farmsSnap.docs) {
-    const farmData = farmDoc.data()
-    const collabs = (farmData.collaborators ?? []) as { isActive?: boolean }[]
-    actualCollaboratorCount += collabs.filter((c) => c.isActive !== false).length
-  }
-
-  return { actualFarmCount, actualCollaboratorCount }
 }
 
 /** GET /api/admin/billing — datos de un usuario especifico */
@@ -49,16 +37,17 @@ export async function GET(request: NextRequest) {
 
     const subDoc = await firestore.doc(`subscriptions/${userId}`).get()
     const subData = subDoc.exists ? subDoc.data() : null
-    const places = subData?.places ?? 0
-    const counts = await getUserCounts(firestore, userId)
-    const usedPlaces = computeUsedPlaces(counts.actualFarmCount, counts.actualCollaboratorCount)
+    const usage = await buildBillingUsage(firestore, userId)
 
     return NextResponse.json({
-      places,
+      tierId: usage.currentTierId,
       planType: subData?.planType ?? 'free',
-      actualFarmCount: counts.actualFarmCount,
-      actualCollaboratorCount: counts.actualCollaboratorCount,
-      usedPlaces,
+      status: subData?.status ?? 'none',
+      animalCount: usage.animalCount,
+      requiredTierId: usage.requiredTierId,
+      animalLimit: usage.animalLimit,
+      actualFarmCount: usage.farmCount,
+      actualCollaboratorCount: usage.collaboratorCount,
     })
   } catch (error) {
     console.error('Error en admin billing:', error)
@@ -66,7 +55,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** POST /api/admin/billing — asignar lugares a un usuario */
+/** POST /api/admin/billing — asignar manualmente un tier a un usuario */
 export async function POST(request: NextRequest) {
   try {
     const result = await verifyAdmin(request)
@@ -74,13 +63,13 @@ export async function POST(request: NextRequest) {
     const { firestore } = result
 
     const body = await request.json()
-    const { userId, places } = body as {
+    const { userId, tierId } = body as {
       userId: string
-      places: number
+      tierId: PlanTierId
     }
 
-    if (!userId || places === undefined) {
-      return NextResponse.json({ error: 'userId y places son requeridos' }, { status: 400 })
+    if (!userId || !PLAN_TIER_IDS.includes(tierId)) {
+      return NextResponse.json({ error: 'userId y tierId valido son requeridos' }, { status: 400 })
     }
 
     // Verificar que el usuario existe
@@ -90,16 +79,17 @@ export async function POST(request: NextRequest) {
     }
 
     const now = new Date().toISOString()
-    const planType = places > 0 ? 'pro' : 'free'
-    const status = places > 0 ? 'active' : 'none'
+    const planType = planTypeForTier(tierId)
+    const status = tierId === 'free' ? 'none' : 'active'
+    const tier = getTierById(tierId, await getBillingTiers(firestore))
 
-    if (places > 0) {
+    if (tierId !== 'free') {
       await firestore.doc(`subscriptions/${userId}`).set(
         {
           userId,
-          planType: 'pro',
-          status: 'active',
-          places,
+          planType,
+          status,
+          tierId,
           updatedAt: now,
           createdAt: now,
         },
@@ -111,7 +101,7 @@ export async function POST(request: NextRequest) {
         await firestore.doc(`subscriptions/${userId}`).update({
           planType: 'free',
           status: 'none',
-          places: 0,
+          tierId: 'free',
           updatedAt: now,
         })
       }
@@ -121,11 +111,12 @@ export async function POST(request: NextRequest) {
     await firestore.doc(`users/${userId}`).update({
       planType,
       subscriptionStatus: status,
+      billingTierId: tierId,
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, tier, status })
   } catch (error) {
-    console.error('Error asignando lugares:', error)
+    console.error('Error asignando tier:', error)
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }

@@ -2,8 +2,8 @@
 
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { RootState } from '@/features/store'
-import { useBilling } from '@/hooks/useBilling'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 import { useMyInvitations } from '@/hooks/useMyInvitations'
@@ -21,6 +21,7 @@ const FarmSwitcherBar = ({
   children?: ReactNode
   trailingAction?: ReactNode
 }) => {
+  const { notify } = useAppFeedback()
   const {
     currentFarm,
     switchFarm,
@@ -274,7 +275,7 @@ const FarmSwitcherBar = ({
                   myInv.refresh()
                 } catch (e) {
                   console.error(e)
-                  alert('No se pudo aceptar la invitacion')
+                  notify('No se pudo aceptar la invitación')
                 }
               }}
             >
@@ -291,7 +292,7 @@ const FarmSwitcherBar = ({
                   await loadUserFarms()
                 } catch (e) {
                   console.error(e)
-                  alert('No se pudo rechazar la invitacion')
+                  notify('No se pudo rechazar la invitación')
                 }
               }}
             >
@@ -382,61 +383,3 @@ const FarmSwitcherBar = ({
 }
 
 export default FarmSwitcherBar
-
-export const PlanBanner = () => {
-  const { usage } = useBilling()
-  const billingPlanType = useSelector((s: RootState) => s.billing.planType)
-
-  const isPro = billingPlanType === 'pro'
-  return (
-    <div>
-      {/* Indicador de plan y uso */}
-      {usage && (
-        /*
-          //TODO: Al hacer click en este   boton. debera abrir un modal con el detalle del plan y uso.
-          // así como un boton -> form para solicitar cambio de plan.
-          */
-        <div className="ml-auto flex items-center gap-2">
-          <div
-            className={`inline-flex flex-col items-end px-3 py-1.5 text-xs rounded-lg border ${
-              usage.usedPlaces > usage.totalPlaces
-                ? 'bg-red-50 text-red-700 border-red-200'
-                : isPro
-                  ? 'bg-green-50 text-green-700 border-green-200'
-                  : 'bg-gray-50 text-gray-500 border-gray-200'
-            }`}
-          >
-            {isPro ? (
-              <>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-semibold">Pro</span>
-                  <span className="opacity-30">|</span>
-                  <span>
-                    {usage.usedPlaces}/{usage.totalPlaces} lugares ocupados
-                  </span>
-                </div>
-                {/*n
-                  <div className="flex items-center gap-2 text-[10px] opacity-70">
-                    <span>
-                      {usage.farmCount} {usage.farmCount === 1 ? 'granja' : 'granjas'}
-                    </span>
-                    <span>·</span>
-                    <span>
-                      {usage.collaboratorCount}{' '}
-                      {usage.collaboratorCount === 1 ? 'colaborador' : 'colaboradores'}
-                    </span>
-                  </div> */}
-              </>
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <span className="font-semibold">Free</span>
-                <span className="opacity-30">|</span>
-                <span>1 lugar gratis</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}

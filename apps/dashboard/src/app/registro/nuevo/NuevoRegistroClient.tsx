@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import AnimalBadges from '@/components/AnimalBadges'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { DatePickerButtons } from '@/components/buttons/date-picker-buttons'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
 import PageShell from '@/components/PageShell'
@@ -62,6 +63,7 @@ const clinicalCategories: ReadonlyArray<RecordCategory> = [
 ]
 
 export default function NuevoRegistroClient() {
+  const { notify } = useAppFeedback()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { animals, addRecord, addBulkRecord, addWeightEntry } = useAnimalCRUD()
@@ -116,7 +118,7 @@ export default function NuevoRegistroClient() {
 
   const handleSubmit = async () => {
     if (selectedAnimalIds.length === 0) {
-      alert('Selecciona al menos un animal')
+      notify('Selecciona al menos un animal', 'info')
       return
     }
 
@@ -133,7 +135,7 @@ export default function NuevoRegistroClient() {
         })
 
         if (missingWeight) {
-          alert('Ingresa un peso valido para cada animal')
+          notify('Ingresa un peso válido para cada animal', 'info')
           setIsSubmitting(false)
           return
         }
@@ -154,7 +156,7 @@ export default function NuevoRegistroClient() {
         }
       } else {
         if (!formData.title.trim()) {
-          alert('El titulo del registro es requerido')
+          notify('El título del registro es requerido', 'info')
           setIsSubmitting(false)
           return
         }
@@ -196,7 +198,7 @@ export default function NuevoRegistroClient() {
       router.back()
     } catch (error) {
       console.error('Error al crear registro:', error)
-      alert('Error al crear el registro. Intentalo de nuevo.')
+      notify('Error al crear el registro. Inténtalo de nuevo.')
     } finally {
       setIsSubmitting(false)
     }

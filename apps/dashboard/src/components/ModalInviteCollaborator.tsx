@@ -32,7 +32,7 @@ const ModalInviteCollaborator: React.FC<ModalInviteCollaboratorProps> = ({
   const closeModal = isControlled ? (externalOnClose ?? (() => {})) : modal.closeModal
   const { user } = useSelector((state: RootState) => state.auth)
   const { currentFarm } = useFarmCRUD()
-  const { canInviteCollaborator, usage, planType } = useBilling()
+  const { canInviteCollaborator, usage } = useBilling()
   const { inviteCollaborator } = useFarmMembers(currentFarm?.id)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -102,15 +102,10 @@ const ModalInviteCollaborator: React.FC<ModalInviteCollaboratorProps> = ({
             <div className="text-center">
               <span className="text-4xl">👥</span>
               <h3 className="text-lg font-semibold text-gray-900 mt-2">
-                No tienes lugares disponibles
+                No se puede enviar la invitación
               </h3>
               <p className="text-sm text-gray-600 mt-1">
-                Tu plan actual solo incluye{' '}
-                <strong>
-                  {usage?.totalPlaces ?? 0} {(usage?.totalPlaces ?? 0) === 1 ? 'lugar' : 'lugares'}
-                </strong>{' '}
-                y {usage?.usedPlaces === 1 ? 'esta usando' : 'estan usando'}{' '}
-                <strong>{usage?.usedPlaces ?? 0}</strong>.
+                Las granjas y colaboradores no tienen un cargo adicional en el modelo actual.
               </p>
               {usage && (
                 <p className="text-xs text-gray-400 mt-1">
@@ -122,13 +117,12 @@ const ModalInviteCollaborator: React.FC<ModalInviteCollaboratorProps> = ({
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-              <p className="font-medium mb-1">Necesitas mas lugares?</p>
+              <p className="font-medium mb-1">¿Necesitas ayuda?</p>
               <p>
-                Cada lugar extra te permite agregar una granja o un colaborador. Solicita mas
-                lugares enviando un correo a{' '}
+                Escríbenos para revisar el estado de tu cuenta a{' '}
                 <a
-                  href={`mailto:hola@migranja.app?subject=${encodeURIComponent('Agregar mas lugares a mi plan')}&body=${encodeURIComponent(
-                    `Hola, me gustaria agregar mas lugares a mi plan.\n\n¿Cuantos lugares te gustaria agregar?\nR: \n\n--- Datos de mi cuenta ---\nEmail: ${user?.email || '—'}\nID: ${user?.id || '—'}\nPlan actual: ${planType || 'free'}\nLugares: ${usage?.usedPlaces ?? 0}/${usage?.totalPlaces ?? 0} ocupados\nGranjas: ${usage?.farmCount ?? 0}\nColaboradores: ${usage?.collaboratorCount ?? 0}\n`,
+                  href={`mailto:hola@migranja.app?subject=${encodeURIComponent('Ayuda con colaboradores')}&body=${encodeURIComponent(
+                    `Hola, necesito ayuda para invitar un colaborador.\n\nEmail: ${user?.email || '—'}\nID: ${user?.id || '—'}\nAnimales: ${usage?.animalCount ?? 0}\n`,
                   )}`}
                   className="font-semibold underline hover:text-blue-900"
                 >

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect } from 'react'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import catchError from '@/lib/catchError'
@@ -35,19 +36,21 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   onRemoveFromBreeding,
   onDeleteBirth,
 }) => {
+  const { confirmAction } = useAppFeedback()
   const { onAddComment, handleUpdateCommentUrgency } = useBreedingCRUD()
   // Manejar múltiples hembras
   const male = animals.find((a) => a.id === record.maleId)
 
   const animalsType = male?.type
-  const handleDelete = () => {
-    if (
-      window.confirm(
+  const handleDelete = async () => {
+    const confirmed = await confirmAction({
+      title: 'Eliminar empadre',
+      message:
         '¿Estás seguro de que quieres eliminar este registro de empadre? Esta acción no se puede deshacer.',
-      )
-    ) {
-      onDelete?.(record)
-    }
+      confirmLabel: 'Eliminar',
+      danger: true,
+    })
+    if (confirmed) onDelete?.(record)
   }
   const [recordComments, setRecordComments] = React.useState(record.comments || [])
 

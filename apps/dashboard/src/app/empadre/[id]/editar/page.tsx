@@ -1,6 +1,7 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import BreedingForm from '@/components/BreedingForm'
 import PageShell from '@/components/PageShell'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -8,6 +9,7 @@ import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { BreedingRecord } from '@/types/breedings'
 
 export default function EditarEmpadrePage() {
+  const { confirmAction } = useAppFeedback()
   const router = useRouter()
   const params = useParams<{ id: string }>()
   const { animals, update } = useAnimalCRUD()
@@ -58,10 +60,13 @@ export default function EditarEmpadrePage() {
 
   const handleDelete = async () => {
     if (!record) return
-    if (
-      !window.confirm('¿Estas seguro de eliminar este empadre? Esta accion no se puede deshacer.')
-    )
-      return
+    const confirmed = await confirmAction({
+      title: 'Eliminar empadre',
+      message: '¿Estás seguro de eliminar este empadre? Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      danger: true,
+    })
+    if (!confirmed) return
     await deleteBreedingRecord(record.id)
     router.back()
   }

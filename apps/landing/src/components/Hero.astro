@@ -1,5 +1,5 @@
 ---
-
+import { DASHBOARD_AUTH_URL } from '../lib/urls'
 ---
 
 <section class="relative overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-50 pt-28 pb-20 sm:pt-36 sm:pb-28">
@@ -20,7 +20,7 @@
 
       <div class="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
         <a
-          href="https://panel.migranja.app/auth"
+          href={DASHBOARD_AUTH_URL}
           class="w-full rounded-xl bg-green-600 px-8 py-4 text-lg font-bold text-white shadow-lg shadow-green-600/25 hover:bg-green-700 hover:shadow-green-700/30 transition-all sm:w-auto"
           data-ph-event="cta_click"
           data-ph-location="hero"

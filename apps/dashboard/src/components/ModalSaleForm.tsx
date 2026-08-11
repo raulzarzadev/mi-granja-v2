@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import AnimalSelector from '@/components/inputs/AnimalSelector'
 import DateTimeInput from '@/components/inputs/DateTimeInput'
 import { MoneyInput } from '@/components/inputs/MoneyInput'
@@ -9,7 +10,6 @@ import { WeightInput } from '@/components/inputs/WeightInput'
 import { Modal } from '@/components/Modal'
 import { RootState } from '@/features/store'
 import { useSalesCRUD } from '@/hooks/useSalesCRUD'
-import { Animal } from '@/types/animals'
 import {
   Sale,
   SaleAnimalEntry,
@@ -28,6 +28,7 @@ interface ModalSaleFormProps {
 }
 
 const ModalSaleForm: React.FC<ModalSaleFormProps> = ({ isOpen, onClose, sale }) => {
+  const { confirmAction } = useAppFeedback()
   const { animals } = useSelector((state: RootState) => state.animals)
   const {
     createSale,
@@ -193,7 +194,13 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({ isOpen, onClose, sale }) 
 
   const handleDelete = async () => {
     if (!sale) return
-    if (!confirm('¿Eliminar esta venta?')) return
+    const confirmed = await confirmAction({
+      title: 'Eliminar venta',
+      message: '¿Eliminar esta venta?',
+      confirmLabel: 'Eliminar',
+      danger: true,
+    })
+    if (!confirmed) return
     setError('')
     try {
       await deleteSale(sale.id)

@@ -2,6 +2,7 @@
 
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore'
 import { useState } from 'react'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { db } from '@/lib/firebase'
 import { User } from '@/types'
 
@@ -11,6 +12,7 @@ interface AdminUserActionsProps {
 }
 
 export default function AdminUserActions({ user, onClose }: AdminUserActionsProps) {
+  const { confirmAction, notify } = useAppFeedback()
   const [isLoading, setIsLoading] = useState(false)
   const [newRole, setNewRole] = useState('')
 
@@ -36,10 +38,10 @@ export default function AdminUserActions({ user, onClose }: AdminUserActionsProp
       })
 
       setNewRole('')
-      alert('Rol agregado exitosamente')
+      notify('Rol agregado exitosamente', 'success')
     } catch (error) {
       console.error('Error adding role:', error)
-      alert('Error al agregar rol')
+      notify('Error al agregar rol')
     } finally {
       setIsLoading(false)
     }
@@ -47,7 +49,7 @@ export default function AdminUserActions({ user, onClose }: AdminUserActionsProp
 
   const handleRemoveRole = async (roleToRemove: string) => {
     if (user.roles.length <= 1) {
-      alert('El usuario debe tener al menos un rol')
+      notify('El usuario debe tener al menos un rol', 'info')
       return
     }
 
@@ -69,17 +71,23 @@ export default function AdminUserActions({ user, onClose }: AdminUserActionsProp
         adminNote: `Rol ${roleToRemove} removido por admin`,
       })
 
-      alert('Rol removido exitosamente')
+      notify('Rol removido exitosamente', 'success')
     } catch (error) {
       console.error('Error removing role:', error)
-      alert('Error al remover rol')
+      notify('Error al remover rol')
     } finally {
       setIsLoading(false)
     }
   }
 
   const suspendUser = async () => {
-    if (!confirm(`¿Estás seguro de suspender al usuario ${user.email}?`)) return
+    const confirmed = await confirmAction({
+      title: 'Suspender usuario',
+      message: `¿Estás seguro de suspender al usuario ${user.email}?`,
+      confirmLabel: 'Suspender',
+      danger: true,
+    })
+    if (!confirmed) return
 
     setIsLoading(true)
     try {
@@ -98,11 +106,11 @@ export default function AdminUserActions({ user, onClose }: AdminUserActionsProp
         adminNote: `Usuario suspendido por admin`,
       })
 
-      alert('Usuario suspendido exitosamente')
+      notify('Usuario suspendido exitosamente', 'success')
       onClose()
     } catch (error) {
       console.error('Error suspending user:', error)
-      alert('Error al suspender usuario')
+      notify('Error al suspender usuario')
     } finally {
       setIsLoading(false)
     }

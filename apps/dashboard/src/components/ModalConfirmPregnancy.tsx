@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { type Animal, animals_types_labels } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
@@ -28,6 +29,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
   onSubmit,
   selectedAnimal,
 }) => {
+  const { notify } = useAppFeedback()
   const male = breedingRecord ? animals.find((animal) => animal.id === breedingRecord.maleId) : null
   const maleLabel = male
     ? [
@@ -66,7 +68,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
     e.preventDefault()
 
     if (selectedFemales.length === 0) {
-      alert('Debes seleccionar al menos una hembra')
+      notify('Debes seleccionar al menos una hembra', 'info')
       return
     }
 
