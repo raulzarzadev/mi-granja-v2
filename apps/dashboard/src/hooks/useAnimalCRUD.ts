@@ -21,7 +21,12 @@ import { setError } from '@/features/auth/authSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { RootState } from '@/features/store'
 import { useAdminActions } from '@/lib/adminActions'
-import { trackAnimalCreated, trackAnimalDeleted, trackAnimalUpdated } from '@/lib/analytics/track'
+import {
+  trackAnimalCreated,
+  trackAnimalDeleted,
+  trackAnimalUpdated,
+  trackRecordCreated,
+} from '@/lib/analytics/track'
 import { computeAnimalStage } from '@/lib/animal-utils'
 import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { db } from '@/lib/firebase'
@@ -473,6 +478,10 @@ export const useAnimalCRUD = () => {
     const updatedRecords = [...(animal.records || []), newRecord]
 
     await update(animalId, { records: updatedRecords })
+    trackRecordCreated({
+      record_type: newRecord.type,
+      category: newRecord.category,
+    })
     console.log('Registro agregado al animal:', animalId)
   }
 
@@ -843,6 +852,7 @@ export const useAnimalCRUD = () => {
       lactationPurpose: nextPurpose,
       driedAt: null,
     })
+    trackRecordCreated({ record_type: 'milk', category: 'general' })
   }
 
   const endLactation = async (animalId: string, endedAt = new Date()) => {

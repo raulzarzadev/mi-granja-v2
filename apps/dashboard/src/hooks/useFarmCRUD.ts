@@ -33,6 +33,7 @@ import {
 import { serializeObj } from '@/features/libs/serializeObj'
 import { AppDispatch, RootState } from '@/features/store'
 import { db } from '@/lib/firebase'
+import { trackFarmCreated } from '@/lib/analytics/track'
 import { FarmCollaborator } from '@/types/collaborators'
 import { Farm, FarmArea } from '@/types/farm'
 
@@ -205,6 +206,7 @@ export const useFarmCRUD = () => {
       }
 
       dispatch(serializeObj(addFarm(createdFarm)))
+      trackFarmCreated()
       return createdFarm
     } catch (error) {
       console.error('Error creating farm:', error)

@@ -24,6 +24,16 @@ export const ANALYTICS_EVENTS = {
   login_completed: 'login_completed',
   logout: 'logout',
 
+  // Core product usage
+  farm_created: 'farm_created',
+  record_created: 'record_created',
+  reminder_created: 'reminder_created',
+  invitation_sent: 'invitation_sent',
+
+  // Billing
+  checkout_started: 'checkout_started',
+  billing_portal_opened: 'billing_portal_opened',
+
   // Animals
   animal_created: 'animal_created',
   animal_updated: 'animal_updated',
@@ -61,8 +71,14 @@ export interface PosthogInitOptions {
   cross_subdomain_cookie: boolean
   persistence: 'localStorage+cookie'
   defaults: '2025-05-24'
-  capture_pageview: boolean
-  capture_pageleave: boolean
+  capture_pageview: boolean | 'history_change'
+  capture_pageleave: boolean | 'if_capture_pageview'
+  autocapture: boolean
+  capture_performance: boolean
+  capture_exceptions: boolean
+  capture_heatmaps: boolean
+  capture_dead_clicks: boolean
+  disable_session_recording: boolean
 }
 
 export const POSTHOG_DEFAULT_OPTIONS: PosthogInitOptions = {
@@ -71,8 +87,16 @@ export const POSTHOG_DEFAULT_OPTIONS: PosthogInitOptions = {
   cross_subdomain_cookie: true,
   persistence: 'localStorage+cookie',
   defaults: '2025-05-24',
-  capture_pageview: false, // we fire page_viewed manually with consistent name
-  capture_pageleave: true,
+  // PostHog's standard events feed Web Analytics and SPA navigation reports.
+  capture_pageview: 'history_change',
+  capture_pageleave: 'if_capture_pageview',
+  autocapture: true,
+  capture_performance: true,
+  capture_exceptions: true,
+  capture_heatmaps: true,
+  capture_dead_clicks: true,
+  // Recording still respects the sampling and privacy controls configured remotely.
+  disable_session_recording: false,
 }
 
 /** Append distinct_id to outbound URLs that cross domain (landing → panel). */

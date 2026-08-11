@@ -1,12 +1,10 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
 import posthog from 'posthog-js'
 import { useEffect, useMemo, useRef } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import { getPosthog, identifyUser, resetIdentity } from '@/lib/analytics/posthog'
-import { trackPageViewed } from '@/lib/analytics/track'
 
 /**
  * Mounts inside <Providers>. Initializes PostHog, identifies the Firebase
@@ -18,9 +16,10 @@ import { trackPageViewed } from '@/lib/analytics/track'
 export function PostHogProvider() {
   const user = useSelector((s: RootState) => s.auth.user)
   const farmCount = useSelector((s: RootState) => s.farm.farms?.length ?? 0)
+  const currentFarmId = useSelector((s: RootState) => s.farm.currentFarm?.id ?? null)
   const planType = useSelector((s: RootState) => s.billing.planType)
   const animalTypes = useSelector((s: RootState) => s.animals.animals?.map((a) => a.type) ?? [])
-  const pathname = usePathname()
+  const animalCount = animalTypes.length
   const lastIdentifiedId = useRef<string | null>(null)
 
   // Stable signature for species set so we don't re-run on every animals slice change.
@@ -62,14 +61,22 @@ export function PostHogProvider() {
     posthog.setPersonProperties({
       plan: planType,
       farm_count: farmCount,
+      animal_count: animalCount,
       species_managed: speciesKey ? speciesKey.split('|') : [],
     })
-  }, [user?.id, planType, farmCount, speciesKey])
+  }, [user?.id, planType, farmCount, animalCount, speciesKey])
 
   useEffect(() => {
-    if (!pathname) return
-    trackPageViewed(pathname)
-  }, [pathname])
+    const ph = getPosthog()
+    if (!ph) return
+    if (currentFarmId) {
+      ph.group('farm', currentFarmId)
+      ph.register({ farm_id: currentFarmId })
+    } else {
+      ph.unregister('farm_id')
+      ph.resetGroups()
+    }
+  }, [currentFarmId])
 
   return null
 }

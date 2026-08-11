@@ -11,6 +11,7 @@ import {
 } from '@/features/billing/billingSlice'
 import type { AppDispatch, RootState } from '@/features/store'
 import { auth } from '@/lib/firebase'
+import { trackBillingPortalOpened, trackCheckoutStarted } from '@/lib/analytics/track'
 import { type BillingUsage, canAddAnimals, type PlanTierId } from '@/types/billing'
 
 async function getAuthToken(): Promise<string> {
@@ -87,6 +88,7 @@ export function useBilling() {
         body: JSON.stringify({ tierId }),
       })
       if (!data.url) throw new Error('Stripe no devolvio una URL de checkout')
+      trackCheckoutStarted(tierId)
       window.location.assign(data.url)
     },
     [impersonateUid],
@@ -96,6 +98,7 @@ export function useBilling() {
     if (impersonateUid) throw new Error('No puedes abrir Stripe mientras impersonas a un usuario')
     const data = await billingFetch('/portal', impersonateUid, { method: 'POST' })
     if (!data.url) throw new Error('Stripe no devolvio una URL del portal')
+    trackBillingPortalOpened()
     window.location.assign(data.url)
   }, [impersonateUid])
 

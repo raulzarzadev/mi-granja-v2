@@ -20,6 +20,7 @@ import { RootState } from '@/features/store'
 import { useEmail } from '@/hooks/useEmail'
 import { toDate } from '@/lib/dates'
 import { APP_URL, emailTemplate } from '@/lib/emailTemplate'
+import { trackInvitationSent } from '@/lib/analytics/track'
 import { db } from '@/lib/firebase'
 import {
   collaborator_roles_label,
@@ -225,6 +226,7 @@ export const useFarmMembers = (farmId?: string) => {
       farmId: docData.farmId,
       email: docData.email,
     })
+    trackInvitationSent()
     return created
   }
 

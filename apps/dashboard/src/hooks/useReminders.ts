@@ -15,6 +15,7 @@ import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import { toDate, toLocalDateStart } from '@/lib/dates'
 import { db } from '@/lib/firebase'
+import { trackReminderCreated } from '@/lib/analytics/track'
 import { Reminder } from '@/types'
 
 /** Normaliza animalNumbers desde datos legacy (animalNumber) y nuevos (animalNumbers) */
@@ -165,6 +166,11 @@ export const useReminders = () => {
       }
 
       await addDoc(collection(db, 'reminders'), docData)
+      trackReminderCreated({
+        reminder_type: data.type || 'other',
+        priority: data.priority || 'medium',
+        animal_count: animalNumbers.length,
+      })
     } catch (error) {
       console.error('Error creating reminder:', error)
       throw error

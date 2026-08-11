@@ -13,6 +13,25 @@ export const trackLoginCompleted = (method: 'email' | 'google' | 'custom_token' 
 
 export const trackLogout = () => track(ANALYTICS_EVENTS.logout)
 
+export const trackFarmCreated = (props?: { purpose?: string }) =>
+  track(ANALYTICS_EVENTS.farm_created, props)
+
+export const trackRecordCreated = (props: { record_type: string; category?: string }) =>
+  track(ANALYTICS_EVENTS.record_created, props)
+
+export const trackReminderCreated = (props: {
+  reminder_type: string
+  priority: string
+  animal_count: number
+}) => track(ANALYTICS_EVENTS.reminder_created, props)
+
+export const trackInvitationSent = () => track(ANALYTICS_EVENTS.invitation_sent)
+
+export const trackCheckoutStarted = (tierId: string) =>
+  track(ANALYTICS_EVENTS.checkout_started, { tier_id: tierId })
+
+export const trackBillingPortalOpened = () => track(ANALYTICS_EVENTS.billing_portal_opened)
+
 export const trackAnimalCreated = (props: { species?: string; breed?: string }) =>
   track(ANALYTICS_EVENTS.animal_created, props)
 
