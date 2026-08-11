@@ -112,22 +112,22 @@ export function AppFeedbackProvider({ children }: { children: React.ReactNode })
             <p id="app-confirmation-message" className="mt-3 text-sm leading-6 text-slate-600">
               {confirmation.message}
             </p>
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 autoFocus
                 onClick={() => finishConfirmation(false)}
-                className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="min-h-11 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-700"
               >
                 {confirmation.cancelLabel ?? 'Cancelar'}
               </button>
               <button
                 type="button"
                 onClick={() => finishConfirmation(true)}
-                className={`rounded-xl px-4 py-2.5 text-sm font-semibold text-white ${
+                className={`min-h-11 rounded-xl px-4 py-2.5 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 ${
                   confirmation.danger
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-green-700 hover:bg-green-800'
+                    ? 'bg-red-600 hover:bg-red-700 focus-visible:outline-red-700'
+                    : 'bg-green-700 hover:bg-green-800 focus-visible:outline-green-800'
                 }`}
               >
                 {confirmation.confirmLabel ?? 'Confirmar'}

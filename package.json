@@ -9,6 +9,7 @@
     "dev:kill": "bash scripts/dev-kill.sh",
     "emu": "cd firebase && firebase emulators:start --import=data --export-on-exit=data",
     "emu:kill": "lsof -ti :9299 -ti :8180 -ti :9399 -ti :4100 -ti :4600 | xargs kill 2>/dev/null; echo '✅ Emuladores detenidos'",
+    "posthog:sync": "node scripts/posthog-sync.mjs",
     "review": "bash scripts/review.sh",
     "deploy:preview": "git switch monorepo-dev && git pull origin monorepo-dev && git push origin monorepo-dev",
     "deploy:pre": "pnpm deploy:preview",

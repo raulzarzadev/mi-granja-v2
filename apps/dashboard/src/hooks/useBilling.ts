@@ -10,8 +10,8 @@ import {
   setUsage,
 } from '@/features/billing/billingSlice'
 import type { AppDispatch, RootState } from '@/features/store'
-import { auth } from '@/lib/firebase'
 import { trackBillingPortalOpened, trackCheckoutStarted } from '@/lib/analytics/track'
+import { auth } from '@/lib/firebase'
 import { type BillingUsage, canAddAnimals, type PlanTierId } from '@/types/billing'
 
 async function getAuthToken(): Promise<string> {
@@ -102,6 +102,30 @@ export function useBilling() {
     window.location.assign(data.url)
   }, [impersonateUid])
 
+  const setCancelAtPeriodEnd = useCallback(
+    async (cancelAtPeriodEnd: boolean) => {
+      if (impersonateUid) {
+        throw new Error('No puedes cancelar una suscripción mientras impersonas a un usuario')
+      }
+      const data = (await billingFetch('/cancellation', impersonateUid, {
+        method: 'POST',
+        body: JSON.stringify({ cancelAtPeriodEnd }),
+      })) as { cancelAtPeriodEnd: boolean; currentPeriodEnd: string | null }
+
+      if (billing.subscription) {
+        dispatch(
+          setSubscription({
+            ...billing.subscription,
+            cancelAtPeriodEnd: data.cancelAtPeriodEnd,
+            currentPeriodEnd: data.currentPeriodEnd,
+          }),
+        )
+      }
+      return data
+    },
+    [billing.subscription, dispatch, impersonateUid],
+  )
+
   const reset = useCallback(() => {
     dispatch(clearBilling())
   }, [dispatch])
@@ -120,6 +144,7 @@ export function useBilling() {
     canCreateAnimals,
     startCheckout,
     openBillingPortal,
+    setCancelAtPeriodEnd,
 
     // Reset
     reset,
