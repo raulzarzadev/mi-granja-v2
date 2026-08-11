@@ -29,6 +29,12 @@ export async function POST(request: NextRequest) {
     const firestore = getAdminFirestore()
     const tiers = await getBillingTiers(firestore)
     const tier = getTierById(tierId, tiers)
+    if (!tier.isVisible) {
+      return NextResponse.json(
+        { error: 'Este plan no está disponible actualmente' },
+        { status: 400 },
+      )
+    }
     const priceId = getStripePriceId(tierId, tiers)
     if (!priceId) {
       return NextResponse.json(

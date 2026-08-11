@@ -36,6 +36,12 @@ interface ModalRecordDetailProps {
 }
 
 const clinicalCategories = ['illness', 'injury', 'treatment', 'surgery']
+const milkingSessionLabels = {
+  morning: 'Mañana',
+  afternoon: 'Tarde',
+  evening: 'Noche',
+  total: 'Total del día',
+} as const
 
 const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, record }) => {
   const { confirmAction, notify } = useAppFeedback()
@@ -285,6 +291,30 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
               </div>
             )}
 
+            {record.type === 'milk' && typeof record.amountMl === 'number' && (
+              <div>
+                <span className="font-medium text-gray-600">Cantidad:</span>{' '}
+                {(record.amountMl / 1000).toLocaleString('es-MX', {
+                  maximumFractionDigits: 3,
+                })}{' '}
+                L
+              </div>
+            )}
+
+            {record.type === 'milk' && record.session && (
+              <div>
+                <span className="font-medium text-gray-600">Turno:</span>{' '}
+                {milkingSessionLabels[record.session]}
+              </div>
+            )}
+
+            {record.notes && (
+              <div className="sm:col-span-2">
+                <span className="font-medium text-gray-600">Notas:</span>{' '}
+                <p className="mt-1 whitespace-pre-wrap text-gray-800">{record.notes}</p>
+              </div>
+            )}
+
             {record.severity && (
               <div>
                 <span className="font-medium text-gray-600">Severidad:</span>{' '}
@@ -342,13 +372,15 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
 
           {/* Botones de accion */}
           <div className="flex flex-wrap gap-2 pt-4 border-t">
-            <button
-              onClick={startEdit}
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              Editar
-            </button>
+            {record.type !== 'milk' && (
+              <button
+                onClick={startEdit}
+                disabled={isSubmitting}
+                className="min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:opacity-50"
+              >
+                Editar
+              </button>
+            )}
 
             {isClinical &&
               (record.isResolved ? (
@@ -372,7 +404,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
             <button
               onClick={handleDelete}
               disabled={isSubmitting}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 disabled:opacity-50 transition-colors"
+              className="min-h-11 rounded-lg bg-red-600 px-4 py-2 text-sm text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:opacity-50"
             >
               Eliminar
             </button>

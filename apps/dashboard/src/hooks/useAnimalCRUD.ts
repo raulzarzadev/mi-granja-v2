@@ -27,7 +27,7 @@ import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { db } from '@/lib/firebase'
 import {
   Animal,
-  type AnimalMilkEntry,
+  type AnimalMilkRecord,
   AnimalRecord,
   AnimalStatus,
   WeanNextStage,
@@ -801,7 +801,7 @@ export const useAnimalCRUD = () => {
 
   const addMilkEntry = async (
     animalId: string,
-    entry: Omit<AnimalMilkEntry, 'id' | 'createdAt'>,
+    entry: Pick<AnimalMilkRecord, 'date' | 'amountMl' | 'session' | 'notes'>,
   ) => {
     if (!user?.id) throw new Error('Usuario no autenticado')
     const animal = animals.find((candidate) => candidate.id === animalId)
@@ -821,17 +821,24 @@ export const useAnimalCRUD = () => {
       throw new Error('La fecha del ordeño no puede estar en el futuro')
     }
 
-    const newEntry: AnimalMilkEntry = {
-      ...entry,
+    const amountMl = Math.round(entry.amountMl)
+    const newRecord: AnimalMilkRecord = {
       id: crypto.randomUUID(),
-      amountMl: Math.round(entry.amountMl),
+      type: 'milk',
+      category: 'general',
+      title: `Ordeño · ${(amountMl / 1000).toLocaleString('es-MX', { maximumFractionDigits: 3 })} L`,
+      date: entry.date,
+      amountMl,
+      session: entry.session,
+      ...(entry.notes ? { notes: entry.notes } : {}),
       createdAt: new Date(),
+      createdBy: user.id,
     }
     const nextPurpose =
       animal.lactationPurpose === 'offspring' ? 'dual' : (animal.lactationPurpose ?? 'dairy')
 
     await update(animalId, {
-      milkRecords: [...(animal.milkRecords || []), newEntry],
+      records: [...(animal.records || []), newRecord],
       lactationStatus: 'active',
       lactationPurpose: nextPurpose,
       driedAt: null,

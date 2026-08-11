@@ -179,6 +179,9 @@ const RecordsTab: React.FC = () => {
         const parts = [
           record.title,
           record.description || '',
+          record.notes || '',
+          record.session || '',
+          record.amountMl ? `${record.amountMl / 1000} litros` : '',
           record.veterinarian || '',
           record.batch || '',
           record.treatment || '',
@@ -433,6 +436,39 @@ const RecordsTab: React.FC = () => {
             </svg>
           </button>
         </div>
+
+        <nav
+          aria-label="Filtrar registros por tipo"
+          className="flex gap-2 overflow-x-auto border-t border-gray-100 px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <button
+            type="button"
+            onClick={() => setFilters((prev) => ({ ...prev, type: '', category: '' }))}
+            aria-pressed={!filters.type}
+            className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${
+              !filters.type
+                ? 'bg-green-600 text-white'
+                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            📋 Todos
+          </button>
+          {record_types.map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => setFilters((prev) => ({ ...prev, type, category: '' }))}
+              aria-pressed={filters.type === type}
+              className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${
+                filters.type === type
+                  ? 'bg-green-600 text-white'
+                  : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {record_type_icons[type]} {record_type_labels[type]}
+            </button>
+          ))}
+        </nav>
 
         {/* Collapsible filters */}
         {filtersOpen && (

@@ -8,6 +8,7 @@ interface StoredPlanTier {
   maxAnimals?: unknown
   priceUsd?: unknown
   stripePriceId?: unknown
+  isVisible?: unknown
 }
 
 function tierDescription(minAnimals: number, maxAnimals: number | null): string {
@@ -48,6 +49,7 @@ export function mergeBillingTiers(value: unknown): PlanTier[] {
       minAnimals,
       maxAnimals,
       priceUsd,
+      isVisible: typeof stored?.isVisible === 'boolean' ? stored.isVisible : defaultTier.isVisible,
       stripePriceId:
         typeof stored?.stripePriceId === 'string' && stored.stripePriceId.trim()
           ? stored.stripePriceId.trim()
@@ -119,6 +121,7 @@ export function validateBillingTiers(
       minAnimals,
       maxAnimals,
       priceUsd,
+      isVisible: typeof input.isVisible === 'boolean' ? input.isVisible : defaultTier.isVisible,
       stripePriceId,
       description: tierDescription(minAnimals, maxAnimals),
     })
@@ -134,11 +137,12 @@ export async function getBillingTiers(firestore: FirebaseFirestore.Firestore): P
 }
 
 export function serializeBillingTiers(tiers: PlanTier[]) {
-  return tiers.map(({ id, label, maxAnimals, priceUsd, stripePriceId }) => ({
+  return tiers.map(({ id, label, maxAnimals, priceUsd, stripePriceId, isVisible }) => ({
     id,
     label,
     maxAnimals,
     priceUsd,
     stripePriceId: stripePriceId ?? null,
+    isVisible,
   }))
 }

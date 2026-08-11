@@ -5,7 +5,7 @@ import { es } from 'date-fns/locale'
 import { type FormEvent, useMemo, useState } from 'react'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { toDate } from '@/lib/dates'
-import type { Animal, MilkingSession } from '@/types/animals'
+import { type Animal, isMilkRecord, type MilkingSession } from '@/types/animals'
 import Button from './buttons/Button'
 import { Modal } from './Modal'
 
@@ -36,10 +36,10 @@ export default function ModalMilkRecord({ animal }: { animal: Animal }) {
 
   const sortedRecords = useMemo(
     () =>
-      [...(animal.milkRecords || [])].sort(
-        (a, b) => toDate(b.date).getTime() - toDate(a.date).getTime(),
-      ),
-    [animal.milkRecords],
+      (animal.records || [])
+        .filter(isMilkRecord)
+        .sort((a, b) => toDate(b.date).getTime() - toDate(a.date).getTime()),
+    [animal.records],
   )
   const todayKey = format(new Date(), 'yyyy-MM-dd')
   const todayTotal = sortedRecords

@@ -2,7 +2,7 @@
 export interface AnimalRecord {
   id: string
   // Categorización del registro
-  type: 'note' | 'health' | 'birth' | 'weight' | 'expense'
+  type: RecordType
   category: RecordCategory
 
   // Información básica (todos los tipos)
@@ -25,6 +25,11 @@ export interface AnimalRecord {
   cost?: number // centavos
   notes?: string
 
+  // Campos específicos para registros de ordeño
+  /** Cantidad almacenada en mililitros para evitar errores de punto flotante. */
+  amountMl?: number
+  session?: MilkingSession
+
   // Para aplicación masiva (eventos de salud)
   appliedToAnimals?: string[] // IDs de animales
   isBulkApplication?: boolean
@@ -46,14 +51,10 @@ export type LactationPurpose = 'offspring' | 'dairy' | 'dual'
 export type LactationStatus = 'active' | 'dry'
 export type MilkingSession = 'morning' | 'afternoon' | 'evening' | 'total'
 
-export interface AnimalMilkEntry {
-  id: string
-  date: Date
-  /** Cantidad almacenada en mililitros para evitar errores de punto flotante. */
+export type AnimalMilkRecord = AnimalRecord & {
+  type: 'milk'
   amountMl: number
   session: MilkingSession
-  notes?: string
-  createdAt: Date
 }
 
 export interface Animal {
@@ -83,8 +84,6 @@ export interface Animal {
   updatedAt: Date
   // Historial de pesajes del animal
   weightRecords?: AnimalWeightEntry[]
-  // Historial de producción de leche
-  milkRecords?: AnimalMilkEntry[]
   // Sistema unificado de registros
   records?: AnimalRecord[]
   // Estado general del animal
@@ -274,8 +273,13 @@ export const animal_icon: Record<AnimalType, string> = {
 
 // ===== SISTEMA UNIFICADO DE REGISTROS =====
 
-export const record_types = ['note', 'health', 'weight', 'birth', 'expense'] as const
+export const record_types = ['note', 'health', 'weight', 'birth', 'milk', 'expense'] as const
 export type RecordType = (typeof record_types)[number]
+
+export const isMilkRecord = (record: AnimalRecord): record is AnimalMilkRecord =>
+  record.type === 'milk' &&
+  typeof record.amountMl === 'number' &&
+  typeof record.session === 'string'
 
 export const record_categories = [
   'general',
@@ -296,6 +300,7 @@ export const record_type_labels: Record<RecordType, string> = {
   health: 'Salud',
   weight: 'Peso',
   birth: 'Parto',
+  milk: 'Leche',
   expense: 'Gasto',
 }
 
@@ -304,6 +309,7 @@ export const record_type_icons: Record<RecordType, string> = {
   health: '🏥',
   weight: '⚖️',
   birth: '🐣',
+  milk: '🥛',
   expense: '💰',
 }
 

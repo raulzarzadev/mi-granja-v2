@@ -6,6 +6,19 @@ describe('billing config', () => {
     const tiers = mergeBillingTiers(undefined)
     expect(tiers.map((tier) => tier.id)).toEqual(PLAN_TIERS.map((tier) => tier.id))
     expect(tiers[2].maxAnimals).toBe(100)
+    expect(tiers.every((tier) => tier.isVisible)).toBe(true)
+  })
+
+  it('conserva la visibilidad configurada de cada plan', () => {
+    const input = PLAN_TIERS.map((tier) => ({ ...tier, isVisible: tier.id === 'pro' }))
+
+    const merged = mergeBillingTiers(input)
+    const validated = validateBillingTiers(input)
+
+    expect(merged.find((tier) => tier.id === 'pro')?.isVisible).toBe(true)
+    expect(merged.find((tier) => tier.id === 'basico')?.isVisible).toBe(false)
+    expect(validated.tiers?.find((tier) => tier.id === 'pro')?.isVisible).toBe(true)
+    expect(validated.tiers?.find((tier) => tier.id === 'basico')?.isVisible).toBe(false)
   })
 
   it('recalcula rangos consecutivos al cambiar limites', () => {

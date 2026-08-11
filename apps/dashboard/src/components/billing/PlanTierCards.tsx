@@ -19,10 +19,12 @@ export function PlanTierCards({
 }: PlanTierCardsProps) {
   const currentTierIndex = tiers.findIndex((tier) => tier.id === currentTierId)
   const requiredTierIndex = tiers.findIndex((tier) => tier.id === requiredTierId)
+  const visibleTiers = tiers.filter((tier) => tier.isVisible)
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {tiers.map((tier, tierIndex) => {
+      {visibleTiers.map((tier) => {
+        const tierIndex = tiers.findIndex((candidate) => candidate.id === tier.id)
         const isCurrent = tier.id === currentTierId
         const isEnterprise = tier.id === 'empresarial'
         const isDowngrade = tierIndex < currentTierIndex

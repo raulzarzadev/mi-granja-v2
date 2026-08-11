@@ -38,6 +38,8 @@ export interface PlanTier {
   stripePriceEnv: string | null
   /** Price ID persistido. Tiene prioridad sobre la variable de entorno. */
   stripePriceId?: string | null
+  /** Si puede ofrecerse a usuarios en la pantalla de planes y Checkout. */
+  isVisible: boolean
   description: string
 }
 
@@ -53,6 +55,7 @@ export const PLAN_TIERS: PlanTier[] = [
     maxAnimals: 10,
     priceUsd: 0,
     stripePriceEnv: null,
+    isVisible: true,
     description: 'Hasta 10 animales',
   },
   {
@@ -62,6 +65,7 @@ export const PLAN_TIERS: PlanTier[] = [
     maxAnimals: 50,
     priceUsd: 2.5,
     stripePriceEnv: 'STRIPE_PRICE_INICIAL',
+    isVisible: true,
     description: 'De 11 a 50 animales',
   },
   {
@@ -71,6 +75,7 @@ export const PLAN_TIERS: PlanTier[] = [
     maxAnimals: 100,
     priceUsd: 5,
     stripePriceEnv: 'STRIPE_PRICE_BASICO',
+    isVisible: true,
     description: 'De 51 a 100 animales',
   },
   {
@@ -80,6 +85,7 @@ export const PLAN_TIERS: PlanTier[] = [
     maxAnimals: 500,
     priceUsd: 20,
     stripePriceEnv: 'STRIPE_PRICE_PRO',
+    isVisible: true,
     description: 'De 101 a 500 animales',
   },
   {
@@ -89,6 +95,7 @@ export const PLAN_TIERS: PlanTier[] = [
     maxAnimals: 1000,
     priceUsd: 40,
     stripePriceEnv: 'STRIPE_PRICE_RANCHO',
+    isVisible: true,
     description: 'De 501 a 1000 animales',
   },
   {
@@ -98,6 +105,7 @@ export const PLAN_TIERS: PlanTier[] = [
     maxAnimals: null,
     priceUsd: null,
     stripePriceEnv: null,
+    isVisible: true,
     description: 'Mas de 1000 animales — precio a convenir',
   },
 ]

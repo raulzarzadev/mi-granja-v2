@@ -147,13 +147,35 @@ export default function AdminPricing({ onTiersChange }: AdminPricingProps) {
           const isFree = tier.id === 'free'
           const isLast = index === tiers.length - 1
           return (
-            <article key={tier.id} className="rounded-xl border border-gray-200 bg-white p-4">
+            <article
+              key={tier.id}
+              className={`rounded-xl border bg-white p-4 ${
+                tier.isVisible ? 'border-gray-200' : 'border-gray-300 opacity-75'
+              }`}
+            >
               <div className="mb-4 flex items-center justify-between gap-3">
-                <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-600">
-                  {tier.id}
-                </span>
-                <span className="text-xs text-gray-500">Desde {tier.minAnimals} animales</span>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    {tier.id}
+                  </span>
+                  {!tier.isVisible && (
+                    <span className="rounded-full bg-gray-200 px-2 py-1 text-xs font-semibold text-gray-700">
+                      Oculto
+                    </span>
+                  )}
+                </div>
+                <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm font-medium text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={tier.isVisible}
+                    onChange={(event) => updateTier(tier.id, { isVisible: event.target.checked })}
+                    className="h-5 w-5 rounded border-gray-300 text-green-700 focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2"
+                  />
+                  Visible
+                </label>
               </div>
+
+              <p className="mb-4 text-xs text-gray-500">Desde {tier.minAnimals} animales</p>
 
               <div className="space-y-4">
                 <div>

@@ -267,7 +267,7 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
       '{ date: ISO 8601, buyer?: string, weight?: number (gramos), price?: number (centavos) } | undefined',
     lostInfo: '{ lostAt: ISO 8601, foundAt?: ISO 8601 } | undefined',
     records:
-      '[ { id, type, category, title, description?, date, severity?, isResolved?, resolvedDate?, treatment?, nextDueDate?, batch?, veterinarian?, cost?, notes?, appliedToAnimals?: string[], isBulkApplication?: boolean, createdAt, createdBy, updatedAt? } ] | undefined',
+      "[ { id, type: 'note'|'health'|'birth'|'weight'|'milk'|'expense', category, title, description?, date, amountMl?, session?, severity?, isResolved?, resolvedDate?, treatment?, nextDueDate?, batch?, veterinarian?, cost?, notes?, appliedToAnimals?: string[], isBulkApplication?: boolean, createdAt, createdBy, updatedAt? } ] | undefined. Los registros type='milk' requieren amountMl y session.",
     customWeaningDays: 'number | undefined (override de días de destete recomendados)',
     pregnantAt:
       'string (ISO 8601) | null | undefined. Fecha de confirmación de embarazo (hembras). Se limpia al registrar parto.',
@@ -286,8 +286,6 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     lactationPurpose:
       "'offspring' | 'dairy' | 'dual' | undefined. Distingue lactancia para crías, ordeño o ambos.",
     driedAt: 'string (ISO 8601) | null | undefined. Fecha en que terminó la lactancia.',
-    milkRecords:
-      "[{ id: string, date: ISO 8601, amountMl: number, session: 'morning' | 'afternoon' | 'evening' | 'total', notes?: string, createdAt: ISO 8601 }] | undefined",
     availableToSaleAt:
       'string (ISO 8601) | null | undefined. Marcado por el usuario como candidato a venta. Se limpia al completarse la venta.',
     adminAction:

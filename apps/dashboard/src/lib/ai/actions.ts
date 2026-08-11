@@ -3,7 +3,7 @@ import { activeUnweanedOffspring, computeAnimalEffectiveStage } from '@/lib/anim
 import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { Reminder } from '@/types'
-import { Animal, type AnimalStageKey } from '@/types/animals'
+import { Animal, type AnimalStageKey, isMilkRecord } from '@/types/animals'
 import { BreedingRecord, type FemaleBreedingInfo } from '@/types/breedings'
 import type { FarmPermission } from '@/types/farm'
 import { selectRelevance } from './context-relevance'
@@ -113,13 +113,6 @@ function normalizeAnimal(doc: FirebaseFirestore.QueryDocumentSnapshot): Animal {
       ? data.weightRecords.map((entry: Record<string, unknown>) => ({
           ...entry,
           date: asDate(entry.date) ?? new Date(0),
-        }))
-      : [],
-    milkRecords: Array.isArray(data.milkRecords)
-      ? data.milkRecords.map((entry: Record<string, unknown>) => ({
-          ...entry,
-          date: asDate(entry.date) ?? new Date(0),
-          createdAt: asDate(entry.createdAt) ?? asDate(entry.date) ?? new Date(0),
         }))
       : [],
     records: Array.isArray(data.records)
@@ -530,8 +523,8 @@ export async function buildAiContext(
     )
   }
   const animals = animalsWithComputedStage.map((animal) => {
-    const milkRecords = animal.milkRecords || []
-    const lastMilkRecord = [...milkRecords].sort(
+    const animalMilkEntries = (animal.records || []).filter(isMilkRecord)
+    const lastMilkRecord = [...animalMilkEntries].sort(
       (a, b) => (asDate(b.date)?.getTime() ?? 0) - (asDate(a.date)?.getTime() ?? 0),
     )[0]
     const lastRecord = [...(animal.records || [])].sort(
@@ -562,7 +555,7 @@ export async function buildAiContext(
         estado: animal.lactationStatus || null,
         proposito: animal.lactationPurpose || null,
         fechaSecado: dateKey(animal.driedAt),
-        totalOrdeños: milkRecords.length,
+        totalOrdeños: animalMilkEntries.length,
         ultimoOrdeño: lastMilkRecord
           ? {
               fecha: dateKey(lastMilkRecord.date),
@@ -697,7 +690,9 @@ export async function buildAiContext(
   const sevenDaysAgo = new Date(todayStart)
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
   const milkEntries = activeAnimals.flatMap((animal) =>
-    (animal.milkRecords || []).map((entry) => ({ animal, entry, date: asDate(entry.date) })),
+    (animal.records || [])
+      .filter(isMilkRecord)
+      .map((entry) => ({ animal, entry, date: asDate(entry.date) })),
   )
   const milkToday = milkEntries.filter(
     ({ date }) => date && startOfDay(date).getTime() === todayStart.getTime(),
@@ -739,19 +734,14 @@ export async function buildAiContext(
   }
   for (const animal of farmAnimals) {
     for (const record of animal.records || []) {
+      const detail = isMilkRecord(record)
+        ? `${litersFromMl(record.amountMl)} L · ${record.session}${record.notes ? ` · ${record.notes}` : ''}`
+        : `${record.title}${record.notes ? ` · ${record.notes}` : ''}`
       addMovement(
         record.date,
         animal,
-        `registro_${record.type}`,
-        `${record.title}${record.notes ? ` · ${record.notes}` : ''}`,
-      )
-    }
-    for (const entry of animal.milkRecords || []) {
-      addMovement(
-        entry.date,
-        animal,
-        'ordeño',
-        `${litersFromMl(entry.amountMl)} L · ${entry.session}${entry.notes ? ` · ${entry.notes}` : ''}`,
+        record.type === 'milk' ? 'ordeño' : `registro_${record.type}`,
+        detail,
       )
     }
     const unifiedWeightDates = new Set(
