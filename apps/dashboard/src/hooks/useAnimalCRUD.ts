@@ -25,7 +25,13 @@ import { trackAnimalCreated, trackAnimalDeleted, trackAnimalUpdated } from '@/li
 import { computeAnimalStage } from '@/lib/animal-utils'
 import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { db } from '@/lib/firebase'
-import { Animal, AnimalRecord, AnimalStatus, WeanNextStage } from '@/types/animals'
+import {
+  Animal,
+  type AnimalMilkEntry,
+  AnimalRecord,
+  AnimalStatus,
+  WeanNextStage,
+} from '@/types/animals'
 
 /**
  * Hook personalizado para el manejo de animales
@@ -156,7 +162,9 @@ export const useAnimalCRUD = () => {
       })
     } catch (error) {
       console.error('Error actualizando animal:', error)
-      dispatch(setError('Error actualizando animal'))
+      const errorMessage = error instanceof Error ? error.message : 'Error actualizando animal'
+      dispatch(setError(errorMessage))
+      throw error
     } finally {
       setIsLoading(false)
     }
@@ -206,6 +214,37 @@ export const useAnimalCRUD = () => {
     }
     if (opts?.notes) updateData.notes = opts?.notes
     await update(animalId, updateData)
+
+    // Si fue la última cría sin destetar, cerrar sólo la lactancia destinada a crías.
+    // Las hembras de leche o doble propósito continúan lactando después del destete.
+    const cria = animals.find((animal) => animal.id === animalId)
+    if (!cria?.motherId) return
+    const mother = animals.find(
+      (animal) => animal.id === cria.motherId || animal.animalNumber === cria.motherId,
+    )
+    if (!mother) return
+    const hasOtherUnweanedOffspring = animals.some(
+      (animal) =>
+        animal.id !== animalId &&
+        (animal.motherId === mother.id || animal.motherId === mother.animalNumber) &&
+        animal.stage === 'cria' &&
+        !animal.isWeaned &&
+        !['muerto', 'vendido', 'perdido'].includes(animal.status ?? 'activo'),
+    )
+    if (hasOtherUnweanedOffspring) return
+
+    const weanedMotherAt = opts?.weanDate || new Date()
+    const keepsMilking = mother.lactationPurpose === 'dairy' || mother.lactationPurpose === 'dual'
+    await update(mother.id, {
+      weanedMotherAt,
+      ...(keepsMilking
+        ? { lactationStatus: 'active' }
+        : {
+            lactationStatus: 'dry',
+            birthedAt: null,
+            driedAt: weanedMotherAt,
+          }),
+    })
   }
 
   // Buscar animales por ID
@@ -760,6 +799,69 @@ export const useAnimalCRUD = () => {
     })
   }
 
+  const addMilkEntry = async (
+    animalId: string,
+    entry: Omit<AnimalMilkEntry, 'id' | 'createdAt'>,
+  ) => {
+    if (!user?.id) throw new Error('Usuario no autenticado')
+    const animal = animals.find((candidate) => candidate.id === animalId)
+    if (!animal) throw new Error('Animal no encontrado')
+    if (animal.gender !== 'hembra') throw new Error('Sólo se puede registrar leche en hembras')
+    if (!Number.isFinite(entry.amountMl) || entry.amountMl <= 0) {
+      throw new Error('La cantidad de leche debe ser mayor que cero')
+    }
+    if (Number.isNaN(entry.date.getTime())) {
+      throw new Error('Selecciona una fecha válida')
+    }
+    const milkEntryDay = new Date(entry.date)
+    const today = new Date()
+    milkEntryDay.setHours(0, 0, 0, 0)
+    today.setHours(0, 0, 0, 0)
+    if (milkEntryDay.getTime() > today.getTime()) {
+      throw new Error('La fecha del ordeño no puede estar en el futuro')
+    }
+
+    const newEntry: AnimalMilkEntry = {
+      ...entry,
+      id: crypto.randomUUID(),
+      amountMl: Math.round(entry.amountMl),
+      createdAt: new Date(),
+    }
+    const nextPurpose =
+      animal.lactationPurpose === 'offspring' ? 'dual' : (animal.lactationPurpose ?? 'dairy')
+
+    await update(animalId, {
+      milkRecords: [...(animal.milkRecords || []), newEntry],
+      lactationStatus: 'active',
+      lactationPurpose: nextPurpose,
+      driedAt: null,
+    })
+  }
+
+  const endLactation = async (animalId: string, endedAt = new Date()) => {
+    if (!user?.id) throw new Error('Usuario no autenticado')
+    const animal = animals.find((candidate) => candidate.id === animalId)
+    if (!animal) throw new Error('Animal no encontrado')
+    if (animal.gender !== 'hembra') throw new Error('Sólo las hembras pueden tener lactancia')
+    const hasUnweanedOffspring = animals.some(
+      (candidate) =>
+        (candidate.motherId === animal.id || candidate.motherId === animal.animalNumber) &&
+        candidate.stage === 'cria' &&
+        candidate.isWeaned !== true &&
+        !candidate.weanedAt &&
+        !['muerto', 'vendido', 'perdido'].includes(candidate.status ?? 'activo'),
+    )
+    if (hasUnweanedOffspring) {
+      throw new Error('Primero desteta las crías activas antes de finalizar la lactancia.')
+    }
+
+    await update(animalId, {
+      lactationStatus: 'dry',
+      driedAt: endedAt,
+      birthedAt: null,
+    })
+  }
+
   // Asignar (o quitar) el área física actual de un animal.
   // areaId null/'' => sin área. No-op si ya está en esa área.
   const assignArea = async (animalId: string, areaId: string | null) => {
@@ -795,6 +897,8 @@ export const useAnimalCRUD = () => {
     addBulkRecord,
     addWeightEntry,
     updateWeightRecord,
+    addMilkEntry,
+    endLactation,
     getUpcomingHealthRecords,
     searchExact,
   }

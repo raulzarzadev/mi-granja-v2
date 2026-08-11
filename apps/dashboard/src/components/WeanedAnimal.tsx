@@ -1,9 +1,8 @@
 'use client'
 
-import { addDays, differenceInCalendarDays, format, toDate } from 'date-fns'
+import { addDays, differenceInCalendarDays, format, parseISO, toDate } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useState } from 'react'
-import { setLoading } from '@/features/auth/authSlice'
 import { useAnimalCRUD, WeanNextStage } from '@/hooks/useAnimalCRUD'
 import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import { Animal } from '@/types/animals'
@@ -69,7 +68,8 @@ export const WeanedAnimal = ({ animal }: WeanedAnimalProps) => {
 
   return (
     <>
-      <div
+      <button
+        type="button"
         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${statusBg} ${statusBorder} ${statusColor} cursor-pointer hover:opacity-80 transition-opacity`}
         onClick={(e) => {
           e.stopPropagation()
@@ -79,7 +79,7 @@ export const WeanedAnimal = ({ animal }: WeanedAnimalProps) => {
       >
         <Icon icon="babyBottle" className="text-xs" />
         <span>{statusText}</span>
-      </div>
+      </button>
 
       {showWeanModal && (
         <ModalWeanAnimal
@@ -88,6 +88,31 @@ export const WeanedAnimal = ({ animal }: WeanedAnimalProps) => {
           onClose={() => setShowWeanModal(false)}
         />
       )}
+    </>
+  )
+}
+
+export const WeanAnimalButton = ({ animal }: { animal: Animal }) => {
+  const [showWeanModal, setShowWeanModal] = useState(false)
+  const birthDate = animal.birthDate ? toDate(animal.birthDate) : null
+  const targetWeanDate = birthDate ? addDays(birthDate, getWeaningDays(animal)) : new Date()
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setShowWeanModal(true)}
+        className="inline-flex min-h-11 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 px-3 text-xs font-semibold text-amber-800 transition-colors hover:border-amber-400 hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
+      >
+        Destetar
+      </button>
+      {showWeanModal ? (
+        <ModalWeanAnimal
+          animal={animal}
+          targetWeanDate={targetWeanDate}
+          onClose={() => setShowWeanModal(false)}
+        />
+      ) : null}
     </>
   )
 }
@@ -106,18 +131,27 @@ const ModalWeanAnimal = ({ animal, targetWeanDate, onClose }: ModalWeanAnimalPro
     animal.weanedAt ? toDate(animal.weanedAt) : new Date(),
   )
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleWean = async (stageDecision: WeanNextStage) => {
     if (!wean) return
     setIsLoading(true)
-
-    await wean(animal.id, {
-      weanDate,
-      stageDecision,
-    })
-
-    onClose()
-    setLoading(false)
+    setError('')
+    try {
+      await wean(animal.id, {
+        weanDate,
+        stageDecision,
+      })
+      onClose()
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : 'No se pudo registrar el destete. Inténtalo de nuevo.',
+      )
+    } finally {
+      setIsLoading(false)
+    }
   }
   return (
     <Modal
@@ -133,7 +167,7 @@ const ModalWeanAnimal = ({ animal, targetWeanDate, onClose }: ModalWeanAnimalPro
           <Icon icon="babyBottle" className="text-3xl text-green-600" />
         </div> */}
 
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex justify-between">
+        <div className="grid gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 sm:grid-cols-2">
           <p className="text-sm text-blue-900">
             <span className="font-semibold">Animal:</span> {animal?.animalNumber}
           </p>
@@ -152,7 +186,7 @@ const ModalWeanAnimal = ({ animal, targetWeanDate, onClose }: ModalWeanAnimalPro
               type="date"
               id="weanDate"
               value={format(weanDate, 'yyyy-MM-dd')}
-              onChange={(e) => setWeanDate(new Date(e.target.value))}
+              onChange={(e) => setWeanDate(parseISO(e.target.value))}
               max={format(new Date(), 'yyyy-MM-dd')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
               disabled={isLoading}
@@ -164,39 +198,50 @@ const ModalWeanAnimal = ({ animal, targetWeanDate, onClose }: ModalWeanAnimalPro
             </p>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          {error ? (
+            <p
+              role="alert"
+              className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+            >
+              {error}
+            </p>
+          ) : null}
+
+          <div className="grid gap-2 pt-2 sm:grid-cols-[auto_1fr_1fr]">
             <Button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+              className="min-h-11 px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
               disabled={isLoading}
               variant="ghost"
               size="sm"
             >
               Cancelar
             </Button>
-            <div className="flex items-center gap-1">
-              <Button
-                color="success"
-                onClick={(e) => {
-                  e.preventDefault()
-                  handleWean('engorda')
-                }}
-                size="sm"
-              >
-                Destetar→Engorda
-              </Button>
-              <Button
-                onClick={(e) => {
-                  e.preventDefault()
-                  handleWean('reproductor')
-                }}
-                color="primary"
-                size="sm"
-              >
-                Destetar→Repro
-              </Button>
-            </div>
+            <Button
+              color="warning"
+              onClick={(e) => {
+                e.preventDefault()
+                void handleWean('engorda')
+              }}
+              size="sm"
+              disabled={isLoading}
+              className="min-h-11"
+            >
+              🍖 A Engorda
+            </Button>
+            <Button
+              onClick={(e) => {
+                e.preventDefault()
+                void handleWean('reproductor')
+              }}
+              color="success"
+              size="sm"
+              disabled={isLoading}
+              className="min-h-11"
+            >
+              ❤️ A Reproducción
+            </Button>
           </div>
         </form>
       </div>

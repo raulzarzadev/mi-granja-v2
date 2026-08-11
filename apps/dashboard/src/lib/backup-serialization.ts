@@ -21,6 +21,7 @@ const DATE_FIELDS_BY_COLLECTION: Record<string, string[]> = {
     'pregnantAt',
     'birthedAt',
     'weanedMotherAt',
+    'driedAt',
     // Marcado como candidato a venta
     'availableToSaleAt',
     // Ubicación física dentro de la granja
@@ -63,6 +64,7 @@ const KNOWN_DATE_FIELD_NAMES = new Set([
   'pregnantAt',
   'birthedAt',
   'weanedMotherAt',
+  'driedAt',
   'availableToSaleAt',
   'currentAreaAssignedAt',
   'timestamp',
@@ -279,6 +281,13 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
       'string (ISO 8601) | null | undefined. Fecha de parto como madre (hembras). Se limpia al destetar todas las crías.',
     weanedMotherAt:
       'string (ISO 8601) | null | undefined. Fecha en que destetó a sus crías (hembras). Se limpia al iniciar nuevo empadre.',
+    lactationStatus:
+      "'active' | 'dry' | undefined. Una lactancia activa mantiene a la hembra visible como Madre/Lechera aunque esté embarazada.",
+    lactationPurpose:
+      "'offspring' | 'dairy' | 'dual' | undefined. Distingue lactancia para crías, ordeño o ambos.",
+    driedAt: 'string (ISO 8601) | null | undefined. Fecha en que terminó la lactancia.',
+    milkRecords:
+      "[{ id: string, date: ISO 8601, amountMl: number, session: 'morning' | 'afternoon' | 'evening' | 'total', notes?: string, createdAt: ISO 8601 }] | undefined",
     availableToSaleAt:
       'string (ISO 8601) | null | undefined. Marcado por el usuario como candidato a venta. Se limpia al completarse la venta.',
     adminAction:

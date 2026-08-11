@@ -106,7 +106,7 @@ interface ApplyOptions {
  * Lógica:
  * 1. Si hay `weanCriaIds` → destetar primero esas crías (con `weaningDestination`).
  * 2. Si la selección incluye madres lactantes → destetar TODAS sus crías activas (mismo paso 1 fusionado).
- * 3. Para cada madre cuyas últimas crías quedaron destetadas → cerrar lactancia (`weanedMotherAt`, `birthedAt: null`).
+ * 3. Para cada madre cuyas últimas crías quedaron destetadas → cerrar sólo la lactancia destinada a crías.
  * 4. Aplicar el target al conjunto principal de animales:
  *    - Stages manuales (engorda, descarte): `stage = target`.
  *    - Reproductor: `stage='reproductor'`, `weaningDestination='reproductor'`, `isWeaned=true`, `weanedAt`.
@@ -173,10 +173,18 @@ export async function applyChangeStage(
     }
     if (mothersToClose.size > 0) {
       const batch = writeBatch(db)
-      for (const motherId of mothersToClose) {
-        batch.update(doc(db, 'animals', motherId), {
+      for (const motherRef of mothersToClose) {
+        const mother = allAnimals.find(
+          (animal) => animal.id === motherRef || animal.animalNumber === motherRef,
+        )
+        if (!mother) continue
+        const keepsMilking =
+          mother.lactationPurpose === 'dairy' || mother.lactationPurpose === 'dual'
+        batch.update(doc(db, 'animals', mother.id), {
           weanedMotherAt: dateTs,
-          birthedAt: null,
+          ...(keepsMilking
+            ? { lactationStatus: 'active' }
+            : { lactationStatus: 'dry', birthedAt: null, driedAt: dateTs }),
           updatedAt: serverTimestamp(),
         })
       }
@@ -307,7 +315,6 @@ export async function applyChangeStage(
           pregnantBy: maleId,
           pregnantBreedingRecordId: docRef.id,
           pregnantBreedingId: breedingId,
-          birthedAt: null,
           weanedMotherAt: null,
         } as unknown as Partial<Animal>,
         { onProgress: opts.onProgress },

@@ -37,27 +37,36 @@ interface BirthDateInputProps {
   disabled?: boolean
   error?: string
   showAge?: boolean
+  required?: boolean
 }
 
 export function BirthDateInput({
   value,
   onChange,
   label = 'Fecha de Nacimiento',
-  placeholder = 'Opcional',
+  placeholder,
   disabled,
   error,
   showAge = true,
+  required = false,
 }: BirthDateInputProps) {
   const age = computeAge(value)
+  const resolvedPlaceholder = placeholder ?? (required ? 'Seleccionar fecha' : 'Opcional')
   return (
     <div className="space-y-1">
-      <p className="text-sm font-medium text-gray-700 mb-1">{label}</p>
+      <p className="text-sm font-medium text-gray-700 mb-1">
+        {label}
+        {required && <span aria-hidden="true"> *</span>}
+      </p>
       <div className="flex items-center gap-2">
         <DatePickerModal
           value={value}
           onChange={onChange}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           disabled={disabled}
+          ariaLabel={`${label}${required ? ', requerido' : ''}`}
+          required={required}
+          invalid={!!error}
         />
         {showAge && age && (
           <span className="font-bold text-sm text-green-700 bg-green-50 px-1.5 py-0.5 rounded whitespace-nowrap">

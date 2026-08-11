@@ -85,15 +85,15 @@ function MessageText({ text, onNavigate }: { text: string; onNavigate: (href: st
 
 const SUGERENCIAS = [
   '¿Qué pendientes hay hoy?',
-  '¿Cuántos animales tengo?',
-  '¿Cómo registro un parto?',
-  '¿Cómo registrar embarazo?',
+  '¿Qué animales requieren atención?',
+  '¿Cuáles fueron los últimos movimientos?',
+  '¿Cuánta leche se registró hoy?',
+  '¿Qué lecheras no tienen ordeño hoy?',
   '¿Qué partos puedo registrar?',
-  '¿Cómo crear un empadre?',
-  '¿Cómo agregar un animal nuevo?',
-  '¿Qué hembras están embarazadas?',
-  '¿Cómo registrar una venta?',
-  '¿Cómo crear un recordatorio?',
+  '¿Qué destetes están próximos?',
+  '¿Cómo registro leche?',
+  '¿Cómo agrego un animal?',
+  '¿Cuántos animales activos tengo?',
 ]
 
 export default function AiAssistant() {
@@ -225,8 +225,8 @@ export default function AiAssistant() {
             {items.length === 0 && (
               <div className="space-y-3">
                 <p className="text-sm text-gray-500">
-                  Pregunta sobre tus animales, pendientes, partos, empadres o cómo realizar
-                  cualquier acción en la app.
+                  Consulta el estado actual de tus animales, movimientos recientes y acciones
+                  pendientes. El asistente usa los datos de esta granja en cada respuesta.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {SUGERENCIAS.map((s) => (

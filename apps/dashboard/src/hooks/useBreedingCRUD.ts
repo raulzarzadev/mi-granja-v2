@@ -141,8 +141,6 @@ export const useBreedingCRUD = () => {
             pregnantBy: data.maleId,
             pregnantBreedingRecordId: docRef.id,
             pregnantBreedingId: breedingId,
-            birthedAt: null,
-            weanedMotherAt: null,
             updatedAt: now,
           })
         }

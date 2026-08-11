@@ -10,13 +10,14 @@ import Button from './buttons/Button'
 
 interface ModalEditAnimalProps {
   animal: Animal
+  triggerClassName?: string
 }
 
 /**
  * Modal que contiene el formulario de animales
  * Incluye botón trigger y manejo del modal
  */
-const ModalEditAnimal: React.FC<ModalEditAnimalProps> = ({ animal }) => {
+const ModalEditAnimal: React.FC<ModalEditAnimalProps> = ({ animal, triggerClassName = '' }) => {
   const { isOpen, openModal, closeModal } = useModal()
   const { update: updateAnimal, animals } = useAnimalCRUD()
   const handleEditAnimal = async (
@@ -28,7 +29,13 @@ const ModalEditAnimal: React.FC<ModalEditAnimalProps> = ({ animal }) => {
   }
   return (
     <>
-      <Button onClick={openModal} className="cursor-pointer" icon="edit" color="primary" size="sm">
+      <Button
+        onClick={openModal}
+        className={`min-h-11 cursor-pointer whitespace-nowrap ${triggerClassName}`}
+        icon="edit"
+        color="primary"
+        size="sm"
+      >
         Editar
       </Button>
 

@@ -50,8 +50,6 @@ export default function EditarEmpadrePage() {
           pregnantBy: data.maleId,
           pregnantBreedingRecordId: record.id,
           pregnantBreedingId: data.breedingId ?? record.breedingId ?? null,
-          birthedAt: null,
-          weanedMotherAt: null,
         })
       }
     }

@@ -168,6 +168,12 @@ export function computeAnimalEffectiveStage(
 ): AnimalStageKey {
   const activeBreedings = (breedings || []).filter((b) => b.status !== 'finished')
 
+  // La lactancia es una condición explícita y concurrente. Tiene prioridad visual
+  // incluso si faltan datos de edad legacy o la hembra ya volvió a quedar preñada.
+  if (animal.gender === 'hembra' && animal.lactationStatus === 'active') {
+    return 'crias_lactantes'
+  }
+
   const baseStage = computeAnimalStage(animal)
   // Una cría no puede estar en estado reproductivo (empadre/embarazos/crias_lactantes).
   // Evita clasificar crías con datos legacy (birthedAt/pregnantAt heredados) como madres.
@@ -245,26 +251,14 @@ export function computeAnimalEffectiveStage(
 }
 
 /**
- * Un animal se considera «sin destetar» si aún es lactante por edad.
- *
- *  - weanedAt registrado → destetado
- *  - ageDays >= weaningDays → ya pasó la etapa lactante (aunque no haya registro)
- *  - ageDays < weaningDays → sigue lactando
- *
- * La edad es el criterio autoritativo: animales viejos sin registro de destete
- * no siguen "amamantando" aunque falte el flag. Sin birthDate ni age cae a
- * lactante (fallback conservador) salvo que esté explícitamente destetado.
+ * Un animal sigue «sin destetar» hasta que exista una decisión explícita.
+ * La fecha objetivo es sólo una recomendación operativa: no debe separar a la
+ * cría de su madre automáticamente porque el destete real puede retrasarse.
  */
 function isUnweanedAnimal(a: Animal): boolean {
-  if (a.weanedAt) return false
-  const weaningDays = getWeaningDays(a)
-  const ageDays = a.birthDate
-    ? Math.floor((Date.now() - toDate(a.birthDate).getTime()) / (1000 * 60 * 60 * 24))
-    : typeof a.age === 'number'
-      ? a.age * 30
-      : null
-  if (ageDays === null) return a.isWeaned !== true
-  return ageDays < weaningDays
+  if (a.weanedAt || a.isWeaned === true) return false
+  if (a.stage && a.stage !== 'cria') return false
+  return true
 }
 
 /**

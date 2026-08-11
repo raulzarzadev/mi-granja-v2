@@ -182,7 +182,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       }
 
       // Detectar madres cuyas últimas crías fueron destetadas en esta tanda
-      const mothersToClose: string[] = []
+      const mothersToUpdate: Animal[] = []
       const byMother = new Map<string, Set<string>>()
       for (const a of animals) {
         if (a.stage !== 'cria' || a.status === 'muerto' || a.status === 'vendido') continue
@@ -192,15 +192,24 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       }
       for (const [motherId, criaIds] of byMother) {
         const remaining = [...criaIds].filter((id) => !weanedIds.has(id))
-        if (remaining.length === 0) mothersToClose.push(motherId)
+        if (remaining.length === 0) {
+          const mother = animals.find((animal) =>
+            [animal.id, animal.animalNumber].includes(motherId),
+          )
+          if (mother) mothersToUpdate.push(mother)
+        }
       }
-      if (mothersToClose.length > 0) {
+      if (mothersToUpdate.length > 0) {
         const batch = writeBatch(db)
         const weanedMotherAt = Timestamp.fromDate(new Date())
-        for (const motherId of mothersToClose) {
-          batch.update(doc(db, 'animals', motherId), {
+        for (const mother of mothersToUpdate) {
+          const keepsMilking =
+            mother.lactationPurpose === 'dairy' || mother.lactationPurpose === 'dual'
+          batch.update(doc(db, 'animals', mother.id), {
             weanedMotherAt,
-            birthedAt: null,
+            ...(keepsMilking
+              ? { lactationStatus: 'active' }
+              : { birthedAt: null, lactationStatus: 'dry', driedAt: weanedMotherAt }),
             updatedAt: serverTimestamp(),
           })
         }
@@ -583,6 +592,10 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       // Actualizar estado reproductivo de la madre
       await update(form.animalId, {
         birthedAt: actualDate,
+        lactationStatus: 'active',
+        lactationPurpose:
+          mother?.lactationPurpose === 'dairy' ? 'dual' : (mother?.lactationPurpose ?? 'offspring'),
+        driedAt: null,
         pregnantAt: null,
         pregnantBy: null,
         pregnantBreedingRecordId: null,
@@ -761,6 +774,37 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
 
   const etapasTabs = [
     {
+      label: etapaLabel('cria', allCrias.length),
+      content: (
+        <TabStageCrias
+          allCrias={allCrias}
+          columns={destetesColumns}
+          openBulkWean={openBulkWean}
+          onChangeStage={openChangeStage}
+        />
+      ),
+    },
+    {
+      label: etapaLabel('juvenil', juvenilAnimals.length),
+      content: (
+        <TabStageJuvenil
+          animals={juvenilAnimals}
+          columns={animalColumns}
+          onChangeStage={openChangeStage}
+        />
+      ),
+    },
+    {
+      label: etapaLabel('engorda', engordaAnimals.length),
+      content: (
+        <TabStageEngorda
+          animals={engordaAnimals}
+          columns={animalColumns}
+          onChangeStage={openChangeStage}
+        />
+      ),
+    },
+    {
       label: etapaLabel('reproductor', reproductorAnimals.length),
       content: (
         <TabStageRepro
@@ -815,44 +859,11 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       ),
     },
     {
-      label: etapaLabel('cria', allCrias.length),
-      content: (
-        <TabStageCrias
-          allCrias={allCrias}
-          columns={destetesColumns}
-          openBulkWean={openBulkWean}
-          onChangeStage={openChangeStage}
-        />
-      ),
-    },
-    {
       label: etapaLabel('crias_lactantes', noursingMothersRows.length),
       content: (
         <TabStageNoursingMothers
           noursingMothersRows={noursingMothersRows}
           columns={noursingMothersColumns}
-          animals={animals}
-          openBulkWean={openBulkWean}
-          onChangeStage={openChangeStage}
-        />
-      ),
-    },
-    {
-      label: etapaLabel('juvenil', juvenilAnimals.length),
-      content: (
-        <TabStageJuvenil
-          animals={juvenilAnimals}
-          columns={animalColumns}
-          onChangeStage={openChangeStage}
-        />
-      ),
-    },
-    {
-      label: etapaLabel('engorda', engordaAnimals.length),
-      content: (
-        <TabStageEngorda
-          animals={engordaAnimals}
-          columns={animalColumns}
           onChangeStage={openChangeStage}
         />
       ),
@@ -958,12 +969,12 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       <Modal
         isOpen={showCrossTabDups}
         onClose={() => setShowCrossTabDups(false)}
-        title={`Animales en múltiples etapas (${crossTabDuplicates.length})`}
+        title={`Animales con condiciones simultáneas (${crossTabDuplicates.length})`}
         size="xl"
       >
         <p className="text-sm text-gray-600 mb-3">
-          Estos animales están contados en más de una pestaña de Etapas. Cada uno se suma N veces en
-          el total general.
+          Es normal que una hembra, por ejemplo, sea Madre/Lechera y esté Embarazada al mismo
+          tiempo. Aquí puedes revisar todas sus vistas activas.
         </p>
         <div className="space-y-2 max-h-[60vh] overflow-y-auto">
           {crossTabDuplicates.map((d) => (
@@ -976,7 +987,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
               {d.tabs.map((t) => (
                 <span
                   key={t}
-                  className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200"
+                  className="rounded border border-blue-200 bg-blue-100 px-1.5 py-0.5 text-xs text-blue-800"
                 >
                   {t}
                 </span>
@@ -1220,8 +1231,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                 pregnantBy: r.maleId,
                 pregnantBreedingRecordId: r.id,
                 pregnantBreedingId: r.breedingId ?? null,
-                birthedAt: null,
-                weanedMotherAt: null,
               })
             }
           }

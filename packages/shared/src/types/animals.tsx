@@ -42,12 +42,27 @@ export interface AnimalWeightEntry {
   notes?: string
 }
 
+export type LactationPurpose = 'offspring' | 'dairy' | 'dual'
+export type LactationStatus = 'active' | 'dry'
+export type MilkingSession = 'morning' | 'afternoon' | 'evening' | 'total'
+
+export interface AnimalMilkEntry {
+  id: string
+  date: Date
+  /** Cantidad almacenada en mililitros para evitar errores de punto flotante. */
+  amountMl: number
+  session: MilkingSession
+  notes?: string
+  createdAt: Date
+}
+
 export interface Animal {
   id: string
   farmerId: string
   farmId?: string
   animalNumber: string // ID único del animal (asignado por el granjero)
   name?: string // Nombre opcional del animal
+  imageUrl?: string // Foto principal opcional almacenada en Firebase Storage
   type: AnimalType
   breed?: string // Raza del animal
   stage: AnimalStage
@@ -68,6 +83,8 @@ export interface Animal {
   updatedAt: Date
   // Historial de pesajes del animal
   weightRecords?: AnimalWeightEntry[]
+  // Historial de producción de leche
+  milkRecords?: AnimalMilkEntry[]
   // Sistema unificado de registros
   records?: AnimalRecord[]
   // Estado general del animal
@@ -104,6 +121,12 @@ export interface Animal {
   birthedAt?: Date | null
   /** Fecha en que destetó a sus crías (hembras). Se limpia al iniciar nuevo empadre. */
   weanedMotherAt?: Date | null
+  /** Lactancia explícita; puede coexistir con empadre o embarazo. */
+  lactationStatus?: LactationStatus
+  /** Define si la lactancia alimenta crías, produce leche o cumple ambos propósitos. */
+  lactationPurpose?: LactationPurpose
+  /** Fecha de secado cuando termina una lactancia productiva. */
+  driedAt?: Date | null
   // Metadata de admin para rastrear acciones administrativas
   adminAction?: {
     performedByAdmin: boolean
@@ -418,12 +441,12 @@ export const animal_stage_config: Record<
   // Breeding-derived stages
   empadre: { label: 'Empadre', icon: '🛏️', color: 'bg-amber-100 text-amber-800' },
   embarazos: { label: 'Embarazos', icon: '🤰', color: 'bg-pink-100 text-pink-800' },
-  crias_lactantes: { label: 'Madre (Lactando)', icon: '🍼', color: 'bg-cyan-100 text-cyan-800' },
+  crias_lactantes: { label: 'Madre / Lechera', icon: '🍼', color: 'bg-cyan-100 text-cyan-800' },
   // Animal stages
   cria: { label: 'Cría', icon: '👶', color: 'bg-blue-100 text-blue-800' },
   juvenil: { label: 'Juvenil', icon: '🌱', color: 'bg-teal-100 text-teal-800' },
   engorda: { label: 'Engorda', icon: '🍖', color: 'bg-orange-100 text-orange-800' },
-  reproductor: { label: 'Reproducción', icon: '❤️', color: 'bg-rose-100 text-rose-800' },
+  reproductor: { label: 'Reproductores', icon: '❤️', color: 'bg-rose-100 text-rose-800' },
   descarte: { label: 'Descarte', icon: '🚫', color: 'bg-gray-100 text-gray-800' },
 }
 

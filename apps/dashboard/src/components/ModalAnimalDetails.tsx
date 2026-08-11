@@ -36,7 +36,13 @@ const ModalAnimalDetails: React.FC<ModalAnimalDetailsProps> = ({ animal, trigger
           Información
         </button>
       )}
-      <Modal isOpen={isOpen} onClose={closeModal} title={'Detalles del Animal'} size="lg">
+      <Modal
+        isOpen={isOpen}
+        onClose={closeModal}
+        title="Detalles del animal"
+        size="xl"
+        contentClassName="!p-0"
+      >
         {freshAnimal && <AnimalDetailView animal={freshAnimal} onDeleted={closeModal} />}
         {!freshAnimal && (
           <div className="text-center text-gray-500">No se encontró información del animal.</div>

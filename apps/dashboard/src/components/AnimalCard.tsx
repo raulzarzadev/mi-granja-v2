@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import React from 'react'
 import { computeAnimalStage, formatWeight } from '@/lib/animal-utils'
 import {
@@ -57,9 +58,20 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           {/* Species emoji */}
-          <span className="text-xl leading-none" aria-hidden="true">
-            {animal_icon[animal.type]}
-          </span>
+          {animal.imageUrl ? (
+            <Image
+              src={animal.imageUrl}
+              alt=""
+              width={36}
+              height={36}
+              unoptimized
+              className="h-9 w-9 shrink-0 rounded-lg border border-gray-100 object-cover"
+            />
+          ) : (
+            <span className="text-xl leading-none" aria-hidden="true">
+              {animal_icon[animal.type]}
+            </span>
+          )}
 
           {/* Number + optional name */}
           <div className="min-w-0">

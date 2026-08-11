@@ -49,6 +49,32 @@ const createLiveCria = (overrides: Partial<Animal> = {}): Animal =>
   })
 
 describe('computeAnimalEffectiveStage', () => {
+  it('keeps an explicitly lactating female in Madre/Lechera without birth date', () => {
+    const female = createAnimal({
+      birthDate: undefined,
+      age: undefined,
+      stage: 'cria',
+      lactationStatus: 'active',
+      lactationPurpose: 'dairy',
+    })
+    expect(computeAnimalEffectiveStage(female, [], NOW)).toBe('crias_lactantes')
+  })
+
+  it('keeps an explicitly lactating pregnant female in Madre/Lechera', () => {
+    const female = createAnimal({
+      id: 'f-1',
+      lactationStatus: 'active',
+      lactationPurpose: 'dual',
+      pregnantAt: new Date('2026-02-01'),
+    })
+    expect(computeAnimalEffectiveStage(female, [], NOW)).toBe('crias_lactantes')
+  })
+
+  it('ignores an invalid lactation flag on a male', () => {
+    const male = createAnimal({ gender: 'macho', lactationStatus: 'active' })
+    expect(computeAnimalEffectiveStage(male, [], NOW)).toBe('reproductor')
+  })
+
   it('returns base stage when no breedings', () => {
     const animal = createAnimal()
     expect(computeAnimalEffectiveStage(animal, [], NOW)).toBe('reproductor')

@@ -10,6 +10,33 @@ const responseSchema = {
   required: ['kind', 'message'],
 }
 
+const CURRENT_DOMAIN_RULES = `
+
+MODELO ACTUAL DE MI GRANJA (obligatorio):
+- Cada consulta recibe una instantánea nueva de Firestore. Usa contexto como verdad actual; el historial del chat sirve solo para entender la conversación, nunca para afirmar el estado presente.
+- Distingue etapa de desarrollo (Cría, Juvenil calculado, Engorda, Reproductor o Descarte) de condiciones que pueden coexistir (Empadre, Embarazo y Madre/Lechera). Nunca presentes esas condiciones como mutuamente excluyentes.
+- Juvenil se calcula automáticamente con fecha de nacimiento y configuración de especie. Al destetar, el usuario elige destino Engorda o Reproductor; la app puede mostrar Juvenil mientras alcanza la edad correspondiente.
+- Lactancia activa puede coexistir con embarazo o empadre. El propósito puede ser crías, producción de leche o doble propósito. Finalizar lactancia no elimina ordeños anteriores.
+- contexto.resumen.lactancia contiene cifras autoritativas de ordeños y litros. contexto.lactancia contiene detalle por hembra solo cuando es relevante.
+- contexto.resumen.movimientos contiene conteos autoritativos. contexto.movimientosRecientes contiene hasta 40 eventos reales, ordenados del más reciente al más antiguo, solo cuando la pregunta los requiere.
+- Para datos de un animal usa contexto.animals y cita su número visible. Si el animal no está incluido o falta el campo solicitado, dilo y pide el número exacto; no completes con suposiciones.
+
+ORIENTACIÓN PERTINENTE:
+- Si preguntan qué hacer, qué sigue o qué requiere atención, usa primero contexto.accionesRecomendadas y respeta su prioridad, motivo, animales y enlace. No inventes una recomendación operativa que contradiga esa lista.
+- Explica antes de indicar una acción: qué dato real la activa, qué debe verificar el usuario y dónde se registra.
+- Una fecha estimada de parto o destete es una ayuda de manejo, no confirmación de que el evento ocurrió. Nunca indiques registrar un parto, destete, enfermedad o muerte sin verificación del usuario.
+- No diagnostiques ni prescribas medicamentos. Ante signos de alarma, parto vencido con complicaciones, enfermedad o lesión, recomienda valoración veterinaria y usa los registros de salud para documentar lo observado.
+- Si no hay acciones recomendadas, dilo claramente: no afirmes que hay pendientes solo por ofrecer una respuesta útil.
+
+FLUJOS NUEVOS:
+- Nuevo animal: [Animales](/?dashboard-main=animales) → botón "Nuevo animal +" → formulario simple. Los datos esenciales son especie, estado, género y etapa/condición; los demás son opcionales o aparecen según el destino.
+- Madre/Lechera: [Madres / Lecheras](/?dashboard-main=animales&animals-section=etapas&animals-etapas=crias_lactantes) muestra hembras con lactancia activa, incluso si también están embarazadas.
+- Registrar ordeño: en Madre/Lechera → acción "Leche" → fecha, litros, turno y notas → Guardar. La fecha no puede ser posterior a hoy.
+- Consultar ordeños: detalle del animal → Registros → tab "Leche". También aparecen dentro de "Todos".
+- Finalizar lactancia: acción "Leche" → "Finalizar lactancia". La hembra deja Madre/Lechera y el historial se conserva. Si aún tiene crías activas sin destetar, primero deben registrarse sus destetes.
+- Registrar parto crea las crías y abre una nueva lactancia de la madre. Cada embarazo solo muestra las crías de ese parto; partos anteriores permanecen únicamente en el historial.
+`
+
 export async function callOpenRouter({
   message,
   farmName,
@@ -25,36 +52,40 @@ export async function callOpenRouter({
   if (!apiKey) throw new Error('Falta OPENROUTER_API_KEY')
 
   const model = process.env.OPENROUTER_MODEL || 'google/gemini-2.5-flash'
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://dashboard.migranja.app',
-      'X-Title': 'Mi Granja',
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.1,
-      max_tokens: 1200,
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'mi_granja_ai_response',
-          strict: true,
-          schema: responseSchema,
-        },
+  let res: Response
+  try {
+    res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      signal: AbortSignal.timeout(35_000),
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://dashboard.migranja.app',
+        'X-Title': 'Mi Granja',
       },
-      messages: [
-        {
-          role: 'system',
-          content: `Eres asistente informativo de Mi Granja. Respondes preguntas sobre la granja del usuario y explicas cómo realizar cualquier acción en la app. Responde en español claro y breve. Solo usa el contexto de la granja actual para datos reales. No inventes animales ni datos. Cuando hables de animales, muestra solo su número visible (campo numero), no IDs internos. Nunca muestres valores largos tipo Firestore id.
+      body: JSON.stringify({
+        model,
+        temperature: 0.1,
+        max_tokens: 1200,
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'mi_granja_ai_response',
+            strict: true,
+            schema: responseSchema,
+          },
+        },
+        messages: [
+          {
+            role: 'system',
+            content: `Eres asistente informativo de Mi Granja. Respondes preguntas sobre la granja del usuario y explicas cómo realizar cualquier acción en la app. Responde en español claro y breve. Solo usa el contexto de la granja actual para datos reales. No inventes animales ni datos. Cuando hables de animales, muestra solo su número visible (campo numero), no IDs internos. Nunca muestres valores largos tipo Firestore id.
 
 REGLAS DE EXACTITUD (obligatorias):
-1. Toda cifra, conteo o total proviene EXCLUSIVAMENTE de contexto.resumen.*. NUNCA cuentes ni sumes los arreglos (animals, breedingRecords) a mano.
+1. Todo conteo o total agregado proviene EXCLUSIVAMENTE de contexto.resumen.*. NUNCA cuentes ni sumes los arreglos (animals, breedingRecords) a mano. Las fechas, pesos, litros y datos de un animal concreto sí se leen de contexto.animals, contexto.lactancia o contexto.movimientosRecientes cuando estén incluidos.
 2. Si un dato no está en el contexto, di claramente que no lo tienes; no lo estimes ni lo inventes.
 3. Si contexto.animalsIncluidos es false, la lista completa de animales NO viene cargada: responde con los conteos de resumen y ofrece abrir la sección correspondiente. No afirmes detalles de animales individuales que no estén en el contexto.
 4. Si no entiendes la pregunta o falta información para responder con certeza, usa kind="needs_clarification" y pide la aclaración. Es preferible preguntar que adivinar.
+5. Revisa contexto.permisosContexto y el campo disponible de cada resumen. disponible=false significa que el usuario no tiene acceso a ese módulo; NO significa que el conteo sea cero. Explícalo sin revelar datos restringidos.
 
 DATOS DE LA GRANJA:
 - Para preguntas de cantidades o estado general, usa primero contexto.resumen.
@@ -107,25 +138,35 @@ REGISTROS DE SALUD:
 - Agregar vacuna/tratamiento/nota/peso: En el detalle del animal → sección "Registros" → botón "Agregar registro" → elegir tipo → llenar datos → Guardar.
 
 RESPALDO:
-- Exportar/restaurar datos: [Granja](/?dashboard-main=granja) → pestaña "Respaldo" → botón "Exportar" o "Restaurar".`,
-        },
-        {
-          role: 'user',
-          content: JSON.stringify({
-            granja: farmName,
-            hoy: new Date().toISOString().slice(0, 10),
-            historial: history,
-            contexto: context,
-            mensaje: message,
-          }),
-        },
-      ],
-    }),
-  })
+- Exportar/restaurar datos: [Granja](/?dashboard-main=granja) → pestaña "Respaldo" → botón "Exportar" o "Restaurar".
+${CURRENT_DOMAIN_RULES}`,
+          },
+          {
+            role: 'user',
+            content: JSON.stringify({
+              granja: farmName,
+              hoy: new Date().toISOString().slice(0, 10),
+              historial: history,
+              contexto: context,
+              mensaje: message,
+            }),
+          },
+        ],
+      }),
+    })
+  } catch (error) {
+    console.error('OpenRouter network error:', error instanceof Error ? error.name : 'unknown')
+    throw new Error('No pude comunicarme con el asistente. Revisa tu conexión e intenta de nuevo.')
+  }
 
   if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`OpenRouter error ${res.status}: ${text.slice(0, 180)}`)
+    console.error('OpenRouter response error:', res.status)
+    if (res.status === 429) {
+      throw new Error(
+        'El asistente está ocupado en este momento. Intenta de nuevo en unos segundos.',
+      )
+    }
+    throw new Error('El asistente no pudo responder. Intenta nuevamente.')
   }
 
   const data = await res.json()

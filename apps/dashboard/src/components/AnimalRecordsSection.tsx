@@ -6,7 +6,14 @@ import ModalRecordDetail, { RecordDetailRow } from '@/components/ModalRecordDeta
 import RecordRow from '@/components/RecordRow'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useReminders } from '@/hooks/useReminders'
-import { Animal, AnimalRecord, RecordType } from '@/types/animals'
+import { toDate } from '@/lib/dates'
+import {
+  Animal,
+  type AnimalMilkEntry,
+  AnimalRecord,
+  type MilkingSession,
+  RecordType,
+} from '@/types/animals'
 
 interface Props {
   animal: Animal
@@ -14,12 +21,66 @@ interface Props {
 
 const PAGE_SIZE = 5
 
-const filterTypes: Array<{ value: RecordType | ''; label: string; icon: string }> = [
+type RecordFilter = RecordType | 'milk' | ''
+
+interface MilkDisplayRecord {
+  id: string
+  type: 'milk'
+  date: Date
+  entry: AnimalMilkEntry
+}
+
+type DisplayRecord = AnimalRecord | MilkDisplayRecord
+
+const isMilkRecord = (record: DisplayRecord): record is MilkDisplayRecord => record.type === 'milk'
+
+const milkingSessionLabels: Record<MilkingSession, string> = {
+  morning: 'Mañana',
+  afternoon: 'Tarde',
+  evening: 'Noche',
+  total: 'Total del día',
+}
+
+const formatLiters = (amountMl: number) =>
+  `${(amountMl / 1000).toLocaleString('es-MX', { maximumFractionDigits: 3 })} L`
+
+const MilkRecordRow = ({ entry }: { entry: AnimalMilkEntry }) => (
+  <article className="min-w-0 rounded-lg border border-cyan-200 bg-cyan-50/60 p-3">
+    <div className="flex min-w-0 items-start justify-between gap-3">
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <span className="inline-flex shrink-0 items-center rounded-full bg-cyan-100 px-2 py-0.5 text-xs font-semibold text-cyan-900">
+            🥛 Leche
+          </span>
+          <span className="text-sm text-gray-600">{milkingSessionLabels[entry.session]}</span>
+        </div>
+        <p className="mt-1 text-sm text-gray-600">
+          {new Intl.DateTimeFormat('es-MX', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          }).format(toDate(entry.date))}
+        </p>
+        {entry.notes ? (
+          <p className="mt-2 whitespace-pre-wrap break-words text-sm text-gray-700">
+            {entry.notes}
+          </p>
+        ) : null}
+      </div>
+      <strong className="shrink-0 text-base font-semibold text-cyan-900">
+        {formatLiters(entry.amountMl)}
+      </strong>
+    </div>
+  </article>
+)
+
+const filterTypes: Array<{ value: RecordFilter; label: string; icon: string }> = [
   { value: '', label: 'Todos', icon: '📋' },
   { value: 'weight', label: 'Peso', icon: '⚖️' },
   { value: 'health', label: 'Salud', icon: '🏥' },
   { value: 'note', label: 'Nota', icon: '📝' },
   { value: 'birth', label: 'Parto', icon: '🐣' },
+  { value: 'milk', label: 'Leche', icon: '🥛' },
 ]
 
 const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
@@ -27,17 +88,20 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
   const { animals } = useAnimalCRUD()
   const { getRemindersByAnimal, markAnimalCompleted } = useReminders()
   const [detailRecord, setDetailRecord] = useState<RecordDetailRow | null>(null)
-  const [typeFilter, setTypeFilter] = useState<RecordType | ''>('')
+  const [typeFilter, setTypeFilter] = useState<RecordFilter>('')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
-  // Combinar records[] + weightRecords[] (para datos legacy sin record en records[])
-  const allRecords: AnimalRecord[] = useMemo(() => {
-    const records = [...(animal.records || [])]
+  // Combinar records[], pesos legacy y ordeños en una sola línea de tiempo.
+  const allRecords: DisplayRecord[] = useMemo(() => {
+    const records: DisplayRecord[] = [...(animal.records || [])]
 
     // Incluir weightRecords legacy que no tengan un record correspondiente en records[]
     if (animal.weightRecords) {
       const existingWeightDates = new Set(
-        records.filter((r) => r.type === 'weight').map((r) => new Date(r.date).getTime()),
+        records
+          .filter((record): record is AnimalRecord => !isMilkRecord(record))
+          .filter((record) => record.type === 'weight')
+          .map((record) => toDate(record.date).getTime()),
       )
       animal.weightRecords.forEach((wr) => {
         const wrTime = new Date(wr.date).getTime()
@@ -56,8 +120,17 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       })
     }
 
-    return records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  }, [animal.records, animal.weightRecords])
+    animal.milkRecords?.forEach((entry) => {
+      records.push({
+        id: `milk-${entry.id}`,
+        type: 'milk',
+        date: toDate(entry.date),
+        entry,
+      })
+    })
+
+    return records.sort((a, b) => toDate(b.date).getTime() - toDate(a.date).getTime())
+  }, [animal.records, animal.weightRecords, animal.milkRecords])
 
   const filteredRecords = useMemo(() => {
     if (!typeFilter) return allRecords
@@ -126,7 +199,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
     return counts
   }, [allRecords])
 
-  const handleFilterChange = (t: RecordType | '') => {
+  const handleFilterChange = (t: RecordFilter) => {
     setTypeFilter(t)
     setVisibleCount(PAGE_SIZE)
   }
@@ -227,7 +300,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
                 key={ft.value || 'all'}
                 type="button"
                 onClick={() => handleFilterChange(ft.value)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                className={`inline-flex min-h-11 items-center gap-1 rounded-full px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
                   isActive
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -254,9 +327,13 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
         <p className="text-sm text-gray-400 py-4">No hay registros de este tipo.</p>
       ) : (
         <div className="space-y-2">
-          {visibleRecords.map((rec) => (
-            <RecordRow key={rec.id} rec={rec} onClick={() => openDetail(rec)} />
-          ))}
+          {visibleRecords.map((rec) =>
+            isMilkRecord(rec) ? (
+              <MilkRecordRow key={rec.id} entry={rec.entry} />
+            ) : (
+              <RecordRow key={rec.id} rec={rec} onClick={() => openDetail(rec)} />
+            ),
+          )}
 
           {hasMore && (
             <button

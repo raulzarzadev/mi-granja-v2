@@ -750,6 +750,10 @@ const BACKUP_SCHEMA_JSON = `{
       "pregnantBreedingId": "string | null (código legible del empadre, ej: 10-10-25-01, solo hembras)",
       "birthedAt": "ISO 8601 | null (fecha de parto como madre, solo hembras)",
       "weanedMotherAt": "ISO 8601 | null (fecha en que destetó sus crías, solo hembras)",
+      "lactationStatus": "active | dry (estado explícito de lactancia, solo hembras)",
+      "lactationPurpose": "offspring | dairy | dual (crías, leche o ambos)",
+      "driedAt": "ISO 8601 | null (fecha en que terminó la lactancia)",
+      "milkRecords": "[{ id, date, amountMl, session, notes?, createdAt }] (opcional)",
       "availableToSaleAt": "ISO 8601 | null (marcado como listo para venta, se limpia al completarse la venta)",
       "adminAction": "{ performedByAdmin, adminEmail?, adminId?, originalTimestamp, impersonationReason? } (opcional)",
       "createdAt": "ISO 8601",
@@ -846,7 +850,7 @@ const BACKUP_SCHEMA_JSON = `{
       "etapas_por_edad": "cria=no destetado, juvenil=destetado pero sin edad reproductiva, engorda=manual, reproductor=edad reproductiva alcanzada, descarte=manual",
       "destete": "Al destetar una cría: isWeaned=true, weanedAt=fecha, stage cambia según destino. Para engorda→stage=engorda. Para reproductor→stage=juvenil.",
       "nacimiento_muerto": "Si una cría nace muerta: status=muerto, statusAt=fecha del parto",
-      "estado_reproductivo": "Solo hembras. pregnantAt=embarazada, birthedAt=parida, weanedMotherAt=destetó. Cada transición limpia el estado anterior.",
+      "estado_reproductivo": "Solo hembras. Embarazo y lactancia pueden coexistir. lactationStatus=active mantiene Madre/Lechera; el destete sólo termina la lactancia cuando lactationPurpose=offspring.",
       "ids_de_referencia": "motherId, fatherId, maleId, femaleId, offspring[] — son IDs internos. Al importar se remapean automáticamente.",
       "peso_auto_sync": "Si weight está presente pero weightRecords y records están vacíos, al importar se genera una entrada sintética con fecha=updatedAt (o createdAt) para mantener consistencia."
     }

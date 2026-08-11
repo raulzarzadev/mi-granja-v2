@@ -33,6 +33,22 @@ const genderLabels: Record<string, string> = {
   macho: 'Macho',
 }
 
+const createEmptyBirthRecord = (animalId = ''): BirthRecord => {
+  const now = new Date()
+  const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+    now.getDate(),
+  ).padStart(2, '0')}`
+
+  return {
+    animalId,
+    birthDate: localDate,
+    birthTime: now.toTimeString().slice(0, 5),
+    totalOffspring: 0,
+    offspring: [],
+    notes: '',
+  }
+}
+
 /**
  * Sub-modal para agregar/editar una cría
  */
@@ -287,24 +303,23 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
     offspringNumbers: string[]
   } | null>(null)
 
-  const [formData, setFormData] = useState<BirthRecord>({
-    animalId: selectedFemaleId || '',
-    birthDate: new Date().toISOString().split('T')[0],
-    birthTime: new Date().toTimeString().slice(0, 5),
-    totalOffspring: 0,
-    offspring: [],
-    notes: '',
-  })
+  const [formData, setFormData] = useState<BirthRecord>(() =>
+    createEmptyBirthRecord(selectedFemaleId),
+  )
 
   // Sub-modal state
   const [offspringModalOpen, setOffspringModalOpen] = useState(false)
   const [editingOffspring, setEditingOffspring] = useState<OffspringInfo | null>(null)
 
+  // Cada apertura representa un parto nuevo. Nunca conservar crías capturadas
+  // para otra hembra, otro embarazo o una apertura anterior del modal.
   React.useEffect(() => {
-    if (selectedFemaleId && formData.animalId !== selectedFemaleId) {
-      setFormData((prev) => ({ ...prev, animalId: selectedFemaleId }))
-    }
-  }, [selectedFemaleId])
+    if (!isOpen) return
+    setFormData(createEmptyBirthRecord(selectedFemaleId))
+    setOffspringModalOpen(false)
+    setEditingOffspring(null)
+    setSuccessData(null)
+  }, [isOpen, selectedFemaleId, breedingRecord?.id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -348,6 +363,9 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
 
   const handleClose = () => {
     setSuccessData(null)
+    setFormData(createEmptyBirthRecord())
+    setOffspringModalOpen(false)
+    setEditingOffspring(null)
     onClose()
   }
 
@@ -506,9 +524,21 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                       defaultValue={selectedFemaleId}
                       value={female?.id}
                       checked={formData.animalId === female?.id}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, animalId: e.target.value }))
-                      }
+                      onChange={(e) => {
+                        const nextMotherId = e.target.value
+                        setFormData((prev) =>
+                          prev.animalId === nextMotherId
+                            ? prev
+                            : {
+                                ...prev,
+                                animalId: nextMotherId,
+                                offspring: [],
+                                totalOffspring: 0,
+                              },
+                        )
+                        setOffspringModalOpen(false)
+                        setEditingOffspring(null)
+                      }}
                       className="mr-3"
                     />
                     <div className="flex items-center gap-2 flex-1">
@@ -677,19 +707,20 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
         )}
 
         {/* Botones */}
-        <div className="flex gap-2">
+        <div className="sticky -bottom-3 grid grid-cols-2 gap-3 border-t border-gray-200 bg-white pt-4 pb-1 sm:-bottom-4">
           <button
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50 transition-colors cursor-pointer"
+            className="min-h-12 rounded-xl border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={isSubmitting || !formData.animalId || formData.offspring.length === 0}
-            className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            aria-label={`Registrar parto con ${formData.offspring.length} cría${formData.offspring.length !== 1 ? 's' : ''}`}
+            className="flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-green-700 px-3 py-2.5 font-semibold text-white transition-colors hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? (
               <>
@@ -697,7 +728,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                 Registrando...
               </>
             ) : (
-              `Registrar Parto (${formData.offspring.length} cría${formData.offspring.length !== 1 ? 's' : ''})`
+              'Registrar parto'
             )}
           </button>
         </div>

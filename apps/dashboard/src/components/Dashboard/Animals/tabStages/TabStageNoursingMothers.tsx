@@ -3,6 +3,7 @@
 import Button from '@/components/buttons/Button'
 import DataTable, { type ColumnDef } from '@/components/DataTable'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
+import ModalMilkRecord from '@/components/ModalMilkRecord'
 import type { Animal } from '@/types/animals'
 import { animal_stage_config } from '@/types/animals'
 import type { NoursingMotherRow } from '../columns/noursingMothersColumns'
@@ -10,25 +11,12 @@ import type { NoursingMotherRow } from '../columns/noursingMothersColumns'
 interface Props {
   noursingMothersRows: NoursingMotherRow[]
   columns: ColumnDef<NoursingMotherRow>[]
-  animals: Animal[]
-  openBulkWean: (decision: 'engorda' | 'reproductor', ids: Set<string>) => void
   onChangeStage?: (animals: Animal[]) => void
-}
-
-const collectCriaIds = (rows: NoursingMotherRow[], motherIds: Set<string>): Set<string> => {
-  const ids = new Set<string>()
-  for (const r of rows) {
-    if (!motherIds.has(r.animal.id)) continue
-    for (const c of r.crias) ids.add(c.id)
-  }
-  return ids
 }
 
 export default function TabStageNoursingMothers({
   noursingMothersRows,
   columns,
-  animals: _animals,
-  openBulkWean,
   onChangeStage,
 }: Props) {
   const overdue = noursingMothersRows.filter((r) => r.daysUntilWean !== null && r.daysUntilWean < 0)
@@ -66,10 +54,11 @@ export default function TabStageNoursingMothers({
         </div>
       )}
       <p className="text-xs text-gray-500 mb-2">
-        Madres en lactancia. Destetar destetará a sus crías.
+        Hembras con lactancia activa. Pueden estar también embarazadas. El destete se registra en
+        cada cría; el ordeño se registra desde Leche.
       </p>
       <DataTable
-        title={`${animal_stage_config.crias_lactantes.icon} Madres Lactantes`}
+        title={`${animal_stage_config.crias_lactantes.icon} Madres / Lecheras`}
         data={noursingMothersRows}
         columns={columns}
         rowKey={(row) => row.animal.id}
@@ -77,31 +66,12 @@ export default function TabStageNoursingMothers({
         sessionStorageKey="mg_last_noursing_id"
         selectable
         renderBulkActions={(ids) => {
-          const criaIds = collectCriaIds(noursingMothersRows, ids)
           const selectedMothers = noursingMothersRows
             .filter((r) => ids.has(r.animal.id))
             .map((r) => r.animal)
-          if (criaIds.size === 0 && selectedMothers.length === 0) return null
+          if (selectedMothers.length === 0) return null
           return (
             <>
-              {criaIds.size > 0 && (
-                <>
-                  <Button
-                    size="xs"
-                    color="warning"
-                    onClick={() => openBulkWean('engorda', criaIds)}
-                  >
-                    {animal_stage_config.engorda.icon} Destetar a Engorda ({criaIds.size})
-                  </Button>
-                  <Button
-                    size="xs"
-                    color="error"
-                    onClick={() => openBulkWean('reproductor', criaIds)}
-                  >
-                    {animal_stage_config.reproductor.icon} Destetar a Reproductor ({criaIds.size})
-                  </Button>
-                </>
-              )}
               {onChangeStage && selectedMothers.length > 0 && (
                 <Button size="xs" color="primary" onClick={() => onChangeStage(selectedMothers)}>
                   ⇄ Cambiar etapa ({selectedMothers.length})
@@ -121,29 +91,9 @@ export default function TabStageNoursingMothers({
           />
         )}
         renderActions={(row) => {
-          const criaIds = new Set(row.crias.map((c) => c.id))
           return (
             <>
-              {criaIds.size > 0 && (
-                <>
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    color="warning"
-                    onClick={() => openBulkWean('engorda', criaIds)}
-                  >
-                    {animal_stage_config.engorda.icon} Destetar Engorda
-                  </Button>
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    color="error"
-                    onClick={() => openBulkWean('reproductor', criaIds)}
-                  >
-                    {animal_stage_config.reproductor.icon} Destetar Reproductor
-                  </Button>
-                </>
-              )}
+              <ModalMilkRecord animal={row.animal} />
               {onChangeStage && (
                 <Button
                   size="xs"
@@ -157,7 +107,7 @@ export default function TabStageNoursingMothers({
             </>
           )
         }}
-        emptyMessage="No hay madres en lactancia."
+        emptyMessage="No hay madres o lecheras con lactancia activa."
       />
     </div>
   )

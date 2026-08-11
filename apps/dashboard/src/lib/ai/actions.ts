@@ -6,6 +6,7 @@ import { Reminder } from '@/types'
 import { Animal, type AnimalStageKey } from '@/types/animals'
 import { BreedingRecord, type FemaleBreedingInfo } from '@/types/breedings'
 import type { FarmPermission } from '@/types/farm'
+import { selectRelevance } from './context-relevance'
 import { hasPermission } from './server'
 import { AiAction } from './types'
 
@@ -106,6 +107,29 @@ function normalizeAnimal(doc: FirebaseFirestore.QueryDocumentSnapshot): Animal {
     birthedAt: asDate(data.birthedAt),
     weanedAt: asDate(data.weanedAt) ?? undefined,
     weanedMotherAt: asDate(data.weanedMotherAt),
+    driedAt: asDate(data.driedAt),
+    currentAreaAssignedAt: asDate(data.currentAreaAssignedAt),
+    weightRecords: Array.isArray(data.weightRecords)
+      ? data.weightRecords.map((entry: Record<string, unknown>) => ({
+          ...entry,
+          date: asDate(entry.date) ?? new Date(0),
+        }))
+      : [],
+    milkRecords: Array.isArray(data.milkRecords)
+      ? data.milkRecords.map((entry: Record<string, unknown>) => ({
+          ...entry,
+          date: asDate(entry.date) ?? new Date(0),
+          createdAt: asDate(entry.createdAt) ?? asDate(entry.date) ?? new Date(0),
+        }))
+      : [],
+    records: Array.isArray(data.records)
+      ? data.records.map((entry: Record<string, unknown>) => ({
+          ...entry,
+          date: asDate(entry.date) ?? new Date(0),
+          createdAt: asDate(entry.createdAt) ?? asDate(entry.date) ?? new Date(0),
+          nextDueDate: asDate(entry.nextDueDate) ?? undefined,
+        }))
+      : [],
   } as Animal
 }
 
@@ -141,6 +165,28 @@ function countBy<T extends string>(items: T[]): Record<T, number> {
 
 function daysUntil(from: Date, to: Date): number {
   return Math.round((to.getTime() - from.getTime()) / 86400000)
+}
+
+function startOfDay(value: Date): Date {
+  const day = new Date(value)
+  day.setHours(0, 0, 0, 0)
+  return day
+}
+
+function litersFromMl(amountMl: number): number {
+  return Math.round((amountMl / 1000) * 1000) / 1000
+}
+
+function weightInKg(value: Animal['weight']): number | null {
+  const grams = typeof value === 'string' ? Number(value) : value
+  if (!Number.isFinite(grams) || grams === null || grams === undefined) return null
+  return Math.round((Number(grams) / 1000) * 100) / 100
+}
+
+export interface AiContextAccess {
+  animals: boolean
+  reminders: boolean
+  breeding: boolean
 }
 
 async function createAnimal(
@@ -443,35 +489,31 @@ export async function executeAiAction(params: ExecuteParams) {
 
 // Decide qué detalle crudo incluir según la pregunta, para no volcar
 // cientos de registros en cada llamada (degrada la precisión del modelo).
-function selectRelevance(message: string, animals: { numero?: string }[]) {
-  const msg = (message || '').toLowerCase()
-  const wantsAnimalList =
-    /\b(lista|listar|listado|cu[aá]l|cu[aá]les|mu[eé]stra|mostrar|dame|ens[eé][ñn]a|todos|todas|qu[eé] animales|machos|hembras|crías|crias)\b/.test(
-      msg,
-    )
-  const wantsBreeding = /empadre|monta|parto|embaraz|preñ|gestaci|destet|reproduc/.test(msg)
-  const referencedAnimals = animals.filter(
-    (a) => a.numero && msg.includes(String(a.numero).toLowerCase()),
-  )
-  return { wantsAnimalList, wantsBreeding, referencedAnimals }
-}
-
-export async function buildAiContext(farmId: string, message = '') {
+export async function buildAiContext(
+  farmId: string,
+  message = '',
+  access: AiContextAccess = { animals: true, reminders: true, breeding: true },
+) {
   const firestore = getAdminFirestore()
   const [animalsSnap, remindersSnap, breedingSnap] = await Promise.all([
-    firestore.collection('animals').where('farmId', '==', farmId).limit(1000).get(),
-    firestore
-      .collection('reminders')
-      .where('farmId', '==', farmId)
-      .where('completed', '==', false)
-      .limit(40)
-      .get(),
-    firestore.collection('breedingRecords').where('farmId', '==', farmId).limit(200).get(),
+    access.animals
+      ? firestore.collection('animals').where('farmId', '==', farmId).get()
+      : Promise.resolve(null),
+    access.reminders
+      ? firestore
+          .collection('reminders')
+          .where('farmId', '==', farmId)
+          .where('completed', '==', false)
+          .get()
+      : Promise.resolve(null),
+    access.breeding
+      ? firestore.collection('breedingRecords').where('farmId', '==', farmId).get()
+      : Promise.resolve(null),
   ])
 
   const today = new Date()
-  const farmAnimals = animalsSnap.docs.map(normalizeAnimal)
-  const farmBreedingRecords = breedingSnap.docs.map(normalizeBreedingRecord)
+  const farmAnimals = animalsSnap?.docs.map(normalizeAnimal) ?? []
+  const farmBreedingRecords = breedingSnap?.docs.map(normalizeBreedingRecord) ?? []
   const animalsWithComputedStage = farmAnimals.map((animal) => ({
     ...animal,
     computedStage: computeAnimalEffectiveStage(animal, farmBreedingRecords, today, farmAnimals),
@@ -479,23 +521,70 @@ export async function buildAiContext(farmId: string, message = '') {
   const activeAnimals = animalsWithComputedStage.filter(
     (animal) => animal.status === 'activo' || animal.status === undefined || animal.status === null,
   )
+  const visibleAnimalNumber = (reference?: string | null) => {
+    if (!reference) return null
+    return (
+      farmAnimals.find(
+        (candidate) => candidate.id === reference || candidate.animalNumber === reference,
+      )?.animalNumber ?? null
+    )
+  }
   const animals = animalsWithComputedStage.map((animal) => {
+    const milkRecords = animal.milkRecords || []
+    const lastMilkRecord = [...milkRecords].sort(
+      (a, b) => (asDate(b.date)?.getTime() ?? 0) - (asDate(a.date)?.getTime() ?? 0),
+    )[0]
+    const lastRecord = [...(animal.records || [])].sort(
+      (a, b) => (asDate(b.date)?.getTime() ?? 0) - (asDate(a.date)?.getTime() ?? 0),
+    )[0]
     return {
       id: animal.id,
       numero: animal.animalNumber,
       nombre: animal.name || '',
       especie: animal.type,
+      raza: animal.breed || null,
       genero: animal.gender,
       etapa: animal.stage,
       etapaCalculada: animal.computedStage,
       estado: animal.status || 'activo',
+      pesoActualKg: weightInKg(animal.weight),
+      lote: animal.batch || null,
+      tieneAreaAsignada: Boolean(animal.currentAreaId),
+      madre: visibleAnimalNumber(animal.motherId),
+      padre: visibleAnimalNumber(animal.fatherId),
       fechaNacimiento: dateKey(animal.birthDate),
+      destetado: Boolean(animal.isWeaned || animal.weanedAt),
+      fechaDestete: dateKey(animal.weanedAt),
+      destinoDestete: animal.weaningDestination || null,
       fechaEmbarazo: dateKey(animal.pregnantAt),
       fechaParto: dateKey(animal.birthedAt),
+      lactancia: {
+        estado: animal.lactationStatus || null,
+        proposito: animal.lactationPurpose || null,
+        fechaSecado: dateKey(animal.driedAt),
+        totalOrdeños: milkRecords.length,
+        ultimoOrdeño: lastMilkRecord
+          ? {
+              fecha: dateKey(lastMilkRecord.date),
+              litros: litersFromMl(lastMilkRecord.amountMl),
+              turno: lastMilkRecord.session,
+            }
+          : null,
+      },
+      registros: {
+        total: animal.records?.length || 0,
+        ultimo: lastRecord
+          ? {
+              fecha: dateKey(lastRecord.date),
+              tipo: lastRecord.type,
+              titulo: lastRecord.title,
+            }
+          : null,
+      },
     }
   })
 
-  const reminders = remindersSnap.docs.map((doc) => {
+  const reminders = (remindersSnap?.docs ?? []).map((doc) => {
     const data = doc.data()
     const dueDate = data.dueDate?.toDate?.() ? data.dueDate.toDate() : new Date(data.dueDate)
     return {
@@ -523,7 +612,7 @@ export async function buildAiContext(farmId: string, message = '') {
 
   const breedingRecords = farmBreedingRecords.map((record) => {
     const male = animals.find((animal) => animal.id === record.maleId)
-    const breedingLabel = record.breedingId || record.id
+    const breedingLabel = record.breedingId || 'sin código visible'
     const femaleInfos = record.femaleBreedingInfo || []
     const pendingFemales = femaleInfos
       .filter((info: FemaleBreedingInfo) => !info.pregnancyConfirmedDate && !info.actualBirthDate)
@@ -604,6 +693,127 @@ export async function buildAiContext(farmId: string, message = '') {
       }
     })
 
+  const todayStart = startOfDay(today)
+  const sevenDaysAgo = new Date(todayStart)
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
+  const milkEntries = activeAnimals.flatMap((animal) =>
+    (animal.milkRecords || []).map((entry) => ({ animal, entry, date: asDate(entry.date) })),
+  )
+  const milkToday = milkEntries.filter(
+    ({ date }) => date && startOfDay(date).getTime() === todayStart.getTime(),
+  )
+  const milkLast7Days = milkEntries.filter(({ date }) => {
+    if (!date) return false
+    const entryDay = startOfDay(date)
+    return (
+      entryDay.getTime() >= sevenDaysAgo.getTime() && entryDay.getTime() <= todayStart.getTime()
+    )
+  })
+  const lactatingFemales = activeAnimals.filter(
+    (animal) =>
+      animal.gender === 'hembra' &&
+      (animal.lactationStatus === 'active' || animal.computedStage === 'crias_lactantes'),
+  )
+  const dairyFemalesWithoutMilkToday = lactatingFemales.filter((animal) => {
+    if (animal.lactationPurpose !== 'dairy' && animal.lactationPurpose !== 'dual') return false
+    return !milkToday.some(({ animal: milkAnimal }) => milkAnimal.id === animal.id)
+  })
+
+  const recentMovements: {
+    fecha: string
+    momento: string
+    animal: string
+    tipo: string
+    detalle: string
+  }[] = []
+  const addMovement = (date: unknown, animal: Animal, type: string, detail: string) => {
+    const movementDate = asDate(date)
+    if (!movementDate) return
+    recentMovements.push({
+      fecha: dateKey(movementDate) || '',
+      momento: movementDate.toISOString(),
+      animal: animal.animalNumber,
+      tipo: type,
+      detalle: detail.slice(0, 240),
+    })
+  }
+  for (const animal of farmAnimals) {
+    for (const record of animal.records || []) {
+      addMovement(
+        record.date,
+        animal,
+        `registro_${record.type}`,
+        `${record.title}${record.notes ? ` · ${record.notes}` : ''}`,
+      )
+    }
+    for (const entry of animal.milkRecords || []) {
+      addMovement(
+        entry.date,
+        animal,
+        'ordeño',
+        `${litersFromMl(entry.amountMl)} L · ${entry.session}${entry.notes ? ` · ${entry.notes}` : ''}`,
+      )
+    }
+    const unifiedWeightDates = new Set(
+      (animal.records || [])
+        .filter((record) => record.type === 'weight')
+        .map((record) => dateKey(record.date)),
+    )
+    for (const entry of animal.weightRecords || []) {
+      if (unifiedWeightDates.has(dateKey(entry.date))) continue
+      addMovement(
+        entry.date,
+        animal,
+        'pesaje',
+        `${Math.round((entry.weight / 1000) * 100) / 100} kg${entry.notes ? ` · ${entry.notes}` : ''}`,
+      )
+    }
+    if (animal.statusAt) {
+      addMovement(animal.statusAt, animal, 'estado', animal.status || 'activo')
+    }
+    if (animal.weanedAt) {
+      addMovement(
+        animal.weanedAt,
+        animal,
+        'destete',
+        animal.weaningDestination ? `Destino: ${animal.weaningDestination}` : 'Destetado',
+      )
+    }
+    if (animal.pregnantAt) {
+      addMovement(animal.pregnantAt, animal, 'embarazo', 'Embarazo confirmado')
+    }
+    const hasBirthRecord = (animal.records || []).some(
+      (record) => record.type === 'birth' && dateKey(record.date) === dateKey(animal.birthedAt),
+    )
+    if (animal.birthedAt && !hasBirthRecord) {
+      addMovement(animal.birthedAt, animal, 'parto', 'Parto registrado')
+    }
+    if (animal.currentAreaAssignedAt) {
+      addMovement(
+        animal.currentAreaAssignedAt,
+        animal,
+        'ubicación',
+        animal.currentAreaId ? 'Asignado a un área de la granja' : 'Sin área asignada',
+      )
+    }
+    if (animal.driedAt) {
+      addMovement(animal.driedAt, animal, 'lactancia', 'Lactancia finalizada')
+    }
+    if (animal.availableToSaleAt) {
+      addMovement(animal.availableToSaleAt, animal, 'venta', 'Marcado como disponible para venta')
+    }
+    if (animal.soldInfo?.date) {
+      addMovement(animal.soldInfo.date, animal, 'venta', 'Venta registrada')
+    }
+    if (animal.lostInfo?.lostAt) {
+      addMovement(animal.lostInfo.lostAt, animal, 'pérdida', 'Animal marcado como perdido')
+    }
+    if (animal.lostInfo?.foundAt) {
+      addMovement(animal.lostInfo.foundAt, animal, 'ubicación', 'Animal marcado como encontrado')
+    }
+  }
+  recentMovements.sort((a, b) => b.momento.localeCompare(a.momento))
+
   const pregnancyPendingFemales = pregnancyCandidates.reduce(
     (total, record) => total + record.hembrasPendientes.length,
     0,
@@ -612,67 +822,247 @@ export async function buildAiContext(farmId: string, message = '') {
     (a, b) => (a.diasRestantes ?? 9999) - (b.diasRestantes ?? 9999),
   )
 
+  const recommendedActions: {
+    prioridad: 'alta' | 'media' | 'informativa'
+    accion: string
+    motivo: string
+    animales?: string[]
+    enlace: string
+  }[] = []
+  const overdueBirths = sortedExpectedBirths.filter(
+    (birth) => birth.diasRestantes !== null && birth.diasRestantes < 0,
+  )
+  const upcomingBirths = sortedExpectedBirths.filter(
+    (birth) => birth.diasRestantes !== null && birth.diasRestantes >= 0 && birth.diasRestantes <= 7,
+  )
+  const overdueWeaning = pendingWeaningRows.filter(
+    (row) => row.diasRestantes !== null && row.diasRestantes < 0,
+  )
+  const upcomingWeaning = pendingWeaningRows.filter(
+    (row) => row.diasRestantes !== null && row.diasRestantes >= 0 && row.diasRestantes <= 7,
+  )
+  if (overdueBirths.length > 0) {
+    recommendedActions.push({
+      prioridad: 'alta',
+      accion: 'Revisar y registrar partos vencidos',
+      motivo: `${overdueBirths.length} parto(s) superaron la fecha esperada. Confirma primero que el parto ocurrió; si hay signos de alarma, contacta a un veterinario.`,
+      animales: overdueBirths.map((birth) => birth.hembra).slice(0, 20),
+      enlace: '/?dashboard-main=animales&animals-section=etapas&animals-etapas=embarazos',
+    })
+  }
+  if (upcomingBirths.length > 0) {
+    recommendedActions.push({
+      prioridad: 'media',
+      accion: 'Preparar próximos partos',
+      motivo: `${upcomingBirths.length} parto(s) están previstos en los próximos 7 días.`,
+      animales: upcomingBirths.map((birth) => birth.hembra).slice(0, 20),
+      enlace: '/?dashboard-main=animales&animals-section=etapas&animals-etapas=embarazos',
+    })
+  }
+  if (overdueWeaning.length > 0) {
+    recommendedActions.push({
+      prioridad: 'alta',
+      accion: 'Revisar destetes vencidos',
+      motivo: `${overdueWeaning.length} cría(s) superaron la fecha estimada de destete. La fecha es orientativa; valida condición y manejo antes de registrar.`,
+      animales: overdueWeaning.map((row) => row.numero).slice(0, 20),
+      enlace: '/?dashboard-main=animales&animals-section=etapas&animals-etapas=cria',
+    })
+  } else if (upcomingWeaning.length > 0) {
+    recommendedActions.push({
+      prioridad: 'media',
+      accion: 'Planear próximos destetes',
+      motivo: `${upcomingWeaning.length} cría(s) alcanzan su fecha estimada en los próximos 7 días.`,
+      animales: upcomingWeaning.map((row) => row.numero).slice(0, 20),
+      enlace: '/?dashboard-main=animales&animals-section=etapas&animals-etapas=cria',
+    })
+  }
+  if (pregnancyPendingFemales > 0) {
+    recommendedActions.push({
+      prioridad: 'media',
+      accion: 'Confirmar resultado de empadres',
+      motivo: `${pregnancyPendingFemales} hembra(s) siguen pendientes de confirmar embarazo.`,
+      animales: pregnancyCandidates.flatMap((record) => record.hembrasPendientes).slice(0, 20),
+      enlace: '/?dashboard-main=animales&animals-section=etapas&animals-etapas=empadre',
+    })
+  }
+  if (dairyFemalesWithoutMilkToday.length > 0) {
+    recommendedActions.push({
+      prioridad: 'informativa',
+      accion: 'Completar registros de ordeño de hoy',
+      motivo: `${dairyFemalesWithoutMilkToday.length} lechera(s) activas de producción o doble propósito no tienen ordeño registrado hoy.`,
+      animales: dairyFemalesWithoutMilkToday.map((animal) => animal.animalNumber).slice(0, 20),
+      enlace: '/?dashboard-main=animales&animals-section=etapas&animals-etapas=crias_lactantes',
+    })
+  }
+  const todayKey = dateKey(today) || ''
+  const overdueReminders = reminders.filter((reminder) => reminder.fecha < todayKey)
+  if (overdueReminders.length > 0) {
+    recommendedActions.push({
+      prioridad: 'alta',
+      accion: 'Atender recordatorios vencidos',
+      motivo: `${overdueReminders.length} recordatorio(s) tienen una fecha anterior a hoy.`,
+      animales: Array.from(
+        new Set(overdueReminders.flatMap((reminder) => reminder.animales)),
+      ).slice(0, 20),
+      enlace: '/?dashboard-main=recordatorios',
+    })
+  }
+
   const summary = {
-    animales: {
-      totalRegistrados: farmAnimals.length,
-      activos: activeAnimals.length,
-      inactivos: farmAnimals.length - activeAnimals.length,
-      porEstado: countBy(farmAnimals.map((animal) => animal.status || 'activo')),
-      porEspecie: countBy(activeAnimals.map((animal) => animal.type)),
-      porGenero: countBy(activeAnimals.map((animal) => animal.gender)),
-      porEtapaCalculada: countBy(
-        activeAnimals.map((animal) => animal.computedStage || animal.stage) as AnimalStageKey[],
-      ),
-    },
-    reproduccion: {
-      empadresActivos: farmBreedingRecords.filter(
-        (record) => (record.status || 'active') !== 'finished',
-      ).length,
-      embarazosPendientesParto: expectedBirths.length,
-      hembrasPendientesConfirmarEmbarazo: pregnancyPendingFemales,
-      madresLactantes: nursingMothers.length,
-    },
-    destetes: {
-      pendientes: pendingWeaningRows.length,
-      vencidos: pendingWeaningRows.filter(
-        (row) => row.diasRestantes !== null && row.diasRestantes < 0,
-      ).length,
-      proximos7Dias: pendingWeaningRows.filter(
-        (row) => row.diasRestantes !== null && row.diasRestantes >= 0 && row.diasRestantes <= 7,
-      ).length,
-      sinFechaNacimiento: pendingWeaningRows.filter((row) => row.fechaNacimiento === null).length,
-      proximos: pendingWeaningRows.slice(0, 20),
-      madres: nursingMothers.slice(0, 20),
-    },
-    recordatorios: {
-      pendientes: reminders.length,
-      vencidos: reminders.filter((reminder) => new Date(reminder.fecha) < today).length,
-      proximos7Dias: reminders.filter((reminder) => {
-        const dueDate = new Date(reminder.fecha)
-        const days = daysUntil(today, dueDate)
-        return days >= 0 && days <= 7
-      }).length,
-    },
+    animales: access.animals
+      ? {
+          disponible: true,
+          totalRegistrados: farmAnimals.length,
+          activos: activeAnimals.length,
+          inactivos: farmAnimals.length - activeAnimals.length,
+          porEstado: countBy(farmAnimals.map((animal) => animal.status || 'activo')),
+          porEspecie: countBy(activeAnimals.map((animal) => animal.type)),
+          porGenero: countBy(activeAnimals.map((animal) => animal.gender)),
+          porEtapaCalculada: countBy(
+            activeAnimals.map((animal) => animal.computedStage || animal.stage) as AnimalStageKey[],
+          ),
+        }
+      : { disponible: false },
+    reproduccion:
+      access.animals && access.breeding
+        ? {
+            disponible: true,
+            empadresActivos: farmBreedingRecords.filter(
+              (record) => (record.status || 'active') !== 'finished',
+            ).length,
+            embarazosPendientesParto: expectedBirths.length,
+            hembrasPendientesConfirmarEmbarazo: pregnancyPendingFemales,
+            madresLactantes: nursingMothers.length,
+          }
+        : { disponible: false },
+    lactancia: access.animals
+      ? {
+          disponible: true,
+          hembrasActivas: lactatingFemales.length,
+          paraCrias: lactatingFemales.filter((animal) => animal.lactationPurpose === 'offspring')
+            .length,
+          produccionLeche: lactatingFemales.filter((animal) => animal.lactationPurpose === 'dairy')
+            .length,
+          dobleProposito: lactatingFemales.filter((animal) => animal.lactationPurpose === 'dual')
+            .length,
+          ordeñosHoy: milkToday.length,
+          litrosHoy: litersFromMl(
+            milkToday.reduce((total, { entry }) => total + Number(entry.amountMl || 0), 0),
+          ),
+          ordeñosUltimos7Dias: milkLast7Days.length,
+          litrosUltimos7Dias: litersFromMl(
+            milkLast7Days.reduce((total, { entry }) => total + Number(entry.amountMl || 0), 0),
+          ),
+          lecherasSinRegistroHoy: dairyFemalesWithoutMilkToday.length,
+        }
+      : { disponible: false },
+    destetes: access.animals
+      ? {
+          disponible: true,
+          pendientes: pendingWeaningRows.length,
+          vencidos: pendingWeaningRows.filter(
+            (row) => row.diasRestantes !== null && row.diasRestantes < 0,
+          ).length,
+          proximos7Dias: pendingWeaningRows.filter(
+            (row) => row.diasRestantes !== null && row.diasRestantes >= 0 && row.diasRestantes <= 7,
+          ).length,
+          sinFechaNacimiento: pendingWeaningRows.filter((row) => row.fechaNacimiento === null)
+            .length,
+          proximos: pendingWeaningRows.slice(0, 20),
+          madres: nursingMothers.slice(0, 20),
+        }
+      : { disponible: false },
+    recordatorios: access.reminders
+      ? {
+          disponible: true,
+          pendientes: reminders.length,
+          vencidos: overdueReminders.length,
+          proximos7Dias: reminders.filter((reminder) => {
+            const dueDate = new Date(`${reminder.fecha}T12:00:00`)
+            const days = daysUntil(today, dueDate)
+            return days >= 0 && days <= 7
+          }).length,
+        }
+      : { disponible: false },
+    movimientos: access.animals
+      ? {
+          disponible: true,
+          totalDetectados: recentMovements.length,
+          porTipo: countBy(recentMovements.map((movement) => movement.tipo)),
+          ultimo: recentMovements[0] || null,
+        }
+      : { disponible: false },
   }
 
   // Recorte por relevancia: el resumen (autoritativo) va siempre; los arreglos
   // crudos solo cuando la pregunta los necesita.
-  const { wantsAnimalList, wantsBreeding, referencedAnimals } = selectRelevance(message, animals)
+  const {
+    wantsAnimalList,
+    wantsBreeding,
+    wantsMilk,
+    wantsMovements,
+    wantsGuidance,
+    referencedAnimals,
+  } = selectRelevance(message, animals)
   const animalsForContext = referencedAnimals.length
     ? referencedAnimals
     : wantsAnimalList
       ? animals.slice(0, 150)
       : []
   const animalsOmitidos = animals.length - animalsForContext.length
+  const referencedNumbers = new Set(referencedAnimals.map((animal) => animal.numero))
+  const movementsForContext = referencedNumbers.size
+    ? recentMovements.filter((movement) => referencedNumbers.has(movement.animal)).slice(0, 40)
+    : wantsMovements || wantsGuidance
+      ? recentMovements.slice(0, 40)
+      : []
+  const milkByAnimal = lactatingFemales
+    .map((animal) => {
+      const entries = milkEntries.filter(({ animal: owner }) => owner.id === animal.id)
+      const todayEntries = entries.filter(
+        ({ date }) => date && startOfDay(date).getTime() === todayStart.getTime(),
+      )
+      const lastEntry = [...entries].sort(
+        (a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0),
+      )[0]
+      return {
+        animal: animal.animalNumber,
+        proposito: animal.lactationPurpose || null,
+        criasActivas: activeUnweanedOffspring({ farmAnimals, motherId: animal.id }).map(
+          (offspring) => offspring.animalNumber,
+        ),
+        ordeñosHoy: todayEntries.length,
+        litrosHoy: litersFromMl(
+          todayEntries.reduce((total, { entry }) => total + Number(entry.amountMl || 0), 0),
+        ),
+        ultimoOrdeño: lastEntry
+          ? {
+              fecha: dateKey(lastEntry.entry.date),
+              litros: litersFromMl(lastEntry.entry.amountMl),
+              turno: lastEntry.entry.session,
+            }
+          : null,
+      }
+    })
+    .slice(0, 100)
+  const priorityOrder = { alta: 0, media: 1, informativa: 2 } as const
+  recommendedActions.sort((a, b) => priorityOrder[a.prioridad] - priorityOrder[b.prioridad])
 
   return {
-    nota: 'Las cifras y conteos provienen SIEMPRE de resumen.*; no cuentes los arreglos manualmente. Si la lista de animales no viene incluida (animalsIncluidos=false), responde con los conteos del resumen y ofrece abrir la sección correspondiente; no inventes datos.',
+    versionContexto: 2,
+    generadoEn: today.toISOString(),
+    permisosContexto: access,
+    nota: 'Instantánea leída directamente de Firestore para esta granja. Las cifras provienen SIEMPRE de resumen.*; no cuentes arreglos manualmente. etapaCalculada es la condición vigente mostrada por la app y puede coexistir con lactancia, empadre o embarazo. Si falta un dato, dilo explícitamente.',
     resumen: summary,
     animalsIncluidos: animalsForContext.length > 0,
     animalsOmitidos: animalsOmitidos > 0 ? animalsOmitidos : 0,
-    animals: animalsForContext,
+    animals: animalsForContext.map(({ id: _internalId, ...animal }) => animal),
     reminders,
     breedingRecords: wantsBreeding ? breedingRecords : [],
+    movimientosIncluidos: movementsForContext.length > 0,
+    movimientosRecientes: movementsForContext,
+    accionesRecomendadas: recommendedActions.slice(0, 12),
+    lactancia: wantsMilk || wantsGuidance || referencedAnimals.length > 0 ? milkByAnimal : [],
     reproductiveFlows: {
       embarazadas: expectedBirths.length,
       registrarEmbarazo: {
@@ -689,6 +1079,14 @@ export async function buildAiContext(farmId: string, message = '') {
         proximosPartos: sortedExpectedBirths.slice(0, 20),
         siNoHayPartos:
           'El boton abre un selector simple; si no hay partos previstos, indica que primero debe confirmarse un embarazo desde un empadre.',
+      },
+      registrarLeche: {
+        botonVisibleEn: 'Animales > Etapas > Madre/Lechera, acción Leche',
+        hembrasConLactanciaActiva: lactatingFemales.length,
+        registrosHoy: milkToday.length,
+        lecherasSinRegistroHoy: dairyFemalesWithoutMilkToday.map((animal) => animal.animalNumber),
+        historialVisibleEn:
+          'Detalle del animal > Registros > Leche. Finalizar lactancia conserva todo el historial.',
       },
     },
   }

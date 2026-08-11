@@ -214,8 +214,6 @@ describe('handleUnconfirmPregnancy', () => {
       pregnantBy: null,
       pregnantBreedingRecordId: null,
       pregnantBreedingId: null,
-      birthedAt: null,
-      weanedMotherAt: null,
     })
   })
 })
@@ -240,10 +238,38 @@ describe('handleRevertBirth', () => {
     expect(remove).toHaveBeenCalledWith('cria-1')
     expect(update).toHaveBeenCalledWith('f1', {
       birthedAt: null,
+      lactationStatus: 'dry',
+      driedAt: expect.any(Date),
       pregnantAt: confirmed,
       pregnantBy: 'male-1',
       pregnantBreedingRecordId: 'br-doc-1',
       pregnantBreedingId: '10-10-25-01',
     })
+  })
+
+  it('mantiene activa una lactancia lechera al revertir un parto', async () => {
+    const record = makeRecord({
+      femaleBreedingInfo: [
+        makeFemaleInfo({
+          femaleId: 'f1',
+          pregnancyConfirmedDate: new Date('2026-02-01'),
+          actualBirthDate: new Date('2026-06-01'),
+        }),
+      ],
+    })
+    const dairyFemale = makeAnimal({
+      id: 'f1',
+      lactationStatus: 'active',
+      lactationPurpose: 'dairy',
+    })
+    const { result, update } = setup([dairyFemale])
+
+    await result.current.handleRevertBirth(record, 'f1')
+
+    expect(update).toHaveBeenCalledWith(
+      'f1',
+      expect.objectContaining({ lactationStatus: 'active', birthedAt: null }),
+    )
+    expect(update.mock.calls[0]?.[1]).not.toHaveProperty('driedAt')
   })
 })

@@ -86,8 +86,6 @@ export const useBreedingHandlers = ({
         pregnantBy: null,
         pregnantBreedingRecordId: null,
         pregnantBreedingId: null,
-        birthedAt: null,
-        weanedMotherAt: null,
       })
     },
     [update, updateBreedingRecord],
@@ -109,15 +107,20 @@ export const useBreedingHandlers = ({
       )
       await updateBreedingRecord(record.id, { femaleBreedingInfo: updatedFemaleInfo })
 
+      const mother = animals.find((a) => a.id === femaleId)
+      const keepsMilking =
+        mother?.lactationPurpose === 'dairy' || mother?.lactationPurpose === 'dual'
       await update(femaleId, {
         birthedAt: null,
+        ...(keepsMilking
+          ? { lactationStatus: 'active' as const }
+          : { lactationStatus: 'dry' as const, driedAt: new Date() }),
         pregnantAt: femaleInfo.pregnancyConfirmedDate ?? null,
         pregnantBy: femaleInfo.pregnancyConfirmedDate ? record.maleId : null,
         pregnantBreedingRecordId: femaleInfo.pregnancyConfirmedDate ? record.id : null,
         pregnantBreedingId: femaleInfo.pregnancyConfirmedDate ? (record.breedingId ?? null) : null,
       })
 
-      const mother = animals.find((a) => a.id === femaleId)
       await addRecord(femaleId, {
         type: 'note',
         category: 'general',
@@ -132,22 +135,8 @@ export const useBreedingHandlers = ({
   const weanAndUpdateMother = useCallback(
     async (animalId: string, opts: { stageDecision: 'engorda' | 'reproductor' }) => {
       await wean(animalId, opts)
-      const animal = animals.find((a) => a.id === animalId)
-      if (animal?.motherId) {
-        const remainingCrias = animals.filter(
-          (a) =>
-            a.motherId === animal.motherId &&
-            a.id !== animalId &&
-            a.stage === 'cria' &&
-            a.status !== 'muerto' &&
-            a.status !== 'vendido',
-        )
-        if (remainingCrias.length === 0) {
-          await update(animal.motherId, { weanedMotherAt: new Date(), birthedAt: null })
-        }
-      }
     },
-    [animals, update, wean],
+    [wean],
   )
 
   return {

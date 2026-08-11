@@ -1,176 +1,188 @@
 import React from 'react'
 
-/**
- * Guía de etapas. Refleja exactamente el comportamiento de
- * computeAnimalStage (base) y computeAnimalEffectiveStage (overlay).
- */
+const developmentStages = [
+  {
+    icon: '🐣',
+    name: 'Cría',
+    detail: 'Desde el nacimiento hasta registrar su destete.',
+    tone: 'border-amber-200 bg-amber-50 text-amber-950',
+  },
+  {
+    icon: '🌱',
+    name: 'Juvenil',
+    detail: 'Etapa automática mientras alcanza la edad reproductiva.',
+    tone: 'border-teal-200 bg-teal-50 text-teal-950',
+  },
+] as const
+
+const destinations = [
+  {
+    icon: '🌾',
+    name: 'Engorda',
+    detail: 'Cuando su destino productivo es crecimiento o venta.',
+    tone: 'border-orange-200 bg-orange-50 text-orange-950',
+  },
+  {
+    icon: '❤️',
+    name: 'Reproductor',
+    detail: 'Cuando se conservará para reproducción.',
+    tone: 'border-rose-200 bg-rose-50 text-rose-950',
+  },
+] as const
+
+const conditions = [
+  {
+    icon: '🐂',
+    name: 'Empadre',
+    detail: 'Está participando en una monta activa.',
+  },
+  {
+    icon: '🤰',
+    name: 'Embarazo',
+    detail: 'La preñez ya fue confirmada.',
+  },
+  {
+    icon: '🥛',
+    name: 'Madre / Lechera',
+    detail: 'Tiene una lactancia activa para crías, leche o ambos.',
+  },
+] as const
+
 const StageGuidePage: React.FC = () => {
   return (
-    <div className="space-y-5 text-sm">
-      <section>
-        <h3 className="font-semibold text-gray-900 mb-1">Regla base del stage</h3>
-        <p className="text-gray-600">
-          <code>computeAnimalStage</code> evalúa en orden:
+    <div className="space-y-6">
+      <header>
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-green-700">
+          Dos conceptos fáciles
         </p>
-        <ol className="list-decimal list-inside text-gray-700 mt-2 space-y-1">
-          <li>
-            <strong>Stage manual</strong> (<code>engorda</code> / <code>descarte</code>): se respeta
-            tal cual — no se recalcula nunca.
-          </li>
-          <li>
-            <strong>No destetado</strong> (<code>isWeaned=false</code> y sin <code>weanedAt</code>)
-            → <span className="font-medium">cria</span>.
-          </li>
-          <li>
-            <strong>Edad &lt; weaningDays de la especie</strong> (gate doble) →{' '}
-            <span className="font-medium">cria</span>, aunque esté marcado como destetado.
-          </li>
-          <li>
-            Destetado + edad ≥ weaningDays + edad &lt; edad mínima reproductiva →{' '}
-            <span className="font-medium">juvenil</span>.
-          </li>
-          <li>
-            Destetado + edad ≥ weaningDays + edad ≥ edad mínima reproductiva →{' '}
-            <span className="font-medium">reproductor</span>.
-          </li>
-        </ol>
-      </section>
-
-      <section className="p-3 rounded-md bg-amber-50 border border-amber-200">
-        <p className="text-amber-900">
-          <strong>Gate doble para salir de cría:</strong> se requieren <em>destete explícito</em>{' '}
-          <u>Y</u> <em>edad ≥ weaningDays</em>. La edad sola no avanza, y un destete prematuro
-          tampoco saca al animal de cría si aún no alcanza la edad mínima de destete de su especie.
+        <h3 className="mt-1 text-xl font-bold text-slate-950 sm:text-2xl">
+          Desarrollo y condición actual
+        </h3>
+        <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
+          La <strong>etapa</strong> indica cómo va creciendo el animal. La{' '}
+          <strong>condición</strong> describe lo que está pasando en su ciclo reproductivo.
         </p>
-      </section>
+      </header>
 
-      <section>
-        <h3 className="font-semibold text-gray-900 mb-2">Tabla de decisión (base)</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs border border-gray-200 rounded">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="p-2 text-left border-b">Stage guardado</th>
-                <th className="p-2 text-left border-b">isWeaned / weanedAt</th>
-                <th className="p-2 text-left border-b">Edad vs weaningDays</th>
-                <th className="p-2 text-left border-b">Edad vs minBreeding</th>
-                <th className="p-2 text-left border-b">Resultado</th>
-              </tr>
-            </thead>
-            <tbody className="text-gray-700">
-              <tr>
-                <td className="p-2 border-b">
-                  <code>engorda</code> / <code>descarte</code>
-                </td>
-                <td className="p-2 border-b">cualquiera</td>
-                <td className="p-2 border-b">cualquiera</td>
-                <td className="p-2 border-b">cualquiera</td>
-                <td className="p-2 border-b font-medium">igual al guardado</td>
-              </tr>
-              <tr>
-                <td className="p-2 border-b">otro</td>
-                <td className="p-2 border-b">no destetado</td>
-                <td className="p-2 border-b">cualquiera</td>
-                <td className="p-2 border-b">cualquiera</td>
-                <td className="p-2 border-b font-medium">cria</td>
-              </tr>
-              <tr>
-                <td className="p-2 border-b">otro</td>
-                <td className="p-2 border-b">destetado</td>
-                <td className="p-2 border-b">&lt; weaningDays</td>
-                <td className="p-2 border-b">cualquiera</td>
-                <td className="p-2 border-b font-medium">cria</td>
-              </tr>
-              <tr>
-                <td className="p-2 border-b">otro</td>
-                <td className="p-2 border-b">destetado</td>
-                <td className="p-2 border-b">≥ weaningDays</td>
-                <td className="p-2 border-b">&lt; min. reproductiva</td>
-                <td className="p-2 border-b font-medium">juvenil</td>
-              </tr>
-              <tr>
-                <td className="p-2">otro</td>
-                <td className="p-2">destetado</td>
-                <td className="p-2">≥ weaningDays</td>
-                <td className="p-2">≥ min. reproductiva</td>
-                <td className="p-2 font-medium">reproductor</td>
-              </tr>
-            </tbody>
-          </table>
+      <section aria-labelledby="development-title">
+        <div className="mb-3 flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 font-bold text-green-800">
+            1
+          </span>
+          <div>
+            <h4 id="development-title" className="font-bold text-slate-950">
+              Etapa de desarrollo
+            </h4>
+            <p className="text-xs text-slate-500">Sigue una ruta principal</p>
+          </div>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-stretch">
+          {developmentStages.map((stage, index) => (
+            <React.Fragment key={stage.name}>
+              <article className={`rounded-2xl border p-3.5 ${stage.tone}`}>
+                <p className="text-xl" aria-hidden="true">
+                  {stage.icon}
+                </p>
+                <h5 className="mt-1 font-bold">{stage.name}</h5>
+                <p className="mt-1 text-sm leading-5 opacity-80">{stage.detail}</p>
+              </article>
+              {index === 0 && (
+                <div
+                  className="flex min-h-9 items-center justify-center text-green-700"
+                  aria-hidden="true"
+                >
+                  <span className="sm:hidden">↓</span>
+                  <span className="hidden sm:inline">→</span>
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+
+          <div
+            className="flex min-h-9 items-center justify-center text-green-700"
+            aria-hidden="true"
+          >
+            <span className="sm:hidden">↓</span>
+            <span className="hidden sm:inline">→</span>
+          </div>
+
+          <div className="grid gap-2">
+            {destinations.map((stage) => (
+              <article key={stage.name} className={`rounded-2xl border p-3 ${stage.tone}`}>
+                <h5 className="font-bold">
+                  <span aria-hidden="true">{stage.icon}</span> {stage.name}
+                </h5>
+                <p className="mt-1 text-xs leading-5 opacity-80">{stage.detail}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-xl border border-green-200 bg-green-50 p-3 text-sm leading-5 text-green-950">
+          <strong>La app te ayuda:</strong> después del destete, “Juvenil” se calcula por la edad.
+          Tú sólo decides si el destino será Engorda o Reproducción.
         </div>
       </section>
 
-      <section>
-        <h3 className="font-semibold text-gray-900 mb-2">Diagrama (base + overlay)</h3>
-        <pre className="text-[11px] leading-5 bg-gray-50 border border-gray-200 rounded p-3 overflow-x-auto">
-          {`BASE (computeAnimalStage):
+      <section aria-labelledby="condition-title" className="border-t border-slate-200 pt-5">
+        <div className="mb-3 flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-800">
+            2
+          </span>
+          <div>
+            <h4 id="condition-title" className="font-bold text-slate-950">
+              Condición reproductiva
+            </h4>
+            <p className="text-xs text-slate-500">Puede cambiar o combinarse</p>
+          </div>
+        </div>
 
-┌─────────┐  wean + edad ≥ weaningDays  ┌──────────┐  edad ≥ minBreeding  ┌─────────────┐
-│  cria   │ ──────────────────────────▶ │ juvenil  │ ───────────────────▶ │ reproductor │
-└─────────┘                             └──────────┘                      └─────────────┘
-     │
-     │ wean (destino = engorda)
-     ▼
-┌─────────┐
-│ engorda │   (manual, no se recalcula)
-└─────────┘
+        <div className="grid gap-2 sm:grid-cols-3">
+          {conditions.map((condition, index) => (
+            <article
+              key={condition.name}
+              className="relative rounded-2xl border border-blue-200 bg-blue-50 p-3.5 text-blue-950"
+            >
+              <div className="flex items-center gap-2">
+                <span aria-hidden="true" className="text-xl">
+                  {condition.icon}
+                </span>
+                <h5 className="font-bold">{condition.name}</h5>
+              </div>
+              <p className="mt-1 text-sm leading-5 text-blue-900/80">{condition.detail}</p>
+              {index < conditions.length - 1 && (
+                <span
+                  aria-hidden="true"
+                  className="absolute -right-4 top-1/2 z-10 hidden -translate-y-1/2 text-blue-500 sm:block"
+                >
+                  →
+                </span>
+              )}
+            </article>
+          ))}
+        </div>
 
-OVERLAY (computeAnimalEffectiveStage, solo si base ≠ cria):
-
-  cria  ⇒  siempre cria (overlay NO aplica — protege contra datos legacy)
-
-  macho + monta activa (breeding sin finish)             → empadre
-  hembra + info en breeding activo:
-    actualBirthDate + daysSince ≤ weaningDays especie   → crias_lactantes  (prioridad 1)
-    pregnancyConfirmedDate + sin parto                  → embarazos        (prioridad 2)
-    sin embarazo ni parto                                → empadre          (prioridad 3)
-
-FALLBACK (hembra sin breeding activo, usa campos del animal):
-  animal.birthedAt + daysSince ≤ weaningDays            → crias_lactantes
-  animal.pregnantAt                                     → embarazos`}
-        </pre>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-3 text-sm leading-5 text-cyan-950">
+            <strong>Puede coexistir:</strong> una Madre/Lechera también puede estar embarazada.
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm leading-5 text-slate-700">
+            <strong>Madre/Lechera:</strong> requiere fecha de nacimiento y último parto para evitar
+            clasificaciones incorrectas.
+          </div>
+        </div>
       </section>
 
-      <section>
-        <h3 className="font-semibold text-gray-900 mb-1">Overlay reproductivo</h3>
-        <p className="text-gray-600">
-          <code>computeAnimalEffectiveStage</code> añade contexto reproductivo sobre la base. Se
-          aplica en tabs de <em>Empadre</em>, <em>Embarazos</em>, <em>Crías lactantes</em> y
-          <em> Todos</em> (columna Etapa). Reglas exactas:
-        </p>
-        <ul className="list-disc list-inside text-gray-700 mt-2 space-y-1">
-          <li>
-            Si la base es <code>cria</code> → resultado <strong>cria</strong>. El overlay nunca
-            aplica sobre crías (evita clasificar legacy <code>birthedAt</code>/
-            <code>pregnantAt</code> como madres).
-          </li>
-          <li>
-            🐏 <strong>Empadre</strong>: macho en breeding activo, o hembra en breeding activo sin
-            embarazo confirmado ni parto.
-          </li>
-          <li>
-            🤰 <strong>Embarazos</strong>: hembra con <code>pregnancyConfirmedDate</code> y sin
-            <code> actualBirthDate</code>. Prioridad sobre empadre. Fallback:{' '}
-            <code>animal.pregnantAt</code> sin breeding activo.
-          </li>
-          <li>
-            🍼 <strong>Crías lactantes</strong>: hembra con <code>actualBirthDate</code> dentro del
-            periodo <code>weaningDays</code> de la especie. Máxima prioridad del overlay. Fallback:{' '}
-            <code>animal.birthedAt</code> dentro del mismo rango sin breeding activo.
-          </li>
-          <li>
-            Si no aplica ningún overlay → se conserva la base (juvenil / reproductor / engorda /
-            descarte).
-          </li>
-        </ul>
-      </section>
-
-      <section className="p-3 rounded-md bg-sky-50 border border-sky-200">
-        <p className="text-sky-900">
-          Toda la lógica vive en <code>computeAnimalStage</code> (base) y{' '}
-          <code>computeAnimalEffectiveStage</code> (overlay) en{' '}
-          <code>packages/shared/src/lib/animal-utils.ts</code>. Todos los tabs, conteos y vistas del
-          sistema consumen estas funciones — si ves una diferencia con esta guía, es un bug.
+      <section className="rounded-2xl bg-slate-900 p-4 text-white sm:flex sm:items-center sm:justify-between sm:gap-5">
+        <div>
+          <h4 className="font-bold">En resumen</h4>
+          <p className="mt-1 text-sm leading-5 text-slate-300">
+            Etapa = crecimiento. Condición = situación reproductiva actual.
+          </p>
+        </div>
+        <p className="mt-3 text-sm font-semibold text-green-300 sm:mt-0 sm:text-right">
+          Cría → Juvenil → Engorda o Reproductor
         </p>
       </section>
     </div>

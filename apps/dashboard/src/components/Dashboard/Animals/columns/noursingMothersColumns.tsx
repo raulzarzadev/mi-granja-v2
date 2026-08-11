@@ -2,6 +2,7 @@ import AnimalTag from '@/components/AnimalTag'
 import type { ColumnDef } from '@/components/DataTable'
 import { Icon } from '@/components/Icon/icon'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
+import { WeanAnimalButton } from '@/components/WeanedAnimal'
 import { findAnimalByRef } from '@/lib/animal-utils'
 import { type Animal, animal_gender_config } from '@/types/animals'
 
@@ -37,7 +38,7 @@ export const buildNoursingColumns = (animals: Animal[]): ColumnDef<NoursingMothe
   },
   {
     key: 'gender',
-    label: 'Genero',
+    label: 'Género',
     sortable: true,
     sortFn: (a, b) => (a.animal.gender || '').localeCompare(b.animal.gender || ''),
     render: (row) => {
@@ -55,7 +56,7 @@ export const buildNoursingColumns = (animals: Animal[]): ColumnDef<NoursingMothe
   },
   {
     key: 'crias',
-    label: 'Crias',
+    label: 'Crías',
     sortable: true,
     sortFn: (a, b) => {
       const mA = findAnimalByRef(animals, a.crias[0]?.id)?.animalNumber || ''
@@ -64,18 +65,22 @@ export const buildNoursingColumns = (animals: Animal[]): ColumnDef<NoursingMothe
     },
     render: (row) => {
       return row.crias?.length ? (
-        <div>
-          <div className="flex gap-1">
-            {row.crias.map((cria) => (
-              <AnimalTag animal={cria} key={cria.id} showModalOnClick showAge />
-            ))}
-          </div>
+        <div className="grid min-w-56 gap-2">
+          {row.crias.map((cria) => (
+            <div
+              key={cria.id}
+              className="flex min-h-11 flex-wrap items-center justify-between gap-2 rounded-xl border border-gray-200 bg-gray-50 p-2"
+            >
+              <AnimalTag animal={cria} showModalOnClick showAge />
+              <WeanAnimalButton animal={cria} />
+            </div>
+          ))}
         </div>
       ) : (
         <span className="text-gray-400">—</span>
       )
     },
-    className: 'whitespace-nowrap',
+    className: 'min-w-64',
   },
 
   {
