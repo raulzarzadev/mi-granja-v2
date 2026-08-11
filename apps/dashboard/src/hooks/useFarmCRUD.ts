@@ -32,8 +32,8 @@ import {
 } from '@/features/farm/farmSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { AppDispatch, RootState } from '@/features/store'
-import { db } from '@/lib/firebase'
 import { trackFarmCreated } from '@/lib/analytics/track'
+import { db } from '@/lib/firebase'
 import { FarmCollaborator } from '@/types/collaborators'
 import { Farm, FarmArea } from '@/types/farm'
 
@@ -206,7 +206,14 @@ export const useFarmCRUD = () => {
       }
 
       dispatch(serializeObj(addFarm(createdFarm)))
-      trackFarmCreated()
+      trackFarmCreated({
+        activity_type: farmData.productionProfile?.activityType,
+        country: farmData.location?.country,
+        purposes: farmData.productionProfile?.productionPurposes,
+        species: farmData.productionProfile?.animalSpecies,
+        crop_types: farmData.productionProfile?.cropTypes,
+        other_activity: farmData.productionProfile?.otherActivity,
+      })
       return createdFarm
     } catch (error) {
       console.error('Error creating farm:', error)

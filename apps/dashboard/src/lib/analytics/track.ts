@@ -13,8 +13,14 @@ export const trackLoginCompleted = (method: 'email' | 'google' | 'custom_token' 
 
 export const trackLogout = () => track(ANALYTICS_EVENTS.logout)
 
-export const trackFarmCreated = (props?: { purpose?: string }) =>
-  track(ANALYTICS_EVENTS.farm_created, props)
+export const trackFarmCreated = (props?: {
+  activity_type?: string
+  country?: string
+  purposes?: string[]
+  species?: string[]
+  crop_types?: string[]
+  other_activity?: string
+}) => track(ANALYTICS_EVENTS.farm_created, props)
 
 export const trackRecordCreated = (props: { record_type: string; category?: string }) =>
   track(ANALYTICS_EVENTS.record_created, props)

@@ -1,6 +1,29 @@
 import { FarmCollaborator } from './collaborators'
 import { AppDate } from './date'
 
+export type FarmActivityType = 'livestock' | 'crops' | 'mixed' | 'other'
+
+export type FarmProductionPurpose = 'breeding' | 'meat' | 'milk' | 'eggs' | 'fiber' | 'other'
+
+export type FarmAnimalSpecies = 'vaca' | 'oveja' | 'cabra' | 'cerdo' | 'gallina' | 'equino' | 'otro'
+
+export type FarmCropType = 'grains' | 'vegetables' | 'fruit' | 'forage' | 'other'
+
+export type FarmOtherActivity =
+  | 'beekeeping'
+  | 'aquaculture'
+  | 'veterinary'
+  | 'agrotourism'
+  | 'other'
+
+export interface FarmProductionProfile {
+  activityType: FarmActivityType
+  productionPurposes?: FarmProductionPurpose[]
+  animalSpecies?: FarmAnimalSpecies[]
+  cropTypes?: FarmCropType[]
+  otherActivity?: FarmOtherActivity
+}
+
 export interface Farm {
   id: string
   name: string
@@ -17,6 +40,8 @@ export interface Farm {
       lng: number
     }
   }
+  /** Respuestas del onboarding usadas para personalizar herramientas y orientación. */
+  productionProfile?: FarmProductionProfile
   areas?: FarmArea[]
   collaborators?: FarmCollaborator[]
   createdAt: AppDate

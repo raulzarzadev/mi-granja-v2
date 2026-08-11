@@ -393,6 +393,8 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     ownerId: 'string (ID del usuario dueño)',
     location:
       '{ address?: string, city?: string, state?: string, country?: string, coordinates?: { lat: number, lng: number } } | undefined',
+    productionProfile:
+      '{ activityType: "livestock"|"crops"|"mixed"|"other", productionPurposes?: string[], animalSpecies?: string[], cropTypes?: string[], otherActivity?: string } | undefined',
     createdAt: 'string (ISO 8601)',
     updatedAt: 'string (ISO 8601)',
   },
