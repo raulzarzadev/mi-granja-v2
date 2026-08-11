@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
+import { ANALYTICS_EVENTS } from '@mi-granja/shared'
+import { captureServerEvent } from '@/lib/analytics/posthog-server'
 import { getBillingTiers } from '@/lib/billing-config'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { getStripe, getTierByStripePriceId, mapStripeStatus } from '@/lib/stripe'
@@ -27,7 +29,10 @@ async function syncSubscription(subscription: Stripe.Subscription, fallbackUserI
   const now = new Date().toISOString()
   const subscriptionRef = firestore.doc(`subscriptions/${userId}`)
   const currentDoc = await subscriptionRef.get()
-  const createdAt = currentDoc.data()?.createdAt ?? now
+  const currentData = currentDoc.data()
+  const createdAt = currentData?.createdAt ?? now
+  const previousStatus = currentData?.status
+  const previousTierId = currentData?.tierId
 
   await Promise.all([
     subscriptionRef.set(
@@ -50,6 +55,26 @@ async function syncSubscription(subscription: Stripe.Subscription, fallbackUserI
       .doc(`users/${userId}`)
       .set({ planType, subscriptionStatus: status, billingTierId: tierId }, { merge: true }),
   ])
+
+  const wasPaid = previousStatus ? PAID_STATUSES.includes(previousStatus) : false
+  const isPaid = PAID_STATUSES.includes(status)
+  if (!wasPaid && isPaid) {
+    await captureServerEvent(userId, ANALYTICS_EVENTS.subscription_activated, {
+      tier_id: tierId,
+      status,
+    })
+  } else if (wasPaid && !isPaid) {
+    await captureServerEvent(userId, ANALYTICS_EVENTS.subscription_ended, {
+      tier_id: tierId,
+      status,
+    })
+  } else if (isPaid && previousTierId && previousTierId !== tierId) {
+    await captureServerEvent(userId, ANALYTICS_EVENTS.subscription_plan_changed, {
+      previous_tier_id: previousTierId,
+      tier_id: tierId,
+      status,
+    })
+  }
 }
 
 export async function POST(request: NextRequest) {

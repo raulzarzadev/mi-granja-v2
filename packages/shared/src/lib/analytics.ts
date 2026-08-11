@@ -33,6 +33,9 @@ export const ANALYTICS_EVENTS = {
   // Billing
   checkout_started: 'checkout_started',
   billing_portal_opened: 'billing_portal_opened',
+  subscription_activated: 'subscription_activated',
+  subscription_ended: 'subscription_ended',
+  subscription_plan_changed: 'subscription_plan_changed',
 
   // Animals
   animal_created: 'animal_created',

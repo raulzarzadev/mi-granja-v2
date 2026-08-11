@@ -14,6 +14,8 @@ describe('analytics configuration', () => {
       record_created: 'record_created',
       reminder_created: 'reminder_created',
       checkout_started: 'checkout_started',
+      subscription_activated: 'subscription_activated',
+      subscription_ended: 'subscription_ended',
     })
   })
 })
