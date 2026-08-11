@@ -26,7 +26,7 @@ export default function PlanPage() {
     : null
   const periodEndLabel =
     periodEnd && !Number.isNaN(periodEnd.getTime())
-      ? new Intl.DateTimeFormat('es-MX', { dateStyle: 'long' }).format(periodEnd)
+      ? `el ${new Intl.DateTimeFormat('es-MX', { dateStyle: 'long' }).format(periodEnd)}`
       : 'el final del periodo actual'
 
   async function handleSelect(tierId: PlanTierId) {
@@ -143,10 +143,10 @@ export default function PlanPage() {
               className="mt-4 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
-                <p className="font-semibold text-amber-950">Cancelación programada</p>
+                <p className="font-semibold text-amber-950">Plan cancelado</p>
                 <p className="mt-1 text-sm leading-5 text-amber-900">
-                  Mantendrás todas las funciones de {currentTier.label} hasta {periodEndLabel}.
-                  Después pasarás al plan Gratis y no habrá otro cobro.
+                  Aún podrás usar todas las funciones de {currentTier.label} hasta {periodEndLabel}.
+                  Después pasarás al plan Gratis y no habrá más cobros.
                 </p>
               </div>
               <button
