@@ -12,11 +12,12 @@ import FAQ from '../components/FAQ.astro'
 import Community from '../components/Community.astro'
 import CTA from '../components/CTA.astro'
 import Footer from '../components/Footer.astro'
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE } from '../lib/product-content'
 ---
 
 <Layout
-  title="Mi Granja — Software de Gestión Ganadera con IA"
-  description="Software ganadero en español con asistente IA. Controla animales, reproducción, partos, salud y recordatorios desde cualquier dispositivo. Plan gratis."
+  title={DEFAULT_TITLE}
+  description={DEFAULT_DESCRIPTION}
   keywords="software ganadero, asistente IA ganadero, gestion ganadera, control de animales, reproduccion animal, partos ganaderos, empadres, recordatorios ganaderos, Mi Granja"
 >
   <Header />

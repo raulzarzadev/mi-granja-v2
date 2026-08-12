@@ -1,6 +1,12 @@
 ---
 import PostHogAnalytics from '../components/PostHogAnalytics.astro'
 import { DASHBOARD_URL } from '../lib/urls'
+import {
+  DEFAULT_DESCRIPTION,
+  PRODUCT_FEATURES,
+  SITE_NAME,
+  SITE_URL,
+} from '../lib/product-content'
 
 interface Props {
   title: string
@@ -10,46 +16,55 @@ interface Props {
   extraJsonLd?: Record<string, unknown> | Record<string, unknown>[]
 }
 
-const SITE_URL = 'https://www.migranja.app'
-
 const { title, description, canonicalURL, keywords, extraJsonLd } = Astro.props
 // Force canonical host to www.migranja.app regardless of how the page was reached
 const canonical = canonicalURL || new URL(Astro.url.pathname, SITE_URL).href
-const siteName = 'Mi Granja'
 const ogImage = `${SITE_URL}/og-image.png`
+const markdownURL = new URL(
+  Astro.url.pathname === '/' ? '/index.md' : `${Astro.url.pathname.replace(/\/$/, '')}.md`,
+  SITE_URL,
+).href
+
+const serializeJsonLd = (value: Record<string, unknown>) =>
+  JSON.stringify(value).replace(/</g, '\\u003c')
 
 const jsonLdSoftware = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'Mi Granja',
+  '@id': `${SITE_URL}/#software`,
+  name: SITE_NAME,
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web',
-  description:
-    'Software de gestión ganadera para controlar animales, reproducción, salud, colaboradores y responder preguntas con asistente IA.',
+  description: DEFAULT_DESCRIPTION,
   url: SITE_URL,
   offers: {
     '@type': 'Offer',
     price: '0',
-    priceCurrency: 'MXN',
+    priceCurrency: 'USD',
   },
-  featureList: [
-    'Registro de animales',
-    'Control de reproducción',
-    'Historial de salud',
-    'Gestión de colaboradores',
-    'Recordatorios automáticos',
-    'Asistente IA para granjas',
-    'Respaldo de datos',
-  ],
-  inLanguage: 'es',
+  featureList: PRODUCT_FEATURES,
+  inLanguage: 'es-MX',
+  publisher: { '@id': `${SITE_URL}/#organization` },
 }
 
 const jsonLdOrg = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'Mi Granja',
+  '@id': `${SITE_URL}/#organization`,
+  name: SITE_NAME,
   url: SITE_URL,
   logo: `${SITE_URL}/logo/logo-migranja.png`,
+}
+
+const jsonLdWebsite = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  '@id': `${SITE_URL}/#website`,
+  name: SITE_NAME,
+  alternateName: 'MiGranja.app',
+  url: SITE_URL,
+  inLanguage: 'es-MX',
+  publisher: { '@id': `${SITE_URL}/#organization` },
 }
 
 const extraJsonLdItems = Array.isArray(extraJsonLd)
@@ -70,7 +85,10 @@ const extraJsonLdItems = Array.isArray(extraJsonLd)
     <meta name="description" content={description} />
     {keywords && <meta name="keywords" content={keywords} />}
     <link rel="canonical" href={canonical} />
-    <meta name="robots" content="index, follow" />
+    <link rel="alternate" type="text/markdown" href={markdownURL} />
+    <link rel="describedby" href={`${SITE_URL}/llms.txt`} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="author" content="Mi Granja" />
     <meta name="theme-color" content="#16a34a" />
 
@@ -85,8 +103,10 @@ const extraJsonLdItems = Array.isArray(extraJsonLd)
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:site_name" content={siteName} />
+    <meta property="og:site_name" content={SITE_NAME} />
     <meta property="og:image" content={ogImage} />
+    <meta property="og:image:secure_url" content={ogImage} />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Mi Granja — Software ganadero en español" />
@@ -100,10 +120,11 @@ const extraJsonLdItems = Array.isArray(extraJsonLd)
     <meta name="twitter:image:alt" content="Mi Granja — Software ganadero en español" />
 
     <!-- JSON-LD Structured Data -->
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLdSoftware)} />
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLdOrg)} />
+    <script type="application/ld+json" set:html={serializeJsonLd(jsonLdSoftware)} />
+    <script type="application/ld+json" set:html={serializeJsonLd(jsonLdOrg)} />
+    <script type="application/ld+json" set:html={serializeJsonLd(jsonLdWebsite)} />
     {extraJsonLdItems.map((item) => (
-      <script type="application/ld+json" set:html={JSON.stringify(item)} />
+      <script type="application/ld+json" set:html={serializeJsonLd(item)} />
     ))}
 
     <!-- Preconnect -->

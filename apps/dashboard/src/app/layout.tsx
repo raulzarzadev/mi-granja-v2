@@ -21,48 +21,15 @@ export const viewport: Viewport = {
   themeColor: '#16a34a',
 }
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dashboard.migranja.app'
-
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: 'Mi Granja',
-  url: appUrl,
-  description:
-    'Aplicación para gestionar tu ganado de manera eficiente. Registra animales, empadres, recordatorios y colaboradores.',
-  applicationCategory: 'BusinessApplication',
-  applicationSubCategory: 'Farm Management',
-  operatingSystem: 'Web',
-  inLanguage: 'es',
-  image: `${appUrl}/icons/icon-512x512.png`,
-  offers: [
-    {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'MXN',
-      description: 'Plan gratuito: 1 granja, 1 usuario',
-    },
-    {
-      '@type': 'Offer',
-      price: '2.50',
-      priceCurrency: 'USD',
-      description: 'Planes desde 2.50 USD/mes según la cantidad de animales activos',
-    },
-  ],
-  creator: {
-    '@type': 'Organization',
-    name: 'Mi Granja',
-    url: 'https://migranja.app',
-  },
-}
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://panel.migranja.app'
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
   title: {
-    default: 'Mi Granja - Gestión de Ganado',
+    default: 'Mi Granja - Gestión ganadera',
     template: '%s | Mi Granja',
   },
-  description: 'Aplicación para gestionar tu ganado de manera eficiente',
+  description: 'Panel privado de gestión ganadera de Mi Granja.',
   manifest: '/manifest.json',
   robots: { index: false, follow: false },
   openGraph: {
@@ -82,10 +49,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico?v=3', sizes: 'any' },
-      { url: '/favicon-32x32.png?v=3', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon.ico?v=4', sizes: 'any' },
+      { url: '/favicon-32x32.png?v=4', type: 'image/png', sizes: '32x32' },
     ],
-    apple: [{ url: '/icons/apple-touch-icon.png?v=3', sizes: '180x180' }],
+    apple: [{ url: '/icons/apple-touch-icon.png?v=4', sizes: '180x180' }],
   },
 }
 
@@ -97,10 +64,6 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
         <ServiceWorkerRegistrar />
         <OfflineBanner />
         <BetaBanner />

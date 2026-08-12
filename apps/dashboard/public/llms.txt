@@ -1,27 +1,9 @@
-# Mi Granja
+# Panel de Mi Granja
 
-> Aplicación de gestión de ganado para granjas en Latinoamérica.
+> Aplicación privada de Mi Granja. El contenido de las cuentas requiere autorización y no debe rastrearse ni utilizarse como información pública del producto.
 
-Mi Granja es una aplicación web (PWA) que permite gestionar animales, registros de monta, recordatorios, áreas y colaboradores en granjas ganaderas.
+## Información pública
 
-## Funcionalidades principales
-
-- Registro y seguimiento de animales (bovinos, caprinos, ovinos, porcinos, equinos, aves)
-- Registros de monta y reproducción
-- Sistema de recordatorios
-- Gestión de áreas y corrales
-- Colaboradores con roles y permisos
-- Multi-granja
-
-## Tecnologías
-
-- Next.js (App Router)
-- Firebase (Auth, Firestore)
-- TypeScript
-- Tailwind CSS
-- PWA con soporte offline
-
-## Contacto
-
-- Sitio web: https://migranja.app
-- Dashboard: https://dashboard.migranja.app
+- [Mi Granja para LLMs](https://www.migranja.app/llms.txt): resumen y fuentes oficiales del producto.
+- [Sitio web](https://www.migranja.app/): información general.
+- [Planes y precios](https://www.migranja.app/prices): información comercial vigente.

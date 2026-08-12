@@ -1,8 +1,13 @@
-# Mi Granja Dashboard - Private app, no indexing
-User-agent: *
-Disallow: /
+# Search crawlers may read the noindex response header and remove stale URLs.
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
 
-# Block AI crawlers explicitly
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+
+# Mi Granja Panel is private and is not a public product-information source.
 User-agent: GPTBot
 Disallow: /
 
@@ -10,4 +15,7 @@ User-agent: ClaudeBot
 Disallow: /
 
 User-agent: PerplexityBot
+Disallow: /
+
+User-agent: *
 Disallow: /

@@ -1,11 +1,11 @@
 ---
-import { PLAN_TIERS } from '@mi-granja/shared'
 import CTA from '../components/CTA.astro'
 import FAQ from '../components/FAQ.astro'
 import Footer from '../components/Footer.astro'
 import Header from '../components/Header.astro'
 import Pricing from '../components/Pricing.astro'
 import Layout from '../layouts/Layout.astro'
+import { PUBLIC_PLAN_TIERS, SITE_URL } from '../lib/product-content'
 
 const pricingSchema = {
   '@context': 'https://schema.org',
@@ -13,7 +13,9 @@ const pricingSchema = {
   name: 'Mi Granja',
   description: 'Software ganadero con planes mensuales según la cantidad de animales activos.',
   brand: { '@type': 'Brand', name: 'Mi Granja' },
-  offers: PLAN_TIERS.filter((tier) => tier.priceUsd !== null).map((tier) => ({
+  image: `${SITE_URL}/og-image.png`,
+  url: `${SITE_URL}/prices`,
+  offers: PUBLIC_PLAN_TIERS.filter((tier) => tier.priceUsd !== null).map((tier) => ({
     '@type': 'Offer',
     name: `Plan ${tier.label}`,
     price: String(tier.priceUsd),

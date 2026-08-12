@@ -4,7 +4,12 @@ import { defineConfig } from 'astro/config'
 
 export default defineConfig({
   site: 'https://www.migranja.app',
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      filter: (page) => !/\.(?:md|txt)$/.test(new URL(page).pathname),
+      namespaces: { news: false, video: false },
+    }),
+  ],
   vite: {
     plugins: [tailwindcss()],
   },
