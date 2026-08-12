@@ -27,7 +27,7 @@ import {
   trackAnimalUpdated,
   trackRecordCreated,
 } from '@/lib/analytics/track'
-import { computeAnimalStage } from '@/lib/animal-utils'
+import { computeAnimalStage, isActiveCalf } from '@/lib/animal-utils'
 import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { db } from '@/lib/firebase'
 import {
@@ -245,9 +245,7 @@ export const useAnimalCRUD = () => {
       (animal) =>
         animal.id !== animalId &&
         (animal.motherId === mother.id || animal.motherId === mother.animalNumber) &&
-        animal.stage === 'cria' &&
-        !animal.isWeaned &&
-        !['muerto', 'vendido', 'perdido'].includes(animal.status ?? 'activo'),
+        isActiveCalf(animal),
     )
     if (hasOtherUnweanedOffspring) return
 
@@ -313,8 +311,7 @@ export const useAnimalCRUD = () => {
       q,
       (snapshot) => {
         const list = snapshot.docs.map((d) => {
-          const animal = { id: d.id, ...d.data() } as Animal
-          return { ...animal, stage: computeAnimalStage(animal) }
+          return { id: d.id, ...d.data() } as Animal
         })
         dispatch(setAnimals(serializeObj(list)))
       },
@@ -868,10 +865,7 @@ export const useAnimalCRUD = () => {
     const hasUnweanedOffspring = animals.some(
       (candidate) =>
         (candidate.motherId === animal.id || candidate.motherId === animal.animalNumber) &&
-        candidate.stage === 'cria' &&
-        candidate.isWeaned !== true &&
-        !candidate.weanedAt &&
-        !['muerto', 'vendido', 'perdido'].includes(candidate.status ?? 'activo'),
+        isActiveCalf(candidate),
     )
     if (hasUnweanedOffspring) {
       throw new Error('Primero desteta las crías activas antes de finalizar la lactancia.')

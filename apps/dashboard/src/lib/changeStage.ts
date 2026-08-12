@@ -1,5 +1,11 @@
 import { doc, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore'
-import { activeUnweanedOffspring, animalAge, computeAnimalStage } from '@/lib/animal-utils'
+import {
+  activeUnweanedOffspring,
+  animalAge,
+  computeAnimalStage,
+  isActiveCalf,
+  isCalf,
+} from '@/lib/animal-utils'
 import { ANIMAL_BREEDING_CONFIGS, calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { db } from '@/lib/firebase'
@@ -156,13 +162,7 @@ export async function applyChangeStage(
     const mothersToClose = new Set<string>()
     const byMother = new Map<string, Set<string>>()
     for (const a of allAnimals) {
-      if (
-        a.stage !== 'cria' ||
-        a.status === 'muerto' ||
-        a.status === 'vendido' ||
-        a.status === 'perdido'
-      )
-        continue
+      if (!isActiveCalf(a)) continue
       if (!a.motherId) continue
       if (!byMother.has(a.motherId)) byMother.set(a.motherId, new Set())
       byMother.get(a.motherId)!.add(a.id)
@@ -337,7 +337,7 @@ export function getFamilyContext(
   siblings: Animal[]
   crias: Animal[]
 } {
-  const isCria = animal.computedStage === 'cria'
+  const isCria = isCalf(animal)
   const isNursingMother = animal.computedStage === 'crias_lactantes'
   let mother: Animal | undefined
   let siblings: Animal[] = []
@@ -371,7 +371,7 @@ export { ANIMAL_BREEDING_CONFIGS, animalAge }
  * - target='engorda' → 'engorda' (manual)
  * - target='descarte' → 'descarte' (manual)
  * - target='reproductor' → 'juvenil' o 'reproductor' según `minBreedingAge` (weaningDestination override)
- * - target='juvenil' → recompute: si edad < weaningDays → 'cria'; si edad < minBreedingAge → 'juvenil'; sino → 'reproductor'
+ * - target='juvenil' → 'juvenil' o 'reproductor' según minBreedingAge; nunca vuelve a cría por edad
  * - target='embarazada' → 'embarazos' (breeding-derived)
  * - target='perdido' → 'perdido' (status, no es stage; se muestra como key especial)
  * - target='muerto' → 'muerto' (status)

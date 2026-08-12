@@ -1,6 +1,5 @@
 'use client'
 
-import { addDays, differenceInCalendarDays } from 'date-fns'
 import { doc, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
@@ -20,8 +19,13 @@ import Tabs from '@/components/Tabs'
 import type { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
-import { findAnimalByRef } from '@/lib/animal-utils'
-import { calculateExpectedBirthDate, getWeaningDays } from '@/lib/animalBreedingConfig'
+import {
+  findAnimalByRef,
+  getWeaningDueDate,
+  getWeaningStatus,
+  isActiveCalf,
+} from '@/lib/animal-utils'
+import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { formatDate, toDate } from '@/lib/dates'
 import { db } from '@/lib/firebase'
@@ -185,7 +189,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       const mothersToUpdate: Animal[] = []
       const byMother = new Map<string, Set<string>>()
       for (const a of animals) {
-        if (a.stage !== 'cria' || a.status === 'muerto' || a.status === 'vendido') continue
+        if (!isActiveCalf(a)) continue
         if (!a.motherId) continue
         if (!byMother.has(a.motherId)) byMother.set(a.motherId, new Set())
         byMother.get(a.motherId)!.add(a.id)
@@ -374,9 +378,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           const a = animals.find((an) => an.id === offId)
           if (
             a &&
-            a.stage === 'cria' &&
-            a.status !== 'muerto' &&
-            a.status !== 'vendido' &&
+            isActiveCalf(a) &&
             matchesEtapasFilters(a, { skipSearch: true }) &&
             (() => {
               const q = filters.search.trim().toLowerCase()
@@ -396,13 +398,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
               )
             })()
           ) {
-            let weanDate: Date | null = null
-            let daysUntilWean: number | null = null
-            if (a.birthDate) {
-              const days = getWeaningDays(a)
-              weanDate = addDays(toDate(a.birthDate), days)
-              daysUntilWean = differenceInCalendarDays(weanDate, new Date())
-            }
+            const weanDate = getWeaningDueDate(a)
+            const daysUntilWean = getWeaningStatus(a).daysUntilDue
             result.push({ animal: a, motherId: fi.femaleId, record, weanDate, daysUntilWean })
           }
         }
@@ -654,18 +651,13 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     const allStandalone = activeAnimals
       .filter(
         (a) =>
-          a.computedStage === 'cria' &&
+          isActiveCalf(a) &&
           !breedingCriaIds.has(a.id) &&
           matchesEtapasFilters(a, { skipSearch: true }),
       )
       .map((a) => {
-        let weanDate: Date | null = null
-        let daysUntilWean: number | null = null
-        if (a.birthDate) {
-          const days = getWeaningDays(a)
-          weanDate = addDays(toDate(a.birthDate), days)
-          daysUntilWean = differenceInCalendarDays(weanDate, new Date())
-        }
+        const weanDate = getWeaningDueDate(a)
+        const daysUntilWean = getWeaningStatus(a).daysUntilDue
         let motherId = ''
         let record: BreedingRecord | null = null
         for (const r of breedingRecords) {

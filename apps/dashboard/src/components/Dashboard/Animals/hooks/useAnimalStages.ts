@@ -1,10 +1,7 @@
 'use client'
 
-import { addDays, differenceInCalendarDays } from 'date-fns'
 import { useMemo } from 'react'
-import { activeUnweanedOffspring } from '@/lib/animal-utils'
-import { getWeaningDays } from '@/lib/animalBreedingConfig'
-import { toDate } from '@/lib/dates'
+import { activeUnweanedOffspring, getWeaningDueDate, getWeaningStatus } from '@/lib/animal-utils'
 import type { Animal } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
 import type { NoursingMotherRow } from '../columns/noursingMothersColumns'
@@ -61,10 +58,10 @@ export const useAnimalStages = ({ activeAnimals, animals, matchesEtapasFilters }
       let minDaysUntilWean: number | null = null
       let earliestUnweanDate: Date | null = null
       for (const cria of crias) {
-        if (cria.birthDate) {
-          const days = getWeaningDays(cria)
-          const weanDate = addDays(toDate(cria.birthDate)!, days)
-          const daysUntil = differenceInCalendarDays(weanDate, new Date())
+        const weanDate = getWeaningDueDate(cria)
+        if (weanDate) {
+          const daysUntil = getWeaningStatus(cria).daysUntilDue
+          if (daysUntil === null) continue
           if (minDaysUntilWean === null || daysUntil < minDaysUntilWean) {
             minDaysUntilWean = daysUntil
             earliestUnweanDate = weanDate

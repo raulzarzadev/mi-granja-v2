@@ -5,7 +5,6 @@ import React, { useMemo } from 'react'
 import { Controller, UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
 import { useZodForm } from '@/hooks/useZodForm'
-import { getWeaningDays } from '@/lib/animalBreedingConfig'
 import {
   Animal,
   animal_icon,
@@ -307,36 +306,17 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       return
     }
 
-    // Solo marcar isWeaned=true si el animal ya superó la edad de destete de su especie.
-    // Evita falsos destetes para bebés creados con stage='juvenil' desde este form.
-    const weaningDays = getWeaningDays(values.type)
-    const birthDateForAge = values.birthDate
-      ? (() => {
-          const [y, m, d] = values.birthDate.split('-').map(Number)
-          return new Date(y, m - 1, d)
-        })()
-      : null
-    const ageDays = birthDateForAge
-      ? Math.floor((Date.now() - birthDateForAge.getTime()) / (1000 * 60 * 60 * 24))
-      : values.age
-        ? Number(values.age) * 30
-        : Number.POSITIVE_INFINITY
-    const isPostWean = POST_WEAN_STAGES.includes(values.stage) && ageDays >= weaningDays
+    // Elegir una etapa posterior al destete es una decisión explícita del usuario.
+    // La edad nunca se interpreta como prueba de que el destete ocurrió.
+    const isPostWean = POST_WEAN_STAGES.includes(values.stage)
 
-    // Calcular weanedAt: usar el valor explícito del form, o estimar como birthDate + weaningDays
+    // La fecha real sólo se guarda si fue capturada; nunca se inventa desde la edad teórica.
     const explicitWeanedAt = values.weanedAt
       ? (() => {
           const [y, m, d] = values.weanedAt.split('-').map(Number)
           return new Date(y, m - 1, d)
         })()
       : null
-    const estimatedWeanedAt =
-      isPostWean && !explicitWeanedAt
-        ? birthDateForAge
-          ? new Date(birthDateForAge.getTime() + weaningDays * 24 * 60 * 60 * 1000)
-          : new Date()
-        : null
-    const weanedAtDate = explicitWeanedAt ?? estimatedWeanedAt
 
     const transformed: Omit<Animal, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'> = {
       animalNumber: trimmedAnimalNumber,
@@ -344,7 +324,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       type: values.type,
       stage: values.stage,
       gender: values.gender,
-      ...(isPostWean ? { isWeaned: true, weanedAt: weanedAtDate ?? undefined } : {}),
+      ...(isPostWean ? { isWeaned: true } : {}),
       ...(explicitWeanedAt && !isPostWean ? { weanedAt: explicitWeanedAt } : {}),
       breed: values.breed?.trim() ?? '',
       status: values.status as Animal['status'],

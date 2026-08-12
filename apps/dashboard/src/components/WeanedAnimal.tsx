@@ -1,10 +1,10 @@
 'use client'
 
-import { addDays, differenceInCalendarDays, format, parseISO, toDate } from 'date-fns'
+import { format, parseISO, toDate } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useState } from 'react'
 import { useAnimalCRUD, WeanNextStage } from '@/hooks/useAnimalCRUD'
-import { getWeaningDays } from '@/lib/animalBreedingConfig'
+import { getWeaningDueDate, getWeaningStatus, isCalf } from '@/lib/animal-utils'
 import { Animal } from '@/types/animals'
 import Button from './buttons/Button'
 import { Icon } from './Icon/icon'
@@ -20,13 +20,9 @@ export const WeanedAnimal = ({ animal }: WeanedAnimalProps) => {
 
   if (!animal.birthDate) return null
 
-  const raw = animal.birthDate
-  const birthDate = raw instanceof Date ? raw : new Date(raw as string | number)
-  if (Number.isNaN(birthDate.getTime())) return null
-
-  const weaningDays = getWeaningDays(animal)
-  const targetWeanDate = addDays(birthDate, weaningDays)
-  const daysUntilWean = differenceInCalendarDays(targetWeanDate, new Date())
+  const targetWeanDate = getWeaningDueDate(animal)
+  if (!targetWeanDate) return null
+  const status = getWeaningStatus(animal)
 
   // Determinar el estado del destete
   let statusColor = ''
@@ -35,35 +31,26 @@ export const WeanedAnimal = ({ animal }: WeanedAnimalProps) => {
   let statusText = ''
 
   // Verificar si el animal necesita destete (edad y estado)
-  const needWeaning = animal.stage === 'cria'
+  const needWeaning = isCalf(animal)
   if (!needWeaning) {
     return null
   }
 
-  if (daysUntilWean < -10) {
-    // Más de 10 días vencido - ROJO
+  if (status.tone === 'danger') {
     statusColor = 'text-red-900'
     statusBg = 'bg-red-50'
     statusBorder = 'border-red-300'
-    statusText = `Vencido hace ${Math.abs(daysUntilWean)} días`
-  } else if (daysUntilWean >= -10 && daysUntilWean <= 10) {
-    // Entre -10 y +10 días - AMARILLO (próximo o recién vencido)
+    statusText = status.label
+  } else if (status.tone === 'warning') {
     statusColor = 'text-yellow-900'
     statusBg = 'bg-yellow-50'
     statusBorder = 'border-yellow-300'
-    if (daysUntilWean < 0) {
-      statusText = `Vencido hace ${Math.abs(daysUntilWean)} días`
-    } else if (daysUntilWean === 0) {
-      statusText = 'Hoy es el destete'
-    } else {
-      statusText = `En ${daysUntilWean} días`
-    }
+    statusText = status.label
   } else {
-    // Más de 10 días para el destete - VERDE
-    statusColor = 'text-green-900'
-    statusBg = 'bg-green-50'
-    statusBorder = 'border-green-300'
-    statusText = `En ${daysUntilWean} días`
+    statusColor = 'text-gray-700'
+    statusBg = 'bg-gray-50'
+    statusBorder = 'border-gray-300'
+    statusText = status.label
   }
 
   return (
@@ -75,7 +62,7 @@ export const WeanedAnimal = ({ animal }: WeanedAnimalProps) => {
           e.stopPropagation()
           setShowWeanModal(true)
         }}
-        title={`Destete: ${format(targetWeanDate, 'dd/MM/yyyy', { locale: es })}`}
+        title={`${status.description}. Fecha recomendada: ${format(targetWeanDate, 'dd/MM/yyyy', { locale: es })}`}
       >
         <Icon icon="babyBottle" className="text-xs" />
         <span>{statusText}</span>
@@ -94,8 +81,7 @@ export const WeanedAnimal = ({ animal }: WeanedAnimalProps) => {
 
 export const WeanAnimalButton = ({ animal }: { animal: Animal }) => {
   const [showWeanModal, setShowWeanModal] = useState(false)
-  const birthDate = animal.birthDate ? toDate(animal.birthDate) : null
-  const targetWeanDate = birthDate ? addDays(birthDate, getWeaningDays(animal)) : new Date()
+  const targetWeanDate = getWeaningDueDate(animal) ?? new Date()
 
   return (
     <>

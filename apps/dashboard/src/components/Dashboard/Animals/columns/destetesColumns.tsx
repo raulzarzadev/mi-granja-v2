@@ -2,7 +2,7 @@ import { differenceInCalendarDays } from 'date-fns'
 import type { ColumnDef } from '@/components/DataTable'
 import { Icon } from '@/components/Icon/icon'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
-import { findAnimalByRef } from '@/lib/animal-utils'
+import { findAnimalByRef, getWeaningStatus } from '@/lib/animal-utils'
 import { toDate } from '@/lib/dates'
 import { type Animal, animal_gender_config } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
@@ -108,25 +108,19 @@ export const buildDestetesColumns = (animals: Animal[]): ColumnDef<UnweanedRow>[
       return a.daysUntilWean - b.daysUntilWean
     },
     render: (row) => {
-      const isOverdue = row.daysUntilWean !== null && row.daysUntilWean < 0
-      const isSoon = row.daysUntilWean !== null && row.daysUntilWean >= 0 && row.daysUntilWean <= 7
+      const status = getWeaningStatus(row.animal)
       return (
         <span
+          title={status.description}
           className={`inline-flex px-1.5 py-0.5 rounded-full text-xs font-medium ${
-            isOverdue
+            status.tone === 'danger'
               ? 'bg-red-100 text-red-700'
-              : isSoon
+              : status.tone === 'warning'
                 ? 'bg-yellow-100 text-yellow-700'
                 : 'bg-gray-100 text-gray-600'
           }`}
         >
-          {row.daysUntilWean !== null
-            ? row.daysUntilWean === 0
-              ? 'Hoy'
-              : row.daysUntilWean > 0
-                ? `En ${row.daysUntilWean}d`
-                : `Hace ${Math.abs(row.daysUntilWean)}d`
-            : 'Sin fecha'}
+          {status.label}
         </span>
       )
     },

@@ -1,22 +1,10 @@
 'use client'
 
-import { addDays, differenceInCalendarDays } from 'date-fns'
 import React from 'react'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
-import { getWeaningDays } from '@/lib/animalBreedingConfig'
+import { getWeaningDueDate, getWeaningStatus, isActiveCalf } from '@/lib/animal-utils'
 import { Animal } from '@/types/animals'
 import AnimalBadges from './AnimalBadges'
-
-const formatRelative = (diff: number) => {
-  if (diff === 0) return 'Hoy'
-  const abs = Math.abs(diff)
-  if (abs < 30) return diff < 0 ? `${abs} días atrasado` : `En ${abs} días`
-  const months = Math.floor(abs / 30)
-  const days = abs % 30
-  const monthLabel = months === 1 ? '1 mes' : `${months} meses`
-  const dayLabel = days > 0 ? ` y ${days}d` : ''
-  return diff < 0 ? `${monthLabel}${dayLabel} atrasado` : `En ${monthLabel}${dayLabel}`
-}
 
 interface WeaningItem {
   animal: Animal
@@ -52,20 +40,18 @@ const WeaningItemActions: React.FC<{
 
 const WeaningRemindersCard: React.FC = () => {
   const { animals, wean } = useAnimalCRUD()
-  const today = new Date()
   const allPending = animals
-    .filter((a) => a.status !== 'muerto' && a.status !== 'vendido')
-    .filter((a) => !a.isWeaned && a.birthDate)
-    .filter((a) => a.stage === 'cria')
-    .map((a) => {
-      const due = addDays(a.birthDate as Date, getWeaningDays(a))
-      const daysUntil = differenceInCalendarDays(due, today)
-      return { animal: a, dueDate: due, daysUntil }
+    .filter(isActiveCalf)
+    .flatMap((a) => {
+      const due = getWeaningDueDate(a)
+      const daysUntil = getWeaningStatus(a).daysUntilDue
+      if (!due || daysUntil === null) return []
+      return [{ animal: a, dueDate: due, daysUntil }]
     })
     .sort((a, b) => a.daysUntil - b.daysUntil)
 
-  const overdue = allPending.filter((x) => x.daysUntil <= 0)
-  const upcoming = allPending.filter((x) => x.daysUntil > 0)
+  const overdue = allPending.filter((x) => x.daysUntil < 0)
+  const upcoming = allPending.filter((x) => x.daysUntil >= 0)
 
   const handleWean = async (
     animalId: string,
@@ -78,11 +64,26 @@ const WeaningRemindersCard: React.FC = () => {
     }
   }
 
-  const renderListItem = (item: WeaningItem, variant: 'red' | 'yellow') => {
-    const borderColor = variant === 'red' ? 'border-red-100' : 'border-yellow-100'
+  const renderListItem = (item: WeaningItem) => {
+    const status = getWeaningStatus(item.animal)
+    const borderColor =
+      status.tone === 'danger'
+        ? 'border-red-100'
+        : status.tone === 'warning'
+          ? 'border-yellow-100'
+          : 'border-gray-200'
     const bgColor =
-      variant === 'red' ? 'bg-red-50 hover:bg-red-100' : 'bg-yellow-50 hover:bg-yellow-100'
-    const textColor = variant === 'red' ? 'text-red-700' : 'text-yellow-700'
+      status.tone === 'danger'
+        ? 'bg-red-50 hover:bg-red-100'
+        : status.tone === 'warning'
+          ? 'bg-yellow-50 hover:bg-yellow-100'
+          : 'bg-gray-50 hover:bg-gray-100'
+    const textColor =
+      status.tone === 'danger'
+        ? 'text-red-700'
+        : status.tone === 'warning'
+          ? 'text-yellow-700'
+          : 'text-gray-600'
 
     return (
       <li
@@ -96,7 +97,9 @@ const WeaningRemindersCard: React.FC = () => {
           <AnimalBadges animal={item.animal} />
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className={`text-xs ${textColor}`}>{formatRelative(item.daysUntil)}</span>
+          <span className={`text-xs ${textColor}`} title={status.description}>
+            {status.label}
+          </span>
           <WeaningItemActions animal={item.animal} onWean={handleWean} />
         </div>
       </li>
@@ -113,9 +116,7 @@ const WeaningRemindersCard: React.FC = () => {
         {overdue.length === 0 ? (
           <p className="text-xs text-gray-500">Sin destetes atrasados.</p>
         ) : (
-          <ul className="space-y-1 text-sm">
-            {overdue.map((item) => renderListItem(item, 'red'))}
-          </ul>
+          <ul className="space-y-1 text-sm">{overdue.map(renderListItem)}</ul>
         )}
       </section>
       <section>
@@ -126,9 +127,7 @@ const WeaningRemindersCard: React.FC = () => {
         {upcoming.length === 0 ? (
           <p className="text-xs text-gray-500">No hay destetes próximos.</p>
         ) : (
-          <ul className="space-y-1 text-sm">
-            {upcoming.map((item) => renderListItem(item, 'yellow'))}
-          </ul>
+          <ul className="space-y-1 text-sm">{upcoming.map(renderListItem)}</ul>
         )}
       </section>
     </div>

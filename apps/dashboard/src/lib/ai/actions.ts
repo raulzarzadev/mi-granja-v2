@@ -1,6 +1,11 @@
 import { Timestamp } from 'firebase-admin/firestore'
-import { activeUnweanedOffspring, computeAnimalEffectiveStage } from '@/lib/animal-utils'
-import { getWeaningDays } from '@/lib/animalBreedingConfig'
+import {
+  activeUnweanedOffspring,
+  computeAnimalEffectiveStage,
+  getWeaningDueDate,
+  getWeaningStatus,
+  isActiveCalf,
+} from '@/lib/animal-utils'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { Reminder } from '@/types'
 import { Animal, type AnimalStageKey, isMilkRecord } from '@/types/animals'
@@ -647,13 +652,10 @@ export async function buildAiContext(
   })
 
   const pendingWeaningRows = activeAnimals
-    .filter((animal) => animal.computedStage === 'cria')
+    .filter(isActiveCalf)
     .map((animal) => {
-      const birthDate = asDate(animal.birthDate)
-      const weaningDays = getWeaningDays(animal)
-      const weanDate = birthDate
-        ? new Date(birthDate.getTime() + weaningDays * 24 * 60 * 60 * 1000)
-        : null
+      const weanDate = getWeaningDueDate(animal)
+      const weaningStatus = getWeaningStatus(animal, today)
       const mother = farmAnimals.find(
         (candidate) =>
           candidate.id === animal.motherId || candidate.animalNumber === animal.motherId,
@@ -664,7 +666,8 @@ export async function buildAiContext(
         especie: animal.type,
         fechaNacimiento: dateKey(animal.birthDate),
         fechaDesteteEstimada: dateKey(weanDate),
-        diasRestantes: weanDate ? daysUntil(today, weanDate) : null,
+        diasRestantes: weaningStatus.daysUntilDue,
+        estadoDestete: weaningStatus.description,
       }
     })
     .sort((a, b) => (a.diasRestantes ?? 9999) - (b.diasRestantes ?? 9999))

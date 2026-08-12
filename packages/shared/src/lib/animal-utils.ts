@@ -88,21 +88,128 @@ export function animalAge(
 /** Stages asignados manualmente por el usuario (no se sobreescriben) */
 const MANUAL_STAGES = new Set<AnimalStage>(['engorda', 'descarte'])
 
+export type WeaningStatusKind = 'completed' | 'unknown' | 'upcoming' | 'soon' | 'today' | 'overdue'
+
+export type WeaningStatusTone = 'neutral' | 'warning' | 'danger'
+
+export interface WeaningStatus {
+  kind: WeaningStatusKind
+  tone: WeaningStatusTone
+  daysUntilDue: number | null
+  label: string
+  description: string
+}
+
+/** El destete sólo existe cuando fue registrado explícitamente. */
+export function isAnimalWeaned(animal: Pick<Animal, 'isWeaned'>): boolean {
+  return animal.isWeaned === true
+}
+
+/** Una cría conserva su etapa hasta que el usuario registra el destete. */
+export function isCalf(animal: Pick<Animal, 'stage' | 'isWeaned'>): boolean {
+  return animal.stage === 'cria' && !isAnimalWeaned(animal)
+}
+
+/** Criterio canónico para listas y conteos de crías activas. */
+export function isActiveCalf(animal: Pick<Animal, 'stage' | 'isWeaned' | 'status'>): boolean {
+  return (animal.status ?? 'activo') === 'activo' && isCalf(animal)
+}
+
+/** Fecha recomendada de destete: nacimiento + override/configuración de especie. */
+export function getWeaningDueDate(
+  animal: Pick<Animal, 'birthDate' | 'type' | 'customWeaningDays'>,
+): Date | null {
+  if (!animal.birthDate) return null
+  const birthDate = toDate(animal.birthDate)
+  if (Number.isNaN(birthDate.getTime())) return null
+  const dueDate = new Date(birthDate)
+  dueDate.setDate(dueDate.getDate() + getWeaningDays(animal))
+  return dueDate
+}
+
+export function getWeaningStatusFromDays(daysUntilDue: number | null): WeaningStatus {
+  if (daysUntilDue === null) {
+    return {
+      kind: 'unknown',
+      tone: 'neutral',
+      daysUntilDue,
+      label: 'Sin fecha',
+      description: 'Falta la fecha de nacimiento para calcular el destete',
+    }
+  }
+  if (daysUntilDue < 0) {
+    return {
+      kind: 'overdue',
+      tone: 'danger',
+      daysUntilDue,
+      label: `Hace ${Math.abs(daysUntilDue)}d`,
+      description: `Destete vencido hace ${Math.abs(daysUntilDue)} días`,
+    }
+  }
+  if (daysUntilDue === 0) {
+    return {
+      kind: 'today',
+      tone: 'warning',
+      daysUntilDue,
+      label: 'Hoy',
+      description: 'El destete recomendado vence hoy',
+    }
+  }
+  if (daysUntilDue <= 14) {
+    return {
+      kind: 'soon',
+      tone: 'warning',
+      daysUntilDue,
+      label: `En ${daysUntilDue}d`,
+      description: `Destete recomendado en ${daysUntilDue} días`,
+    }
+  }
+  return {
+    kind: 'upcoming',
+    tone: 'neutral',
+    daysUntilDue,
+    label: `En ${daysUntilDue}d`,
+    description: `Destete recomendado en ${daysUntilDue} días`,
+  }
+}
+
+/** Estado operativo del destete. La fecha vencida nunca cambia stage/isWeaned. */
+export function getWeaningStatus(
+  animal: Pick<Animal, 'birthDate' | 'type' | 'customWeaningDays' | 'isWeaned'>,
+  now: Date = new Date(),
+): WeaningStatus {
+  if (isAnimalWeaned(animal)) {
+    return {
+      kind: 'completed',
+      tone: 'neutral',
+      daysUntilDue: null,
+      label: 'Destetado',
+      description: 'Destete registrado',
+    }
+  }
+  const dueDate = getWeaningDueDate(animal)
+  if (!dueDate) return getWeaningStatusFromDays(null)
+  const startOfDueDate = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate())
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const daysUntilDue = Math.round(
+    (startOfDueDate.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24),
+  )
+  return getWeaningStatusFromDays(daysUntilDue)
+}
+
 /**
  * Calcula el stage de un animal basándose en sus parámetros.
  *
- * Regla canónica — la edad manda (cría = recién nacido hasta destete):
+ * Regla canónica — el destete real manda para las crías:
  *  - engorda / descarte: asignación manual, se respeta
- *  - ageDays < weaningDays → 'cria' (aún lactando por edad)
- *  - ageDays >= weaningDays + ageMonths < minBreedingAge → 'juvenil'
- *  - ageDays >= weaningDays + ageMonths >= minBreedingAge → 'reproductor'
- *  - sin birthDate y sin age → 'cria' (fallback conservador)
- *
- * La edad es el criterio base: un animal viejo sin registro de destete no
- * puede seguir siendo cría (datos legacy). El age-gate también protege contra
- * isWeaned=true prematuro en animales muy jóvenes.
+ *  - stage='cria' + isWeaned!==true → 'cria', sin importar la edad
+ *  - después del destete, la edad decide entre juvenil y reproductor
+ *  - sin birthDate/age se conserva el stage persistido
  */
 export function computeAnimalStage(animal: Animal): AnimalStage {
+  // La fecha recomendada puede estar vencida, pero eso no equivale a un destete real.
+  if (isCalf(animal)) return 'cria'
+
   // Stages manuales: el usuario los asignó explícitamente
   if (MANUAL_STAGES.has(animal.stage)) return animal.stage
 
@@ -111,27 +218,14 @@ export function computeAnimalStage(animal: Animal): AnimalStage {
 
   // Destete explícito a reproductor por el usuario: nunca 'cria'.
   // weaningDestination solo se setea por la acción "Destetar a Reproductor" en UI;
-  // override autoritativo sobre la regla de edad (a diferencia de isWeaned, que es
-  // solo un flag y puede setearse prematuramente — el age-gate sigue protegiendo
-  // contra eso para crías sin destino explícito).
+  // es una decisión autoritativa y la edad sólo decide si se muestra como juvenil
+  // o si ya alcanzó la etapa de reproductor.
   if (animal.weaningDestination === 'reproductor') {
     const ageMonths = animalAge(animal, { format: 'months' })
     return ageMonths < minBreedingAge ? 'juvenil' : 'reproductor'
   }
 
-  const weaningDays = animal.customWeaningDays ?? config?.weaningDays ?? 60
-
-  let ageDays = 0
-  if (animal.birthDate) {
-    const birth = toDate(animal.birthDate)
-    ageDays = Math.floor((Date.now() - birth.getTime()) / (1000 * 60 * 60 * 24))
-  } else if (animal.age) {
-    ageDays = animal.age * 30
-  } else {
-    return 'cria'
-  }
-
-  if (ageDays < weaningDays) return 'cria'
+  if (!animal.birthDate && !animal.age) return animal.stage
 
   const ageMonths = animalAge(animal, { format: 'months' })
   if (ageMonths < minBreedingAge) return 'juvenil'
@@ -255,12 +349,6 @@ export function computeAnimalEffectiveStage(
  * La fecha objetivo es sólo una recomendación operativa: no debe separar a la
  * cría de su madre automáticamente porque el destete real puede retrasarse.
  */
-function isUnweanedAnimal(a: Animal): boolean {
-  if (a.weanedAt || a.isWeaned === true) return false
-  if (a.stage && a.stage !== 'cria') return false
-  return true
-}
-
 /**
  * Verifica si la madre tiene al menos una cría viva y sin destetar.
  * Prioriza offspringIds del breeding record; hace fallback a motherId
@@ -288,7 +376,7 @@ export function activeUnweanedOffspring({
   const isOffspring = (a: Animal) => a.motherId === motherId
 
   // Retorna los animales que son hijas de la madre y están activos y sin destetar
-  return farmAnimals.filter((a) => isOffspring(a) && isActive(a) && isUnweanedAnimal(a))
+  return farmAnimals.filter((a) => isOffspring(a) && isActive(a) && isCalf(a))
 }
 
 /**
@@ -417,13 +505,11 @@ function lastWeightDetail(animal: Animal, now?: Date): string | undefined {
 
 /** Detail para cría: días al destete según birthDate + weaningDays. */
 function daysUntilWeaningDetail(animal: Animal, now?: Date): string | undefined {
-  if (!animal.birthDate) return undefined
-  const ref = now ?? new Date()
-  const weaningDays = getWeaningDays(animal)
-  const since = daysBetween(toDate(animal.birthDate), ref)
-  const remaining = weaningDays - since
-  if (remaining <= 0) return 'destete recomendado'
-  return `destete en ${plural(remaining, 'día', 'días')}`
+  const status = getWeaningStatus(animal, now)
+  if (status.kind === 'unknown' || status.kind === 'completed') return undefined
+  if (status.kind === 'overdue') return status.description.toLowerCase()
+  if (status.kind === 'today') return 'destete recomendado hoy'
+  return `destete en ${plural(status.daysUntilDue!, 'día', 'días')}`
 }
 
 /** Detail para empadre: días en empadre del animal en su empadre activo. */

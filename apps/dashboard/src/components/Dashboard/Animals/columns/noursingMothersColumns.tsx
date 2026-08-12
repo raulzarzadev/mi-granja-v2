@@ -3,7 +3,7 @@ import type { ColumnDef } from '@/components/DataTable'
 import { Icon } from '@/components/Icon/icon'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import { WeanAnimalButton } from '@/components/WeanedAnimal'
-import { findAnimalByRef } from '@/lib/animal-utils'
+import { findAnimalByRef, getWeaningStatusFromDays } from '@/lib/animal-utils'
 import { type Animal, animal_gender_config } from '@/types/animals'
 
 export type NoursingMotherRow = {
@@ -94,8 +94,7 @@ export const buildNoursingColumns = (animals: Animal[]): ColumnDef<NoursingMothe
       return a.daysUntilWean - b.daysUntilWean
     },
     render: (row) => {
-      const isOverdue = row.daysUntilWean !== null && row.daysUntilWean < 0
-      const isSoon = row.daysUntilWean !== null && row.daysUntilWean >= 0 && row.daysUntilWean <= 7
+      const status = getWeaningStatusFromDays(row.daysUntilWean)
 
       const dateStr = row.unweanDate
         ? row.unweanDate.toLocaleDateString('es-MX', {
@@ -105,27 +104,19 @@ export const buildNoursingColumns = (animals: Animal[]): ColumnDef<NoursingMothe
           })
         : null
 
-      const relativeStr =
-        row.daysUntilWean !== null
-          ? row.daysUntilWean === 0
-            ? 'Hoy'
-            : row.daysUntilWean > 0
-              ? `En ${row.daysUntilWean}d`
-              : `Hace ${Math.abs(row.daysUntilWean)}d`
-          : null
-
       return (
         <span
+          title={status.description}
           className={`inline-flex flex-col px-1.5 py-0.5 rounded-md text-xs font-medium ${
-            isOverdue
+            status.tone === 'danger'
               ? 'bg-red-100 text-red-700'
-              : isSoon
+              : status.tone === 'warning'
                 ? 'bg-yellow-100 text-yellow-700'
                 : 'bg-gray-100 text-gray-600'
           }`}
         >
           {dateStr ?? 'Sin fecha'}
-          {relativeStr && <span className="text-[10px] opacity-70 font-normal">{relativeStr}</span>}
+          <span className="text-[10px] opacity-70 font-normal">{status.label}</span>
         </span>
       )
     },
