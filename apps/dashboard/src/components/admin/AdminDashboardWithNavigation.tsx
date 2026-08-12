@@ -15,10 +15,20 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
+import {
+  computeFarmProfileStats,
+  FARM_ACTIVITY_LABELS,
+  FARM_CROP_LABELS,
+  FARM_OTHER_ACTIVITY_LABELS,
+  FARM_PURPOSE_LABELS,
+  FARM_SPECIES_LABELS,
+  formatFarmProfile,
+} from '@/lib/admin/farm-profile-stats'
 import { auth, db } from '@/lib/firebase'
 import { animal_icon, animal_status_labels, animals_types_labels } from '@/types/animals'
 import { PLAN_TIERS, type PlanTier, type PlanTierId } from '@/types/billing'
 import { sale_status_labels } from '@/types/sales'
+import AdminFarmProfileCharts from './AdminFarmProfileCharts'
 import AdminPricing from './AdminPricing'
 import AdminUserActions from './AdminUserActions'
 
@@ -104,6 +114,77 @@ function formatDate(raw: any): string {
     return d.toISOString().slice(0, 10)
   }
   return '—'
+}
+
+function farmProfileRows(farm: any): DetailRow[] {
+  const profile = farm?.productionProfile
+  if (!profile?.activityType) {
+    return [
+      {
+        key: 'production-profile',
+        label: 'Perfil productivo',
+        value: 'Sin perfil',
+      },
+    ]
+  }
+
+  return [
+    {
+      key: 'production-profile',
+      label: 'Tipo de granja',
+      value: FARM_ACTIVITY_LABELS[profile.activityType as keyof typeof FARM_ACTIVITY_LABELS],
+    },
+    {
+      key: 'country',
+      label: 'País',
+      value: farm.location?.country || '—',
+    },
+    ...(profile.productionPurposes?.length
+      ? [
+          {
+            key: 'production-purposes',
+            label: 'Objetivos',
+            value: profile.productionPurposes
+              .map((item: keyof typeof FARM_PURPOSE_LABELS) => FARM_PURPOSE_LABELS[item])
+              .join(', '),
+          },
+        ]
+      : []),
+    ...(profile.animalSpecies?.length
+      ? [
+          {
+            key: 'declared-species',
+            label: 'Especies declaradas',
+            value: profile.animalSpecies
+              .map((item: keyof typeof FARM_SPECIES_LABELS) => FARM_SPECIES_LABELS[item])
+              .join(', '),
+          },
+        ]
+      : []),
+    ...(profile.cropTypes?.length
+      ? [
+          {
+            key: 'crop-types',
+            label: 'Cultivos declarados',
+            value: profile.cropTypes
+              .map((item: keyof typeof FARM_CROP_LABELS) => FARM_CROP_LABELS[item])
+              .join(', '),
+          },
+        ]
+      : []),
+    ...(profile.otherActivity
+      ? [
+          {
+            key: 'other-activity',
+            label: 'Actividad',
+            value:
+              FARM_OTHER_ACTIVITY_LABELS[
+                profile.otherActivity as keyof typeof FARM_OTHER_ACTIVITY_LABELS
+              ],
+          },
+        ]
+      : []),
+  ]
 }
 
 // ── Main Component ──
@@ -456,6 +537,10 @@ export default function AdminDashboard() {
 
   // Métricas de uso derivadas (sin tracking nuevo). Recalcula al cambiar los datos.
   const usage = useMemo(() => computeUsageMetrics(rawData, new Date()), [rawData])
+  const farmProfileStats = useMemo(
+    () => computeFarmProfileStats(rawData.farms || []),
+    [rawData.farms],
+  )
 
   const summaryCards = useCallback((): CardItem[] => {
     const {
@@ -552,6 +637,14 @@ export default function AdminDashboard() {
         bg: 'bg-cyan-50',
         text: 'text-cyan-700',
       },
+      {
+        key: 'profiles',
+        label: 'Perfiles de granja',
+        icon: '🌾',
+        value: `${farmProfileStats.profiledFarms}/${farmProfileStats.totalFarms}`,
+        bg: 'bg-orange-50',
+        text: 'text-orange-800',
+      },
     ]
     if (deletedCount > 0) {
       result.push({
@@ -564,7 +657,7 @@ export default function AdminDashboard() {
       })
     }
     return result
-  }, [billingTiers.length, rawData, usage])
+  }, [billingTiers.length, farmProfileStats, rawData, usage])
 
   // ── Resolve current view based on path ──
 
@@ -607,12 +700,25 @@ export default function AdminDashboard() {
               { key: 'plan', label: 'Plan', sortable: true },
               { key: 'tier', label: 'Tier', sortable: true },
               { key: 'farms', label: 'Granjas', align: 'right' as const, sortable: true },
+              { key: 'operation', label: 'Operación', sortable: true },
               { key: 'animals', label: 'Animales', align: 'right' as const, sortable: true },
               { key: 'createdAt', label: 'Registro', sortable: true },
               { key: 'lastActivity', label: 'Último movimiento', sortable: true },
             ],
             data: users.map((u: any) => {
               const userFarms = farms.filter((f: any) => f.ownerId === u.id).length
+              const ownedFarms = farms.filter((f: any) => f.ownerId === u.id)
+              const userActivities = Array.from(
+                new Set(
+                  ownedFarms
+                    .map((farm: any) => farm.productionProfile?.activityType)
+                    .filter(Boolean)
+                    .map(
+                      (activity: keyof typeof FARM_ACTIVITY_LABELS) =>
+                        FARM_ACTIVITY_LABELS[activity],
+                    ),
+                ),
+              )
               const userAnimals = animals.filter((a: any) => a.farmerId === u.id)
               const latestAnimal = userAnimals.reduce((max: any, a: any) => {
                 const aDate = a.updatedAt?.toDate?.() || a.updatedAt
@@ -631,6 +737,7 @@ export default function AdminDashboard() {
                   plan: u.planType === 'pro' ? 'Pro' : 'Free',
                   tier: u.tierId ?? 'free',
                   farms: userFarms,
+                  operation: userActivities.join(', ') || 'Sin perfil',
                   animals: userAnimals.length,
                   createdAt: formatDate(u.createdAt),
                   lastActivity: latestAnimal ? formatDate(latestAnimal.updatedAt) : '—',
@@ -660,6 +767,7 @@ export default function AdminDashboard() {
             key: `farm-${farm.id}`,
             label: `🚜 ${farm.name || '(sin nombre)'}`,
             value: `${farmAnimalCount} animales${collabCount > 0 ? ` · ${collabCount} colab.` : ''}`,
+            meta: { profile: formatFarmProfile(farm.productionProfile) },
             drillable: true,
           })
         }
@@ -688,6 +796,7 @@ export default function AdminDashboard() {
             speciesSet.set(a.type, (speciesSet.get(a.type) || 0) + 1)
           }
           const rows: DetailRow[] = [
+            ...farmProfileRows(farm),
             {
               key: 'collabs',
               label: 'Colaboradores',
@@ -757,6 +866,8 @@ export default function AdminDashboard() {
             columns: [
               { key: 'name', label: 'Nombre', sortable: true },
               { key: 'owner', label: 'Dueño', sortable: true },
+              { key: 'country', label: 'País', sortable: true },
+              { key: 'operation', label: 'Operación', sortable: true },
               { key: 'animals', label: 'Animales', align: 'right' as const, sortable: true },
               { key: 'collabs', label: 'Colaboradores', align: 'right' as const, sortable: true },
               { key: 'createdAt', label: 'Registro', sortable: true },
@@ -772,6 +883,8 @@ export default function AdminDashboard() {
                 cells: {
                   name: f.name || '(sin nombre)',
                   owner: owner?.email || f.ownerId || '',
+                  country: f.location?.country || '—',
+                  operation: formatFarmProfile(f.productionProfile),
                   animals: animals.filter((a: any) => a.farmId === f.id).length,
                   collabs: f.collaborators?.length || 0,
                   createdAt: formatDate(f.createdAt),
@@ -798,6 +911,7 @@ export default function AdminDashboard() {
         }
         const rows: DetailRow[] = [
           { key: 'owner', label: 'Dueño', value: owner?.email || farm?.ownerId || '—' },
+          ...farmProfileRows(farm),
           {
             key: 'collabs',
             label: 'Colaboradores',
@@ -1187,6 +1301,8 @@ export default function AdminDashboard() {
 
         {activeRoot === 'pricing' && <AdminPricing onTiersChange={setBillingTiers} />}
 
+        {activeRoot === 'profiles' && <AdminFarmProfileCharts stats={farmProfileStats} />}
+
         {/* Uso / métricas */}
         {activeRoot === 'usage' &&
           (() => {
@@ -1408,7 +1524,7 @@ export default function AdminDashboard() {
                         ? () => drillInto({ key: row.key, label: row.label, icon: row.icon })
                         : undefined
                     }
-                    className={`flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0 ${
+                    className={`flex flex-col items-stretch gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 border-b border-gray-100 last:border-0 ${
                       row.drillable ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''
                     }`}
                   >
@@ -1441,8 +1557,13 @@ export default function AdminDashboard() {
                           {String(row.meta.campaignInfo)}
                         </span>
                       )}
+                      {row.meta?.profile && (
+                        <span className="text-xs text-emerald-700">
+                          · {String(row.meta.profile)}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center justify-between gap-2 sm:shrink-0 sm:justify-end">
                       <span className="text-sm text-gray-600">{row.value}</span>
                       {row.meta?.deletedDate && (
                         <button
