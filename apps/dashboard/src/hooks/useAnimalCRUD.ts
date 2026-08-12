@@ -35,8 +35,21 @@ import {
   type AnimalMilkRecord,
   AnimalRecord,
   AnimalStatus,
+  type AnimalWeightRecord,
   WeanNextStage,
 } from '@/types/animals'
+
+function latestWeightGrams(records: AnimalRecord[]): number | null {
+  const latest = records
+    .filter(
+      (record): record is AnimalWeightRecord =>
+        record.type === 'weight' &&
+        typeof record.weightGrams === 'number' &&
+        record.weightGrams > 0,
+    )
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+  return latest?.weightGrams ?? null
+}
 
 /**
  * Hook personalizado para el manejo de animales
@@ -76,23 +89,24 @@ export const useAnimalCRUD = () => {
         updatedAt: now,
       }
 
-      // Sync initial weight → weightRecords + records (source of truth = history)
+      // El historial unificado es la fuente de verdad del peso.
       const initialWeight =
         typeof newAnimal.weight === 'number' && newAnimal.weight > 0 ? newAnimal.weight : null
-      if (initialWeight && !newAnimal.weightRecords?.length) {
+      const hasInitialWeightRecord = newAnimal.records?.some((record) => record.type === 'weight')
+      if (initialWeight && !hasInitialWeightRecord) {
         const weightKg = (initialWeight / 1000).toFixed(1)
         const weightRecord: AnimalRecord = {
           id: crypto.randomUUID(),
           type: 'weight',
           category: 'general',
           title: `${weightKg} kg`,
+          weightGrams: initialWeight,
           date: now,
           createdAt: now,
           createdBy: user.id,
         }
         newAnimal = {
           ...newAnimal,
-          weightRecords: [{ date: now, weight: initialWeight }],
           records: [...(newAnimal.records || []), weightRecord],
         }
       }
@@ -130,10 +144,9 @@ export const useAnimalCRUD = () => {
         updatedAt: now,
       }
 
-      // Sync weight → weightRecords + records if weight changed and caller didn't already push history
+      // Si cambia el peso resumido, agregar el evento al historial unificado.
       const hasWeightInUpdate = typeof updateData.weight === 'number' && updateData.weight > 0
-      const callerAlreadyPushedHistory =
-        updateData.weightRecords !== undefined || updateData.records !== undefined
+      const callerAlreadyPushedHistory = updateData.records !== undefined
       if (hasWeightInUpdate && !callerAlreadyPushedHistory) {
         const existing = animals.find((a) => a.id === animalId)
         if (existing && existing.weight !== updateData.weight) {
@@ -144,13 +157,13 @@ export const useAnimalCRUD = () => {
             type: 'weight',
             category: 'general',
             title: `${weightKg} kg`,
+            weightGrams: newWeight,
             date: now,
             createdAt: now,
             createdBy: user.id,
           }
           updatedData = {
             ...updatedData,
-            weightRecords: [...(existing.weightRecords || []), { date: now, weight: newWeight }],
             records: [...(existing.records || []), weightRecord],
           }
         }
@@ -531,9 +544,13 @@ export const useAnimalCRUD = () => {
       return
     }
 
+    const removedRecord = animal.records.find((record) => record.id === recordId)
     const updatedRecords = animal.records.filter((record) => record.id !== recordId)
 
-    await update(animalId, { records: updatedRecords })
+    await update(animalId, {
+      records: updatedRecords,
+      ...(removedRecord?.type === 'weight' ? { weight: latestWeightGrams(updatedRecords) } : {}),
+    })
     console.log('Registro eliminado:', recordId)
   }
 
@@ -745,21 +762,14 @@ export const useAnimalCRUD = () => {
       return
     }
 
-    const newEntry = {
-      date: entry.date,
-      weight: entry.weight,
-      ...(entry.notes ? { notes: entry.notes } : {}),
-    }
-
-    const updatedWeightRecords = [...(animal.weightRecords || []), newEntry]
-
-    // También crear un AnimalRecord de tipo 'weight' para que aparezca en la tabla de registros
+    // El pesaje vive únicamente en records[].
     const weightKg = (entry.weight / 1000).toFixed(1)
     const newRecord = {
       id: crypto.randomUUID(),
       type: 'weight' as const,
       category: 'general' as const,
       title: `${weightKg} kg`,
+      weightGrams: entry.weight,
       date: entry.date,
       createdAt: new Date(),
       createdBy: user.id,
@@ -769,42 +779,37 @@ export const useAnimalCRUD = () => {
 
     await update(animalId, {
       weight: entry.weight,
-      weightRecords: updatedWeightRecords,
       records: updatedRecords,
     })
     console.log('Peso registrado para animal:', animalId, entry.weight, 'g')
   }
 
-  // Actualizar una entrada de peso existente en weightRecords (match por fecha original)
+  // Actualizar un registro de peso dentro del historial unificado.
   const updateWeightRecord = async (
     animalId: string,
-    originalDate: Date | string | number,
+    recordId: string,
     newEntry: { date: Date; weight: number; notes?: string },
   ) => {
     const animal = animals.find((a) => a.id === animalId)
     if (!animal) return
 
-    const origTime = new Date(originalDate).getTime()
-    const updatedWeightRecords = (animal.weightRecords || []).map((wr) => {
-      if (new Date(wr.date).getTime() === origTime) {
+    const updatedRecords = (animal.records || []).map((record) => {
+      if (record.id === recordId && record.type === 'weight') {
         return {
+          ...record,
           date: newEntry.date,
-          weight: newEntry.weight,
+          weightGrams: newEntry.weight,
+          title: `${(newEntry.weight / 1000).toFixed(1)} kg`,
           ...(newEntry.notes ? { notes: newEntry.notes } : {}),
+          updatedAt: new Date(),
         }
       }
-      return wr
+      return record
     })
 
-    // Actualizar weight al peso más reciente por fecha
-    const sorted = [...updatedWeightRecords].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    )
-    const latestWeight = sorted[0]?.weight
-
     await update(animalId, {
-      ...(latestWeight !== undefined ? { weight: latestWeight } : {}),
-      weightRecords: updatedWeightRecords,
+      weight: latestWeightGrams(updatedRecords),
+      records: updatedRecords,
     })
   }
 

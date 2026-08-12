@@ -329,35 +329,23 @@ export function formatTimeRemaining(months: number): string {
 }
 
 /**
- * Obtiene el peso más reciente del animal (en kg) considerando ambas fuentes:
- * `records` (type='weight') y `weightRecords` (gramos). Devuelve null si no hay.
+ * Obtiene el peso más reciente del animal desde el historial unificado.
+ * `weightGrams` es la fuente de verdad; el título sólo se interpreta para
+ * registros antiguos que todavía no hayan sido migrados.
  */
 export function getLastWeight(animal: Animal): { kg: number; date: Date } | null {
-  const weightFromRecords = [...(animal.records || [])]
+  const latest = [...(animal.records || [])]
     .filter((r) => r.type === 'weight')
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
-
-  const weightFromEntries = [...(animal.weightRecords || [])].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  )[0]
-
-  if (weightFromRecords && weightFromEntries) {
-    const rDate = new Date(weightFromRecords.date).getTime()
-    const eDate = new Date(weightFromEntries.date).getTime()
-    if (rDate >= eDate) {
-      const match = weightFromRecords.title.match(/^([\d.]+)/)
-      if (match) return { kg: Number.parseFloat(match[1]), date: new Date(weightFromRecords.date) }
-    } else {
-      return { kg: weightFromEntries.weight / 1000, date: new Date(weightFromEntries.date) }
-    }
-  } else if (weightFromRecords) {
-    const match = weightFromRecords.title.match(/^([\d.]+)/)
-    if (match) return { kg: Number.parseFloat(match[1]), date: new Date(weightFromRecords.date) }
-  } else if (weightFromEntries) {
-    return { kg: weightFromEntries.weight / 1000, date: new Date(weightFromEntries.date) }
+  if (!latest) return null
+  if (typeof latest.weightGrams === 'number' && latest.weightGrams > 0) {
+    return { kg: latest.weightGrams / 1000, date: new Date(latest.date) }
   }
-
-  return null
+  const match = latest.title.match(/^([\d.]+)\s*(kg|lb)?/i)
+  if (!match) return null
+  const value = Number.parseFloat(match[1])
+  const kg = match[2]?.toLowerCase() === 'lb' ? value * 0.453592 : value
+  return { kg, date: new Date(latest.date) }
 }
 
 /**

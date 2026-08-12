@@ -68,24 +68,39 @@ describe('getLastWeight', () => {
     expect(getLastWeight(createAnimal())).toBeNull()
   })
 
-  it('reads from weightRecords (grams)', () => {
+  it('reads weightGrams from unified records', () => {
     const animal = createAnimal({
-      weightRecords: [{ id: 'w1', date: new Date('2026-04-01'), weight: 35000 }],
+      records: [
+        {
+          id: 'w1',
+          type: 'weight',
+          date: new Date('2026-04-01'),
+          title: '35 kg',
+          weightGrams: 35000,
+        } as any,
+      ],
     })
     const r = getLastWeight(animal)
     expect(r).not.toBeNull()
     expect(r!.kg).toBe(35)
   })
 
-  it('picks most recent across both sources', () => {
+  it('picks the most recent unified weight record', () => {
     const animal = createAnimal({
-      weightRecords: [{ id: 'w1', date: new Date('2026-03-01'), weight: 30000 }],
       records: [
+        {
+          id: 'r0',
+          type: 'weight',
+          date: new Date('2026-03-01'),
+          title: '30 kg',
+          weightGrams: 30000,
+        } as any,
         {
           id: 'r1',
           type: 'weight',
           date: new Date('2026-04-10'),
           title: '40 kg',
+          weightGrams: 40000,
         } as any,
       ],
     })
@@ -107,7 +122,15 @@ describe('weightTargetProgress', () => {
   it('computes percent vs target (oveja target 50)', () => {
     const animal = createAnimal({
       type: 'oveja',
-      weightRecords: [{ id: 'w1', date: new Date('2026-04-01'), weight: 44000 }],
+      records: [
+        {
+          id: 'w1',
+          type: 'weight',
+          date: new Date('2026-04-01'),
+          title: '44 kg',
+          weightGrams: 44000,
+        } as any,
+      ],
     })
     const p = weightTargetProgress(animal)
     expect(p).not.toBeNull()

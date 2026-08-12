@@ -13,14 +13,6 @@ export interface User {
   billingTierId?: import('./billing').PlanTierId
 }
 
-export interface WeightRecord {
-  id: string
-  animalNumber: string
-  weight: number
-  date: Date
-  notes?: string
-}
-
 export interface MilkProduction {
   id: string
   animalNumber: string

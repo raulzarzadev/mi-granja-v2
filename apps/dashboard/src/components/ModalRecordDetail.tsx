@@ -68,10 +68,14 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
     let weightValue = ''
     let weightUnit: 'kg' | 'lb' = 'kg'
     if (record.type === 'weight') {
-      const match = record.title.match(/^([\d.]+)\s*(kg|lb)$/i)
-      if (match) {
-        weightValue = match[1]
-        weightUnit = match[2].toLowerCase() as 'kg' | 'lb'
+      if (typeof record.weightGrams === 'number') {
+        weightValue = (record.weightGrams / 1000).toString()
+      } else {
+        const match = record.title.match(/^([\d.]+)\s*(kg|lb)$/i)
+        if (match) {
+          weightValue = match[1]
+          weightUnit = match[2].toLowerCase() as 'kg' | 'lb'
+        }
       }
     }
 
@@ -123,30 +127,34 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
         // Para peso, reconstruir el título desde el valor
         const weightKg =
           form.weightUnit === 'kg' ? parseFloat(form.weight) : parseFloat(form.weight) * 0.453592
-        const title = `${parseFloat(form.weight).toFixed(1)} ${form.weightUnit}`
         data = {
           type: 'weight',
           category: 'general',
-          title,
+          title: `${weightKg.toFixed(1)} kg`,
+          weightGrams: Math.round(weightKg * 1000),
           date: form.date ? new Date(form.date) : new Date(),
           description: form.description || undefined,
         }
 
-        // También actualizar weightRecords del animal
         const weightGrams = Math.round(weightKg * 1000)
-        await updateWeightRecord(record.animalId, record.date, {
-          date: form.date ? new Date(form.date) : new Date(),
-          weight: weightGrams,
-          ...(form.description ? { notes: form.description } : {}),
-        })
+        const targets =
+          isGrouped && record.__isGrouped ? record.__animals : [{ id: record.animalId }]
+        await Promise.all(
+          targets.map((target) =>
+            updateWeightRecord(target.id, record.id, {
+              date: form.date ? new Date(form.date) : new Date(),
+              weight: weightGrams,
+              ...(form.description ? { notes: form.description } : {}),
+            }),
+          ),
+        )
       } else {
         data = buildRecordFromForm(form)
-      }
-
-      if (isGrouped && record.__isGrouped) {
-        await Promise.all(record.__animals.map((a) => updateRecord(a.id, record.id, data)))
-      } else {
-        await updateRecord(record.animalId, record.id, data)
+        if (isGrouped && record.__isGrouped) {
+          await Promise.all(record.__animals.map((a) => updateRecord(a.id, record.id, data)))
+        } else {
+          await updateRecord(record.animalId, record.id, data)
+        }
       }
 
       if (form.createReminder && form.reminderDate) {

@@ -85,36 +85,11 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
   const [typeFilter, setTypeFilter] = useState<RecordFilter>('')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
-  // Combinar records[] y pesos legacy en una sola línea de tiempo.
   const allRecords: AnimalRecord[] = useMemo(() => {
-    const records: AnimalRecord[] = [...(animal.records || [])]
-
-    // Incluir weightRecords legacy que no tengan un record correspondiente en records[]
-    if (animal.weightRecords) {
-      const existingWeightDates = new Set(
-        records
-          .filter((record) => record.type === 'weight')
-          .map((record) => toDate(record.date).getTime()),
-      )
-      animal.weightRecords.forEach((wr) => {
-        const wrTime = new Date(wr.date).getTime()
-        if (!existingWeightDates.has(wrTime)) {
-          records.push({
-            id: `wr-${wrTime}`,
-            type: 'weight',
-            category: 'general',
-            title: `${(wr.weight / 1000).toFixed(1)} kg`,
-            date: wr.date,
-            notes: wr.notes,
-            createdAt: wr.date,
-            createdBy: '',
-          })
-        }
-      })
-    }
-
-    return records.sort((a, b) => toDate(b.date).getTime() - toDate(a.date).getTime())
-  }, [animal.records, animal.weightRecords])
+    return [...(animal.records || [])].sort(
+      (a, b) => toDate(b.date).getTime() - toDate(a.date).getTime(),
+    )
+  }, [animal.records])
 
   const filteredRecords = useMemo(() => {
     if (!typeFilter) return allRecords

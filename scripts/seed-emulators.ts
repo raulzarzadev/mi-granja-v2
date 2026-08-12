@@ -280,7 +280,26 @@ async function seedAnimals() {
   ]
 
   for (const animal of animals) {
-    await db.collection('animals').doc(animal.id).set(animal)
+    const weightGrams = animal.weight * 1000
+    await db
+      .collection('animals')
+      .doc(animal.id)
+      .set({
+        ...animal,
+        weight: weightGrams,
+        records: [
+          {
+            id: `weight-${animal.id}`,
+            type: 'weight',
+            category: 'general',
+            title: `${animal.weight.toFixed(1)} kg`,
+            weightGrams,
+            date: now,
+            createdAt: now,
+            createdBy: ADMIN_UID,
+          },
+        ],
+      })
   }
   console.log(`  ✓ ${animals.length} animales`)
 }
@@ -423,48 +442,6 @@ async function seedReminders() {
   console.log(`  ✓ ${reminders.length} recordatorios`)
 }
 
-async function seedWeightRecords() {
-  console.log('⚖️ Creando registros de peso...')
-
-  const records = [
-    {
-      id: 'weight-001',
-      animalId: 'animal-001',
-      weight: 65,
-      date: Timestamp.fromDate(new Date('2026-01-15')),
-      notes: 'Peso después de esquila',
-      farmId: FARM_ID,
-      createdAt: Timestamp.now(),
-      createdBy: ADMIN_UID,
-    },
-    {
-      id: 'weight-002',
-      animalId: 'animal-003',
-      weight: 15,
-      date: Timestamp.fromDate(new Date('2026-02-01')),
-      notes: 'Cría en buen crecimiento',
-      farmId: FARM_ID,
-      createdAt: Timestamp.now(),
-      createdBy: ADMIN_UID,
-    },
-    {
-      id: 'weight-003',
-      animalId: 'animal-004',
-      weight: 450,
-      date: Timestamp.fromDate(new Date('2026-02-10')),
-      notes: 'Peso previo a temporada de monta',
-      farmId: FARM_ID,
-      createdAt: Timestamp.now(),
-      createdBy: ADMIN_UID,
-    },
-  ]
-
-  for (const record of records) {
-    await db.collection('weightRecords').doc(record.id).set(record)
-  }
-  console.log(`  ✓ ${records.length} registros de peso`)
-}
-
 async function seedInvitations() {
   console.log('📧 Creando invitaciones...')
 
@@ -511,7 +488,6 @@ async function main() {
     await seedAnimals()
     await seedBreedings()
     await seedReminders()
-    await seedWeightRecords()
     await seedInvitations()
     await seedAdminActions()
 

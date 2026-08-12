@@ -68,9 +68,8 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
       const result = await parseBackupFile(file)
       setValidation(result)
 
-      if (result.valid) {
-        const text = await file.text()
-        setBackupData(JSON.parse(text))
+      if (result.valid && result.data) {
+        setBackupData(result.data)
         setStep('preview')
       }
     } catch {
@@ -489,9 +488,9 @@ function StepIndicator({ currentStep }: { currentStep: Step }) {
 
 const COLLECTION_LABELS: Record<string, string> = {
   animals: 'Animales',
+  animalRecords: 'Registros de animales',
   breedingRecords: 'Registros reproductivos',
   reminders: 'Recordatorios',
-  weightRecords: 'Registros de peso',
   farmInvitations: 'Invitaciones',
   sales: 'Ventas',
 }
@@ -637,11 +636,6 @@ function ConfirmOtherCollections({ data, mode }: { data: BackupFile; mode: 'merg
       detail: 'Se crearán nuevos recordatorios asociados a tu usuario y granja actual.',
     },
     {
-      label: 'Registros de peso',
-      count: data.weightRecords?.length || 0,
-      detail: 'Se crearán como registros nuevos.',
-    },
-    {
       label: 'Ventas',
       count: data.sales?.length || 0,
       detail: 'Se crearán como ventas nuevas con referencias actualizadas a los nuevos animales.',
@@ -699,16 +693,16 @@ function ProgressView({ progress }: { progress: BackupProgress }) {
 
 const BACKUP_SCHEMA_JSON = `{
   "_meta": {
-    "version": 1,
+    "version": 2,
     "exportDate": "ISO 8601",
     "farmId": "string",
     "farmName": "string",
     "exportedBy": "string (userId)",
     "counts": {
       "animals": 0,
+      "animalRecords": 0,
       "breedingRecords": 0,
       "reminders": 0,
-      "weightRecords": 0,
       "farmInvitations": 0,
       "sales": 0
     }
@@ -739,10 +733,9 @@ const BACKUP_SCHEMA_JSON = `{
       "isWeaned": "true | false (opcional)",
       "weanedAt": "ISO 8601 (opcional)",
       "weaningDestination": "engorda | reproductor (destino al destetar, opcional)",
-      "weightRecords": "[{ date, weight (gramos), age? (meses), notes? }] (opcional)",
       "soldInfo": "{ date, buyer?, weight? (gramos), price? (centavos) } (si vendido)",
       "lostInfo": "{ lostAt, foundAt? } (si perdido)",
-      "records": "[{ id, type, category, title, date, amountMl?, session?, severity?, isResolved?, resolvedDate?, treatment?, nextDueDate?, batch?, veterinarian?, cost?, notes?, appliedToAnimals?, isBulkApplication?, createdAt, createdBy, updatedAt? }] (opcional; type='milk' requiere amountMl y session)",
+      "records": "[{ id, type, category, title, date, weightGrams?, amountMl?, session?, severity?, isResolved?, resolvedDate?, treatment?, nextDueDate?, batch?, veterinarian?, cost?, notes?, appliedToAnimals?, isBulkApplication?, createdAt, createdBy, updatedAt? }] (type='weight' requiere weightGrams; type='milk' requiere amountMl y session)",
       "customWeaningDays": "number (override días de destete, opcional)",
       "pregnantAt": "ISO 8601 | null (fecha confirmación embarazo, solo hembras)",
       "pregnantBy": "string | null (ID del macho que la preñó, solo hembras)",
@@ -795,13 +788,6 @@ const BACKUP_SCHEMA_JSON = `{
       "createdAt": "ISO 8601",
       "updatedAt": "ISO 8601"
     },
-    "weightRecord": {
-      "id": "string",
-      "animalNumber": "string (arete)",
-      "weight": "number (en gramos)",
-      "date": "ISO 8601",
-      "notes": "string (opcional)"
-    },
     "farmInvitation": {
       "id": "string",
       "farmId": "string",
@@ -850,15 +836,14 @@ const BACKUP_SCHEMA_JSON = `{
       "destete": "Al destetar una cría: isWeaned=true, weanedAt=fecha, stage cambia según destino. Para engorda→stage=engorda. Para reproductor→stage=juvenil.",
       "nacimiento_muerto": "Si una cría nace muerta: status=muerto, statusAt=fecha del parto",
       "estado_reproductivo": "Solo hembras. Embarazo y lactancia pueden coexistir. lactationStatus=active mantiene Madre/Lechera; el destete sólo termina la lactancia cuando lactationPurpose=offspring.",
-      "ids_de_referencia": "motherId, fatherId, maleId, femaleId, offspring[] — son IDs internos. Al importar se remapean automáticamente.",
-      "peso_auto_sync": "Si weight está presente pero weightRecords y records están vacíos, al importar se genera una entrada sintética con fecha=updatedAt (o createdAt) para mantener consistencia."
+      "ids_de_referencia": "motherId, fatherId, pregnantBy, pregnantBreedingRecordId, records[].appliedToAnimals, maleId, femaleId y offspring[] se remapean automáticamente.",
+      "peso_auto_sync": "records[] type=weight con weightGrams es la fuente de verdad. animal.weight conserva sólo el último valor como resumen."
     }
   },
   "farm": { },
   "animals": [ ],
   "breedingRecords": [ ],
   "reminders": [ ],
-  "weightRecords": [ ],
   "farmInvitations": [ ],
   "sales": [ ]
 }`

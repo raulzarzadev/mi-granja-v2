@@ -27,7 +27,6 @@ export type {
   OffspringInfo,
   Reminder,
   User,
-  WeightRecord,
 } from './types/index'
 export * from './types/records'
 export * from './types/sales'

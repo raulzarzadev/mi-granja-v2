@@ -57,9 +57,9 @@ export interface Farm {
     fileName: string
     counts: {
       animals: number
+      animalRecords: number
       breedingRecords: number
       reminders: number
-      weightRecords: number
       farmInvitations: number
       sales: number
     }

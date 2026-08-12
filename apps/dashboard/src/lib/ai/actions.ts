@@ -109,12 +109,6 @@ function normalizeAnimal(doc: FirebaseFirestore.QueryDocumentSnapshot): Animal {
     weanedMotherAt: asDate(data.weanedMotherAt),
     driedAt: asDate(data.driedAt),
     currentAreaAssignedAt: asDate(data.currentAreaAssignedAt),
-    weightRecords: Array.isArray(data.weightRecords)
-      ? data.weightRecords.map((entry: Record<string, unknown>) => ({
-          ...entry,
-          date: asDate(entry.date) ?? new Date(0),
-        }))
-      : [],
     records: Array.isArray(data.records)
       ? data.records.map((entry: Record<string, unknown>) => ({
           ...entry,
@@ -742,20 +736,6 @@ export async function buildAiContext(
         animal,
         record.type === 'milk' ? 'ordeño' : `registro_${record.type}`,
         detail,
-      )
-    }
-    const unifiedWeightDates = new Set(
-      (animal.records || [])
-        .filter((record) => record.type === 'weight')
-        .map((record) => dateKey(record.date)),
-    )
-    for (const entry of animal.weightRecords || []) {
-      if (unifiedWeightDates.has(dateKey(entry.date))) continue
-      addMovement(
-        entry.date,
-        animal,
-        'pesaje',
-        `${Math.round((entry.weight / 1000) * 100) / 100} kg${entry.notes ? ` · ${entry.notes}` : ''}`,
       )
     }
     if (animal.statusAt) {

@@ -30,6 +30,10 @@ export interface AnimalRecord {
   amountMl?: number
   session?: MilkingSession
 
+  // Campos específicos para registros de peso
+  /** Peso almacenado en gramos. El título es sólo una etiqueta de presentación. */
+  weightGrams?: number
+
   // Para aplicación masiva (eventos de salud)
   appliedToAnimals?: string[] // IDs de animales
   isBulkApplication?: boolean
@@ -40,13 +44,6 @@ export interface AnimalRecord {
   updatedAt?: Date
 }
 
-export interface AnimalWeightEntry {
-  date: Date
-  weight: number // gramos
-  age?: number // meses al momento del pesaje
-  notes?: string
-}
-
 export type LactationPurpose = 'offspring' | 'dairy' | 'dual'
 export type LactationStatus = 'active' | 'dry'
 export type MilkingSession = 'morning' | 'afternoon' | 'evening' | 'total'
@@ -55,6 +52,11 @@ export type AnimalMilkRecord = AnimalRecord & {
   type: 'milk'
   amountMl: number
   session: MilkingSession
+}
+
+export type AnimalWeightRecord = AnimalRecord & {
+  type: 'weight'
+  weightGrams: number
 }
 
 export interface Animal {
@@ -82,9 +84,7 @@ export interface Animal {
   notes?: string
   createdAt: Date
   updatedAt: Date
-  // Historial de pesajes del animal
-  weightRecords?: AnimalWeightEntry[]
-  // Sistema unificado de registros
+  // Sistema unificado de registros (incluye pesajes y ordeños)
   records?: AnimalRecord[]
   // Estado general del animal
   status?: AnimalStatus // default lógico: 'activo'
@@ -280,6 +280,9 @@ export const isMilkRecord = (record: AnimalRecord): record is AnimalMilkRecord =
   record.type === 'milk' &&
   typeof record.amountMl === 'number' &&
   typeof record.session === 'string'
+
+export const isWeightRecord = (record: AnimalRecord): record is AnimalWeightRecord =>
+  record.type === 'weight' && typeof record.weightGrams === 'number'
 
 export const record_categories = [
   'general',
