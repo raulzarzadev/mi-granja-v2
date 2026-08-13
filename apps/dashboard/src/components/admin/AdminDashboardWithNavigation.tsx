@@ -1,15 +1,7 @@
 'use client'
 
 import { computeUsageMetrics } from '@mi-granja/shared'
-import {
-  collection,
-  deleteDoc,
-  doc as firestoreDoc,
-  getDocs,
-  query,
-  where,
-  writeBatch,
-} from 'firebase/firestore'
+import { collection, getDocs } from 'firebase/firestore'
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
@@ -467,24 +459,17 @@ export default function AdminDashboard() {
   const handleHardDelete = async (farmId: string) => {
     setIsDeletingFarm(true)
     try {
-      const collections = ['animals', 'breedingRecords', 'reminders', 'sales', 'farmInvitations']
-      for (const col of collections) {
-        const snap = await getDocs(query(collection(db, col), where('farmId', '==', farmId)))
-        // Batch delete in groups of 500
-        const batch = writeBatch(db)
-        let count = 0
-        for (const d of snap.docs) {
-          batch.delete(d.ref)
-          count++
-          if (count >= 499) {
-            await batch.commit()
-            count = 0
-          }
-        }
-        if (count > 0) await batch.commit()
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) throw new Error('Debes iniciar sesión nuevamente')
+
+      const response = await fetch(`/api/farms/${encodeURIComponent(farmId)}/hard-delete`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(payload.error || 'No se pudo eliminar la granja permanentemente')
       }
-      // Delete the farm doc
-      await deleteDoc(firestoreDoc(db, 'farms', farmId))
 
       // Refresh data
       setDeleteFarm(null)
@@ -492,9 +477,10 @@ export default function AdminDashboard() {
       const farmsSnap = await getDocs(collection(db, 'farms'))
       const mapSnap = (snap: any) => snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
       setRawData((prev) => ({ ...prev, farms: mapSnap(farmsSnap) }))
+      notify('La granja y sus datos se eliminaron permanentemente', 'success')
     } catch (err) {
       console.error('Error eliminando granja:', err)
-      notify('Error al eliminar la granja')
+      notify(err instanceof Error ? err.message : 'Error al eliminar la granja')
     } finally {
       setIsDeletingFarm(false)
     }

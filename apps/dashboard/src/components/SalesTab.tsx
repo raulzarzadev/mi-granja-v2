@@ -46,7 +46,7 @@ const sort_labels: Record<SortKey, string> = {
 const SalesTab: React.FC = () => {
   const { sales, getFarmSales } = useSalesCRUD()
   const [statusFilter, setStatusFilter] = useState<SaleStatus | ''>('')
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedSale, setSelectedSale] = useState<Sale | undefined>()
   const [sortKey, setSortKey] = useState<SortKey>('date')

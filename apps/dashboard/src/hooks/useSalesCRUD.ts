@@ -176,9 +176,16 @@ export const useSalesCRUD = () => {
     opts?: { onProgress?: (current: number, total: number) => void; overrideData?: Partial<Sale> },
   ) => {
     const saleFromRedux = sales.find((s) => s.id === id)
-    if (!saleFromRedux) throw new Error('Venta no encontrada')
+    if (!saleFromRedux && !opts?.overrideData) throw new Error('Venta no encontrada')
 
-    const sale = opts?.overrideData ? { ...saleFromRedux, ...opts.overrideData } : saleFromRedux
+    // Al crear y completar en una sola acción, el listener de Firestore puede no haber
+    // incorporado todavía la venta a Redux. En ese caso usamos los datos validados del formulario.
+    const sale = saleFromRedux
+      ? opts?.overrideData
+        ? { ...saleFromRedux, ...opts.overrideData }
+        : saleFromRedux
+      : opts?.overrideData
+    if (!sale) throw new Error('Venta no encontrada')
 
     // Reconstruir sale con Date objects para isSaleComplete
     const saleForValidation = {
@@ -195,9 +202,10 @@ export const useSalesCRUD = () => {
     try {
       const pricePerKg = sale.pricePerKg || 0 // centavos/kg
       const saleDate = sale.date ? new Date(sale.date) : new Date()
+      const saleAnimals = sale.animals || []
 
-      const entryById = new Map(sale.animals.map((e) => [e.animalId, e]))
-      const ids = sale.animals.map((e) => e.animalId)
+      const entryById = new Map(saleAnimals.map((e) => [e.animalId, e]))
+      const ids = saleAnimals.map((e) => e.animalId)
       await batchUpdateAnimals(
         ids,
         ({ id: animalId }) => {

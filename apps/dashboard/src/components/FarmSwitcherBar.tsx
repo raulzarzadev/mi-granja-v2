@@ -21,7 +21,7 @@ const FarmSwitcherBar = ({
   children?: ReactNode
   trailingAction?: ReactNode
 }) => {
-  const { notify } = useAppFeedback()
+  const { confirmAction, notify } = useAppFeedback()
   const {
     currentFarm,
     switchFarm,
@@ -30,8 +30,11 @@ const FarmSwitcherBar = ({
     invitationFarms,
     deletedFarms,
     restoreFarm,
+    hardDeleteFarm,
   } = useFarmCRUD()
   const [isRestoring, setIsRestoring] = useState<string | null>(null)
+  const [isHardDeleting, setIsHardDeleting] = useState<string | null>(null)
+  const [deletedFarmsHidden, setDeletedFarmsHidden] = useState(false)
 
   const myInv = useMyInvitations()
   const { acceptInvitation } = useFarmMembers(undefined)
@@ -308,9 +311,31 @@ const FarmSwitcherBar = ({
         )}
 
         {/* Banner granjas eliminadas */}
-        {deletedFarms.length > 0 && (
+        {deletedFarms.length > 0 && deletedFarmsHidden && (
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setDeletedFarmsHidden(false)}
+              className="min-h-10 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-medium text-red-700 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+            >
+              Mostrar granjas por eliminar ({deletedFarms.length})
+            </button>
+          </div>
+        )}
+        {deletedFarms.length > 0 && !deletedFarmsHidden && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-3 space-y-2">
-            <p className="text-sm font-medium text-red-800">Granjas marcadas para eliminacion</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-red-800">Granjas marcadas para eliminación</p>
+              <button
+                type="button"
+                aria-label="Ocultar granjas marcadas para eliminación"
+                title="Ocultar"
+                onClick={() => setDeletedFarmsHidden(true)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xl leading-none text-red-700 transition-colors hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+              >
+                ×
+              </button>
+            </div>
             {deletedFarms.map((farm) => {
               const deletedDate =
                 farm.deletedAt instanceof Date ? farm.deletedAt : new Date(farm.deletedAt as any)
@@ -325,33 +350,74 @@ const FarmSwitcherBar = ({
               return (
                 <div
                   key={farm.id}
-                  className="flex items-center justify-between bg-white rounded-md border border-red-100 px-3 py-2"
+                  className="flex flex-col gap-3 rounded-md border border-red-100 bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900">{farm.name}</p>
                     <p className="text-xs text-red-600">
                       Eliminada el {deletedDate.toLocaleDateString('es-MX')} ·{' '}
                       {daysLeft > 0 ? `${daysLeft} dias para recuperar` : 'Eliminacion pendiente'}
                     </p>
                   </div>
-                  <Button
-                    size="xs"
-                    variant="filled"
-                    color="success"
-                    disabled={isRestoring === farm.id}
-                    onClick={async () => {
-                      setIsRestoring(farm.id)
-                      try {
-                        await restoreFarm(farm.id)
-                      } catch (e) {
-                        console.error(e)
-                      } finally {
-                        setIsRestoring(null)
-                      }
-                    }}
-                  >
-                    {isRestoring === farm.id ? 'Restaurando...' : 'Recuperar'}
-                  </Button>
+                  <div className="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      color="error"
+                      className="min-h-11 w-full sm:w-auto"
+                      disabled={isHardDeleting === farm.id || isRestoring === farm.id}
+                      onClick={async () => {
+                        const confirmed = await confirmAction({
+                          title: 'Eliminar granja definitivamente',
+                          message: `Se eliminarán permanentemente ${farm.name}, sus animales, registros, reproducciones, ventas, recordatorios e invitaciones. Esta acción no se puede deshacer.`,
+                          confirmLabel: 'Eliminar definitivamente',
+                          cancelLabel: 'Conservar granja',
+                          danger: true,
+                        })
+                        if (!confirmed) return
+
+                        setIsHardDeleting(farm.id)
+                        try {
+                          await hardDeleteFarm(farm.id)
+                          notify('La granja y sus datos se eliminaron permanentemente', 'success')
+                        } catch (error) {
+                          notify(
+                            error instanceof Error
+                              ? error.message
+                              : 'No se pudo eliminar la granja permanentemente',
+                          )
+                        } finally {
+                          setIsHardDeleting(null)
+                        }
+                      }}
+                    >
+                      {isHardDeleting === farm.id ? 'Eliminando...' : 'Eliminar definitivamente'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="filled"
+                      color="success"
+                      className="min-h-11 w-full sm:w-auto"
+                      disabled={isRestoring === farm.id || isHardDeleting === farm.id}
+                      onClick={async () => {
+                        setIsRestoring(farm.id)
+                        try {
+                          await restoreFarm(farm.id)
+                          notify('La granja fue recuperada', 'success')
+                        } catch (error) {
+                          notify(
+                            error instanceof Error
+                              ? error.message
+                              : 'No se pudo recuperar la granja',
+                          )
+                        } finally {
+                          setIsRestoring(null)
+                        }
+                      }}
+                    >
+                      {isRestoring === farm.id ? 'Restaurando...' : 'Recuperar'}
+                    </Button>
+                  </div>
                 </div>
               )
             })}

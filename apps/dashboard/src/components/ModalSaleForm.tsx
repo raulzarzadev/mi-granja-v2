@@ -128,6 +128,10 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({ isOpen, onClose, sale }) 
       setError('Selecciona al menos un animal')
       return
     }
+    if (status === 'completed') {
+      await handleComplete()
+      return
+    }
     try {
       const data = buildSaleData()
       if (isEditing && sale) {
@@ -142,7 +146,6 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({ isOpen, onClose, sale }) 
   }
 
   const handleComplete = async () => {
-    if (!sale) return
     setError('')
     if (selectedAnimalIds.length === 0) {
       setError('Selecciona al menos un animal')
@@ -165,13 +168,27 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({ isOpen, onClose, sale }) 
       setError(`Ingresa el peso del animal ${animal?.animalNumber || missingWeight}`)
       return
     }
-    setCompleteProgress({ current: 0, total: sale.animals.length })
+    setCompleteProgress({ current: 0, total: selectedAnimalIds.length })
     const saleData = buildSaleData()
+    // La venta solo pasa a completed después de actualizar correctamente a todos los animales.
+    const statusBeforeCompletion: SaleStatus = sale
+      ? sale.status === 'completed' || sale.status === 'cancelled'
+        ? 'pending'
+        : sale.status
+      : 'pending'
+    const pendingSaleData = { ...saleData, status: statusBeforeCompletion }
     try {
-      await updateSale(sale.id, saleData)
-      await completeSale(sale.id, {
+      const saleId = sale
+        ? sale.id
+        : await createSale({
+            ...pendingSaleData,
+            buyer: pendingSaleData.buyer || '',
+            notes: pendingSaleData.notes || '',
+          })
+      if (sale) await updateSale(sale.id, pendingSaleData)
+      await completeSale(saleId, {
         onProgress: (current, total) => setCompleteProgress({ current, total }),
-        overrideData: saleData,
+        overrideData: pendingSaleData,
       })
       onClose()
     } catch (err) {
@@ -237,14 +254,18 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({ isOpen, onClose, sale }) 
             disabled={isReadOnly}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
           >
-            {sale_statuses
-              .filter((s) => s !== 'completed')
-              .map((s) => (
-                <option key={s} value={s}>
-                  {sale_status_labels[s]}
-                </option>
-              ))}
+            {sale_statuses.map((s) => (
+              <option key={s} value={s}>
+                {sale_status_labels[s]}
+              </option>
+            ))}
           </select>
+          {status === 'completed' && !isReadOnly && (
+            <p className="mt-1.5 text-xs leading-5 text-gray-600">
+              Para completarla se requiere fecha, precio y peso de cada animal. Al guardar, los
+              animales quedarán registrados como vendidos.
+            </p>
+          )}
         </div>
 
         {/* Fecha */}
@@ -400,10 +421,16 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({ isOpen, onClose, sale }) 
                 disabled={isSubmitting || isReadOnly}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
               >
-                {isEditing ? 'Guardar Cambios' : 'Crear Venta'}
+                {status === 'completed'
+                  ? isEditing
+                    ? 'Completar venta'
+                    : 'Crear y completar venta'
+                  : isEditing
+                    ? 'Guardar Cambios'
+                    : 'Crear Venta'}
               </button>
 
-              {isEditing && (
+              {isEditing && !isReadOnly && status !== 'completed' && (
                 <button
                   onClick={handleComplete}
                   disabled={isSubmitting}

@@ -33,7 +33,7 @@ import {
 import { serializeObj } from '@/features/libs/serializeObj'
 import { AppDispatch, RootState } from '@/features/store'
 import { trackFarmCreated } from '@/lib/analytics/track'
-import { db } from '@/lib/firebase'
+import { auth, db } from '@/lib/firebase'
 import { FarmCollaborator } from '@/types/collaborators'
 import { Farm, FarmArea } from '@/types/farm'
 
@@ -285,6 +285,30 @@ export const useFarmCRUD = () => {
     } catch (error) {
       console.error('Error restoring farm:', error)
       dispatch(setError('Error al restaurar la granja'))
+      throw error
+    }
+  }
+
+  // Eliminar permanentemente una granja previamente marcada para eliminación.
+  const hardDeleteFarm = async (farmId: string) => {
+    try {
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) throw new Error('Debes iniciar sesión nuevamente')
+
+      const response = await fetch(`/api/farms/${encodeURIComponent(farmId)}/hard-delete`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(payload.error || 'No se pudo eliminar la granja permanentemente')
+      }
+
+      await loadUserFarms()
+      return payload
+    } catch (error) {
+      console.error('Error hard deleting farm:', error)
+      dispatch(setError('Error al eliminar la granja permanentemente'))
       throw error
     }
   }
@@ -598,6 +622,7 @@ export const useFarmCRUD = () => {
     updateFarm,
     softDeleteFarm,
     restoreFarm,
+    hardDeleteFarm,
     switchFarm,
     loadAndSwitchFarm,
 
