@@ -1,5 +1,5 @@
 /**
- * Tests de useBreedingHandlers — preservación de embarazo/padre/empadre
+ * Tests de useBreedingHandlers — preservación de gestación/padre/empadre
  * al remover hembras (o el macho) de un empadre, y reversión de parto.
  */
 import { renderHook } from '@testing-library/react'
@@ -67,7 +67,7 @@ const setup = (animals: Animal[]) => {
 }
 
 describe('handleRemoveFromBreeding', () => {
-  it('sacar hembra embarazada conserva pregnantAt, backfillea pregnantBy y guarda ids del empadre', async () => {
+  it('sacar hembra gestante conserva pregnantAt, backfillea pregnantBy y guarda ids del empadre', async () => {
     const confirmed = new Date('2026-02-01')
     const info = makeFemaleInfo({ femaleId: 'f1', pregnancyConfirmedDate: confirmed })
     const record = makeRecord({
@@ -174,7 +174,7 @@ describe('handleRemoveFromBreeding', () => {
     expect(deleteBreedingRecord).toHaveBeenCalledWith('br-doc-1')
   })
 
-  it('sacar la última hembra borra el record pero conserva su embarazo', async () => {
+  it('sacar la última hembra borra el record pero conserva su gestación', async () => {
     const confirmed = new Date('2026-02-01')
     const record = makeRecord({
       femaleBreedingInfo: [makeFemaleInfo({ femaleId: 'f1', pregnancyConfirmedDate: confirmed })],

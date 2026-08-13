@@ -333,7 +333,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     }
   }, [filteredBreedingRecords])
 
-  // --- Partos próximos (hembras embarazadas) ---
+  // --- Partos próximos (hembras gestantes) ---
   const pregnantFemales = usePregnantFemales({
     activeAnimals,
     animals,
@@ -641,7 +641,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
 
   const partosColumns = useMemo(() => buildPartosColumns(), [])
 
-  // Tab: Embarazos — see TabStagePregnant
+  // Tab: Gestantes — see TabStagePregnant
 
   // Tab: Crías — recién nacidos en espera de destete
   const allCrias: UnweanedRow[] = useMemo(() => {
@@ -696,7 +696,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   const crossTabDuplicates = useMemo(() => {
     const tabBuckets: Record<string, Set<string>> = {
       Reproducción: new Set(reproductorAnimals.map((a) => a.id)),
-      Embarazos: new Set(pregnantFemales.map((e) => e.animal.id)),
+      Gestantes: new Set(pregnantFemales.map((e) => e.animal.id)),
       Crías: new Set([
         ...unweanedOffspring.map((e) => e.animal.id),
         ...criaAnimals.map((a) => a.id),
@@ -965,8 +965,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         size="xl"
       >
         <p className="text-sm text-gray-600 mb-3">
-          Es normal que una hembra, por ejemplo, sea Madre/Lechera y esté Embarazada al mismo
-          tiempo. Aquí puedes revisar todas sus vistas activas.
+          Es normal que una hembra, por ejemplo, sea Madre/Lechera y esté Gestante al mismo tiempo.
+          Aquí puedes revisar todas sus vistas activas.
         </p>
         <div className="space-y-2 max-h-[60vh] overflow-y-auto">
           {crossTabDuplicates.map((d) => (
@@ -1087,18 +1087,18 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       <Modal
         isOpen={showNoPregnancyCandidates}
         onClose={() => setShowNoPregnancyCandidates(false)}
-        title="Registrar embarazo"
+        title="Registrar gestación"
         size="md"
       >
         <div className="space-y-3">
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
             No hay hembras en reproducción pendientes de confirmar. Hay{' '}
             <span className="font-semibold">{pregnantFemales.length}</span> hembra
-            {pregnantFemales.length !== 1 ? 's' : ''} embarazada
+            {pregnantFemales.length !== 1 ? 's' : ''} gestante
             {pregnantFemales.length !== 1 ? 's' : ''}.
           </div>
           <p className="text-sm text-gray-600">
-            Para registrar otro embarazo, primero crea un empadre con macho y hembras desde la
+            Para registrar otra gestación, primero crea un empadre con macho y hembras desde la
             pestaña Empadre.
           </p>
           <div className="flex justify-end">
@@ -1123,11 +1123,11 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       >
         <div className="space-y-3">
           <p className="text-sm text-gray-600">
-            Elige una hembra embarazada para registrar su parto.
+            Elige una hembra gestante para registrar su parto.
           </p>
           {enrichedPregnantFemales.length === 0 ? (
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              No hay partos previstos. Primero confirma un embarazo desde un empadre.
+              No hay partos previstos. Primero confirma una gestación desde un empadre.
             </div>
           ) : (
             <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
@@ -1210,7 +1210,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         breedingRecord={confirmPregnancyRecord as BreedingRecord}
         animals={animals}
         onSubmit={async (r) => {
-          // Si todas las hembras tienen embarazo confirmado, marcar empadre como terminado
+          // Si todas las hembras tienen gestación confirmada, marcar empadre como terminado
           const allConfirmed = r.femaleBreedingInfo.every((fi) => !!fi.pregnancyConfirmedDate)
           await updateBreedingRecord(r.id, {
             ...r,

@@ -75,7 +75,7 @@ const schema = z
       context.addIssue({
         path: ['lifecycle'],
         code: z.ZodIssueCode.custom,
-        message: 'El estado Embarazada sólo aplica a hembras',
+        message: 'El estado Gestante sólo aplica a hembras',
       })
     }
     if (data.lifecycle === 'lechera' && data.gender !== 'hembra') {
@@ -423,7 +423,7 @@ export default function SimpleAnimalForm({
                 {animals_stages_labels[stage]}
               </option>
             ))}
-            {selectedGender === 'hembra' && <option value="embarazada">Embarazada</option>}
+            {selectedGender === 'hembra' && <option value="embarazada">Gestante</option>}
             {selectedGender === 'hembra' && <option value="lechera">Madre / Lechera</option>}
           </select>
         </label>
@@ -496,7 +496,7 @@ export default function SimpleAnimalForm({
                 render={({ field, fieldState }) => (
                   <BirthDateInput
                     showAge={false}
-                    label="Fecha de embarazo"
+                    label="Fecha de gestación"
                     value={field.value ?? ''}
                     onChange={field.onChange}
                     disabled={isBusy}
@@ -582,7 +582,7 @@ export default function SimpleAnimalForm({
                 </div>
               </fieldset>
               <p className="text-sm leading-6 text-green-900">
-                Lactancia y embarazo pueden coexistir. Destetar una cría sólo termina la lactancia
+                Lactancia y gestación pueden coexistir. Destetar una cría sólo termina la lactancia
                 cuando su uso es exclusivamente para crías.
               </p>
             </div>

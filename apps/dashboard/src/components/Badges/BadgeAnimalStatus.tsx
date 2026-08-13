@@ -31,7 +31,7 @@ export const BadgeAnimalStatus = ({
       break
     case 'embarazada':
       bgColor = 'bg-purple-100 text-purple-800'
-      text = 'Embarazada'
+      text = 'Gestante'
       break
     case 'parida':
       bgColor = 'bg-pink-100 text-pink-800'

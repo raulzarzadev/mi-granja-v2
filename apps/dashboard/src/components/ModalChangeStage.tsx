@@ -34,9 +34,9 @@ interface Props {
   allAnimals: Animal[]
   /** Callback opcional al completar (para limpiar selección bulk). */
   onApplied?: () => void
-  /** Para hembras embarazadas (computedStage === 'embarazos'): handler de desconfirmar */
+  /** Para hembras gestantes (computedStage === 'embarazos'): handler de desconfirmar */
   onUnconfirmPregnancy?: (animal: Animal) => void
-  /** Para hembras embarazadas: handler de registrar parto */
+  /** Para hembras gestantes: handler de registrar parto */
   onRegisterBirth?: (animal: Animal) => void
 }
 
@@ -203,11 +203,11 @@ const ModalChangeStage: React.FC<Props> = ({
           </div>
         )}
 
-        {/* Hembra embarazada: solo desconfirmar embarazo o registrar parto */}
+        {/* Hembra gestante: solo desconfirmar gestación o registrar parto */}
         {isPregnantSingle && single ? (
           <div className="space-y-3">
             <p className="text-sm text-gray-700">
-              Esta hembra está embarazada. Las acciones disponibles son:
+              Esta hembra está gestante. Las acciones disponibles son:
             </p>
             <div className="flex flex-col gap-2">
               {onRegisterBirth && (
@@ -232,7 +232,7 @@ const ModalChangeStage: React.FC<Props> = ({
                     onClose()
                   }}
                 >
-                  Desconfirmar embarazo
+                  Desconfirmar gestación
                 </Button>
               )}
               {!onRegisterBirth && !onUnconfirmPregnancy && (

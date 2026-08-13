@@ -206,7 +206,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                   {status === 'embarazada' && femaleInfo?.pregnancyConfirmedDate && (
                     <>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Embarazo confirmado:</span>
+                        <span className="text-gray-600">Gestación confirmada:</span>
                         <span className="font-medium">
                           {formatDate(femaleInfo.pregnancyConfirmedDate)}
                         </span>
@@ -285,7 +285,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                     }
                     variant="primary"
                     icon="pregnant"
-                    label="Confirmar embarazo"
+                    label="Confirmar gestación"
                     loadingLabel="Abriendo..."
                   />
                   <ActionButton
@@ -301,7 +301,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                 </>
               )}
 
-              {/* Acciones para hembras embarazadas */}
+              {/* Acciones para hembras gestantes */}
               {animalType === 'female' && status === 'embarazada' && (
                 <>
                   <ActionButton
@@ -317,7 +317,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                     }
                     variant="warning"
                     icon="bed"
-                    label="Desconfirmar embarazo"
+                    label="Desconfirmar gestación"
                     loadingLabel="Desconfirmando..."
                   />
                   <ActionButton
@@ -341,7 +341,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                   icon="delete"
                   label="Revertir parto"
                   loadingLabel="Revirtiendo..."
-                  confirm="¿Estás seguro? La madre volverá a estado embarazada y las crías asociadas serán eliminadas. Esta acción no se puede deshacer."
+                  confirm="¿Estás seguro? La madre volverá a estado gestante y las crías asociadas serán eliminadas. Esta acción no se puede deshacer."
                 />
               )}
             </div>

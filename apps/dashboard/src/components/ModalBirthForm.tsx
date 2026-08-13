@@ -312,7 +312,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   const [editingOffspring, setEditingOffspring] = useState<OffspringInfo | null>(null)
 
   // Cada apertura representa un parto nuevo. Nunca conservar crías capturadas
-  // para otra hembra, otro embarazo o una apertura anterior del modal.
+  // para otra hembra, otra gestación o una apertura anterior del modal.
   React.useEffect(() => {
     if (!isOpen) return
     setFormData(createEmptyBirthRecord(selectedFemaleId))
@@ -505,7 +505,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
             </label>
             {pregnantFemales.length === 0 ? (
               <p className="text-sm text-gray-600 p-3 bg-gray-50 rounded-md">
-                No hay hembras con embarazos confirmados en este empadre
+                No hay hembras con gestaciones confirmadas en este empadre
               </p>
             ) : (
               <div className="grid gap-2">

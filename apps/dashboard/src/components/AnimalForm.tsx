@@ -115,7 +115,7 @@ const reproOptions: {
   icon: string
   field: keyof FormSchema
 }[] = [
-  { value: 'embarazada', label: 'Embarazada', icon: '🤰', field: 'pregnantAt' },
+  { value: 'embarazada', label: 'Gestante', icon: '🤰', field: 'pregnantAt' },
   { value: 'parida', label: 'Parida', icon: '🍼', field: 'birthedAt' },
   { value: 'destetada', label: 'Destetó', icon: '✂️', field: 'weanedMotherAt' },
 ]
@@ -352,7 +352,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
                 })()
               : null,
             pregnantBy: values.pregnantAt ? values.pregnantBy?.trim() || null : null,
-            // Al quitar el embarazo manualmente, limpiar también la referencia al empadre
+            // Al quitar la gestación manualmente, limpiar también la referencia al empadre
             ...(values.pregnantAt
               ? {}
               : { pregnantBreedingRecordId: null, pregnantBreedingId: null }),

@@ -293,7 +293,7 @@ async function registerBirth(
     ),
   )
   if (activeRecords.length === 0) {
-    throw new Error(`No hay embarazo confirmado activo para ${mother.animalNumber}`)
+    throw new Error(`No hay una gestación confirmada activa para ${mother.animalNumber}`)
   }
   if (activeRecords.length > 1) {
     throw new Error(`${mother.animalNumber} tiene más de un empadre activo. Revísalo manualmente`)
@@ -753,7 +753,7 @@ export async function buildAiContext(
       )
     }
     if (animal.pregnantAt) {
-      addMovement(animal.pregnantAt, animal, 'embarazo', 'Embarazo confirmado')
+      addMovement(animal.pregnantAt, animal, 'embarazo', 'Gestación confirmada')
     }
     const hasBirthRecord = (animal.records || []).some(
       (record) => record.type === 'birth' && dateKey(record.date) === dateKey(animal.birthedAt),
@@ -853,7 +853,7 @@ export async function buildAiContext(
     recommendedActions.push({
       prioridad: 'media',
       accion: 'Confirmar resultado de empadres',
-      motivo: `${pregnancyPendingFemales} hembra(s) siguen pendientes de confirmar embarazo.`,
+      motivo: `${pregnancyPendingFemales} hembra(s) siguen pendientes de confirmar gestación.`,
       animales: pregnancyCandidates.flatMap((record) => record.hembrasPendientes).slice(0, 20),
       enlace: '/?dashboard-main=animales&animals-section=etapas&animals-etapas=empadre',
     })
@@ -1025,7 +1025,7 @@ export async function buildAiContext(
     versionContexto: 2,
     generadoEn: today.toISOString(),
     permisosContexto: access,
-    nota: 'Instantánea leída directamente de Firestore para esta granja. Las cifras provienen SIEMPRE de resumen.*; no cuentes arreglos manualmente. etapaCalculada es la condición vigente mostrada por la app y puede coexistir con lactancia, empadre o embarazo. Si falta un dato, dilo explícitamente.',
+    nota: 'Instantánea leída directamente de Firestore para esta granja. Las cifras provienen SIEMPRE de resumen.*; no cuentes arreglos manualmente. etapaCalculada es la condición vigente mostrada por la app y puede coexistir con lactancia, empadre o gestación. Si falta un dato, dilo explícitamente.',
     resumen: summary,
     animalsIncluidos: animalsForContext.length > 0,
     animalsOmitidos: animalsOmitidos > 0 ? animalsOmitidos : 0,
@@ -1039,7 +1039,7 @@ export async function buildAiContext(
     reproductiveFlows: {
       embarazadas: expectedBirths.length,
       registrarEmbarazo: {
-        botonVisibleEn: 'Animales > Etapas > Embarazos',
+        botonVisibleEn: 'Animales > Etapas > Gestantes',
         hembrasPendientes: pregnancyPendingFemales,
         empadresDisponibles: pregnancyCandidates.length,
         candidatos: pregnancyCandidates.slice(0, 10),
@@ -1047,11 +1047,11 @@ export async function buildAiContext(
           'El boton sigue visible; al abrirlo informa que no hay hembras en reproduccion pendientes de confirmar y sugiere crear un empadre.',
       },
       registrarParto: {
-        botonVisibleEn: 'Animales > Etapas > Embarazos',
+        botonVisibleEn: 'Animales > Etapas > Gestantes',
         partosPrevistos: expectedBirths.length,
         proximosPartos: sortedExpectedBirths.slice(0, 20),
         siNoHayPartos:
-          'El boton abre un selector simple; si no hay partos previstos, indica que primero debe confirmarse un embarazo desde un empadre.',
+          'El boton abre un selector simple; si no hay partos previstos, indica que primero debe confirmarse una gestación desde un empadre.',
       },
       registrarLeche: {
         botonVisibleEn: 'Animales > Etapas > Madre/Lechera, acción Leche',

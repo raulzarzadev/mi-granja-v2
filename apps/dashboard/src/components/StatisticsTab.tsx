@@ -14,6 +14,7 @@ import {
 } from 'recharts'
 import { RootState } from '@/features/store'
 import { isAvailableToSale } from '@/lib/animal-utils'
+import { isDateInMonthBuckets } from '@/lib/statistics-period'
 import { Animal, AnimalType, animal_icon, animals_types_labels } from '@/types/animals'
 import { getTotalAmount, getTotalWeight } from './SaleCard'
 
@@ -66,7 +67,11 @@ const getRecentMonths = (numberOfMonths: number): MonthBucket[] => {
   return result
 }
 
-const chartWidth = (points: number) => Math.max(640, points * 58)
+const getXAxisInterval = (points: number) => {
+  if (points <= 6) return 0
+  if (points <= 12) return 1
+  return 2
+}
 
 const chartTooltipStyle = {
   border: '1px solid #e5e7eb',
@@ -76,12 +81,17 @@ const chartTooltipStyle = {
 }
 
 const SalesLineChart: React.FC<{ data: MonthlySalesPoint[] }> = ({ data }) => (
-  <div className="overflow-x-auto" aria-label="Ventas mensuales en kilos e ingresos">
-    <div className="h-72" style={{ minWidth: chartWidth(data.length) }}>
+  <div className="w-full min-w-0" role="img" aria-label="Ventas mensuales en kilos e ingresos">
+    <div className="h-72 w-full min-w-0">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 10, left: 4, bottom: 4 }}>
           <CartesianGrid strokeDasharray="4 4" stroke="#e5e7eb" vertical={false} />
-          <XAxis dataKey="key" tickFormatter={monthKeyLabel} tick={{ fontSize: 11 }} />
+          <XAxis
+            dataKey="key"
+            tickFormatter={monthKeyLabel}
+            tick={{ fontSize: 11 }}
+            interval={getXAxisInterval(data.length)}
+          />
           <YAxis
             yAxisId="kg"
             width={54}
@@ -113,7 +123,7 @@ const SalesLineChart: React.FC<{ data: MonthlySalesPoint[] }> = ({ data }) => (
             name="Kilos vendidos"
             stroke="#d97706"
             strokeWidth={3}
-            dot={{ r: 4, fill: '#fff', strokeWidth: 2 }}
+            dot={data.length <= 12 ? { r: 4, fill: '#fff', strokeWidth: 2 } : false}
             activeDot={{ r: 6 }}
           />
           <Line
@@ -123,7 +133,7 @@ const SalesLineChart: React.FC<{ data: MonthlySalesPoint[] }> = ({ data }) => (
             name="Ingresos"
             stroke="#16a34a"
             strokeWidth={3}
-            dot={{ r: 4, fill: '#fff', strokeWidth: 2 }}
+            dot={data.length <= 12 ? { r: 4, fill: '#fff', strokeWidth: 2 } : false}
             activeDot={{ r: 6 }}
           />
         </LineChart>
@@ -133,12 +143,17 @@ const SalesLineChart: React.FC<{ data: MonthlySalesPoint[] }> = ({ data }) => (
 )
 
 const PriceLineChart: React.FC<{ data: MonthlySalesPoint[] }> = ({ data }) => (
-  <div className="overflow-x-auto" aria-label="Precio promedio mensual por kilo">
-    <div className="h-56" style={{ minWidth: chartWidth(data.length) }}>
+  <div className="w-full min-w-0" role="img" aria-label="Precio promedio mensual por kilo">
+    <div className="h-56 w-full min-w-0">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 16, left: 8, bottom: 4 }}>
           <CartesianGrid strokeDasharray="4 4" stroke="#e5e7eb" vertical={false} />
-          <XAxis dataKey="key" tickFormatter={monthKeyLabel} tick={{ fontSize: 11 }} />
+          <XAxis
+            dataKey="key"
+            tickFormatter={monthKeyLabel}
+            tick={{ fontSize: 11 }}
+            interval={getXAxisInterval(data.length)}
+          />
           <YAxis
             width={72}
             tick={{ fontSize: 11 }}
@@ -155,7 +170,7 @@ const PriceLineChart: React.FC<{ data: MonthlySalesPoint[] }> = ({ data }) => (
             name="Precio por kg"
             stroke="#7c3aed"
             strokeWidth={3}
-            dot={{ r: 4, fill: '#fff', strokeWidth: 2 }}
+            dot={data.length <= 12 ? { r: 4, fill: '#fff', strokeWidth: 2 } : false}
             activeDot={{ r: 6 }}
             connectNulls={false}
           />
@@ -167,14 +182,20 @@ const PriceLineChart: React.FC<{ data: MonthlySalesPoint[] }> = ({ data }) => (
 
 const ActivityLineChart: React.FC<{ data: MonthlyActivityPoint[] }> = ({ data }) => (
   <div
-    className="overflow-x-auto"
-    aria-label="Nacimientos, muertes, embarazos y montas fallidas por mes"
+    className="w-full min-w-0"
+    role="img"
+    aria-label="Nacimientos, muertes, gestaciones y montas fallidas por mes"
   >
-    <div className="h-80" style={{ minWidth: chartWidth(data.length) }}>
+    <div className="h-80 w-full min-w-0">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
           <CartesianGrid strokeDasharray="4 4" stroke="#e5e7eb" vertical={false} />
-          <XAxis dataKey="key" tickFormatter={monthKeyLabel} tick={{ fontSize: 11 }} />
+          <XAxis
+            dataKey="key"
+            tickFormatter={monthKeyLabel}
+            tick={{ fontSize: 11 }}
+            interval={getXAxisInterval(data.length)}
+          />
           <YAxis allowDecimals={false} width={38} tick={{ fontSize: 11 }} />
           <Tooltip
             labelFormatter={(label) => monthKeyLabel(String(label))}
@@ -192,7 +213,7 @@ const ActivityLineChart: React.FC<{ data: MonthlyActivityPoint[] }> = ({ data })
           <Line
             type="monotone"
             dataKey="pregnancies"
-            name="Embarazos"
+            name="Gestaciones"
             stroke="#db2777"
             strokeWidth={3}
           />
@@ -242,10 +263,15 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
   )
 
   const months = useMemo(() => getRecentMonths(period), [period])
+  const monthKeys = useMemo(() => new Set(months.map((month) => month.key)), [months])
+  const periodLabel =
+    period === 6 ? 'Últimos 6 meses' : period === 12 ? 'Último año' : 'Últimos 2 años'
 
   // ── Ventas ──
   const salesStats = useMemo(() => {
-    const completed = sales.filter((s) => s.status === 'completed')
+    const completed = sales.filter(
+      (sale) => sale.status === 'completed' && isDateInMonthBuckets(sale.date, monthKeys),
+    )
     const totalAmount = completed.reduce((sum, s) => sum + getTotalAmount(s), 0)
     const totalKg = completed.reduce((sum, s) => sum + getTotalWeight(s), 0)
     const totalAnimals = completed.reduce((sum, s) => sum + (s.animals?.length || 0), 0)
@@ -315,7 +341,7 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
       topBuyers,
       count: completed.length,
     }
-  }, [sales, months, allAnimals])
+  }, [sales, months, monthKeys, allAnimals])
 
   // ── Nacimientos ──
   const birthStats = useMemo(() => {
@@ -325,7 +351,7 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
     let totalBirths = 0
     for (const b of breedings) {
       for (const f of b.femaleBreedingInfo) {
-        if (f.actualBirthDate) {
+        if (f.actualBirthDate && isDateInMonthBuckets(f.actualBirthDate, monthKeys)) {
           const d = new Date(f.actualBirthDate)
           const key = `${d.getFullYear()}-${d.getMonth()}`
           totalBirths++
@@ -339,7 +365,11 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
     const offspringIds = new Set<string>()
     for (const b of breedings) {
       for (const f of b.femaleBreedingInfo) {
-        if (f.offspring) {
+        if (
+          f.actualBirthDate &&
+          isDateInMonthBuckets(f.actualBirthDate, monthKeys) &&
+          f.offspring
+        ) {
           for (const id of f.offspring) offspringIds.add(id)
         }
       }
@@ -350,14 +380,16 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
     const survivalRate = offspringIds.size > 0 ? (alive / offspringIds.size) * 100 : 0
 
     return { byMonth, totalBirths, survivalRate }
-  }, [breedings, animals, months])
+  }, [breedings, animals, months, monthKeys])
 
   // ── Muertes ──
   const deathStats = useMemo(() => {
     const byMonth = new Map<string, number>()
     for (const m of months) byMonth.set(m.key, 0)
 
-    const dead = animals.filter((a) => a.status === 'muerto')
+    const dead = animals.filter(
+      (animal) => animal.status === 'muerto' && isDateInMonthBuckets(animal.statusAt, monthKeys),
+    )
     for (const a of dead) {
       if (a.statusAt) {
         const d = new Date(a.statusAt)
@@ -368,7 +400,7 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
     }
 
     return { byMonth, total: dead.length }
-  }, [animals, months])
+  }, [animals, months, monthKeys])
 
   // ── Actividad reproductiva ──
   const reproductiveStats = useMemo(() => {
@@ -462,7 +494,8 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Estadísticas</h2>
           <p className="text-xs text-gray-500">
-            Las gráficas se actualizan según el periodo elegido.
+            Ventas y movimientos corresponden al periodo elegido; el inventario muestra su estado
+            actual.
           </p>
         </div>
         <div
@@ -481,7 +514,7 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
               type="button"
               onClick={() => setPeriod(value)}
               aria-pressed={period === value}
-              className={`min-h-10 flex-1 rounded-md px-3 text-sm font-medium transition-colors sm:flex-none ${
+              className={`min-h-11 flex-1 rounded-md px-3 text-sm font-medium transition-colors sm:flex-none ${
                 period === value
                   ? 'bg-green-600 text-white shadow-sm'
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -496,38 +529,41 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
       {/* Resumen rápido */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-xs text-gray-500">Animales activos</p>
+          <p className="text-xs text-gray-500">Animales activos · Actual</p>
           <p className="text-2xl font-bold text-gray-900">{weightStats.activeCount}</p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-xs text-gray-500">Listos para venta</p>
+          <p className="text-xs text-gray-500">Listos para venta · Actual</p>
           <p className="text-2xl font-bold text-gray-900">
             {animals.filter(isAvailableToSale).length}
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-xs text-gray-500">Ventas completadas</p>
+          <p className="text-xs text-gray-500">Ventas completadas · {periodLabel}</p>
           <p className="text-2xl font-bold text-gray-900">{salesStats.count}</p>
           <p className="text-xs text-green-600 font-medium">
             {formatPrice(salesStats.totalAmount)}
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-xs text-gray-500">Nacimientos</p>
+          <p className="text-xs text-gray-500">Nacimientos · {periodLabel}</p>
           <p className="text-2xl font-bold text-gray-900">{birthStats.totalBirths}</p>
           <p className="text-xs text-blue-600 font-medium">
             {birthStats.survivalRate.toFixed(0)}% supervivencia
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-xs text-gray-500">Muertes</p>
+          <p className="text-xs text-gray-500">Muertes · {periodLabel}</p>
           <p className="text-2xl font-bold text-gray-900">{deathStats.total}</p>
         </div>
       </div>
 
       {/* KPIs ventas */}
       <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Resumen de ventas</h3>
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-1">
+          <h3 className="text-sm font-medium text-gray-700">Resumen de ventas</h3>
+          <p className="text-xs text-gray-500">{periodLabel}</p>
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div>
             <p className="text-xs text-gray-500">Animales vendidos</p>
@@ -574,7 +610,7 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
       <div className="bg-white rounded-lg shadow p-4">
         <h3 className="text-sm font-medium text-gray-700 mb-1">Actividad del hato por mes</h3>
         <p className="text-xs text-gray-500 mb-3">
-          Nacimientos, muertes, embarazos confirmados y montas diagnosticadas sin gestación.
+          Nacimientos, muertes, gestaciones confirmadas y montas diagnosticadas sin gestación.
         </p>
         <ActivityLineChart data={monthlyActivityData} />
       </div>

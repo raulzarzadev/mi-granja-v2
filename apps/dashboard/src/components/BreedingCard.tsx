@@ -68,8 +68,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   }
 
   const getFemaleStatuses = () => {
-    //TODO: los estados son , Empadre en proceso, no. de partos, no. de embarazos confirmados,
-    // algo asi Empadre en proceso. Partos:2 Embarazos:3 Pendientes: 1
+    //TODO: los estados son , Empadre en proceso, no. de partos, no. de gestaciones confirmadas,
+    // algo asi Empadre en proceso. Partos:2 Gestaciones:3 Pendientes: 1
     const births = record.femaleBreedingInfo.filter((info) => info.actualBirthDate).length
     const pregnancies = record.femaleBreedingInfo.filter(
       (info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate,
@@ -87,7 +87,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
 
   const getStatusColor = (statuses: ReturnType<typeof getFemaleStatuses>) => {
     if (statuses.pending > 0) return 'bg-yellow-100 text-yellow-800' // Empadres pendientes
-    if (statuses.pregnancies > 0) return 'bg-blue-100 text-blue-800' // Embarazos
+    if (statuses.pregnancies > 0) return 'bg-blue-100 text-blue-800' // Gestaciones
     if (statuses.births > 0) return 'bg-green-100 text-green-800' // Partos
   }
 
@@ -114,7 +114,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         // si ya parió, no hay fecha probable
         if (info.actualBirthDate) return null
 
-        // si hay embarazo confirmado, calcular desde esa fecha
+        // si hay gestación confirmada, calcular desde esa fecha
         if (info.pregnancyConfirmedDate) {
           const res = calculateExpectedBirthDate(info.pregnancyConfirmedDate, typeForCalc)
           return res
@@ -141,8 +141,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
 
   // Orden de hembras:
   // 1) En empadre (pendiente de confirmación)
-  // 2) Embarazadas con fecha probable de parto vencida
-  // 3) Embarazadas con fecha probable futura (más próximas primero)
+  // 2) Gestantes con fecha probable de parto vencida
+  // 3) Gestantes con fecha probable futura (más próximas primero)
   // 4) Al final, las que ya han parido (más reciente primero)
   const sortedFemales = React.useMemo(() => {
     const now = Date.now()
@@ -172,14 +172,14 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
           return getAnimalNumber(a).localeCompare(getAnimalNumber(b), 'es', {
             numeric: true,
           })
-        case 1: // embarazada vencida: más vencida primero (fecha más antigua)
+        case 1: // gestante vencida: más vencida primero (fecha más antigua)
           if (a.expectedBirthDate && b.expectedBirthDate) {
             return a.expectedBirthDate.getTime() - b.expectedBirthDate.getTime()
           }
           if (a.expectedBirthDate) return -1
           if (b.expectedBirthDate) return 1
           return 0
-        case 2: // embarazada próxima: más cercana primero (fecha ascendente)
+        case 2: // gestante próxima: más cercana primero (fecha ascendente)
           if (a.expectedBirthDate && b.expectedBirthDate) {
             return a.expectedBirthDate.getTime() - b.expectedBirthDate.getTime()
           }
@@ -288,8 +288,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
           {femaleStatuses.pregnancies > 0 && (
             <span className="text-blue-600 ml-2">
               <Icon icon="pregnant" className="inline mr-1" />
-              {femaleStatuses.pregnancies} embarazo
-              {femaleStatuses.pregnancies !== 1 ? 's' : ''}
+              {femaleStatuses.pregnancies}{' '}
+              {femaleStatuses.pregnancies === 1 ? 'gestación' : 'gestaciones'}
             </span>
           )}
           {femaleStatuses.pending > 0 && (

@@ -1,5 +1,5 @@
 /**
- * E2E: Flujo completo de monta → confirmar embarazo → partos próximos
+ * E2E: Flujo completo de monta → confirmar gestación → partos próximos
  *
  * Prerequisitos:
  *   - Emuladores Firebase corriendo (pnpm emulators)
@@ -30,7 +30,7 @@ function _formatShortDate(date: Date): string {
     .replace('.', '')
 }
 
-describe('Flujo de monta → embarazo → partos próximos', () => {
+describe('Flujo de monta → gestación → partos próximos', () => {
   beforeEach(() => {
     // Login con el usuario admin del seed
     cy.visit('/auth')
@@ -43,7 +43,7 @@ describe('Flujo de monta → embarazo → partos próximos', () => {
     cy.contains('Animales', { timeout: 10000 }).should('be.visible')
   })
 
-  it('debe crear una monta, confirmar embarazo y verificar partos próximos', () => {
+  it('debe crear una monta, confirmar gestación y verificar partos próximos', () => {
     // ── 1. Navegar a Animales → Etapas → Monta ──
     cy.contains('Animales').click()
     cy.contains('Etapas').click()
@@ -68,11 +68,11 @@ describe('Flujo de monta → embarazo → partos próximos', () => {
     // Verificar que la monta aparece en la tabla
     cy.contains('OV-002').should('be.visible')
 
-    // ── 3. Confirmar embarazo de OV-001 ──
-    // Click en el botón "Embarazo" de la monta recién creada
-    cy.contains('Embarazo').first().click()
+    // ── 3. Confirmar gestación de OV-001 ──
+    // Click en el botón "Gestación" de la monta recién creada
+    cy.contains('Gestación').first().click()
 
-    // En el modal/form de confirmación de embarazo, marcar OV-001
+    // En el modal/form de confirmación de gestación, marcar OV-001
     cy.get('[type="checkbox"]').first().check()
 
     // Confirmar
@@ -92,7 +92,7 @@ describe('Flujo de monta → embarazo → partos próximos', () => {
 
     // ── 5. Verificar que OV-001 NO aparece en Reproducción ──
     cy.contains('Reproducción').click()
-    // Reproducción muestra solo hembras "libres" — OV-001 ahora está embarazada
+    // Reproducción muestra solo hembras "libres" — OV-001 ahora está gestante
     cy.get('table').then(($table) => {
       // Si hay tabla, OV-001 no debe estar
       if ($table.length) {
@@ -148,11 +148,11 @@ describe('Flujo de monta → embarazo → partos próximos', () => {
     })
   })
 
-  it('una hembra embarazada no debe aparecer en el tab Reproducción', () => {
+  it('una hembra gestante no debe aparecer en el tab Reproducción', () => {
     cy.contains('Animales').click()
     cy.contains('Etapas').click()
 
-    // Ir a Partos próximos y tomar los números de las hembras embarazadas
+    // Ir a Partos próximos y tomar los números de las hembras gestantes
     cy.contains('Partos próximos').click()
 
     cy.get('body').then(($body) => {
@@ -167,7 +167,7 @@ describe('Flujo de monta → embarazo → partos próximos', () => {
       }
 
       if (pregnantNumbers.length > 0) {
-        // Ir a Reproducción y verificar que ninguna embarazada aparece
+        // Ir a Reproducción y verificar que ninguna gestante aparece
         cy.contains('Reproducción').click()
 
         cy.get('body').then(($reproBody) => {

@@ -33,11 +33,11 @@ export const BreedingBirths = ({ breedingRecord }: { breedingRecord: BreedingRec
   //             {nextBirthInfo.animalNumber &&
   //             nextBirthInfo.animalNumber !== 'Estimado'
   //               ? `Hembra: ${nextBirthInfo.animalNumber} (${nextBirthInfo.animalType})`
-  //               : `Basado en embarazos confirmados de ${nextBirthInfo.animalType}`}
+  //               : `Basado en gestaciones confirmadas de ${nextBirthInfo.animalType}`}
   //           </div>
   //           {nextBirthInfo.hasMultiplePregnancies && (
   //             <div className="text-xs text-blue-600 mt-1">
-  //               {nextBirthInfo.totalConfirmedPregnancies} embarazos confirmados
+  //               {nextBirthInfo.totalConfirmedPregnancies} gestaciones confirmadas
   //             </div>
   //           )}
   //         </div>
@@ -56,7 +56,7 @@ export const getNextBreedingBirth = ({ breeding }: { breeding: BreedingRecord })
   if (!breedingDate) return null
   if (females.length === 0) return null
 
-  // solo regresa si hay un ´embarazo confirmado pero no tiene parto
+  // solo regresa si hay una gestación confirmada pero no tiene parto
   const pendingBirths = females.filter(
     (female) => !female.actualBirthDate && female.pregnancyConfirmedDate,
   )

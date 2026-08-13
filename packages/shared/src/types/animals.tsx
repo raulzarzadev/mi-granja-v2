@@ -108,11 +108,11 @@ export interface Animal {
   weaningDestination?: WeanNextStage
   // Override opcional para días de destete recomendados
   customWeaningDays?: number
-  /** Fecha de confirmación de embarazo (hembras). Se limpia al registrar parto. */
+  /** Fecha de confirmación de gestación (hembras). Se limpia al registrar parto. */
   pregnantAt?: Date | null
-  /** ID del macho que preñó a la hembra (se setea al confirmar embarazo). */
+  /** ID del macho que preñó a la hembra (se setea al confirmar gestación). */
   pregnantBy?: string | null
-  /** ID Firestore del empadre donde se confirmó el embarazo. Se conserva aunque la hembra sea removida del empadre; se limpia junto con pregnantAt/pregnantBy. */
+  /** ID Firestore del empadre donde se confirmó la gestación. Se conserva aunque la hembra sea removida del empadre; se limpia junto con pregnantAt/pregnantBy. */
   pregnantBreedingRecordId?: string | null
   /** Código legible del empadre (ej. "10-10-25-01") para mostrar en UI aunque el registro se borre. */
   pregnantBreedingId?: string | null
@@ -120,7 +120,7 @@ export interface Animal {
   birthedAt?: Date | null
   /** Fecha en que destetó a sus crías (hembras). Se limpia al iniciar nuevo empadre. */
   weanedMotherAt?: Date | null
-  /** Lactancia explícita; puede coexistir con empadre o embarazo. */
+  /** Lactancia explícita; puede coexistir con empadre o gestación. */
   lactationStatus?: LactationStatus
   /** Define si la lactancia alimenta crías, produce leche o cumple ambos propósitos. */
   lactationPurpose?: LactationPurpose
@@ -230,13 +230,13 @@ export const breeding_animal_status = ['empadre', 'embarazada', 'parida'] as con
 export type AnimalBreedingStatus = (typeof breeding_animal_status)[number]
 export const breeding_animal_status_labels: Record<AnimalBreedingStatus, string> = {
   empadre: 'En empadre',
-  embarazada: 'Embarazada',
+  embarazada: 'Gestante',
   parida: 'Parida',
 }
 
 /**
  * Deriva el estado reproductivo de una hembra desde sus campos.
- * pregnantAt → embarazada
+ * pregnantAt → gestante
  * birthedAt → parida
  * ninguno → libre
  */
@@ -439,7 +439,7 @@ export const animal_stage_icons: Record<AnimalStage, string> = {
 }
 
 // Configuración unificada de etapas y estados — fuente única de verdad para iconos, colores y labels.
-// Incluye AnimalStage + estados derivados de breeding (empadre, embarazos, crias_lactantes).
+// Incluye AnimalStage + estados derivados de breeding (empadre, gestaciones, crias_lactantes).
 // Usar en tabs de etapas, tablas, badges, filtros y cualquier UI que muestre etapas.
 export type AnimalStageKey = AnimalStage | 'empadre' | 'embarazos' | 'crias_lactantes'
 
@@ -449,7 +449,7 @@ export const animal_stage_config: Record<
 > = {
   // Breeding-derived stages
   empadre: { label: 'Empadre', icon: '🛏️', color: 'bg-amber-100 text-amber-800' },
-  embarazos: { label: 'Embarazos', icon: '🤰', color: 'bg-pink-100 text-pink-800' },
+  embarazos: { label: 'Gestantes', icon: '🤰', color: 'bg-pink-100 text-pink-800' },
   crias_lactantes: { label: 'Madre / Lechera', icon: '🍼', color: 'bg-cyan-100 text-cyan-800' },
   // Animal stages
   cria: { label: 'Cría', icon: '👶', color: 'bg-blue-100 text-blue-800' },

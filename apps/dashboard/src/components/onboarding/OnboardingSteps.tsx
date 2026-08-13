@@ -24,17 +24,17 @@ const STEPS: Step[] = [
   },
   {
     emoji: '🤰',
-    title: 'Marca embarazos o saca animales del empadre',
+    title: 'Marca gestaciones o saca animales del empadre',
     description:
-      'Espera los tiempos adecuados. Confirma las hembras preñadas o retira a las que no quedaron para liberar al macho.',
-    action: 'Etapas → Empadre o Embarazos',
+      'Espera los tiempos adecuados. Confirma qué hembras están gestantes o retira a las que no quedaron para liberar al macho.',
+    action: 'Etapas → Empadre o Gestantes',
   },
   {
     emoji: '🍼',
     title: 'Registra el parto',
     description:
       'Cuando nazca la cría, registra el parto desde el empadre. Las crías se agregan automáticamente a tu inventario.',
-    action: 'Etapas → Embarazos',
+    action: 'Etapas → Gestantes',
   },
   {
     emoji: '🌾',

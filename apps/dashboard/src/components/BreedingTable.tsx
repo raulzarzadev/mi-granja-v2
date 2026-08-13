@@ -252,7 +252,7 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
                 icon="pregnant"
                 onClick={() => onConfirmPregnancy(row.record)}
               >
-                Embarazo
+                Gestación
               </Button>
             )}
             {onFinish && row.record.status !== 'finished' && (
@@ -265,7 +265,7 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
                 onConfirm={async () => onFinish(row.record)}
               >
                 <InfoNote>
-                  Al terminar un empadre, las hembras, sin embarazos y los machos regresan al estado
+                  Al terminar un empadre, las hembras sin gestación y los machos regresan al estado
                   de reproducción
                 </InfoNote>
               </ButtonConfirm>

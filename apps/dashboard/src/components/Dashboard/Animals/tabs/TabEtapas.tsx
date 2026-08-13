@@ -20,7 +20,7 @@ const TabEtapas: React.FC<Props> = ({ crossTabDuplicatesCount, onShowDuplicates,
         Reproductor. Juvenil se calcula automáticamente por edad.
       </p>
       <p className="text-gray-700">
-        <strong className="text-gray-900">Condiciones:</strong> Empadre, Embarazo y Madre/Lechera
+        <strong className="text-gray-900">Condiciones:</strong> Empadre, Gestación y Madre/Lechera
         pueden cambiar o coexistir durante el ciclo.
       </p>
     </div>

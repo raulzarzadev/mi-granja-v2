@@ -22,7 +22,7 @@ export function groupFemalesByStatus(females: FemaleBreedingInfo[]): FemaleGroup
     },
     {
       key: 'embarazada',
-      label: 'Embarazada',
+      label: 'Gestante',
       items: females.filter((fi) => fi.pregnancyConfirmedDate && !fi.actualBirthDate),
     },
     { key: 'parida', label: 'Parida', items: females.filter((fi) => !!fi.actualBirthDate) },

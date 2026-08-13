@@ -25,7 +25,7 @@ export default function EditarEmpadrePage() {
     await updateBreedingRecord(record.id, data)
 
     const newInfoByFemale = new Map(data.femaleBreedingInfo.map((i) => [i.femaleId, i]))
-    // Hembras removidas con embarazo confirmado: conservar embarazo, padre y referencia al empadre
+    // Hembras removidas con gestación confirmada: conservar gestación, padre y referencia al empadre
     for (const oldInfo of record.femaleBreedingInfo) {
       if (
         !newInfoByFemale.has(oldInfo.femaleId) &&

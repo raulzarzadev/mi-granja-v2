@@ -41,7 +41,7 @@ export interface ChangeStageContext {
 
 export const TARGET_LABEL: Record<TargetKey, string> = {
   reproductor: 'Reproducción',
-  embarazada: 'Embarazada',
+  embarazada: 'Gestante',
   engorda: 'Engorda',
   juvenil: 'Juvenil',
   descarte: 'Descarte',
@@ -63,7 +63,7 @@ export const TARGET_ICON: Record<TargetKey, string> = {
  * Devuelve los destinos aplicables según la selección.
  * Reglas:
  * - Solo se consideran animales `status === 'activo'` (los demás se excluyen).
- * - Embarazada: requiere todas hembras (gender === 'hembra').
+ * - Gestante: requiere todas hembras (gender === 'hembra').
  * - Reproductor: requiere al menos uno con `ageMonths >= minBreedingAge` o sin birthDate (decisión usuario).
  * - Perdido/Muerto: visibles siempre (la operación los marca).
  */
@@ -81,7 +81,7 @@ export function getApplicableTargets(animals: Animal[]): TargetKey[] {
   // Reproductor: aceptar siempre (UI permite, la regla de edad luego determina computedStage juvenil vs reproductor)
   out.push('reproductor')
 
-  // Embarazada: solo hembras
+  // Gestante: solo hembras
   const allFemale = active.every((a) => a.gender === 'hembra')
   if (allFemale) out.push('embarazada')
 
@@ -119,7 +119,7 @@ interface ApplyOptions {
  *    - Juvenil: `stage='juvenil'`, `weaningDestination=null`.
  *    - Perdido: `status='perdido'`, `statusAt`, `lostInfo.lostAt`.
  *    - Muerto: `status='muerto'`, `statusAt`, `statusNotes`.
- *    - Embarazada: crear breeding record + actualizar `pregnantAt`/`pregnantBy`.
+ *    - Gestante: crear breeding record + actualizar `pregnantAt`/`pregnantBy`.
  */
 export async function applyChangeStage(
   primaryAnimals: Animal[],
@@ -274,7 +274,7 @@ export async function applyChangeStage(
       break
 
     case 'embarazada': {
-      if (!maleId) throw new Error('Falta macho padre para target embarazada')
+      if (!maleId) throw new Error('Falta seleccionar el macho para marcarla como gestante')
       // Crear breeding record con todas las hembras
       const dateTsStart = Timestamp.fromDate(date)
       const breedingId = `BR-${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`

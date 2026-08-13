@@ -25,8 +25,8 @@ export const useBreedingHandlers = ({
   updateBreedingRecord,
   deleteBreedingRecord,
 }: Params) => {
-  // Conserva embarazo, padre y referencia al empadre en el animal cuando se le
-  // saca del empadre con embarazo confirmado, para poder registrar el parto después.
+  // Conserva gestación, padre y referencia al empadre en el animal cuando se le
+  // saca del empadre con gestación confirmada, para poder registrar el parto después.
   const preservePregnancyOnRemoval = useCallback(
     async (record: BreedingRecord, info: BreedingRecord['femaleBreedingInfo'][number]) => {
       const animal = animals.find((a) => a.id === info.femaleId)
@@ -40,7 +40,7 @@ export const useBreedingHandlers = ({
         type: 'note',
         category: 'general',
         title: 'Removida del empadre',
-        description: `Se removió del empadre ${record.breedingId || record.id} conservando el embarazo.`,
+        description: `Se removió del empadre ${record.breedingId || record.id} conservando la gestación.`,
         date: new Date(),
       })
     },

@@ -117,7 +117,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
   const [onlyAvailable, setOnlyAvailable] = useState(true)
 
-  // IDs de hembras en empadres activos (embarazadas o pendientes de parto)
+  // IDs de hembras en empadres activos (gestantes o pendientes de parto)
   const busyFemaleIds = useMemo(() => {
     const ids = new Set<string>()
     for (const r of breedingRecords) {
@@ -554,7 +554,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                             }
                             className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                           />
-                          <span className="text-sm text-gray-700">Embarazo confirmado</span>
+                          <span className="text-sm text-gray-700">Gestación confirmada</span>
                         </label>
 
                         {info.pregnancyConfirmedDate ? (

@@ -2,12 +2,12 @@ import { expect, test } from '@playwright/test'
 import { login } from './helpers'
 
 /**
- * E2E: Flujo de monta → confirmar embarazo → partos próximos
+ * E2E: Flujo de monta → confirmar gestación → partos próximos
  *
  * Prerequisitos:
  *   - Emuladores Firebase corriendo (pnpm emulators)
  *   - Dashboard corriendo con emuladores
- *   - Al menos 1 monta activa con hembras pendientes de embarazo
+ *   - Al menos 1 monta activa con hembras pendientes de gestación
  *
  * El test trabaja con datos existentes — no crea montas nuevas
  * para evitar problemas de IDs duplicados entre ejecuciones.
@@ -19,12 +19,14 @@ async function goToEtapas(page: import('@playwright/test').Page) {
   await page.getByText('Etapas').click()
 }
 
-test.describe('Monta → Embarazo → Partos próximos', () => {
+test.describe('Monta → Gestación → Partos próximos', () => {
   test.beforeEach(async ({ page }) => {
     await login(page)
   })
 
-  test('confirmar embarazo en monta existente y verificar en partos próximos', async ({ page }) => {
+  test('confirmar gestación en monta existente y verificar en partos próximos', async ({
+    page,
+  }) => {
     await goToEtapas(page)
     await page.getByText('Monta').first().click()
 
@@ -41,16 +43,16 @@ test.describe('Monta → Embarazo → Partos próximos', () => {
       return
     }
 
-    // Click en "Embarazo" de esa monta
-    const embarazoBtn = pendRow.getByRole('button', { name: /embarazo/i })
+    // Click en "Gestación" de esa monta
+    const embarazoBtn = pendRow.getByRole('button', { name: /gestación/i })
     await embarazoBtn.click()
 
-    // Modal de confirmar embarazo
-    await expect(page.getByText(/Confirmar Embarazo/i)).toBeVisible({ timeout: 5000 })
+    // Modal de confirmar gestación
+    await expect(page.getByText(/Confirmar Gestación/i)).toBeVisible({ timeout: 5000 })
 
-    // Esperar el modal de confirmar embarazo
+    // Esperar el modal de confirmar gestación
     const dialog = page.locator('[role="dialog"]')
-    await expect(dialog.getByText(/Confirmar Embarazo/i)).toBeVisible({ timeout: 5000 })
+    await expect(dialog.getByText(/Confirmar Gestación/i)).toBeVisible({ timeout: 5000 })
 
     // Click en el div de la primera hembra para toggle selección
     // Usar evaluate para disparar el click directamente en el DOM
@@ -113,7 +115,7 @@ test.describe('Monta → Embarazo → Partos próximos', () => {
       return
     }
 
-    // Ir a Reproducción — ninguna embarazada debe aparecer
+    // Ir a Reproducción — ninguna gestante debe aparecer
     await page.getByText('Reproducción').click()
     await page.waitForTimeout(500)
 

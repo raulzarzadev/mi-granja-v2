@@ -737,9 +737,9 @@ const BACKUP_SCHEMA_JSON = `{
       "lostInfo": "{ lostAt, foundAt? } (si perdido)",
       "records": "[{ id, type, category, title, date, weightGrams?, amountMl?, session?, severity?, isResolved?, resolvedDate?, treatment?, nextDueDate?, batch?, veterinarian?, cost?, notes?, appliedToAnimals?, isBulkApplication?, createdAt, createdBy, updatedAt? }] (type='weight' requiere weightGrams; type='milk' requiere amountMl y session)",
       "customWeaningDays": "number (override días de destete, opcional)",
-      "pregnantAt": "ISO 8601 | null (fecha confirmación embarazo, solo hembras)",
+      "pregnantAt": "ISO 8601 | null (fecha de confirmación de gestación, solo hembras)",
       "pregnantBy": "string | null (ID del macho que la preñó, solo hembras)",
-      "pregnantBreedingRecordId": "string | null (ID Firestore del empadre del embarazo activo, solo hembras)",
+      "pregnantBreedingRecordId": "string | null (ID Firestore del empadre de la gestación activa, solo hembras)",
       "pregnantBreedingId": "string | null (código legible del empadre, ej: 10-10-25-01, solo hembras)",
       "birthedAt": "ISO 8601 | null (fecha de parto como madre, solo hembras)",
       "weanedMotherAt": "ISO 8601 | null (fecha en que destetó sus crías, solo hembras)",
@@ -835,7 +835,7 @@ const BACKUP_SCHEMA_JSON = `{
       "etapas_por_edad": "cria=no destetado, juvenil=destetado pero sin edad reproductiva, engorda=manual, reproductor=edad reproductiva alcanzada, descarte=manual",
       "destete": "Al destetar una cría: isWeaned=true, weanedAt=fecha, stage cambia según destino. Para engorda→stage=engorda. Para reproductor→stage=juvenil.",
       "nacimiento_muerto": "Si una cría nace muerta: status=muerto, statusAt=fecha del parto",
-      "estado_reproductivo": "Solo hembras. Embarazo y lactancia pueden coexistir. lactationStatus=active mantiene Madre/Lechera; el destete sólo termina la lactancia cuando lactationPurpose=offspring.",
+      "estado_reproductivo": "Solo hembras. Gestación y lactancia pueden coexistir. lactationStatus=active mantiene Madre/Lechera; el destete sólo termina la lactancia cuando lactationPurpose=offspring.",
       "ids_de_referencia": "motherId, fatherId, pregnantBy, pregnantBreedingRecordId, records[].appliedToAnimals, maleId, femaleId y offspring[] se remapean automáticamente.",
       "peso_auto_sync": "records[] type=weight con weightGrams es la fuente de verdad. animal.weight conserva sólo el último valor como resumen."
     }

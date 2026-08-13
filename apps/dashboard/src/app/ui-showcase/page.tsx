@@ -272,7 +272,7 @@ export default function UIShowcasePage() {
                   <ul className="text-xs text-gray-600 space-y-1">
                     <li>• Selección de hembra y macho</li>
                     <li>• Fecha de empadre y parto esperado</li>
-                    <li>• Confirmación de embarazo</li>
+                    <li>• Confirmación de gestación</li>
                     <li>• Notas adicionales</li>
                   </ul>
                 </div>

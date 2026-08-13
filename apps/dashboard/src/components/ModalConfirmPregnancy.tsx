@@ -19,7 +19,7 @@ interface ModalConfirmPregnancyProps {
 }
 
 /**
- * Modal para confirmar embarazos de hembras en un empadre
+ * Modal para confirmar gestaciones de hembras en un empadre
  */
 const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
   isOpen,
@@ -42,7 +42,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
     : 'macho no encontrado'
   const hasBreedingFemales = Boolean(breedingRecord?.femaleBreedingInfo?.length)
 
-  // Obtener hembras que aún no tienen embarazo confirmado
+  // Obtener hembras que aún no tienen gestación confirmada
   const unconfirmedFemales =
     breedingRecord?.femaleBreedingInfo
       ?.filter((info) => !info.pregnancyConfirmedDate && !info.actualBirthDate)
@@ -102,7 +102,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
       setSelectedFemales([])
       onClose()
     } catch (error) {
-      console.error('Error confirmando embarazos:', error)
+      console.error('Error confirmando gestaciones:', error)
     } finally {
       setSubmitting(false)
     }
@@ -125,7 +125,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleCancel}
-      title={`Confirmar Embarazos — Empadre ${breedingRecord?.breedingId || ''}`}
+      title={`Confirmar gestación — Empadre ${breedingRecord?.breedingId || ''}`}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-900">
@@ -136,12 +136,12 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
                 registradas con el macho {maleLabel}.
               </p>
               <p className="mt-1 text-green-800">
-                Selecciona sólo las hembras cuyo embarazo ya confirmaste.
+                Selecciona sólo las hembras cuya gestación ya confirmaste.
               </p>
             </>
           ) : (
             <p>
-              Para registrar un embarazo necesitas crear primero un empadre con macho y hembras.
+              Para registrar una gestación necesitas crear primero un empadre con macho y hembras.
             </p>
           )}
         </div>
@@ -150,7 +150,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
           <div className="text-center py-8">
             <div className="text-gray-500 mb-2">
               {hasBreedingFemales
-                ? '✓ Todas las hembras ya tienen embarazo confirmado'
+                ? '✓ Todas las hembras ya tienen gestación confirmada'
                 : 'No hay hembras en empadre para confirmar.'}
             </div>
             <button
@@ -174,7 +174,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
             {/* Lista de hembras para confirmar */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Seleccionar hembras con embarazo confirmado *
+                Seleccionar hembras con gestación confirmada *
               </label>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {unconfirmedFemales.map((animal) => {
@@ -278,7 +278,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
                 ) : selectedFemales.length === 0 ? (
                   'Selecciona hembras'
                 ) : (
-                  `Confirmar ${selectedFemales.length} embarazo${selectedFemales.length !== 1 ? 's' : ''}`
+                  `Confirmar ${selectedFemales.length} ${selectedFemales.length === 1 ? 'gestación' : 'gestaciones'}`
                 )}
               </button>
             </div>

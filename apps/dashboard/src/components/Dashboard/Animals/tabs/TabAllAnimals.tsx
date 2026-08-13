@@ -158,8 +158,8 @@ const TabAllAnimals: React.FC<Props> = ({
               </span>
               <p className="text-sm leading-6">
                 <strong className="font-bold text-white">En reproducción:</strong> las hembras
-                también pasan por empadre, embarazo y lactancia. Mi Granja relaciona esas etapas con
-                sus registros reproductivos.
+                también pasan por empadre, gestación y lactancia. Mi Granja relaciona esas etapas
+                con sus registros reproductivos.
               </p>
             </div>
           </div>

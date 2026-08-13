@@ -269,7 +269,7 @@ export function computeAnimalEffectiveStage(
   }
 
   const baseStage = computeAnimalStage(animal)
-  // Una cría no puede estar en estado reproductivo (empadre/embarazos/crias_lactantes).
+  // Una cría no puede estar en estado reproductivo (empadre/gestaciones/crias_lactantes).
   // Evita clasificar crías con datos legacy (birthedAt/pregnantAt heredados) como madres.
   if (baseStage === 'cria') return 'cria'
 
@@ -283,7 +283,7 @@ export function computeAnimalEffectiveStage(
   // Hembra: revisar breeding records.
   // Para crias_lactantes revisamos TODOS los records (activos y cerrados) cuando
   // tenemos la lista de animales — el empadre puede haberse cerrado tras el parto.
-  // Para empadre/embarazos solo usamos records activos.
+  // Para empadre/gestaciones solo usamos records activos.
   let bestState: AnimalStageKey | null = null
   const weaningDays = getWeaningDays(animal)
   const breedingsToCheck = animals ? breedings || [] : activeBreedings
@@ -312,7 +312,7 @@ export function computeAnimalEffectiveStage(
         }
       }
     } else if (breeding.status !== 'finished') {
-      // empadre/embarazos solo aplican a records activos
+      // empadre/gestaciones solo aplican a records activos
       if (info.pregnancyConfirmedDate) {
         if (bestState !== 'crias_lactantes') bestState = 'embarazos'
       } else {
@@ -550,7 +550,7 @@ function empadreDetail(
   return undefined
 }
 
-/** Detail para embarazos: días al parto esperado. */
+/** Detail para gestaciones: días al parto esperado. */
 function expectedBirthDetail(
   animal: Animal,
   breedings: BreedingRecord[],
@@ -724,8 +724,8 @@ export const animal_stage_next_steps: Record<AnimalStageKey, NextStepsResolver> 
   empadre: ({ animal, breedings, now }) => {
     const detail = empadreDetail(animal, breedings, now)
     return [
-      { text: 'Confirma el embarazo cuando lo detectes' },
-      { text: 'Sácala del empadre si no quedó preñada' },
+      { text: 'Confirma la gestación cuando lo detectes' },
+      { text: 'Sácala del empadre si no quedó gestante' },
       { text: 'Verifica el estado del macho y las hembras periódicamente', detail },
     ]
   },

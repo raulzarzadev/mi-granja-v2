@@ -91,7 +91,7 @@ function simulateRevertBirth(record: BreedingRecord, femaleId: string) {
 describe('groupFemalesByStatus', () => {
   it('agrupa hembras correctamente por status', () => {
     const enEmpadre = makeFemale({ femaleId: 'f1' })
-    const embarazada = makeFemale({
+    const gestante = makeFemale({
       femaleId: 'f2',
       pregnancyConfirmedDate: new Date('2026-02-01'),
     })
@@ -101,13 +101,13 @@ describe('groupFemalesByStatus', () => {
       actualBirthDate: new Date('2026-06-01'),
     })
 
-    const groups = groupFemalesByStatus([enEmpadre, embarazada, parida])
+    const groups = groupFemalesByStatus([enEmpadre, gestante, parida])
 
     expect(groups).toHaveLength(3)
     expect(groups[0].key).toBe('empadre')
     expect(groups[0].items).toEqual([enEmpadre])
     expect(groups[1].key).toBe('embarazada')
-    expect(groups[1].items).toEqual([embarazada])
+    expect(groups[1].items).toEqual([gestante])
     expect(groups[2].key).toBe('parida')
     expect(groups[2].items).toEqual([parida])
   })
@@ -140,7 +140,7 @@ describe('groupFemalesByStatus', () => {
 
     const groups = groupFemalesByStatus(females)
     expect(groups[0].items).toHaveLength(2) // 2 en empadre
-    expect(groups[1].items).toHaveLength(1) // 1 embarazada
+    expect(groups[1].items).toHaveLength(1) // 1 gestante
     expect(groups[2].items).toHaveLength(0) // 0 paridas
   })
 })
@@ -232,8 +232,8 @@ describe('terminar empadre — clasificación de records', () => {
     expect(terminated).toHaveLength(0)
   })
 
-  it('al terminar, embarazadas y paridas conservan sus datos', () => {
-    const embarazada = makeFemale({
+  it('al terminar, gestantes y paridas conservan sus datos', () => {
+    const gestante = makeFemale({
       femaleId: 'f1',
       pregnancyConfirmedDate: new Date('2026-02-01'),
       expectedBirthDate: new Date('2026-07-01'),
@@ -247,7 +247,7 @@ describe('terminar empadre — clasificación de records', () => {
     const enEmpadre = makeFemale({ femaleId: 'f3' })
 
     const terminated: BreedingRecord = makeBreeding({
-      femaleBreedingInfo: [embarazada, parida, enEmpadre],
+      femaleBreedingInfo: [gestante, parida, enEmpadre],
       status: 'finished',
     })
 
@@ -294,7 +294,7 @@ describe('revertir parto — transformación de datos', () => {
     expect(f2.offspring).toEqual(['cria-3'])
   })
 
-  it('la madre vuelve a embarazada (pregnantAt restaurado)', () => {
+  it('la madre vuelve a gestante (pregnantAt restaurado)', () => {
     const record = makeBreeding({
       femaleBreedingInfo: [
         makeFemale({
@@ -354,7 +354,7 @@ describe('revertir parto — transformación de datos', () => {
     expect(result.motherUpdates.pregnantAt).toEqual(new Date('2026-02-01'))
   })
 
-  it('después de revertir, la hembra pasa de parida a embarazada en groupFemalesByStatus', () => {
+  it('después de revertir, la hembra pasa de parida a gestante en groupFemalesByStatus', () => {
     const record = makeBreeding({
       femaleBreedingInfo: [
         makeFemale({
@@ -369,13 +369,13 @@ describe('revertir parto — transformación de datos', () => {
     // Antes de revertir: parida
     const groupsBefore = groupFemalesByStatus(record.femaleBreedingInfo)
     expect(groupsBefore[2].items).toHaveLength(1) // parida
-    expect(groupsBefore[1].items).toHaveLength(0) // no embarazada
+    expect(groupsBefore[1].items).toHaveLength(0) // no gestante
 
     // Después de revertir
     const result = simulateRevertBirth(record, 'f1')!
     const groupsAfter = groupFemalesByStatus(result.updatedFemaleInfo)
     expect(groupsAfter[2].items).toHaveLength(0) // ya no parida
-    expect(groupsAfter[1].items).toHaveLength(1) // ahora embarazada
+    expect(groupsAfter[1].items).toHaveLength(1) // ahora gestante
     expect(groupsAfter[1].items[0].pregnancyConfirmedDate).toEqual(new Date('2026-02-01'))
   })
 })

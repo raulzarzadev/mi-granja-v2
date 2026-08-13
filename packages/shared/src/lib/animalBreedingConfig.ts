@@ -193,7 +193,7 @@ export const calculateNextExpectedBirthDate = (
 ): Date => {
   const config = getAnimalBreedingConfig(animalType)
 
-  // Si hay información específica de hembras con embarazos confirmados
+  // Si hay información específica de hembras con gestaciones confirmadas
   if (breedingRecord.femaleBreedingInfo) {
     const confirmedPregnancies = breedingRecord.femaleBreedingInfo.filter(
       (info) => !!info.pregnancyConfirmedDate,
@@ -297,7 +297,7 @@ export const getNextBirthInfo = (
   const config = getAnimalBreedingConfig(animalType)
   const today = new Date()
 
-  // Si hay información específica de hembras con embarazos confirmados
+  // Si hay información específica de hembras con gestaciones confirmadas
   if (breedingRecord.femaleBreedingInfo) {
     const confirmedPregnancies = breedingRecord.femaleBreedingInfo.filter(
       (info) => !!info.pregnancyConfirmedDate && info.actualBirthDate,

@@ -115,7 +115,7 @@ export const useBreedingCRUD = () => {
           })) || [],
 
         notes: data.notes || '',
-        // Si todas las hembras ya tienen embarazo confirmado, marcar como terminada
+        // Si todas las hembras ya tienen gestación confirmada, marcar como terminada
         ...(data.femaleBreedingInfo?.length &&
         data.femaleBreedingInfo.every((info) => !!info.pregnancyConfirmedDate)
           ? { status: 'finished' }
@@ -127,7 +127,7 @@ export const useBreedingCRUD = () => {
       const docRef = await addDoc(collection(db, 'breedingRecords'), docData)
       trackReproductionEventCreated({ type: 'breeding' })
 
-      // Actualizar animales confirmados como embarazadas en un solo batch
+      // Actualizar animales confirmados como gestantes en un solo batch
       const confirmedFemales =
         data.femaleBreedingInfo?.filter((info) => !!info.pregnancyConfirmedDate) || []
       if (confirmedFemales.length > 0) {
@@ -255,7 +255,7 @@ export const useBreedingCRUD = () => {
     )
   }
 
-  // Obtener embarazos activos
+  // Obtener gestaciones activas
   const getActivePregnancies = () => {
     return breedingRecords.filter((record) =>
       record.femaleBreedingInfo?.some(

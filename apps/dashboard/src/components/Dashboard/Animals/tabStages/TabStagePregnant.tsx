@@ -37,10 +37,10 @@ export default function TabStagePregnant({
   return (
     <div>
       <p className="text-xs text-gray-500 mb-2">
-        Hembras con embarazo confirmado, en espera de parto.
+        Hembras con gestación confirmada, en espera de parto.
       </p>
       <DataTable
-        title={`${animal_stage_config.embarazos.icon} Embarazos`}
+        title={`${animal_stage_config.embarazos.icon} Gestantes`}
         data={enrichedPregnantFemales}
         columns={columns}
         rowKey={(row) => row.animal.id}
@@ -60,8 +60,8 @@ export default function TabStagePregnant({
             {onRegisterPregnancy && (
               <Button size="xs" color="success" icon="pregnant" onClick={onRegisterPregnancy}>
                 {pendingPregnancyCount > 1
-                  ? `Registrar embarazo (${pendingPregnancyCount})`
-                  : 'Registrar embarazo'}
+                  ? `Registrar gestación (${pendingPregnancyCount})`
+                  : 'Registrar gestación'}
               </Button>
             )}
           </div>
@@ -118,7 +118,7 @@ export default function TabStagePregnant({
               openProps={{ size: 'xs', variant: 'ghost', color: 'error', icon: 'close' }}
               confirmProps={{ color: 'error' }}
               openLabel="Desconfirmar"
-              confirmText={`¿Desconfirmar embarazo de ${row.animal.animalNumber}?`}
+              confirmText={`¿Desconfirmar gestación de ${row.animal.animalNumber}?`}
               confirmLabel="Desconfirmar"
               onConfirm={async () => {
                 if (row.record) {

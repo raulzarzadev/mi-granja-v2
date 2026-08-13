@@ -62,7 +62,7 @@ export default function BreedingConfigTab() {
 
       <div className="text-xs text-gray-400 space-y-1">
         <p>
-          <strong>Gestación:</strong> días de embarazo estimados
+          <strong>Gestación:</strong> días de gestación estimados
         </p>
         <p>
           <strong>Destete:</strong> días recomendados para destetar crías

@@ -102,7 +102,7 @@ describe('computeAnimalEffectiveStage', () => {
     expect(computeAnimalEffectiveStage(female, breedings, NOW)).toBe('empadre')
   })
 
-  it('returns embarazos for female with pregnancy confirmed and no birth', () => {
+  it('returns gestaciones for female with pregnancy confirmed and no birth', () => {
     const female = createAnimal({ id: 'f-1' })
     const breedings = [
       createBreeding({
@@ -259,7 +259,7 @@ describe('computeAnimalEffectiveStage', () => {
       )
     })
 
-    it('does NOT return empadre/embarazos from finished breeding', () => {
+    it('does NOT return empadre/gestaciones from finished breeding', () => {
       // Un empadre cerrado no debe seguir clasificando a la hembra como en empadre
       const female = createAnimal({ id: 'f-1', type: 'oveja' })
       const breedings = [
@@ -271,7 +271,7 @@ describe('computeAnimalEffectiveStage', () => {
       expect(computeAnimalEffectiveStage(female, breedings, NOW)).toBe('reproductor')
     })
 
-    it('prioritizes crias_lactantes over embarazos when in multiple breedings', () => {
+    it('prioritizes crias_lactantes over gestaciones when in multiple breedings', () => {
       const female = createAnimal({ id: 'f-1', type: 'oveja' })
       const cria = createLiveCria({ id: 'cria-1', motherId: 'f-1' })
       const breedings = [

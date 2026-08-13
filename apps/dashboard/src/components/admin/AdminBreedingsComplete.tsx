@@ -53,7 +53,7 @@ export default function AdminBreedingsComplete() {
           <div className="text-2xl font-bold text-gray-900">{breedings.length}</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
-          <div className="text-sm text-gray-600">Embarazos Confirmados</div>
+          <div className="text-sm text-gray-600">Gestaciones confirmadas</div>
           <div className="text-2xl font-bold text-pink-600">{totalPregnancies}</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
@@ -134,7 +134,7 @@ export default function AdminBreedingsComplete() {
                             key={index}
                             className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800"
                           >
-                            🤰 Embarazada
+                            🤰 Gestante
                           </span>
                         )
                       } else {

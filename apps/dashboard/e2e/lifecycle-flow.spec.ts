@@ -5,7 +5,7 @@ import { login } from './helpers'
  * E2E: Ciclo de vida completo de una borrega
  *
  * 1. Crear borrega reproductora (hembra oveja)
- * 2. Crear monta (macho + la borrega) con embarazo confirmado
+ * 2. Crear monta (macho + la borrega) con gestación confirmada
  * 3. Verificar en partos próximos
  * 4. Registrar parto con 1 cría
  * 5. Verificar cría en destetes próximos
@@ -20,7 +20,7 @@ import { login } from './helpers'
 const ANIMAL_ID = `E2E-${Date.now().toString(36).slice(-4).toUpperCase()}`
 const CRIA_ID = `${ANIMAL_ID}-C1`
 
-test.describe('Ciclo de vida completo: borrega → monta → embarazo → parto → destete', () => {
+test.describe('Ciclo de vida completo: borrega → monta → gestación → parto → destete', () => {
   test.setTimeout(120000)
 
   test('flujo completo de vida reproductiva', async ({ page }) => {
@@ -79,9 +79,9 @@ test.describe('Ciclo de vida completo: borrega → monta → embarazo → parto 
     await expect(femaleOption).toBeVisible({ timeout: 3000 })
     await femaleOption.click()
 
-    // Marcar "Embarazo confirmado"
+    // Marcar "Gestación confirmada"
     const embarazoCheckbox = page.getByRole('checkbox', {
-      name: /embarazo confirmado/i,
+      name: /gestación confirmada/i,
     })
     await expect(embarazoCheckbox).toBeVisible({ timeout: 3000 })
     await embarazoCheckbox.check()
@@ -105,7 +105,7 @@ test.describe('Ciclo de vida completo: borrega → monta → embarazo → parto 
     await searchInput.fill(ANIMAL_ID)
     await page.waitForTimeout(1000)
 
-    // Nuestra borrega debe aparecer como embarazada
+    // Nuestra borrega debe aparecer como gestante
     await expect(page.getByText(ANIMAL_ID)).toBeVisible({ timeout: 5000 })
 
     // ── 4. REGISTRAR PARTO ─────────────────────────────────────

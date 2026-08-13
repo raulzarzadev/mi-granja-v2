@@ -69,7 +69,7 @@ export default function TabStageEmpadre({
             {duplicateEmpadreFemales.length !== 1 ? 's' : ''} en múltiples empadres activos
           </div>
           <div className="text-xs text-amber-800 mb-2">
-            Termina el empadre anterior o confirma embarazo para que no se cuenten dos veces.
+            Termina el empadre anterior o confirma gestación para que no se cuenten dos veces.
           </div>
           <ul className="text-xs space-y-1">
             {duplicateEmpadreFemales.map((d) => {

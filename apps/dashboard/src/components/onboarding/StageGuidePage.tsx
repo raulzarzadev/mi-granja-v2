@@ -38,8 +38,8 @@ const conditions = [
   },
   {
     icon: '🤰',
-    name: 'Embarazo',
-    detail: 'La preñez ya fue confirmada.',
+    name: 'Gestación',
+    detail: 'La gestación ya fue confirmada.',
   },
   {
     icon: '🥛',
@@ -165,7 +165,7 @@ const StageGuidePage: React.FC = () => {
 
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-3 text-sm leading-5 text-cyan-950">
-            <strong>Puede coexistir:</strong> una Madre/Lechera también puede estar embarazada.
+            <strong>Puede coexistir:</strong> una Madre/Lechera también puede estar gestante.
           </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm leading-5 text-slate-700">
             <strong>Madre/Lechera:</strong> requiere fecha de nacimiento y último parto para evitar
