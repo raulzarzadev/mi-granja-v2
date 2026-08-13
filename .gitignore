@@ -49,6 +49,12 @@ next-env.d.ts
 # firebase
 .firebase/
 
+# local backups and data migrations (may contain customer data)
+/migration/
+respaldo-*.json
+mi-granja-respaldo-*.json
+mi-granja-migracion-*.json
+
 # playwright
 .playwright-mcp/
 test-results/

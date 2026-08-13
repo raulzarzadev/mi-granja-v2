@@ -1,11 +1,19 @@
 import { Comment } from './comment'
 
+export type BreedingOutcome = 'pending' | 'pregnant' | 'open' | 'calved' | 'aborted'
+
 export interface FemaleBreedingInfo {
   femaleId: string // NOTA: Este campo almacena el ID de Firestore del animal hembra, no el animalNumber del usuario
   pregnancyConfirmedDate?: Date | null
   expectedBirthDate?: Date | null
   actualBirthDate?: Date | null
   offspring?: string[] // IDs de las crías de esta hembra específica
+  /** Resultado histórico de la monta; `open` significa diagnosticada no gestante. */
+  outcome?: BreedingOutcome
+  /** Fecha en que se confirmó el resultado reproductivo. */
+  diagnosedAt?: Date | null
+  /** Compatibilidad y trazabilidad con respaldos de la aplicación anterior. */
+  legacyStatus?: 'PENDING' | 'PREGNANT' | 'EMPTY' | 'BIRTH'
 }
 
 /** Estado de un empadre: active = en curso, finished = terminada manualmente */

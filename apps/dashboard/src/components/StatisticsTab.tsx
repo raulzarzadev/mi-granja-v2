@@ -1,7 +1,17 @@
 'use client'
 
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import { RootState } from '@/features/store'
 import { isAvailableToSale } from '@/lib/animal-utils'
 import { Animal, AnimalType, animal_icon, animals_types_labels } from '@/types/animals'
@@ -18,12 +28,34 @@ const monthLabel = (month: number, year: number) => {
   return d.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' })
 }
 
+const monthKeyLabel = (key: string) => {
+  const [year, month] = key.split('-').map(Number)
+  return monthLabel(month, year)
+}
+
 type MonthBucket = { month: number; year: number; key: string }
 
-const getLast6Months = (): MonthBucket[] => {
+type MonthlySalesPoint = MonthBucket & {
+  amount: number
+  count: number
+  kg: number
+  animals: number
+  pricePerKg: number | null
+}
+
+type MonthlyActivityPoint = MonthBucket & {
+  births: number
+  deaths: number
+  pregnancies: number
+  failedBreedings: number
+}
+
+type StatisticsPeriod = 6 | 12 | 24
+
+const getRecentMonths = (numberOfMonths: number): MonthBucket[] => {
   const result: MonthBucket[] = []
   const now = new Date()
-  for (let i = 5; i >= 0; i--) {
+  for (let i = numberOfMonths - 1; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
     result.push({
       month: d.getMonth(),
@@ -34,32 +66,155 @@ const getLast6Months = (): MonthBucket[] => {
   return result
 }
 
-const Bar: React.FC<{ value: number; max: number; label: string; color?: string }> = ({
-  value,
-  max,
-  label,
-  color = 'bg-green-500',
-}) => {
-  const pct = max > 0 ? (value / max) * 100 : 0
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs text-gray-500 w-16 text-right shrink-0">{label}</span>
-      <div className="flex-1 bg-gray-100 rounded-full h-5 relative overflow-hidden">
-        <div
-          className={`${color} h-full rounded-full transition-all`}
-          style={{ width: `${Math.max(pct, 1)}%` }}
-        />
-      </div>
-      <span className="text-xs font-medium text-gray-700 w-12 shrink-0">{value}</span>
-    </div>
-  )
+const chartWidth = (points: number) => Math.max(640, points * 58)
+
+const chartTooltipStyle = {
+  border: '1px solid #e5e7eb',
+  borderRadius: '12px',
+  boxShadow: '0 8px 24px rgb(15 23 42 / 0.10)',
+  fontSize: '12px',
 }
+
+const SalesLineChart: React.FC<{ data: MonthlySalesPoint[] }> = ({ data }) => (
+  <div className="overflow-x-auto" aria-label="Ventas mensuales en kilos e ingresos">
+    <div className="h-72" style={{ minWidth: chartWidth(data.length) }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 8, right: 10, left: 4, bottom: 4 }}>
+          <CartesianGrid strokeDasharray="4 4" stroke="#e5e7eb" vertical={false} />
+          <XAxis dataKey="key" tickFormatter={monthKeyLabel} tick={{ fontSize: 11 }} />
+          <YAxis
+            yAxisId="kg"
+            width={54}
+            tick={{ fontSize: 11 }}
+            tickFormatter={(value) => `${Number(value).toLocaleString('es-MX')} kg`}
+          />
+          <YAxis
+            yAxisId="amount"
+            orientation="right"
+            width={74}
+            tick={{ fontSize: 11 }}
+            tickFormatter={(value) =>
+              `$${(Number(value) / 100).toLocaleString('es-MX', { maximumFractionDigits: 0 })}`
+            }
+          />
+          <Tooltip
+            labelFormatter={(label) => monthKeyLabel(String(label))}
+            formatter={(value, name) => [
+              name === 'Ingresos' ? formatPrice(Number(value)) : formatWeight(Number(value) * 1000),
+              name,
+            ]}
+            contentStyle={chartTooltipStyle}
+          />
+          <Legend iconType="plainline" />
+          <Line
+            yAxisId="kg"
+            type="monotone"
+            dataKey="kg"
+            name="Kilos vendidos"
+            stroke="#d97706"
+            strokeWidth={3}
+            dot={{ r: 4, fill: '#fff', strokeWidth: 2 }}
+            activeDot={{ r: 6 }}
+          />
+          <Line
+            yAxisId="amount"
+            type="monotone"
+            dataKey="amount"
+            name="Ingresos"
+            stroke="#16a34a"
+            strokeWidth={3}
+            dot={{ r: 4, fill: '#fff', strokeWidth: 2 }}
+            activeDot={{ r: 6 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  </div>
+)
+
+const PriceLineChart: React.FC<{ data: MonthlySalesPoint[] }> = ({ data }) => (
+  <div className="overflow-x-auto" aria-label="Precio promedio mensual por kilo">
+    <div className="h-56" style={{ minWidth: chartWidth(data.length) }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 8, right: 16, left: 8, bottom: 4 }}>
+          <CartesianGrid strokeDasharray="4 4" stroke="#e5e7eb" vertical={false} />
+          <XAxis dataKey="key" tickFormatter={monthKeyLabel} tick={{ fontSize: 11 }} />
+          <YAxis
+            width={72}
+            tick={{ fontSize: 11 }}
+            tickFormatter={(value) => formatPrice(Number(value))}
+          />
+          <Tooltip
+            labelFormatter={(label) => monthKeyLabel(String(label))}
+            formatter={(value) => [formatPrice(Number(value)), 'Precio por kg']}
+            contentStyle={chartTooltipStyle}
+          />
+          <Line
+            type="monotone"
+            dataKey="pricePerKg"
+            name="Precio por kg"
+            stroke="#7c3aed"
+            strokeWidth={3}
+            dot={{ r: 4, fill: '#fff', strokeWidth: 2 }}
+            activeDot={{ r: 6 }}
+            connectNulls={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  </div>
+)
+
+const ActivityLineChart: React.FC<{ data: MonthlyActivityPoint[] }> = ({ data }) => (
+  <div
+    className="overflow-x-auto"
+    aria-label="Nacimientos, muertes, embarazos y montas fallidas por mes"
+  >
+    <div className="h-80" style={{ minWidth: chartWidth(data.length) }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
+          <CartesianGrid strokeDasharray="4 4" stroke="#e5e7eb" vertical={false} />
+          <XAxis dataKey="key" tickFormatter={monthKeyLabel} tick={{ fontSize: 11 }} />
+          <YAxis allowDecimals={false} width={38} tick={{ fontSize: 11 }} />
+          <Tooltip
+            labelFormatter={(label) => monthKeyLabel(String(label))}
+            contentStyle={chartTooltipStyle}
+          />
+          <Legend iconType="plainline" />
+          <Line
+            type="monotone"
+            dataKey="births"
+            name="Nacimientos"
+            stroke="#2563eb"
+            strokeWidth={3}
+          />
+          <Line type="monotone" dataKey="deaths" name="Muertes" stroke="#dc2626" strokeWidth={3} />
+          <Line
+            type="monotone"
+            dataKey="pregnancies"
+            name="Embarazos"
+            stroke="#db2777"
+            strokeWidth={3}
+          />
+          <Line
+            type="monotone"
+            dataKey="failedBreedings"
+            name="Montas fallidas"
+            stroke="#d97706"
+            strokeWidth={3}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  </div>
+)
 
 interface StatisticsTabProps {
   animals?: Animal[]
 }
 
 const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) => {
+  const [period, setPeriod] = useState<StatisticsPeriod>(6)
   const allAnimals = useSelector((state: RootState) => state.animals.animals)
   const allSales = useSelector((state: RootState) => state.sales.sales)
   const allBreedings = useSelector((state: RootState) => state.breeding.breedingRecords)
@@ -86,7 +241,7 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
     [allBreedings, allowedIds, isFiltered],
   )
 
-  const months = useMemo(() => getLast6Months(), [])
+  const months = useMemo(() => getRecentMonths(period), [period])
 
   // ── Ventas ──
   const salesStats = useMemo(() => {
@@ -98,9 +253,11 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
 
     const byMonth = new Map<
       string,
-      { amount: number; count: number; kg: number; animals: number }
+      { amount: number; count: number; kg: number; animals: number; pricePerKg: number | null }
     >()
-    for (const m of months) byMonth.set(m.key, { amount: 0, count: 0, kg: 0, animals: 0 })
+    for (const m of months) {
+      byMonth.set(m.key, { amount: 0, count: 0, kg: 0, animals: 0, pricePerKg: null })
+    }
     for (const s of completed) {
       if (!s.date) continue
       const d = new Date(s.date)
@@ -112,6 +269,9 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
         entry.count++
         entry.animals += s.animals?.length || 0
       }
+    }
+    for (const entry of byMonth.values()) {
+      entry.pricePerKg = entry.kg > 0 ? entry.amount / entry.kg : null
     }
 
     // Por especie (mira el animal vendido)
@@ -210,6 +370,68 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
     return { byMonth, total: dead.length }
   }, [animals, months])
 
+  // ── Actividad reproductiva ──
+  const reproductiveStats = useMemo(() => {
+    const pregnanciesByMonth = new Map<string, number>()
+    const failedBreedingsByMonth = new Map<string, number>()
+    for (const month of months) {
+      pregnanciesByMonth.set(month.key, 0)
+      failedBreedingsByMonth.set(month.key, 0)
+    }
+
+    for (const breeding of breedings) {
+      for (const info of breeding.femaleBreedingInfo) {
+        if (info.pregnancyConfirmedDate) {
+          const date = new Date(info.pregnancyConfirmedDate)
+          const key = `${date.getFullYear()}-${date.getMonth()}`
+          const current = pregnanciesByMonth.get(key)
+          if (current !== undefined) pregnanciesByMonth.set(key, current + 1)
+        }
+
+        const isFailed = info.outcome === 'open' || info.legacyStatus === 'EMPTY'
+        const failedDate = info.diagnosedAt
+          ? new Date(info.diagnosedAt)
+          : isFailed && breeding.updatedAt
+            ? new Date(breeding.updatedAt)
+            : null
+        if (isFailed && failedDate && !Number.isNaN(failedDate.getTime())) {
+          const key = `${failedDate.getFullYear()}-${failedDate.getMonth()}`
+          const current = failedBreedingsByMonth.get(key)
+          if (current !== undefined) failedBreedingsByMonth.set(key, current + 1)
+        }
+      }
+    }
+
+    return { pregnanciesByMonth, failedBreedingsByMonth }
+  }, [breedings, months])
+
+  const monthlySalesData = useMemo<MonthlySalesPoint[]>(
+    () =>
+      months.map((month) => ({
+        ...month,
+        ...(salesStats.byMonth.get(month.key) || {
+          amount: 0,
+          count: 0,
+          kg: 0,
+          animals: 0,
+          pricePerKg: null,
+        }),
+      })),
+    [months, salesStats.byMonth],
+  )
+
+  const monthlyActivityData = useMemo<MonthlyActivityPoint[]>(
+    () =>
+      months.map((month) => ({
+        ...month,
+        births: birthStats.byMonth.get(month.key) || 0,
+        deaths: deathStats.byMonth.get(month.key) || 0,
+        pregnancies: reproductiveStats.pregnanciesByMonth.get(month.key) || 0,
+        failedBreedings: reproductiveStats.failedBreedingsByMonth.get(month.key) || 0,
+      })),
+    [months, birthStats.byMonth, deathStats.byMonth, reproductiveStats],
+  )
+
   // ── Producción / Peso ──
   const weightStats = useMemo(() => {
     const active = animals.filter((a) => (a.status ?? 'activo') === 'activo')
@@ -230,17 +452,46 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
     return { totalWeight, byType, activeCount: active.length }
   }, [animals])
 
-  const maxSalesMonth = Math.max(...[...salesStats.byMonth.values()].map((v) => v.amount), 1)
-  const maxKgMonth = Math.max(...[...salesStats.byMonth.values()].map((v) => v.kg), 1)
-  const maxBirthMonth = Math.max(...[...birthStats.byMonth.values()], 1)
-  const maxDeathMonth = Math.max(...[...deathStats.byMonth.values()], 1)
   const maxTypeWeight = Math.max(...[...weightStats.byType.values()].map((v) => v.totalWeight), 1)
   const maxSpeciesAmount = Math.max(...[...salesStats.bySpecies.values()].map((v) => v.amount), 1)
   const maxBuyerAmount = Math.max(...salesStats.topBuyers.map(([, v]) => v.amount), 1)
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">Estadísticas</h2>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Estadísticas</h2>
+          <p className="text-xs text-gray-500">
+            Las gráficas se actualizan según el periodo elegido.
+          </p>
+        </div>
+        <div
+          className="inline-flex w-full rounded-lg border border-gray-200 bg-white p-1 sm:w-auto"
+          aria-label="Periodo de las gráficas"
+        >
+          {(
+            [
+              [6, '6 meses'],
+              [12, '1 año'],
+              [24, '2 años'],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setPeriod(value)}
+              aria-pressed={period === value}
+              className={`min-h-10 flex-1 rounded-md px-3 text-sm font-medium transition-colors sm:flex-none ${
+                period === value
+                  ? 'bg-green-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Resumen rápido */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -301,58 +552,31 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
         </div>
       </div>
 
-      {/* Ventas por mes — kg vs $ */}
+      {/* Ventas por mes — evolución de kg e ingresos */}
       <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="text-sm font-medium text-gray-700 mb-1">Ventas por mes — kg vs $</h3>
-        <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm bg-amber-400" /> kg
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm bg-green-500" /> $
-          </span>
-        </div>
-        <div className="space-y-2">
-          {months.map((m) => {
-            const data = salesStats.byMonth.get(m.key) || {
-              amount: 0,
-              count: 0,
-              kg: 0,
-              animals: 0,
-            }
-            const kgPct = (data.kg / maxKgMonth) * 100
-            const amountPct = (data.amount / maxSalesMonth) * 100
-            return (
-              <div key={m.key} className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 w-16 text-right shrink-0">
-                  {monthLabel(m.month, m.year)}
-                </span>
-                <div className="flex-1 space-y-1">
-                  <div className="bg-gray-100 rounded-full h-3 overflow-hidden">
-                    <div
-                      className="bg-amber-400 h-full rounded-full transition-all"
-                      style={{ width: `${Math.max(kgPct, data.kg > 0 ? 2 : 0)}%` }}
-                    />
-                  </div>
-                  <div className="bg-gray-100 rounded-full h-3 overflow-hidden">
-                    <div
-                      className="bg-green-500 h-full rounded-full transition-all"
-                      style={{ width: `${Math.max(amountPct, data.amount > 0 ? 2 : 0)}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="w-28 shrink-0 text-right">
-                  <p className="text-xs font-medium text-gray-700">
-                    {data.amount > 0 ? formatPrice(data.amount) : '—'}
-                  </p>
-                  <p className="text-[10px] text-gray-400">
-                    {data.kg > 0 ? formatWeight(data.kg * 1000) : '—'} · {data.animals} an.
-                  </p>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        <h3 className="text-sm font-medium text-gray-700 mb-1">Evolución mensual de ventas</h3>
+        <p className="text-xs text-gray-500 mb-3">
+          Compara kilos vendidos e ingresos durante el periodo seleccionado.
+        </p>
+        <SalesLineChart data={monthlySalesData} />
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-4">
+        <h3 className="text-sm font-medium text-gray-700 mb-1">
+          Precio promedio de venta por kilo
+        </h3>
+        <p className="text-xs text-gray-500 mb-3">
+          Promedio ponderado mensual; los meses sin ventas no muestran un punto.
+        </p>
+        <PriceLineChart data={monthlySalesData} />
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-4">
+        <h3 className="text-sm font-medium text-gray-700 mb-1">Actividad del hato por mes</h3>
+        <p className="text-xs text-gray-500 mb-3">
+          Nacimientos, muertes, embarazos confirmados y montas diagnosticadas sin gestación.
+        </p>
+        <ActivityLineChart data={monthlyActivityData} />
       </div>
 
       {/* Ventas por especie */}
@@ -410,38 +634,6 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
           </div>
         </div>
       )}
-
-      {/* Nacimientos y muertes por mes */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Nacimientos por mes</h3>
-          <div className="space-y-1.5">
-            {months.map((m) => (
-              <Bar
-                key={m.key}
-                value={birthStats.byMonth.get(m.key) || 0}
-                max={maxBirthMonth}
-                label={monthLabel(m.month, m.year)}
-                color="bg-blue-500"
-              />
-            ))}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Muertes por mes</h3>
-          <div className="space-y-1.5">
-            {months.map((m) => (
-              <Bar
-                key={m.key}
-                value={deathStats.byMonth.get(m.key) || 0}
-                max={maxDeathMonth}
-                label={monthLabel(m.month, m.year)}
-                color="bg-red-400"
-              />
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* Peso por especie */}
       <div className="bg-white rounded-lg shadow p-4">
