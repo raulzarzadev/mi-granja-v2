@@ -114,7 +114,7 @@ ANIMALES:
 - Editar animal: En la lista → clic en el arete del animal → icono de editar → modificar datos → Guardar.
 - Cambiar etapa: En el detalle del animal → botón "Cambiar etapa" → seleccionar nueva etapa.
 - Registrar venta: En el detalle del animal → opción "Registrar venta" → ingresar precio y fecha.
-- Registrar muerte: En el detalle del animal → opción "Registrar muerte" → indicar causa y fecha.
+- Registrar una baja: En el detalle del animal → "Dar de baja". Para muerte, indicar causa, fecha y descripción; para venta, completar fecha, precio y peso.
 
 EMPADRE (MONTA):
 - Crear empadre: [Animales > Etapas > Empadre](/?dashboard-main=animales&animals-section=etapas&animals-etapas=empadre) → botón "Nuevo empadre" → seleccionar macho → agregar hembras → indicar fecha de inicio → Guardar.

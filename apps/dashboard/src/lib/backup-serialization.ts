@@ -103,6 +103,8 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
       "Historial único en records[]. Un pesaje usa type='weight' y weightGrams. Un ordeño usa type='milk', amountMl y session.",
     weightSummary:
       'animal.weight es un resumen en gramos del pesaje más reciente; records[] es la fuente de verdad.',
+    discharge:
+      'Una muerte puede incluir deathInfo { reason, date, description }; una venta usa soldInfo y una entrada en sales.',
   },
   breedingRecord: {
     references:

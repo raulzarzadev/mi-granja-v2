@@ -412,6 +412,7 @@ export const useAnimalCRUD = () => {
       status: Exclude<AnimalStatus, 'activo'> | 'activo'
       statusAt?: Date
       statusNotes?: string
+      deathInfo?: Animal['deathInfo']
       soldInfo?: Animal['soldInfo']
       lostInfo?: Animal['lostInfo']
     },
@@ -423,6 +424,7 @@ export const useAnimalCRUD = () => {
     }
 
     if (data.statusNotes) updateData.statusNotes = data.statusNotes
+    if (data.deathInfo) updateData.deathInfo = data.deathInfo
     if (data.soldInfo) updateData.soldInfo = data.soldInfo
     if (data.lostInfo) updateData.lostInfo = data.lostInfo
     await update(animalId, updateData)

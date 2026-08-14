@@ -721,6 +721,7 @@ const BACKUP_SCHEMA_JSON = `{
       "status": "activo | muerto | vendido | perdido",
       "statusAt": "ISO 8601 (opcional, fecha del cambio de status)",
       "statusNotes": "string (notas sobre el cambio de status, opcional)",
+      "deathInfo": "{ reason: birth_defect | disease | injury | attack, date: ISO 8601, description: string } (si murió)",
       "birthDate": "ISO 8601 (opcional)",
       "weight": "number en gramos (opcional, ej: 4500 = 4.5kg)",
       "age": "number (edad en meses, opcional — se calcula desde birthDate)",
@@ -834,7 +835,7 @@ const BACKUP_SCHEMA_JSON = `{
       "fechas_iso_8601": "Todas las fechas deben estar en formato ISO 8601 (ej: 2026-03-17T00:00:00.000Z)",
       "etapas_por_edad": "cria=no destetado, juvenil=destetado pero sin edad reproductiva, engorda=manual, reproductor=edad reproductiva alcanzada, descarte=manual",
       "destete": "Al destetar una cría: isWeaned=true, weanedAt=fecha, stage cambia según destino. Para engorda→stage=engorda. Para reproductor→stage=juvenil.",
-      "nacimiento_muerto": "Si una cría nace muerta: status=muerto, statusAt=fecha del parto",
+      "nacimiento_muerto": "Si una cría nace muerta: status=muerto, statusAt=fecha del parto; deathInfo.reason puede ser birth_defect",
       "estado_reproductivo": "Solo hembras. Gestación y lactancia pueden coexistir. lactationStatus=active mantiene Madre/Lechera; el destete sólo termina la lactancia cuando lactationPurpose=offspring.",
       "ids_de_referencia": "motherId, fatherId, pregnantBy, pregnantBreedingRecordId, records[].appliedToAnimals, maleId, femaleId y offspring[] se remapean automáticamente.",
       "peso_auto_sync": "records[] type=weight con weightGrams es la fuente de verdad. animal.weight conserva sólo el último valor como resumen."

@@ -7,6 +7,7 @@ import AnimalRecordsSection from '@/components/AnimalRecordsSection'
 import Tabs from '@/components/Tabs'
 import { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { animalDeathReasonLabels } from '@/lib/animal-discharge'
 import {
   animal_stage_next_steps,
   animalAge,
@@ -25,6 +26,7 @@ import AnimalTag from './AnimalTag'
 import Button from './buttons/Button'
 import ButtonConfirm from './buttons/ButtonConfirm'
 import { Icon } from './Icon/icon'
+import ModalAnimalDischarge from './ModalAnimalDischarge'
 import ModalChangeStage from './ModalChangeStage'
 import ModalEditAnimal from './ModalEditAnimal'
 
@@ -304,6 +306,33 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
             </section>
           )}
 
+          {effectiveStatus === 'muerto' && (
+            <section className="space-y-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-red-800">
+                Información de la baja
+              </h3>
+              <div className="grid grid-cols-1 gap-x-4 gap-y-2 min-[420px]:grid-cols-2">
+                <InfoCell
+                  label="Fecha"
+                  value={formatDate(animal.deathInfo?.date ?? animal.statusAt)}
+                  muted
+                />
+                {animal.deathInfo?.reason ? (
+                  <InfoCell
+                    label="Causa"
+                    value={animalDeathReasonLabels[animal.deathInfo.reason]}
+                    muted
+                  />
+                ) : null}
+              </div>
+              {(animal.deathInfo?.description || animal.statusNotes) && (
+                <p className="whitespace-pre-line text-sm leading-5 text-red-900">
+                  {animal.deathInfo?.description ?? animal.statusNotes}
+                </p>
+              )}
+            </section>
+          )}
+
           {/* Estado adicional — perdido */}
           {effectiveStatus === 'perdido' && animal.lostInfo && (
             <section
@@ -419,6 +448,9 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
               ⇄ Cambiar etapa
             </Button>
             <ModalEditAnimal animal={animal} triggerClassName="w-full sm:w-auto sm:flex-none" />
+            {effectiveStatus === 'activo' ? (
+              <ModalAnimalDischarge animal={animal} triggerClassName="sm:flex-none" />
+            ) : null}
             <ButtonConfirm
               openLabel="Eliminar"
               confirmLabel="Eliminar"

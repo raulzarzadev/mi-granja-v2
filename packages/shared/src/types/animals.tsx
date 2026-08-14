@@ -90,6 +90,11 @@ export interface Animal {
   status?: AnimalStatus // default lógico: 'activo'
   statusAt?: Date
   statusNotes?: string
+  deathInfo?: {
+    reason: AnimalDeathReason
+    date: Date
+    description: string
+  }
   /** Marcado por usuario como candidato a venta. Se limpia al completarse o cancelarse. */
   availableToSaleAt?: Date | null
   soldInfo?: {
@@ -142,6 +147,8 @@ export interface Animal {
    */
   computedStage?: AnimalStageKey
 }
+
+export type AnimalDeathReason = 'birth_defect' | 'disease' | 'injury' | 'attack'
 
 export const animals_genders = ['macho', 'hembra'] as const
 export type AnimalGender = (typeof animals_genders)[number]

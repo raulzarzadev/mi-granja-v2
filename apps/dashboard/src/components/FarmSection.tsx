@@ -14,12 +14,10 @@ import { useMyInvitations } from '@/hooks/useMyInvitations'
 import { formatDate, toDate } from '@/lib/dates'
 import { FarmCollaborator } from '@/types/collaborators'
 import { FARM_AREA_TYPES, FarmInvitation } from '@/types/farm'
-import AreaCard from './AreaCard'
 import BackupSection from './BackupSection'
 import BreedingConfigTab from './BreedingConfigTab'
 import MigrationBanner from './billing/MigrationBanner'
 import CollaboratorCard from './CollaboratorCard'
-import ModalCreateArea from './ModalCreateArea'
 import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditCollaborator from './ModalEditCollaborator'
 import ModalInviteCollaborator from './ModalInviteCollaborator'
@@ -28,7 +26,7 @@ const FarmSection: React.FC = () => {
   const { confirmAction, notify } = useAppFeedback()
   const { farms, currentFarm, isLoading: farmsLoading, loadAndSwitchFarm } = useFarmCRUD()
 
-  const { areas, isLoading: areasLoading, getAreaStats } = useFarmAreasCRUD()
+  const { getAreaStats } = useFarmAreasCRUD()
 
   const {
     collaborators,
@@ -240,35 +238,6 @@ const FarmSection: React.FC = () => {
     {
       label: '💰 Gastos',
       content: <InventoryTab />,
-    },
-    {
-      label: '🏗️ Areas',
-      badgeCount: areaStats.active,
-      content: (
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Areas de la Granja</h3>
-            <ModalCreateArea />
-          </div>
-          {areasLoading ? (
-            <div className="flex justify-center items-center py-8">
-              <LoadingSpinner />
-              <span className="ml-3 text-gray-600">Cargando areas...</span>
-            </div>
-          ) : areas.length === 0 ? (
-            <div className="text-center py-6">
-              <span className="text-3xl mb-2 block">🏗️</span>
-              <p className="text-gray-600 text-sm">Crea areas para organizar mejor tu granja</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {areas.map((area) => (
-                <AreaCard key={area.id} area={area} />
-              ))}
-            </div>
-          )}
-        </div>
-      ),
     },
     {
       label: '👥 Equipo',

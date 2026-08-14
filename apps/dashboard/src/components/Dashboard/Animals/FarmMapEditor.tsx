@@ -71,8 +71,6 @@ function ColorSwatches({ value, onChange }: { value: string; onChange: (color: s
 interface FarmMapEditorProps {
   areas: FarmArea[]
   animalsByArea: Map<string, Animal[]>
-  matchingAnimalIds: Set<string>
-  hasFilters: boolean
   selectedAnimalId: string
   savingIds: Set<string>
   onSelectAnimal: (animalId: string) => void
@@ -184,8 +182,6 @@ const createFallbackLayout = (index: number, total: number, color: string): Area
 export default function FarmMapEditor({
   areas,
   animalsByArea,
-  matchingAnimalIds,
-  hasFilters,
   selectedAnimalId,
   savingIds,
   onSelectAnimal,
@@ -209,6 +205,8 @@ export default function FarmMapEditor({
   const [vertexDrag, setVertexDrag] = useState<{ areaId: string; pointIndex: number } | null>(null)
   const [pendingLayout, setPendingLayout] = useState<AreaLayout | null>(null)
   const [isAreaEditorOpen, setIsAreaEditorOpen] = useState(false)
+  const [isUnassignedOpen, setIsUnassignedOpen] = useState(false)
+  const [unassignedSearch, setUnassignedSearch] = useState('')
   const [dropTargetId, setDropTargetId] = useState<string | null>(null)
   const [menuAnimalId, setMenuAnimalId] = useState<string | null>(null)
   const [isSavingArea, setIsSavingArea] = useState(false)
@@ -237,8 +235,7 @@ export default function FarmMapEditor({
         const color = area.layout?.color || AREA_COLORS[index % AREA_COLORS.length]
         const fallbackLayout = createFallbackLayout(index, activeAreas.length, color)
         const layout =
-          localLayouts.get(area.id) ||
-          normalizeStoredLayout(area.layout, fallbackLayout)
+          localLayouts.get(area.id) || normalizeStoredLayout(area.layout, fallbackLayout)
 
         return { area, layout }
       }),
@@ -521,7 +518,6 @@ export default function FarmMapEditor({
   }
 
   const renderAnimalChip = (animal: Animal, compact = false) => {
-    const isDimmed = hasFilters && !matchingAnimalIds.has(animal.id)
     const isSaving = savingIds.has(animal.id)
     const isMenuOpen = menuAnimalId === animal.id
     const currentAreaId = animal.currentAreaId ?? UNASSIGNED_AREA_ID
@@ -571,7 +567,7 @@ export default function FarmMapEditor({
           }}
           className={`inline-flex max-w-full items-center rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1 ${
             compact ? 'overflow-hidden' : ''
-          } ${isSaving ? 'opacity-50' : ''} ${isDimmed ? 'opacity-25' : ''}`}
+          } ${isSaving ? 'opacity-50' : ''}`}
           title={`Animal ${animal.animalNumber}`}
         >
           <AnimalTag
@@ -642,7 +638,6 @@ export default function FarmMapEditor({
   // Mini-avatar para mostrar muchos animales dentro de un área del lienzo sin ocupar espacio.
   const renderAnimalAvatar = (animal: Animal) => {
     const isMale = animal.gender === 'macho'
-    const isDimmed = hasFilters && !matchingAnimalIds.has(animal.id)
     const isSaving = savingIds.has(animal.id)
     const stageCfg = animal_stage_config[animal.computedStage ?? computeAnimalStage(animal)]
     const title = `#${animal.animalNumber}${stageCfg ? ` · ${stageCfg.label}` : ''} · ${
@@ -675,7 +670,7 @@ export default function FarmMapEditor({
           selectedAnimalId === animal.id
             ? 'border-green-500 ring-1 ring-green-500'
             : 'border-gray-200'
-        } ${isSaving ? 'opacity-50' : ''} ${isDimmed ? 'opacity-25' : ''}`}
+        } ${isSaving ? 'opacity-50' : ''}`}
       >
         <span aria-hidden="true" className="text-xs">
           {animal_icon[animal.type]}
@@ -775,53 +770,23 @@ export default function FarmMapEditor({
       .slice(0, 8)
   }, [animalsByArea, assignAnimalSearch, selectedAreaId])
 
-  // Animales sin área, narrowed a los que coinciden con los filtros activos.
-  const unassignedAnimals = useMemo(() => {
-    const all = animalsByArea.get(UNASSIGNED_AREA_ID) ?? []
-    if (!hasFilters) return all
-    return all.filter((animal) => matchingAnimalIds.has(animal.id))
-  }, [animalsByArea, hasFilters, matchingAnimalIds])
+  const unassignedAnimals = useMemo(
+    () => animalsByArea.get(UNASSIGNED_AREA_ID) ?? [],
+    [animalsByArea],
+  )
+  const visibleUnassignedAnimals = useMemo(() => {
+    const value = unassignedSearch.trim().toLowerCase()
+    if (!value) return unassignedAnimals
+
+    return unassignedAnimals.filter((animal) =>
+      [animal.animalNumber, animal.name, animal.breed, animal.notes]
+        .filter(Boolean)
+        .some((item) => item!.toLowerCase().includes(value)),
+    )
+  }, [unassignedAnimals, unassignedSearch])
 
   return (
-    <div className="space-y-4">
-      <section
-        aria-label="Pendientes de asignar"
-        onDragOver={(event) => {
-          event.preventDefault()
-          setDropTargetId(UNASSIGNED_AREA_ID)
-        }}
-        onDragLeave={() => setDropTargetId(null)}
-        onDrop={(event) => handleDropAnimal(event, UNASSIGNED_AREA_ID)}
-        className={`rounded-lg border bg-white p-4 transition ${
-          dropTargetId === UNASSIGNED_AREA_ID ? 'border-green-500 bg-green-50' : 'border-gray-200'
-        }`}
-      >
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">Pendientes de asignar</h3>
-            <p className="text-xs text-gray-500">
-              Arrastra chips al lienzo o selecciónalos y usa el destino manual.
-            </p>
-          </div>
-          <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700">
-            {unassignedAnimals.length}
-          </span>
-        </div>
-        {(animalsByArea.get(UNASSIGNED_AREA_ID) ?? []).length === 0 ? (
-          <div className="rounded-md border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-center text-sm text-gray-500">
-            Todos los animales visibles tienen área.
-          </div>
-        ) : unassignedAnimals.length === 0 ? (
-          <div className="rounded-md border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-center text-sm text-gray-500">
-            Ningún animal sin área coincide con los filtros.
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {unassignedAnimals.map((animal) => renderAnimalChip(animal))}
-          </div>
-        )}
-      </section>
-
+    <div>
       <section className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
@@ -848,6 +813,18 @@ export default function FarmMapEditor({
             role="toolbar"
             aria-label="Acciones de área"
           >
+            <button
+              type="button"
+              onClick={() => setIsUnassignedOpen(true)}
+              aria-label={`Abrir ${unassignedAnimals.length} animales pendientes de asignar`}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
+            >
+              <span>Pendientes</span>
+              <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-amber-200 px-1.5 py-0.5 text-xs font-bold text-amber-950">
+                {unassignedAnimals.length}
+              </span>
+            </button>
+
             {!isCreating ? (
               <Button size="sm" color="success" onClick={beginCreatePolygon}>
                 Crear área
@@ -1107,6 +1084,66 @@ export default function FarmMapEditor({
           ) : null}
         </div>
       </section>
+
+      <Modal
+        isOpen={isUnassignedOpen}
+        onClose={() => {
+          setIsUnassignedOpen(false)
+          setUnassignedSearch('')
+        }}
+        title="Pendientes de asignar"
+        size="xl"
+      >
+        <div
+          onDragOver={(event) => {
+            event.preventDefault()
+            setDropTargetId(UNASSIGNED_AREA_ID)
+          }}
+          onDragLeave={() => setDropTargetId(null)}
+          onDrop={(event) => handleDropAnimal(event, UNASSIGNED_AREA_ID)}
+          className={`space-y-4 rounded-lg border p-3 transition-colors sm:p-4 ${
+            dropTargetId === UNASSIGNED_AREA_ID
+              ? 'border-green-500 bg-green-50'
+              : 'border-gray-200 bg-white'
+          }`}
+        >
+          <div>
+            <label
+              htmlFor="unassigned-animal-search"
+              className="mb-2 block text-sm font-medium text-gray-700"
+            >
+              Buscar animal
+            </label>
+            <input
+              id="unassigned-animal-search"
+              type="search"
+              value={unassignedSearch}
+              onChange={(event) => setUnassignedSearch(event.target.value)}
+              placeholder="Número, nombre, raza o notas..."
+              className="min-h-11 w-full rounded-md border border-gray-300 px-3 text-base text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+            <p className="mt-2 text-xs text-gray-500">
+              {visibleUnassignedAnimals.length} de {unassignedAnimals.length} animales sin área. Usa
+              el menú ⋮ para asignarlos.
+            </p>
+          </div>
+
+          {unassignedAnimals.length === 0 ? (
+            <div className="rounded-md border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center">
+              <p className="text-sm font-medium text-gray-700">Todos los animales tienen área.</p>
+            </div>
+          ) : visibleUnassignedAnimals.length === 0 ? (
+            <div className="rounded-md border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center">
+              <p className="text-sm font-medium text-gray-700">No encontramos coincidencias.</p>
+              <p className="mt-1 text-xs text-gray-500">Prueba con otro número, nombre o raza.</p>
+            </div>
+          ) : (
+            <div className="flex max-h-[60vh] flex-wrap content-start gap-2 overflow-y-auto rounded-md bg-gray-50 p-2 sm:p-3">
+              {visibleUnassignedAnimals.map((animal) => renderAnimalChip(animal))}
+            </div>
+          )}
+        </div>
+      </Modal>
 
       <Modal
         isOpen={Boolean(pendingLayout)}

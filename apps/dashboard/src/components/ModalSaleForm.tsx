@@ -25,9 +25,17 @@ interface ModalSaleFormProps {
   isOpen: boolean
   onClose: () => void
   sale?: Sale
+  initialAnimalId?: string
+  initialStatus?: SaleStatus
 }
 
-const ModalSaleForm: React.FC<ModalSaleFormProps> = ({ isOpen, onClose, sale }) => {
+const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
+  isOpen,
+  onClose,
+  sale,
+  initialAnimalId,
+  initialStatus,
+}) => {
   const { confirmAction } = useAppFeedback()
   const { animals } = useSelector((state: RootState) => state.animals)
   const {
@@ -89,17 +97,17 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({ isOpen, onClose, sale }) 
       }
       setAnimalWeights(weights)
     } else {
-      setStatus('scheduled')
+      setStatus(initialStatus ?? 'scheduled')
       setDate(new Date())
       setPricePerKg(null)
       setPriceType('en_pie')
       setBuyer('')
       setNotes('')
-      setSelectedAnimalIds([])
+      setSelectedAnimalIds(initialAnimalId ? [initialAnimalId] : [])
       setAnimalWeights({})
     }
     setError('')
-  }, [sale, isOpen])
+  }, [sale, isOpen, initialAnimalId, initialStatus])
 
   const buildAnimalsEntries = (): SaleAnimalEntry[] => {
     return selectedAnimalIds.map((id) => {

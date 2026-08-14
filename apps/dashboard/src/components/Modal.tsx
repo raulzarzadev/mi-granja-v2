@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useId } from 'react'
+import { createPortal } from 'react-dom'
 import ButtonClose from './buttons/ButtonClose'
 import { Icon, IconName } from './Icon/icon'
 
@@ -39,6 +40,10 @@ const sizeClasses = {
   full: 'sm:max-w-[95vw] lg:max-w-4xl xl:max-w-5xl',
 }
 
+const openModalStack: string[] = []
+let bodyScrollLockCount = 0
+let bodyOverflowBeforeModal = ''
+
 /**
  * Componente Modal reutilizable
  * Proporciona una ventana modal con backdrop, animaciones y accesibilidad
@@ -57,26 +62,48 @@ export const Modal: React.FC<ModalProps> = ({
   iconClassName,
   contentClassName,
 }) => {
+  const modalId = useId()
+  const titleId = `${modalId}-title`
+
+  useEffect(() => {
+    if (!isOpen) return
+    openModalStack.push(modalId)
+
+    return () => {
+      const index = openModalStack.lastIndexOf(modalId)
+      if (index >= 0) openModalStack.splice(index, 1)
+    }
+  }, [isOpen, modalId])
+
   // Manejar tecla Escape
   useEffect(() => {
     if (!closeOnEscape || !isOpen) return
 
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && openModalStack.at(-1) === modalId) {
         onClose()
       }
     }
 
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
-  }, [isOpen, onClose, closeOnEscape])
+  }, [isOpen, onClose, closeOnEscape, modalId])
 
   // Prevenir scroll del body cuando el modal está abierto
   useEffect(() => {
     if (isOpen) {
+      if (bodyScrollLockCount === 0) {
+        bodyOverflowBeforeModal = document.body.style.overflow
+      }
+      bodyScrollLockCount += 1
       document.body.style.overflow = 'hidden'
+
       return () => {
-        document.body.style.overflow = 'unset'
+        bodyScrollLockCount = Math.max(0, bodyScrollLockCount - 1)
+        if (bodyScrollLockCount === 0) {
+          document.body.style.overflow = bodyOverflowBeforeModal
+          bodyOverflowBeforeModal = ''
+        }
       }
     }
   }, [isOpen])
@@ -88,15 +115,15 @@ export const Modal: React.FC<ModalProps> = ({
     }
   }
 
-  if (!isOpen) return null
+  if (!isOpen || typeof document === 'undefined') return null
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 bg-black/70 z-50 animate-in fade-in duration-200"
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
-      aria-labelledby={title ? 'modal-title' : undefined}
+      aria-labelledby={title ? titleId : undefined}
       style={{
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
@@ -108,8 +135,8 @@ export const Modal: React.FC<ModalProps> = ({
       <div className="h-full w-full flex items-center justify-center p-0 sm:p-4">
         <div
           className={`
-            bg-white w-full h-full rounded-none
-            sm:rounded-lg sm:w-auto sm:h-auto sm:max-h-[90vh] sm:min-w-96
+            bg-white w-full h-full min-w-0 max-w-full rounded-none
+            sm:rounded-lg sm:w-full sm:h-auto sm:max-h-[90vh] sm:min-w-96
             shadow-none sm:shadow-xl animate-in zoom-in-95 duration-200 
             flex flex-col ${sizeClasses[size]}
             ${className}
@@ -124,7 +151,7 @@ export const Modal: React.FC<ModalProps> = ({
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                   {icon && <Icon icon={icon} className={iconClassName} />}
                   <h2
-                    id="modal-title"
+                    id={titleId}
                     className="min-w-0 truncate pr-2 text-xl font-semibold text-gray-900"
                   >
                     {title}
@@ -143,7 +170,7 @@ export const Modal: React.FC<ModalProps> = ({
 
           {/* Contenido scrolleable */}
           <div
-            className={`flex-1 overflow-y-auto p-3 sm:p-4 ${contentClassName || ''}`}
+            className={`min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 ${contentClassName || ''}`}
             style={{
               WebkitOverflowScrolling: 'touch',
             }}
@@ -152,6 +179,7 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
