@@ -7,6 +7,7 @@ import {
   animal_icon,
   animal_stage_config,
   animal_status_icons,
+  animal_status_labels,
 } from '@/types/animals'
 import { Icon, IconName } from './Icon/icon'
 
@@ -43,10 +44,49 @@ const getAgeLabel = (animal: Animal, format: AgeLabelFormat = 'full') => {
 interface AnimalBadgesProps {
   animal: Animal
   ageFormat?: AgeLabelFormat
+  variant?: 'row' | 'tag'
 }
 
-const AnimalBadges: React.FC<AnimalBadgesProps> = ({ animal, ageFormat = 'full' }) => {
+const AnimalBadges: React.FC<AnimalBadgesProps> = ({
+  animal,
+  ageFormat = 'full',
+  variant = 'row',
+}) => {
   const age = getAgeLabel(animal, ageFormat)
+  const stage = animal.computedStage ?? computeAnimalStage(animal)
+
+  if (variant === 'tag') {
+    const hasInactiveStatus = Boolean(animal.status && animal.status !== 'activo')
+    const stateIcon = hasInactiveStatus
+      ? animal_status_icons[animal.status!]
+      : animal_stage_config[stage].icon
+    const stateLabel = hasInactiveStatus
+      ? animal_status_labels[animal.status!]
+      : animal_stage_config[stage].label
+
+    return (
+      <span
+        className="inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700"
+        title={`${animal.animalNumber} · ${animal_gender_config[animal.gender].label} · ${stateLabel}${age ? ` · ${age}` : ''}`}
+      >
+        <span aria-hidden="true">{animal_icon[animal.type]}</span>
+        <span className="max-w-28 truncate font-semibold text-gray-900">
+          #{animal.animalNumber}
+        </span>
+        <span
+          className={animal_gender_config[animal.gender].color}
+          title={animal_gender_config[animal.gender].label}
+        >
+          <Icon icon={animal_gender_config[animal.gender].iconName as IconName} size={3} />
+        </span>
+        <span className="inline-flex items-center gap-1 text-gray-600" title={stateLabel}>
+          <span aria-hidden="true">{stateIcon}</span>
+          <span className="hidden sm:inline">{stateLabel}</span>
+        </span>
+        <span className="shrink-0 tabular-nums text-gray-500">{age ?? '--'}</span>
+      </span>
+    )
+  }
 
   return (
     <span className="inline-flex items-center gap-1.5 text-sm ">
@@ -65,9 +105,7 @@ const AnimalBadges: React.FC<AnimalBadgesProps> = ({ animal, ageFormat = 'full' 
       {animal.status && animal.status !== 'activo' ? (
         <span title={animal.status}>{animal_status_icons[animal.status]}</span>
       ) : (
-        <span title={animal.computedStage ?? computeAnimalStage(animal)}>
-          {animal_stage_config[animal.computedStage ?? computeAnimalStage(animal)].icon}
-        </span>
+        <span title={stage}>{animal_stage_config[stage].icon}</span>
       )}
       <span className="text-xs text-gray-500 w-10 text-left tabular-nums" title="Edad">
         {age ?? '--'}

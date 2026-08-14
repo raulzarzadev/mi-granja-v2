@@ -1,12 +1,21 @@
 'use client'
 
+import {
+  calculateFemaleProductivityRanking,
+  FemaleProductivityResult,
+} from '@mi-granja/shared/lib/female-productivity'
 import React, { useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import {
+  Bar,
   CartesianGrid,
+  Cell,
+  ComposedChart,
   Legend,
   Line,
   LineChart,
+  ReferenceArea,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,8 +23,11 @@ import {
 } from 'recharts'
 import { RootState } from '@/features/store'
 import { isAvailableToSale } from '@/lib/animal-utils'
+import { toDate } from '@/lib/dates'
 import { isDateInMonthBuckets } from '@/lib/statistics-period'
 import { Animal, AnimalType, animal_icon, animals_types_labels } from '@/types/animals'
+import DataTable, { type ColumnDef } from './DataTable'
+import ModalAnimalDetails from './ModalAnimalDetails'
 import { getTotalAmount, getTotalWeight } from './SaleCard'
 
 const formatPrice = (centavos: number) =>
@@ -52,6 +64,481 @@ type MonthlyActivityPoint = MonthBucket & {
 }
 
 type StatisticsPeriod = 6 | 12 | 24
+
+const toLogChartScale = (value: number) => (value > 0 ? Math.log10(value) + 1 : 0)
+const getAnimalAgeInMonths = (animal?: Animal) => {
+  if (!animal?.birthDate) return null
+  const birthDate = toDate(animal.birthDate)
+  const today = new Date()
+  let months =
+    (today.getFullYear() - birthDate.getFullYear()) * 12 + today.getMonth() - birthDate.getMonth()
+  if (today.getDate() < birthDate.getDate()) months -= 1
+  return Math.max(0, months)
+}
+const formatAnimalAgeInMonths = (months: number | null) => {
+  if (months === null) return '—'
+  const years = Math.floor(months / 12)
+  const remainingMonths = months % 12
+  if (years === 0) return `${remainingMonths}m`
+  return remainingMonths === 0 ? `${years}a` : `${years}a ${remainingMonths}m`
+}
+const normalizeProductivitySearch = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/^#/, '')
+    .toLocaleLowerCase('es-MX')
+const productivityItemMatches = (
+  item: FemaleProductivityResult,
+  query: string,
+  animalById: Map<string, Animal>,
+) => {
+  if (!query) return true
+  const animal = animalById.get(item.femaleId)
+  return [item.animalNumber, animal?.name, animal?.breed].some((value) =>
+    value ? normalizeProductivitySearch(String(value)).includes(query) : false,
+  )
+}
+
+const FemaleProductivitySection: React.FC<{
+  ranking: FemaleProductivityResult[]
+  animals: Animal[]
+}> = ({ ranking, animals }) => {
+  const species = useMemo(() => [...new Set(ranking.map((item) => item.species))].sort(), [ranking])
+  const [selectedSpecies, setSelectedSpecies] = useState<AnimalType | 'all'>('all')
+  const [selectedBin, setSelectedBin] = useState<number | null>(null)
+  const [tableSearch, setTableSearch] = useState('')
+  const animalById = useMemo(() => new Map(animals.map((animal) => [animal.id, animal])), [animals])
+  const speciesFiltered = useMemo(
+    () =>
+      selectedSpecies === 'all'
+        ? ranking
+        : ranking.filter((item) => item.species === selectedSpecies),
+    [ranking, selectedSpecies],
+  )
+  const distribution = useMemo(() => {
+    const binWidth = 0.1
+    const binCount = 20
+    const bins = Array.from({ length: binCount }, (_, index) => ({
+      index,
+      score: Number(((index + 0.5) * binWidth).toFixed(2)),
+      label:
+        index === 0
+          ? '0–0.09'
+          : `${(index * binWidth).toFixed(1)}–${((index + 1) * binWidth - 0.01).toFixed(2)}`,
+      items: [] as FemaleProductivityResult[],
+    }))
+    for (const item of speciesFiltered) {
+      bins[Math.min(binCount - 1, Math.floor(item.score / binWidth))].items.push(item)
+    }
+
+    return bins.map((bin, index) => {
+      const smooth = bins.reduce((total, neighbor, neighborIndex) => {
+        const distance = (index - neighborIndex) / 1.15
+        return total + neighbor.items.length * Math.exp(-0.5 * distance ** 2)
+      }, 0)
+      const count = bin.items.length
+      return {
+        ...bin,
+        count,
+        countScale: toLogChartScale(count),
+        smooth,
+        smoothScale: toLogChartScale(smooth),
+      }
+    })
+  }, [speciesFiltered])
+  const selectedTarget =
+    selectedSpecies === 'all'
+      ? null
+      : speciesFiltered[0]?.targetPerYear ||
+        ranking.find((item) => item.species === selectedSpecies)?.targetPerYear
+  const selectedGroup = selectedBin === null ? null : distribution[selectedBin]
+  const normalizedSearch = normalizeProductivitySearch(tableSearch)
+  const searchResultCount = useMemo(
+    () =>
+      normalizedSearch
+        ? speciesFiltered.filter((item) =>
+            productivityItemMatches(item, normalizedSearch, animalById),
+          ).length
+        : null,
+    [speciesFiltered, normalizedSearch, animalById],
+  )
+  const groupedAnimals = useMemo(
+    () =>
+      [...(selectedGroup?.items || [])].filter((item) =>
+        productivityItemMatches(item, normalizedSearch, animalById),
+      ),
+    [selectedGroup, normalizedSearch, animalById],
+  )
+  const productivityColumns = useMemo<ColumnDef<FemaleProductivityResult>[]>(
+    () => [
+      {
+        key: 'animalNumber',
+        label: 'Hembra',
+        sortable: true,
+        sortFn: (a, b) => a.animalNumber.localeCompare(b.animalNumber, 'es-MX', { numeric: true }),
+        render: (item) => {
+          const animal = animalById.get(item.femaleId)
+          return (
+            <span className="font-semibold text-gray-800">
+              #{item.animalNumber}
+              {animal?.name ? ` · ${animal.name}` : ''}
+            </span>
+          )
+        },
+      },
+      {
+        key: 'age',
+        label: 'Edad',
+        sortable: true,
+        sortFn: (a, b) => {
+          const ageA = getAnimalAgeInMonths(animalById.get(a.femaleId))
+          const ageB = getAnimalAgeInMonths(animalById.get(b.femaleId))
+          if (ageA === null) return ageB === null ? 0 : 1
+          if (ageB === null) return -1
+          return ageA - ageB
+        },
+        render: (item) => (
+          <span className="tabular-nums text-gray-600">
+            {formatAnimalAgeInMonths(getAnimalAgeInMonths(animalById.get(item.femaleId)))}
+          </span>
+        ),
+      },
+      {
+        key: 'recordedBirths',
+        label: 'Partos',
+        sortable: true,
+        sortFn: (a, b) => a.recordedBirths - b.recordedBirths,
+        headerClassName: 'text-right',
+        className: 'text-right tabular-nums',
+        render: (item) => item.recordedBirths,
+      },
+      {
+        key: 'achievedOffspring',
+        label: 'Destetadas',
+        sortable: true,
+        sortFn: (a, b) => a.achievedOffspring - b.achievedOffspring,
+        headerClassName: 'text-right min-w-28',
+        className: 'text-right tabular-nums',
+        render: (item) => item.achievedOffspring,
+      },
+      {
+        key: 'annualizedOffspring',
+        label: 'Por año',
+        sortable: true,
+        sortFn: (a, b) => a.annualizedOffspring - b.annualizedOffspring,
+        headerClassName: 'text-right',
+        className: 'text-right tabular-nums',
+        render: (item) => item.annualizedOffspring.toFixed(2),
+      },
+      {
+        key: 'score',
+        label: 'Índice',
+        sortable: true,
+        sortFn: (a, b) => a.score - b.score,
+        headerClassName: 'text-right',
+        className: 'text-right',
+        render: (item) => (
+          <span className="inline-flex min-w-12 justify-center rounded-full bg-green-100 px-2 py-0.5 font-bold tabular-nums text-green-800">
+            {item.score.toFixed(2)}
+          </span>
+        ),
+      },
+    ],
+    [animalById],
+  )
+  const handleSearchChange = (value: string) => {
+    setTableSearch(value)
+
+    const query = normalizeProductivitySearch(value)
+    if (!query) return
+
+    const matchingAnimals = speciesFiltered.filter((item) =>
+      productivityItemMatches(item, query, animalById),
+    )
+    const exactMatch = matchingAnimals.find((item) => {
+      const animal = animalById.get(item.femaleId)
+      return [item.animalNumber, animal?.name].some(
+        (searchableValue) =>
+          searchableValue && normalizeProductivitySearch(String(searchableValue)) === query,
+      )
+    })
+    const match = exactMatch || matchingAnimals[0]
+    if (match) setSelectedBin(Math.min(19, Math.floor(match.score / 0.1)))
+  }
+
+  if (ranking.length === 0) return null
+
+  return (
+    <section
+      className="min-w-0 rounded-lg bg-white p-4 shadow"
+      aria-labelledby="female-productivity-title"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h3 id="female-productivity-title" className="text-sm font-semibold text-gray-800">
+            Índice de productividad de hembras
+          </h3>
+          <p className="mt-1 max-w-3xl text-xs leading-5 text-gray-500">
+            Compara crías destetadas por año productivo. 1 cumple la meta de su especie; 0 indica
+            que aún no hay crías logradas y 2 es un límite extraordinario que nunca se alcanza.
+          </p>
+        </div>
+        <label className="flex min-w-0 items-center gap-2 text-xs font-medium text-gray-600 sm:shrink-0">
+          Especie
+          <select
+            value={selectedSpecies}
+            onChange={(event) => {
+              setSelectedSpecies(event.target.value as AnimalType | 'all')
+              setSelectedBin(null)
+              setTableSearch('')
+            }}
+            className="min-h-11 min-w-0 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800"
+          >
+            <option value="all">Todas</option>
+            {species.map((type) => (
+              <option key={type} value={type}>
+                {animals_types_labels[type]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {selectedTarget && (
+        <p className="mt-3 rounded-lg bg-green-50 px-3 py-2 text-xs text-green-800">
+          Meta para {animals_types_labels[selectedSpecies as AnimalType].toLowerCase()}:{' '}
+          {selectedTarget.toLocaleString('es-MX')} crías destetadas por hembra al año.
+        </p>
+      )}
+
+      <div className="mt-4 min-w-0 border-y border-gray-200 py-4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h4 className="text-sm font-semibold text-gray-800">Distribución del índice</h4>
+            <p className="mt-0.5 text-xs text-gray-500">
+              Selecciona una barra para ver las hembras que pertenecen a ese intervalo. El eje
+              vertical usa escala logarítmica para que los grupos pequeños sigan visibles.
+            </p>
+          </div>
+          <label className="mt-2 flex items-center gap-2 text-xs font-medium text-gray-600 sm:mt-0">
+            Ver grupo
+            <select
+              value={selectedBin ?? ''}
+              onChange={(event) => {
+                setSelectedBin(event.target.value === '' ? null : Number(event.target.value))
+              }}
+              className="min-h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-200"
+            >
+              <option value="">Seleccionar intervalo</option>
+              {distribution
+                .filter((bin) => bin.count > 0)
+                .map((bin) => (
+                  <option key={bin.index} value={bin.index}>
+                    {bin.label} · {bin.count} hembras
+                  </option>
+                ))}
+            </select>
+          </label>
+        </div>
+        <div
+          className="mt-2 h-72 min-w-0"
+          role="group"
+          aria-label="Distribución del índice de productividad. Las barras se pueden seleccionar."
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart
+              data={distribution}
+              margin={{ top: 16, right: 12, left: -12, bottom: 2 }}
+            >
+              <CartesianGrid strokeDasharray="4 4" stroke="#e5e7eb" vertical={false} />
+              <ReferenceArea x1={0} x2={1} fill="#f59e0b" fillOpacity={0.07} />
+              <ReferenceArea x1={1} x2={1.6} fill="#16a34a" fillOpacity={0.07} />
+              <ReferenceArea x1={1.6} x2={2} fill="#0d9488" fillOpacity={0.08} />
+              <ReferenceLine
+                x={1}
+                stroke="#15803d"
+                strokeWidth={2}
+                strokeDasharray="5 4"
+                label={{
+                  value: 'Meta 1.0',
+                  position: 'insideTopRight',
+                  fill: '#166534',
+                  fontSize: 11,
+                }}
+              />
+              <XAxis
+                type="number"
+                dataKey="score"
+                domain={[0, 2]}
+                ticks={[0, 0.5, 1, 1.5, 2]}
+                tick={{ fontSize: 11 }}
+                tickFormatter={(value) => Number(value).toFixed(1)}
+              />
+              <YAxis
+                domain={[0, 'dataMax']}
+                ticks={[0, 1, 2, 3]}
+                tick={{ fontSize: 11 }}
+                width={40}
+                tickFormatter={(value) =>
+                  Number(value) === 0 ? '0' : Math.round(10 ** (Number(value) - 1)).toString()
+                }
+              />
+              <Tooltip
+                labelFormatter={(_, payload) => payload?.[0]?.payload?.label || ''}
+                formatter={(_, name, item) => {
+                  const values = item.payload as { count: number; smooth: number }
+                  return name === 'Distribución suavizada'
+                    ? [values.smooth.toFixed(1), 'Concentración estimada']
+                    : [values.count, 'Hembras']
+                }}
+                contentStyle={chartTooltipStyle}
+              />
+              <Bar
+                dataKey="countScale"
+                name="Hembras"
+                fill="#86efac"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={28}
+              >
+                {distribution.map((bin) => (
+                  <Cell
+                    key={bin.index}
+                    fill={
+                      selectedBin === bin.index ? '#15803d' : bin.count > 0 ? '#86efac' : '#e5e7eb'
+                    }
+                    cursor={bin.count > 0 ? 'pointer' : 'default'}
+                    onClick={() => {
+                      if (bin.count === 0) return
+                      setSelectedBin(bin.index)
+                    }}
+                  />
+                ))}
+              </Bar>
+              <Line
+                type="monotone"
+                dataKey="smoothScale"
+                name="Distribución suavizada"
+                stroke="#15803d"
+                strokeWidth={3}
+                dot={false}
+                activeDot={{ r: 4 }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="mt-1 grid grid-cols-3 text-center text-[11px] font-medium">
+          <span className="text-amber-800">0–0.99 · Debajo</span>
+          <span className="text-green-800">1–1.59 · En meta/alta</span>
+          <span className="text-teal-800">1.6–1.99 · Extraordinaria</span>
+        </div>
+      </div>
+
+      <div className="mt-3">
+        <label htmlFor="female-productivity-search" className="sr-only">
+          Buscar hembra por número, nombre o raza
+        </label>
+        <div className="relative max-w-xl">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-4-4" />
+          </svg>
+          <input
+            id="female-productivity-search"
+            type="search"
+            value={tableSearch}
+            onChange={(event) => handleSearchChange(event.target.value)}
+            placeholder="Buscar por número, nombre o raza…"
+            className="min-h-11 w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-base text-gray-800 outline-none placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-200 sm:text-sm"
+          />
+        </div>
+        {normalizedSearch && (
+          <p className="mt-1 text-xs text-gray-500" role="status">
+            {searchResultCount === 0
+              ? 'No se encontraron hembras con esa búsqueda.'
+              : `${searchResultCount} coincidencia${searchResultCount === 1 ? '' : 's'} en la distribución.`}
+          </p>
+        )}
+      </div>
+
+      {selectedGroup ? (
+        <div className="pt-3">
+          <div className="overflow-hidden rounded-lg border border-gray-200">
+            <DataTable
+              data={groupedAnimals}
+              columns={productivityColumns}
+              rowKey={(item) => item.femaleId}
+              selectable={false}
+              defaultSortKey="animalNumber"
+              pageSize={10}
+              emptyMessage="No hay hembras de este intervalo que coincidan con la búsqueda."
+              title={
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-800">
+                    Índice {selectedGroup.label}
+                  </h4>
+                  <p className="mt-0.5 text-xs text-gray-500">
+                    {normalizedSearch
+                      ? `${groupedAnimals.length} de ${selectedGroup.items.length}`
+                      : groupedAnimals.length}{' '}
+                    hembra{groupedAnimals.length === 1 ? '' : 's'} en este grupo.
+                  </p>
+                </div>
+              }
+              toolbar={
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedBin(null)
+                    setTableSearch('')
+                  }}
+                  className="min-h-11 rounded-lg px-3 text-sm font-medium text-gray-600 outline-none hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-green-600 sm:min-h-8"
+                >
+                  Cerrar grupo
+                </button>
+              }
+              onView={(item) => {
+                const animal = animalById.get(item.femaleId)
+                if (!animal) return null
+                return (
+                  <ModalAnimalDetails
+                    animal={animal}
+                    triggerComponent={
+                      <button
+                        type="button"
+                        className="min-h-11 rounded-md px-2 font-semibold text-green-700 outline-none hover:bg-green-100 focus-visible:ring-2 focus-visible:ring-green-600 md:min-h-8"
+                        aria-label={`Abrir ficha de la hembra ${item.animalNumber}`}
+                      >
+                        Ver
+                      </button>
+                    }
+                  />
+                )
+              }}
+            />
+          </div>
+        </div>
+      ) : (
+        <p className="py-5 text-center text-sm text-gray-500">
+          Selecciona una barra para ver las hembras de ese grupo.
+        </p>
+      )}
+
+      <p className="mt-3 text-[11px] leading-4 text-gray-400">
+        Índice histórico anualizado desde la edad reproductiva. Las crías cuentan al registrarse su
+        destete; el selector de periodo superior no modifica este indicador.
+      </p>
+    </section>
+  )
+}
 
 const getRecentMonths = (numberOfMonths: number): MonthBucket[] => {
   const result: MonthBucket[] = []
@@ -464,6 +951,11 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
     [months, birthStats.byMonth, deathStats.byMonth, reproductiveStats],
   )
 
+  const femaleProductivityRanking = useMemo(
+    () => calculateFemaleProductivityRanking(animals, breedings),
+    [animals, breedings],
+  )
+
   // ── Producción / Peso ──
   const weightStats = useMemo(() => {
     const active = animals.filter((a) => (a.status ?? 'activo') === 'activo')
@@ -614,6 +1106,8 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
         </p>
         <ActivityLineChart data={monthlyActivityData} />
       </div>
+
+      <FemaleProductivitySection ranking={femaleProductivityRanking} animals={animals} />
 
       {/* Ventas por especie */}
       {salesStats.bySpecies.size > 0 && (

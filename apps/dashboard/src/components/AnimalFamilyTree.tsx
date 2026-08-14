@@ -45,27 +45,6 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
       }
     }
 
-    // Nietos por hijo
-    const grandchildrenByChild = new Map<string, Animal[]>()
-    if (children.length > 0) {
-      for (const a of allAnimals) {
-        if (children.some((c) => c.id === a.id)) continue
-        for (const child of children) {
-          if (
-            a.motherId === child.id ||
-            a.fatherId === child.id ||
-            a.motherId === child.animalNumber ||
-            a.fatherId === child.animalNumber
-          ) {
-            const list = grandchildrenByChild.get(child.id) || []
-            list.push(a)
-            grandchildrenByChild.set(child.id, list)
-            break
-          }
-        }
-      }
-    }
-
     // Hermanos
     const motherId = animal.motherId
     const fatherId = animal.fatherId
@@ -102,7 +81,6 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
       paternalGM,
       paternalGF,
       children,
-      grandchildrenByChild,
       fullCount,
       maternalCount,
       paternalCount,
@@ -327,24 +305,10 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
           </div>
 
           {/* Lista de hijos */}
-          <div className="space-y-1">
-            {tree.children.slice(0, 20).map((child) => {
-              const gc = tree.grandchildrenByChild.get(child.id)
-              const gcCount = gc?.length || 0
-              return (
-                <div
-                  key={child.id}
-                  className="flex items-center gap-2 px-1 py-0.5 rounded hover:bg-gray-50"
-                >
-                  <AnimalBadges animal={child} />
-                  {gcCount > 0 && (
-                    <span className="text-[10px] text-gray-400 ml-auto shrink-0">
-                      {gcCount} {gcCount === 1 ? 'nieto' : 'nietos'}
-                    </span>
-                  )}
-                </div>
-              )
-            })}
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {tree.children.slice(0, 20).map((child) => (
+              <AnimalBadges key={child.id} animal={child} ageFormat="rounded" variant="tag" />
+            ))}
           </div>
           {tree.children.length > 20 && (
             <p className="text-[10px] text-gray-400 text-center mt-1">

@@ -8,6 +8,7 @@ export * from './lib/constants'
 export * from './lib/dates'
 // Lib
 export * from './lib/dateUtils'
+export * from './lib/female-productivity'
 export * from './lib/genetics'
 export * from './lib/records'
 export * from './lib/serializeObj'

@@ -8,6 +8,8 @@ export interface AnimalBreedingConfig {
   breedingSeasonStart?: number // Mes del año (1-12)
   breedingSeasonEnd?: number
   averageLitterSize: number
+  /** Meta anual de crías destetadas por hembra para un índice reproductivo de 1. */
+  expectedWeanedOffspringPerYear: number
   minBreedingAge: number // En meses
   maxBreedingAge?: number // En meses
   breedingCycleDays: number // Ciclo estral
@@ -25,6 +27,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     breedingSeasonStart: 4, // Abril
     breedingSeasonEnd: 7, // Julio
     averageLitterSize: 1.5,
+    expectedWeanedOffspringPerYear: 1.5,
     minBreedingAge: 8, // 8 meses
     maxBreedingAge: 96, // 8 años
     breedingCycleDays: 17,
@@ -38,6 +41,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     breedingSeasonStart: 8, // Agosto
     breedingSeasonEnd: 1, // Enero (siguiente año)
     averageLitterSize: 2,
+    expectedWeanedOffspringPerYear: 1.8,
     minBreedingAge: 7,
     maxBreedingAge: 84, // 7 años
     breedingCycleDays: 21,
@@ -51,6 +55,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     breedingSeasonStart: 1, // Todo el año
     breedingSeasonEnd: 12,
     averageLitterSize: 1,
+    expectedWeanedOffspringPerYear: 0.9,
     minBreedingAge: 15, // 15 meses
     maxBreedingAge: 180, // 15 años
     breedingCycleDays: 21,
@@ -75,6 +80,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     breedingSeasonStart: 1,
     breedingSeasonEnd: 12,
     averageLitterSize: 8,
+    expectedWeanedOffspringPerYear: 16,
     minBreedingAge: 6,
     maxBreedingAge: 60, // 5 años
     breedingCycleDays: 21,
@@ -88,6 +94,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     breedingSeasonStart: 1, // Todo el año
     breedingSeasonEnd: 12,
     averageLitterSize: 8, // promedio de huevos por ciclo
+    expectedWeanedOffspringPerYear: 120,
     minBreedingAge: 5, // 5 meses
     maxBreedingAge: 36, // 3 años de producción óptima
     breedingCycleDays: 1, // postura casi diaria
@@ -101,6 +108,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     breedingSeasonStart: 1, // Todo el año
     breedingSeasonEnd: 12,
     averageLitterSize: 5.5,
+    expectedWeanedOffspringPerYear: 5,
     minBreedingAge: 12, // 12 meses
     maxBreedingAge: 84, // 7 años
     breedingCycleDays: 180, // ~6 meses entre ciclos
@@ -113,6 +121,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     breedingSeasonStart: 2, // Febrero
     breedingSeasonEnd: 9, // Septiembre
     averageLitterSize: 4,
+    expectedWeanedOffspringPerYear: 6,
     minBreedingAge: 6, // 6 meses
     maxBreedingAge: 84, // 7 años
     breedingCycleDays: 14, // ~2 semanas durante temporada
@@ -126,6 +135,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     breedingSeasonStart: 3, // Marzo
     breedingSeasonEnd: 8, // Agosto
     averageLitterSize: 1,
+    expectedWeanedOffspringPerYear: 0.8,
     minBreedingAge: 36, // 3 años
     maxBreedingAge: 180, // 15 años
     breedingCycleDays: 21,
@@ -138,6 +148,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     breedingSeasonStart: 1,
     breedingSeasonEnd: 12,
     averageLitterSize: 2,
+    expectedWeanedOffspringPerYear: 1,
     minBreedingAge: 12,
     maxBreedingAge: 96,
     breedingCycleDays: 21,
