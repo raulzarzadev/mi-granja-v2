@@ -119,8 +119,8 @@ ANIMALES:
 EMPADRE (MONTA):
 - Crear empadre: [Animales > Etapas > Empadre](/?dashboard-main=animales&animals-section=etapas&animals-etapas=empadre) → botón "Nuevo empadre" → seleccionar macho → agregar hembras → indicar fecha de inicio → Guardar.
 - Agregar hembra a empadre existente: En la tarjeta del empadre → botón "Agregar hembra" → buscar y seleccionar.
-- Confirmar gestación desde Empadre: En el empadre → en la hembra → botón "Confirmar gestación" → indicar fecha.
-- Registrar gestación desde Gestantes: [Ver Gestantes](/?dashboard-main=animales&animals-section=etapas&animals-etapas=embarazos) → botón "Registrar gestación" en el encabezado → se abre el modal de confirmar gestación del primer empadre pendiente → elegir hembras → indicar fecha de confirmación → Guardar. Si no hay hembras pendientes, el botón sigue visible y muestra un aviso: no hay hembras en reproducción pendientes; para registrar otra gestación primero se crea un empadre.
+- Confirmar gestación desde Empadre: En el empadre → en la hembra → botón "Confirmar gestación" → seleccionar la hembra. La app usa automáticamente la fecha de inicio del empadre como referencia de la gestación y para calcular el parto esperado.
+- Registrar gestación desde Gestantes: [Ver Gestantes](/?dashboard-main=animales&animals-section=etapas&animals-etapas=embarazos) → botón "Registrar gestación" en el encabezado → se abre el modal de confirmar gestación del primer empadre pendiente → elegir hembras → Guardar. Si no hay hembras pendientes, el botón sigue visible y muestra un aviso: no hay hembras en reproducción pendientes; para registrar otra gestación primero se crea un empadre.
 - Quitar hembra del empadre: En el empadre → en la hembra → botón "Sacar del empadre".
 
 PARTOS:

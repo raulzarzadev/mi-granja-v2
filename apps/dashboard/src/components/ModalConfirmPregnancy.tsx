@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
+import { formatDate, toLocalDateStart } from '@/lib/dates'
 import { type Animal, animals_types_labels } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
-import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Modal } from './Modal'
 
 interface ModalConfirmPregnancyProps {
@@ -53,8 +53,10 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
       .filter(Boolean) || []
 
   const [selectedFemales, setSelectedFemales] = useState<string[]>([])
-  const [confirmationDate, setConfirmationDate] = useState(new Date().toISOString().split('T')[0])
   const [submitting, setSubmitting] = useState(false)
+  const confirmationDate = breedingRecord?.breedingDate
+    ? toLocalDateStart(breedingRecord.breedingDate)
+    : toLocalDateStart(new Date())
 
   const handleFemaleToggle = (animalNumber: string) => {
     setSelectedFemales((prev) =>
@@ -72,19 +74,17 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
       return
     }
 
-    const confirmDate = new Date(confirmationDate)
-
     // Actualizar femaleBreedingInfo con las confirmaciones
     const updatedFemaleBreedingInfo = breedingRecord.femaleBreedingInfo.map((info) => {
       if (selectedFemales.includes(info.femaleId)) {
         const animal = animals.find((a) => a.id === info.femaleId)
         const expectedBirthDate = animal
-          ? calculateExpectedBirthDate(confirmDate, animal.type)
+          ? calculateExpectedBirthDate(confirmationDate, animal.type)
           : undefined
 
         return {
           ...info,
-          pregnancyConfirmedDate: confirmDate,
+          pregnancyConfirmedDate: confirmationDate,
           expectedBirthDate,
         }
       }
@@ -163,13 +163,16 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
           </div>
         ) : (
           <>
-            <DatePickerButtons
-              value={confirmationDate}
-              onChange={setConfirmationDate}
-              label="Fecha de confirmación"
-              helperText="Esta fecha se usará para calcular el parto esperado"
-              showToday
-            />
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+              <p className="text-sm font-medium text-gray-800">Fecha de inicio del empadre</p>
+              <time className="mt-1 block text-base font-semibold text-gray-900">
+                {formatDate(confirmationDate)}
+              </time>
+              <p className="mt-1 text-xs text-gray-600">
+                Se guardará como fecha de referencia de la gestación y se usará para calcular el
+                parto esperado.
+              </p>
+            </div>
 
             {/* Lista de hembras para confirmar */}
             <div>
@@ -180,7 +183,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
                 {unconfirmedFemales.map((animal) => {
                   const isSelected = selectedFemales.includes(animal?.id || '')
                   const expectedBirth = animal
-                    ? calculateExpectedBirthDate(new Date(confirmationDate), animal.type)
+                    ? calculateExpectedBirthDate(confirmationDate, animal.type)
                     : null
 
                   return (
