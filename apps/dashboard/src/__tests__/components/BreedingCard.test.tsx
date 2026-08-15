@@ -6,6 +6,7 @@
  */
 
 import '@testing-library/jest-dom'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import BreedingCard from '@/components/BreedingCard'
 import { Animal } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
@@ -76,5 +77,33 @@ describe('BreedingCard', () => {
       />,
     )
     expect(container).toBeTruthy()
+  })
+
+  it('allows finishing an active breeding from the action menu', async () => {
+    const onFinish = jest.fn()
+    renderWithProviders(
+      <BreedingCard record={mockRecord} animals={mockAnimals} onFinish={onFinish} />,
+    )
+
+    fireEvent.click(screen.getByText('Abrir acciones'))
+    fireEvent.click(screen.getByRole('button', { name: 'Terminar empadre' }))
+
+    const dialog = screen.getByRole('alertdialog')
+    expect(dialog).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Terminar empadre' }))
+
+    await waitFor(() => expect(onFinish).toHaveBeenCalledWith(mockRecord))
+  })
+
+  it('does not offer finishing an already finished breeding', () => {
+    renderWithProviders(
+      <BreedingCard
+        record={{ ...mockRecord, status: 'finished' }}
+        animals={mockAnimals}
+        onFinish={jest.fn()}
+      />,
+    )
+
+    expect(screen.queryByText('Abrir acciones')).not.toBeInTheDocument()
   })
 })

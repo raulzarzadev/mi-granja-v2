@@ -216,7 +216,7 @@ const FemaleProductivitySection: React.FC<{
       },
       {
         key: 'achievedOffspring',
-        label: 'Destetadas',
+        label: 'Logradas',
         sortable: true,
         sortFn: (a, b) => a.achievedOffspring - b.achievedOffspring,
         headerClassName: 'text-right min-w-28',
@@ -281,8 +281,9 @@ const FemaleProductivitySection: React.FC<{
             Índice de productividad de hembras
           </h3>
           <p className="mt-1 max-w-3xl text-xs leading-5 text-gray-500">
-            Compara crías destetadas por año productivo. 1 cumple la meta de su especie; 0 indica
-            que aún no hay crías logradas y 2 es un límite extraordinario que nunca se alcanza.
+            Compara crías nacidas vivas por año productivo. Cada cría cuenta desde su nacimiento y
+            conserva el mérito aunque después se venda o muera; los nacidos muertos no cuentan. 1
+            cumple la meta de su especie y 2 es un límite extraordinario que nunca se alcanza.
           </p>
         </div>
         <label className="flex min-w-0 items-center gap-2 text-xs font-medium text-gray-600 sm:shrink-0">
@@ -309,7 +310,7 @@ const FemaleProductivitySection: React.FC<{
       {selectedTarget && (
         <p className="mt-3 rounded-lg bg-green-50 px-3 py-2 text-xs text-green-800">
           Meta para {animals_types_labels[selectedSpecies as AnimalType].toLowerCase()}:{' '}
-          {selectedTarget.toLocaleString('es-MX')} crías destetadas por hembra al año.
+          {selectedTarget.toLocaleString('es-MX')} crías nacidas vivas por hembra al año.
         </p>
       )}
 

@@ -4,18 +4,10 @@ import { useState } from 'react'
 import BreedingCard from '@/components/BreedingCard'
 import BreedingTable from '@/components/BreedingTable'
 import Button from '@/components/buttons/Button'
-import { Modal } from '@/components/Modal'
 import ModalOnboarding from '@/components/onboarding/ModalOnboarding'
-import { formatDate } from '@/lib/dates'
 import type { Animal } from '@/types/animals'
-import { animals_types_labels } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
 import type { BreedingActionHandlers } from '@/types/components/breeding'
-import {
-  CHIP_COLORS,
-  groupFemalesByStatus,
-  sortFemalesByAnimalNumber,
-} from '../helpers/breedingViewHelpers'
 
 interface DuplicateEntry {
   id: string
@@ -58,6 +50,9 @@ export default function TabStageEmpadre({
   updateBreedingRecord,
 }: Props) {
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const finishBreeding = async (record: BreedingRecord) => {
+    await updateBreedingRecord(record.id, { status: 'finished' })
+  }
 
   return (
     <div>
@@ -124,6 +119,7 @@ export default function TabStageEmpadre({
             record={row.record}
             animals={animals}
             onEdit={onEditRecord}
+            onFinish={finishBreeding}
             onAddBirth={onAddBirth}
             onConfirmPregnancy={onConfirmPregnancy}
             onUnconfirmPregnancy={onUnconfirmPregnancy}
@@ -132,9 +128,7 @@ export default function TabStageEmpadre({
             onDeleteBirth={onDeleteBirth}
           />
         )}
-        onFinish={async (r) => {
-          await updateBreedingRecord(r.id, { status: 'finished' })
-        }}
+        onFinish={finishBreeding}
       />
       {orderedBreedings.terminated.length > 0 && (
         <details className="mt-6">

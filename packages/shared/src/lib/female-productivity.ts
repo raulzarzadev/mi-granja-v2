@@ -1,6 +1,5 @@
 import { Animal, AnimalType } from '../types/animals'
 import { BreedingRecord, FemaleBreedingInfo } from '../types/breedings'
-import { isAnimalWeaned } from './animal-utils'
 import { ANIMAL_BREEDING_CONFIGS } from './animalBreedingConfig'
 import { toDate } from './dates'
 
@@ -133,6 +132,23 @@ const isDirectOffspringOf = (
   return animalsByReference.get(offspring.motherId)?.id === female.id
 }
 
+/**
+ * Una cría cuenta desde que nace viva y conserva el mérito productivo de la madre
+ * aunque después se venda o muera. Se excluyen los defectos de nacimiento y el
+ * formato actual de nacido muerto (statusAt igual a birthDate).
+ */
+export const isAchievedOffspring = (
+  animal: Pick<Animal, 'status' | 'statusAt' | 'birthDate' | 'deathInfo'>,
+): boolean => {
+  if (animal.status === 'muerto' && animal.deathInfo?.reason === 'birth_defect') return false
+  if (animal.status === 'muerto') {
+    const birthDate = validDate(animal.birthDate)
+    const deathDate = validDate(animal.deathInfo?.date ?? animal.statusAt)
+    if (birthDate && deathDate && birthDate.getTime() === deathDate.getTime()) return false
+  }
+  return true
+}
+
 const calculateFemaleProductivityWithContext = (
   female: Animal,
   context: ProductivityContext,
@@ -167,7 +183,7 @@ const calculateFemaleProductivityWithContext = (
     }
   }
 
-  const achievedOffspring = [...offspring.values()].filter(isAnimalWeaned).length
+  const achievedOffspring = [...offspring.values()].filter(isAchievedOffspring).length
   const orderedBirthDates = [...birthDates.values()].sort((a, b) => a.getTime() - b.getTime())
   const productiveYears = productiveExposureYears(female, orderedBirthDates[0] || null, now)
   const annualizedOffspring = achievedOffspring / productiveYears

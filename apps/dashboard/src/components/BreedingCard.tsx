@@ -19,6 +19,7 @@ interface BreedingCardProps extends BreedingActionHandlers {
   record: BreedingRecord
   animals: Animal[]
   onEdit?: (record: BreedingRecord) => void
+  onFinish?: (record: BreedingRecord) => void | Promise<void>
   onDelete?: (record: BreedingRecord) => void
 }
 
@@ -29,6 +30,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   record,
   animals,
   onEdit,
+  onFinish,
   onAddBirth,
   onDelete,
   onConfirmPregnancy,
@@ -51,6 +53,16 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       danger: true,
     })
     if (confirmed) onDelete?.(record)
+  }
+
+  const handleFinish = async () => {
+    const confirmed = await confirmAction({
+      title: 'Terminar empadre',
+      message:
+        'Las hembras sin gestación confirmada y el macho regresarán al estado de reproducción. Las gestaciones confirmadas se conservarán.',
+      confirmLabel: 'Terminar empadre',
+    })
+    if (confirmed) await onFinish?.(record)
   }
   const [recordComments, setRecordComments] = React.useState(record.comments || [])
 
@@ -200,7 +212,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   }, [femalesBreedingInfo])
 
   const renderActionMenu = () => {
-    if (!onEdit && !onDelete) {
+    const canFinish = Boolean(onFinish && record.status !== 'finished')
+    if (!onEdit && !canFinish && !onDelete) {
       return null
     }
 
@@ -224,6 +237,22 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                 >
                   <Icon icon="edit" className="w-4 h-4 text-gray-500" />
                   Editar
+                </button>
+              </li>
+            ) : null}
+            {canFinish ? (
+              <li>
+                <button
+                  type="button"
+                  aria-label="Terminar empadre"
+                  className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left text-amber-700 hover:bg-amber-50 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-amber-600"
+                  onClick={(event) => {
+                    event.currentTarget.closest('details')?.removeAttribute('open')
+                    void handleFinish()
+                  }}
+                >
+                  <Icon icon="check_circle" className="h-4 w-4" />
+                  Terminar
                 </button>
               </li>
             ) : null}

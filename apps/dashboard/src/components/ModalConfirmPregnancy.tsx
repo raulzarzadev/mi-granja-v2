@@ -54,9 +54,23 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
 
   const [selectedFemales, setSelectedFemales] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
-  const confirmationDate = breedingRecord?.breedingDate
-    ? toLocalDateStart(breedingRecord.breedingDate)
-    : toLocalDateStart(new Date())
+  const [isEditingBreedingDate, setIsEditingBreedingDate] = useState(false)
+  const [confirmationDate, setConfirmationDate] = useState(() =>
+    breedingRecord?.breedingDate
+      ? toLocalDateStart(breedingRecord.breedingDate)
+      : toLocalDateStart(new Date()),
+  )
+
+  const toDateInputValue = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+      date.getDate(),
+    ).padStart(2, '0')}`
+
+  const handleBreedingDateChange = (value: string) => {
+    const [year, month, day] = value.split('-').map(Number)
+    if (!year || !month || !day) return
+    setConfirmationDate(new Date(year, month - 1, day))
+  }
 
   const handleFemaleToggle = (animalNumber: string) => {
     setSelectedFemales((prev) =>
@@ -74,9 +88,18 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
       return
     }
 
-    // Actualizar femaleBreedingInfo con las confirmaciones
+    const originalBreedingDate = breedingRecord.breedingDate
+      ? toLocalDateStart(breedingRecord.breedingDate)
+      : toLocalDateStart(new Date())
+    const hasBreedingDateChanged = originalBreedingDate.getTime() !== confirmationDate.getTime()
+
+    // Actualizar nuevas confirmaciones y mantener consistentes las previas si cambia el empadre.
     const updatedFemaleBreedingInfo = breedingRecord.femaleBreedingInfo.map((info) => {
-      if (selectedFemales.includes(info.femaleId)) {
+      const isNewConfirmation = selectedFemales.includes(info.femaleId)
+      const shouldSyncExistingConfirmation = Boolean(
+        hasBreedingDateChanged && info.pregnancyConfirmedDate && !info.actualBirthDate,
+      )
+      if (isNewConfirmation || shouldSyncExistingConfirmation) {
         const animal = animals.find((a) => a.id === info.femaleId)
         const expectedBirthDate = animal
           ? calculateExpectedBirthDate(confirmationDate, animal.type)
@@ -93,6 +116,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
 
     const updatedRecord: BreedingRecord = {
       ...breedingRecord,
+      breedingDate: confirmationDate,
       femaleBreedingInfo: updatedFemaleBreedingInfo,
     }
 
@@ -120,6 +144,16 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
       setSelectedFemales([])
     }
   }, [selectedAnimal])
+
+  useEffect(() => {
+    if (!isOpen) return
+    setConfirmationDate(
+      breedingRecord?.breedingDate
+        ? toLocalDateStart(breedingRecord.breedingDate)
+        : toLocalDateStart(new Date()),
+    )
+    setIsEditingBreedingDate(false)
+  }, [isOpen, breedingRecord?.id, breedingRecord?.breedingDate])
 
   return (
     <Modal
@@ -164,10 +198,45 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
         ) : (
           <>
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-              <p className="text-sm font-medium text-gray-800">Fecha de inicio del empadre</p>
-              <time className="mt-1 block text-base font-semibold text-gray-900">
-                {formatDate(confirmationDate)}
-              </time>
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-800">Fecha de inicio del empadre</p>
+                  {!isEditingBreedingDate && (
+                    <time className="mt-1 block text-base font-semibold text-gray-900">
+                      {formatDate(confirmationDate)}
+                    </time>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  aria-expanded={isEditingBreedingDate}
+                  onClick={() => setIsEditingBreedingDate((current) => !current)}
+                  className="inline-flex min-h-11 shrink-0 items-center rounded-lg px-3 py-2 text-sm font-semibold text-green-700 hover:bg-green-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
+                >
+                  {isEditingBreedingDate ? 'Listo' : 'Editar fecha'}
+                </button>
+              </div>
+              {isEditingBreedingDate && (
+                <div className="mt-3">
+                  <label
+                    htmlFor={`breeding-date-${breedingRecord.id}`}
+                    className="mb-1.5 block text-sm font-medium text-gray-800"
+                  >
+                    Nueva fecha de inicio del empadre
+                  </label>
+                  <input
+                    id={`breeding-date-${breedingRecord.id}`}
+                    type="date"
+                    value={toDateInputValue(confirmationDate)}
+                    max={toDateInputValue(new Date())}
+                    onChange={(event) => handleBreedingDateChange(event.target.value)}
+                    className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-base text-gray-900 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-200"
+                  />
+                  <p className="mt-1.5 text-xs text-gray-600">
+                    El cambio se guardará al confirmar las gestaciones seleccionadas.
+                  </p>
+                </div>
+              )}
               <p className="mt-1 text-xs text-gray-600">
                 Se guardará como fecha de referencia de la gestación y se usará para calcular el
                 parto esperado.

@@ -47,7 +47,7 @@ describe('female productivity index', () => {
     expect(result.band).toBe('none')
   })
 
-  it('does not count a born but not-yet-weaned offspring as achieved', () => {
+  it('counts a live offspring as achieved from birth even before weaning', () => {
     const female = makeAnimal({ id: 'f-1', animalNumber: '002', birthDate: new Date('2023-05-01') })
     const calf = makeAnimal({
       id: 'c-1',
@@ -66,8 +66,96 @@ describe('female productivity index', () => {
     )
 
     expect(result.recordedBirths).toBe(1)
+    expect(result.achievedOffspring).toBe(1)
+    expect(result.score).toBeGreaterThan(0)
+  })
+
+  it('keeps a sold offspring as achieved even when legacy data lacks the weaning flag', () => {
+    const female = makeAnimal({
+      id: 'f-sold',
+      animalNumber: '02-H',
+      birthDate: new Date('2023-02-07'),
+    })
+    const soldOffspring = makeAnimal({
+      id: 'sold-offspring',
+      animalNumber: '367-V',
+      gender: 'macho',
+      stage: 'cria',
+      status: 'vendido',
+      motherId: female.id,
+      birthDate: new Date('2024-06-06'),
+      isWeaned: false,
+    })
+    const result = calculateFemaleProductivity(
+      female,
+      [female, soldOffspring],
+      [makeBreeding(female.id, [soldOffspring.id])],
+      now,
+    )
+
+    expect(result.achievedOffspring).toBe(1)
+    expect(result.score).toBeGreaterThan(0)
+  })
+
+  it('counts an offspring that later died from a non-birth cause as achieved', () => {
+    const female = makeAnimal({ id: 'f-dead', animalNumber: '004' })
+    const deadOffspring = makeAnimal({
+      id: 'dead-offspring',
+      animalNumber: '004-A',
+      stage: 'cria',
+      status: 'muerto',
+      motherId: female.id,
+      isWeaned: false,
+      deathInfo: {
+        reason: 'disease',
+        date: new Date('2025-08-01'),
+        description: 'Enfermedad posterior al nacimiento',
+      },
+    })
+
+    const result = calculateFemaleProductivity(female, [female, deadOffspring], [], now)
+
+    expect(result.achievedOffspring).toBe(1)
+  })
+
+  it('does not count a stillborn or birth-defect death as achieved', () => {
+    const female = makeAnimal({ id: 'f-stillbirth', animalNumber: '005' })
+    const stillborn = makeAnimal({
+      id: 'stillborn',
+      animalNumber: '005-A',
+      stage: 'cria',
+      status: 'muerto',
+      motherId: female.id,
+      isWeaned: false,
+      deathInfo: {
+        reason: 'birth_defect',
+        date: new Date('2025-06-01'),
+        description: 'Nació muerto',
+      },
+    })
+
+    const result = calculateFemaleProductivity(female, [female, stillborn], [], now)
+
     expect(result.achievedOffspring).toBe(0)
-    expect(result.score).toBe(0)
+  })
+
+  it('recognizes the current stillborn format when death and birth timestamps match', () => {
+    const birthDate = new Date('2025-06-01T10:30:00')
+    const female = makeAnimal({ id: 'f-current-stillbirth', animalNumber: '006' })
+    const stillborn = makeAnimal({
+      id: 'current-stillborn',
+      animalNumber: '006-A',
+      stage: 'cria',
+      status: 'muerto',
+      motherId: female.id,
+      birthDate,
+      statusAt: birthDate,
+      isWeaned: false,
+    })
+
+    const result = calculateFemaleProductivity(female, [female, stillborn], [], now)
+
+    expect(result.achievedOffspring).toBe(0)
   })
 
   it('counts only direct offspring and never grandchildren', () => {
@@ -101,7 +189,7 @@ describe('female productivity index', () => {
     expect(result.achievedOffspring).toBe(1)
   })
 
-  it('scores about 1 when a sheep meets 1.5 weaned offspring per productive year', () => {
+  it('scores about 1 when a sheep reaches 1.5 live-born offspring per productive year', () => {
     const female = makeAnimal({ id: 'f-2', animalNumber: '003', birthDate: new Date('2023-05-01') })
     const offspring = ['a', 'b', 'c'].map((suffix) =>
       makeAnimal({

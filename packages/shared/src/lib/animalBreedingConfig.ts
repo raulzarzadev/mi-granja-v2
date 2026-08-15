@@ -8,7 +8,7 @@ export interface AnimalBreedingConfig {
   breedingSeasonStart?: number // Mes del año (1-12)
   breedingSeasonEnd?: number
   averageLitterSize: number
-  /** Meta anual de crías destetadas por hembra para un índice reproductivo de 1. */
+  /** Meta anual de crías nacidas vivas para un índice reproductivo de 1. */
   expectedWeanedOffspringPerYear: number
   minBreedingAge: number // En meses
   maxBreedingAge?: number // En meses
