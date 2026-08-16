@@ -4,6 +4,7 @@ import { AuthenticatedUser, isAuthError, verifyBillingAuth } from '@/lib/billing
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { DEFAULT_PERMISSIONS } from '@/types/collaborators'
 import { FarmPermission } from '@/types/farm'
+import type { AiProvider } from './model-config'
 import { AiUsageResult } from './types'
 
 const DAILY_LIMIT = 3
@@ -38,6 +39,7 @@ function usageNumber(usage: unknown, keys: string[]): number {
 export async function consumeDailyAiUse(
   userId: string,
   providerUsage?: unknown,
+  providerMetadata?: { provider: AiProvider; model: string },
 ): Promise<AiUsageResult> {
   const firestore = getAdminFirestore()
   const key = `${userId}_${dateKey()}`
@@ -60,6 +62,18 @@ export async function consumeDailyAiUse(
         count: next,
         ...(tokens > 0 ? { totalTokens: FieldValue.increment(tokens) } : {}),
         ...(cost > 0 ? { totalCost: FieldValue.increment(cost) } : {}),
+        ...(providerMetadata
+          ? {
+              providerCounts: {
+                [providerMetadata.provider]: FieldValue.increment(1),
+              },
+              modelCounts: {
+                [`${providerMetadata.provider}:${providerMetadata.model}`]: FieldValue.increment(1),
+              },
+              lastProvider: providerMetadata.provider,
+              lastModel: providerMetadata.model,
+            }
+          : {}),
         updatedAt: Timestamp.now(),
       },
       { merge: true },

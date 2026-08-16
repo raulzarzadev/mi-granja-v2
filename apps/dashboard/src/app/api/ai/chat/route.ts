@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { buildAiContext } from '@/lib/ai/actions'
-import { callOpenRouter } from '@/lib/ai/openrouter'
+import { callAiProvider } from '@/lib/ai/openrouter'
 import {
   consumeDailyAiUse,
   forbidden,
@@ -55,9 +55,12 @@ export async function POST(request: NextRequest) {
       reminders: hasPermission(access.permissions, 'reminders', 'read'),
       breeding: hasPermission(access.permissions, 'breeding', 'read'),
     })
-    const ai = await callOpenRouter({ message, farmName: access.farmName, context, history })
+    const ai = await callAiProvider({ message, farmName: access.farmName, context, history })
 
-    const usage = await consumeDailyAiUse(auth.uid, ai.usage)
+    const usage = await consumeDailyAiUse(auth.uid, ai.usage, {
+      provider: ai.provider,
+      model: ai.model,
+    })
     if (usage.allowed === false) {
       return NextResponse.json(
         { error: 'Ya usaste tus 3 consultas de IA hoy', usage },

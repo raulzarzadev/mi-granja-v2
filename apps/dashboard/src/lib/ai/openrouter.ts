@@ -1,5 +1,6 @@
 import { getAdminFirestore } from '@/lib/firebase-admin'
-import { getAiModelConfig } from './model-config'
+import { type AiProvider, getAiModelConfig, getEnabledProviderOrder } from './model-config'
+import { resolveAiApiKey } from './provider-credentials'
 import { AiModelResponse, aiModelResponseSchema } from './types'
 
 const responseSchema = {
@@ -39,36 +40,47 @@ FLUJOS NUEVOS:
 - Registrar parto crea las crías y abre una nueva lactancia de la madre. Cada gestación solo muestra las crías de ese parto; partos anteriores permanecen únicamente en el historial.
 `
 
-export async function callOpenRouter({
+const PROVIDER_ENDPOINTS: Record<AiProvider, string> = {
+  openai: 'https://api.openai.com/v1/chat/completions',
+  kimi: 'https://api.moonshot.ai/v1/chat/completions',
+  openrouter: 'https://openrouter.ai/api/v1/chat/completions',
+}
+
+async function callProviderOnce({
+  provider,
+  apiKey,
+  model,
   message,
   farmName,
   context,
   history = [],
 }: {
+  provider: AiProvider
+  apiKey: string
+  model: string
   message: string
   farmName: string
   context: unknown
   history?: { role: 'user' | 'assistant'; text: string }[]
-}): Promise<{ parsed: AiModelResponse; model: string; usage?: unknown }> {
-  const apiKey = process.env.OPENROUTER_API_KEY
-  if (!apiKey) throw new Error('Falta OPENROUTER_API_KEY')
-
-  const { model } = await getAiModelConfig(getAdminFirestore())
+}): Promise<{ parsed: AiModelResponse; model: string; provider: AiProvider; usage?: unknown }> {
   let res: Response
   try {
-    res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    res = await fetch(PROVIDER_ENDPOINTS[provider], {
       method: 'POST',
       signal: AbortSignal.timeout(35_000),
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://dashboard.migranja.app',
-        'X-Title': 'Mi Granja',
+        ...(provider === 'openrouter'
+          ? {
+              'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://dashboard.migranja.app',
+              'X-Title': 'Mi Granja',
+            }
+          : {}),
       },
       body: JSON.stringify({
         model,
-        temperature: 0.1,
-        max_tokens: 1200,
+        max_completion_tokens: 1200,
         response_format: {
           type: 'json_schema',
           json_schema: {
@@ -157,13 +169,22 @@ ${CURRENT_DOMAIN_RULES}`,
       }),
     })
   } catch (error) {
-    console.error('OpenRouter network error:', error instanceof Error ? error.name : 'unknown')
+    console.error(
+      'AI provider network error:',
+      provider,
+      error instanceof Error ? error.name : 'unknown',
+    )
     throw new Error('No pude comunicarme con el asistente. Revisa tu conexión e intenta de nuevo.')
   }
 
   if (!res.ok) {
     const providerError = await res.json().catch(() => null)
-    console.error('OpenRouter response error:', res.status, providerError?.error?.code || '')
+    console.error(
+      'AI provider response error:',
+      provider,
+      res.status,
+      providerError?.error?.code || '',
+    )
     if (res.status === 402) {
       throw new Error('El asistente no tiene crédito disponible. Contacta al administrador.')
     }
@@ -180,7 +201,7 @@ ${CURRENT_DOMAIN_RULES}`,
 
   const data = await res.json()
   const content = data.choices?.[0]?.message?.content
-  if (!content) throw new Error('OpenRouter no devolvió contenido')
+  if (!content) throw new Error(`${provider} no devolvió contenido`)
 
   let raw: unknown
   try {
@@ -191,5 +212,49 @@ ${CURRENT_DOMAIN_RULES}`,
     )
   }
 
-  return { parsed: aiModelResponseSchema.parse(raw), model, usage: data.usage }
+  return { parsed: aiModelResponseSchema.parse(raw), model, provider, usage: data.usage }
+}
+
+export async function callAiProvider({
+  message,
+  farmName,
+  context,
+  history = [],
+}: {
+  message: string
+  farmName: string
+  context: unknown
+  history?: { role: 'user' | 'assistant'; text: string }[]
+}): Promise<{ parsed: AiModelResponse; model: string; provider: AiProvider; usage?: unknown }> {
+  const firestore = getAdminFirestore()
+  const config = await getAiModelConfig(firestore)
+  const attempts: string[] = []
+
+  for (const provider of getEnabledProviderOrder(config)) {
+    const apiKey = await resolveAiApiKey(firestore, provider)
+    if (!apiKey) {
+      attempts.push(`${provider}: sin API key`)
+      continue
+    }
+    try {
+      return await callProviderOnce({
+        provider,
+        apiKey,
+        model: config.providers[provider].model,
+        message,
+        farmName,
+        context,
+        history,
+      })
+    } catch (error) {
+      attempts.push(`${provider}: ${error instanceof Error ? error.message : 'error desconocido'}`)
+    }
+  }
+
+  console.error('Todos los proveedores de IA fallaron:', attempts.join(' | '))
+  throw new Error(
+    attempts.length === 0
+      ? 'No hay proveedores de IA habilitados.'
+      : 'El asistente no está disponible. El administrador debe revisar sus proveedores.',
+  )
 }
