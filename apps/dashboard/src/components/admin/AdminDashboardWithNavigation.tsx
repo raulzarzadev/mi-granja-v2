@@ -1296,7 +1296,16 @@ export default function AdminDashboard() {
 
         {activeRoot === 'pricing' && <AdminPricing onTiersChange={setBillingTiers} />}
 
-        {activeRoot === 'ai' && <AdminAiConfig />}
+        {activeRoot === 'ai' && (
+          <AdminAiConfig
+            farms={(rawData.farms ?? [])
+              .filter((farm: any) => !farm.deletedAt)
+              .map((farm: any) => ({
+                id: farm.id,
+                name: farm.name || farm.farmName || `Granja ${farm.id}`,
+              }))}
+          />
+        )}
 
         {activeRoot === 'profiles' && <AdminFarmProfileCharts stats={farmProfileStats} />}
 

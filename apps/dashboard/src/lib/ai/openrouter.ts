@@ -46,6 +46,20 @@ const PROVIDER_ENDPOINTS: Record<AiProvider, string> = {
   openrouter: 'https://openrouter.ai/api/v1/chat/completions',
 }
 
+export interface AiProviderAttempt {
+  provider: AiProvider
+  model: string
+  status: 'success' | 'error'
+  error?: string
+}
+
+export class AiProviderChainError extends Error {
+  constructor(public readonly attempts: AiProviderAttempt[]) {
+    super('Todos los proveedores configurados fallaron')
+    this.name = 'AiProviderChainError'
+  }
+}
+
 async function callProviderOnce({
   provider,
   apiKey,
@@ -54,6 +68,7 @@ async function callProviderOnce({
   farmName,
   context,
   history = [],
+  diagnosticErrors = false,
 }: {
   provider: AiProvider
   apiKey: string
@@ -62,6 +77,7 @@ async function callProviderOnce({
   farmName: string
   context: unknown
   history?: { role: 'user' | 'assistant'; text: string }[]
+  diagnosticErrors?: boolean
 }): Promise<{ parsed: AiModelResponse; model: string; provider: AiProvider; usage?: unknown }> {
   let res: Response
   try {
@@ -80,15 +96,22 @@ async function callProviderOnce({
       },
       body: JSON.stringify({
         model,
-        max_completion_tokens: 1200,
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'mi_granja_ai_response',
-            strict: true,
-            schema: responseSchema,
-          },
-        },
+        ...(provider === 'kimi'
+          ? {
+              max_tokens: 1200,
+              response_format: { type: 'json_object' },
+            }
+          : {
+              max_completion_tokens: 1200,
+              response_format: {
+                type: 'json_schema',
+                json_schema: {
+                  name: 'mi_granja_ai_response',
+                  strict: true,
+                  schema: responseSchema,
+                },
+              },
+            }),
         messages: [
           {
             role: 'system',
@@ -174,7 +197,11 @@ ${CURRENT_DOMAIN_RULES}`,
       provider,
       error instanceof Error ? error.name : 'unknown',
     )
-    throw new Error('No pude comunicarme con el asistente. Revisa tu conexión e intenta de nuevo.')
+    throw new Error(
+      diagnosticErrors && error instanceof Error
+        ? `${provider}: ${error.message}`
+        : 'No pude comunicarme con el asistente. Revisa tu conexión e intenta de nuevo.',
+    )
   }
 
   if (!res.ok) {
@@ -185,6 +212,27 @@ ${CURRENT_DOMAIN_RULES}`,
       res.status,
       providerError?.error?.code || '',
     )
+    const providerMessage = providerError?.error?.message
+    const providerCode = providerError?.error?.code
+    if (diagnosticErrors) {
+      const rateLimitDetails = [
+        ['límite de solicitudes', res.headers.get('x-ratelimit-limit-requests')],
+        ['solicitudes restantes', res.headers.get('x-ratelimit-remaining-requests')],
+        ['reinicio', res.headers.get('x-ratelimit-reset-requests')],
+        ['reintentar después', res.headers.get('retry-after')],
+      ]
+        .filter((entry): entry is [string, string] => Boolean(entry[1]))
+        .map(([label, value]) => `${label}: ${value}`)
+      const details = [
+        `${provider} respondió HTTP ${res.status}`,
+        typeof providerCode === 'string' || typeof providerCode === 'number'
+          ? `código ${providerCode}`
+          : '',
+        typeof providerMessage === 'string' ? providerMessage : '',
+        ...rateLimitDetails,
+      ].filter(Boolean)
+      throw new Error(details.join(' · '))
+    }
     if (res.status === 402) {
       throw new Error('El asistente no tiene crédito disponible. Contacta al administrador.')
     }
@@ -196,7 +244,11 @@ ${CURRENT_DOMAIN_RULES}`,
         'El asistente está ocupado en este momento. Intenta de nuevo en unos segundos.',
       )
     }
-    throw new Error('El asistente no pudo responder. Intenta nuevamente.')
+    throw new Error(
+      typeof providerMessage === 'string' && providerMessage.trim()
+        ? providerMessage
+        : 'El asistente no pudo responder. Intenta nuevamente.',
+    )
   }
 
   const data = await res.json()
@@ -220,38 +272,57 @@ export async function callAiProvider({
   farmName,
   context,
   history = [],
+  diagnostics = false,
 }: {
   message: string
   farmName: string
   context: unknown
   history?: { role: 'user' | 'assistant'; text: string }[]
-}): Promise<{ parsed: AiModelResponse; model: string; provider: AiProvider; usage?: unknown }> {
+  diagnostics?: boolean
+}): Promise<{
+  parsed: AiModelResponse
+  model: string
+  provider: AiProvider
+  usage?: unknown
+  attempts?: AiProviderAttempt[]
+}> {
   const firestore = getAdminFirestore()
   const config = await getAiModelConfig(firestore)
   const attempts: string[] = []
+  const detailedAttempts: AiProviderAttempt[] = []
 
   for (const provider of getEnabledProviderOrder(config)) {
+    const model = config.providers[provider].model
     const apiKey = await resolveAiApiKey(firestore, provider)
     if (!apiKey) {
       attempts.push(`${provider}: sin API key`)
+      detailedAttempts.push({ provider, model, status: 'error', error: 'Sin API key' })
       continue
     }
     try {
-      return await callProviderOnce({
+      const result = await callProviderOnce({
         provider,
         apiKey,
-        model: config.providers[provider].model,
+        model,
         message,
         farmName,
         context,
         history,
+        diagnosticErrors: diagnostics,
       })
+      detailedAttempts.push({ provider, model, status: 'success' })
+      return { ...result, ...(diagnostics ? { attempts: detailedAttempts } : {}) }
     } catch (error) {
-      attempts.push(`${provider}: ${error instanceof Error ? error.message : 'error desconocido'}`)
+      const message = error instanceof Error ? error.message : 'error desconocido'
+      attempts.push(`${provider}: ${message}`)
+      detailedAttempts.push({ provider, model, status: 'error', error: message })
     }
   }
 
   console.error('Todos los proveedores de IA fallaron:', attempts.join(' | '))
+  if (diagnostics && detailedAttempts.length > 0) {
+    throw new AiProviderChainError(detailedAttempts)
+  }
   throw new Error(
     attempts.length === 0
       ? 'No hay proveedores de IA habilitados.'

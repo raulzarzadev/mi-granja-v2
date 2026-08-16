@@ -13,7 +13,7 @@ import { getAiCredentialMetadata, resolveAiApiKey } from '@/lib/ai/provider-cred
 import { isAuthError, isAuthenticatedUserAdmin, verifyBillingAuth } from '@/lib/billing-auth'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 
-interface OpenRouterModelResponse {
+interface ProviderModelResponse {
   id?: unknown
   name?: unknown
   context_length?: unknown
@@ -61,7 +61,50 @@ async function readProviderStatus(firestore: FirebaseFirestore.Firestore, provid
         error: payload?.error?.message || `${provider} respondió ${response.status}`,
       }
     }
-    return { ...metadata, operational: true }
+    const models = Array.isArray(payload?.data)
+      ? (payload.data as ProviderModelResponse[])
+          .filter((model) => typeof model.id === 'string')
+          .map((model) => ({
+            id: model.id as string,
+            name: typeof model.name === 'string' ? model.name : (model.id as string),
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name))
+      : []
+    if (provider === 'kimi') {
+      const balanceResponse = await fetch('https://api.moonshot.ai/v1/users/me/balance', {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        signal: AbortSignal.timeout(10_000),
+        cache: 'no-store',
+      })
+      const balancePayload = await balanceResponse.json().catch(() => ({}))
+      const availableBalance = Number(balancePayload?.data?.available_balance)
+      if (balanceResponse.ok && Number.isFinite(availableBalance)) {
+        return {
+          ...metadata,
+          operational: availableBalance > 0,
+          hasCredit: availableBalance > 0,
+          availableBalance,
+          models,
+        }
+      }
+      return {
+        ...metadata,
+        operational: true,
+        hasCredit: null,
+        balanceError:
+          balancePayload?.error?.message ||
+          balancePayload?.message ||
+          `No se pudo consultar el saldo (${balanceResponse.status})`,
+        models,
+      }
+    }
+    return {
+      ...metadata,
+      operational: true,
+      hasCredit: null,
+      balanceError: 'OpenAI no permite consultar el saldo con una API key de proyecto',
+      models,
+    }
   } catch (error) {
     return {
       ...metadata,
@@ -99,7 +142,7 @@ async function readOpenRouterStatus(
   const totalCredits = Number(creditsPayload?.data?.total_credits || 0)
   const totalUsage = Number(creditsPayload?.data?.total_usage || 0)
   const models = Array.isArray(modelsPayload?.data)
-    ? (modelsPayload.data as OpenRouterModelResponse[])
+    ? (modelsPayload.data as ProviderModelResponse[])
         .filter((model) => {
           const parameters = Array.isArray(model.supported_parameters)
             ? model.supported_parameters

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { auth } from '@/lib/firebase'
+import AiModelTester from './AiModelTester'
 import AiUsageStats from './AiUsageStats'
 
 const PROVIDERS = ['openai', 'kimi', 'openrouter'] as const
@@ -29,6 +30,8 @@ interface ProviderStatus {
   totalUsage?: number
   remainingCredits?: number
   hasCredit?: boolean
+  availableBalance?: number
+  balanceError?: string
   models?: Array<{ id: string; name: string }>
 }
 
@@ -39,12 +42,12 @@ const PROVIDER_LABELS: Record<ProviderName, string> = {
 }
 
 const MODEL_SUGGESTIONS: Record<ProviderName, string[]> = {
-  openai: ['gpt-5.6-luna', 'gpt-5.6-terra'],
+  openai: ['gpt-5', 'gpt-5-mini', 'gpt-4.1-mini'],
   kimi: ['kimi-k2.6', 'kimi-k2.5'],
   openrouter: [],
 }
 
-export default function AdminAiConfig() {
+export default function AdminAiConfig({ farms }: { farms: Array<{ id: string; name: string }> }) {
   const [config, setConfig] = useState<AiConfig | null>(null)
   const [statuses, setStatuses] = useState<Record<ProviderName, ProviderStatus> | null>(null)
   const [apiKeys, setApiKeys] = useState<Partial<Record<ProviderName, string>>>({})
@@ -192,16 +195,18 @@ export default function AdminAiConfig() {
           </p>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3">
           {PROVIDERS.map((provider) => {
             const providerConfig = config.providers[provider]
             const status = statuses[provider]
             const isPrimary = config.primaryProvider === provider
             const fallbackPosition = config.fallbackProviders.indexOf(provider)
-            const suggestions =
-              provider === 'openrouter'
-                ? (statuses.openrouter.models ?? []).map((model) => model.id)
-                : MODEL_SUGGESTIONS[provider]
+            const suggestions = Array.from(
+              new Set([
+                ...(statuses[provider].models ?? []).map((model) => model.id),
+                ...MODEL_SUGGESTIONS[provider],
+              ]),
+            )
             return (
               <article
                 key={provider}
@@ -331,6 +336,16 @@ export default function AdminAiConfig() {
                     Crédito disponible: ${(status.remainingCredits ?? 0).toFixed(2)} USD
                   </p>
                 )}
+                {provider === 'kimi' && typeof status.availableBalance === 'number' && (
+                  <p
+                    className={`mt-3 text-xs ${status.hasCredit ? 'text-green-700' : 'font-semibold text-red-700'}`}
+                  >
+                    Saldo API reportado: {status.availableBalance.toFixed(4)}
+                  </p>
+                )}
+                {status.balanceError && (
+                  <p className="mt-3 text-xs text-gray-500">Saldo: {status.balanceError}</p>
+                )}
               </article>
             )
           })}
@@ -359,6 +374,8 @@ export default function AdminAiConfig() {
         </div>
       </section>
 
+      <AiModelTester farms={farms} />
+
       <AiUsageStats />
     </div>
   )
@@ -372,9 +389,23 @@ function StatusBadge({ status }: { status: ProviderStatus }) {
       </span>
     )
   }
+  if (status.hasCredit === false) {
+    return (
+      <span className="shrink-0 rounded-full bg-red-100 px-2 py-1 text-xs text-red-800">
+        Sin saldo
+      </span>
+    )
+  }
+  if (status.hasCredit === true) {
+    return (
+      <span className="shrink-0 rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">
+        Con saldo
+      </span>
+    )
+  }
   return status.operational ? (
     <span className="shrink-0 rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">
-      Disponible
+      Clave válida
     </span>
   ) : (
     <span className="shrink-0 rounded-full bg-red-100 px-2 py-1 text-xs text-red-800">

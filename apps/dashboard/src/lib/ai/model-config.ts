@@ -6,7 +6,7 @@ export const AI_PROVIDERS = ['openai', 'kimi', 'openrouter'] as const
 export type AiProvider = (typeof AI_PROVIDERS)[number]
 
 export const DEFAULT_AI_MODELS: Record<AiProvider, string> = {
-  openai: 'gpt-5.6-luna',
+  openai: 'gpt-5-mini',
   kimi: 'kimi-k2.6',
   openrouter: DEFAULT_OPENROUTER_MODEL,
 }
@@ -30,7 +30,7 @@ export function isAiProvider(value: unknown): value is AiProvider {
   return typeof value === 'string' && AI_PROVIDERS.includes(value as AiProvider)
 }
 
-function validModelId(value: unknown): value is string {
+export function isValidAiModelId(value: unknown): value is string {
   return (
     typeof value === 'string' &&
     value.length >= 3 &&
@@ -46,11 +46,11 @@ function normalizeProviderConfig(
 ): AiProviderConfig {
   const stored = value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
   const envModel = provider === 'openrouter' ? process.env.OPENROUTER_MODEL : undefined
-  const model = validModelId(stored.model)
+  const model = isValidAiModelId(stored.model)
     ? stored.model
-    : validModelId(legacyModel)
+    : isValidAiModelId(legacyModel)
       ? legacyModel
-      : validModelId(envModel)
+      : isValidAiModelId(envModel)
         ? envModel
         : DEFAULT_AI_MODELS[provider]
 
@@ -114,7 +114,7 @@ export function validateAiModelConfig(
       providersInput[provider] && typeof providersInput[provider] === 'object'
         ? (providersInput[provider] as Record<string, unknown>)
         : {}
-    if (!validModelId(candidate.model)) {
+    if (!isValidAiModelId(candidate.model)) {
       return { error: `Ingresa un modelo válido para ${provider}` }
     }
     providers[provider] = {

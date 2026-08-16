@@ -7,7 +7,7 @@ import { FarmPermission } from '@/types/farm'
 import type { AiProvider } from './model-config'
 import { AiUsageResult } from './types'
 
-const DAILY_LIMIT = 3
+export const AI_DAILY_LIMIT = 3
 const isDev = process.env.NODE_ENV === 'development'
 
 export async function requireAiAuth(
@@ -50,8 +50,8 @@ export async function consumeDailyAiUse(
   return firestore.runTransaction(async (tx) => {
     const snap = await tx.get(ref)
     const current = snap.exists ? Number(snap.data()?.count || 0) : 0
-    if (!isDev && current >= DAILY_LIMIT) {
-      return { limit: DAILY_LIMIT, used: current, remaining: 0, allowed: false }
+    if (!isDev && current >= AI_DAILY_LIMIT) {
+      return { limit: AI_DAILY_LIMIT, used: current, remaining: 0, allowed: false }
     }
     const next = current + 1
     tx.set(
@@ -81,9 +81,9 @@ export async function consumeDailyAiUse(
     const previousTokens = Number(snap.data()?.totalTokens || 0)
     const previousCost = Number(snap.data()?.totalCost || 0)
     return {
-      limit: isDev ? Number.MAX_SAFE_INTEGER : DAILY_LIMIT,
+      limit: isDev ? Number.MAX_SAFE_INTEGER : AI_DAILY_LIMIT,
       used: next,
-      remaining: isDev ? Number.MAX_SAFE_INTEGER : DAILY_LIMIT - next,
+      remaining: isDev ? Number.MAX_SAFE_INTEGER : AI_DAILY_LIMIT - next,
       allowed: true,
       totalTokens: previousTokens + tokens,
       totalCost: previousCost + cost,
@@ -99,9 +99,9 @@ export async function getDailyAiUsage(userId: string): Promise<AiUsageResult> {
   const totalTokens = snap.exists ? Number(snap.data()?.totalTokens || 0) : 0
   const totalCost = snap.exists ? Number(snap.data()?.totalCost || 0) : 0
   return {
-    limit: isDev ? Number.MAX_SAFE_INTEGER : DAILY_LIMIT,
+    limit: isDev ? Number.MAX_SAFE_INTEGER : AI_DAILY_LIMIT,
     used,
-    remaining: isDev ? Number.MAX_SAFE_INTEGER : Math.max(DAILY_LIMIT - used, 0),
+    remaining: isDev ? Number.MAX_SAFE_INTEGER : Math.max(AI_DAILY_LIMIT - used, 0),
     totalTokens,
     totalCost,
     isUnlimited: isDev,

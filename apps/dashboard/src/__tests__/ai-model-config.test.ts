@@ -31,7 +31,7 @@ describe('AI model configuration', () => {
         primaryProvider: 'openai',
         fallbackProviders: ['kimi', 'openrouter'],
         providers: {
-          openai: { enabled: false, model: 'gpt-5.6-luna' },
+          openai: { enabled: false, model: 'gpt-5-mini' },
           kimi: { enabled: true, model: 'kimi-k2.6' },
           openrouter: { enabled: false, model: 'google/gemini-2.5-flash' },
         },
