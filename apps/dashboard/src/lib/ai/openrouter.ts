@@ -1,3 +1,5 @@
+import { getAdminFirestore } from '@/lib/firebase-admin'
+import { getAiModelConfig } from './model-config'
 import { AiModelResponse, aiModelResponseSchema } from './types'
 
 const responseSchema = {
@@ -51,7 +53,7 @@ export async function callOpenRouter({
   const apiKey = process.env.OPENROUTER_API_KEY
   if (!apiKey) throw new Error('Falta OPENROUTER_API_KEY')
 
-  const model = process.env.OPENROUTER_MODEL || 'google/gemini-2.5-flash'
+  const { model } = await getAiModelConfig(getAdminFirestore())
   let res: Response
   try {
     res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -160,7 +162,14 @@ ${CURRENT_DOMAIN_RULES}`,
   }
 
   if (!res.ok) {
-    console.error('OpenRouter response error:', res.status)
+    const providerError = await res.json().catch(() => null)
+    console.error('OpenRouter response error:', res.status, providerError?.error?.code || '')
+    if (res.status === 402) {
+      throw new Error('El asistente no tiene crédito disponible. Contacta al administrador.')
+    }
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('La conexión del asistente necesita ser revisada por el administrador.')
+    }
     if (res.status === 429) {
       throw new Error(
         'El asistente está ocupado en este momento. Intenta de nuevo en unos segundos.',

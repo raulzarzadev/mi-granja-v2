@@ -20,6 +20,7 @@ import { auth, db } from '@/lib/firebase'
 import { animal_icon, animal_status_labels, animals_types_labels } from '@/types/animals'
 import { PLAN_TIERS, type PlanTier, type PlanTierId } from '@/types/billing'
 import { sale_status_labels } from '@/types/sales'
+import AdminAiConfig from './AdminAiConfig'
 import AdminFarmProfileCharts from './AdminFarmProfileCharts'
 import AdminPricing from './AdminPricing'
 import AdminUserActions from './AdminUserActions'
@@ -614,6 +615,14 @@ export default function AdminDashboard() {
         value: billingTiers.length,
         bg: 'bg-lime-50',
         text: 'text-lime-800',
+      },
+      {
+        key: 'ai',
+        label: 'Asistente IA',
+        icon: '✨',
+        value: 'Modelos',
+        bg: 'bg-violet-50',
+        text: 'text-violet-800',
       },
       {
         key: 'usage',
@@ -1286,6 +1295,8 @@ export default function AdminDashboard() {
         )}
 
         {activeRoot === 'pricing' && <AdminPricing onTiersChange={setBillingTiers} />}
+
+        {activeRoot === 'ai' && <AdminAiConfig />}
 
         {activeRoot === 'profiles' && <AdminFarmProfileCharts stats={farmProfileStats} />}
 

@@ -12,6 +12,11 @@ import { Animal, type AnimalStageKey, isMilkRecord } from '@/types/animals'
 import { BreedingRecord, type FemaleBreedingInfo } from '@/types/breedings'
 import type { FarmPermission } from '@/types/farm'
 import { selectRelevance } from './context-relevance'
+import {
+  asAiDate as asDate,
+  aiDateKey as dateKey,
+  normalizeAiReminder,
+} from './context-serialization'
 import { hasPermission } from './server'
 import { AiAction } from './types'
 
@@ -78,24 +83,6 @@ async function getFarmBreedingRecords(farmId: string): Promise<BreedingRecord[]>
   const firestore = getAdminFirestore()
   const snap = await firestore.collection('breedingRecords').where('farmId', '==', farmId).get()
   return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as BreedingRecord)
-}
-
-function asDate(value: unknown): Date | null {
-  if (!value) return null
-  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
-  if (typeof value === 'object' && typeof (value as { toDate?: unknown }).toDate === 'function') {
-    const date = (value as { toDate: () => Date }).toDate()
-    return Number.isNaN(date.getTime()) ? null : date
-  }
-  if (typeof value === 'string' || typeof value === 'number') {
-    const date = new Date(value)
-    return Number.isNaN(date.getTime()) ? null : date
-  }
-  return null
-}
-
-function dateKey(value: unknown): string | null {
-  return asDate(value)?.toISOString().slice(0, 10) ?? null
 }
 
 function normalizeAnimal(doc: FirebaseFirestore.QueryDocumentSnapshot): Animal {
@@ -576,18 +563,9 @@ export async function buildAiContext(
     }
   })
 
-  const reminders = (remindersSnap?.docs ?? []).map((doc) => {
-    const data = doc.data()
-    const dueDate = data.dueDate?.toDate?.() ? data.dueDate.toDate() : new Date(data.dueDate)
-    return {
-      id: doc.id,
-      titulo: data.title,
-      fecha: dueDate.toISOString().slice(0, 10),
-      prioridad: data.priority || 'medium',
-      tipo: data.type || 'other',
-      animales: data.animalNumbers || [],
-    }
-  })
+  const reminders = (remindersSnap?.docs ?? []).map((doc) =>
+    normalizeAiReminder(doc.id, doc.data()),
+  )
 
   const pregnancyCandidates: {
     empadre: string
@@ -622,13 +600,13 @@ export async function buildAiContext(
 
     for (const info of femaleInfos) {
       if (!info.pregnancyConfirmedDate || info.actualBirthDate) continue
-      const expectedDate = info.expectedBirthDate ?? info.pregnancyConfirmedDate ?? null
+      const expectedDate = asDate(info.expectedBirthDate ?? info.pregnancyConfirmedDate)
       expectedBirths.push({
         hembra:
           animals.find((animal) => animal.id === info.femaleId)?.numero || 'sin numero visible',
         macho: male?.numero || 'sin macho visible',
         empadre: breedingLabel,
-        fechaEsperada: expectedDate?.toISOString().slice(0, 10) || null,
+        fechaEsperada: dateKey(expectedDate),
         diasRestantes: expectedDate
           ? Math.round((expectedDate.getTime() - today.getTime()) / 86400000)
           : null,
@@ -868,7 +846,9 @@ export async function buildAiContext(
     })
   }
   const todayKey = dateKey(today) || ''
-  const overdueReminders = reminders.filter((reminder) => reminder.fecha < todayKey)
+  const overdueReminders = reminders.filter(
+    (reminder) => reminder.fecha !== null && reminder.fecha < todayKey,
+  )
   if (overdueReminders.length > 0) {
     recommendedActions.push({
       prioridad: 'alta',
@@ -951,7 +931,9 @@ export async function buildAiContext(
           pendientes: reminders.length,
           vencidos: overdueReminders.length,
           proximos7Dias: reminders.filter((reminder) => {
-            const dueDate = new Date(`${reminder.fecha}T12:00:00`)
+            if (!reminder.fecha) return false
+            const dueDate = asDate(`${reminder.fecha}T12:00:00`)
+            if (!dueDate) return false
             const days = daysUntil(today, dueDate)
             return days >= 0 && days <= 7
           }).length,

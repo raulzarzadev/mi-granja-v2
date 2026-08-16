@@ -1,4 +1,5 @@
 import { selectRelevance } from '@/lib/ai/context-relevance'
+import { normalizeAiReminder } from '@/lib/ai/context-serialization'
 
 describe('AI context relevance', () => {
   const animals = [{ numero: '004' }, { numero: '010' }, { numero: 'A-12' }]
@@ -21,5 +22,62 @@ describe('AI context relevance', () => {
 
     expect(relevance.wantsMovements).toBe(true)
     expect(relevance.referencedAnimals).toEqual([{ numero: '004' }])
+  })
+})
+
+describe('AI reminder context', () => {
+  const baseReminder = {
+    title: 'Destetar 324-A',
+    priority: 'high',
+    type: 'weaning',
+    animalNumbers: ['324-A'],
+  }
+
+  it('normaliza fechas válidas de Date y Timestamp', () => {
+    expect(
+      normalizeAiReminder('date-reminder', {
+        ...baseReminder,
+        dueDate: new Date('2026-08-16T12:00:00Z'),
+      }).fecha,
+    ).toBe('2026-08-16')
+
+    expect(
+      normalizeAiReminder('timestamp-reminder', {
+        ...baseReminder,
+        dueDate: { toDate: () => new Date('2026-08-17T12:00:00Z') },
+      }).fecha,
+    ).toBe('2026-08-17')
+  })
+
+  it.each([
+    undefined,
+    '',
+    'not-a-date',
+    new Date('invalid'),
+  ])('conserva el recordatorio pero omite una fecha inválida: %p', (dueDate) => {
+    const reminder = normalizeAiReminder('invalid-reminder', {
+      ...baseReminder,
+      dueDate,
+    })
+
+    expect(reminder).toMatchObject({
+      id: 'invalid-reminder',
+      titulo: 'Destetar 324-A',
+      fecha: null,
+      animales: ['324-A'],
+    })
+  })
+
+  it('tolera objetos Timestamp corruptos sin bloquear el contexto', () => {
+    const reminder = normalizeAiReminder('broken-timestamp', {
+      ...baseReminder,
+      dueDate: {
+        toDate: () => {
+          throw new Error('corrupt timestamp')
+        },
+      },
+    })
+
+    expect(reminder.fecha).toBeNull()
   })
 })
