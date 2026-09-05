@@ -252,8 +252,10 @@ export default function SimpleAnimalForm({
     const ownerId = auth.currentUser?.uid
     if (!ownerId) throw new Error('Debes iniciar sesión para subir una imagen')
     const extension = photoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
-    const folderId = initialData?.id ?? `new-${ownerId}-${crypto.randomUUID()}`
-    const photoRef = ref(storage, `animals/${folderId}/photos/main-${Date.now()}.${extension}`)
+    const photoRef = ref(
+      storage,
+      `users/${ownerId}/animal-photos/${crypto.randomUUID()}.${extension}`,
+    )
     await uploadBytes(photoRef, photoFile, { contentType: photoFile.type })
     return getDownloadURL(photoRef)
   }

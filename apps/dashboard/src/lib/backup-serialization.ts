@@ -1,3 +1,9 @@
+import {
+  animal_statuses,
+  animals_genders,
+  animals_stages,
+  animals_types,
+} from '@mi-granja/shared/types/animals'
 import { Timestamp } from 'firebase/firestore'
 
 export const CURRENT_BACKUP_VERSION = 2
@@ -502,6 +508,20 @@ export function validateBackupFile(data: unknown, currentFarmId: string): Valida
       if (typeof animal[field] !== 'string' || !(animal[field] as string).trim()) {
         errors.push(`${label}: falta ${field}`)
       }
+    }
+    for (const [field, values] of Object.entries({
+      type: animals_types,
+      stage: animals_stages,
+      gender: animals_genders,
+      status: animal_statuses,
+    })) {
+      if (field === 'status' && animal[field] === undefined) continue
+      if (!(values as readonly unknown[]).includes(animal[field])) {
+        errors.push(`${label}: ${field} inválido; usa ${values.join(', ')}`)
+      }
+    }
+    for (const field of ['createdAt', 'updatedAt']) {
+      if (dateMillis(animal[field]) === null) errors.push(`${label}: ${field} inválido`)
     }
     if (typeof animal.id === 'string') {
       if (animalIds.has(animal.id)) errors.push(`${label}: ID duplicado ${animal.id}`)

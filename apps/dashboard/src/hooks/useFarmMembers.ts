@@ -17,16 +17,10 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
-import { useEmail } from '@/hooks/useEmail'
-import { toDate } from '@/lib/dates'
-import { APP_URL, emailTemplate } from '@/lib/emailTemplate'
 import { trackInvitationSent } from '@/lib/analytics/track'
-import { db } from '@/lib/firebase'
-import {
-  collaborator_roles_label,
-  DEFAULT_PERMISSIONS,
-  FarmCollaborator,
-} from '@/types/collaborators'
+import { toDate } from '@/lib/dates'
+import { auth, db } from '@/lib/firebase'
+import { DEFAULT_PERMISSIONS, FarmCollaborator } from '@/types/collaborators'
 import { FarmInvitation, FarmPermission } from '@/types/farm'
 
 /**
@@ -39,7 +33,6 @@ export const useFarmMembers = (farmId?: string) => {
   const [error, setError] = useState<string | null>(null)
   const { user } = useSelector((s: RootState) => s.auth)
   const { currentFarm } = useSelector((s: RootState) => s.farm)
-  const { sendEmail } = useEmail()
 
   const load = useCallback(async () => {
     // Mantener función manual de refresco usando getDocs (opcional)
@@ -219,12 +212,10 @@ export const useFarmMembers = (farmId?: string) => {
       updatedAt: new Date(),
     } as any
     setInvitations((prev) => [...prev, created])
-    await sendInvitationEmail({
-      token: docData.token,
-      role: docData.role,
-      expiresAt: toDate(docData.expiresAt),
-      farmId: docData.farmId,
-      email: docData.email,
+    await sendInvitationEmail(ref.id).catch(() => {
+      setError(
+        'La invitación se guardó, pero no se pudo enviar el correo. Puedes reenviarlo desde Invitaciones.',
+      )
     })
     trackInvitationSent()
     return created
@@ -387,13 +378,7 @@ export const useFarmMembers = (farmId?: string) => {
     if (inv.status !== 'pending') {
       throw new Error('Sólo se pueden reenviar invitaciones pendientes')
     }
-    await sendInvitationEmail({
-      token: inv.token || '',
-      role: inv.role,
-      expiresAt: toDate(inv.expiresAt),
-      farmId: inv.farmId,
-      email: inv.email,
-    })
+    await sendInvitationEmail(invitationId)
   }
 
   const getCollaboratorStats = () => {
@@ -414,61 +399,22 @@ export const useFarmMembers = (farmId?: string) => {
     }
   }
 
-  const sendInvitationEmail = async ({
-    token,
-    role,
-    expiresAt,
-    farmId,
-    email,
-  }: {
-    token: string
-    role: FarmCollaborator['role']
-    expiresAt: Date
-    farmId: string
-    email: string
-  }) => {
-    // Enviar email (best-effort)
+  const sendInvitationEmail = async (invitationId: string) => {
     try {
-      const acceptUrl = `${APP_URL}/invitations/confirm?token=${encodeURIComponent(token)}&action=accept`
-      const rejectUrl = `${APP_URL}/invitations/confirm?token=${encodeURIComponent(token)}&action=reject`
-      const roleLabel = collaborator_roles_label[role] || role
-      const farmName = currentFarm?.name || 'una granja'
-      const inviterName = user?.email || 'Un administrador'
-
-      await sendEmail({
-        to: email,
-        subject: `${inviterName} te invitó a colaborar en ${farmName}`,
-        html: emailTemplate({
-          title: 'Te han invitado a colaborar',
-          body: `
-            <p><strong>${inviterName}</strong> te ha invitado a unirte a la granja <strong>${farmName}</strong> en Mi Granja App.</p>
-            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin:16px 0;">
-              <p style="margin:0 0 4px 0;font-size:13px;color:#6b7280;">Granja</p>
-              <p style="margin:0 0 12px 0;font-size:17px;font-weight:600;color:#111827;">${farmName}</p>
-              <p style="margin:0 0 4px 0;font-size:13px;color:#6b7280;">Rol asignado</p>
-              <p style="margin:0;font-size:17px;font-weight:600;color:#16a34a;">${roleLabel}</p>
-              <p style="margin:12px 0 0 0;font-size:13px;color:#6b7280;">Invitado por</p>
-              <p style="margin:0;font-size:15px;color:#111827;">${inviterName}</p>
-            </div>
-            <p style="font-size:13px;color:#6b7280;">La invitacion expira el <strong>${expiresAt.toLocaleDateString()}</strong>.</p>
-          `,
-          ctaText: 'Aceptar invitacion',
-          ctaUrl: acceptUrl,
-          secondaryCtaText: 'Rechazar',
-          secondaryCtaUrl: rejectUrl,
-          footer:
-            'Si los botones no funcionan, copia y pega estos enlaces en tu navegador:<br/>' +
-            `<span style="word-break:break-all;">Aceptar: ${acceptUrl}</span><br/>` +
-            `<span style="word-break:break-all;">Rechazar: ${rejectUrl}</span>`,
-        }),
-        text: `${inviterName} te invitó a colaborar en ${farmName} como ${roleLabel}. Acepta: ${acceptUrl} | Rechaza: ${rejectUrl}`,
-        tags: [
-          { name: 'type', value: 'invitation' },
-          { name: 'farm_id', value: farmId },
-        ],
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) throw new Error('Usuario no autenticado')
+      const response = await fetch('/api/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ purpose: 'invitation', invitationId }),
       })
-    } catch (e) {
-      console.warn('Fallo al enviar email de invitacion (continuando):', e)
+      if (!response.ok) {
+        const result = await response.json()
+        throw new Error(result.error || 'No se pudo enviar la invitación')
+      }
+    } catch (error) {
+      console.warn('Fallo al enviar email de invitación:', error)
+      throw error
     }
   }
 

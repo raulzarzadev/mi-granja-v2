@@ -1,4 +1,4 @@
-import { APP_DOMAIN, type AnalyticsEvent, POSTHOG_DEFAULT_OPTIONS } from '@mi-granja/shared'
+import { type AnalyticsEvent, APP_DOMAIN, POSTHOG_DEFAULT_OPTIONS } from '@mi-granja/shared'
 
 /** Envia eventos confiables del servidor sin bloquear el flujo principal. */
 export async function captureServerEvent(

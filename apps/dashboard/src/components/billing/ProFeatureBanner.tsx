@@ -5,8 +5,6 @@ import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import { auth } from '@/lib/firebase'
 
-const OWNER_EMAIL = 'raulzarza.dev@gmail.com'
-
 async function sendEmail(payload: object) {
   const token = await auth.currentUser?.getIdToken()
   const res = await fetch('/api/send', {
@@ -39,41 +37,7 @@ const ProFeatureBanner: React.FC<ProFeatureBannerProps> = ({ feature = 'Esta fun
     if (!user) return
     setStatus('loading')
     try {
-      // Email al dueño
-      await sendEmail({
-        to: OWNER_EMAIL,
-        subject: `Solicitud de plan Pro — ${user.email}`,
-        html: `
-          <div style="font-family:Arial,sans-serif;max-width:480px">
-            <h2 style="color:#15803d">Nueva solicitud de plan Pro</h2>
-            <table style="width:100%;border-collapse:collapse;font-size:14px">
-              <tr><td style="padding:6px 0;color:#6b7280">Usuario ID</td><td style="padding:6px 0;font-weight:600">${user.id}</td></tr>
-              <tr><td style="padding:6px 0;color:#6b7280">Email</td><td style="padding:6px 0;font-weight:600">${user.email}</td></tr>
-              <tr><td style="padding:6px 0;color:#6b7280">Granjas adicionales</td><td style="padding:6px 0;font-weight:600">${granjas}</td></tr>
-              <tr><td style="padding:6px 0;color:#6b7280">Colaboradores</td><td style="padding:6px 0;font-weight:600">${colaboradores}</td></tr>
-            </table>
-          </div>
-        `,
-      })
-
-      // Email de confirmación al usuario
-      await sendEmail({
-        to: user.email,
-        subject: 'Recibimos tu solicitud — Mi Granja Pro',
-        html: `
-          <div style="font-family:Arial,sans-serif;max-width:480px">
-            <h2 style="color:#15803d">¡Recibimos tu solicitud! 🎉</h2>
-            <p style="color:#374151">Hola, gracias por tu interés en el plan Pro de Mi Granja.</p>
-            <p style="color:#374151">Pronto te enviaremos más información para comenzar tu período de prueba.</p>
-            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin:16px 0">
-              <p style="margin:0;color:#166534;font-size:14px"><strong>Tu solicitud incluye:</strong></p>
-              <p style="margin:4px 0 0;color:#166534;font-size:14px">• ${granjas} ${granjas === 1 ? 'granja adicional' : 'granjas adicionales'}</p>
-              <p style="margin:4px 0 0;color:#166534;font-size:14px">• ${colaboradores} ${colaboradores === 1 ? 'colaborador' : 'colaboradores'}</p>
-            </div>
-            <p style="color:#6b7280;font-size:13px">Si tienes dudas, responde este correo o escríbenos a hola@migranja.app</p>
-          </div>
-        `,
-      })
+      await sendEmail({ purpose: 'pro-request', granjas, colaboradores })
 
       setStatus('sent')
     } catch {

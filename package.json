@@ -7,13 +7,14 @@
     "dev": "portless proxy start & sleep 1 && turbo run dev:portless",
     "dev:emu": "bash scripts/dev-emu.sh",
     "dev:kill": "bash scripts/dev-kill.sh",
-    "emu": "cd firebase && firebase emulators:start --import=data --export-on-exit=data",
-    "emu:kill": "lsof -ti :9299 -ti :8180 -ti :9399 -ti :4100 -ti :4600 | xargs kill 2>/dev/null; echo '✅ Emuladores detenidos'",
+    "emu": "cd firebase && firebase emulators:start --config firebase.emulators.json --import=data --export-on-exit=data",
+    "emu:kill": "lsof -ti :9299 -ti :8180 -ti :9399 -ti :4100 -ti :4600 | xargs kill 2>/dev/null; echo '\u2705 Emuladores detenidos'",
     "posthog:sync": "node scripts/posthog-sync.mjs",
     "review": "bash scripts/review.sh",
     "deploy:preview": "git switch monorepo-dev && git pull origin monorepo-dev && git push origin monorepo-dev",
     "deploy:pre": "pnpm deploy:preview",
-    "deploy:pro": "git switch monorepo-dev && git switch monorepo && git merge monorepo-dev && git push origin monorepo && git switch monorepo-dev"
+    "deploy:pro": "git switch monorepo-dev && git switch monorepo && git merge monorepo-dev && git push origin monorepo && git switch monorepo-dev",
+    "test:security": "cd firebase && firebase emulators:exec --project demo-granja-security --config firebase.security-tests.json --only firestore,storage \"pnpm exec tsx apps/dashboard/scripts/check-security-emulators.ts\""
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",

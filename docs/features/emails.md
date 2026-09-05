@@ -2,7 +2,7 @@
 title: Email Service
 description: Brevo integration via /api/send route and useEmail hook
 audience: llm+human
-last_updated: 2026-06-12
+last_updated: 2026-09-04
 ---
 
 # Email Service
@@ -13,7 +13,7 @@ last_updated: 2026-06-12
 
 ## Endpoint
 
-`POST /api/send`
+`POST /api/send` requires a Firebase ID token. Free-form emails require a platform administrator.
 
 ```json
 {
@@ -21,11 +21,23 @@ last_updated: 2026-06-12
   "subject": "...",
   "html": "...",
   "text": "...",
-  "tags": ["signup", "welcome"]
+  "tags": [{ "name": "type", "value": "welcome" }]
 }
 ```
 
-Tags are sanitized — only `[a-z0-9_-]` allowed.
+Tags sent by the `useEmail` hook are sanitized to `[a-z0-9_-]`.
+
+Ordinary accounts use structured operations instead of specifying recipients or HTML:
+
+```json
+{ "purpose": "invitation", "invitationId": "existing-invitation-id" }
+```
+
+```json
+{ "purpose": "pro-request", "granjas": 1, "colaboradores": 2 }
+```
+
+The server loads the invitation, verifies farm permissions and expiration, and builds the message. Pro recipients come from the server and authenticated identity. Transactional requests allow 20 operations/hour/account with a 60-second cooldown; free-form admin requests allow 100/hour. Limits use Firestore transactions and survive restarts.
 
 ## Hook — `useEmail`
 
@@ -39,7 +51,7 @@ Never expose error details to client. Log server-side only; return generic messa
 
 ## Upgrade plan emails
 
-`ModalUpgradePlan` sends 2 emails per request:
+`ProFeatureBanner` makes one structured request; the server sends 2 emails:
 1. Owner (`raulzarza.dev@gmail.com`) — notification
 2. User — confirmation
 

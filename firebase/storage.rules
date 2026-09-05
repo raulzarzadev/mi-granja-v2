@@ -1,35 +1,45 @@
-// Reglas de seguridad para Firebase Storage - Mi Granja 2
-// Estructura esperada:
-// - avatars/{uid}/...
-// - farms/{farmId}/logo/... (usar metadata para validar en backend si necesitas ownerId)
-// - animals/{animalId}/photos/{file}
-// NOTA: Storage rules no pueden leer Firestore de forma fiable en todas las regiones. Para
-// validar membresía de granja, hazlo en la app o mediante Cloud Functions que firmen uploads.
-
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-
-    // Avatares: el usuario puede leer/escribir su propio folder
+    function signedIn() { return request.auth != null; }
+    function farmOwner(farmId) {
+      let farm = firestore.get(/databases/(default)/documents/farms/$(farmId)).data;
+      return signedIn() && farm.ownerId == request.auth.uid;
+    }
+    function farmMember(farmId) {
+      let farm = firestore.get(/databases/(default)/documents/farms/$(farmId)).data;
+      return signedIn() && (farm.ownerId == request.auth.uid ||
+        ('collaboratorsIds' in farm && request.auth.uid in farm.collaboratorsIds));
+    }
+    function animalFarm(animalId) {
+      return firestore.get(/databases/(default)/documents/animals/$(animalId)).data.farmId;
+    }
+    function imageUpload() {
+      return request.resource == null ||
+        (request.resource.size <= 10 * 1024 * 1024 &&
+         request.resource.contentType.matches('image/(jpeg|png|webp|gif|heic|heif)'));
+    }
     match /avatars/{userId}/{allPaths=**} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow write: if signedIn() && request.auth.uid == userId && imageUpload();
     }
-
-    // Logos de granja: lectura pública opcional (aquí deshabilitada por privacidad)
+    // New photos are immutable, unique assets in the uploader's own namespace.
+    // The animal stores the download URL, including for photos uploaded before animal creation.
+    match /users/{userId}/animal-photos/{file} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow create: if resource == null && signedIn() && request.auth.uid == userId && imageUpload();
+      allow delete: if signedIn() && request.auth.uid == userId;
+      allow update: if false;
+    }
     match /farms/{farmId}/logo/{allPaths=**} {
-      allow read: if false; // cambia a true si quieres público
-      // Escribe sólo si autenticado. Recomendado: validar en app/CF si es miembro u owner.
-      allow write: if request.auth != null;
+      allow read: if signedIn() && farmMember(farmId);
+      allow write: if signedIn() && farmOwner(farmId) && imageUpload();
     }
-
-    // Fotos de animales: lectura privada, escritura autenticada
-    match /animals/{animalId}/photos/{allPaths=**} {
-      allow read: if request.auth != null; // puedes abrir a público si lo necesitas
-      allow write: if request.auth != null; // valida membresía en app/CF
+    // Legacy photos: no writes across farms. New uploads use the namespace above.
+    match /animals/{animalId}/photos/{file} {
+      allow read: if signedIn() && farmMember(animalFarm(animalId));
+      allow write: if signedIn() && farmOwner(animalFarm(animalId)) && imageUpload();
     }
-
-    // Default deny
     match /{allPaths=**} { allow read, write: if false; }
   }
 }

@@ -13,9 +13,9 @@ import {
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
+import { trackReminderCreated } from '@/lib/analytics/track'
 import { toDate, toLocalDateStart } from '@/lib/dates'
 import { db } from '@/lib/firebase'
-import { trackReminderCreated } from '@/lib/analytics/track'
 import { Reminder } from '@/types'
 
 /** Normaliza animalNumbers desde datos legacy (animalNumber) y nuevos (animalNumbers) */

@@ -17,9 +17,9 @@ Next.js 16 (App Router) + TypeScript + React 19 + Tailwind CSS 4 + Redux Toolkit
 ```bash
 pnpm install
 cp apps/dashboard/.env.example apps/dashboard/.env.local  # configure Firebase + Brevo
-pnpm emulators            # Firebase emulators (optional)
-pnpm dev:dashboard        # http://localhost:3000
-pnpm dev:landing          # http://localhost:3001
+pnpm emu                 # Firebase emulators (another terminal)
+pnpm --filter @mi-granja/dashboard dev  # http://localhost:3000
+pnpm --filter @mi-granja/landing dev    # http://localhost:3001
 ```
 
 ## Documentation

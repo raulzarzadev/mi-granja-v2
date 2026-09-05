@@ -63,7 +63,8 @@
       "!**/.firebase-data",
       "!**/firebase",
       "!**/pnpm-lock.yaml",
-      "!**/*.astro"
+      "!**/*.astro",
+      "!**/next-env.d.ts"
     ]
   }
 }

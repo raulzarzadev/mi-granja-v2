@@ -1,6 +1,6 @@
+import { ANALYTICS_EVENTS } from '@mi-granja/shared'
 import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
-import { ANALYTICS_EVENTS } from '@mi-granja/shared'
 import { captureServerEvent } from '@/lib/analytics/posthog-server'
 import { getBillingTiers } from '@/lib/billing-config'
 import { getAdminFirestore } from '@/lib/firebase-admin'

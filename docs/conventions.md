@@ -53,9 +53,10 @@ When modifying types in `packages/shared/src/types/` (adding/removing/renaming f
 
 1. Update `apps/dashboard/src/lib/backup-serialization.ts`:
    - Add date fields to `DATE_FIELDS_BY_COLLECTION` and `KNOWN_DATE_FIELD_NAMES`
-   - Update `BACKUP_SCHEMA` descriptions
-2. Update `apps/dashboard/src/components/ModalRestoreBackup.tsx`:
-   - Update hardcoded JSON schema shown in "Ver formato requerido del archivo"
+   - Update `BACKUP_TYPE_DESCRIPTIONS` descriptions
+2. Update `apps/dashboard/src/lib/backup-format.ts`:
+   - Update `BACKUP_FORMAT`; the modal serializes it as valid JSON for "Ver formato requerido del archivo".
+   - Run the backup-format and backup-serialization tests.
 
 This keeps backup export/import functional and UI docs in sync.
 

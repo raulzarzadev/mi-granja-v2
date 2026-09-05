@@ -40,7 +40,10 @@ export function PlanTierCards({
 
   if (visibleTiers.length === 0) {
     return (
-      <p role="status" className="rounded-xl border border-gray-200 bg-white px-4 py-6 text-sm text-gray-600">
+      <p
+        role="status"
+        className="rounded-xl border border-gray-200 bg-white px-4 py-6 text-sm text-gray-600"
+      >
         No hay planes disponibles por el momento.
       </p>
     )

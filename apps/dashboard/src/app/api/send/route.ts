@@ -1,19 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isAuthError, verifyBillingAuth } from '@/lib/billing-auth'
+import { z } from 'zod'
+import { isAuthError, isAuthenticatedUserAdmin, verifyBillingAuth } from '@/lib/billing-auth'
+import { getAdminFirestore } from '@/lib/firebase-admin'
+import { consumeRequestLimit } from '@/lib/request-limits'
+import { sendTransactionalEmail } from '@/lib/transactional-email'
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
 
-interface EmailRequest {
-  to: string | string[]
-  from?: string
-  cc?: string | string[]
-  bcc?: string | string[]
-  subject: string
-  html?: string
-  text?: string
-  reply_to?: string | string[]
-  tags?: { name: string; value: string }[]
-}
+const recipientsSchema = z.union([z.string().email(), z.array(z.string().email()).min(1).max(20)])
+const emailSchema = z
+  .object({
+    to: recipientsSchema,
+    from: z.string().max(254).optional(),
+    cc: recipientsSchema.optional(),
+    bcc: recipientsSchema.optional(),
+    subject: z.string().min(1).max(200),
+    html: z.string().max(100000).optional(),
+    text: z.string().max(100000).optional(),
+    reply_to: recipientsSchema.optional(),
+    tags: z
+      .array(z.object({ name: z.string().max(50), value: z.string().max(50) }))
+      .max(10)
+      .optional(),
+  })
+  .refine((email) => email.html || email.text)
 
 function toBrevoRecipients(input: string | string[]): { email: string }[] {
   const emails = Array.isArray(input) ? input : [input]
@@ -34,6 +44,31 @@ export async function POST(request: NextRequest) {
     const auth = await verifyBillingAuth(request)
     if (isAuthError(auth)) return auth
 
+    const body = await request.json()
+    if (body && typeof body === 'object' && 'purpose' in body) {
+      return await sendTransactionalEmail(body, auth)
+    }
+    const db = getAdminFirestore()
+    const user = await db.collection('users').doc(auth.uid).get()
+    if (!isAuthenticatedUserAdmin(auth.email, user.data()?.roles)) {
+      return NextResponse.json(
+        { error: 'El envío libre de correos requiere permisos de administrador' },
+        { status: 403 },
+      )
+    }
+    const parsed = emailSchema.safeParse(body)
+    if (!parsed.success)
+      return NextResponse.json({ error: 'Datos de correo inválidos' }, { status: 400 })
+    const retryAfter = await consumeRequestLimit(db, `admin-email:${auth.uid}`, {
+      maximum: 100,
+      windowMs: 3600000,
+    })
+    if (retryAfter)
+      return NextResponse.json(
+        { error: 'Límite de correos alcanzado' },
+        { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+      )
+
     const apiKey = process.env.BREVO_API_KEY
     if (!apiKey) {
       return NextResponse.json(
@@ -42,7 +77,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const emailData: EmailRequest = await request.json()
+    const emailData = parsed.data
 
     // Validaciones
     if (!emailData.to || (Array.isArray(emailData.to) && emailData.to.length === 0)) {

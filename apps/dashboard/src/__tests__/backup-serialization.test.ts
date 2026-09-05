@@ -162,3 +162,21 @@ describe('backup serialization v2', () => {
     })
   })
 })
+
+describe('import format and domain validation', () => {
+  it.each([
+    ['type', 'dinosaurio'],
+    ['stage', 'embarazada'],
+    ['gender', 'female'],
+    ['status', 'unknown'],
+    ['createdAt', 'ayer'],
+    ['updatedAt', 'mañana'],
+    ['id', ''],
+  ])('rejects invalid %s', (field, value) => {
+    const backup = baseBackup()
+    Object.assign(backup.animals[0], { [field]: value })
+    const result = validateBackupFile(backup, 'farm-target')
+    expect(result.valid).toBe(false)
+    expect(result.errors.join(' ')).toContain(field)
+  })
+})

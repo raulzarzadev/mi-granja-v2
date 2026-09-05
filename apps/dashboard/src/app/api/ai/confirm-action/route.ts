@@ -13,7 +13,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const farmId = String(body.farmId || '').trim()
     const actionId = String(body.actionId || '').trim()
-    const action = aiActionSchema.parse(body.action)
+    const parsedAction = aiActionSchema.safeParse(body.action)
+    if (!parsedAction.success)
+      return NextResponse.json({ error: 'Acción inválida' }, { status: 400 })
+    const action = parsedAction.data
     if (!farmId) return NextResponse.json({ error: 'Granja requerida' }, { status: 400 })
     if (!actionId) return NextResponse.json({ error: 'Acción requerida' }, { status: 400 })
 
@@ -22,13 +25,28 @@ export async function POST(request: NextRequest) {
 
     const firestore = getAdminFirestore()
     const logRef = firestore.collection('aiActionLogs').doc(actionId)
-    const logSnap = await logRef.get()
-    if (!logSnap.exists)
-      return NextResponse.json({ error: 'Acción no encontrada' }, { status: 404 })
-    const log = logSnap.data()!
-    if (log.userId !== auth.uid || log.farmId !== farmId || log.status !== 'proposed') {
-      return NextResponse.json({ error: 'Acción no válida' }, { status: 409 })
-    }
+    const claim = await firestore.runTransaction(async (tx) => {
+      const logSnap = await tx.get(logRef)
+      if (!logSnap.exists) return { status: 404, error: 'Acción no encontrada' }
+      const log = logSnap.data()!
+      if (log.userId !== auth.uid || log.farmId !== farmId) {
+        return { status: 409, error: 'Acción no válida' }
+      }
+      if (log.status === 'confirmed') return { status: 200, result: log.result }
+      if (log.status !== 'proposed') {
+        return {
+          status: 409,
+          error:
+            'Esta acción ya está en proceso. Revisa los registros antes de intentar otra acción.',
+        }
+      }
+      // Never release this claim automatically: execution may partially succeed before failing.
+      tx.update(logRef, { status: 'processing', finalPayload: action, startedAt: Timestamp.now() })
+      return { status: 201 }
+    })
+    if (claim.status === 200) return NextResponse.json({ ok: true, result: claim.result })
+    if (claim.status !== 201)
+      return NextResponse.json({ error: claim.error }, { status: claim.status })
 
     const result = await executeAiAction({
       action,

@@ -1,7 +1,9 @@
 import { randomInt } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { emailTemplate } from '@/lib/emailTemplate'
 import { getAdminFirestore } from '@/lib/firebase-admin'
+import { consumeRequestLimit } from '@/lib/request-limits'
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY
 
@@ -14,40 +16,40 @@ export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json()
 
-    if (!email || typeof email !== 'string') {
-      return NextResponse.json({ error: 'Email requerido' }, { status: 400 })
+    const parsedEmail = z.string().trim().toLowerCase().email().max(254).safeParse(email)
+    if (!parsedEmail.success) {
+      return NextResponse.json({ error: 'Email válido requerido' }, { status: 400 })
     }
 
-    const normalizedEmail = email.trim().toLowerCase()
+    const normalizedEmail = parsedEmail.data
 
-    // Generate 6-digit code
-    const code = generateCode()
-    const expiresAt = Date.now() + 10 * 60 * 1000 // 10 minutes
-
-    // Store in Firestore (authCodes collection)
-    const firestore = getAdminFirestore()
-    await firestore.doc(`authCodes/${normalizedEmail}`).set({
-      code,
-      expiresAt,
-      attempts: 0,
-      createdAt: Date.now(),
-    })
-
-    // In dev/emulator mode, skip sending real email and return code directly
     const isEmulator =
       (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' ||
         !!process.env.FIREBASE_AUTH_EMULATOR_HOST) &&
       process.env.NODE_ENV === 'development'
-    if (isEmulator) {
-      console.log(`[DEV] Código de acceso para ${normalizedEmail}: ${code}`)
-      return NextResponse.json({ ok: true, devCode: code })
-    }
-
-    // Send code via Brevo
-    if (!BREVO_API_KEY) {
-      console.error('BREVO_API_KEY not configured')
+    if (!isEmulator && !BREVO_API_KEY) {
       return NextResponse.json({ error: 'Servicio de email no configurado' }, { status: 500 })
     }
+    const firestore = getAdminFirestore()
+    const retryAfter = await consumeRequestLimit(firestore, `auth-code:${normalizedEmail}`, {
+      maximum: 5,
+      windowMs: 60 * 60 * 1000,
+      intervalMs: 60 * 1000,
+    })
+    if (retryAfter) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes. Espera antes de pedir otro código.' },
+        { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+      )
+    }
+    const code = generateCode()
+    await firestore.doc(`authCodes/${normalizedEmail}`).set({
+      code,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+      attempts: 0,
+      createdAt: Date.now(),
+    })
+    if (isEmulator) return NextResponse.json({ ok: true, devCode: code })
 
     const html = emailTemplate({
       title: 'Tu código de acceso',
@@ -65,7 +67,7 @@ export async function POST(req: NextRequest) {
     const brevoRes = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
-        'api-key': BREVO_API_KEY,
+        'api-key': BREVO_API_KEY!,
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },

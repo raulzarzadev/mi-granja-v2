@@ -1,0 +1,36 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json",
+    "predeploy": [
+      "node scripts/block-emulator-deploy.cjs"
+    ]
+  },
+  "storage": {
+    "rules": "storage.rules",
+    "predeploy": [
+      "node scripts/block-emulator-deploy.cjs"
+    ]
+  },
+  "emulators": {
+    "auth": {
+      "port": 9299
+    },
+    "firestore": {
+      "port": 8180
+    },
+    "storage": {
+      "port": 9399
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4100
+    },
+    "hub": {
+      "port": 4600
+    },
+    "logging": {
+      "port": 4700
+    }
+  }
+}
