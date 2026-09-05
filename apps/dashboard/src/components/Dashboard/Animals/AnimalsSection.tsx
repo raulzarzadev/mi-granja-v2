@@ -894,13 +894,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   const animalSubTabs = [
     {
       label: 'Etapas',
-      content: (
-        <TabEtapas
-          crossTabDuplicatesCount={crossTabDuplicates.length}
-          onShowDuplicates={() => setShowCrossTabDups(true)}
-          etapasTabs={etapasTabs}
-        />
-      ),
+      content: <TabEtapas etapasTabs={etapasTabs} />,
     },
     {
       label: 'Números',
@@ -955,6 +949,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         availableBreeds={availableBreeds}
         availableStages={availableStages}
         availableGenders={availableGenders}
+        crossTabDuplicatesCount={crossTabDuplicates.length}
+        onShowDuplicates={() => setShowCrossTabDups(true)}
         formatStatLabel={formatStatLabel}
         tabsTotal={tabsTotal}
       />

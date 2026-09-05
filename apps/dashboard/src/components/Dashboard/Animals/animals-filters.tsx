@@ -201,6 +201,8 @@ export interface AnimalsFiltersProps {
   availableBreeds: string[]
   availableStages: string[]
   availableGenders: string[]
+  crossTabDuplicatesCount: number
+  onShowDuplicates: () => void
   formatStatLabel: (
     key: AnimalStage | AnimalType | AnimalGender | AnimalStatus | AnimalBreedingStatus | 'libre',
   ) => string
@@ -320,6 +322,8 @@ export const AnimalsFilters = ({
   activeFilterCount,
   availableTypes,
   availableBreeds,
+  crossTabDuplicatesCount,
+  onShowDuplicates,
   formatStatLabel,
   tabsTotal,
 }: AnimalsFiltersProps) => {
@@ -592,6 +596,23 @@ export const AnimalsFilters = ({
               setOpenQuickFilter(null)
             }}
           />
+          {crossTabDuplicatesCount > 0 && (
+            <button
+              type="button"
+              aria-label={`${crossTabDuplicatesCount} animales aparecen en más de una condición compatible. Ver condiciones`}
+              title={`${crossTabDuplicatesCount} animales aparecen en más de una condición compatible`}
+              onClick={onShowDuplicates}
+              className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-full border border-blue-200 bg-blue-50 px-2 text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+            >
+              <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="size-4">
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0ZM9.25 8.25A.75.75 0 0 1 10 7.5h.01a.75.75 0 0 1 .75.75v5a.75.75 0 0 1-1.5 0v-5ZM10 5.25a.875.875 0 1 0 0 1.75.875.875 0 0 0 0-1.75Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          )}
           {hasActiveFilters && (
             <>
               {filters.type && (
