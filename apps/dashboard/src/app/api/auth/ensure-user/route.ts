@@ -75,6 +75,7 @@ export async function POST(req: NextRequest) {
         name: data.name || decodedToken.name || null,
         roles: data.roles || [],
         currentFarmId: data.currentFarmId || null,
+        preferences: data.preferences || undefined,
         createdAt,
         subscriptionStatus: data.subscriptionStatus || null,
         planType: data.planType || null,

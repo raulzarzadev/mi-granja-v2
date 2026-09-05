@@ -5,6 +5,7 @@ import BreedingCard from '@/components/BreedingCard'
 import BreedingTable from '@/components/BreedingTable'
 import Button from '@/components/buttons/Button'
 import ModalOnboarding from '@/components/onboarding/ModalOnboarding'
+import { useUserPreferences } from '@/hooks/useUserPreferences'
 import type { Animal } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
 import type { BreedingActionHandlers } from '@/types/components/breeding'
@@ -50,6 +51,15 @@ export default function TabStageEmpadre({
   updateBreedingRecord,
 }: Props) {
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const {
+    duplicateEmpadreWarningDismissed,
+    setDuplicateEmpadreWarningDismissed,
+  } = useUserPreferences()
+  const showDuplicateWarning = !duplicateEmpadreWarningDismissed
+  const saveDuplicateWarningPreference = (dismissed: boolean) => {
+    void setDuplicateEmpadreWarningDismissed(dismissed).catch(() => undefined)
+  }
+
   const finishBreeding = async (record: BreedingRecord) => {
     await updateBreedingRecord(record.id, { status: 'finished' })
   }
@@ -57,8 +67,30 @@ export default function TabStageEmpadre({
   return (
     <div>
       <ModalOnboarding isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
-      {duplicateEmpadreFemales.length > 0 && (
-        <div className="mb-3 p-3 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 text-sm">
+      {duplicateEmpadreFemales.length > 0 && showDuplicateWarning && (
+        <div
+          role="alert"
+          className="relative mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 pr-12 text-sm text-amber-900"
+        >
+          <button
+            type="button"
+            onClick={() => saveDuplicateWarningPreference(true)}
+            aria-label="Cerrar advertencia de empadres duplicados"
+            title="Cerrar advertencia"
+            className="absolute right-2 top-2 inline-flex min-h-9 min-w-9 items-center justify-center rounded-md text-amber-700 transition-colors hover:bg-amber-100 hover:text-amber-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-1"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              className="h-5 w-5"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            >
+              <path d="m6 6 12 12M18 6 6 18" />
+            </svg>
+          </button>
           <div className="font-semibold mb-2">
             ⚠️ {duplicateEmpadreFemales.length} hembra
             {duplicateEmpadreFemales.length !== 1 ? 's' : ''} en múltiples empadres activos
@@ -99,9 +131,33 @@ export default function TabStageEmpadre({
           for (const id of ids) await onDeleteRecord(id)
         }}
         onConfirmPregnancy={(record) => onConfirmPregnancy?.(record, '')}
-        toolbar={
-          <div className="flex items-center gap-2">
-            <Button
+      toolbar={
+        <div className="flex items-center gap-2">
+          {duplicateEmpadreFemales.length > 0 && !showDuplicateWarning && (
+            <button
+              type="button"
+              onClick={() => saveDuplicateWarningPreference(false)}
+              aria-label="Mostrar advertencia de empadres duplicados"
+              title="Mostrar advertencia de empadres duplicados"
+              className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 text-amber-700 transition-colors hover:border-amber-400 hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-1"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="h-5 w-5"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m12 3-9.3 16a1 1 0 0 0 .9 1.5h16.8a1 1 0 0 0 .9-1.5L12 3Z" />
+                <path d="M12 9v4" />
+                <path d="M12 17h.01" />
+              </svg>
+            </button>
+          )}
+          <Button
               size="xs"
               variant="ghost"
               color="primary"

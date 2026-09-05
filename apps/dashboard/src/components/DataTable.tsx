@@ -102,7 +102,6 @@ function DataTable<T>({
   defaultSortKey,
   defaultSortDir = 'asc',
   emptyMessage = 'No hay datos.',
-  title,
   toolbar,
   selectionAction,
   selectionModeAction,
@@ -217,22 +216,83 @@ function DataTable<T>({
       .filter(Boolean)
       .join(' ')
 
+  const paginationControls =
+    pageSize > 0 && sortedData.length > 0 ? (
+      <div className="flex shrink-0 items-center gap-2 text-sm text-gray-700">
+        <span className="hidden text-xs font-semibold uppercase tracking-wide text-gray-500 sm:inline">
+          Filas
+        </span>
+        <select
+          value={pageSize}
+          onChange={(e) => {
+            setPageSize(Number(e.target.value))
+            setPage(0)
+          }}
+          aria-label="Filas por página"
+          className="min-h-9 cursor-pointer rounded-md border border-gray-300 bg-white px-2.5 py-1 text-sm font-semibold text-gray-700 shadow-sm outline-none transition-colors hover:border-gray-400 focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-1"
+        >
+          {[10, 25, 50, 100].map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+        <span className="whitespace-nowrap text-sm font-semibold text-gray-700" aria-live="polite">
+          {start}–{end} <span className="font-normal text-gray-500">de</span>{' '}
+          {sortedData.length}
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={safePage === 0}
+            aria-label="Página anterior"
+            title="Página anterior"
+            className="inline-flex min-h-10 min-w-10 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 shadow-sm transition-colors hover:border-gray-400 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              fill="none"
+              className="h-5 w-5"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m12.5 15-5-5 5-5" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={safePage >= totalPages - 1}
+            aria-label="Página siguiente"
+            title="Página siguiente"
+            className="inline-flex min-h-10 min-w-10 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 shadow-sm transition-colors hover:border-gray-400 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              fill="none"
+              className="h-5 w-5"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m7.5 5 5 5-5 5" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    ) : null
+
   return (
     <div>
-      {/* Header bar: title + pagination + view toggle + toolbar */}
-      {(title || toolbar || renderCard) && (
-        <div className="px-2 py-2 flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            {title &&
-              (typeof title === 'string' ? (
-                <h3 className="text-lg font-semibold">{title}</h3>
-              ) : (
-                title
-              ))}
-          </div>
+      {/* Header bar: toolbar + view toggle */}
+      {(toolbar || renderCard) && (
+        <div className="px-2 py-2 flex items-center justify-end gap-2 flex-wrap">
           <div className="flex items-center gap-2">
             {toolbar}
-            {/* Pagination */}
             {renderCard && (
               <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
                 <button
@@ -281,50 +341,14 @@ function DataTable<T>({
                 </button>
               </div>
             )}
-            {pageSize > 0 && sortedData.length > 0 && (
-              <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                <select
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value))
-                    setPage(0)
-                  }}
-                  className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm cursor-pointer"
-                >
-                  {[10, 25, 50, 100].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-xs">
-                  {start}–{end} de <strong className="text-gray-700">{sortedData.length}</strong>
-                </span>
-                <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                  <button
-                    onClick={() => setPage((p) => Math.max(0, p - 1))}
-                    disabled={safePage === 0}
-                    className="p-1.5 px-3 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                    disabled={safePage >= totalPages - 1}
-                    className="p-1.5 px-3 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                  >
-                    ›
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
       {/* Selection toolbar */}
       {selectable && (
-        <div className="px-2 py-2 flex items-center gap-2 text-xs flex-wrap">
-          {!isSelectionMode ? (
+        <div className="px-2 py-2 flex items-center justify-between gap-3 text-sm flex-wrap">
+          <div className="flex items-center gap-2 text-sm flex-wrap">
+            {!isSelectionMode ? (
             <>
               <button
                 onClick={() => setIsSelectionMode(true)}
@@ -372,8 +396,13 @@ function DataTable<T>({
                 </>
               )}
             </>
-          )}
+            )}
+          </div>
+          {paginationControls}
         </div>
+      )}
+      {!selectable && paginationControls && (
+        <div className="px-2 py-2 flex justify-end">{paginationControls}</div>
       )}
 
       {sortedData.length === 0 ? (
@@ -460,6 +489,11 @@ function DataTable<T>({
               })}
             </tbody>
           </table>
+        </div>
+      )}
+      {paginationControls && (
+        <div className="flex justify-end px-2 py-3">
+          {paginationControls}
         </div>
       )}
     </div>

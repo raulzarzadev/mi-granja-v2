@@ -5,12 +5,19 @@ export interface User {
   farmName?: string
   roles: ('admin' | 'farmer' | 'vet')[]
   currentFarmId?: string // ID de la granja actualmente seleccionada
+  preferences?: UserPreferences
   createdAt: Date
 
   // Campos de billing (desnormalizados desde subscriptions collection)
   subscriptionStatus?: import('./billing').SubscriptionStatus
   planType?: import('./billing').PlanType
   billingTierId?: import('./billing').PlanTierId
+}
+
+export interface UserPreferences {
+  dismissedWarnings?: {
+    duplicateEmpadre?: boolean
+  }
 }
 
 export interface MilkProduction {

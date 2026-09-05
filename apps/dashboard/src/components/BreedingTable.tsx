@@ -200,6 +200,9 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
     [],
   )
 
+  const finishTooltip =
+    'Al terminar: las hembras sin gestación y los machos regresan a Reproducción; las gestaciones confirmadas se conservan.'
+
   return (
     <>
       <DataTable
@@ -231,6 +234,7 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
                   size="xs"
                   color="warning"
                   icon="check_circle"
+                  title={finishTooltip}
                   onClick={() => {
                     setBulkFinishIds(finishableIds)
                     setShowBulkFinishModal(true)
@@ -269,7 +273,13 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
             {onFinish && row.record.status !== 'finished' && (
               <ButtonConfirm
                 openLabel="Terminar"
-                openProps={{ size: 'xs', variant: 'ghost', color: 'warning', icon: 'check_circle' }}
+                openProps={{
+                  size: 'xs',
+                  variant: 'ghost',
+                  color: 'warning',
+                  icon: 'check_circle',
+                  title: finishTooltip,
+                }}
                 confirmProps={{ color: 'warning' }}
                 confirmText={`¿Terminar empadre ${row.record.breedingId || row.record.id}?`}
                 confirmLabel="Terminar"
