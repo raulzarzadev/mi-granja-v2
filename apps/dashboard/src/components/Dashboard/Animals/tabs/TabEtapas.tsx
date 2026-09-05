@@ -14,16 +14,6 @@ interface Props {
 
 const TabEtapas: React.FC<Props> = ({ crossTabDuplicatesCount, onShowDuplicates, etapasTabs }) => (
   <div className="mt-2 space-y-3">
-    <div className="grid gap-2 rounded-xl border border-gray-200 bg-white p-3 text-xs sm:grid-cols-2">
-      <p className="text-gray-700">
-        <strong className="text-gray-900">Desarrollo:</strong> Cría → Juvenil → Engorda o
-        Reproductor. Juvenil se calcula automáticamente por edad.
-      </p>
-      <p className="text-gray-700">
-        <strong className="text-gray-900">Condiciones:</strong> Empadre, Gestación y Madre/Lechera
-        pueden cambiar o coexistir durante el ciclo.
-      </p>
-    </div>
     {crossTabDuplicatesCount > 0 && (
       <div className="flex items-center justify-between gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2.5 text-xs text-blue-900">
         <span>
