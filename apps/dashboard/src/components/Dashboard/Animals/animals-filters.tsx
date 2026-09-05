@@ -222,6 +222,97 @@ const FilterIcon = ({ active }: { active: boolean }) => (
   </svg>
 )
 
+type QuickFilterMenuProps = {
+  label: string
+  selectedLabel: string
+  value: string
+  allLabel: string
+  options: Array<{ value: string; label: string }>
+  open: boolean
+  onToggle: () => void
+  onChange: (value: string) => void
+}
+
+const QuickFilterMenu = ({
+  label,
+  selectedLabel,
+  value,
+  allLabel,
+  options,
+  open,
+  onToggle,
+  onChange,
+}: QuickFilterMenuProps) => (
+  <div className="relative">
+    <button
+      type="button"
+      aria-haspopup="menu"
+      aria-expanded={open}
+      onClick={onToggle}
+      className={`inline-flex min-h-8 items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-1 ${
+        value
+          ? 'border-slate-300 bg-white text-slate-800 ring-2 ring-slate-400 ring-offset-1'
+          : open
+            ? 'border-slate-300 bg-slate-50 text-slate-800'
+            : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+      }`}
+    >
+      <span>{selectedLabel || label}</span>
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        className={`size-3.5 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}
+      >
+        <path
+          fillRule="evenodd"
+          d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z"
+          clipRule="evenodd"
+        />
+      </svg>
+    </button>
+    {open && (
+      <div
+        role="menu"
+        aria-label={`Filtrar por ${label.toLowerCase()}`}
+        className="absolute left-0 top-full z-30 mt-2 min-w-36 rounded-lg border border-slate-200 bg-white p-1 shadow-lg"
+      >
+        <button
+          type="button"
+          role="menuitemradio"
+          aria-checked={value === ''}
+          onClick={() => onChange('')}
+          className={`flex min-h-9 w-full items-center justify-between rounded-md px-2.5 text-left text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 ${
+            value === ''
+              ? 'bg-slate-100 font-medium text-slate-900'
+              : 'text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          {allLabel}
+          {value === '' && <span aria-hidden="true">✓</span>}
+        </button>
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            role="menuitemradio"
+            aria-checked={value === option.value}
+            onClick={() => onChange(option.value)}
+            className={`flex min-h-9 w-full items-center justify-between rounded-md px-2.5 text-left text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 ${
+              value === option.value
+                ? 'bg-slate-100 font-medium text-slate-900'
+                : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            {option.label}
+            {value === option.value && <span aria-hidden="true">✓</span>}
+          </button>
+        ))}
+      </div>
+    )}
+  </div>
+)
+
 export const AnimalsFilters = ({
   filters,
   setFilters,
@@ -269,174 +360,6 @@ export const AnimalsFilters = ({
           onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
           className="min-w-[14rem] flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
         />
-
-        <div ref={quickFiltersRef} className="flex flex-wrap items-center gap-2">
-          <div className="relative">
-            <button
-              type="button"
-              aria-haspopup="menu"
-              aria-expanded={openQuickFilter === 'gender'}
-              onClick={() =>
-                setOpenQuickFilter((current) => (current === 'gender' ? null : 'gender'))
-              }
-              className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 ${
-                filters.gender
-                  ? 'border-slate-300 bg-white text-slate-800 ring-2 ring-slate-400 ring-offset-1'
-                  : openQuickFilter === 'gender'
-                    ? 'border-slate-300 bg-slate-50 text-slate-800'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <span>Género</span>
-              {filters.gender && (
-                <span className="font-medium text-slate-800">
-                  {formatStatLabel(filters.gender)}
-                </span>
-              )}
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                className={`size-4 text-slate-400 transition-transform ${
-                  openQuickFilter === 'gender' ? 'rotate-180' : ''
-                }`}
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-            {openQuickFilter === 'gender' && (
-              <div
-                role="menu"
-                aria-label="Filtrar por género"
-                className="absolute left-0 top-full z-30 mt-2 min-w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg"
-              >
-                <button
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={filters.gender === ''}
-                  onClick={() => {
-                    setFilters((prev) => ({ ...prev, gender: '' }))
-                    setOpenQuickFilter(null)
-                  }}
-                  className={`flex min-h-10 w-full items-center justify-between rounded-lg px-3 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 ${
-                    filters.gender === ''
-                      ? 'bg-slate-100 font-medium text-slate-900'
-                      : 'text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  Todos
-                  {filters.gender === '' && <span aria-hidden="true">✓</span>}
-                </button>
-                {Object.entries(animals_genders_labels).map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={filters.gender === (key as AnimalGender)}
-                    onClick={() => {
-                      setFilters((prev) => ({ ...prev, gender: key as AnimalGender }))
-                      setOpenQuickFilter(null)
-                    }}
-                    className={`flex min-h-10 w-full items-center justify-between rounded-lg px-3 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 ${
-                      filters.gender === key
-                        ? 'bg-slate-100 font-medium text-slate-900'
-                        : 'text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    {label}
-                    {filters.gender === key && <span aria-hidden="true">✓</span>}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="relative">
-            <button
-              type="button"
-              aria-haspopup="menu"
-              aria-expanded={openQuickFilter === 'stage'}
-              onClick={() =>
-                setOpenQuickFilter((current) => (current === 'stage' ? null : 'stage'))
-              }
-              className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 ${
-                filters.stage
-                  ? 'border-slate-300 bg-white text-slate-800 ring-2 ring-slate-400 ring-offset-1'
-                  : openQuickFilter === 'stage'
-                    ? 'border-slate-300 bg-slate-50 text-slate-800'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <span>Etapa</span>
-              {filters.stage && (
-                <span className="font-medium text-slate-800">{formatStatLabel(filters.stage)}</span>
-              )}
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                className={`size-4 text-slate-400 transition-transform ${
-                  openQuickFilter === 'stage' ? 'rotate-180' : ''
-                }`}
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-            {openQuickFilter === 'stage' && (
-              <div
-                role="menu"
-                aria-label="Filtrar por etapa"
-                className="absolute left-0 top-full z-30 mt-2 min-w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg"
-              >
-                <button
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={filters.stage === ''}
-                  onClick={() => {
-                    setFilters((prev) => ({ ...prev, stage: '' }))
-                    setOpenQuickFilter(null)
-                  }}
-                  className={`flex min-h-10 w-full items-center justify-between rounded-lg px-3 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 ${
-                    filters.stage === ''
-                      ? 'bg-slate-100 font-medium text-slate-900'
-                      : 'text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  Todas
-                  {filters.stage === '' && <span aria-hidden="true">✓</span>}
-                </button>
-                {Object.entries(animals_stages_labels).map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={filters.stage === (key as AnimalStage)}
-                    onClick={() => {
-                      setFilters((prev) => ({ ...prev, stage: key as AnimalStage }))
-                      setOpenQuickFilter(null)
-                    }}
-                    className={`flex min-h-10 w-full items-center justify-between rounded-lg px-3 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 ${
-                      filters.stage === key
-                        ? 'bg-slate-100 font-medium text-slate-900'
-                        : 'text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    {label}
-                    {filters.stage === key && <span aria-hidden="true">✓</span>}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* Botón limpiar filtros */}
         {(activeFilterCount > 0 || filters.search) && (
@@ -634,7 +557,41 @@ export const AnimalsFilters = ({
 
       {/* Resumen de resultados + filtros activos */}
       <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div ref={quickFiltersRef} className="flex items-center gap-1.5 flex-wrap">
+          <QuickFilterMenu
+            label="Género"
+            selectedLabel={filters.gender ? formatStatLabel(filters.gender) : ''}
+            value={filters.gender}
+            allLabel="Todos"
+            options={Object.entries(animals_genders_labels).map(([value, label]) => ({
+              value,
+              label,
+            }))}
+            open={openQuickFilter === 'gender'}
+            onToggle={() =>
+              setOpenQuickFilter((current) => (current === 'gender' ? null : 'gender'))
+            }
+            onChange={(value) => {
+              setFilters((prev) => ({ ...prev, gender: value as AnimalGender | '' }))
+              setOpenQuickFilter(null)
+            }}
+          />
+          <QuickFilterMenu
+            label="Etapa"
+            selectedLabel={filters.stage ? formatStatLabel(filters.stage) : ''}
+            value={filters.stage}
+            allLabel="Todas"
+            options={Object.entries(animals_stages_labels).map(([value, label]) => ({
+              value,
+              label,
+            }))}
+            open={openQuickFilter === 'stage'}
+            onToggle={() => setOpenQuickFilter((current) => (current === 'stage' ? null : 'stage'))}
+            onChange={(value) => {
+              setFilters((prev) => ({ ...prev, stage: value as AnimalStage | '' }))
+              setOpenQuickFilter(null)
+            }}
+          />
           {hasActiveFilters && (
             <>
               {filters.type && (
@@ -650,16 +607,6 @@ export const AnimalsFilters = ({
               {filters.breed && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                   {filters.breed}
-                </span>
-              )}
-              {filters.stage && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  {formatStatLabel(filters.stage)}
-                </span>
-              )}
-              {filters.gender && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
-                  {formatStatLabel(filters.gender)}
                 </span>
               )}
               {filters.breedingStatus && (
