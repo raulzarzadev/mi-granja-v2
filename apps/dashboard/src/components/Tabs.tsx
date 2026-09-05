@@ -113,7 +113,7 @@ const Tabs: React.FC<TabsProps> = ({
         role="tablist"
         aria-label="Secciones"
         className={`flex gap-2 overflow-x-auto pb-1 pt-1 ${
-          hideScrollbar ? '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'scrollbar-thin'
+          hideScrollbar ? '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'tabs-scrollbar'
         }`}
         onKeyDown={handleKey}
       >

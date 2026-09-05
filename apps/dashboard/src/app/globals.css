@@ -70,3 +70,28 @@ label {
 button {
   font-weight: 500;
 }
+
+/* Scroll horizontal visible y sólido para filas de tabs desbordadas */
+.tabs-scrollbar {
+  scrollbar-width: auto;
+  scrollbar-color: rgb(148 163 184) rgb(226 232 240);
+}
+
+.tabs-scrollbar::-webkit-scrollbar {
+  height: 10px;
+}
+
+.tabs-scrollbar::-webkit-scrollbar-track {
+  background: rgb(226 232 240);
+  border-radius: 9999px;
+}
+
+.tabs-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(148 163 184);
+  border: 2px solid rgb(226 232 240);
+  border-radius: 9999px;
+}
+
+.tabs-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(100 116 139);
+}
