@@ -20,6 +20,7 @@ import type { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import {
+  computeAnimalStage,
   findAnimalByRef,
   getWeaningDueDate,
   getWeaningStatus,
@@ -258,6 +259,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       if (filters.type && animal.type !== filters.type) return false
       if (filters.breed && animal.breed !== filters.breed) return false
       if (filters.gender && animal.gender !== filters.gender) return false
+      if (filters.stage && computeAnimalStage(animal) !== filters.stage) return false
       if (!skipSearch) {
         const q = filters.search.trim().toLowerCase()
         if (q) {
