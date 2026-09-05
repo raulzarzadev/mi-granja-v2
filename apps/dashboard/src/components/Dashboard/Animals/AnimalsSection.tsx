@@ -1244,7 +1244,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           (() => {
             const r = viewingBreedingRecord
             const male = animals.find((a) => a.id === r.maleId)
-            const groups = groupFemalesByStatus(r.femaleBreedingInfo)
+            const groups = groupFemalesByStatus(r.femaleBreedingInfo, animals, r)
             return (
               <div className="p-4 space-y-4">
                 <div className="flex items-center justify-between text-sm">

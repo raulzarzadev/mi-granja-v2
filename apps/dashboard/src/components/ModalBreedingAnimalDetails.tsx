@@ -6,17 +6,18 @@ import { Modal } from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { formatDate } from '@/lib/dates'
-import { Animal, AnimalBreedingStatus } from '@/types/animals'
+import { Animal } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 import { BadgeAnimalStatus } from './Badges/BadgeAnimalStatus'
+import type { FemaleBreedingStatus } from './Dashboard/Animals/helpers/breedingViewHelpers'
 import { Icon, IconName } from './Icon/icon'
 
 interface ModalBreedingAnimalDetailsProps extends BreedingActionHandlers {
   animal: Animal
   record: BreedingRecord
   animalType: 'male' | 'female'
-  status?: AnimalBreedingStatus
+  status?: FemaleBreedingStatus
   triggerComponent?: React.ReactNode
   animals: Animal[]
 }
@@ -122,6 +123,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
     animalType === 'female'
       ? record.femaleBreedingInfo.find((info) => info.femaleId === animal.id)
       : null
+  const pregnancyDate = animal.pregnantAt ?? femaleInfo?.pregnancyConfirmedDate ?? null
 
   const expectedBirthDate = () => {
     if (animalType === 'male') return null
@@ -132,8 +134,8 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
     if (!animalsType) return null
     if (femaleInfo?.actualBirthDate) return null
 
-    if (femaleInfo?.pregnancyConfirmedDate) {
-      return calculateExpectedBirthDate(femaleInfo.pregnancyConfirmedDate, animalsType)
+    if (pregnancyDate) {
+      return calculateExpectedBirthDate(pregnancyDate, animalsType)
     }
 
     if (record.breedingDate) {
@@ -203,22 +205,25 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                     <BadgeAnimalStatus status={status} />
                   </div>
 
-                  {status === 'embarazada' && femaleInfo?.pregnancyConfirmedDate && (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Gestación confirmada:</span>
-                        <span className="font-medium">
-                          {formatDate(femaleInfo.pregnancyConfirmedDate)}
-                        </span>
-                      </div>
-                      {expectedBirthDate() && (
+                  {(status === 'embarazada' || status === 'embarazada_otra_monta') &&
+                    pregnancyDate && (
+                      <>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Parto esperado:</span>
-                          <span className="font-medium">{formatDate(expectedBirthDate()!)}</span>
+                          <span className="text-gray-600">
+                            {status === 'embarazada_otra_monta'
+                              ? 'Gestación activa:'
+                              : 'Gestación confirmada:'}
+                          </span>
+                          <span className="font-medium">{formatDate(pregnancyDate)}</span>
                         </div>
-                      )}
-                    </>
-                  )}
+                        {expectedBirthDate() && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Parto esperado:</span>
+                            <span className="font-medium">{formatDate(expectedBirthDate()!)}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
 
                   {status === 'parida' && femaleInfo?.actualBirthDate && (
                     <div className="flex justify-between">

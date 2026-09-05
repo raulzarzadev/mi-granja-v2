@@ -103,13 +103,15 @@ describe('groupFemalesByStatus', () => {
 
     const groups = groupFemalesByStatus([enEmpadre, gestante, parida])
 
-    expect(groups).toHaveLength(3)
+    expect(groups).toHaveLength(4)
     expect(groups[0].key).toBe('empadre')
     expect(groups[0].items).toEqual([enEmpadre])
     expect(groups[1].key).toBe('embarazada')
     expect(groups[1].items).toEqual([gestante])
-    expect(groups[2].key).toBe('parida')
-    expect(groups[2].items).toEqual([parida])
+    expect(groups[2].key).toBe('embarazada_otra_monta')
+    expect(groups[2].items).toEqual([])
+    expect(groups[3].key).toBe('parida')
+    expect(groups[3].items).toEqual([parida])
   })
 
   it('hembras con birthDate son paridas aunque tengan pregnancyConfirmedDate', () => {
@@ -123,7 +125,7 @@ describe('groupFemalesByStatus', () => {
 
     expect(groups[0].items).toHaveLength(0)
     expect(groups[1].items).toHaveLength(0)
-    expect(groups[2].items).toEqual([parida])
+    expect(groups[3].items).toEqual([parida])
   })
 
   it('maneja lista vacía', () => {
@@ -141,7 +143,27 @@ describe('groupFemalesByStatus', () => {
     const groups = groupFemalesByStatus(females)
     expect(groups[0].items).toHaveLength(2) // 2 en empadre
     expect(groups[1].items).toHaveLength(1) // 1 gestante
-    expect(groups[2].items).toHaveLength(0) // 0 paridas
+    expect(groups[3].items).toHaveLength(0) // 0 paridas
+  })
+
+  it('marca una hembra gestante en otra monta', () => {
+    const femaleInfo = makeFemale({
+      femaleId: 'f1',
+      pregnancyConfirmedDate: new Date('2026-02-01'),
+    })
+    const record = makeBreeding({ id: 'record-current', femaleBreedingInfo: [femaleInfo] })
+    const animal = makeAnimal({
+      id: 'f1',
+      pregnantAt: new Date('2026-02-01'),
+      pregnantBreedingRecordId: 'record-other',
+    })
+
+    const groups = groupFemalesByStatus(record.femaleBreedingInfo, [animal], record)
+
+    expect(groups[0].items).toHaveLength(0)
+    expect(groups[1].items).toHaveLength(0)
+    expect(groups[2].items).toEqual([femaleInfo])
+    expect(groups[3].items).toHaveLength(0)
   })
 })
 
@@ -254,8 +276,8 @@ describe('terminar empadre — clasificación de records', () => {
     const groups = groupFemalesByStatus(terminated.femaleBreedingInfo)
 
     expect(groups[1].items[0].pregnancyConfirmedDate).toEqual(new Date('2026-02-01'))
-    expect(groups[2].items[0].actualBirthDate).toEqual(new Date('2026-06-15'))
-    expect(groups[2].items[0].offspring).toEqual(['cria-1'])
+    expect(groups[3].items[0].actualBirthDate).toEqual(new Date('2026-06-15'))
+    expect(groups[3].items[0].offspring).toEqual(['cria-1'])
     expect(groups[0].items[0].pregnancyConfirmedDate).toBeNull()
     expect(groups[0].items[0].actualBirthDate).toBeNull()
   })
@@ -368,13 +390,13 @@ describe('revertir parto — transformación de datos', () => {
 
     // Antes de revertir: parida
     const groupsBefore = groupFemalesByStatus(record.femaleBreedingInfo)
-    expect(groupsBefore[2].items).toHaveLength(1) // parida
+    expect(groupsBefore[3].items).toHaveLength(1) // parida
     expect(groupsBefore[1].items).toHaveLength(0) // no gestante
 
     // Después de revertir
     const result = simulateRevertBirth(record, 'f1')!
     const groupsAfter = groupFemalesByStatus(result.updatedFemaleInfo)
-    expect(groupsAfter[2].items).toHaveLength(0) // ya no parida
+    expect(groupsAfter[3].items).toHaveLength(0) // ya no parida
     expect(groupsAfter[1].items).toHaveLength(1) // ahora gestante
     expect(groupsAfter[1].items[0].pregnancyConfirmedDate).toEqual(new Date('2026-02-01'))
   })

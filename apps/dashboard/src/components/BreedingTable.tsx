@@ -8,6 +8,7 @@ import { Modal } from '@/components/Modal'
 import { formatDate } from '@/lib/dates'
 import { Animal, animals_types_labels } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
+import { getFemaleBreedingStatus } from './Dashboard/Animals/helpers/breedingViewHelpers'
 import InfoNote from './InfoNote'
 
 interface BreedingTableProps {
@@ -25,30 +26,39 @@ interface BreedingTableProps {
   }) => React.ReactNode
 }
 
-function getBreedingStatus(record: BreedingRecord) {
+function getBreedingStatus(record: BreedingRecord, animals: Animal[]) {
   let pending = 0
   let pregnant = 0
+  let pregnantInOtherBreeding = 0
   let births = 0
   let totalOffspring = 0
 
   for (const f of record.femaleBreedingInfo) {
-    if (f.actualBirthDate) {
+    const status = getFemaleBreedingStatus(f, animals, record)
+    if (status === 'parida') {
       births++
       totalOffspring += f.offspring?.length || 0
-    } else if (f.pregnancyConfirmedDate) {
+    } else if (status === 'embarazada') {
       pregnant++
+    } else if (status === 'embarazada_otra_monta') {
+      pregnantInOtherBreeding++
     } else {
       pending++
     }
   }
 
-  return { pending, pregnant, births, totalOffspring }
+  return { pending, pregnant, pregnantInOtherBreeding, births, totalOffspring }
 }
 
 function statusLabel(s: ReturnType<typeof getBreedingStatus>) {
   const parts: string[] = []
   if (s.pending > 0) parts.push(`${s.pending} pend`)
   if (s.pregnant > 0) parts.push(`${s.pregnant} emb`)
+  if (s.pregnantInOtherBreeding > 0) {
+    parts.push(
+      `${s.pregnantInOtherBreeding} gestante${s.pregnantInOtherBreeding !== 1 ? 's' : ''} en otra monta`,
+    )
+  }
   if (s.births > 0) parts.push(`${s.births} partos`)
   return parts.join(' / ') || '-'
 }
@@ -56,6 +66,7 @@ function statusLabel(s: ReturnType<typeof getBreedingStatus>) {
 function statusColor(s: ReturnType<typeof getBreedingStatus>) {
   if (s.pending > 0) return 'bg-yellow-100 text-yellow-800'
   if (s.pregnant > 0) return 'bg-blue-100 text-blue-800'
+  if (s.pregnantInOtherBreeding > 0) return 'bg-orange-100 text-orange-800'
   if (s.births > 0) return 'bg-green-100 text-green-800'
   return 'bg-gray-100 text-gray-600'
 }
@@ -90,7 +101,7 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
       records.map((r) => ({
         record: r,
         male: animals.find((a) => a.id === r.maleId),
-        status: getBreedingStatus(r),
+        status: getBreedingStatus(r, animals),
       })),
     [records, animals],
   )

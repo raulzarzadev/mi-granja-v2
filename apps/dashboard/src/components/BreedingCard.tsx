@@ -6,12 +6,16 @@ import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import catchError from '@/lib/catchError'
 import { formatDate, fromNow } from '@/lib/dates'
-import { Animal, AnimalBreedingStatus } from '@/types/animals'
+import { Animal } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 import { NewCommentInput } from '@/types/comment'
 import { BreedingActionHandlers } from '@/types/components/breeding'
 import { BadgeAnimalStatus } from './Badges/BadgeAnimalStatus'
 import { Comments } from './comments/modal-comments'
+import {
+  type FemaleBreedingStatus,
+  getFemaleBreedingStatus,
+} from './Dashboard/Animals/helpers/breedingViewHelpers'
 import { Icon } from './Icon/icon'
 import ModalBreedingAnimalDetails from './ModalBreedingAnimalDetails'
 
@@ -84,15 +88,19 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
     // algo asi Empadre en proceso. Partos:2 Gestaciones:3 Pendientes: 1
     const births = record.femaleBreedingInfo.filter((info) => info.actualBirthDate).length
     const pregnancies = record.femaleBreedingInfo.filter(
-      (info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate,
+      (info) => getFemaleBreedingStatus(info, animals, record) === 'embarazada',
+    ).length
+    const pregnantInOtherBreeding = record.femaleBreedingInfo.filter(
+      (info) => getFemaleBreedingStatus(info, animals, record) === 'embarazada_otra_monta',
     ).length
     const pending = record.femaleBreedingInfo.filter(
-      (info) => !info.pregnancyConfirmedDate && !info.actualBirthDate,
+      (info) => getFemaleBreedingStatus(info, animals, record) === 'empadre',
     ).length
 
     return {
       births,
       pregnancies,
+      pregnantInOtherBreeding,
       pending,
     }
   }
@@ -100,6 +108,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   const getStatusColor = (statuses: ReturnType<typeof getFemaleStatuses>) => {
     if (statuses.pending > 0) return 'bg-yellow-100 text-yellow-800' // Empadres pendientes
     if (statuses.pregnancies > 0) return 'bg-blue-100 text-blue-800' // Gestaciones
+    if (statuses.pregnantInOtherBreeding > 0) return 'bg-orange-100 text-orange-800'
     if (statuses.births > 0) return 'bg-green-100 text-green-800' // Partos
   }
 
@@ -108,15 +117,12 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
     record?.femaleBreedingInfo.map((info) => {
       const animalInfo = animals.find((a) => info.femaleId === a.id)
 
-      // Determinar el estado real de la hembra
-      let status: AnimalBreedingStatus = 'empadre'
-      if (info.actualBirthDate) {
-        status = 'parida'
-      } else if (info.pregnancyConfirmedDate) {
-        status = 'embarazada'
-      } else {
-        status = 'empadre'
-      }
+      // Determinar el estado real usando la gestación guardada en el animal.
+      const status: FemaleBreedingStatus = getFemaleBreedingStatus(info, animals, record)
+      const pregnancyDate =
+        status === 'embarazada' || status === 'embarazada_otra_monta'
+          ? animalInfo?.pregnantAt || info.pregnancyConfirmedDate
+          : info.pregnancyConfirmedDate
 
       const expectedBirthDate = () => {
         // Priorizar el tipo de la hembra; si no, usar el del macho
@@ -127,8 +133,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         if (info.actualBirthDate) return null
 
         // si hay gestación confirmada, calcular desde esa fecha
-        if (info.pregnancyConfirmedDate) {
-          const res = calculateExpectedBirthDate(info.pregnancyConfirmedDate, typeForCalc)
+        if (pregnancyDate) {
+          const res = calculateExpectedBirthDate(pregnancyDate, typeForCalc)
           return res
         }
 
@@ -142,7 +148,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         animalId: animalInfo?.id || info.femaleId, // Número del animal para mostrar al usuario
         animalNumber: animalInfo?.animalNumber,
         type: animalInfo?.type,
-        pregnancyConfirmedDate: info.pregnancyConfirmedDate || null,
+        pregnancyConfirmedDate: pregnancyDate || null,
         expectedBirthDate: expected,
         actualBirthDate: info.actualBirthDate || null,
         status,
@@ -155,7 +161,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   // 1) En empadre (pendiente de confirmación)
   // 2) Gestantes con fecha probable de parto vencida
   // 3) Gestantes con fecha probable futura (más próximas primero)
-  // 4) Al final, las que ya han parido (más reciente primero)
+  // 4) Gestantes en otra monta
+  // 5) Al final, las que ya han parido (más reciente primero)
   const sortedFemales = React.useMemo(() => {
     const now = Date.now()
 
@@ -167,7 +174,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         }
         return 2 // próxima
       }
-      return 3 // parida
+      if (f.status === 'embarazada_otra_monta') return 3
+      return 4 // parida
     }
 
     const getAnimalNumber = (f: (typeof femalesBreedingInfo)[number]) =>
@@ -198,7 +206,14 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
           if (a.expectedBirthDate) return -1
           if (b.expectedBirthDate) return 1
           return 0
-        case 3: // parida: más reciente primero (fecha desc)
+        case 3: // gestante en otra monta: más próxima primero
+          if (a.expectedBirthDate && b.expectedBirthDate) {
+            return a.expectedBirthDate.getTime() - b.expectedBirthDate.getTime()
+          }
+          if (a.expectedBirthDate) return -1
+          if (b.expectedBirthDate) return 1
+          return 0
+        case 4: // parida: más reciente primero (fecha desc)
           if (a.actualBirthDate && b.actualBirthDate) {
             return b.actualBirthDate.getTime() - a.actualBirthDate.getTime()
           }
@@ -319,6 +334,13 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
               <Icon icon="pregnant" className="inline mr-1" />
               {femaleStatuses.pregnancies}{' '}
               {femaleStatuses.pregnancies === 1 ? 'gestación' : 'gestaciones'}
+            </span>
+          )}
+          {femaleStatuses.pregnantInOtherBreeding > 0 && (
+            <span className="text-orange-600 ml-2">
+              <Icon icon="pregnant" className="inline mr-1" />
+              {femaleStatuses.pregnantInOtherBreeding} gestante
+              {femaleStatuses.pregnantInOtherBreeding !== 1 ? 's' : ''} en otra monta
             </span>
           )}
           {femaleStatuses.pending > 0 && (
