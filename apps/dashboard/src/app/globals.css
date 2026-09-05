@@ -71,27 +71,33 @@ button {
   font-weight: 500;
 }
 
-/* Scroll horizontal visible y sólido para filas de tabs desbordadas */
+/* Scroll horizontal con indicador sólido persistente para filas de tabs desbordadas */
+.tabs-scrollbar-shell {
+  min-width: 0;
+}
+
 .tabs-scrollbar {
-  scrollbar-width: auto;
-  scrollbar-color: rgb(148 163 184) rgb(226 232 240);
+  scrollbar-width: none !important;
 }
 
 .tabs-scrollbar::-webkit-scrollbar {
-  height: 10px;
+  display: none !important;
+  width: 0;
+  height: 0;
 }
 
-.tabs-scrollbar::-webkit-scrollbar-track {
+.tabs-scrollbar-track {
+  width: 100%;
+  height: 8px;
+  margin-top: 2px;
   background: rgb(226 232 240);
   border-radius: 9999px;
+  overflow: hidden;
 }
 
-.tabs-scrollbar::-webkit-scrollbar-thumb {
-  background: rgb(148 163 184);
-  border: 2px solid rgb(226 232 240);
-  border-radius: 9999px;
-}
-
-.tabs-scrollbar::-webkit-scrollbar-thumb:hover {
+.tabs-scrollbar-thumb {
+  height: 100%;
   background: rgb(100 116 139);
+  border-radius: 9999px;
+  will-change: transform;
 }

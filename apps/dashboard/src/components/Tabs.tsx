@@ -1,6 +1,14 @@
 'use client'
 
-import React, { KeyboardEvent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import React, {
+  KeyboardEvent,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 
 type Tab = {
   label: string
@@ -75,6 +83,56 @@ const Tabs: React.FC<TabsProps> = ({
   }, [paramKey, slugs, initialActiveTab])
 
   const [activeTab, setActiveTab] = useState(resolveTab)
+  const tabListRef = useRef<HTMLDivElement>(null)
+  const [scrollbar, setScrollbar] = useState({
+    visible: false,
+    thumbWidth: 0,
+    thumbOffset: 0,
+  })
+
+  const updateScrollbar = useCallback(() => {
+    const tabList = tabListRef.current
+    if (!tabList || hideScrollbar) return
+
+    const viewportWidth = tabList.clientWidth
+    const maxScrollLeft = tabList.scrollWidth - viewportWidth
+
+    if (maxScrollLeft <= 0 || viewportWidth === 0) {
+      setScrollbar((current) =>
+        current.visible ? { visible: false, thumbWidth: 0, thumbOffset: 0 } : current,
+      )
+      return
+    }
+
+    const thumbWidth = Math.max((viewportWidth / tabList.scrollWidth) * viewportWidth, 24)
+    const maxThumbOffset = viewportWidth - thumbWidth
+    const thumbOffset = (tabList.scrollLeft / maxScrollLeft) * maxThumbOffset
+
+    setScrollbar({
+      visible: true,
+      thumbWidth,
+      thumbOffset,
+    })
+  }, [hideScrollbar])
+
+  useEffect(() => {
+    const tabList = tabListRef.current
+    if (!tabList || hideScrollbar) return
+
+    updateScrollbar()
+    tabList.addEventListener('scroll', updateScrollbar, { passive: true })
+    window.addEventListener('resize', updateScrollbar)
+
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateScrollbar) : null
+    resizeObserver?.observe(tabList)
+    Array.from(tabList.children).forEach((child) => resizeObserver?.observe(child))
+
+    return () => {
+      tabList.removeEventListener('scroll', updateScrollbar)
+      window.removeEventListener('resize', updateScrollbar)
+      resizeObserver?.disconnect()
+    }
+  }, [hideScrollbar, slugs, trailingAction, updateScrollbar])
 
   // Sync con URL al montar y al navegar back/forward
   useEffect(() => {
@@ -109,49 +167,90 @@ const Tabs: React.FC<TabsProps> = ({
 
   return (
     <div>
-      <div
-        role="tablist"
-        aria-label="Secciones"
-        className={`flex gap-2 overflow-x-auto pb-1 pt-1 ${
-          hideScrollbar ? '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'tabs-scrollbar'
-        }`}
-        onKeyDown={handleKey}
-      >
-        {tabs.map((tab, index) => {
-          const isActive = index === activeTab
-          return (
-            <button
-              key={slugs[index]}
-              role="tab"
-              aria-selected={isActive}
-              aria-controls={`tab-panel-${slugs[index]}`}
-              id={`tab-${slugs[index]}`}
-              onClick={() => changeActiveTab(index)}
-              className={`group relative flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium outline-none transition-all cursor-pointer ${
-                isActive
-                  ? 'bg-green-600 text-white border-green-600 shadow-sm'
-                  : 'bg-white/70 text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300 hover:shadow-sm'
-              } focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1`}
-            >
-              <span className="whitespace-nowrap select-none leading-none">{tab.label}</span>
-              {typeof tab.badgeCount === 'number' && tab.badgeCount > 0 && (
-                <span
-                  className={`inline-flex items-center justify-center rounded-full px-2 h-5 min-w-5 text-[10px] font-semibold tracking-wide leading-none transition-colors ${
-                    isActive
-                      ? 'bg-white/20 text-white'
-                      : 'bg-gray-200 text-gray-700 group-hover:bg-gray-300'
-                  }`}
-                >
-                  {tab.badgeCount}
-                </span>
-              )}
-              {isActive && (
-                <span className="absolute inset-0 rounded-full ring-2 ring-green-500/40 pointer-events-none" />
-              )}
-            </button>
-          )
-        })}
-        {trailingAction && <div className="flex items-center ml-1">{trailingAction}</div>}
+      <style>{`
+        .tabs-scrollbar-native-hidden {
+          scrollbar-width: none !important;
+        }
+
+        .tabs-scrollbar-native-hidden::-webkit-scrollbar {
+          display: none !important;
+          width: 0 !important;
+          height: 0 !important;
+        }
+      `}</style>
+      <div className="tabs-scrollbar-shell">
+        <div
+          ref={tabListRef}
+          role="tablist"
+          aria-label="Secciones"
+          className={`flex gap-2 overflow-x-auto pb-1 pt-1 ${
+            hideScrollbar
+              ? '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+              : 'tabs-scrollbar'
+          } tabs-scrollbar-native-hidden`}
+          onKeyDown={handleKey}
+        >
+          {tabs.map((tab, index) => {
+            const isActive = index === activeTab
+            return (
+              <button
+                key={slugs[index]}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`tab-panel-${slugs[index]}`}
+                id={`tab-${slugs[index]}`}
+                onClick={() => changeActiveTab(index)}
+                className={`group relative flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium outline-none transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-green-600 text-white border-green-600 shadow-sm'
+                    : 'bg-white/70 text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300 hover:shadow-sm'
+                } focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1`}
+              >
+                <span className="whitespace-nowrap select-none leading-none">{tab.label}</span>
+                {typeof tab.badgeCount === 'number' && tab.badgeCount > 0 && (
+                  <span
+                    className={`inline-flex items-center justify-center rounded-full px-2 h-5 min-w-5 text-[10px] font-semibold tracking-wide leading-none transition-colors ${
+                      isActive
+                        ? 'bg-white/20 text-white'
+                        : 'bg-gray-200 text-gray-700 group-hover:bg-gray-300'
+                    }`}
+                  >
+                    {tab.badgeCount}
+                  </span>
+                )}
+                {isActive && (
+                  <span className="absolute inset-0 rounded-full ring-2 ring-green-500/40 pointer-events-none" />
+                )}
+              </button>
+            )
+          })}
+          {trailingAction && <div className="flex items-center ml-1">{trailingAction}</div>}
+        </div>
+        {!hideScrollbar && scrollbar.visible && (
+          <div
+            className="tabs-scrollbar-track"
+            aria-hidden="true"
+            style={{
+              width: '100%',
+              height: '8px',
+              marginTop: '2px',
+              backgroundColor: 'rgb(226 232 240)',
+              borderRadius: '9999px',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              className="tabs-scrollbar-thumb"
+              style={{
+                height: '100%',
+                width: `${scrollbar.thumbWidth}px`,
+                backgroundColor: 'rgb(100 116 139)',
+                borderRadius: '9999px',
+                transform: `translateX(${scrollbar.thumbOffset}px)`,
+              }}
+            />
+          </div>
+        )}
       </div>
       <div
         id={`tab-panel-${slugs[activeTab]}`}
