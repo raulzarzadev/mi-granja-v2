@@ -233,6 +233,21 @@ export const AnimalsFilters = ({
   tabsTotal,
 }: AnimalsFiltersProps) => {
   const [showFilters, setShowFilters] = useState(false)
+  const [openQuickFilter, setOpenQuickFilter] = useState<'gender' | 'stage' | null>(null)
+  const quickFiltersRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!openQuickFilter) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!quickFiltersRef.current?.contains(event.target as Node)) {
+        setOpenQuickFilter(null)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => document.removeEventListener('pointerdown', handlePointerDown)
+  }, [openQuickFilter])
 
   const hasActiveFilters =
     filters.status !== 'activo' ||
@@ -246,14 +261,182 @@ export const AnimalsFilters = ({
   return (
     <div className="bg-white rounded-lg shadow mb-4">
       {/* Barra principal: búsqueda + filtro + crear */}
-      <div className="px-4 py-3 flex items-center gap-2">
+      <div className="px-4 py-3 flex flex-wrap items-center gap-2">
         <input
           type="text"
           placeholder="Buscar por numero, nombre o notas..."
           value={filters.search}
           onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
-          className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="min-w-[14rem] flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
         />
+
+        <div ref={quickFiltersRef} className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={openQuickFilter === 'gender'}
+              onClick={() =>
+                setOpenQuickFilter((current) => (current === 'gender' ? null : 'gender'))
+              }
+              className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 ${
+                filters.gender
+                  ? 'border-slate-300 bg-white text-slate-800 ring-2 ring-slate-400 ring-offset-1'
+                  : openQuickFilter === 'gender'
+                    ? 'border-slate-300 bg-slate-50 text-slate-800'
+                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <span>Género</span>
+              {filters.gender && (
+                <span className="font-medium text-slate-800">
+                  {formatStatLabel(filters.gender)}
+                </span>
+              )}
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className={`size-4 text-slate-400 transition-transform ${
+                  openQuickFilter === 'gender' ? 'rotate-180' : ''
+                }`}
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+            {openQuickFilter === 'gender' && (
+              <div
+                role="menu"
+                aria-label="Filtrar por género"
+                className="absolute left-0 top-full z-30 mt-2 min-w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg"
+              >
+                <button
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={filters.gender === ''}
+                  onClick={() => {
+                    setFilters((prev) => ({ ...prev, gender: '' }))
+                    setOpenQuickFilter(null)
+                  }}
+                  className={`flex min-h-10 w-full items-center justify-between rounded-lg px-3 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 ${
+                    filters.gender === ''
+                      ? 'bg-slate-100 font-medium text-slate-900'
+                      : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  Todos
+                  {filters.gender === '' && <span aria-hidden="true">✓</span>}
+                </button>
+                {Object.entries(animals_genders_labels).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={filters.gender === (key as AnimalGender)}
+                    onClick={() => {
+                      setFilters((prev) => ({ ...prev, gender: key as AnimalGender }))
+                      setOpenQuickFilter(null)
+                    }}
+                    className={`flex min-h-10 w-full items-center justify-between rounded-lg px-3 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 ${
+                      filters.gender === key
+                        ? 'bg-slate-100 font-medium text-slate-900'
+                        : 'text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {label}
+                    {filters.gender === key && <span aria-hidden="true">✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="relative">
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={openQuickFilter === 'stage'}
+              onClick={() =>
+                setOpenQuickFilter((current) => (current === 'stage' ? null : 'stage'))
+              }
+              className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 ${
+                filters.stage
+                  ? 'border-slate-300 bg-white text-slate-800 ring-2 ring-slate-400 ring-offset-1'
+                  : openQuickFilter === 'stage'
+                    ? 'border-slate-300 bg-slate-50 text-slate-800'
+                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <span>Etapa</span>
+              {filters.stage && (
+                <span className="font-medium text-slate-800">{formatStatLabel(filters.stage)}</span>
+              )}
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className={`size-4 text-slate-400 transition-transform ${
+                  openQuickFilter === 'stage' ? 'rotate-180' : ''
+                }`}
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+            {openQuickFilter === 'stage' && (
+              <div
+                role="menu"
+                aria-label="Filtrar por etapa"
+                className="absolute left-0 top-full z-30 mt-2 min-w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg"
+              >
+                <button
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={filters.stage === ''}
+                  onClick={() => {
+                    setFilters((prev) => ({ ...prev, stage: '' }))
+                    setOpenQuickFilter(null)
+                  }}
+                  className={`flex min-h-10 w-full items-center justify-between rounded-lg px-3 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 ${
+                    filters.stage === ''
+                      ? 'bg-slate-100 font-medium text-slate-900'
+                      : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  Todas
+                  {filters.stage === '' && <span aria-hidden="true">✓</span>}
+                </button>
+                {Object.entries(animals_stages_labels).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={filters.stage === (key as AnimalStage)}
+                    onClick={() => {
+                      setFilters((prev) => ({ ...prev, stage: key as AnimalStage }))
+                      setOpenQuickFilter(null)
+                    }}
+                    className={`flex min-h-10 w-full items-center justify-between rounded-lg px-3 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 ${
+                      filters.stage === key
+                        ? 'bg-slate-100 font-medium text-slate-900'
+                        : 'text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {label}
+                    {filters.stage === key && <span aria-hidden="true">✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Botón limpiar filtros */}
         {(activeFilterCount > 0 || filters.search) && (
