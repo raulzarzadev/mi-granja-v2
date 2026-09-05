@@ -51,7 +51,7 @@ const Tabs: React.FC<TabsProps> = ({
   tabsId,
   persistState = true,
   trailingAction,
-  hideScrollbar = true,
+  hideScrollbar = false,
 }) => {
   const paramKey = tabsId || 'tab'
 
