@@ -6,7 +6,7 @@ import {
   animal_stage_config,
 } from '@mi-granja/shared/types/animals'
 import React, { useMemo, useState } from 'react'
-import { Modal } from '@/components/Modal'
+import AnimalPrintListModal from '@/components/AnimalPrintListModal'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { animalAge, isAvailableToSale } from '@/lib/animal-utils'
 
@@ -37,12 +37,6 @@ const STAGE_ORDER: AnimalStageKey[] = [
   'engorda',
   'descarte',
 ]
-
-function sortByAnimalNumber(list: Animal[]): Animal[] {
-  return [...list].sort((a, b) =>
-    (a.animalNumber || '').localeCompare(b.animalNumber || '', 'es', { numeric: true }),
-  )
-}
 
 interface NumbersTabProps {
   animals?: Animal[]
@@ -199,114 +193,6 @@ const NumbersTab: React.FC<NumbersTabProps> = ({ animals: animalsProp }) => {
         />
       )}
     </div>
-  )
-}
-
-interface AnimalPrintListModalProps {
-  title: string
-  animals: Animal[]
-  onClose: () => void
-}
-
-const AnimalPrintListModal: React.FC<AnimalPrintListModalProps> = ({ title, animals, onClose }) => {
-  const [checked, setChecked] = useState<Set<string>>(new Set())
-  const sorted = useMemo(() => sortByAnimalNumber(animals), [animals])
-
-  const toggle = (id: string) => {
-    setChecked((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
-  const handlePrint = () => {
-    const rows = sorted
-      .map((a) => {
-        const isChecked = checked.has(a.id)
-        const box = isChecked ? '☑' : '☐'
-        const label = a.animalNumber || a.id.slice(0, 6)
-        return `<li><span class="box">${box}</span><span class="num">${label}</span></li>`
-      })
-      .join('')
-
-    const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="utf-8" />
-<title>Lista: ${title}</title>
-<style>
-  * { box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; color: #111; }
-  h1 { font-size: 18px; margin: 0 0 16px; }
-  .meta { font-size: 12px; color: #555; margin-bottom: 16px; }
-  ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px 16px; }
-  li { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 4px 0; break-inside: avoid; }
-  .box { font-size: 16px; width: 18px; display: inline-block; }
-  .num { font-weight: 500; }
-  @media print { body { padding: 12px; } }
-</style>
-</head>
-<body>
-  <h1>Lista de: ${title}</h1>
-  <div class="meta">Total: ${sorted.length} · Marcados: ${checked.size}</div>
-  <ul>${rows}</ul>
-  <script>
-    window.addEventListener('load', () => { setTimeout(() => { window.print(); }, 150); });
-  </script>
-</body>
-</html>`
-
-    const w = window.open('', '_blank', 'width=900,height=700')
-    if (!w) return
-    w.document.open()
-    w.document.write(html)
-    w.document.close()
-  }
-
-  return (
-    <Modal isOpen onClose={onClose} title={`Lista de: ${title}`} size="xl">
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-sm text-gray-600">
-          Total: {sorted.length} · Marcados: {checked.size}
-        </div>
-        <button
-          type="button"
-          onClick={handlePrint}
-          disabled={sorted.length === 0}
-          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-        >
-          🖨️ Imprimir
-        </button>
-      </div>
-
-      {sorted.length === 0 ? (
-        <div className="text-center text-gray-500 py-8 text-sm">Sin animales en esta categoría</div>
-      ) : (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-          {sorted.map((a) => {
-            const isChecked = checked.has(a.id)
-            return (
-              <label
-                key={a.id}
-                className="inline-flex items-center gap-2 text-sm border border-gray-200 rounded px-2 py-1.5 cursor-pointer hover:bg-gray-50"
-              >
-                <input
-                  type="checkbox"
-                  checked={isChecked}
-                  onChange={() => toggle(a.id)}
-                  className="cursor-pointer"
-                />
-                <span className={`font-medium ${isChecked ? 'line-through text-gray-500' : ''}`}>
-                  {a.animalNumber || a.id.slice(0, 6)}
-                </span>
-              </label>
-            )
-          })}
-        </div>
-      )}
-    </Modal>
   )
 }
 

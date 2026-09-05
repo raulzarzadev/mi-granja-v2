@@ -31,6 +31,10 @@ export interface DataTableProps<T> {
   title?: React.ReactNode
   /** Extra buttons rendered in the header bar (e.g. "Nuevo Empadre") */
   toolbar?: React.ReactNode
+  /** Extra action rendered beside the selection link. */
+  selectionAction?: React.ReactNode
+  /** Extra action rendered while selecting, receiving the current selected IDs. */
+  selectionModeAction?: (selectedIds: Set<string>) => React.ReactNode
   /** If provided, enables card/table view toggle. Renders each item as a card. */
   renderCard?: (row: T) => React.ReactNode
   /** Persist view mode preference key for localStorage */
@@ -100,6 +104,8 @@ function DataTable<T>({
   emptyMessage = 'No hay datos.',
   title,
   toolbar,
+  selectionAction,
+  selectionModeAction,
   renderCard,
   viewModeKey,
   pageSize: initialPageSize = 10,
@@ -319,12 +325,22 @@ function DataTable<T>({
       {selectable && (
         <div className="px-2 py-2 flex items-center gap-2 text-xs flex-wrap">
           {!isSelectionMode ? (
-            <button
-              onClick={() => setIsSelectionMode(true)}
-              className="text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
-            >
-              Seleccionar
-            </button>
+            <>
+              <button
+                onClick={() => setIsSelectionMode(true)}
+                className="min-h-11 text-blue-600 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-colors cursor-pointer"
+              >
+                Seleccionar
+              </button>
+              {selectionAction && (
+                <>
+                  <span className="text-gray-300" aria-hidden="true">
+                    |
+                  </span>
+                  {selectionAction}
+                </>
+              )}
+            </>
           ) : (
             <>
               <button
@@ -347,6 +363,12 @@ function DataTable<T>({
                   <span className="text-gray-300">|</span>
                   <span className="text-gray-500">{selectedIds.size} seleccionados</span>
                   {renderBulkActions?.(selectedIds, clearSelection)}
+                </>
+              )}
+              {selectionModeAction && (
+                <>
+                  <span className="text-gray-300">|</span>
+                  {selectionModeAction(selectedIds)}
                 </>
               )}
             </>

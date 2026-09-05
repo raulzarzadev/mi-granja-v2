@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+import AnimalPrintListModal from '@/components/AnimalPrintListModal'
 import Button from '@/components/buttons/Button'
 import DataTable, { type ColumnDef } from '@/components/DataTable'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
@@ -15,6 +17,9 @@ interface Props {
 }
 
 export default function TabStageCrias({ allCrias, columns, openBulkWean, onChangeStage }: Props) {
+  const [listAnimals, setListAnimals] = useState<Animal[] | null>(null)
+  const criaAnimals = allCrias.map((row) => row.animal)
+
   return (
     <div>
       <p className="text-xs text-gray-500 mb-2">Recién nacidos, en espera de destete.</p>
@@ -26,6 +31,25 @@ export default function TabStageCrias({ allCrias, columns, openBulkWean, onChang
         defaultSortKey="weanDate"
         sessionStorageKey="mg_last_destete_id"
         selectable
+        selectionAction={
+          <button
+            type="button"
+            onClick={() => setListAnimals(criaAnimals)}
+            className="min-h-11 text-blue-600 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-colors cursor-pointer"
+          >
+            Ver lista
+          </button>
+        }
+        selectionModeAction={(ids) => (
+          <button
+            type="button"
+            disabled={ids.size === 0}
+            onClick={() => setListAnimals(criaAnimals.filter((animal) => ids.has(animal.id)))}
+            className="min-h-11 text-blue-600 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          >
+            Ver lista
+          </button>
+        )}
         renderBulkActions={(ids) => (
           <>
             <Button size="xs" color="warning" onClick={() => openBulkWean('engorda', ids)}>
@@ -89,6 +113,13 @@ export default function TabStageCrias({ allCrias, columns, openBulkWean, onChang
         )}
         emptyMessage="No hay crías pendientes de destete."
       />
+      {listAnimals && (
+        <AnimalPrintListModal
+          title="Crías"
+          animals={listAnimals}
+          onClose={() => setListAnimals(null)}
+        />
+      )}
     </div>
   )
 }

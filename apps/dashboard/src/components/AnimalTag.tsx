@@ -20,6 +20,9 @@ interface AnimalTagProps {
   onClick?: () => void
   active?: boolean // para destacar el tag (ej: en la ficha del animal, para mostrar que es el mismo)
   showAge?: boolean
+  showSpecies?: boolean
+  showStage?: boolean
+  size?: 'sm' | 'md'
   showModalOnClick?: boolean // si true, onClick abrirá el modal de detalles del animal
   variant?: 'chip' | 'header'
   trailing?: React.ReactNode // contenido extra dentro del chip (ej: menú de acciones)
@@ -30,6 +33,9 @@ const AnimalTag: React.FC<AnimalTagProps> = ({
   onClick,
   active,
   showAge = false,
+  showSpecies = true,
+  showStage = true,
+  size = 'sm',
   showModalOnClick = false,
   variant = 'chip',
   trailing,
@@ -56,6 +62,9 @@ const AnimalTag: React.FC<AnimalTagProps> = ({
   const Tag = onClick ? 'button' : 'span'
 
   const isHeader = variant === 'header'
+  const chipSize = size === 'md' ? 'gap-1.5 px-3 py-2 text-sm' : 'gap-1 px-2 py-1 text-xs'
+  const genderSize = size === 'md' ? 'w-6 h-6' : 'w-4 h-4'
+  const genderIconSize = size === 'md' ? 4 : 3
 
   const tagEl = (
     <Tag
@@ -66,7 +75,7 @@ const AnimalTag: React.FC<AnimalTagProps> = ({
           ? `inline-flex flex-col items-start gap-1 text-lg font-semibold ${
               active ? 'text-green-700' : inactive ? 'text-gray-500' : 'text-gray-900'
             }`
-          : `inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
+          : `inline-flex items-center rounded-md font-medium ${chipSize} ${
               active
                 ? 'bg-green-50 text-gray-900 border border-green-500 shadow-sm'
                 : inactive
@@ -85,13 +94,13 @@ const AnimalTag: React.FC<AnimalTagProps> = ({
             {speciesIcon}
           </span>
         )}
-        {!isHeader && (
-          <span className="text-sm" title={animal.type}>
+        {!isHeader && showSpecies && (
+          <span className={size === 'md' ? 'text-base' : 'text-sm'} title={animal.type}>
             {speciesIcon}
           </span>
         )}
-        {!isHeader && stageCfg ? (
-          <span title={stageCfg.label} className="text-sm">
+        {!isHeader && showStage && stageCfg ? (
+          <span title={stageCfg.label} className={size === 'md' ? 'text-base' : 'text-sm'}>
             {stageCfg.icon}
           </span>
         ) : null}
@@ -99,10 +108,10 @@ const AnimalTag: React.FC<AnimalTagProps> = ({
           <span
             className={`inline-flex items-center justify-center rounded-full font-bold ${
               animal.gender === 'macho' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'
-            } w-4 h-4`}
+            } ${genderSize}`}
             title={genderCfg.label}
           >
-            <Icon icon={genderCfg.iconName as IconName} size={3} />
+            <Icon icon={genderCfg.iconName as IconName} size={genderIconSize} />
           </span>
         ) : null}
         <span className="font-bold">#{animal.animalNumber}</span>
@@ -123,7 +132,7 @@ const AnimalTag: React.FC<AnimalTagProps> = ({
         )}
         {age && age !== 'No registrado' && (
           <span
-            className={`${isHeader ? 'text-sm' : 'text-[10px]'} ${active ? 'text-gray-500' : 'text-gray-400'}`}
+            className={`${isHeader ? 'text-sm' : size === 'md' ? 'text-xs' : 'text-[10px]'} ${active ? 'text-gray-500' : 'text-gray-400'}`}
           >
             {age}
           </span>
