@@ -6,7 +6,7 @@ import Button from '@/components/buttons/Button'
 import { Icon } from '@/components/Icon/icon'
 import { toDate } from '@/lib/dates'
 import { BirthRecord, OffspringInfo } from '@/types'
-import { Animal, animal_icon } from '@/types/animals'
+import { Animal, animal_icon, isActivePregnancy } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Modal } from './Modal'
@@ -288,14 +288,17 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   selectedFemaleId,
 }) => {
   const { notify } = useAppFeedback()
-  const pregnantFemales =
-    breedingRecord?.femaleBreedingInfo
-      ?.filter((info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate)
-      .map((info) => {
-        const animal = animals.find((a) => a.id === info.femaleId)
-        return animal ? { ...animal, breedingInfo: info } : null
-      })
-      .filter(Boolean) || []
+  const pregnantFemales = animals
+    .filter(isActivePregnancy)
+    .filter(
+      (animal) =>
+        !breedingRecord ||
+        breedingRecord.femaleBreedingInfo.some((info) => info.femaleId === animal.id),
+    )
+    .map((animal) => ({
+      ...animal,
+      breedingInfo: breedingRecord?.femaleBreedingInfo.find((info) => info.femaleId === animal.id),
+    }))
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [successData, setSuccessData] = useState<{
@@ -505,7 +508,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
             </label>
             {pregnantFemales.length === 0 ? (
               <p className="text-sm text-gray-600 p-3 bg-gray-50 rounded-md">
-                No hay hembras con gestaciones confirmadas en este empadre
+                No hay hembras con gestación activa
               </p>
             ) : (
               <div className="grid gap-2">

@@ -1,5 +1,5 @@
 import { toDate } from 'date-fns'
-import { Animal, AnimalStage, AnimalStageKey, NextStep } from '../types/animals'
+import { Animal, AnimalStage, AnimalStageKey, isActivePregnancy, NextStep } from '../types/animals'
 import { BreedingRecord } from '../types/breedings'
 import {
   ANIMAL_BREEDING_CONFIGS,
@@ -321,10 +321,14 @@ export function computeAnimalEffectiveStage(
     }
   }
 
-  if (bestState) return bestState
   // Con lista de animales: verificar crías activas sin importar la fecha de parto
   const hasActiveCria = hasLivingUnweanedOffspring(undefined, animals, animal.id)
   if (hasActiveCria) return 'crias_lactantes'
+  // La gestación activa se determina por el animal, aunque ya no pertenezca a un empadre.
+  if (isActivePregnancy(animal)) return 'embarazos'
+  // Un dato histórico del empadre no puede crear una gestación activa por sí solo.
+  if (bestState === 'embarazos') return baseStage
+  if (bestState) return bestState
   // Fallback a campos directos del animal (cuando no hay breeding record con parto)
   if (animal.gender === 'hembra') {
     if (animal.birthedAt) {
@@ -338,7 +342,7 @@ export function computeAnimalEffectiveStage(
         if (daysSinceBirth >= 0 && daysSinceBirth <= weaningDays) return 'crias_lactantes'
       }
     }
-    if (animal.pregnantAt) return 'embarazos'
+    if (isActivePregnancy(animal)) return 'embarazos'
   }
 
   return baseStage

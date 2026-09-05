@@ -93,7 +93,7 @@ export default function TabStagePregnant({
         )}
         renderActions={(row) => (
           <>
-            {(row.record || row.animal.pregnantBy) && (
+            {row.animal.pregnantAt && (
               <Button
                 size="xs"
                 color="success"

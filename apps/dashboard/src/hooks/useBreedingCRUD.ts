@@ -17,6 +17,7 @@ import { setBreedingRecords } from '@/features/breeding/breedingSlice'
 import { deserializeObj, serializeObj } from '@/features/libs/serializeObj'
 import { RootState } from '@/features/store'
 import { toDate, toLocalDateStart } from '@/lib/dates'
+import { isActivePregnancy } from '@/types/animals'
 
 /** Convierte de forma segura un valor (Timestamp, Date, string, number) a Date */
 const safeToDate = (val: unknown): Date | null => {
@@ -56,6 +57,7 @@ export const useBreedingCRUD = () => {
   const [isLoading] = useState(false)
   const { user } = useSelector((state: RootState) => state.auth)
   const { breedingRecords } = useSelector((state: RootState) => state.breeding)
+  const { animals } = useSelector((state: RootState) => state.animals)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { currentFarm } = useSelector((state: RootState) => state.farm)
 
@@ -257,10 +259,9 @@ export const useBreedingCRUD = () => {
 
   // Obtener gestaciones activas
   const getActivePregnancies = () => {
+    const activePregnantIds = new Set(animals.filter(isActivePregnancy).map((animal) => animal.id))
     return breedingRecords.filter((record) =>
-      record.femaleBreedingInfo?.some(
-        (info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate,
-      ),
+      record.femaleBreedingInfo?.some((info) => activePregnantIds.has(info.femaleId)),
     )
   }
 
@@ -274,14 +275,7 @@ export const useBreedingCRUD = () => {
 
   // Obtener estadísticas
   const getStats = () => {
-    const activePregnancies = breedingRecords.reduce(
-      (total, record) =>
-        total +
-        (record.femaleBreedingInfo?.filter(
-          (info) => !!info.pregnancyConfirmedDate && !info.actualBirthDate,
-        ).length || 0),
-      0,
-    )
+    const activePregnancies = animals.filter(isActivePregnancy).length
     const upcomingBirths = getUpcomingBirths().length
 
     const totalOffspring = breedingRecords.reduce(

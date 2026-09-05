@@ -1134,7 +1134,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
               {[...enrichedPregnantFemales]
                 .sort((a, b) => (a.daysLeft ?? 9999) - (b.daysLeft ?? 9999))
                 .map((row) => {
-                  const canRegister = Boolean(row.record) || Boolean(row.animal.pregnantBy)
+                  const canRegister = Boolean(row.animal.pregnantAt)
                   return (
                     <div
                       key={row.animal.id}
@@ -1582,7 +1582,12 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           if (record) {
             void handleUnconfirmPregnancy(record, animal.id)
           } else {
-            void update(animal.id, { pregnantAt: null, pregnantBy: null })
+            void update(animal.id, {
+              pregnantAt: null,
+              pregnantBy: null,
+              pregnantBreedingRecordId: null,
+              pregnantBreedingId: null,
+            })
           }
         }}
         onRegisterBirth={(animal) => {
@@ -1593,6 +1598,9 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           )
           if (record) {
             setBirthRecord(record)
+            setBirthFemaleId(animal.id)
+          } else {
+            setBirthRecord(null)
             setBirthFemaleId(animal.id)
           }
         }}

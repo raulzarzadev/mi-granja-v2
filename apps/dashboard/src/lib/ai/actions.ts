@@ -8,7 +8,7 @@ import {
 } from '@/lib/animal-utils'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { Reminder } from '@/types'
-import { Animal, type AnimalStageKey, isMilkRecord } from '@/types/animals'
+import { Animal, type AnimalStageKey, isActivePregnancy, isMilkRecord } from '@/types/animals'
 import { BreedingRecord, type FemaleBreedingInfo } from '@/types/breedings'
 import type { FarmPermission } from '@/types/farm'
 import { selectRelevance } from './context-relevance'
@@ -274,15 +274,17 @@ async function registerBirth(
   const mother = resolveAnimal(animals, payload.motherRef)
   if (mother.gender !== 'hembra') throw new Error(`${mother.animalNumber} no es hembra`)
 
-  const activeRecords = records.filter((record) =>
-    record.femaleBreedingInfo?.some(
-      (info) => info.femaleId === mother.id && info.pregnancyConfirmedDate && !info.actualBirthDate,
-    ),
-  )
-  if (activeRecords.length === 0) {
-    throw new Error(`No hay una gestación confirmada activa para ${mother.animalNumber}`)
+  if (!isActivePregnancy(mother)) {
+    throw new Error(`No hay una gestación activa para ${mother.animalNumber}`)
   }
-  if (activeRecords.length > 1) {
+
+  const activeRecords = records.filter((record) =>
+    record.femaleBreedingInfo?.some((info) => info.femaleId === mother.id && !info.actualBirthDate),
+  )
+  const linkedRecord = mother.pregnantBreedingRecordId
+    ? records.find((record) => record.id === mother.pregnantBreedingRecordId)
+    : undefined
+  if (activeRecords.length > 1 && !linkedRecord) {
     throw new Error(`${mother.animalNumber} tiene más de un empadre activo. Revísalo manualmente`)
   }
 
@@ -292,7 +294,7 @@ async function registerBirth(
     }
   }
 
-  const record = activeRecords[0]
+  const record = linkedRecord ?? activeRecords[0] ?? null
   const birthDate = parseLocalDate(payload.birthDate, payload.birthTime)
   const now = Timestamp.now()
   const batch = firestore.batch()
@@ -310,7 +312,9 @@ async function registerBirth(
       farmId: params.farmId,
       birthDate: Timestamp.fromDate(birthDate),
       motherId: mother.id,
-      fatherId: record.maleId,
+      ...(record?.maleId || mother.pregnantBy
+        ? { fatherId: record?.maleId ?? mother.pregnantBy }
+        : {}),
       ...(typeof offspring.weightKg === 'number'
         ? { weight: Math.round(offspring.weightKg * 1000) }
         : {}),
@@ -323,20 +327,22 @@ async function registerBirth(
     })
   }
 
-  const updatedFemaleInfo = record.femaleBreedingInfo.map((info) =>
-    info.femaleId === mother.id
-      ? {
-          ...info,
-          actualBirthDate: Timestamp.fromDate(birthDate),
-          offspring: [...(info.offspring || []), ...offspringIds],
-        }
-      : info,
-  )
+  if (record) {
+    const updatedFemaleInfo = record.femaleBreedingInfo.map((info) =>
+      info.femaleId === mother.id
+        ? {
+            ...info,
+            actualBirthDate: Timestamp.fromDate(birthDate),
+            offspring: [...(info.offspring || []), ...offspringIds],
+          }
+        : info,
+    )
 
-  batch.update(firestore.collection('breedingRecords').doc(record.id), {
-    femaleBreedingInfo: updatedFemaleInfo,
-    updatedAt: now,
-  })
+    batch.update(firestore.collection('breedingRecords').doc(record.id), {
+      femaleBreedingInfo: updatedFemaleInfo,
+      updatedAt: now,
+    })
+  }
   batch.update(firestore.collection('animals').doc(mother.id), {
     birthedAt: Timestamp.fromDate(birthDate),
     pregnantAt: null,

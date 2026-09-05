@@ -242,6 +242,16 @@ export const breeding_animal_status_labels: Record<AnimalBreedingStatus, string>
 }
 
 /**
+ * Una gestación activa pertenece al animal. El empadre puede aportar contexto,
+ * pero no es necesario para reconocerla y el macho puede ser desconocido.
+ */
+export function isActivePregnancy(animal: Animal): boolean {
+  return (
+    animal.gender === 'hembra' && (animal.status ?? 'activo') === 'activo' && !!animal.pregnantAt
+  )
+}
+
+/**
  * Deriva el estado reproductivo de una hembra desde sus campos.
  * pregnantAt → gestante
  * birthedAt → parida
@@ -250,7 +260,7 @@ export const breeding_animal_status_labels: Record<AnimalBreedingStatus, string>
 export function getReproductiveStatus(animal: Animal): AnimalBreedingStatus | 'libre' {
   if (animal.gender !== 'hembra') return 'libre'
   if (animal.birthedAt) return 'parida'
-  if (animal.pregnantAt) return 'embarazada'
+  if (isActivePregnancy(animal)) return 'embarazada'
   return 'libre'
 }
 

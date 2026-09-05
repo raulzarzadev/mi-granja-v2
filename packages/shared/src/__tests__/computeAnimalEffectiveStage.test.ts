@@ -103,7 +103,7 @@ describe('computeAnimalEffectiveStage', () => {
   })
 
   it('returns gestaciones for female with pregnancy confirmed and no birth', () => {
-    const female = createAnimal({ id: 'f-1' })
+    const female = createAnimal({ id: 'f-1', pregnantAt: new Date('2026-02-01') })
     const breedings = [
       createBreeding({
         femaleBreedingInfo: [{ femaleId: 'f-1', pregnancyConfirmedDate: new Date('2026-02-01') }],
