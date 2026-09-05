@@ -602,7 +602,7 @@ export const AnimalsFilters = ({
               aria-label={`${crossTabDuplicatesCount} animales aparecen en más de una condición compatible. Ver condiciones`}
               title={`${crossTabDuplicatesCount} animales aparecen en más de una condición compatible`}
               onClick={onShowDuplicates}
-              className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-full border border-blue-200 bg-blue-50 px-2 text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+              className="inline-flex min-h-8 min-w-8 items-center justify-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
             >
               <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="size-4">
                 <path
@@ -611,6 +611,7 @@ export const AnimalsFilters = ({
                   clipRule="evenodd"
                 />
               </svg>
+              <span className="text-xs font-semibold">{crossTabDuplicatesCount}</span>
             </button>
           )}
           {hasActiveFilters && (
