@@ -891,6 +891,28 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
 
   const animalSubTabs = [
     {
+      label: 'Etapas',
+      content: (
+        <TabEtapas
+          crossTabDuplicatesCount={crossTabDuplicates.length}
+          onShowDuplicates={() => setShowCrossTabDups(true)}
+          etapasTabs={etapasTabs}
+        />
+      ),
+    },
+    {
+      label: 'Números',
+      content: <NumbersTab animals={filteredAnimals} />,
+    },
+    {
+      label: '📍 Áreas',
+      content: <TabAreas animals={filteredAnimals} areas={currentFarm?.areas || []} />,
+    },
+    {
+      label: 'Estadísticas',
+      content: <StatisticsTab animals={filteredAnimals} />,
+    },
+    {
       label: 'Todos',
       content: (
         <TabAllAnimals
@@ -917,28 +939,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           onShowDuplicateNumbers={() => setShowDuplicateNumbers(true)}
         />
       ),
-    },
-    {
-      label: 'Etapas',
-      content: (
-        <TabEtapas
-          crossTabDuplicatesCount={crossTabDuplicates.length}
-          onShowDuplicates={() => setShowCrossTabDups(true)}
-          etapasTabs={etapasTabs}
-        />
-      ),
-    },
-    {
-      label: '📍 Áreas',
-      content: <TabAreas animals={filteredAnimals} areas={currentFarm?.areas || []} />,
-    },
-    {
-      label: 'Números',
-      content: <NumbersTab animals={filteredAnimals} />,
-    },
-    {
-      label: 'Estadísticas',
-      content: <StatisticsTab animals={filteredAnimals} />,
     },
   ]
 
