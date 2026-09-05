@@ -282,29 +282,32 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
               )}
 
               {/* Acciones para hembras en empadre */}
-              {animalType === 'female' && status === 'empadre' && (
-                <>
-                  <ActionButton
-                    onClick={() =>
-                      handleActionAndClose(() => onConfirmPregnancy?.(record, animal.id))
-                    }
-                    variant="primary"
-                    icon="pregnant"
-                    label="Confirmar gestación"
-                    loadingLabel="Abriendo..."
-                  />
-                  <ActionButton
-                    onClick={() =>
-                      handleActionAndClose(() => onRemoveFromBreeding?.(record, animal.id))
-                    }
-                    variant="danger"
-                    icon="delete"
-                    label="Sacar del empadre"
-                    loadingLabel="Sacando..."
-                    confirm="¿Estás seguro de sacar a esta hembra del empadre?"
-                  />
-                </>
-              )}
+              {animalType === 'female' &&
+                (status === 'empadre' || status === 'embarazada_otra_monta') && (
+                  <>
+                    {status === 'empadre' && (
+                      <ActionButton
+                        onClick={() =>
+                          handleActionAndClose(() => onConfirmPregnancy?.(record, animal.id))
+                        }
+                        variant="primary"
+                        icon="pregnant"
+                        label="Confirmar gestación"
+                        loadingLabel="Abriendo..."
+                      />
+                    )}
+                    <ActionButton
+                      onClick={() =>
+                        handleActionAndClose(() => onRemoveFromBreeding?.(record, animal.id))
+                      }
+                      variant="danger"
+                      icon="delete"
+                      label="Sacar del empadre"
+                      loadingLabel="Sacando..."
+                      confirm="¿Estás seguro de sacar a esta hembra del empadre?"
+                    />
+                  </>
+                )}
 
               {/* Acciones para hembras gestantes */}
               {animalType === 'female' && status === 'embarazada' && (
