@@ -17,6 +17,8 @@ type TabsProps = {
   persistState?: boolean
   /** Elemento opcional renderizado al final de la fila de tabs (ej. boton de ayuda) */
   trailingAction?: ReactNode
+  /** Oculta la barra visual manteniendo el desplazamiento horizontal */
+  hideScrollbar?: boolean
 }
 
 /** Genera un slug a partir del label del tab, quitando emojis */
@@ -49,6 +51,7 @@ const Tabs: React.FC<TabsProps> = ({
   tabsId,
   persistState = true,
   trailingAction,
+  hideScrollbar = true,
 }) => {
   const paramKey = tabsId || 'tab'
 
@@ -109,7 +112,9 @@ const Tabs: React.FC<TabsProps> = ({
       <div
         role="tablist"
         aria-label="Secciones"
-        className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin pt-1"
+        className={`flex gap-2 overflow-x-auto pb-1 pt-1 ${
+          hideScrollbar ? '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'scrollbar-thin'
+        }`}
         onKeyDown={handleKey}
       >
         {tabs.map((tab, index) => {
