@@ -219,28 +219,6 @@ function DataTable<T>({
   const paginationControls =
     pageSize > 0 && sortedData.length > 0 ? (
       <div className="flex shrink-0 items-center gap-2 text-sm text-gray-700">
-        <span className="hidden text-xs font-semibold uppercase tracking-wide text-gray-500 sm:inline">
-          Filas
-        </span>
-        <select
-          value={pageSize}
-          onChange={(e) => {
-            setPageSize(Number(e.target.value))
-            setPage(0)
-          }}
-          aria-label="Filas por página"
-          className="min-h-9 cursor-pointer rounded-md border border-gray-300 bg-white px-2.5 py-1 text-sm font-semibold text-gray-700 shadow-sm outline-none transition-colors hover:border-gray-400 focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-1"
-        >
-          {[10, 25, 50, 100].map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-        <span className="whitespace-nowrap text-sm font-semibold text-gray-700" aria-live="polite">
-          {start}–{end} <span className="font-normal text-gray-500">de</span>{' '}
-          {sortedData.length}
-        </span>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
@@ -262,6 +240,10 @@ function DataTable<T>({
               <path d="m12.5 15-5-5 5-5" />
             </svg>
           </button>
+          <span className="whitespace-nowrap text-sm font-semibold text-gray-700" aria-live="polite">
+            {safePage + 1} <span className="font-normal text-gray-500">de</span>{' '}
+            {totalPages} <span className="font-normal text-gray-500">páginas</span>
+          </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={safePage >= totalPages - 1}
@@ -283,6 +265,22 @@ function DataTable<T>({
             </svg>
           </button>
         </div>
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Filas</span>
+        <select
+          value={pageSize}
+          onChange={(e) => {
+            setPageSize(Number(e.target.value))
+            setPage(0)
+          }}
+          aria-label="Filas por página"
+          className="min-h-9 cursor-pointer rounded-md border border-gray-300 bg-white px-2.5 py-1 text-sm font-semibold text-gray-700 shadow-sm outline-none transition-colors hover:border-gray-400 focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-1"
+        >
+          {[10, 25, 50, 100].map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
       </div>
     ) : null
 
