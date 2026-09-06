@@ -14,6 +14,7 @@ type Tab = {
   label: string
   content: ReactNode
   badgeCount?: number
+  description?: string
 }
 
 type TabsProps = {
@@ -252,6 +253,11 @@ const Tabs: React.FC<TabsProps> = ({
           </div>
         )}
       </div>
+      {tabs[activeTab]?.description && (
+        <p className="mt-1 px-2 text-xs leading-4 text-gray-500">
+          {tabs[activeTab].description}
+        </p>
+      )}
       <div
         id={`tab-panel-${slugs[activeTab]}`}
         role="tabpanel"

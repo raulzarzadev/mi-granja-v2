@@ -769,6 +769,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   const etapasTabs = [
     {
       label: etapaLabel('cria', allCrias.length),
+      description: 'Recién nacidos, en espera de destete.',
       content: (
         <TabStageCrias
           allCrias={allCrias}
@@ -780,6 +781,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     },
     {
       label: etapaLabel('juvenil', juvenilAnimals.length),
+      description: 'Ya destetados y en crecimiento, antes de reproducción. Frecuentemente son hembras o prospectos de sementales machos.',
       content: (
         <TabStageJuvenil
           animals={juvenilAnimals}
@@ -790,6 +792,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     },
     {
       label: etapaLabel('engorda', engordaAnimals.length),
+      description: 'En alimentación para ganar peso antes de la venta. Frecuentemente, machos y hembras no aptos para reproducción.',
       content: (
         <TabStageEngorda
           animals={engordaAnimals}
@@ -800,6 +803,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     },
     {
       label: etapaLabel('reproductor', reproductorAnimals.length),
+      description: 'Aptos para reproducción como sementales o hembras reproductoras.',
       content: (
         <TabStageRepro
           animals={reproductorAnimals}
@@ -811,6 +815,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     {
       label: etapaLabel('empadre', empadreFemalesCount),
       badgeCount: empadresCount,
+      description: 'Hembras y machos en proceso de empadre, en espera de confirmar gestación.',
       content: (
         <TabStageEmpadre
           orderedBreedings={orderedBreedings}
@@ -834,6 +839,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     },
     {
       label: etapaLabel('embarazos', pregnantFemales.length),
+      description: 'Hembras con gestación confirmada, en espera de parto.',
       content: (
         <TabStagePregnant
           enrichedPregnantFemales={enrichedPregnantFemales}
@@ -854,6 +860,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     },
     {
       label: etapaLabel('crias_lactantes', noursingMothersRows.length),
+      description: 'Madres con lactancia activa; el destete y el ordeño se registran aquí.',
       content: (
         <TabStageNoursingMothers
           noursingMothersRows={noursingMothersRows}
@@ -864,6 +871,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     },
     {
       label: etapaLabel('descarte', descarteAnimals.length),
+      description: 'Fuera del ciclo productivo por edad, salud o bajo rendimiento.',
       content: (
         <TabStageDescarte
           animals={descarteAnimals}
@@ -874,6 +882,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     },
     {
       label: `❓ Perdidos (${perdidoAnimals.length})`,
+      description: 'Animales reportados como perdidos, pendientes de localizar o recuperar.',
       content: <TabStagePerdidos animals={perdidoAnimals} onChangeStage={openChangeStage} />,
     },
   ]

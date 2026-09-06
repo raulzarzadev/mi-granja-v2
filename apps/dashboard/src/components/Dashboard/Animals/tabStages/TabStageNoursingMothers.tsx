@@ -53,10 +53,6 @@ export default function TabStageNoursingMothers({
           )}
         </div>
       )}
-      <p className="text-xs text-gray-500 mb-2">
-        Hembras con lactancia activa. Pueden estar también gestantes. El destete se registra en cada
-        cría; el ordeño se registra desde Leche.
-      </p>
       <DataTable
         title={`${animal_stage_config.crias_lactantes.icon} Madres / Lecheras`}
         data={noursingMothersRows}

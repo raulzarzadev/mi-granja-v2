@@ -22,7 +22,6 @@ export default function TabStageCrias({ allCrias, columns, openBulkWean, onChang
 
   return (
     <div>
-      <p className="text-xs text-gray-500 mb-2">Recién nacidos, en espera de destete.</p>
       <DataTable
         title={`${animal_stage_config.crias_lactantes.icon} Crías`}
         data={allCrias}

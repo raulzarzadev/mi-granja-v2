@@ -36,9 +36,6 @@ export default function TabStagePregnant({
 }: Props) {
   return (
     <div>
-      <p className="text-xs text-gray-500 mb-2">
-        Hembras con gestación confirmada, en espera de parto.
-      </p>
       <DataTable
         title={`${animal_stage_config.embarazos.icon} Gestantes`}
         data={enrichedPregnantFemales}
