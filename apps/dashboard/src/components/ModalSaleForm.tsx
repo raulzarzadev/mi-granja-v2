@@ -21,12 +21,24 @@ import {
   sale_statuses,
 } from '@/types/sales'
 
+export interface SaleCompletionSummary {
+  animalIds: string[]
+  date: Date
+  pricePerKg: number
+  totalWeightGrams: number
+  totalPriceCentavos: number
+  buyer?: string
+  notes?: string
+}
+
 interface ModalSaleFormProps {
   isOpen: boolean
   onClose: () => void
   sale?: Sale
   initialAnimalId?: string
+  initialAnimalIds?: string[]
   initialStatus?: SaleStatus
+  onCompleted?: (summary: SaleCompletionSummary) => Promise<void> | void
 }
 
 const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
@@ -34,7 +46,9 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
   onClose,
   sale,
   initialAnimalId,
+  initialAnimalIds,
   initialStatus,
+  onCompleted,
 }) => {
   const { confirmAction } = useAppFeedback()
   const { animals } = useSelector((state: RootState) => state.animals)
@@ -103,11 +117,13 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
       setPriceType('en_pie')
       setBuyer('')
       setNotes('')
-      setSelectedAnimalIds(initialAnimalId ? [initialAnimalId] : [])
+      setSelectedAnimalIds(
+        initialAnimalIds?.length ? initialAnimalIds : initialAnimalId ? [initialAnimalId] : [],
+      )
       setAnimalWeights({})
     }
     setError('')
-  }, [sale, isOpen, initialAnimalId, initialStatus])
+  }, [sale, isOpen, initialAnimalId, initialAnimalIds, initialStatus])
 
   const buildAnimalsEntries = (): SaleAnimalEntry[] => {
     return selectedAnimalIds.map((id) => {
@@ -185,6 +201,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
         : sale.status
       : 'pending'
     const pendingSaleData = { ...saleData, status: statusBeforeCompletion }
+    let saleCompleted = false
     try {
       const saleId = sale
         ? sale.id
@@ -198,9 +215,32 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
         onProgress: (current, total) => setCompleteProgress({ current, total }),
         overrideData: pendingSaleData,
       })
+      saleCompleted = true
+
+      if (onCompleted) {
+        const totalWeightGrams = selectedAnimalIds.reduce(
+          (sum, id) => sum + (animalWeights[id] || 0),
+          0,
+        )
+        await onCompleted({
+          animalIds: selectedAnimalIds,
+          date,
+          pricePerKg,
+          totalWeightGrams,
+          totalPriceCentavos: Math.round((pricePerKg * totalWeightGrams) / 1000),
+          buyer: buyer.trim() || undefined,
+          notes: notes.trim() || undefined,
+        })
+      }
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al completar venta')
+      setError(
+        saleCompleted
+          ? 'La venta se completó, pero no se pudo guardar el historial. Revisa Registros.'
+          : err instanceof Error
+            ? err.message
+            : 'Error al completar venta',
+      )
     } finally {
       setCompleteProgress(null)
     }

@@ -8,7 +8,7 @@ import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { formatDate } from '@/lib/dates'
 import { Animal } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
-import { BreedingActionHandlers } from '@/types/components/breeding'
+import type { AbortPregnancyInput, BreedingActionHandlers } from '@/types/components/breeding'
 import { BadgeAnimalStatus } from './Badges/BadgeAnimalStatus'
 import type { FemaleBreedingStatus } from './Dashboard/Animals/helpers/breedingViewHelpers'
 import { Icon, IconName } from './Icon/icon'
@@ -101,6 +101,18 @@ const ActionButton = ({
   )
 }
 
+const getDateInputValue = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const parseDateInput = (value: string) => {
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
 /**
  * Modal especializado para mostrar detalles de un animal en el contexto de un empadre/breeding
  */
@@ -113,11 +125,17 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
   animals,
   onConfirmPregnancy,
   onUnconfirmPregnancy,
+  onAbort,
   onRemoveFromBreeding,
   onDeleteBirth,
   onAddBirth,
 }) => {
   const { isOpen, openModal, closeModal } = useModal()
+  const [isAbortFormOpen, setIsAbortFormOpen] = useState(false)
+  const [abortDate, setAbortDate] = useState(() => getDateInputValue(new Date()))
+  const [abortNote, setAbortNote] = useState('')
+  const [abortError, setAbortError] = useState<string | null>(null)
+  const [isSubmittingAbort, setIsSubmittingAbort] = useState(false)
 
   const femaleInfo =
     animalType === 'female'
@@ -148,6 +166,38 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
   const handleActionAndClose = async (action: () => void | Promise<void>) => {
     await action()
     closeModal()
+  }
+
+  const openAbortForm = () => {
+    setAbortDate(getDateInputValue(new Date()))
+    setAbortNote('')
+    setAbortError(null)
+    setIsAbortFormOpen(true)
+  }
+
+  const closeAbortForm = () => {
+    if (!isSubmittingAbort) setIsAbortFormOpen(false)
+  }
+
+  const handleAbortSubmit = async () => {
+    if (!abortDate || !onAbort) return
+
+    const input: AbortPregnancyInput = {
+      date: parseDateInput(abortDate),
+      note: abortNote.trim() || undefined,
+    }
+
+    setIsSubmittingAbort(true)
+    try {
+      await onAbort(record, animal.id, input)
+      setIsAbortFormOpen(false)
+      closeModal()
+    } catch (error) {
+      console.error('No se pudo registrar el aborto', error)
+      setAbortError('No se pudo registrar el aborto. Intenta nuevamente.')
+    } finally {
+      setIsSubmittingAbort(false)
+    }
   }
 
   return (
@@ -329,6 +379,13 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                     loadingLabel="Desconfirmando..."
                   />
                   <ActionButton
+                    onClick={openAbortForm}
+                    variant="warning"
+                    icon="close"
+                    label="Registrar aborto"
+                    loadingLabel="Registrando..."
+                  />
+                  <ActionButton
                     onClick={() =>
                       handleActionAndClose(() => onRemoveFromBreeding?.(record, animal.id))
                     }
@@ -355,6 +412,85 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
             </div>
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        isOpen={isAbortFormOpen}
+        onClose={closeAbortForm}
+        title="Registrar aborto"
+        size="sm"
+        closeOnOverlayClick={!isSubmittingAbort}
+        closeOnEscape={!isSubmittingAbort}
+      >
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            void handleAbortSubmit()
+          }}
+          className="space-y-4"
+        >
+          <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-900">
+            Se liberará la gestación de <strong>{animal.animalNumber}</strong> y se conservará el
+            historial reproductivo.
+          </div>
+
+          {abortError && (
+            <div
+              role="alert"
+              className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+            >
+              {abortError}
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="abort-date" className="mb-1 block text-sm font-medium text-gray-800">
+              Fecha del aborto
+            </label>
+            <input
+              id="abort-date"
+              type="date"
+              value={abortDate}
+              onChange={(event) => setAbortDate(event.target.value)}
+              required
+              disabled={isSubmittingAbort}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base text-gray-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200 disabled:bg-gray-100"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="abort-note" className="mb-1 block text-sm font-medium text-gray-800">
+              Nota <span className="font-normal text-gray-500">(opcional)</span>
+            </label>
+            <textarea
+              id="abort-note"
+              value={abortNote}
+              onChange={(event) => setAbortNote(event.target.value)}
+              disabled={isSubmittingAbort}
+              rows={3}
+              placeholder="Describe brevemente lo ocurrido..."
+              className="w-full resize-y rounded-lg border border-gray-300 px-3 py-2.5 text-base text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 disabled:bg-gray-100"
+            />
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={closeAbortForm}
+              disabled={isSubmittingAbort}
+              className="min-h-11 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={!abortDate || isSubmittingAbort}
+              className="min-h-11 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-orange-300"
+            >
+              {isSubmittingAbort ? 'Registrando...' : 'Confirmar aborto'}
+            </button>
+          </div>
+        </form>
       </Modal>
     </>
   )

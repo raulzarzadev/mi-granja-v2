@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import ModalAnimalForm from '@/components/ModalAnimalForm'
+import ModalNewRecord from '@/components/ModalNewRecord'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { computeAnimalStage } from '@/lib/animal-utils'
 import {
@@ -417,6 +418,7 @@ export const AnimalsFilters = ({
 
         {/* Botón crear: formulario simple dentro de un modal */}
         <ModalAnimalForm compact formVariant="simple" />
+        <ModalNewRecord />
       </div>
 
       {/* Panel de filtros colapsable */}

@@ -2,14 +2,14 @@
 
 import { toDate } from 'date-fns'
 import React, { useEffect, useMemo, useState } from 'react'
-import { Controller } from 'react-hook-form'
+import { Controller, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useZodForm } from '@/hooks/useZodForm'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { Animal } from '@/types/animals'
-import { BreedingRecord } from '@/types/breedings'
+import { BreedingRecord, generateBreedingId } from '@/types/breedings'
 import ButtonClose from './buttons/ButtonClose'
 import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Form } from './forms/Form'
@@ -26,6 +26,10 @@ interface BreedingFormProps {
   onCancel: () => void
   isLoading?: boolean
   initialData?: BreedingRecord
+  /** Animales preseleccionados desde un flujo de registro rápido. */
+  initialAnimalIds?: string[]
+  /** Clave local para conservar el formulario si el usuario cierra el modal. */
+  draftStorageKey?: string
 }
 
 /** Convert a YYYY-MM-DD string to local Date (no timezone shift) */
@@ -71,6 +75,8 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   onCancel,
   isLoading = false,
   initialData,
+  initialAnimalIds = [],
+  draftStorageKey,
 }) => {
   const { remove } = useAnimalCRUD()
   const { breedingRecords } = useBreedingCRUD()
@@ -85,31 +91,92 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         expectedBirthDate: info.expectedBirthDate ? toDateStr(info.expectedBirthDate) : null,
         actualBirthDate: info.actualBirthDate ? toDateStr(info.actualBirthDate) : null,
         offspring: info.offspring ?? [],
-      })) ?? []
+      })) ??
+      animals
+        .filter((animal) => initialAnimalIds.includes(animal.id) && animal.gender === 'hembra')
+        .map<FemaleBreedingInfoForm>((animal) => ({
+          femaleId: animal.id,
+          pregnancyConfirmedDate: null,
+          expectedBirthDate: null,
+          actualBirthDate: null,
+          offspring: [],
+        }))
+
+    const presetMale = animals.find(
+      (animal) =>
+        initialAnimalIds.includes(animal.id) &&
+        animal.gender === 'macho' &&
+        animal.stage === 'reproductor',
+    )
+
+    const defaultBreedingDate = initialData?.breedingDate
+      ? toDateStr(initialData.breedingDate)
+      : toDateStr(new Date())
 
     return {
-      breedingId: initialData?.breedingId ?? '',
-      breedingDate: initialData?.breedingDate
-        ? toDateStr(initialData.breedingDate)
-        : toDateStr(new Date()),
-      maleId: initialData?.maleId ?? '',
+      breedingId:
+        initialData?.breedingId ??
+        generateBreedingId(parseLocalDate(defaultBreedingDate), breedingRecords),
+      breedingDate: defaultBreedingDate,
+      maleId: initialData?.maleId ?? presetMale?.id ?? '',
       femaleIds: normalizedFemaleInfo.map((info) => info.femaleId),
       femaleBreedingInfo: normalizedFemaleInfo,
       notes: initialData?.notes ?? '',
     }
-  }, [initialData])
+  }, [animals, breedingRecords, initialAnimalIds, initialData])
 
   const form = useZodForm({
     schema,
     defaultValues,
     mode: 'onBlur',
   })
+  const watchedValues = useWatch({ control: form.control })
+  const [draftLoaded, setDraftLoaded] = useState(!draftStorageKey)
+
+  useEffect(() => {
+    if (!draftStorageKey || typeof window === 'undefined') return
+
+    try {
+      const rawDraft = window.localStorage.getItem(draftStorageKey)
+      if (rawDraft) {
+        const draft = JSON.parse(rawDraft) as Partial<FormSchema>
+        form.reset({
+          ...form.getValues(),
+          ...draft,
+          femaleIds: draft.femaleIds ?? form.getValues('femaleIds'),
+          femaleBreedingInfo: draft.femaleBreedingInfo ?? form.getValues('femaleBreedingInfo'),
+        })
+      }
+    } catch (error) {
+      console.warn('No se pudo leer el borrador del empadre', error)
+    } finally {
+      setDraftLoaded(true)
+    }
+  }, [draftStorageKey, form])
+
+  useEffect(() => {
+    if (!draftStorageKey || !draftLoaded || typeof window === 'undefined') return
+
+    try {
+      window.localStorage.setItem(draftStorageKey, JSON.stringify(watchedValues))
+    } catch (error) {
+      console.warn('No se pudo guardar el borrador del empadre', error)
+    }
+  }, [draftLoaded, draftStorageKey, watchedValues])
 
   const femaleIds = form.watch('femaleIds') ?? []
   const femaleBreedingInfo = form.watch('femaleBreedingInfo') ?? []
   const breedingDate = form.watch('breedingDate')
-  const breedingIdValue = form.watch('breedingId')
   const maleId = form.watch('maleId')
+
+  useEffect(() => {
+    if (initialData || !breedingDate || form.getFieldState('breedingId').isDirty) return
+
+    const nextBreedingId = generateBreedingId(parseLocalDate(breedingDate), breedingRecords)
+    if (form.getValues('breedingId') !== nextBreedingId) {
+      form.setValue('breedingId', nextBreedingId, { shouldDirty: false })
+    }
+  }, [breedingDate, breedingRecords, form, initialData])
 
   const selectedMale = useMemo(() => {
     return animals.find((animal) => animal.id === maleId) ?? null
@@ -144,17 +211,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
       return true
     })
   }, [animals, selectedMale, onlyAvailable, busyFemaleIds])
-
-  useEffect(() => {
-    if (initialData) {
-      return
-    }
-    if (breedingDate && !breedingIdValue) {
-      form.setValue('breedingId', generateBreedingIdFromStr(breedingDate), {
-        shouldDirty: false,
-      })
-    }
-  }, [breedingDate, breedingIdValue, form, initialData])
 
   const initialFemaleIds = useMemo(
     () => new Set(initialData?.femaleBreedingInfo?.map((f) => f.femaleId) ?? []),
@@ -360,7 +416,9 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
     )
 
     const payload: Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt' | 'updatedAt'> = {
-      breedingId: trimmedBreedingId || generateBreedingIdFromStr(values.breedingDate),
+      breedingId:
+        trimmedBreedingId ||
+        generateBreedingId(parseLocalDate(values.breedingDate), breedingRecords, initialData?.id),
       maleId: values.maleId,
       breedingDate: parseLocalDate(values.breedingDate),
       femaleBreedingInfo: normalizedFemaleInfo.map((info) => ({
@@ -382,7 +440,13 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
   return (
     <Form form={form} onSubmit={onSubmitForm} className="space-y-4">
-      <TextField name="breedingId" label="ID de Empadre" placeholder="Ej: 10-10-25-01" required />
+      <TextField
+        name="breedingId"
+        label="ID de Empadre"
+        placeholder="Ej: 26520"
+        helperText="Año + semana ISO + consecutivo. Ejemplo: 26520."
+        required
+      />
 
       {selectedMale ? (
         <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
@@ -448,16 +512,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 
       {selectedMale ? (
         <>
-          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={onlyAvailable}
-              onChange={(e) => setOnlyAvailable(e.target.checked)}
-              className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-            />
-            Solo hembras disponibles
-            <span className="text-xs text-gray-400">({filteredFemales.length})</span>
-          </label>
           <InputSelectAnimals
             animals={filteredFemales}
             selectedIds={femaleIds}
@@ -467,6 +521,19 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             }}
             onRemove={(id) => handleRemoveFemale(id)}
             label="Hembras"
+            inputAccessory={
+              <label className="inline-flex min-h-9 cursor-pointer select-none items-center gap-2 rounded-md px-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={onlyAvailable}
+                  onChange={(e) => setOnlyAvailable(e.target.checked)}
+                  aria-label="Mostrar solo hembras disponibles"
+                  className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+                />
+                Solo hembras disponibles
+                <span className="text-gray-400">({filteredFemales.length})</span>
+              </label>
+            }
             placeholder={`Buscar hembra ${selectedMale.type} por numero...`}
             disabled={!selectedMale || isLoading || isSubmitting}
             showOmitButton
@@ -656,12 +723,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
       </div>
     </Form>
   )
-}
-
-/** Generate breeding ID from a YYYY-MM-DD string */
-function generateBreedingIdFromStr(dateStr: string): string {
-  const [y, m, d] = dateStr.split('-')
-  return `${d}-${m}-${y.slice(-2)}-01`
 }
 
 export default BreedingForm

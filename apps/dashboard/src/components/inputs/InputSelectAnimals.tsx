@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import AnimalBadges from '@/components/AnimalBadges'
 import ButtonClose from '@/components/buttons/ButtonClose'
 import { Animal } from '@/types/animals'
@@ -20,6 +21,8 @@ export interface InputSelectAnimalsProps {
   placeholder?: string
   /** Label del campo */
   label?: string
+  /** Contenido auxiliar alineado con el input, como filtros del selector */
+  inputAccessory?: React.ReactNode
   /** IDs que no se pueden quitar (pre-seleccionados fijos) */
   fixedIds?: string[]
   /** Filtro adicional sobre los animales disponibles */
@@ -30,8 +33,17 @@ export interface InputSelectAnimalsProps {
   secondaryLabel?: (animal: Animal) => string | undefined
   /** Mostrar boton "Omitir" en items ya seleccionados dentro del dropdown */
   showOmitButton?: boolean
+  /** Reducir la altura del dropdown en espacios compactos como modales */
+  compactDropdown?: boolean
   /** Deshabilitado */
   disabled?: boolean
+}
+
+type DropdownPosition = {
+  top: number
+  left: number
+  width: number
+  maxHeight: number
 }
 
 const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
@@ -42,11 +54,13 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   mode = 'multi',
   placeholder = 'Buscar por numero, nombre, tipo o raza...',
   label,
+  inputAccessory,
   fixedIds = [],
   filterFn,
   renderOption,
   secondaryLabel,
   disabled = false,
+  compactDropdown = false,
 }) => {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
@@ -54,8 +68,10 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   const [chipsExpanded, setChipsExpanded] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const chipsRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef<(HTMLDivElement | null)[]>([])
+  const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition | null>(null)
 
   const selectedAnimals = useMemo(
     () =>
@@ -94,7 +110,12 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        !dropdownRef.current?.contains(target)
+      ) {
         setIsOpen(false)
         setHighlightIndex(-1)
       }
@@ -102,6 +123,42 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  // El dropdown se monta en body para que el scroll del modal no lo recorte.
+  useEffect(() => {
+    if (!isOpen) {
+      setDropdownPosition(null)
+      return
+    }
+
+    const updateDropdownPosition = () => {
+      const input = inputRef.current
+      if (!input) return
+
+      const rect = input.getBoundingClientRect()
+      const preferredHeight = compactDropdown ? 176 : 240
+      const spaceBelow = window.innerHeight - rect.bottom - 8
+      const spaceAbove = rect.top - 8
+      const opensAbove = spaceBelow < preferredHeight && spaceAbove > spaceBelow
+      const availableSpace = Math.max(96, opensAbove ? spaceAbove : spaceBelow)
+      const maxHeight = Math.min(preferredHeight, availableSpace)
+
+      setDropdownPosition({
+        top: opensAbove ? Math.max(8, rect.top - maxHeight - 4) : rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        maxHeight,
+      })
+    }
+
+    updateDropdownPosition()
+    window.addEventListener('resize', updateDropdownPosition)
+    window.addEventListener('scroll', updateDropdownPosition, true)
+    return () => {
+      window.removeEventListener('resize', updateDropdownPosition)
+      window.removeEventListener('scroll', updateDropdownPosition, true)
+    }
+  }, [compactDropdown, isOpen])
 
   // Scroll into view on keyboard nav
   useEffect(() => {
@@ -203,12 +260,14 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     <div ref={containerRef}>
       {/* Label con contador */}
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {label}
-          {selectedAnimals.length > 0 && (
-            <span className="text-gray-400 font-normal ml-1">({selectedAnimals.length})</span>
-          )}
-        </label>
+        <div className="mb-1 min-h-8">
+          <label className="text-sm font-medium text-gray-700">
+            {label}
+            {selectedAnimals.length > 0 && (
+              <span className="text-gray-400 font-normal ml-1">({selectedAnimals.length})</span>
+            )}
+          </label>
+        </div>
       )}
 
       {/* Chips de seleccionados — max 2 filas con "ver" */}
@@ -264,95 +323,113 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
 
       {/* Input de busqueda */}
       {(mode === 'multi' || selectedIds.length === 0) && (
-        <div className="relative">
-          <input
-            ref={inputRef}
-            type="text"
-            role="combobox"
-            aria-expanded={isOpen}
-            aria-autocomplete="list"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value)
-              setIsOpen(true)
-              setHighlightIndex(-1)
-            }}
-            onFocus={() => setIsOpen(true)}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            disabled={disabled}
-            className={`w-full border rounded-lg px-3 py-2 text-sm transition-colors ${
-              isOpen
-                ? 'ring-1 ring-green-400 border-green-400'
-                : 'border-gray-300 focus:ring-1 focus:ring-green-400 focus:border-green-400'
-            } disabled:bg-gray-100 disabled:cursor-not-allowed`}
-          />
-          {mode === 'multi' && !isOpen && selectedIds.length === 0 && (
-            <p className="text-xs text-gray-400 mt-1">
-              Escribe un numero o nombre y presiona Enter para agregar.
-            </p>
-          )}
-          {/* Dropdown */}
-          {isOpen && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {/* Cerrar selector */}
-              <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-3 py-1.5 flex justify-end">
-                <ButtonClose
-                  showTitle="Cerrar selector"
-                  title="Cerrar"
-                  className="text-gray-400 hover:text-gray-600"
-                  onClick={() => {
-                    setIsOpen(false)
-                    setHighlightIndex(-1)
+        <>
+          {inputAccessory && <div className="mb-1 flex justify-end">{inputAccessory}</div>}
+          <div className="relative">
+            <input
+              ref={inputRef}
+              type="text"
+              role="combobox"
+              aria-expanded={isOpen}
+              aria-autocomplete="list"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value)
+                setIsOpen(true)
+                setHighlightIndex(-1)
+              }}
+              onFocus={() => setIsOpen(true)}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              disabled={disabled}
+              className={`w-full border rounded-lg px-3 py-2 text-sm transition-colors ${
+                isOpen
+                  ? 'ring-1 ring-green-400 border-green-400'
+                  : 'border-gray-300 focus:ring-1 focus:ring-green-400 focus:border-green-400'
+              } disabled:bg-gray-100 disabled:cursor-not-allowed`}
+            />
+            {mode === 'multi' && !isOpen && selectedIds.length === 0 && (
+              <p className="text-xs text-gray-400 mt-1">
+                Escribe un numero o nombre y presiona Enter para agregar.
+              </p>
+            )}
+            {/* Dropdown */}
+            {isOpen &&
+              dropdownPosition &&
+              typeof document !== 'undefined' &&
+              createPortal(
+                <div
+                  ref={dropdownRef}
+                  role="listbox"
+                  style={{
+                    position: 'fixed',
+                    top: dropdownPosition.top,
+                    left: dropdownPosition.left,
+                    width: dropdownPosition.width,
+                    maxHeight: dropdownPosition.maxHeight,
                   }}
-                />
-              </div>
-
-              {/* Indicacion de Enter */}
-              {query.trim() && dropdownItems.length > 0 && (
-                <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
-                  Presiona{' '}
-                  <kbd className="px-1 py-0.5 bg-white border border-gray-300 rounded text-[10px] font-mono">
-                    Enter
-                  </kbd>{' '}
-                  para agregar el primero
-                </div>
-              )}
-
-              {dropdownItems.length > 0 ? (
-                dropdownItems.map((animal, index) => {
-                  const isHighlighted = highlightIndex === index
-                  const isFirstMatch = query.trim() && index === 0 && highlightIndex === -1
-
-                  return (
-                    <div
-                      key={animal.id}
-                      ref={(el) => {
-                        itemRefs.current[index] = el
+                  className="z-[100] overflow-y-auto rounded-lg border border-gray-100 bg-white shadow-lg"
+                >
+                  {/* Cerrar selector */}
+                  <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-3 py-1.5 flex justify-end">
+                    <ButtonClose
+                      showTitle="Cerrar selector"
+                      title="Cerrar"
+                      className="text-gray-400 hover:text-gray-600"
+                      onClick={() => {
+                        setIsOpen(false)
+                        setHighlightIndex(-1)
                       }}
-                      role="option"
-                      aria-selected={isHighlighted}
-                      onMouseDown={(e) => {
-                        e.preventDefault()
-                        handleSelect(animal.id)
-                      }}
-                      onMouseEnter={() => setHighlightIndex(index)}
-                      className={`w-full px-3 py-2 flex items-center gap-3 transition-colors text-left border-b border-gray-100 last:border-b-0 cursor-pointer ${
-                        isHighlighted || isFirstMatch ? 'bg-green-50' : 'hover:bg-gray-50'
-                      }`}
-                    >
-                      {renderOption ? renderOption(animal, false) : defaultRenderOption(animal)}
+                    />
+                  </div>
+
+                  {/* Indicacion de Enter */}
+                  {query.trim() && dropdownItems.length > 0 && (
+                    <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
+                      Presiona{' '}
+                      <kbd className="px-1 py-0.5 bg-white border border-gray-300 rounded text-[10px] font-mono">
+                        Enter
+                      </kbd>{' '}
+                      para agregar el primero
                     </div>
-                  )
-                })
-              ) : (
-                <div className="p-4 text-center text-sm text-gray-500">
-                  {query.trim() ? 'No se encontraron animales' : 'No hay animales disponibles'}
-                </div>
+                  )}
+
+                  {dropdownItems.length > 0 ? (
+                    dropdownItems.map((animal, index) => {
+                      const isHighlighted = highlightIndex === index
+                      const isFirstMatch = query.trim() && index === 0 && highlightIndex === -1
+
+                      return (
+                        <div
+                          key={animal.id}
+                          ref={(el) => {
+                            itemRefs.current[index] = el
+                          }}
+                          role="option"
+                          aria-selected={isHighlighted}
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            handleSelect(animal.id)
+                          }}
+                          onMouseEnter={() => setHighlightIndex(index)}
+                          className={`w-full px-3 py-2 flex items-center gap-3 transition-colors text-left border-b border-gray-100 last:border-b-0 cursor-pointer ${
+                            isHighlighted || isFirstMatch ? 'bg-green-50' : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          {renderOption ? renderOption(animal, false) : defaultRenderOption(animal)}
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div className="p-4 text-center text-sm text-gray-500">
+                      {query.trim() ? 'No se encontraron animales' : 'No hay animales disponibles'}
+                    </div>
+                  )}
+                </div>,
+                document.body,
               )}
-            </div>
-          )}
-        </div>
+          </div>
+        </>
       )}
 
       {/* En modo single con seleccion, mostrar boton para cambiar */}

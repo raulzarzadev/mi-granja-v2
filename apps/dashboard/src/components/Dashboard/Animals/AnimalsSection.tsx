@@ -134,16 +134,20 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
 
   const editRecord = (record: BreedingRecord) => router.push(`/empadre/${record.id}/editar`)
 
-  const { handleRemoveFromBreeding, handleUnconfirmPregnancy, handleRevertBirth } =
-    useBreedingHandlers({
-      animals,
-      update,
-      remove,
-      wean,
-      addRecord,
-      updateBreedingRecord,
-      deleteBreedingRecord,
-    })
+  const {
+    handleRemoveFromBreeding,
+    handleUnconfirmPregnancy,
+    handleAbortPregnancy,
+    handleRevertBirth,
+  } = useBreedingHandlers({
+    animals,
+    update,
+    remove,
+    wean,
+    addRecord,
+    updateBreedingRecord,
+    deleteBreedingRecord,
+  })
 
   // --- Breeding modal triggers ---
   const handleOpenAddBirth: BreedingActionHandlers['onAddBirth'] = (record, femaleId) => {
@@ -781,7 +785,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     },
     {
       label: etapaLabel('juvenil', juvenilAnimals.length),
-      description: 'Ya destetados y en crecimiento, antes de reproducción. Frecuentemente son hembras o prospectos de sementales machos.',
+      description:
+        'Ya destetados y en crecimiento, antes de reproducción. Frecuentemente son hembras o prospectos de sementales machos.',
       content: (
         <TabStageJuvenil
           animals={juvenilAnimals}
@@ -792,7 +797,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     },
     {
       label: etapaLabel('engorda', engordaAnimals.length),
-      description: 'En alimentación para ganar peso antes de la venta. Frecuentemente, machos y hembras no aptos para reproducción.',
+      description:
+        'En alimentación para ganar peso antes de la venta. Frecuentemente, machos y hembras no aptos para reproducción.',
       content: (
         <TabStageEngorda
           animals={engordaAnimals}
@@ -829,6 +835,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           }}
           onAddBirth={handleOpenAddBirth}
           onUnconfirmPregnancy={handleUnconfirmPregnancy}
+          onAbort={handleAbortPregnancy}
           onRemoveFromBreeding={handleRemoveFromBreeding}
           onDeleteBirth={handleRevertBirth}
           onEditRecord={editRecord}
@@ -1301,6 +1308,10 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                                   onAddBirth={(rec, fId) => {
                                     setViewingBreedingRecord(null)
                                     handleOpenAddBirth(rec, fId)
+                                  }}
+                                  onAbort={async (rec, fId, input) => {
+                                    await handleAbortPregnancy(rec, fId, input)
+                                    setViewingBreedingRecord(null)
                                   }}
                                   onRemoveFromBreeding={async (rec, animalId) => {
                                     const updated = rec.femaleBreedingInfo.filter(

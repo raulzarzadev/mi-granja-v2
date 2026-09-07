@@ -469,13 +469,13 @@ export const useAnimalCRUD = () => {
   ) => {
     if (!user?.id) {
       dispatch(setError('Usuario no autenticado'))
-      return
+      return undefined
     }
 
     const animal = animals.find((a) => a.id === animalId)
     if (!animal) {
       dispatch(setError('Animal no encontrado'))
-      return
+      return undefined
     }
 
     const cleanedRecordData = cleanUndefinedFields(recordData)
@@ -495,6 +495,7 @@ export const useAnimalCRUD = () => {
       category: newRecord.category,
     })
     console.log('Registro agregado al animal:', animalId)
+    return newRecord.id
   }
 
   // Actualizar registro
@@ -610,12 +611,12 @@ export const useAnimalCRUD = () => {
   ) => {
     if (!user?.id) {
       dispatch(setError('Usuario no autenticado'))
-      return
+      return undefined
     }
 
     if (animalIds.length === 0) {
       dispatch(setError('No se han seleccionado animales'))
-      return
+      return undefined
     }
 
     const cleanedRecordData = cleanUndefinedFields(recordData)
@@ -643,6 +644,7 @@ export const useAnimalCRUD = () => {
       { onProgress: opts?.onProgress },
     )
     console.log('Registro masivo aplicado a:', animalIds.length, 'animales')
+    return newRecord.id
   }
 
   // Obtener próximos vencimientos de registros de salud

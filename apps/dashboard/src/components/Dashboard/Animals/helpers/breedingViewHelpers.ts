@@ -7,13 +7,14 @@ export type FemaleGroup = {
   items: FemaleBreedingInfo[]
 }
 
-export type FemaleBreedingStatus = AnimalBreedingStatus | 'embarazada_otra_monta'
+export type FemaleBreedingStatus = AnimalBreedingStatus | 'embarazada_otra_monta' | 'abortada'
 
 export const CHIP_COLORS: Record<FemaleBreedingStatus, string> = {
   empadre: 'bg-yellow-50 text-yellow-800 border-yellow-200',
   embarazada: 'bg-blue-50 text-blue-800 border-blue-200',
   embarazada_otra_monta: 'bg-orange-50 text-orange-800 border-orange-200',
   parida: 'bg-green-50 text-green-800 border-green-200',
+  abortada: 'bg-red-50 text-red-800 border-red-200',
 }
 
 export function getFemaleBreedingStatus(
@@ -21,6 +22,7 @@ export function getFemaleBreedingStatus(
   animals: Animal[] = [],
   record?: BreedingRecord,
 ): FemaleBreedingStatus {
+  if (info.outcome === 'aborted') return 'abortada'
   if (info.actualBirthDate) return 'parida'
 
   const animal = animals.find((candidate) => candidate.id === info.femaleId)
@@ -70,7 +72,12 @@ export function groupFemalesByStatus(
       label: 'Gestante en otra monta',
       items: females.filter((fi) => statusOf(fi) === 'embarazada_otra_monta'),
     },
-    { key: 'parida', label: 'Parida', items: females.filter((fi) => !!fi.actualBirthDate) },
+    { key: 'parida', label: 'Parida', items: females.filter((fi) => statusOf(fi) === 'parida') },
+    {
+      key: 'abortada',
+      label: 'Aborto registrado',
+      items: females.filter((fi) => statusOf(fi) === 'abortada'),
+    },
   ]
 }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import AnimalFamilyTree from '@/components/AnimalFamilyTree'
 import AnimalRecordsSection from '@/components/AnimalRecordsSection'
@@ -26,6 +26,7 @@ import AnimalTag from './AnimalTag'
 import Button from './buttons/Button'
 import ButtonConfirm from './buttons/ButtonConfirm'
 import { Icon } from './Icon/icon'
+import { Modal } from './Modal'
 import ModalAnimalDischarge from './ModalAnimalDischarge'
 import ModalChangeStage from './ModalChangeStage'
 import ModalEditAnimal from './ModalEditAnimal'
@@ -42,6 +43,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
   const { animals: allAnimals, remove, assignArea } = useAnimalCRUD()
   const animal = allAnimals.find((a) => a.id === animalProp.id) ?? animalProp
   const [changeStageOpen, setChangeStageOpen] = useState(false)
+  const [failedBreedingsOpen, setFailedBreedingsOpen] = useState(false)
   const [isUpdatingArea, setIsUpdatingArea] = useState(false)
   const [areaError, setAreaError] = useState<string | null>(null)
 
@@ -64,6 +66,25 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
   const effectiveStatus = animal.status ?? 'activo'
   const activeAreas = (currentFarm?.areas || []).filter((area) => area.isActive)
   const currentArea = activeAreas.find((area) => area.id === animal.currentAreaId) || null
+  const failedBreedings = useMemo(() => {
+    if (animal.gender !== 'hembra') return []
+
+    return breedings
+      .flatMap((record) => {
+        const info = record.femaleBreedingInfo?.find((item) => item.femaleId === animal.id)
+        if (!info) return []
+
+        const isFailed =
+          info.outcome === 'open' ||
+          (record.status === 'finished' && !info.pregnancyConfirmedDate && !info.actualBirthDate)
+        return isFailed ? [{ info, record }] : []
+      })
+      .sort((a, b) => {
+        const aTime = a.record.breedingDate ? toDate(a.record.breedingDate).getTime() : 0
+        const bTime = b.record.breedingDate ? toDate(b.record.breedingDate).getTime() : 0
+        return bTime - aTime
+      })
+  }, [animal.gender, animal.id, breedings])
 
   const handleAreaChange = async (areaId: string) => {
     const nextAreaId = areaId || null
@@ -235,6 +256,38 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
               ) : null}
             </div>
           </section>
+
+          {animal.gender === 'hembra' && (
+            <section
+              aria-labelledby="reproduccion-heading"
+              className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 sm:p-5"
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 id="reproduccion-heading" className="text-sm font-bold text-amber-950">
+                    Empadres fallidos
+                  </h3>
+                  <p className="mt-1 text-sm text-amber-900/80">
+                    Ciclos terminados sin gestación confirmada.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl font-bold tabular-nums text-amber-950">
+                    {failedBreedings.length}
+                  </span>
+                  {failedBreedings.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setFailedBreedingsOpen(true)}
+                      className="min-h-11 rounded-lg px-2 text-sm font-semibold text-amber-800 underline decoration-amber-400 underline-offset-4 transition hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:ring-offset-2"
+                    >
+                      Ver detalles
+                    </button>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Genealogía section */}
           <section
@@ -483,6 +536,47 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
         animals={[animal]}
         allAnimals={allAnimals}
       />
+
+      <Modal
+        isOpen={failedBreedingsOpen}
+        onClose={() => setFailedBreedingsOpen(false)}
+        title={`Empadres fallidos · ${animal.animalNumber}`}
+        size="md"
+        contentClassName="max-h-[min(70vh,38rem)]"
+      >
+        <div className="space-y-3">
+          <p className="text-sm leading-5 text-slate-600">
+            Ciclos terminados sin gestación confirmada para esta hembra.
+          </p>
+          <ol className="space-y-2" aria-label="Empadres sin gestación confirmada">
+            {failedBreedings.map(({ record }) => {
+              const male = allAnimals.find((candidate) => candidate.id === record.maleId)
+              return (
+                <li
+                  key={record.id}
+                  className="rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3"
+                >
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <span className="font-semibold text-slate-900">
+                      {record.breedingId || record.id.slice(0, 8)}
+                    </span>
+                    <span className="text-xs font-medium uppercase tracking-wide text-amber-800">
+                      Sin gestación
+                    </span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
+                    <span>
+                      Fecha:{' '}
+                      {record.breedingDate ? formatDate(record.breedingDate) : 'No disponible'}
+                    </span>
+                    {male && <span>Macho: {male.animalNumber}</span>}
+                  </div>
+                </li>
+              )
+            })}
+          </ol>
+        </div>
+      </Modal>
     </div>
   )
 }

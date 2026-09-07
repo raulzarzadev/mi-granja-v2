@@ -47,7 +47,7 @@ import {
   trackReproductionEventUpdated,
 } from '@/lib/analytics/track'
 import { db } from '@/lib/firebase'
-import { BreedingRecord } from '@/types/breedings'
+import { BreedingRecord, generateBreedingId as buildBreedingId } from '@/types/breedings'
 import { Comment, NewCommentInput } from '@/types/comment'
 import { getBreedingUpcomingBirths } from './libs/breeding-helpers'
 
@@ -63,21 +63,7 @@ export const useBreedingCRUD = () => {
 
   // Función para generar ID legible por humanos
   const generateBreedingId = (breedingDate: Date): string => {
-    const day = breedingDate.getDate().toString().padStart(2, '0')
-    const month = (breedingDate.getMonth() + 1).toString().padStart(2, '0')
-    const year = breedingDate.getFullYear().toString().slice(-2)
-    const baseId = `${day}-${month}-${year}`
-
-    // Buscar registros existentes para la misma fecha
-    const sameDate = breedingRecords.filter((record) => {
-      if (!record.breedingDate) return false
-      const recordDate = toDate(record.breedingDate)
-      return recordDate.toDateString() === breedingDate.toDateString()
-    })
-
-    // Generar consecutivo
-    const consecutive = (sameDate.length + 1).toString().padStart(2, '0')
-    return `${baseId}-${consecutive}`
+    return buildBreedingId(breedingDate, breedingRecords)
   }
 
   // Crear registro de empadre

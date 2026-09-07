@@ -38,6 +38,10 @@ export interface AnimalRecord {
   appliedToAnimals?: string[] // IDs de animales
   isBulkApplication?: boolean
 
+  // Para acciones creadas desde el registro rápido
+  eventType?: AnimalRecordEventType
+  undoData?: AnimalRecordUndoData
+
   // Metadata
   createdAt: Date
   createdBy: string
@@ -274,6 +278,19 @@ export const animal_statuses = [
 
 export type AnimalStatus = (typeof animal_statuses)[number]
 
+export type AnimalRecordUndoData = {
+  action: AnimalRecordEventType
+  previousAnimalStates?: Array<{
+    id: string
+    status?: AnimalStatus
+    statusAt?: Date | null
+    statusNotes?: string | null
+    deathInfo?: Animal['deathInfo'] | null
+    soldInfo?: Animal['soldInfo'] | null
+    lostInfo?: Animal['lostInfo'] | null
+  }>
+}
+
 export const animal_icon: Record<AnimalType, string> = {
   oveja: '🐑',
   vaca: '🐄',
@@ -290,8 +307,35 @@ export const animal_icon: Record<AnimalType, string> = {
 
 // ===== SISTEMA UNIFICADO DE REGISTROS =====
 
-export const record_types = ['note', 'health', 'weight', 'birth', 'milk', 'expense'] as const
+export const record_types = [
+  'note',
+  'health',
+  'weight',
+  'birth',
+  'milk',
+  'expense',
+  'event',
+] as const
 export type RecordType = (typeof record_types)[number]
+
+export const animal_record_event_types = ['monta', 'destete', 'parto', 'muerte', 'venta'] as const
+export type AnimalRecordEventType = (typeof animal_record_event_types)[number]
+
+export const record_event_type_labels: Record<AnimalRecordEventType, string> = {
+  monta: 'Empadre',
+  destete: 'Destete',
+  parto: 'Parto',
+  muerte: 'Muerte',
+  venta: 'Venta',
+}
+
+export const record_event_type_icons: Record<AnimalRecordEventType, string> = {
+  monta: '🐐',
+  destete: '🍼',
+  parto: '🐣',
+  muerte: '💀',
+  venta: '💰',
+}
 
 export const isMilkRecord = (record: AnimalRecord): record is AnimalMilkRecord =>
   record.type === 'milk' &&
@@ -322,6 +366,7 @@ export const record_type_labels: Record<RecordType, string> = {
   birth: 'Parto',
   milk: 'Leche',
   expense: 'Gasto',
+  event: 'Evento',
 }
 
 export const record_type_icons: Record<RecordType, string> = {
@@ -331,7 +376,18 @@ export const record_type_icons: Record<RecordType, string> = {
   birth: '🐣',
   milk: '🥛',
   expense: '💰',
+  event: '📌',
 }
+
+export const getRecordTypeLabel = (record: Pick<AnimalRecord, 'type' | 'eventType'>): string =>
+  record.type === 'event' && record.eventType
+    ? record_event_type_labels[record.eventType]
+    : record_type_labels[record.type]
+
+export const getRecordTypeIcon = (record: Pick<AnimalRecord, 'type' | 'eventType'>): string =>
+  record.type === 'event' && record.eventType
+    ? record_event_type_icons[record.eventType]
+    : record_type_icons[record.type]
 
 // ===== CATEGORÍAS DE GASTO =====
 

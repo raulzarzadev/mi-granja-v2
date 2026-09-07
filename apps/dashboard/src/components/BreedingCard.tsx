@@ -39,6 +39,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
   onDelete,
   onConfirmPregnancy,
   onUnconfirmPregnancy,
+  onAbort,
   onRemoveFromBreeding,
   onDeleteBirth,
 }) => {
@@ -96,12 +97,16 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
     const pending = record.femaleBreedingInfo.filter(
       (info) => getFemaleBreedingStatus(info, animals, record) === 'empadre',
     ).length
+    const open = record.femaleBreedingInfo.filter((info) => info.outcome === 'open').length
+    const aborted = record.femaleBreedingInfo.filter((info) => info.outcome === 'aborted').length
 
     return {
       births,
       pregnancies,
       pregnantInOtherBreeding,
       pending,
+      open,
+      aborted,
     }
   }
 
@@ -110,6 +115,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
     if (statuses.pregnancies > 0) return 'bg-blue-100 text-blue-800' // Gestaciones
     if (statuses.pregnantInOtherBreeding > 0) return 'bg-orange-100 text-orange-800'
     if (statuses.births > 0) return 'bg-green-100 text-green-800' // Partos
+    if (statuses.open > 0) return 'bg-red-100 text-red-800' // Sin gestación confirmada
+    if (statuses.aborted > 0) return 'bg-red-100 text-red-800'
   }
 
   const femaleStatuses = getFemaleStatuses()
@@ -122,7 +129,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
       const pregnancyDate =
         status === 'embarazada' || status === 'embarazada_otra_monta'
           ? animalInfo?.pregnantAt || info.pregnancyConfirmedDate
-          : info.pregnancyConfirmedDate
+          : null
 
       const expectedBirthDate = () => {
         // Priorizar el tipo de la hembra; si no, usar el del macho
@@ -175,7 +182,8 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         return 2 // próxima
       }
       if (f.status === 'embarazada_otra_monta') return 3
-      return 4 // parida
+      if (f.status === 'abortada') return 4
+      return 5 // parida
     }
 
     const getAnimalNumber = (f: (typeof femalesBreedingInfo)[number]) =>
@@ -350,6 +358,17 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
               {femaleStatuses.pending !== 1 ? 's' : ''}
             </span>
           )}
+          {femaleStatuses.open > 0 && (
+            <span className="text-red-600 ml-2">
+              ⚠️ {femaleStatuses.open} sin gestación confirmada
+            </span>
+          )}
+          {femaleStatuses.aborted > 0 && (
+            <span className="text-red-600 ml-2">
+              ⚠️ {femaleStatuses.aborted} aborto
+              {femaleStatuses.aborted !== 1 ? 's' : ''}
+            </span>
+          )}
         </span>
       </div>
 
@@ -419,6 +438,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                 onRemoveFromBreeding={onRemoveFromBreeding}
                 onDeleteBirth={onDeleteBirth}
                 onAddBirth={onAddBirth}
+                onAbort={onAbort}
                 triggerComponent={
                   <div className="p-2 bg-gray-50 rounded-md hover:bg-gray-100 cursor-pointer transition-colors">
                     <div className="flex items-center justify-between">

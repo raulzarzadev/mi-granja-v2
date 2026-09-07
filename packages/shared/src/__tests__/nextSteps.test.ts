@@ -11,7 +11,7 @@ import {
   weightTargetProgress,
 } from '../lib/animal-utils'
 import { Animal } from '../types/animals'
-import { BreedingRecord } from '../types/breedings'
+import { BreedingRecord, finalizeFemaleBreedingOutcomes } from '../types/breedings'
 
 const NOW = new Date('2026-04-19T12:00:00Z')
 
@@ -205,6 +205,7 @@ describe('femaleBreedingStats', () => {
       pregnancies: 0,
       births: 0,
       offspring: 0,
+      openCycles: 0,
       lastBirthDate: null,
     })
   })
@@ -233,7 +234,50 @@ describe('femaleBreedingStats', () => {
     expect(stats.pregnancies).toBe(3)
     expect(stats.births).toBe(2)
     expect(stats.offspring).toBe(3)
+    expect(stats.openCycles).toBe(0)
     expect(stats.lastBirthDate?.toISOString().slice(0, 10)).toBe('2026-03-01')
+  })
+
+  it('counts completed cycles without confirmed pregnancy', () => {
+    const stats = femaleBreedingStats(female, [
+      breeding({}, { id: 'b-open', status: 'finished' }),
+      breeding({ outcome: 'open' }, { id: 'b-open-explicit' }),
+    ])
+
+    expect(stats.openCycles).toBe(2)
+  })
+
+  it('marks each female outcome when an empadre is finished', () => {
+    const diagnosedAt = new Date('2026-06-01')
+    const results = finalizeFemaleBreedingOutcomes(
+      [
+        { femaleId: 'f-1' },
+        { femaleId: 'f-2', pregnancyConfirmedDate: new Date('2026-05-01') },
+        { femaleId: 'f-3', actualBirthDate: new Date('2026-05-20') },
+      ],
+      diagnosedAt,
+    )
+
+    expect(results.map((info) => info.outcome)).toEqual(['open', 'pregnant', 'calved'])
+    expect(results.every((info) => info.diagnosedAt === diagnosedAt)).toBe(true)
+  })
+
+  it('preserves an explicitly registered abortion when the empadre is finished', () => {
+    const diagnosedAt = new Date('2026-03-01')
+    const results = finalizeFemaleBreedingOutcomes(
+      [
+        {
+          femaleId: 'f-abortada',
+          pregnancyConfirmedDate: new Date('2026-02-01'),
+          outcome: 'aborted',
+          diagnosedAt,
+        },
+      ],
+      new Date('2026-06-01'),
+    )
+
+    expect(results[0].outcome).toBe('aborted')
+    expect(results[0].diagnosedAt).toBe(diagnosedAt)
   })
 
   it('ignores breedings where female is not present', () => {
@@ -248,6 +292,12 @@ describe('femaleBreedingStats', () => {
       } as BreedingRecord,
     ]
     const stats = femaleBreedingStats(female, breedings)
-    expect(stats).toEqual({ pregnancies: 0, births: 0, offspring: 0, lastBirthDate: null })
+    expect(stats).toEqual({
+      pregnancies: 0,
+      births: 0,
+      offspring: 0,
+      openCycles: 0,
+      lastBirthDate: null,
+    })
   })
 })

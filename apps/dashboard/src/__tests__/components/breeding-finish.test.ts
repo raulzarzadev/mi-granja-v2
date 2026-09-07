@@ -103,7 +103,7 @@ describe('groupFemalesByStatus', () => {
 
     const groups = groupFemalesByStatus([enEmpadre, gestante, parida])
 
-    expect(groups).toHaveLength(4)
+    expect(groups).toHaveLength(5)
     expect(groups[0].key).toBe('empadre')
     expect(groups[0].items).toEqual([enEmpadre])
     expect(groups[1].key).toBe('embarazada')
@@ -112,6 +112,23 @@ describe('groupFemalesByStatus', () => {
     expect(groups[2].items).toEqual([])
     expect(groups[3].key).toBe('parida')
     expect(groups[3].items).toEqual([parida])
+    expect(groups[4].key).toBe('abortada')
+    expect(groups[4].items).toEqual([])
+  })
+
+  it('agrupa una hembra con aborto registrado sin devolverla a gestante', () => {
+    const abortada = makeFemale({
+      femaleId: 'f-abortada',
+      pregnancyConfirmedDate: new Date('2026-02-01'),
+      outcome: 'aborted',
+      diagnosedAt: new Date('2026-03-01'),
+    })
+
+    const groups = groupFemalesByStatus([abortada])
+
+    expect(groups[1].items).toHaveLength(0)
+    expect(groups[4].key).toBe('abortada')
+    expect(groups[4].items).toEqual([abortada])
   })
 
   it('hembras con birthDate son paridas aunque tengan pregnancyConfirmedDate', () => {

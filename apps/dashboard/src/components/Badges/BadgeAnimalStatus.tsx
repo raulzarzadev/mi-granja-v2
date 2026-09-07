@@ -1,6 +1,6 @@
 import { AnimalBreedingStatus, AnimalStatus } from '@/types/animals'
 
-type BreedingDisplayStatus = AnimalBreedingStatus | 'embarazada_otra_monta'
+type BreedingDisplayStatus = AnimalBreedingStatus | 'embarazada_otra_monta' | 'abortada'
 
 export const BadgeAnimalStatus = ({
   status,
@@ -42,6 +42,10 @@ export const BadgeAnimalStatus = ({
     case 'parida':
       bgColor = 'bg-pink-100 text-pink-800'
       text = 'Parida'
+      break
+    case 'abortada':
+      bgColor = 'bg-red-100 text-red-800'
+      text = '⚠️ Aborto'
       break
     default:
       bgColor = 'bg-gray-100 text-gray-800'

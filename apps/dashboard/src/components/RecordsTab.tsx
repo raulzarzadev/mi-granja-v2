@@ -8,6 +8,8 @@ import ModalRecordDetail from '@/components/ModalRecordDetail'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import {
   AnimalRecord,
+  getRecordTypeIcon,
+  getRecordTypeLabel,
   record_categories,
   record_category_colors,
   record_category_icons,
@@ -30,6 +32,13 @@ const PAGE_SIZE = 20
 
 type SortKey = 'date' | 'animal' | 'type' | 'application' | 'category' | 'title' | 'status'
 type SortDir = 'asc' | 'desc'
+
+// La tabla es un historial de creación. Conservamos el fallback para registros antiguos
+// que todavía no tienen metadata de creación persistida.
+const getRecordCreationDate = (record: Pick<AnimalRecord, 'createdAt' | 'date'>): Date => {
+  const createdAt = new Date(record.createdAt)
+  return Number.isNaN(createdAt.getTime()) ? new Date(record.date) : createdAt
+}
 
 // ─── Sort Arrow ───
 const SortIcon: React.FC<{ active: boolean; dir: SortDir }> = ({ active, dir }) => (
@@ -166,12 +175,12 @@ const RecordsTab: React.FC = () => {
       }
 
       if (filters.dateFrom) {
-        if (new Date(record.date) < new Date(filters.dateFrom)) return false
+        if (getRecordCreationDate(record) < new Date(filters.dateFrom)) return false
       }
       if (filters.dateTo) {
         const toDate = new Date(filters.dateTo)
         toDate.setHours(23, 59, 59, 999)
-        if (new Date(record.date) > toDate) return false
+        if (getRecordCreationDate(record) > toDate) return false
       }
 
       if (filters.search) {
@@ -188,6 +197,7 @@ const RecordsTab: React.FC = () => {
           record.animalNumber || '',
           record_category_labels[record.category],
           record_type_labels[record.type],
+          getRecordTypeLabel(record),
         ]
         if (!parts.join(' ').toLowerCase().includes(q)) return false
       }
@@ -211,6 +221,7 @@ const RecordsTab: React.FC = () => {
           r.type,
           r.category,
           dateKey(r.date),
+          r.eventType || '',
           r.title,
           r.batch || '',
           r.veterinarian || '',
@@ -255,7 +266,7 @@ const RecordsTab: React.FC = () => {
       let cmp = 0
       switch (sortKey) {
         case 'date':
-          cmp = new Date(a.date).getTime() - new Date(b.date).getTime()
+          cmp = getRecordCreationDate(a).getTime() - getRecordCreationDate(b).getTime()
           break
         case 'animal':
           cmp = (a.__isGrouped ? '' : a.animalNumber).localeCompare(
@@ -263,9 +274,7 @@ const RecordsTab: React.FC = () => {
           )
           break
         case 'type':
-          cmp = (record_type_labels[a.type] || a.type || '').localeCompare(
-            record_type_labels[b.type] || b.type || '',
-          )
+          cmp = getRecordTypeLabel(a).localeCompare(getRecordTypeLabel(b))
           break
         case 'application': {
           const aB = a.__isGrouped ? 1 : 0
@@ -288,7 +297,7 @@ const RecordsTab: React.FC = () => {
           break
         }
       }
-      return cmp * dir || new Date(b.date).getTime() - new Date(a.date).getTime()
+      return cmp * dir || getRecordCreationDate(b).getTime() - getRecordCreationDate(a).getTime()
     })
 
     return rows
@@ -650,7 +659,7 @@ const RecordsTab: React.FC = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <ThBtn k="date">Fecha</ThBtn>
+                    <ThBtn k="date">Creado</ThBtn>
                     <ThBtn k="animal">Animal</ThBtn>
                     <ThBtn k="type">Tipo</ThBtn>
                     <ThBtn k="application">Aplicacion</ThBtn>
@@ -674,7 +683,7 @@ const RecordsTab: React.FC = () => {
                       >
                         {/* Fecha */}
                         <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-900">
-                          {format(new Date(record.date), 'dd/MM/yyyy', { locale: es })}
+                          {format(getRecordCreationDate(record), 'dd/MM/yyyy', { locale: es })}
                         </td>
 
                         {/* Animal */}
@@ -707,9 +716,9 @@ const RecordsTab: React.FC = () => {
                         {/* Tipo */}
                         <td className="px-3 py-2.5 whitespace-nowrap text-sm">
                           <span className="inline-flex items-center gap-1">
-                            <span>{record_type_icons[record.type] || '📄'}</span>
+                            <span>{getRecordTypeIcon(record) || '📄'}</span>
                             <span className="text-gray-700">
-                              {record_type_labels[record.type] || record.type || '—'}
+                              {getRecordTypeLabel(record) || record.type || '—'}
                             </span>
                           </span>
                         </td>
@@ -729,14 +738,20 @@ const RecordsTab: React.FC = () => {
 
                         {/* Categoria */}
                         <td className="px-3 py-2.5 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${
-                              record_category_colors[record.category]
-                            }`}
-                          >
-                            {record_category_icons[record.category]}{' '}
-                            {record_category_labels[record.category]}
-                          </span>
+                          {record.type === 'event' ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                              ⚡ Acción
+                            </span>
+                          ) : (
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${
+                                record_category_colors[record.category]
+                              }`}
+                            >
+                              {record_category_icons[record.category]}{' '}
+                              {record_category_labels[record.category]}
+                            </span>
+                          )}
                         </td>
 
                         {/* Titulo */}

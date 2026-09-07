@@ -12,11 +12,12 @@ import { buildRecordFromForm } from '@/lib/records'
 import {
   Animal,
   AnimalRecord,
+  getRecordTypeIcon,
+  getRecordTypeLabel,
   record_category_colors,
   record_category_icons,
   record_category_labels,
   record_severity_labels,
-  record_type_labels,
 } from '@/types/animals'
 
 export type RecordDetailRow =
@@ -45,8 +46,15 @@ const milkingSessionLabels = {
 
 const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, record }) => {
   const { confirmAction, notify } = useAppFeedback()
-  const { updateRecord, removeRecord, resolveRecord, reopenRecord, updateWeightRecord } =
-    useAnimalCRUD()
+  const {
+    animals,
+    update,
+    updateRecord,
+    removeRecord,
+    resolveRecord,
+    reopenRecord,
+    updateWeightRecord,
+  } = useAnimalCRUD()
   const { createReminder } = useReminders()
   const [mode, setMode] = useState<'view' | 'edit'>('view')
   const [form, setForm] = useState<RecordFormState | null>(null)
@@ -55,6 +63,8 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
   if (!record) return null
 
   const isClinical = record.type === 'health' && clinicalCategories.includes(record.category)
+  const isSystemEvent = record.type === 'event'
+  const isUndoableDeath = isSystemEvent && record.eventType === 'muerte'
   const isGrouped = !!record.__isGrouped
 
   const handleClose = () => {
@@ -204,6 +214,48 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
     }
   }
 
+  const handleUndoDeath = async () => {
+    const targets = isGrouped ? record.__animals : [{ id: record.animalId }]
+    const targetCount = targets.length
+    const confirmed = await confirmAction({
+      title: 'Deshacer muerte',
+      message: `Se reactivarán ${targetCount === 1 ? 'el animal' : `los ${targetCount} animales`} y se quitará este evento del historial.`,
+      confirmLabel: 'Deshacer',
+    })
+    if (!confirmed) return
+
+    setIsSubmitting(true)
+    try {
+      await Promise.all(
+        targets.map(async (target) => {
+          const animal = animals.find((candidate) => candidate.id === target.id)
+          if (!animal) throw new Error('Animal no encontrado')
+
+          const previousState = record.undoData?.previousAnimalStates?.find(
+            (state) => state.id === target.id,
+          )
+          const records = (animal.records || []).filter((item) => item.id !== record.id)
+
+          await update(target.id, {
+            status: previousState?.status ?? 'activo',
+            statusAt: previousState?.statusAt ?? null,
+            statusNotes: previousState?.statusNotes ?? null,
+            deathInfo: previousState?.deathInfo ?? null,
+            soldInfo: previousState?.soldInfo ?? null,
+            lostInfo: previousState?.lostInfo ?? null,
+            records,
+          } as Partial<Animal>)
+        }),
+      )
+      handleClose()
+    } catch (error) {
+      console.error('Error deshaciendo muerte desde registros:', error)
+      notify('No se pudo deshacer la muerte. Intenta nuevamente.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const handleResolve = async () => {
     setIsSubmitting(true)
     try {
@@ -251,12 +303,20 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
         <div className="space-y-4">
           {/* Badge de categoria */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span
-              className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${record_category_colors[record.category]}`}
-            >
-              {record_category_icons[record.category]} {record_category_labels[record.category]}
+            {isSystemEvent ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
+                ⚡ Acción
+              </span>
+            ) : (
+              <span
+                className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${record_category_colors[record.category]}`}
+              >
+                {record_category_icons[record.category]} {record_category_labels[record.category]}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 text-sm text-gray-500">
+              {getRecordTypeIcon(record)} {getRecordTypeLabel(record)}
             </span>
-            <span className="text-sm text-gray-500">{record_type_labels[record.type]}</span>
             {isGrouped && (
               <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                 Masivo
@@ -380,7 +440,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
 
           {/* Botones de accion */}
           <div className="flex flex-wrap gap-2 pt-4 border-t">
-            {record.type !== 'milk' && (
+            {record.type !== 'milk' && !isSystemEvent && (
               <button
                 onClick={startEdit}
                 disabled={isSubmitting}
@@ -416,6 +476,29 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
             >
               Eliminar
             </button>
+
+            {isUndoableDeath && (
+              <button
+                onClick={handleUndoDeath}
+                disabled={isSubmitting}
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-50"
+              >
+                <svg
+                  aria-hidden="true"
+                  className="h-5 w-5 shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M9 14 4 9l5-5" />
+                  <path d="M4 9h10.5a4.5 4.5 0 0 1 0 9H13" />
+                </svg>
+                Deshacer muerte
+              </button>
+            )}
           </div>
         </div>
       ) : (

@@ -7,7 +7,7 @@ import Button from '@/components/buttons/Button'
 import ModalOnboarding from '@/components/onboarding/ModalOnboarding'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
 import type { Animal } from '@/types/animals'
-import type { BreedingRecord } from '@/types/breedings'
+import { type BreedingRecord, finalizeFemaleBreedingOutcomes } from '@/types/breedings'
 import type { BreedingActionHandlers } from '@/types/components/breeding'
 
 interface DuplicateEntry {
@@ -28,6 +28,7 @@ interface Props {
   onConfirmPregnancy: BreedingActionHandlers['onConfirmPregnancy']
   onAddBirth: BreedingActionHandlers['onAddBirth']
   onUnconfirmPregnancy: BreedingActionHandlers['onUnconfirmPregnancy']
+  onAbort: BreedingActionHandlers['onAbort']
   onRemoveFromBreeding: BreedingActionHandlers['onRemoveFromBreeding']
   onDeleteBirth: BreedingActionHandlers['onDeleteBirth']
   onEditRecord: (record: BreedingRecord) => void
@@ -44,6 +45,7 @@ export default function TabStageEmpadre({
   onConfirmPregnancy,
   onAddBirth,
   onUnconfirmPregnancy,
+  onAbort,
   onRemoveFromBreeding,
   onDeleteBirth,
   onEditRecord,
@@ -51,17 +53,18 @@ export default function TabStageEmpadre({
   updateBreedingRecord,
 }: Props) {
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const {
-    duplicateEmpadreWarningDismissed,
-    setDuplicateEmpadreWarningDismissed,
-  } = useUserPreferences()
+  const { duplicateEmpadreWarningDismissed, setDuplicateEmpadreWarningDismissed } =
+    useUserPreferences()
   const showDuplicateWarning = !duplicateEmpadreWarningDismissed
   const saveDuplicateWarningPreference = (dismissed: boolean) => {
     void setDuplicateEmpadreWarningDismissed(dismissed).catch(() => undefined)
   }
 
   const finishBreeding = async (record: BreedingRecord) => {
-    await updateBreedingRecord(record.id, { status: 'finished' })
+    await updateBreedingRecord(record.id, {
+      status: 'finished',
+      femaleBreedingInfo: finalizeFemaleBreedingOutcomes(record.femaleBreedingInfo),
+    })
   }
 
   return (
@@ -131,33 +134,33 @@ export default function TabStageEmpadre({
           for (const id of ids) await onDeleteRecord(id)
         }}
         onConfirmPregnancy={(record) => onConfirmPregnancy?.(record, '')}
-      toolbar={
-        <div className="flex items-center gap-2">
-          {duplicateEmpadreFemales.length > 0 && !showDuplicateWarning && (
-            <button
-              type="button"
-              onClick={() => saveDuplicateWarningPreference(false)}
-              aria-label="Mostrar advertencia de empadres duplicados"
-              title="Mostrar advertencia de empadres duplicados"
-              className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 text-amber-700 transition-colors hover:border-amber-400 hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-1"
-            >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                className="h-5 w-5"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+        toolbar={
+          <div className="flex items-center gap-2">
+            {duplicateEmpadreFemales.length > 0 && !showDuplicateWarning && (
+              <button
+                type="button"
+                onClick={() => saveDuplicateWarningPreference(false)}
+                aria-label="Mostrar advertencia de empadres duplicados"
+                title="Mostrar advertencia de empadres duplicados"
+                className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 text-amber-700 transition-colors hover:border-amber-400 hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-1"
               >
-                <path d="m12 3-9.3 16a1 1 0 0 0 .9 1.5h16.8a1 1 0 0 0 .9-1.5L12 3Z" />
-                <path d="M12 9v4" />
-                <path d="M12 17h.01" />
-              </svg>
-            </button>
-          )}
-          <Button
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="h-5 w-5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m12 3-9.3 16a1 1 0 0 0 .9 1.5h16.8a1 1 0 0 0 .9-1.5L12 3Z" />
+                  <path d="M12 9v4" />
+                  <path d="M12 17h.01" />
+                </svg>
+              </button>
+            )}
+            <Button
               size="xs"
               variant="ghost"
               color="primary"
@@ -179,6 +182,7 @@ export default function TabStageEmpadre({
             onAddBirth={onAddBirth}
             onConfirmPregnancy={onConfirmPregnancy}
             onUnconfirmPregnancy={onUnconfirmPregnancy}
+            onAbort={onAbort}
             onDelete={(rec) => onDeleteRecord(rec.id)}
             onRemoveFromBreeding={onRemoveFromBreeding}
             onDeleteBirth={onDeleteBirth}

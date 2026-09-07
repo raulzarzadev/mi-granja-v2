@@ -218,6 +218,59 @@ describe('handleUnconfirmPregnancy', () => {
   })
 })
 
+describe('handleAbortPregnancy', () => {
+  it('marca el aborto, libera la gestación y guarda una nota histórica', async () => {
+    const confirmed = new Date('2026-02-01')
+    const record = makeRecord({
+      femaleBreedingInfo: [
+        makeFemaleInfo({
+          femaleId: 'f1',
+          pregnancyConfirmedDate: confirmed,
+          expectedBirthDate: new Date('2026-07-01'),
+        }),
+      ],
+    })
+    const { result, update, updateBreedingRecord, addRecord } = setup([
+      makeAnimal({ id: 'f1', pregnantAt: confirmed, pregnantBy: 'male-1' }),
+    ])
+
+    await result.current.handleAbortPregnancy(record, 'f1', {
+      date: new Date('2026-03-15'),
+      note: 'Se observó pérdida de gestación.',
+    })
+
+    expect(updateBreedingRecord).toHaveBeenCalledWith(
+      'br-doc-1',
+      expect.objectContaining({
+        femaleBreedingInfo: [
+          expect.objectContaining({
+            femaleId: 'f1',
+            outcome: 'aborted',
+            diagnosedAt: expect.any(Date),
+            actualBirthDate: null,
+            expectedBirthDate: null,
+          }),
+        ],
+      }),
+    )
+    expect(update).toHaveBeenCalledWith('f1', {
+      pregnantAt: null,
+      pregnantBy: null,
+      pregnantBreedingRecordId: null,
+      pregnantBreedingId: null,
+    })
+    expect(addRecord).toHaveBeenCalledWith(
+      'f1',
+      expect.objectContaining({
+        title: 'Aborto registrado',
+        type: 'note',
+        date: new Date('2026-03-15'),
+        description: expect.stringContaining('Se observó pérdida de gestación.'),
+      }),
+    )
+  })
+})
+
 describe('handleRevertBirth', () => {
   it('restaura pregnantBy y los ids del empadre', async () => {
     const confirmed = new Date('2026-02-01')

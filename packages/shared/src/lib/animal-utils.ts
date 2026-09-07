@@ -462,16 +462,29 @@ export function weightTargetProgress(
 export function femaleBreedingStats(
   animal: Animal,
   breedings: BreedingRecord[],
-): { pregnancies: number; births: number; offspring: number; lastBirthDate: Date | null } {
+): {
+  pregnancies: number
+  births: number
+  offspring: number
+  openCycles: number
+  lastBirthDate: Date | null
+} {
   let pregnancies = 0
   let births = 0
   let offspring = 0
+  let openCycles = 0
   let lastBirthDate: Date | null = null
 
   for (const breeding of breedings || []) {
     const info = breeding.femaleBreedingInfo?.find((f) => f.femaleId === animal.id)
     if (!info) continue
     if (info.pregnancyConfirmedDate) pregnancies++
+    if (
+      info.outcome === 'open' ||
+      (breeding.status === 'finished' && !info.pregnancyConfirmedDate && !info.actualBirthDate)
+    ) {
+      openCycles++
+    }
     if (info.actualBirthDate) {
       births++
       offspring += info.offspring?.length ?? 0
@@ -482,7 +495,7 @@ export function femaleBreedingStats(
     }
   }
 
-  return { pregnancies, births, offspring, lastBirthDate }
+  return { pregnancies, births, offspring, openCycles, lastBirthDate }
 }
 
 /** Días entre dos fechas, redondeados hacia abajo. */

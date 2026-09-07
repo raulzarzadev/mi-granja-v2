@@ -32,10 +32,13 @@ function getBreedingStatus(record: BreedingRecord, animals: Animal[]) {
   let pregnantInOtherBreeding = 0
   let births = 0
   let totalOffspring = 0
+  let aborted = 0
 
   for (const f of record.femaleBreedingInfo) {
     const status = getFemaleBreedingStatus(f, animals, record)
-    if (status === 'parida') {
+    if (status === 'abortada') {
+      aborted++
+    } else if (status === 'parida') {
       births++
       totalOffspring += f.offspring?.length || 0
     } else if (status === 'embarazada') {
@@ -47,7 +50,7 @@ function getBreedingStatus(record: BreedingRecord, animals: Animal[]) {
     }
   }
 
-  return { pending, pregnant, pregnantInOtherBreeding, births, totalOffspring }
+  return { pending, pregnant, pregnantInOtherBreeding, births, totalOffspring, aborted }
 }
 
 function statusLabel(s: ReturnType<typeof getBreedingStatus>) {
@@ -60,6 +63,7 @@ function statusLabel(s: ReturnType<typeof getBreedingStatus>) {
     )
   }
   if (s.births > 0) parts.push(`${s.births} partos`)
+  if (s.aborted > 0) parts.push(`${s.aborted} aborto${s.aborted !== 1 ? 's' : ''}`)
   return parts.join(' / ') || '-'
 }
 
@@ -68,6 +72,7 @@ function statusColor(s: ReturnType<typeof getBreedingStatus>) {
   if (s.pregnant > 0) return 'bg-blue-100 text-blue-800'
   if (s.pregnantInOtherBreeding > 0) return 'bg-orange-100 text-orange-800'
   if (s.births > 0) return 'bg-green-100 text-green-800'
+  if (s.aborted > 0) return 'bg-red-100 text-red-800'
   return 'bg-gray-100 text-gray-600'
 }
 

@@ -9,7 +9,12 @@ import {
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { Reminder } from '@/types'
 import { Animal, type AnimalStageKey, isActivePregnancy, isMilkRecord } from '@/types/animals'
-import { BreedingRecord, type FemaleBreedingInfo } from '@/types/breedings'
+import {
+  BreedingRecord,
+  generateBreedingId as buildBreedingId,
+  type FemaleBreedingInfo,
+  finalizeFemaleBreedingOutcomes,
+} from '@/types/breedings'
 import type { FarmPermission } from '@/types/farm'
 import { selectRelevance } from './context-relevance'
 import {
@@ -64,19 +69,7 @@ function resolveAnimal(animals: Animal[], ref: string): Animal {
 }
 
 function generateBreedingId(breedingDate: Date, records: BreedingRecord[]): string {
-  const day = String(breedingDate.getDate()).padStart(2, '0')
-  const month = String(breedingDate.getMonth() + 1).padStart(2, '0')
-  const year = String(breedingDate.getFullYear()).slice(-2)
-  const baseId = `${day}-${month}-${year}`
-  const sameDate = records.filter((record) => {
-    if (!record.breedingDate) return false
-    const date =
-      record.breedingDate instanceof Date
-        ? record.breedingDate
-        : (record.breedingDate as unknown as Timestamp).toDate()
-    return date.toDateString() === breedingDate.toDateString()
-  })
-  return `${baseId}-${String(sameDate.length + 1).padStart(2, '0')}`
+  return buildBreedingId(breedingDate, records)
 }
 
 async function getFarmBreedingRecords(farmId: string): Promise<BreedingRecord[]> {
@@ -216,7 +209,7 @@ async function createBreeding(
   params: ExecuteParams,
 ) {
   if (!hasPermission(params.permissions, 'breeding', 'create')) {
-    throw new Error('No tienes permiso para registrar montas')
+    throw new Error('No tienes permiso para registrar empadres')
   }
 
   const firestore = getAdminFirestore()
@@ -253,7 +246,7 @@ async function createBreeding(
     updatedAt: now,
   })
 
-  return { message: `Monta registrada con ${females.length} hembra(s)` }
+  return { message: `Empadre registrado con ${females.length} hembra(s)` }
 }
 
 async function registerBirth(
@@ -447,10 +440,14 @@ async function finishBreeding(
   if (matches.length > 1)
     throw new Error(`Hay más de un empadre que coincide con ${action.payload.breedingRef}`)
 
-  await firestore.collection('breedingRecords').doc(matches[0].id).update({
-    status: 'finished',
-    updatedAt: Timestamp.now(),
-  })
+  await firestore
+    .collection('breedingRecords')
+    .doc(matches[0].id)
+    .update({
+      status: 'finished',
+      femaleBreedingInfo: finalizeFemaleBreedingOutcomes(matches[0].femaleBreedingInfo),
+      updatedAt: Timestamp.now(),
+    })
 
   return { message: `Empadre ${matches[0].breedingId || matches[0].id} terminado` }
 }

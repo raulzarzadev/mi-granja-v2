@@ -5,6 +5,7 @@ import type { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import type { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import type { Animal } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
+import type { AbortPregnancyInput } from '@/types/components/breeding'
 
 interface Params {
   animals: Animal[]
@@ -91,6 +92,47 @@ export const useBreedingHandlers = ({
     [update, updateBreedingRecord],
   )
 
+  const handleAbortPregnancy = useCallback(
+    async (record: BreedingRecord, femaleId: string, input: AbortPregnancyInput) => {
+      const femaleInfo = record.femaleBreedingInfo.find((info) => info.femaleId === femaleId)
+      if (!femaleInfo) return
+
+      const abortedAt = input.date
+      const updatedFemaleInfo = record.femaleBreedingInfo.map((info) =>
+        info.femaleId === femaleId
+          ? {
+              ...info,
+              outcome: 'aborted' as const,
+              diagnosedAt: abortedAt,
+              actualBirthDate: null,
+              expectedBirthDate: null,
+            }
+          : info,
+      )
+
+      await updateBreedingRecord(record.id, { femaleBreedingInfo: updatedFemaleInfo })
+      await update(femaleId, {
+        pregnantAt: null,
+        pregnantBy: null,
+        pregnantBreedingRecordId: null,
+        pregnantBreedingId: null,
+      })
+      await addRecord(femaleId, {
+        type: 'note',
+        category: 'general',
+        title: 'Aborto registrado',
+        description: [
+          `Se registró un aborto en el empadre ${record.breedingId || record.id}.`,
+          input.note?.trim() ? `Nota: ${input.note.trim()}` : null,
+        ]
+          .filter(Boolean)
+          .join(' '),
+        date: abortedAt,
+      })
+    },
+    [addRecord, update, updateBreedingRecord],
+  )
+
   const handleRevertBirth = useCallback(
     async (record: BreedingRecord, femaleId: string) => {
       const femaleInfo = record.femaleBreedingInfo.find((fi) => fi.femaleId === femaleId)
@@ -142,6 +184,7 @@ export const useBreedingHandlers = ({
   return {
     handleRemoveFromBreeding,
     handleUnconfirmPregnancy,
+    handleAbortPregnancy,
     handleRevertBirth,
     weanAndUpdateMother,
   }
