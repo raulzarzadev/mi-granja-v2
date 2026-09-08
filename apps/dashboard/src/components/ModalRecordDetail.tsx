@@ -58,8 +58,8 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
   if (!record) return null
 
   const isClinical = record.type === 'health' && clinicalCategories.includes(record.category)
-  const isSystemEvent = record.type === 'event' || Boolean(record.undoData?.documents)
-  const isUndoableDeath =
+  const isSystemEvent = record.type === 'event'
+  const isUndoableMovement =
     !record.undoneAt &&
     Boolean(record.undoData?.documents?.length || record.undoData?.previousAnimalStates?.length)
   const isGrouped = !!record.__isGrouped
@@ -212,7 +212,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
     }
   }
 
-  const handleUndoDeath = async () => {
+  const handleUndoMovement = async () => {
     if (
       !(await confirmAction({
         title: 'Deshacer movimiento',
@@ -335,7 +335,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
             </div>
 
             {record.undoneAt && <p className="text-gray-600 sm:col-span-2">Movimiento deshecho</p>}
-            {record.eventType && !record.undoneAt && !isUndoableDeath && (
+            {record.eventType && !record.undoneAt && !isUndoableMovement && (
               <p className="text-sm text-gray-600 sm:col-span-2">
                 Este registro anterior no conserva el estado previo necesario para deshacerlo de
                 forma segura.
@@ -439,7 +439,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
 
           {/* Botones de accion */}
           <div className="flex flex-wrap gap-2 pt-4 border-t">
-            {record.type !== 'milk' && !isSystemEvent && (
+            {record.type !== 'milk' && !isSystemEvent && !isUndoableMovement && (
               <button
                 onClick={startEdit}
                 disabled={isSubmitting}
@@ -477,9 +477,9 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
               Eliminar
             </button>
 
-            {isUndoableDeath && (
+            {isUndoableMovement && (
               <button
-                onClick={handleUndoDeath}
+                onClick={handleUndoMovement}
                 disabled={isSubmitting}
                 className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-50"
               >

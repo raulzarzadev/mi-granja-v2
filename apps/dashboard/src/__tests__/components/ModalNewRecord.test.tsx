@@ -26,6 +26,7 @@ const mockAnimals = [
 const mockDeath = jest.fn()
 const mockWeight = jest.fn()
 const mockMilk = jest.fn()
+const mockHealth = jest.fn()
 const mockUndo = jest.fn()
 jest.mock('@/hooks/useAnimalCRUD', () => ({ useAnimalCRUD: () => ({ animals: mockAnimals }) }))
 jest.mock('@/hooks/useBreedingCRUD', () => ({ useBreedingCRUD: () => ({ breedingRecords: [] }) }))
@@ -35,6 +36,7 @@ jest.mock('@/hooks/useRecordMovements', () => ({
     death: mockDeath,
     weight: mockWeight,
     milk: mockMilk,
+    health: mockHealth,
     undo: mockUndo,
   }),
 }))
@@ -165,4 +167,35 @@ it('ofrece Peso y Leche como registros rápidos con formularios propios', () => 
   expect(screen.getByLabelText('Peso (kg)')).toBeInTheDocument()
   fireEvent.change(screen.getByLabelText('Peso (kg)'), { target: { value: '32.5' } })
   expect(screen.getByRole('button', { name: 'Registrar peso' })).toBeInTheDocument()
+})
+
+it('ofrece Sanidad y registra una vacuna con seguimiento', async () => {
+  mockHealth.mockResolvedValue({
+    id: 'health-movement',
+    type: 'health',
+    title: 'Vacuna clostridial',
+    description: 'Dosis inicial',
+    appliedToAnimals: ['h'],
+  })
+  render(<ModalNewRecord />)
+  fireEvent.click(screen.getByRole('button', { name: /Nuevo Registro/ }))
+  fireEvent.click(screen.getByRole('button', { name: /Sanidad/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Elegir H1' }))
+  fireEvent.change(screen.getByLabelText('Producto o atención'), {
+    target: { value: 'Vacuna clostridial' },
+  })
+  fireEvent.change(screen.getByLabelText('Descripción (opcional)'), {
+    target: { value: 'Dosis inicial' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Registrar sanidad' }))
+  await screen.findByText('✓ Vacuna clostridial')
+  expect(mockHealth).toHaveBeenCalledWith(
+    expect.any(String),
+    ['h'],
+    expect.objectContaining({
+      category: 'vaccine',
+      title: 'Vacuna clostridial',
+      description: 'Dosis inicial',
+    }),
+  )
 })

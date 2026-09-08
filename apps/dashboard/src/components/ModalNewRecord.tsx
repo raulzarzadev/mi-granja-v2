@@ -25,7 +25,16 @@ import { animalDeathReasonLabels } from '@/lib/animal-discharge'
 import { activeUnweanedOffspring } from '@/lib/animal-utils'
 import { breedingWarnings } from '@/lib/breeding-warnings'
 import type { BirthRecord } from '@/types'
-import type { AnimalDeathReason, AnimalRecord, MilkingSession } from '@/types/animals'
+import {
+  type AnimalDeathReason,
+  type AnimalRecord,
+  type MilkingSession,
+  type RecordSeverity,
+  record_category_icons,
+  record_category_labels,
+  record_severities,
+  record_severity_labels,
+} from '@/types/animals'
 
 const recordOptions = [
   {
@@ -77,9 +86,28 @@ const recordOptions = [
     icon: '🥛',
     activeClass: 'border-cyan-500 bg-cyan-50 text-cyan-900',
   },
+  {
+    id: 'sanidad',
+    label: 'Sanidad',
+    description: 'Registra vacunas, desparasitación, tratamientos y revisiones.',
+    icon: '🏥',
+    activeClass: 'border-emerald-500 bg-emerald-50 text-emerald-900',
+  },
 ] as const
 
 type RecordOptionId = (typeof recordOptions)[number]['id']
+const sanitaryCategories = [
+  'vaccine',
+  'deworming',
+  'treatment',
+  'illness',
+  'injury',
+  'supplement',
+  'surgery',
+  'observation',
+  'other',
+] as const
+type SanitaryCategory = (typeof sanitaryCategories)[number]
 type WeaningDestination = 'engorda' | 'reproductor'
 type DeathStep = 'form' | 'review' | 'success'
 type ActionRecommendation = {
@@ -103,6 +131,17 @@ type NewRecordDraft = {
   weightValue: string
   milkAmount: string
   milkSession: MilkingSession
+  sanitaryCategory: SanitaryCategory
+  sanitaryTitle: string
+  sanitaryDescription: string
+  sanitaryNextDueDate: string
+  sanitaryBatch: string
+  sanitaryVeterinarian: string
+  sanitaryCost: string
+  sanitaryTreatment: string
+  sanitarySeverity: '' | RecordSeverity
+  sanitaryIsResolved: boolean
+  sanitaryResolvedDate: string
 }
 
 const NEW_RECORD_DRAFT_STORAGE_KEY = 'mi-granja:new-record-draft:v1'
@@ -117,6 +156,12 @@ const createDraftId = () => {
 
 const isRecordOptionId = (value: unknown): value is RecordOptionId =>
   recordOptions.some((option) => option.id === value)
+
+const isSanitaryCategory = (value: unknown): value is SanitaryCategory =>
+  sanitaryCategories.some((category) => category === value)
+
+const isRecordSeverity = (value: unknown): value is RecordSeverity =>
+  record_severities.some((severity) => severity === value)
 
 const normalizeNewRecordDraft = (
   value: unknown,
@@ -152,6 +197,23 @@ const normalizeNewRecordDraft = (
       draft.milkSession === 'afternoon' || draft.milkSession === 'evening'
         ? draft.milkSession
         : 'morning',
+    sanitaryCategory: isSanitaryCategory(draft.sanitaryCategory)
+      ? draft.sanitaryCategory
+      : 'vaccine',
+    sanitaryTitle: typeof draft.sanitaryTitle === 'string' ? draft.sanitaryTitle : '',
+    sanitaryDescription:
+      typeof draft.sanitaryDescription === 'string' ? draft.sanitaryDescription : '',
+    sanitaryNextDueDate:
+      typeof draft.sanitaryNextDueDate === 'string' ? draft.sanitaryNextDueDate : '',
+    sanitaryBatch: typeof draft.sanitaryBatch === 'string' ? draft.sanitaryBatch : '',
+    sanitaryVeterinarian:
+      typeof draft.sanitaryVeterinarian === 'string' ? draft.sanitaryVeterinarian : '',
+    sanitaryCost: typeof draft.sanitaryCost === 'string' ? draft.sanitaryCost : '',
+    sanitaryTreatment: typeof draft.sanitaryTreatment === 'string' ? draft.sanitaryTreatment : '',
+    sanitarySeverity: isRecordSeverity(draft.sanitarySeverity) ? draft.sanitarySeverity : '',
+    sanitaryIsResolved: draft.sanitaryIsResolved === true,
+    sanitaryResolvedDate:
+      typeof draft.sanitaryResolvedDate === 'string' ? draft.sanitaryResolvedDate : '',
     deathStep:
       draft.deathStep === 'review' || draft.deathStep === 'success' ? draft.deathStep : 'form',
     updatedAt: typeof draft.updatedAt === 'string' ? draft.updatedAt : new Date().toISOString(),
@@ -223,7 +285,18 @@ export default function ModalNewRecord() {
   const [weightValue, setWeightValue] = useState('')
   const [milkAmount, setMilkAmount] = useState('')
   const [milkSession, setMilkSession] = useState<MilkingSession>('morning')
-  const [isUndoingDeath, setIsUndoingDeath] = useState(false)
+  const [sanitaryCategory, setSanitaryCategory] = useState<SanitaryCategory>('vaccine')
+  const [sanitaryTitle, setSanitaryTitle] = useState('')
+  const [sanitaryDescription, setSanitaryDescription] = useState('')
+  const [sanitaryNextDueDate, setSanitaryNextDueDate] = useState('')
+  const [sanitaryBatch, setSanitaryBatch] = useState('')
+  const [sanitaryVeterinarian, setSanitaryVeterinarian] = useState('')
+  const [sanitaryCost, setSanitaryCost] = useState('')
+  const [sanitaryTreatment, setSanitaryTreatment] = useState('')
+  const [sanitarySeverity, setSanitarySeverity] = useState<'' | RecordSeverity>('')
+  const [sanitaryIsResolved, setSanitaryIsResolved] = useState(false)
+  const [sanitaryResolvedDate, setSanitaryResolvedDate] = useState('')
+  const [isUndoingMovement, setIsUndoingMovement] = useState(false)
   const [isActionSubmitting, setIsActionSubmitting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
@@ -483,10 +556,21 @@ export default function ModalNewRecord() {
     setWeightValue('')
     setMilkAmount('')
     setMilkSession('morning')
+    setSanitaryCategory('vaccine')
+    setSanitaryTitle('')
+    setSanitaryDescription('')
+    setSanitaryNextDueDate('')
+    setSanitaryBatch('')
+    setSanitaryVeterinarian('')
+    setSanitaryCost('')
+    setSanitaryTreatment('')
+    setSanitarySeverity('')
+    setSanitaryIsResolved(false)
+    setSanitaryResolvedDate('')
     setMovementNotes('')
     setDeathStep('form')
     setCompletedRecord(null)
-    setIsUndoingDeath(false)
+    setIsUndoingMovement(false)
     setIsActionSubmitting(false)
     setActionError(null)
   }
@@ -508,6 +592,17 @@ export default function ModalNewRecord() {
       weightValue,
       milkAmount,
       milkSession,
+      sanitaryCategory,
+      sanitaryTitle,
+      sanitaryDescription,
+      sanitaryNextDueDate,
+      sanitaryBatch,
+      sanitaryVeterinarian,
+      sanitaryCost,
+      sanitaryTreatment,
+      sanitarySeverity,
+      sanitaryIsResolved,
+      sanitaryResolvedDate,
       updatedAt: new Date().toISOString(),
     }
   }
@@ -549,6 +644,17 @@ export default function ModalNewRecord() {
     weightValue,
     milkAmount,
     milkSession,
+    sanitaryCategory,
+    sanitaryTitle,
+    sanitaryDescription,
+    sanitaryNextDueDate,
+    sanitaryBatch,
+    sanitaryVeterinarian,
+    sanitaryCost,
+    sanitaryTreatment,
+    sanitarySeverity,
+    sanitaryIsResolved,
+    sanitaryResolvedDate,
   ])
 
   const clearDraft = () => {
@@ -586,6 +692,17 @@ export default function ModalNewRecord() {
     setWeightValue(draft.weightValue ?? '')
     setMilkAmount(draft.milkAmount ?? '')
     setMilkSession(draft.milkSession ?? 'morning')
+    setSanitaryCategory(draft.sanitaryCategory ?? 'vaccine')
+    setSanitaryTitle(draft.sanitaryTitle ?? '')
+    setSanitaryDescription(draft.sanitaryDescription ?? '')
+    setSanitaryNextDueDate(draft.sanitaryNextDueDate ?? '')
+    setSanitaryBatch(draft.sanitaryBatch ?? '')
+    setSanitaryVeterinarian(draft.sanitaryVeterinarian ?? '')
+    setSanitaryCost(draft.sanitaryCost ?? '')
+    setSanitaryTreatment(draft.sanitaryTreatment ?? '')
+    setSanitarySeverity(draft.sanitarySeverity ?? '')
+    setSanitaryIsResolved(draft.sanitaryIsResolved ?? false)
+    setSanitaryResolvedDate(draft.sanitaryResolvedDate ?? '')
     setDeathStep('form')
     setCompletedRecord(null)
     setMovementNotes(draft.movementNotes ?? '')
@@ -732,10 +849,42 @@ export default function ModalNewRecord() {
       ),
     ).catch(() => {})
   }
+  const registerSanitary = () => {
+    if (!sanitaryTitle.trim()) {
+      setActionError('Ingresa el nombre de la vacuna, medicamento o atención.')
+      return
+    }
+
+    const parsedCost = sanitaryCost.trim() ? Number(sanitaryCost.replace(',', '.')) : undefined
+    if (parsedCost != null && (!Number.isFinite(parsedCost) || parsedCost < 0)) {
+      setActionError('Ingresa un costo válido.')
+      return
+    }
+
+    perform((id) =>
+      movements.health(id, selectedAnimalIds, {
+        category: sanitaryCategory,
+        title: sanitaryTitle,
+        date: fromInputDate(actionDate),
+        description: sanitaryDescription,
+        nextDueDate: sanitaryNextDueDate ? fromInputDate(sanitaryNextDueDate) : undefined,
+        batch: sanitaryBatch,
+        veterinarian: sanitaryVeterinarian,
+        cost: parsedCost,
+        treatment: sanitaryTreatment,
+        severity: sanitarySeverity || undefined,
+        isResolved: sanitaryIsResolved,
+        resolvedDate:
+          sanitaryIsResolved && sanitaryResolvedDate
+            ? fromInputDate(sanitaryResolvedDate)
+            : undefined,
+      }),
+    ).catch(() => {})
+  }
   const undoCompleted = async () => {
     if (!completedRecord || busyRef.current) return
     busyRef.current = true
-    setIsUndoingDeath(true)
+    setIsUndoingMovement(true)
     try {
       await movements.undo(completedRecord)
       trackNewRecordUndone({
@@ -747,7 +896,7 @@ export default function ModalNewRecord() {
       setActionError(error instanceof Error ? error.message : 'No se pudo deshacer.')
     } finally {
       busyRef.current = false
-      setIsUndoingDeath(false)
+      setIsUndoingMovement(false)
     }
   }
   const openSaleForm = () => {
@@ -806,7 +955,7 @@ export default function ModalNewRecord() {
       </Button>
 
       <Modal isOpen={isOpen} onClose={closeModal} title="Nuevo Registro" size="md">
-        <fieldset disabled={isActionSubmitting || isUndoingDeath} className="min-w-0 space-y-4">
+        <fieldset disabled={isActionSubmitting || isUndoingMovement} className="min-w-0 space-y-4">
           {storedDrafts.length > 0 && (
             <div className="flex flex-col items-end gap-2 pb-2 text-right">
               <button
@@ -879,7 +1028,7 @@ export default function ModalNewRecord() {
                   <button
                     type="button"
                     onClick={undoCompleted}
-                    disabled={isUndoingDeath}
+                    disabled={isUndoingMovement}
                     className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-50"
                   >
                     <svg
@@ -895,10 +1044,10 @@ export default function ModalNewRecord() {
                       <path d="M9 14 4 9l5-5" />
                       <path d="M4 9h10.5a4.5 4.5 0 0 1 0 9H13" />
                     </svg>
-                    {isUndoingDeath ? 'Deshaciendo…' : 'Deshacer'}
+                    {isUndoingMovement ? 'Deshaciendo…' : 'Deshacer'}
                   </button>
                 )}
-                <Button type="button" onClick={closeModal} disabled={isUndoingDeath}>
+                <Button type="button" onClick={closeModal} disabled={isUndoingMovement}>
                   Cerrar
                 </Button>
               </div>
@@ -1433,6 +1582,242 @@ export default function ModalNewRecord() {
                         className="w-full"
                       >
                         {isActionSubmitting ? 'Registrando...' : 'Registrar leche'}
+                      </Button>
+                    </div>
+                  )}
+
+                  {selectedOption === 'sanidad' && (
+                    <div className="space-y-3">
+                      <div>
+                        <label
+                          htmlFor="new-record-health-category"
+                          className="mb-1 block text-sm font-medium text-gray-700"
+                        >
+                          Tipo de atención sanitaria
+                        </label>
+                        <select
+                          id="new-record-health-category"
+                          value={sanitaryCategory}
+                          onChange={(event) =>
+                            setSanitaryCategory(event.target.value as SanitaryCategory)
+                          }
+                          className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+                        >
+                          {sanitaryCategories.map((category) => (
+                            <option key={category} value={category}>
+                              {record_category_icons[category]} {record_category_labels[category]}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="new-record-health-title"
+                          className="mb-1 block text-sm font-medium text-gray-700"
+                        >
+                          Producto o atención
+                        </label>
+                        <input
+                          id="new-record-health-title"
+                          type="text"
+                          value={sanitaryTitle}
+                          onChange={(event) => setSanitaryTitle(event.target.value)}
+                          placeholder={
+                            sanitaryCategory === 'vaccine'
+                              ? 'Ej. Vacuna clostridial'
+                              : sanitaryCategory === 'deworming'
+                                ? 'Ej. Ivermectina'
+                                : 'Ej. Revisión veterinaria'
+                          }
+                          className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="new-record-health-date"
+                          className="mb-1 block text-sm font-medium text-gray-700"
+                        >
+                          Fecha de aplicación
+                        </label>
+                        <input
+                          id="new-record-health-date"
+                          type="date"
+                          value={actionDate}
+                          max={toInputDate(new Date())}
+                          onChange={(event) => setActionDate(event.target.value)}
+                          className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+                        />
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <label
+                            htmlFor="new-record-health-next-date"
+                            className="mb-1 block text-sm font-medium text-gray-700"
+                          >
+                            Próxima dosis o revisión (opcional)
+                          </label>
+                          <input
+                            id="new-record-health-next-date"
+                            type="date"
+                            value={sanitaryNextDueDate}
+                            onChange={(event) => setSanitaryNextDueDate(event.target.value)}
+                            className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="new-record-health-batch"
+                            className="mb-1 block text-sm font-medium text-gray-700"
+                          >
+                            Lote o producto (opcional)
+                          </label>
+                          <input
+                            id="new-record-health-batch"
+                            type="text"
+                            value={sanitaryBatch}
+                            onChange={(event) => setSanitaryBatch(event.target.value)}
+                            placeholder="Lote, marca o presentación"
+                            className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="new-record-health-veterinarian"
+                            className="mb-1 block text-sm font-medium text-gray-700"
+                          >
+                            Veterinario (opcional)
+                          </label>
+                          <input
+                            id="new-record-health-veterinarian"
+                            type="text"
+                            value={sanitaryVeterinarian}
+                            onChange={(event) => setSanitaryVeterinarian(event.target.value)}
+                            placeholder="Nombre del responsable"
+                            className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="new-record-health-cost"
+                            className="mb-1 block text-sm font-medium text-gray-700"
+                          >
+                            Costo (opcional)
+                          </label>
+                          <input
+                            id="new-record-health-cost"
+                            type="number"
+                            inputMode="decimal"
+                            min="0"
+                            step="0.01"
+                            value={sanitaryCost}
+                            onChange={(event) => setSanitaryCost(event.target.value)}
+                            placeholder="$0.00"
+                            className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+                          />
+                        </div>
+                      </div>
+
+                      {(['illness', 'injury', 'treatment', 'surgery'] as const).includes(
+                        sanitaryCategory as 'illness' | 'injury' | 'treatment' | 'surgery',
+                      ) && (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label
+                              htmlFor="new-record-health-severity"
+                              className="mb-1 block text-sm font-medium text-gray-700"
+                            >
+                              Severidad (opcional)
+                            </label>
+                            <select
+                              id="new-record-health-severity"
+                              value={sanitarySeverity}
+                              onChange={(event) =>
+                                setSanitarySeverity(event.target.value as '' | RecordSeverity)
+                              }
+                              className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+                            >
+                              <option value="">Sin especificar</option>
+                              {record_severities.map((severity) => (
+                                <option key={severity} value={severity}>
+                                  {record_severity_labels[severity]}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="new-record-health-treatment"
+                              className="mb-1 block text-sm font-medium text-gray-700"
+                            >
+                              Tratamiento (opcional)
+                            </label>
+                            <input
+                              id="new-record-health-treatment"
+                              type="text"
+                              value={sanitaryTreatment}
+                              onChange={(event) => setSanitaryTreatment(event.target.value)}
+                              placeholder="Medicamento o indicación"
+                              className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+                            />
+                          </div>
+                          <label className="inline-flex min-h-11 items-center gap-2 text-sm text-gray-700 sm:col-span-2">
+                            <input
+                              type="checkbox"
+                              checked={sanitaryIsResolved}
+                              onChange={(event) => setSanitaryIsResolved(event.target.checked)}
+                              className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-2 focus:ring-emerald-500"
+                            />
+                            Caso resuelto
+                          </label>
+                          {sanitaryIsResolved && (
+                            <div>
+                              <label
+                                htmlFor="new-record-health-resolved-date"
+                                className="mb-1 block text-sm font-medium text-gray-700"
+                              >
+                                Fecha de resolución
+                              </label>
+                              <input
+                                id="new-record-health-resolved-date"
+                                type="date"
+                                value={sanitaryResolvedDate}
+                                max={toInputDate(new Date())}
+                                onChange={(event) => setSanitaryResolvedDate(event.target.value)}
+                                className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div>
+                        <label
+                          htmlFor="new-record-health-description"
+                          className="mb-1 block text-sm font-medium text-gray-700"
+                        >
+                          Descripción (opcional)
+                        </label>
+                        <textarea
+                          id="new-record-health-description"
+                          value={sanitaryDescription}
+                          onChange={(event) => setSanitaryDescription(event.target.value)}
+                          rows={3}
+                          placeholder="Observaciones, dosis o indicaciones..."
+                          className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2 text-base outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+                        />
+                      </div>
+
+                      <Button
+                        type="button"
+                        color="success"
+                        onClick={registerSanitary}
+                        disabled={isActionSubmitting}
+                        className="w-full"
+                      >
+                        {isActionSubmitting ? 'Registrando...' : 'Registrar sanidad'}
                       </Button>
                     </div>
                   )}

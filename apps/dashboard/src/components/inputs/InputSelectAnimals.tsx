@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import AnimalBadges from '@/components/AnimalBadges'
 import ButtonClose from '@/components/buttons/ButtonClose'
+import { animalAge } from '@/lib/animal-utils'
 import { Animal } from '@/types/animals'
 
 export interface InputSelectAnimalsProps {
@@ -46,6 +47,51 @@ type DropdownPosition = {
   maxHeight: number
 }
 
+type AnimalSortOption = 'selection' | 'number' | 'age-asc'
+type AnimalSortDirection = 'asc' | 'desc'
+
+const animalSortOptions: Array<{ value: AnimalSortOption; label: string }> = [
+  { value: 'selection', label: 'Agregación' },
+  { value: 'number', label: 'Arete' },
+  { value: 'age-asc', label: 'Edad' },
+]
+
+const compareAnimalNumbers = (a: Animal, b: Animal, direction: AnimalSortDirection) => {
+  const comparison = (a.animalNumber || '').localeCompare(b.animalNumber || '', undefined, {
+    numeric: true,
+  })
+  return direction === 'asc' ? comparison : -comparison
+}
+
+const getAnimalAgeMonths = (animal: Animal) => {
+  if (!animal.birthDate && typeof animal.age !== 'number') return null
+  const age = animalAge(animal, { format: 'months' })
+  return Number.isFinite(age) ? age : null
+}
+
+const compareAnimalAge = (a: Animal, b: Animal, direction: AnimalSortDirection) => {
+  const ageA = getAnimalAgeMonths(a)
+  const ageB = getAnimalAgeMonths(b)
+
+  // Animals without age stay at the end in either direction.
+  if (ageA === null && ageB !== null) return 1
+  if (ageA !== null && ageB === null) return -1
+  if (ageA !== null && ageB !== null && ageA !== ageB) {
+    return direction === 'asc' ? ageA - ageB : ageB - ageA
+  }
+  return compareAnimalNumbers(a, b, direction)
+}
+
+const compareAnimals = (
+  a: Animal,
+  b: Animal,
+  sortOption: AnimalSortOption,
+  direction: AnimalSortDirection,
+) => {
+  if (sortOption === 'age-asc') return compareAnimalAge(a, b, direction)
+  return compareAnimalNumbers(a, b, direction)
+}
+
 const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   animals,
   selectedIds,
@@ -64,27 +110,32 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
 }) => {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false)
   const [highlightIndex, setHighlightIndex] = useState(-1)
   const [chipsExpanded, setChipsExpanded] = useState(false)
+  const [sortOption, setSortOption] = useState<AnimalSortOption>('number')
+  const [sortDirection, setSortDirection] = useState<AnimalSortDirection>('asc')
+  const inputId = useId()
+  const sortId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const sortMenuRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const chipsRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef<(HTMLDivElement | null)[]>([])
   const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition | null>(null)
 
-  const selectedAnimals = useMemo(
-    () =>
-      selectedIds
-        .map((id) => animals.find((a) => a.id === id))
-        .filter(Boolean)
-        .sort((a, b) =>
-          (a!.animalNumber || '').localeCompare(b!.animalNumber || '', undefined, {
-            numeric: true,
-          }),
-        ) as Animal[],
-    [animals, selectedIds],
-  )
+  const selectedAnimals = useMemo(() => {
+    const selected = selectedIds
+      .map((id) => animals.find((a) => a.id === id))
+      .filter(Boolean)
+      .filter((animal): animal is Animal => Boolean(animal))
+
+    if (sortOption === 'selection') {
+      return sortDirection === 'asc' ? selected : selected.reverse()
+    }
+    return selected.sort((a, b) => compareAnimals(a, b, sortOption, sortDirection))
+  }, [animals, selectedIds, sortOption, sortDirection])
 
   // Lista del dropdown: excluye animales ya seleccionados
   const dropdownItems = useMemo(() => {
@@ -92,6 +143,11 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     // Ocultar los ya seleccionados
     const selectedSet = new Set(selectedIds)
     pool = pool.filter((a) => !selectedSet.has(a.id))
+    if (sortOption === 'selection') {
+      if (sortDirection === 'desc') pool.reverse()
+    } else {
+      pool.sort((a, b) => compareAnimals(a, b, sortOption, sortDirection))
+    }
     if (!query.trim()) {
       return pool.slice(0, 30)
     }
@@ -105,18 +161,22 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
           (a.breed || '').toLowerCase().includes(q),
       )
       .slice(0, 30)
-  }, [animals, selectedIds, query, filterFn])
+  }, [animals, selectedIds, query, filterFn, sortOption, sortDirection])
 
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as Node
+      if (sortMenuRef.current && !sortMenuRef.current.contains(target)) {
+        setIsSortMenuOpen(false)
+      }
       if (
         containerRef.current &&
         !containerRef.current.contains(target) &&
         !dropdownRef.current?.contains(target)
       ) {
         setIsOpen(false)
+        setIsSortMenuOpen(false)
         setHighlightIndex(-1)
       }
     }
@@ -256,17 +316,84 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   const hiddenCount =
     visibleChipCount !== null && !chipsExpanded ? selectedAnimals.length - visibleChipCount : 0
 
+  const sortControl = selectedAnimals.length > 1 && (
+    <div ref={sortMenuRef} className="relative flex shrink-0 items-center gap-1">
+      <button
+        type="button"
+        aria-label="Ordenar por"
+        aria-haspopup="menu"
+        aria-expanded={isSortMenuOpen}
+        aria-controls={sortId}
+        onClick={() => setIsSortMenuOpen((open) => !open)}
+        className="inline-flex h-8 cursor-pointer items-center rounded-md border border-gray-300 bg-white px-2 text-xs font-medium text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-50 focus:border-green-400 focus:outline-none focus:ring-1 focus:ring-green-200"
+      >
+        Ordenar por
+      </button>
+      {isSortMenuOpen && (
+        <div
+          id={sortId}
+          role="menu"
+          aria-label="Opciones de orden"
+          className="absolute right-9 top-[calc(100%+0.35rem)] z-20 min-w-48 overflow-hidden rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
+        >
+          {animalSortOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="menuitemradio"
+              aria-checked={sortOption === option.value}
+              onClick={() => {
+                setSortOption(option.value)
+                setSortDirection('asc')
+                setIsSortMenuOpen(false)
+                setHighlightIndex(-1)
+              }}
+              className={`flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                sortOption === option.value
+                  ? 'bg-green-50 font-medium text-green-800'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <span>{option.label}</span>
+              {sortOption === option.value && <span aria-hidden="true">✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+      <button
+        type="button"
+        aria-label={`Cambiar orden: ${sortDirection === 'asc' ? 'ascendente' : 'descendente'}`}
+        title="Cambiar sentido del orden"
+        onClick={() => {
+          setSortDirection((direction) => (direction === 'asc' ? 'desc' : 'asc'))
+          setHighlightIndex(-1)
+        }}
+        className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white text-lg leading-none text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-50 focus:border-green-400 focus:outline-none focus:ring-1 focus:ring-green-200"
+      >
+        <span aria-hidden="true">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+      </button>
+    </div>
+  )
+
   return (
     <div ref={containerRef}>
       {/* Label con contador */}
-      {label && (
-        <div className="mb-1 min-h-8">
-          <label className="text-sm font-medium text-gray-700">
-            {label}
-            {selectedAnimals.length > 0 && (
-              <span className="text-gray-400 font-normal ml-1">({selectedAnimals.length})</span>
-            )}
-          </label>
+      {(label || sortControl) && (
+        <div className="mb-1 flex min-h-8 items-center justify-between gap-2">
+          {label ? (
+            <label
+              htmlFor={inputId}
+              className="min-w-0 flex-1 truncate text-sm font-medium text-gray-700"
+            >
+              {label}
+              {selectedAnimals.length > 0 && (
+                <span className="text-gray-400 font-normal ml-1">({selectedAnimals.length})</span>
+              )}
+            </label>
+          ) : (
+            <span className="sr-only">Animales seleccionados</span>
+          )}
+          {sortControl}
         </div>
       )}
 
@@ -281,6 +408,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
           {selectedAnimals.map((a) => (
             <span
               key={a.id}
+              data-animal-id={a.id}
               className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-50 text-green-800 border border-green-200"
             >
               <AnimalBadges animal={a} ageFormat="rounded" />
@@ -328,6 +456,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
           <div className="relative">
             <input
               ref={inputRef}
+              id={inputId}
               type="text"
               role="combobox"
               aria-expanded={isOpen}
@@ -371,7 +500,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                   className="z-[100] overflow-y-auto rounded-lg border border-gray-100 bg-white shadow-lg"
                 >
                   {/* Cerrar selector */}
-                  <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-3 py-1.5 flex justify-end">
+                  <div className="sticky top-0 z-10 flex justify-end border-b border-gray-100 bg-white/95 px-3 py-1.5 backdrop-blur-sm">
                     <ButtonClose
                       showTitle="Cerrar selector"
                       title="Cerrar"

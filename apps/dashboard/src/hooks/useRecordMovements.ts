@@ -9,8 +9,31 @@ import {
   undoMovement,
 } from '@/lib/record-movements'
 import type { BirthRecord } from '@/types'
-import type { Animal, AnimalDeathReason, AnimalRecord, MilkingSession } from '@/types/animals'
+import type {
+  Animal,
+  AnimalDeathReason,
+  AnimalRecord,
+  MilkingSession,
+  RecordCategory,
+  RecordSeverity,
+} from '@/types/animals'
+import { record_category_labels } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
+
+export type HealthMovementInput = {
+  category: Exclude<RecordCategory, 'general'>
+  title: string
+  date: Date
+  description?: string
+  severity?: RecordSeverity
+  isResolved?: boolean
+  resolvedDate?: Date
+  treatment?: string
+  nextDueDate?: Date
+  batch?: string
+  veterinarian?: string
+  cost?: number
+}
 
 export function useRecordMovements(animals: Animal[] = []) {
   const { user } = useSelector((s: RootState) => s.auth)
@@ -347,6 +370,58 @@ export function useRecordMovements(animals: Animal[] = []) {
             notes,
             description: notes,
             details: { Cantidad: `${liters} L`, Turno: sessionLabel },
+          },
+        }
+      })
+    },
+    health: (id: string, ids: string[], input: HealthMovementInput) => {
+      validateDate(input.date)
+      const title = input.title.trim()
+      if (!title) throw new Error('Ingresa el nombre de la vacuna, medicamento o atención.')
+      if (!input.category) throw new Error('Selecciona el tipo de atención sanitaria.')
+      if (input.nextDueDate && !Number.isFinite(input.nextDueDate.getTime()))
+        throw new Error('La próxima fecha de atención no es válida.')
+      if (input.resolvedDate) validateDate(input.resolvedDate)
+      if (input.cost != null && (!Number.isFinite(input.cost) || input.cost < 0))
+        throw new Error('Ingresa un costo válido.')
+
+      return execute(id, ids, [], (docs) => {
+        const description = input.description?.trim() ?? ''
+        const treatment = input.treatment?.trim() ?? ''
+        const batch = input.batch?.trim() ?? ''
+        const veterinarian = input.veterinarian?.trim() ?? ''
+        const changes: MovementChange[] = ids.map((animalId) => {
+          active(docs.get(`animals/${animalId}`))
+          return {
+            path: `animals/${animalId}`,
+            data: {},
+          }
+        })
+
+        return {
+          changes,
+          record: {
+            type: 'health',
+            category: input.category,
+            title,
+            date: input.date,
+            description,
+            notes: description,
+            ...(input.severity ? { severity: input.severity } : {}),
+            ...(input.isResolved ? { isResolved: true } : {}),
+            ...(input.resolvedDate ? { resolvedDate: input.resolvedDate } : {}),
+            ...(treatment ? { treatment } : {}),
+            ...(input.nextDueDate ? { nextDueDate: input.nextDueDate } : {}),
+            ...(batch ? { batch } : {}),
+            ...(veterinarian ? { veterinarian } : {}),
+            ...(input.cost != null ? { cost: input.cost } : {}),
+            details: {
+              Tipo: record_category_labels[input.category],
+              ...(treatment ? { Tratamiento: treatment } : {}),
+              ...(input.nextDueDate
+                ? { 'Próxima fecha': input.nextDueDate.toLocaleDateString('es-MX') }
+                : {}),
+            },
           },
         }
       })

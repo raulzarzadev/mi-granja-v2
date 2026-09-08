@@ -243,3 +243,35 @@ it('peso y leche guardan sus datos como movimientos reversibles', async () => {
   await movement.undo(milk)
   expect(mockDocuments.get('animals/female').records.at(-1).undoneAt).toBeTruthy()
 })
+
+it('sanidad: aplica un registro masivo, guarda seguimiento y permite deshacerlo', async () => {
+  const a = animal('a')
+  const b = animal('b')
+  const movement = api([a, b])
+  const record = await movement.health('health', ['a', 'b'], {
+    category: 'vaccine',
+    title: 'Vacuna clostridial',
+    date,
+    description: 'Dosis inicial',
+    nextDueDate: new Date('2025-07-01T12:00:00'),
+    batch: 'LOT-01',
+    veterinarian: 'Dra. López',
+    cost: 125,
+  })
+
+  expect(record.type).toBe('health')
+  expect(record.category).toBe('vaccine')
+  expect(record.nextDueDate).toEqual(new Date('2025-07-01T12:00:00'))
+  expect(mockDocuments.get('animals/a').records[0].id).toBe('health')
+  expect(mockDocuments.get('animals/b').records[0].id).toBe('health')
+
+  await movement.health('health', ['a'], {
+    category: 'vaccine',
+    title: 'Otro intento',
+    date,
+  })
+  expect(mockDocuments.get('animals/a').records).toHaveLength(1)
+  await movement.undo(record)
+  expect(mockDocuments.get('animals/a').records[0].undoneAt).toBeTruthy()
+  expect(mockDocuments.get('animals/b').records[0].undoneAt).toBeTruthy()
+})
