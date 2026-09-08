@@ -11,6 +11,7 @@ export const CURRENT_BACKUP_VERSION = 2
 const KNOWN_DATE_FIELD_NAMES = new Set([
   'createdAt',
   'updatedAt',
+  'undoneAt',
   'birthDate',
   'statusAt',
   'weanedAt',
@@ -107,6 +108,8 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
       'motherId, fatherId, pregnantBy y records[].appliedToAnimals contienen IDs internos de animales.',
     records:
       "Historial único en records[]. Un pesaje usa type='weight' y weightGrams. Un ordeño usa type='milk', amountMl y session.",
+    movements:
+      'Los movimientos incluyen eventType, details, undoData.documents (estado anterior y posterior), movementFarmId y undoneAt/undoneBy. recordMovements contiene recibos de idempotencia; el historial y la reversión también quedan en records[].',
     weightSummary:
       'animal.weight es un resumen en gramos del pesaje más reciente; records[] es la fuente de verdad.',
     discharge:

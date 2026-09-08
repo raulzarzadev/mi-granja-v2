@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import BreedingForm from '@/components/BreedingForm'
 import Button from '@/components/buttons/Button'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
@@ -10,11 +10,11 @@ import type { SaleCompletionSummary } from '@/components/ModalSaleForm'
 import ModalSaleForm from '@/components/ModalSaleForm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
-import { animalDeathReasonLabels, buildDeathStatusNotes } from '@/lib/animal-discharge'
+import { useRecordMovements } from '@/hooks/useRecordMovements'
+import { animalDeathReasonLabels } from '@/lib/animal-discharge'
 import { activeUnweanedOffspring } from '@/lib/animal-utils'
 import type { BirthRecord } from '@/types'
-import type { Animal, AnimalDeathReason, AnimalRecord } from '@/types/animals'
-import type { BreedingRecord } from '@/types/breedings'
+import type { AnimalDeathReason, AnimalRecord } from '@/types/animals'
 
 const recordOptions = [
   {
@@ -57,14 +57,6 @@ const recordOptions = [
 type RecordOptionId = (typeof recordOptions)[number]['id']
 type WeaningDestination = 'engorda' | 'reproductor'
 type DeathStep = 'form' | 'review' | 'success'
-type AnimalDeathSnapshot = Pick<
-  Animal,
-  'id' | 'status' | 'statusAt' | 'statusNotes' | 'deathInfo' | 'soldInfo' | 'lostInfo' | 'records'
->
-type ActionRecordData = Omit<
-  AnimalRecord,
-  'id' | 'createdAt' | 'createdBy' | 'appliedToAnimals' | 'isBulkApplication'
->
 type ActionRecommendation = {
   key: string
   message: string
@@ -82,6 +74,7 @@ type NewRecordDraft = {
   deathDescription: string
   deathStep: DeathStep
   updatedAt: string
+  movementNotes?: string
 }
 
 const NEW_RECORD_DRAFT_STORAGE_KEY = 'mi-granja:new-record-draft:v1'
@@ -123,6 +116,7 @@ const normalizeNewRecordDraft = (
     actionDate: typeof draft.actionDate === 'string' ? draft.actionDate : '',
     weaningDestination: draft.weaningDestination === 'engorda' ? 'engorda' : 'reproductor',
     deathReason: typeof draft.deathReason === 'string' ? draft.deathReason : '',
+    movementNotes: typeof draft.movementNotes === 'string' ? draft.movementNotes : '',
     deathDescription: typeof draft.deathDescription === 'string' ? draft.deathDescription : '',
     deathStep:
       draft.deathStep === 'review' || draft.deathStep === 'success' ? draft.deathStep : 'form',
@@ -130,11 +124,11 @@ const normalizeNewRecordDraft = (
   }
 }
 
-const readNewRecordDrafts = (): NewRecordDraft[] => {
+const readNewRecordDrafts = (storageKey: string): NewRecordDraft[] => {
   if (typeof window === 'undefined') return []
 
   try {
-    const rawDraft = window.localStorage.getItem(NEW_RECORD_DRAFT_STORAGE_KEY)
+    const rawDraft = window.localStorage.getItem(storageKey)
     if (!rawDraft) return []
 
     const parsedDrafts: unknown = JSON.parse(rawDraft)
@@ -151,11 +145,6 @@ const readNewRecordDrafts = (): NewRecordDraft[] => {
     return []
   }
 }
-
-const getBreedingFormDraftStorageKey = (draftId: string) =>
-  draftId === 'legacy'
-    ? BREEDING_FORM_DRAFT_STORAGE_KEY
-    : `${BREEDING_FORM_DRAFT_STORAGE_KEY}:${draftId}`
 
 const toInputDate = (date: Date) => {
   const year = date.getFullYear()
@@ -175,14 +164,13 @@ const formatInputDate = (value: string) =>
   })
 
 export default function ModalNewRecord() {
-  const { animals, addRecord, addBulkRecord, create, markStatus, update, wean } = useAnimalCRUD()
-  const {
-    breedingRecords,
-    createBreedingRecord,
-    isSubmitting: isBreedingSubmitting,
-    updateBreedingRecord,
-  } = useBreedingCRUD()
-
+  const { animals } = useAnimalCRUD()
+  const { breedingRecords } = useBreedingCRUD()
+  const movements = useRecordMovements(animals)
+  const busyRef = useRef(false)
+  const [completedRecord, setCompletedRecord] = useState<AnimalRecord | null>(null)
+  const [movementNotes, setMovementNotes] = useState('')
+  const storageKey = `${NEW_RECORD_DRAFT_STORAGE_KEY}:${movements.context.userId}:${movements.context.farmId}`
   const [isOpen, setIsOpen] = useState(false)
   const [storedDrafts, setStoredDrafts] = useState<NewRecordDraft[]>([])
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null)
@@ -198,26 +186,44 @@ export default function ModalNewRecord() {
   const [deathReason, setDeathReason] = useState<AnimalDeathReason | ''>('')
   const [deathDescription, setDeathDescription] = useState('')
   const [deathStep, setDeathStep] = useState<DeathStep>('form')
-  const [deathPreviousStates, setDeathPreviousStates] = useState<
-    Record<string, AnimalDeathSnapshot>
-  >({})
   const [isUndoingDeath, setIsUndoingDeath] = useState(false)
   const [isActionSubmitting, setIsActionSubmitting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
   useEffect(() => {
-    setStoredDrafts(readNewRecordDrafts())
-  }, [])
-
-  const addActionRecord = async (animalIds: string[], recordData: ActionRecordData) => {
-    const ids = Array.from(new Set(animalIds.filter(Boolean)))
-    if (ids.length === 0) throw new Error('No se han seleccionado animales')
-
-    const recordId =
-      ids.length === 1 ? await addRecord(ids[0], recordData) : await addBulkRecord(ids, recordData)
-    if (!recordId) throw new Error('No se pudo guardar el registro del evento')
-    return recordId
-  }
+    // Claim the old unscoped drafts once; subsequent storage is isolated by account and farm.
+    try {
+      if (
+        movements.context.userId &&
+        movements.context.farmId &&
+        !localStorage.getItem(storageKey)
+      ) {
+        const legacy = localStorage.getItem(NEW_RECORD_DRAFT_STORAGE_KEY)
+        if (legacy) {
+          localStorage.setItem(storageKey, legacy)
+          localStorage.removeItem(NEW_RECORD_DRAFT_STORAGE_KEY)
+          const breeding = localStorage.getItem(BREEDING_FORM_DRAFT_STORAGE_KEY)
+          if (breeding) {
+            localStorage.setItem(`${storageKey}:breeding:legacy`, breeding)
+            localStorage.removeItem(BREEDING_FORM_DRAFT_STORAGE_KEY)
+          }
+          for (const draft of readNewRecordDrafts(storageKey)) {
+            const oldKey = `${BREEDING_FORM_DRAFT_STORAGE_KEY}:${draft.id}`
+            const value = localStorage.getItem(oldKey)
+            if (value) {
+              localStorage.setItem(`${storageKey}:breeding:${draft.id}`, value)
+              localStorage.removeItem(oldKey)
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('No se pudieron migrar los borradores', error)
+    }
+    setStoredDrafts(readNewRecordDrafts(storageKey))
+    resetActionState()
+    setIsOpen(false)
+  }, [storageKey])
 
   const selectedRecord = recordOptions.find((option) => option.id === selectedOption)
   const selectedAnimals = useMemo(
@@ -262,6 +268,7 @@ export default function ModalNewRecord() {
   const busyMontaFemaleIds = useMemo(() => {
     const ids = new Set<string>()
     for (const record of breedingRecords) {
+      if (record.status === 'finished') continue
       for (const femaleInfo of record.femaleBreedingInfo) {
         if (!femaleInfo.actualBirthDate) ids.add(femaleInfo.femaleId)
       }
@@ -425,15 +432,16 @@ export default function ModalNewRecord() {
     setWeaningDestination('reproductor')
     setDeathReason('')
     setDeathDescription('')
+    setMovementNotes('')
     setDeathStep('form')
-    setDeathPreviousStates({})
+    setCompletedRecord(null)
     setIsUndoingDeath(false)
     setIsActionSubmitting(false)
     setActionError(null)
   }
 
   const buildCurrentDraft = (): NewRecordDraft | null => {
-    if (!selectedOption) return null
+    if (!selectedOption || completedRecord) return null
     return {
       id: activeDraftId ?? createDraftId(),
       version: 1,
@@ -444,6 +452,7 @@ export default function ModalNewRecord() {
       weaningDestination,
       deathReason,
       deathDescription,
+      movementNotes,
       deathStep,
       updatedAt: new Date().toISOString(),
     }
@@ -458,7 +467,7 @@ export default function ModalNewRecord() {
         draft,
         ...storedDrafts.filter((storedDraft) => storedDraft.id !== draft.id),
       ]
-      window.localStorage.setItem(NEW_RECORD_DRAFT_STORAGE_KEY, JSON.stringify(nextDrafts))
+      window.localStorage.setItem(storageKey, JSON.stringify(nextDrafts))
       setStoredDrafts(nextDrafts)
       setActiveDraftId(draft.id)
     } catch (error) {
@@ -467,7 +476,7 @@ export default function ModalNewRecord() {
   }
 
   useEffect(() => {
-    if (!isOpen || !selectedOption) return
+    if (!isOpen || !selectedOption || completedRecord) return
     persistCurrentDraft()
     // El borrador se actualiza mientras el usuario completa el formulario.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -481,6 +490,7 @@ export default function ModalNewRecord() {
     weaningDestination,
     deathReason,
     deathDescription,
+    movementNotes,
     deathStep,
   ])
 
@@ -492,9 +502,11 @@ export default function ModalNewRecord() {
 
     if (typeof window !== 'undefined') {
       try {
-        window.localStorage.setItem(NEW_RECORD_DRAFT_STORAGE_KEY, JSON.stringify(nextDrafts))
+        window.localStorage.setItem(storageKey, JSON.stringify(nextDrafts))
         if (draftId) {
-          window.localStorage.removeItem(getBreedingFormDraftStorageKey(draftId))
+          window.localStorage.removeItem(`${storageKey}:breeding:${draftId}`)
+          localStorage.removeItem(`${storageKey}:sale:${draftId}`)
+          localStorage.removeItem(`${storageKey}:birth:${draftId}`)
         }
       } catch (error) {
         console.warn('No se pudo eliminar el borrador de nuevo registro', error)
@@ -513,7 +525,9 @@ export default function ModalNewRecord() {
     setWeaningDestination(draft.weaningDestination)
     setDeathReason(draft.deathReason)
     setDeathDescription(draft.deathDescription)
-    setDeathStep(draft.deathStep)
+    setDeathStep('form')
+    setCompletedRecord(null)
+    setMovementNotes(draft.movementNotes ?? '')
     setActionError(null)
     setIsDraftsOpen(false)
   }
@@ -523,8 +537,10 @@ export default function ModalNewRecord() {
 
     if (typeof window !== 'undefined') {
       try {
-        window.localStorage.setItem(NEW_RECORD_DRAFT_STORAGE_KEY, JSON.stringify(nextDrafts))
-        window.localStorage.removeItem(getBreedingFormDraftStorageKey(draftId))
+        window.localStorage.setItem(storageKey, JSON.stringify(nextDrafts))
+        window.localStorage.removeItem(`${storageKey}:breeding:${draftId}`)
+        localStorage.removeItem(`${storageKey}:sale:${draftId}`)
+        localStorage.removeItem(`${storageKey}:birth:${draftId}`)
       } catch (error) {
         console.warn('No se pudo eliminar el borrador de nuevo registro', error)
       }
@@ -537,6 +553,7 @@ export default function ModalNewRecord() {
   }
 
   const selectRecordOption = (optionId: RecordOptionId) => {
+    resetActionState()
     setSelectedOption(optionId)
     setSelectedAnimalIds([])
     setActiveDraftId(createDraftId())
@@ -545,53 +562,47 @@ export default function ModalNewRecord() {
   }
 
   const closeModal = () => {
+    if (busyRef.current) return
     persistCurrentDraft()
     setIsOpen(false)
     resetActionState()
   }
 
-  const completeAndCloseModal = () => {
+  const finishMovement = (record: AnimalRecord) => {
+    setCompletedRecord(record)
     clearDraft()
-    setIsOpen(false)
-    resetActionState()
+    setIsBirthOpen(false)
+    setIsSaleOpen(false)
+    setIsMontaFormOpen(false)
+    setIsOpen(true)
   }
-
-  const handleWean = async () => {
-    if (!actionDate) {
-      setActionError('Selecciona la fecha del destete.')
-      return
-    }
-
+  const perform = async (action: (id: string) => Promise<AnimalRecord>) => {
+    if (busyRef.current) throw new Error('Ya hay un movimiento en proceso.')
+    busyRef.current = true
     setIsActionSubmitting(true)
     setActionError(null)
-    let updatedAnimalCount = 0
     try {
-      const weanDate = fromInputDate(actionDate)
-      for (const animalId of selectedAnimalIds) {
-        await wean(animalId, { weanDate, stageDecision: weaningDestination })
-        updatedAnimalCount += 1
-      }
-      await addActionRecord(selectedAnimalIds, {
-        type: 'event',
-        category: 'other',
-        eventType: 'destete',
-        title: 'Destete registrado',
-        description: `Destino: ${weaningDestination === 'engorda' ? 'Engorda' : 'Reproducción'}`,
-        date: weanDate,
-      })
-      completeAndCloseModal()
+      if (!activeDraftId) throw new Error('Abre un registro nuevo.')
+      const record = await action(activeDraftId)
+      finishMovement(record)
     } catch (error) {
-      console.error('Error registrando destete múltiple:', error)
-      setActionError(
-        updatedAnimalCount > 0
-          ? 'El destete se aplicó, pero no se pudo guardar el historial. Revisa Registros.'
-          : 'No se pudo registrar el destete. Revisa los animales seleccionados.',
-      )
+      setActionError(error instanceof Error ? error.message : 'No se pudo guardar el movimiento.')
+      throw error
     } finally {
+      busyRef.current = false
       setIsActionSubmitting(false)
     }
   }
-
+  const handleWean = () =>
+    perform((id) =>
+      movements.wean(
+        id,
+        selectedAnimalIds,
+        fromInputDate(actionDate),
+        weaningDestination,
+        movementNotes,
+      ),
+    ).catch(() => {})
   const reviewDeath = () => {
     if (!deathReason) {
       setActionError('Selecciona la causa de muerte.')
@@ -610,115 +621,30 @@ export default function ModalNewRecord() {
     setDeathStep('review')
   }
 
-  const restoreAnimalState = async (snapshot: AnimalDeathSnapshot) => {
-    await update(snapshot.id, {
-      status: snapshot.status ?? 'activo',
-      // Null limpia los datos creados por la baja cuando antes no existían.
-      statusAt: snapshot.statusAt ?? null,
-      statusNotes: snapshot.statusNotes ?? null,
-      deathInfo: snapshot.deathInfo ?? null,
-      soldInfo: snapshot.soldInfo ?? null,
-      lostInfo: snapshot.lostInfo ?? null,
-      records: snapshot.records ?? [],
-    } as Partial<Animal>)
-  }
-
-  const confirmDeath = async () => {
-    if (!deathReason || !actionDate) return
-
-    setIsActionSubmitting(true)
-    setActionError(null)
-    const date = fromInputDate(actionDate)
-    const description = deathDescription.trim()
-    const previousStates = Object.fromEntries(
-      selectedAnimals.map((animal) => [
-        animal.id,
-        {
-          id: animal.id,
-          status: animal.status,
-          statusAt: animal.statusAt,
-          statusNotes: animal.statusNotes,
-          deathInfo: animal.deathInfo,
-          soldInfo: animal.soldInfo,
-          lostInfo: animal.lostInfo,
-          records: animal.records,
-        },
-      ]),
-    ) as Record<string, AnimalDeathSnapshot>
-    setDeathPreviousStates(previousStates)
-
-    const updatedIds: string[] = []
-    try {
-      for (const animalId of selectedAnimalIds) {
-        await markStatus(animalId, {
-          status: 'muerto',
-          statusAt: date,
-          statusNotes: description
-            ? buildDeathStatusNotes(deathReason, description)
-            : animalDeathReasonLabels[deathReason],
-          deathInfo: { reason: deathReason, date, description },
-        })
-        updatedIds.push(animalId)
-      }
-      await addActionRecord(selectedAnimalIds, {
-        type: 'event',
-        category: 'other',
-        eventType: 'muerte',
-        title: 'Muerte registrada',
-        description: description || undefined,
-        notes: animalDeathReasonLabels[deathReason],
-        date,
-        undoData: {
-          action: 'muerte',
-          previousAnimalStates: Object.values(previousStates).map((snapshot) => ({
-            id: snapshot.id,
-            ...(snapshot.status ? { status: snapshot.status } : {}),
-            ...(snapshot.statusAt ? { statusAt: snapshot.statusAt } : {}),
-            ...(snapshot.statusNotes ? { statusNotes: snapshot.statusNotes } : {}),
-            ...(snapshot.deathInfo ? { deathInfo: snapshot.deathInfo } : {}),
-            ...(snapshot.soldInfo ? { soldInfo: snapshot.soldInfo } : {}),
-            ...(snapshot.lostInfo ? { lostInfo: snapshot.lostInfo } : {}),
-          })),
-        },
-      })
-      setDeathStep('success')
-    } catch (error) {
-      console.error('Error registrando muertes múltiples:', error)
-      try {
-        await Promise.all(
-          updatedIds.map((animalId) => {
-            const snapshot = previousStates[animalId]
-            return snapshot ? restoreAnimalState(snapshot) : Promise.resolve()
-          }),
-        )
-      } catch (rollbackError) {
-        console.error('Error revirtiendo muertes parciales:', rollbackError)
-      }
-      setDeathPreviousStates({})
-      setActionError('No se pudo registrar la muerte. Intenta nuevamente.')
-    } finally {
-      setIsActionSubmitting(false)
-    }
-  }
-
-  const undoDeath = async () => {
-    const snapshots = Object.values(deathPreviousStates)
-    if (snapshots.length === 0) return
-
+  const confirmDeath = () =>
+    perform((id) =>
+      movements.death(
+        id,
+        selectedAnimalIds,
+        fromInputDate(actionDate),
+        deathReason as AnimalDeathReason,
+        deathDescription.trim(),
+      ),
+    ).catch(() => {})
+  const undoCompleted = async () => {
+    if (!completedRecord || busyRef.current) return
+    busyRef.current = true
     setIsUndoingDeath(true)
-    setActionError(null)
     try {
-      await Promise.all(snapshots.map(restoreAnimalState))
-      setDeathPreviousStates({})
-      setDeathStep('form')
+      await movements.undo(completedRecord)
+      setCompletedRecord({ ...completedRecord, undoneAt: new Date() })
     } catch (error) {
-      console.error('Error deshaciendo muertes múltiples:', error)
-      setActionError('No se pudo deshacer el registro. Intenta nuevamente.')
+      setActionError(error instanceof Error ? error.message : 'No se pudo deshacer.')
     } finally {
+      busyRef.current = false
       setIsUndoingDeath(false)
     }
   }
-
   const openSaleForm = () => {
     setActionError(null)
     persistCurrentDraft()
@@ -728,7 +654,7 @@ export default function ModalNewRecord() {
 
   const closeSaleForm = () => {
     setIsSaleOpen(false)
-    closeModal()
+    setIsOpen(true)
   }
 
   const openBirthForm = () => {
@@ -748,110 +674,13 @@ export default function ModalNewRecord() {
 
   const closeBirthForm = () => {
     setIsBirthOpen(false)
-    closeModal()
+    setIsOpen(true)
   }
 
-  const handleBirthSubmit = async (form: BirthRecord) => {
-    const mother = animals.find((animal) => animal.id === form.animalId)
-    if (!mother) throw new Error('Madre no encontrada')
-
-    const [year, month, day] = form.birthDate.split('-').map(Number)
-    const [hours, minutes] = form.birthTime.split(':').map(Number)
-    const actualDate = new Date(year, (month || 1) - 1, day || 1, hours || 0, minutes || 0)
-    const offspringIds: string[] = []
-
-    for (const offspring of form.offspring) {
-      const weight =
-        typeof offspring.weight === 'string'
-          ? offspring.weight === ''
-            ? null
-            : Number.parseFloat(offspring.weight)
-          : (offspring.weight ?? null)
-      const notes = [
-        offspring.color ? `Color: ${offspring.color}` : null,
-        offspring.healthIssues ? `Salud: ${offspring.healthIssues}` : null,
-      ].filter(Boolean)
-      const isDead = offspring.status === 'muerto'
-
-      const createdId = await create({
-        animalNumber: offspring.animalNumber.trim(),
-        type: mother.type,
-        stage: 'cria',
-        weight,
-        birthDate: actualDate,
-        gender: offspring.gender,
-        motherId: mother.id,
-        fatherId: selectedBirthRecord?.maleId ?? mother.pregnantBy ?? undefined,
-        ...(notes.length > 0 && { notes: notes.join(' · ') }),
-        ...(isDead && { status: 'muerto' as const, statusAt: actualDate }),
-      })
-      if (createdId) offspringIds.push(createdId)
-    }
-
-    if (selectedBirthRecord?.femaleBreedingInfo.some((info) => info.femaleId === form.animalId)) {
-      const updatedFemaleInfo = selectedBirthRecord.femaleBreedingInfo.map((info) =>
-        info.femaleId === form.animalId
-          ? {
-              ...info,
-              actualBirthDate: actualDate,
-              offspring: [...(info.offspring || []), ...offspringIds],
-            }
-          : info,
-      )
-      await updateBreedingRecord(selectedBirthRecord.id, { femaleBreedingInfo: updatedFemaleInfo })
-    }
-
-    await update(form.animalId, {
-      birthedAt: actualDate,
-      lactationStatus: 'active',
-      lactationPurpose:
-        mother.lactationPurpose === 'dairy' ? 'dual' : (mother.lactationPurpose ?? 'offspring'),
-      driedAt: null,
-      pregnantAt: null,
-      pregnantBy: null,
-      pregnantBreedingRecordId: null,
-      pregnantBreedingId: null,
-    })
-
-    const offspringSummary = form.offspring
-      .map(
-        (offspring) =>
-          `#${offspring.animalNumber} (${offspring.gender}${offspring.weight ? `, ${offspring.weight}kg` : ''})`,
-      )
-      .join(', ')
-    await addRecord(form.animalId, {
-      type: 'birth',
-      category: 'general',
-      title: `Parto: ${form.totalOffspring} cría${form.totalOffspring > 1 ? 's' : ''}`,
-      description: offspringSummary,
-      date: actualDate,
-      notes: form.notes || undefined,
-      eventType: 'parto',
-    })
-  }
-
-  const handleSaleCompleted = async (summary: SaleCompletionSummary) => {
-    const price = (summary.pricePerKg / 100).toLocaleString('es-MX', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })
-    const total = (summary.totalPriceCentavos / 100).toLocaleString('es-MX', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })
-
-    await addActionRecord(summary.animalIds, {
-      type: 'event',
-      category: 'other',
-      eventType: 'venta',
-      title: 'Venta registrada',
-      description: `Precio: $${price}/kg · Total: $${total}`,
-      notes: summary.buyer
-        ? `Comprador: ${summary.buyer}${summary.notes ? ` · ${summary.notes}` : ''}`
-        : summary.notes,
-      date: summary.date,
-    })
-  }
+  const handleBirthSubmit = (form: BirthRecord) =>
+    perform((id) => movements.birth(id, form, selectedBirthRecord))
+  const handleSaleCompleted = (summary: SaleCompletionSummary) =>
+    perform((id) => movements.sale(id, summary))
 
   return (
     <>
@@ -868,7 +697,7 @@ export default function ModalNewRecord() {
       </Button>
 
       <Modal isOpen={isOpen} onClose={closeModal} title="Nuevo Registro" size="md">
-        <div className="space-y-4">
+        <fieldset disabled={isActionSubmitting || isUndoingDeath} className="min-w-0 space-y-4">
           {storedDrafts.length > 0 && (
             <div className="-mb-2 space-y-1 text-right">
               <button
@@ -920,7 +749,34 @@ export default function ModalNewRecord() {
             </div>
           )}
 
-          {!selectedRecord ? (
+          {completedRecord ? (
+            <div className="space-y-3" role="status">
+              <p className="text-center text-lg font-semibold text-green-700">
+                ✓ {completedRecord.undoneAt ? 'Movimiento deshecho' : completedRecord.title}
+              </p>
+              <p className="text-sm text-gray-700">{completedRecord.description}</p>
+              {Object.entries(completedRecord.details ?? {}).map(([label, value]) => (
+                <p key={label} className="text-sm">
+                  <strong>{label}:</strong> {value}
+                </p>
+              ))}
+              {actionError && (
+                <p role="alert" className="text-sm text-red-700">
+                  {actionError}
+                </p>
+              )}
+              <div className="flex justify-end gap-2">
+                {!completedRecord.undoneAt && (
+                  <Button type="button" onClick={undoCompleted} disabled={isUndoingDeath}>
+                    {isUndoingDeath ? 'Deshaciendo…' : '↶ Deshacer'}
+                  </Button>
+                )}
+                <Button type="button" onClick={closeModal} disabled={isUndoingDeath}>
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+          ) : !selectedRecord ? (
             <>
               <p className="text-sm leading-5 text-gray-600">
                 Selecciona el tipo de evento que quieres registrar.
@@ -976,7 +832,7 @@ export default function ModalNewRecord() {
                 </button>
               </div>
 
-              {selectedOption === 'monta' ? (
+              {isMontaFormOpen ? null : selectedOption === 'monta' ? (
                 <div className="space-y-3">
                   <InputSelectAnimals
                     animals={montaMales}
@@ -1037,7 +893,15 @@ export default function ModalNewRecord() {
                 </div>
               ) : (
                 <InputSelectAnimals
-                  animals={animals}
+                  animals={animals.filter(
+                    (a) =>
+                      (a.status ?? 'activo') === 'activo' &&
+                      (selectedOption === 'destete'
+                        ? a.stage === 'cria' && !a.isWeaned
+                        : selectedOption === 'parto'
+                          ? a.gender === 'hembra' && Boolean(a.pregnantAt)
+                          : true),
+                  )}
                   selectedIds={selectedAnimalIds}
                   onAdd={(animalId) => {
                     setSelectedAnimalIds((current) => [...current, animalId])
@@ -1046,7 +910,7 @@ export default function ModalNewRecord() {
                   onRemove={(animalId) =>
                     setSelectedAnimalIds((current) => current.filter((id) => id !== animalId))
                   }
-                  mode="multi"
+                  mode={selectedOption === 'parto' ? 'single' : 'multi'}
                   label="Animales a los que aplica"
                   placeholder="Buscar por número, nombre, tipo o raza..."
                   compactDropdown
@@ -1071,7 +935,7 @@ export default function ModalNewRecord() {
               {hasSelectedActionAnimals && (
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
                   <p className="mb-3 text-sm font-semibold text-gray-900">
-                    Configura el {selectedRecord.label.toLowerCase()}
+                    Datos de {selectedRecord.label.toLowerCase()}
                     <span className="ml-1 font-normal text-gray-500">
                       ({selectedAnimalIds.length} animal{selectedAnimalIds.length === 1 ? '' : 'es'}
                       )
@@ -1129,6 +993,14 @@ export default function ModalNewRecord() {
                           ))}
                         </div>
                       </fieldset>
+                      <label className="block text-sm">
+                        Notas (opcional)
+                        <textarea
+                          value={movementNotes}
+                          onChange={(e) => setMovementNotes(e.target.value)}
+                          className="mt-1 w-full rounded border border-gray-300 p-2"
+                        />
+                      </label>
                       <Button
                         type="button"
                         color="success"
@@ -1283,55 +1155,6 @@ export default function ModalNewRecord() {
                           </div>
                         </div>
                       )}
-
-                      {deathStep === 'success' && (
-                        <div className="space-y-4 text-center" aria-live="polite">
-                          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-green-700">
-                            <svg
-                              aria-hidden="true"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              className="h-8 w-8"
-                              stroke="currentColor"
-                              strokeWidth="2.5"
-                            >
-                              <path
-                                d="m5 12 4.5 4.5L19 7"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </div>
-                          <div>
-                            <h4 className="text-base font-semibold text-green-800">
-                              Muerte registrada
-                            </h4>
-                            <p className="mt-1 text-sm text-gray-600">
-                              Se actualizó el estado de {selectedAnimalIds.length}{' '}
-                              {selectedAnimalIds.length === 1 ? 'animal' : 'animales'}.
-                            </p>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <Button
-                              type="button"
-                              color="warning"
-                              variant="outline"
-                              onClick={undoDeath}
-                              disabled={isUndoingDeath}
-                            >
-                              {isUndoingDeath ? 'Deshaciendo...' : 'Deshacer'}
-                            </Button>
-                            <Button
-                              type="button"
-                              color="neutral"
-                              variant="outline"
-                              onClick={completeAndCloseModal}
-                            >
-                              Cerrar
-                            </Button>
-                          </div>
-                        </div>
-                      )}
                     </>
                   )}
 
@@ -1386,47 +1209,13 @@ export default function ModalNewRecord() {
                         </>
                       ) : (
                         <BreedingForm
-                          key={selectedAnimalIds.join('|')}
+                          key={activeDraftId}
                           animals={animals}
                           initialAnimalIds={selectedAnimalIds}
-                          draftStorageKey={getBreedingFormDraftStorageKey(activeDraftId ?? 'new')}
-                          onSubmit={async (
-                            data: Omit<
-                              BreedingRecord,
-                              'id' | 'farmerId' | 'createdAt' | 'updatedAt'
-                            >,
-                          ) => {
-                            let breedingSaved = false
-                            try {
-                              await createBreedingRecord(data)
-                              breedingSaved = true
-                              const femaleIds = data.femaleBreedingInfo.map(
-                                (femaleInfo) => femaleInfo.femaleId,
-                              )
-                              await addActionRecord([data.maleId, ...femaleIds], {
-                                type: 'event',
-                                category: 'other',
-                                eventType: 'monta',
-                                title: data.breedingId
-                                  ? `Empadre · ${data.breedingId}`
-                                  : 'Empadre registrado',
-                                description: `${femaleIds.length} hembra${femaleIds.length === 1 ? '' : 's'}`,
-                                notes: data.notes,
-                                date: data.breedingDate ?? new Date(),
-                              })
-                              completeAndCloseModal()
-                            } catch (error) {
-                              console.error('Error registrando la monta en el historial:', error)
-                              setActionError(
-                                breedingSaved
-                                  ? 'El empadre se guardó, pero no se pudo agregar al historial. Intenta nuevamente.'
-                                  : 'No se pudo registrar la monta. Intenta nuevamente.',
-                              )
-                              throw error
-                            }
-                          }}
+                          draftStorageKey={`${storageKey}:breeding:${activeDraftId}`}
+                          onSubmit={(data) => perform((id) => movements.breeding(id, data))}
                           onCancel={closeModal}
-                          isLoading={isBreedingSubmitting}
+                          isLoading={isActionSubmitting}
                         />
                       )}
                     </div>
@@ -1436,14 +1225,14 @@ export default function ModalNewRecord() {
             </>
           )}
 
-          {!isMontaFormOpen && (
+          {!isMontaFormOpen && !completedRecord && (
             <div className="flex justify-end border-t border-gray-200 pt-4">
               <Button type="button" color="neutral" variant="outline" onClick={closeModal}>
                 Cancelar
               </Button>
             </div>
           )}
-        </div>
+        </fieldset>
       </Modal>
 
       <ModalSaleForm
@@ -1451,7 +1240,8 @@ export default function ModalNewRecord() {
         onClose={closeSaleForm}
         initialAnimalIds={selectedAnimalIds}
         initialStatus="completed"
-        onCompleted={handleSaleCompleted}
+        onCommit={handleSaleCompleted}
+        draftStorageKey={`${storageKey}:sale:${activeDraftId}`}
       />
 
       <ModalBirthForm
@@ -1461,6 +1251,7 @@ export default function ModalNewRecord() {
         animals={animals}
         selectedFemaleId={selectedBirthAnimal?.id}
         onSubmit={handleBirthSubmit}
+        draftStorageKey={`${storageKey}:birth:${activeDraftId}`}
       />
     </>
   )

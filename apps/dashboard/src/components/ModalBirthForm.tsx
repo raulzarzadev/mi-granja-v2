@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import Button from '@/components/buttons/Button'
 import { Icon } from '@/components/Icon/icon'
+import { useFormDraft } from '@/hooks/useFormDraft'
 import { toDate } from '@/lib/dates'
 import { BirthRecord, OffspringInfo } from '@/types'
 import { Animal, animal_icon, isActivePregnancy } from '@/types/animals'
@@ -12,6 +13,7 @@ import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Modal } from './Modal'
 
 interface ModalBirthFormProps {
+  draftStorageKey?: string
   isOpen: boolean
   onClose: () => void
   /** Empadre asociado. Puede ser null si la hembra fue removida del empadre (se usa pregnantBy). */
@@ -286,6 +288,7 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
   animals,
   onSubmit,
   selectedFemaleId,
+  draftStorageKey,
 }) => {
   const { notify } = useAppFeedback()
   const pregnantFemales = animals
@@ -324,8 +327,13 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
     setSuccessData(null)
   }, [isOpen, selectedFemaleId, breedingRecord?.id])
 
+  useFormDraft(draftStorageKey, isOpen, formData, (draft) => {
+    if (draft.animalId === selectedFemaleId && Array.isArray(draft.offspring)) setFormData(draft)
+  })
+  const submitLock = React.useRef(false)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submitLock.current) return
     if (!formData.animalId || formData.offspring.length === 0) return
 
     const hasEmptyIds = formData.offspring.some((o) => !o.animalNumber.trim())
@@ -348,23 +356,28 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
       return
     }
 
+    submitLock.current = true
     setIsSubmitting(true)
     try {
       const mother = animals.find((a) => a.id === formData.animalId)
       const offNums = formData.offspring.map((o) => o.animalNumber.trim())
       await onSubmit({ ...formData, totalOffspring: formData.offspring.length })
+      if (draftStorageKey) return
       setSuccessData({
         motherNumber: mother?.animalNumber || formData.animalId,
         offspringNumbers: offNums,
       })
     } catch (error) {
+      notify(error instanceof Error ? error.message : 'No se pudo registrar el parto.', 'error')
       console.error('Error registrando parto:', error, formData)
     } finally {
+      submitLock.current = false
       setIsSubmitting(false)
     }
   }
 
   const handleClose = () => {
+    if (submitLock.current) return
     setSuccessData(null)
     setFormData(createEmptyBirthRecord())
     setOffspringModalOpen(false)

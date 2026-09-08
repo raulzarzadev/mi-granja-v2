@@ -5,6 +5,7 @@ export const FARM_SCOPED_COLLECTIONS = [
   'breedingRecords',
   'reminders',
   'sales',
+  'recordMovements',
   'farmInvitations',
   // Datos de versiones anteriores que todavía pueden existir en respaldos/migraciones.
   'weightRecords',

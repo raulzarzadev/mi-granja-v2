@@ -9,6 +9,7 @@ import { MoneyInput } from '@/components/inputs/MoneyInput'
 import { WeightInput } from '@/components/inputs/WeightInput'
 import { Modal } from '@/components/Modal'
 import { RootState } from '@/features/store'
+import { useFormDraft } from '@/hooks/useFormDraft'
 import { useSalesCRUD } from '@/hooks/useSalesCRUD'
 import {
   Sale,
@@ -23,6 +24,8 @@ import {
 
 export interface SaleCompletionSummary {
   animalIds: string[]
+  animalWeights?: Record<string, number | null>
+  priceType?: SalePriceType
   date: Date
   pricePerKg: number
   totalWeightGrams: number
@@ -38,6 +41,8 @@ interface ModalSaleFormProps {
   initialAnimalId?: string
   initialAnimalIds?: string[]
   initialStatus?: SaleStatus
+  draftStorageKey?: string
+  onCommit?: (summary: SaleCompletionSummary) => Promise<void>
   onCompleted?: (summary: SaleCompletionSummary) => Promise<void> | void
 }
 
@@ -49,6 +54,8 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
   initialAnimalIds,
   initialStatus,
   onCompleted,
+  onCommit,
+  draftStorageKey,
 }) => {
   const { confirmAction } = useAppFeedback()
   const { animals } = useSelector((state: RootState) => state.animals)
@@ -76,6 +83,8 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
     total: number
   } | null>(null)
 
+  const [isCommitting, setIsCommitting] = useState(false)
+  const commitLock = React.useRef(false)
   const isEditing = !!sale
 
   const animalsInActiveSales = useMemo(() => getAnimalsInActiveSales(), [getAnimalsInActiveSales])
@@ -125,6 +134,20 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
     setError('')
   }, [sale, isOpen, initialAnimalId, initialAnimalIds, initialStatus])
 
+  const draftValue = useMemo(
+    () => ({ status, date, pricePerKg, priceType, buyer, notes, selectedAnimalIds, animalWeights }),
+    [status, date, pricePerKg, priceType, buyer, notes, selectedAnimalIds, animalWeights],
+  )
+  useFormDraft(draftStorageKey, isOpen, draftValue, (draft) => {
+    setDate(draft.date ? new Date(draft.date) : new Date())
+    setStatus(draft.status ?? 'completed')
+    setPricePerKg(draft.pricePerKg ?? null)
+    setPriceType(draft.priceType ?? 'en_pie')
+    setBuyer(draft.buyer ?? '')
+    setNotes(draft.notes ?? '')
+    if (Array.isArray(draft.selectedAnimalIds)) setSelectedAnimalIds(draft.selectedAnimalIds)
+    setAnimalWeights(draft.animalWeights ?? {})
+  })
   const buildAnimalsEntries = (): SaleAnimalEntry[] => {
     return selectedAnimalIds.map((id) => {
       const animal = animals.find((a) => a.id === id)
@@ -152,7 +175,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
       setError('Selecciona al menos un animal')
       return
     }
-    if (status === 'completed') {
+    if (onCommit || status === 'completed') {
       await handleComplete()
       return
     }
@@ -170,6 +193,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
   }
 
   const handleComplete = async () => {
+    if (commitLock.current) return
     setError('')
     if (selectedAnimalIds.length === 0) {
       setError('Selecciona al menos un animal')
@@ -190,6 +214,33 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
     if (missingWeight) {
       const animal = animals.find((a) => a.id === missingWeight)
       setError(`Ingresa el peso del animal ${animal?.animalNumber || missingWeight}`)
+      return
+    }
+    if (onCommit) {
+      commitLock.current = true
+      setIsCommitting(true)
+      try {
+        const totalWeightGrams = selectedAnimalIds.reduce(
+          (total, id) => total + (animalWeights[id] ?? 0),
+          0,
+        )
+        await onCommit({
+          animalIds: selectedAnimalIds,
+          date,
+          pricePerKg,
+          animalWeights,
+          priceType,
+          totalWeightGrams,
+          totalPriceCentavos: Math.round((pricePerKg * totalWeightGrams) / 1000),
+          buyer,
+          notes,
+        })
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'No se pudo registrar la venta.')
+      } finally {
+        commitLock.current = false
+        setIsCommitting(false)
+      }
       return
     }
     setCompleteProgress({ current: 0, total: selectedAnimalIds.length })
@@ -282,7 +333,9 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={() => {
+        if (!commitLock.current) onClose()
+      }}
       title={isEditing ? 'Editar Venta' : 'Nueva Venta'}
       size="lg"
     >
@@ -299,7 +352,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as SaleStatus)}
-            disabled={isReadOnly}
+            disabled={isReadOnly || Boolean(onCommit)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
           >
             {sale_statuses.map((s) => (
@@ -457,7 +510,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
           {isCompleted ? (
             <button
               onClick={handleRevert}
-              disabled={isSubmitting}
+              disabled={isCommitting || isSubmitting}
               className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm hover:bg-orange-700 transition-colors disabled:opacity-50"
             >
               Revertir Venta
@@ -466,7 +519,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
             <>
               <button
                 onClick={handleSave}
-                disabled={isSubmitting || isReadOnly}
+                disabled={isCommitting || isSubmitting || isReadOnly}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
               >
                 {status === 'completed'
@@ -481,7 +534,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
               {isEditing && !isReadOnly && status !== 'completed' && (
                 <button
                   onClick={handleComplete}
-                  disabled={isSubmitting}
+                  disabled={isCommitting || isSubmitting}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
                   {completeProgress
@@ -493,7 +546,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
               {isEditing && !isCompleted && (
                 <button
                   onClick={handleDelete}
-                  disabled={isSubmitting}
+                  disabled={isCommitting || isSubmitting}
                   className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition-colors disabled:opacity-50"
                 >
                   Eliminar

@@ -143,6 +143,8 @@ export const BACKUP_FORMAT = {
       updatedAt: 'ISO 8601',
     },
     _reglas_de_negocio: {
+      movimientos:
+        'records[].eventType identifica el movimiento; details conserva motivo/destino/datos. undoData.documents guarda path, before y after. undoneAt (ISO 8601) y undoneBy indican que fue deshecho. No modificar los datos de reversión manualmente.',
       _nota: 'Reglas que deben cumplirse para que los datos importados funcionen correctamente',
       campos_obligatorios_animal: 'id, animalNumber, type, stage, gender, createdAt, updatedAt',
       campos_nunca_undefined:

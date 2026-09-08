@@ -106,7 +106,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
       (animal) =>
         initialAnimalIds.includes(animal.id) &&
         animal.gender === 'macho' &&
-        animal.stage === 'reproductor',
+        (animal.computedStage ?? animal.stage) === 'reproductor',
     )
 
     const defaultBreedingDate = initialData?.breedingDate
@@ -188,6 +188,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   const busyFemaleIds = useMemo(() => {
     const ids = new Set<string>()
     for (const r of breedingRecords) {
+      if (r.status === 'finished') continue
       if (r.id === initialData?.id) continue // excluir el empadre actual en edición
       for (const fi of r.femaleBreedingInfo) {
         if (!fi.actualBirthDate) ids.add(fi.femaleId) // sin parto = ocupada
@@ -203,7 +204,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
       if ((animal.status ?? 'activo') !== 'activo') return false
       if (animal.gender !== 'hembra') return false
       if (animal.type !== selectedMale.type) return false
-      if (animal.stage !== 'reproductor') return false
+      if ((animal.computedStage ?? animal.stage) !== 'reproductor') return false
       if (onlyAvailable) {
         if (animal.pregnantAt || animal.birthedAt) return false
         if (busyFemaleIds.has(animal.id)) return false

@@ -7,6 +7,7 @@ import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { Modal } from '@/components/Modal'
 import RecordForm, { RecordFormState } from '@/components/RecordForm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useRecordMovements } from '@/hooks/useRecordMovements'
 import { useReminders } from '@/hooks/useReminders'
 import { buildRecordFromForm } from '@/lib/records'
 import {
@@ -46,25 +47,21 @@ const milkingSessionLabels = {
 
 const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, record }) => {
   const { confirmAction, notify } = useAppFeedback()
-  const {
-    animals,
-    update,
-    updateRecord,
-    removeRecord,
-    resolveRecord,
-    reopenRecord,
-    updateWeightRecord,
-  } = useAnimalCRUD()
+  const { animals, updateRecord, removeRecord, resolveRecord, reopenRecord, updateWeightRecord } =
+    useAnimalCRUD()
   const { createReminder } = useReminders()
   const [mode, setMode] = useState<'view' | 'edit'>('view')
   const [form, setForm] = useState<RecordFormState | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const movements = useRecordMovements(animals)
   if (!record) return null
 
   const isClinical = record.type === 'health' && clinicalCategories.includes(record.category)
-  const isSystemEvent = record.type === 'event'
-  const isUndoableDeath = isSystemEvent && record.eventType === 'muerte'
+  const isSystemEvent = record.type === 'event' || Boolean(record.undoData?.documents)
+  const isUndoableDeath =
+    !record.undoneAt &&
+    Boolean(record.undoData?.documents?.length || record.undoData?.previousAnimalStates?.length)
   const isGrouped = !!record.__isGrouped
 
   const handleClose = () => {
@@ -191,6 +188,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
   }
 
   const handleDelete = async () => {
+    if (record.undoData?.documents) return
     const confirmed = await confirmAction({
       title: 'Eliminar registro',
       message: '¿Eliminar este registro?',
@@ -215,42 +213,26 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
   }
 
   const handleUndoDeath = async () => {
-    const targets = isGrouped ? record.__animals : [{ id: record.animalId }]
-    const targetCount = targets.length
-    const confirmed = await confirmAction({
-      title: 'Deshacer muerte',
-      message: `Se reactivarán ${targetCount === 1 ? 'el animal' : `los ${targetCount} animales`} y se quitará este evento del historial.`,
-      confirmLabel: 'Deshacer',
-    })
-    if (!confirmed) return
-
+    if (
+      !(await confirmAction({
+        title: 'Deshacer movimiento',
+        message:
+          'Se revertirán los cambios de este movimiento y quedará marcado como deshecho en el historial.',
+        confirmLabel: 'Deshacer',
+      }))
+    )
+      return
     setIsSubmitting(true)
     try {
-      await Promise.all(
-        targets.map(async (target) => {
-          const animal = animals.find((candidate) => candidate.id === target.id)
-          if (!animal) throw new Error('Animal no encontrado')
-
-          const previousState = record.undoData?.previousAnimalStates?.find(
-            (state) => state.id === target.id,
-          )
-          const records = (animal.records || []).filter((item) => item.id !== record.id)
-
-          await update(target.id, {
-            status: previousState?.status ?? 'activo',
-            statusAt: previousState?.statusAt ?? null,
-            statusNotes: previousState?.statusNotes ?? null,
-            deathInfo: previousState?.deathInfo ?? null,
-            soldInfo: previousState?.soldInfo ?? null,
-            lostInfo: previousState?.lostInfo ?? null,
-            records,
-          } as Partial<Animal>)
-        }),
-      )
+      await movements.undo({
+        ...record,
+        appliedToAnimals: record.appliedToAnimals?.length
+          ? record.appliedToAnimals
+          : [record.animalId],
+      })
       handleClose()
     } catch (error) {
-      console.error('Error deshaciendo muerte desde registros:', error)
-      notify('No se pudo deshacer la muerte. Intenta nuevamente.')
+      notify(error instanceof Error ? error.message : 'No se pudo deshacer el movimiento.')
     } finally {
       setIsSubmitting(false)
     }
@@ -352,6 +334,23 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
               )}
             </div>
 
+            {record.undoneAt && <p className="text-gray-600 sm:col-span-2">Movimiento deshecho</p>}
+            {record.eventType && !record.undoneAt && !isUndoableDeath && (
+              <p className="text-sm text-gray-600 sm:col-span-2">
+                Este registro anterior no conserva el estado previo necesario para deshacerlo de
+                forma segura.
+              </p>
+            )}
+            {Object.entries(record.details ?? {}).map(([label, value]) => (
+              <div key={label} className="sm:col-span-2">
+                <span className="font-medium text-gray-600">{label}:</span> {value}
+              </div>
+            ))}
+            {record.eventType === 'muerte' && !record.details?.Motivo && record.notes && (
+              <p className="sm:col-span-2">
+                <strong>Motivo:</strong> {record.notes}
+              </p>
+            )}
             {record.description && (
               <div className="sm:col-span-2">
                 <span className="font-medium text-gray-600">Descripcion:</span>{' '}
@@ -471,6 +470,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
 
             <button
               onClick={handleDelete}
+              hidden={Boolean(record.undoData?.documents)}
               disabled={isSubmitting}
               className="min-h-11 rounded-lg bg-red-600 px-4 py-2 text-sm text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:opacity-50"
             >
@@ -496,7 +496,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
                   <path d="M9 14 4 9l5-5" />
                   <path d="M4 9h10.5a4.5 4.5 0 0 1 0 9H13" />
                 </svg>
-                Deshacer muerte
+                Deshacer movimiento
               </button>
             )}
           </div>

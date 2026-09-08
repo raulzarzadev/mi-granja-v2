@@ -169,7 +169,7 @@ const RecordsTab: React.FC = () => {
       if (filters.application) {
         const looksBulk =
           !!record.isBulkApplication ||
-          (Array.isArray(record.appliedToAnimals) && record.appliedToAnimals.length > 0)
+          (Array.isArray(record.appliedToAnimals) && record.appliedToAnimals.length > 1)
         if (filters.application === 'bulk' && !looksBulk) return false
         if (filters.application === 'single' && looksBulk) return false
       }
@@ -215,9 +215,10 @@ const RecordsTab: React.FC = () => {
     for (const r of filteredRecords) {
       const looksBulk =
         !!r.isBulkApplication ||
-        (Array.isArray(r.appliedToAnimals) && r.appliedToAnimals.length > 0)
+        (Array.isArray(r.appliedToAnimals) && r.appliedToAnimals.length > 1)
       if (looksBulk) {
         const key = [
+          r.id,
           r.type,
           r.category,
           dateKey(r.date),
@@ -771,7 +772,9 @@ const RecordsTab: React.FC = () => {
 
                         {/* Estado */}
                         <td className="px-3 py-2.5 whitespace-nowrap text-sm">
-                          {showStatus ? (
+                          {record.undoneAt ? (
+                            <span className="text-gray-600">↶ Deshecho</span>
+                          ) : showStatus ? (
                             <span
                               className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
                                 record.isResolved

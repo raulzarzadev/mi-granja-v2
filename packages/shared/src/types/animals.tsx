@@ -41,6 +41,10 @@ export interface AnimalRecord {
   // Para acciones creadas desde el registro rápido
   eventType?: AnimalRecordEventType
   undoData?: AnimalRecordUndoData
+  undoneAt?: Date
+  undoneBy?: string
+  movementFarmId?: string
+  details?: Record<string, string>
 
   // Metadata
   createdAt: Date
@@ -280,6 +284,11 @@ export type AnimalStatus = (typeof animal_statuses)[number]
 
 export type AnimalRecordUndoData = {
   action: AnimalRecordEventType
+  documents?: Array<{
+    path: string
+    before: Record<string, unknown> | null
+    after: Record<string, unknown>
+  }>
   previousAnimalStates?: Array<{
     id: string
     status?: AnimalStatus
