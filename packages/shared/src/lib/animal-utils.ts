@@ -427,7 +427,7 @@ export function formatTimeRemaining(months: number): string {
  */
 export function getLastWeight(animal: Animal): { kg: number; date: Date } | null {
   const latest = [...(animal.records || [])]
-    .filter((r) => r.type === 'weight')
+    .filter((r) => r.type === 'weight' && !r.undoneAt)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
   if (!latest) return null
   if (typeof latest.weightGrams === 'number' && latest.weightGrams > 0) {

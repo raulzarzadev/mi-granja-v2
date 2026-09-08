@@ -9,7 +9,7 @@ import {
   undoMovement,
 } from '@/lib/record-movements'
 import type { BirthRecord } from '@/types'
-import type { Animal, AnimalDeathReason, AnimalRecord } from '@/types/animals'
+import type { Animal, AnimalDeathReason, AnimalRecord, MilkingSession } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
 
 export function useRecordMovements(animals: Animal[] = []) {
@@ -270,6 +270,83 @@ export function useRecordMovements(animals: Animal[] = []) {
               'Precio por kg': `$${(summary.pricePerKg / 100).toFixed(2)}`,
               Total: `$${(summary.totalPriceCentavos / 100).toFixed(2)}`,
             },
+          },
+        }
+      })
+    },
+    weight: (id: string, animalId: string, date: Date, weightGrams: number, notes: string) => {
+      validateDate(date)
+      if (!Number.isFinite(weightGrams) || weightGrams <= 0)
+        throw new Error('Ingresa un peso mayor que cero.')
+      return execute(id, [animalId], [], (docs) => {
+        const animal = docs.get(`animals/${animalId}`)
+        active(animal)
+        const weightKg = (weightGrams / 1000).toLocaleString('es-MX', {
+          maximumFractionDigits: 1,
+        })
+        return {
+          changes: [
+            {
+              path: `animals/${animalId}`,
+              data: { weight: weightGrams },
+            },
+          ],
+          record: {
+            type: 'weight',
+            category: 'general',
+            title: `${weightKg} kg`,
+            date,
+            weightGrams,
+            notes,
+            description: notes,
+          },
+        }
+      })
+    },
+    milk: (
+      id: string,
+      animalId: string,
+      date: Date,
+      amountMl: number,
+      session: MilkingSession,
+      notes: string,
+    ) => {
+      validateDate(date)
+      if (!Number.isFinite(amountMl) || amountMl <= 0)
+        throw new Error('Ingresa una cantidad de leche mayor que cero.')
+      return execute(id, [animalId], [], (docs) => {
+        const animal = docs.get(`animals/${animalId}`)
+        active(animal)
+        if (animal?.gender !== 'hembra')
+          throw new Error('Sólo se puede registrar leche en hembras.')
+        const nextPurpose =
+          animal.lactationPurpose === 'offspring' ? 'dual' : (animal.lactationPurpose ?? 'dairy')
+        const liters = (amountMl / 1000).toLocaleString('es-MX', {
+          maximumFractionDigits: 3,
+        })
+        const sessionLabel =
+          session === 'morning' ? 'Mañana' : session === 'afternoon' ? 'Tarde' : 'Noche'
+        return {
+          changes: [
+            {
+              path: `animals/${animalId}`,
+              data: {
+                lactationStatus: 'active',
+                lactationPurpose: nextPurpose,
+                driedAt: null,
+              },
+            },
+          ],
+          record: {
+            type: 'milk',
+            category: 'general',
+            title: `Ordeño · ${liters} L`,
+            date,
+            amountMl: Math.round(amountMl),
+            session,
+            notes,
+            description: notes,
+            details: { Cantidad: `${liters} L`, Turno: sessionLabel },
           },
         }
       })

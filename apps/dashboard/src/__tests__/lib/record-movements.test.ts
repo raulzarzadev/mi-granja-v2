@@ -225,3 +225,21 @@ it('permite deshacer en orden inverso conservando ambos movimientos en el histor
   expect(mockDocuments.get('animals/a').records).toHaveLength(2)
   expect(mockDocuments.get('animals/a').records.every((r: any) => r.undoneAt)).toBe(true)
 })
+
+it('peso y leche guardan sus datos como movimientos reversibles', async () => {
+  const female = animal('female', { lactationStatus: 'dry' })
+  const movement = api([female])
+  const weight = await movement.weight('weight', 'female', date, 32500, 'Pesaje de control')
+  expect(mockDocuments.get('animals/female').weight).toBe(32500)
+  expect(weight.type).toBe('weight')
+  expect(weight.weightGrams).toBe(32500)
+  await movement.undo(weight)
+  expect(mockDocuments.get('animals/female').weight).toBeNull()
+
+  const milk = await movement.milk('milk', 'female', date, 8500, 'morning', 'Sin incidencias')
+  expect(mockDocuments.get('animals/female').lactationStatus).toBe('active')
+  expect(milk.type).toBe('milk')
+  expect(milk.amountMl).toBe(8500)
+  await movement.undo(milk)
+  expect(mockDocuments.get('animals/female').records.at(-1).undoneAt).toBeTruthy()
+})

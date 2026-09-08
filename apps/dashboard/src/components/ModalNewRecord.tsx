@@ -11,10 +11,21 @@ import ModalSaleForm from '@/components/ModalSaleForm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useRecordMovements } from '@/hooks/useRecordMovements'
+import {
+  trackNewRecordCompleted,
+  trackNewRecordDraftRestored,
+  trackNewRecordDraftSaved,
+  trackNewRecordFailed,
+  trackNewRecordOpened,
+  trackNewRecordSubmitted,
+  trackNewRecordTypeSelected,
+  trackNewRecordUndone,
+} from '@/lib/analytics/track'
 import { animalDeathReasonLabels } from '@/lib/animal-discharge'
 import { activeUnweanedOffspring } from '@/lib/animal-utils'
+import { breedingWarnings } from '@/lib/breeding-warnings'
 import type { BirthRecord } from '@/types'
-import type { AnimalDeathReason, AnimalRecord } from '@/types/animals'
+import type { AnimalDeathReason, AnimalRecord, MilkingSession } from '@/types/animals'
 
 const recordOptions = [
   {
@@ -52,6 +63,20 @@ const recordOptions = [
     icon: '💰',
     activeClass: 'border-teal-500 bg-teal-50 text-teal-900',
   },
+  {
+    id: 'peso',
+    label: 'Peso',
+    description: 'Registra el peso actual de un animal y lo agrega a su historial.',
+    icon: '⚖️',
+    activeClass: 'border-violet-500 bg-violet-50 text-violet-900',
+  },
+  {
+    id: 'leche',
+    label: 'Leche',
+    description: 'Registra una sesión de ordeño y la cantidad obtenida.',
+    icon: '🥛',
+    activeClass: 'border-cyan-500 bg-cyan-50 text-cyan-900',
+  },
 ] as const
 
 type RecordOptionId = (typeof recordOptions)[number]['id']
@@ -75,6 +100,9 @@ type NewRecordDraft = {
   deathStep: DeathStep
   updatedAt: string
   movementNotes?: string
+  weightValue: string
+  milkAmount: string
+  milkSession: MilkingSession
 }
 
 const NEW_RECORD_DRAFT_STORAGE_KEY = 'mi-granja:new-record-draft:v1'
@@ -118,6 +146,12 @@ const normalizeNewRecordDraft = (
     deathReason: typeof draft.deathReason === 'string' ? draft.deathReason : '',
     movementNotes: typeof draft.movementNotes === 'string' ? draft.movementNotes : '',
     deathDescription: typeof draft.deathDescription === 'string' ? draft.deathDescription : '',
+    weightValue: typeof draft.weightValue === 'string' ? draft.weightValue : '',
+    milkAmount: typeof draft.milkAmount === 'string' ? draft.milkAmount : '',
+    milkSession:
+      draft.milkSession === 'afternoon' || draft.milkSession === 'evening'
+        ? draft.milkSession
+        : 'morning',
     deathStep:
       draft.deathStep === 'review' || draft.deathStep === 'success' ? draft.deathStep : 'form',
     updatedAt: typeof draft.updatedAt === 'string' ? draft.updatedAt : new Date().toISOString(),
@@ -186,6 +220,9 @@ export default function ModalNewRecord() {
   const [deathReason, setDeathReason] = useState<AnimalDeathReason | ''>('')
   const [deathDescription, setDeathDescription] = useState('')
   const [deathStep, setDeathStep] = useState<DeathStep>('form')
+  const [weightValue, setWeightValue] = useState('')
+  const [milkAmount, setMilkAmount] = useState('')
+  const [milkSession, setMilkSession] = useState<MilkingSession>('morning')
   const [isUndoingDeath, setIsUndoingDeath] = useState(false)
   const [isActionSubmitting, setIsActionSubmitting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -260,7 +297,6 @@ export default function ModalNewRecord() {
         (animal) =>
           (animal.status ?? 'activo') === 'activo' &&
           animal.gender === 'hembra' &&
-          animal.computedStage === 'reproductor' &&
           (!selectedMontaMale || animal.type === selectedMontaMale.type),
       ),
     [animals, selectedMontaMale],
@@ -321,6 +357,18 @@ export default function ModalNewRecord() {
     }
 
     for (const animal of selectedAnimals) {
+      if (selectedOption === 'monta' && selectedMontaMale && animal.gender === 'hembra') {
+        for (const [index, message] of breedingWarnings(
+          animal,
+          selectedMontaMale,
+          animals,
+        ).entries()) {
+          addRecommendation(
+            `${animal.id}-compatibility-${index}`,
+            `#${animal.animalNumber}: ${message}`,
+          )
+        }
+      }
       const offspring = [
         ...activeUnweanedOffspring({ farmAnimals: animals, motherId: animal.id }),
         ...(animal.animalNumber
@@ -419,7 +467,7 @@ export default function ModalNewRecord() {
     }
 
     return recommendations
-  }, [animals, breedingRecords, selectedAnimals, selectedOption])
+  }, [animals, breedingRecords, selectedAnimals, selectedOption, selectedMontaMale])
 
   const resetActionState = () => {
     setSelectedOption(null)
@@ -432,6 +480,9 @@ export default function ModalNewRecord() {
     setWeaningDestination('reproductor')
     setDeathReason('')
     setDeathDescription('')
+    setWeightValue('')
+    setMilkAmount('')
+    setMilkSession('morning')
     setMovementNotes('')
     setDeathStep('form')
     setCompletedRecord(null)
@@ -454,6 +505,9 @@ export default function ModalNewRecord() {
       deathDescription,
       movementNotes,
       deathStep,
+      weightValue,
+      milkAmount,
+      milkSession,
       updatedAt: new Date().toISOString(),
     }
   }
@@ -492,6 +546,9 @@ export default function ModalNewRecord() {
     deathDescription,
     movementNotes,
     deathStep,
+    weightValue,
+    milkAmount,
+    milkSession,
   ])
 
   const clearDraft = () => {
@@ -517,6 +574,7 @@ export default function ModalNewRecord() {
   }
 
   const restoreStoredDraft = (draft: NewRecordDraft) => {
+    trackNewRecordDraftRestored(draft.selectedOption)
     setActiveDraftId(draft.id)
     setSelectedOption(draft.selectedOption)
     setSelectedAnimalIds(draft.selectedAnimalIds)
@@ -525,6 +583,9 @@ export default function ModalNewRecord() {
     setWeaningDestination(draft.weaningDestination)
     setDeathReason(draft.deathReason)
     setDeathDescription(draft.deathDescription)
+    setWeightValue(draft.weightValue ?? '')
+    setMilkAmount(draft.milkAmount ?? '')
+    setMilkSession(draft.milkSession ?? 'morning')
     setDeathStep('form')
     setCompletedRecord(null)
     setMovementNotes(draft.movementNotes ?? '')
@@ -553,6 +614,7 @@ export default function ModalNewRecord() {
   }
 
   const selectRecordOption = (optionId: RecordOptionId) => {
+    trackNewRecordTypeSelected(optionId)
     resetActionState()
     setSelectedOption(optionId)
     setSelectedAnimalIds([])
@@ -563,6 +625,13 @@ export default function ModalNewRecord() {
 
   const closeModal = () => {
     if (busyRef.current) return
+    const draft = buildCurrentDraft()
+    if (draft) {
+      trackNewRecordDraftSaved({
+        record_type: draft.selectedOption,
+        animal_count: draft.selectedAnimalIds.length,
+      })
+    }
     persistCurrentDraft()
     setIsOpen(false)
     resetActionState()
@@ -583,9 +652,16 @@ export default function ModalNewRecord() {
     setActionError(null)
     try {
       if (!activeDraftId) throw new Error('Abre un registro nuevo.')
+      const recordType = selectedOption ?? 'unknown'
+      trackNewRecordSubmitted({ record_type: recordType, animal_count: selectedAnimalIds.length })
       const record = await action(activeDraftId)
+      trackNewRecordCompleted({ record_type: recordType, animal_count: selectedAnimalIds.length })
       finishMovement(record)
     } catch (error) {
+      trackNewRecordFailed({
+        record_type: selectedOption ?? 'unknown',
+        animal_count: selectedAnimalIds.length,
+      })
       setActionError(error instanceof Error ? error.message : 'No se pudo guardar el movimiento.')
       throw error
     } finally {
@@ -631,12 +707,41 @@ export default function ModalNewRecord() {
         deathDescription.trim(),
       ),
     ).catch(() => {})
+  const registerWeight = () => {
+    const grams = Number(weightValue.replace(',', '.')) * 1000
+    perform((id) =>
+      movements.weight(
+        id,
+        selectedAnimalIds[0],
+        fromInputDate(actionDate),
+        Math.round(grams),
+        movementNotes.trim(),
+      ),
+    ).catch(() => {})
+  }
+  const registerMilk = () => {
+    const amountMl = Number(milkAmount.replace(',', '.')) * 1000
+    perform((id) =>
+      movements.milk(
+        id,
+        selectedAnimalIds[0],
+        fromInputDate(actionDate),
+        Math.round(amountMl),
+        milkSession,
+        movementNotes.trim(),
+      ),
+    ).catch(() => {})
+  }
   const undoCompleted = async () => {
     if (!completedRecord || busyRef.current) return
     busyRef.current = true
     setIsUndoingDeath(true)
     try {
       await movements.undo(completedRecord)
+      trackNewRecordUndone({
+        record_type: completedRecord.eventType ?? completedRecord.type,
+        animal_count: completedRecord.appliedToAnimals?.length ?? 0,
+      })
       setCompletedRecord({ ...completedRecord, undoneAt: new Date() })
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'No se pudo deshacer.')
@@ -681,6 +786,10 @@ export default function ModalNewRecord() {
     perform((id) => movements.birth(id, form, selectedBirthRecord))
   const handleSaleCompleted = (summary: SaleCompletionSummary) =>
     perform((id) => movements.sale(id, summary))
+  const openNewRecordModal = () => {
+    trackNewRecordOpened(storedDrafts.length)
+    setIsOpen(true)
+  }
 
   return (
     <>
@@ -690,7 +799,7 @@ export default function ModalNewRecord() {
         color="primary"
         icon="add"
         className="min-h-11 whitespace-nowrap"
-        onClick={() => setIsOpen(true)}
+        onClick={openNewRecordModal}
         aria-label="Abrir opciones de nuevo registro"
       >
         Nuevo Registro{storedDrafts.length > 0 ? ` (${storedDrafts.length})` : ''}
@@ -699,12 +808,13 @@ export default function ModalNewRecord() {
       <Modal isOpen={isOpen} onClose={closeModal} title="Nuevo Registro" size="md">
         <fieldset disabled={isActionSubmitting || isUndoingDeath} className="min-w-0 space-y-4">
           {storedDrafts.length > 0 && (
-            <div className="-mb-2 space-y-1 text-right">
+            <div className="flex flex-col items-end gap-2 pb-2 text-right">
               <button
                 type="button"
                 aria-expanded={isDraftsOpen}
+                aria-label={`${isDraftsOpen ? 'Ocultar' : 'Ver'} borradores (${storedDrafts.length})`}
                 onClick={() => setIsDraftsOpen((open) => !open)}
-                className="min-h-8 px-1 text-sm font-medium text-gray-600 underline-offset-2 hover:text-gray-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2"
+                className="min-h-8 cursor-pointer rounded-md border-0 bg-transparent px-1 text-sm font-medium text-gray-600 underline-offset-2 hover:text-gray-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2"
               >
                 {isDraftsOpen ? 'Ocultar borradores' : 'Ver borradores'} ({storedDrafts.length})
               </button>
@@ -718,8 +828,7 @@ export default function ModalNewRecord() {
                     const option = recordOptions.find(
                       (record) => record.id === draft.selectedOption,
                     )
-                    const label =
-                      draft.selectedOption === 'monta' ? 'Monta' : (option?.label ?? 'Registro')
+                    const label = option?.label ?? 'Registro'
 
                     return (
                       <div
@@ -729,7 +838,7 @@ export default function ModalNewRecord() {
                         <button
                           type="button"
                           onClick={() => restoreStoredDraft(draft)}
-                          className="min-h-9 px-3 text-left hover:text-gray-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-inset"
+                          className="min-h-9 cursor-pointer rounded-l-full px-3 text-left transition-colors hover:bg-gray-100 hover:text-gray-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-inset"
                         >
                           {label}
                         </button>
@@ -737,7 +846,7 @@ export default function ModalNewRecord() {
                           type="button"
                           onClick={() => removeStoredDraft(draft.id)}
                           aria-label={`Eliminar borrador de ${label}`}
-                          className="mr-1 flex size-7 items-center justify-center rounded-full text-gray-400 hover:bg-gray-200 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+                          className="mr-1 flex size-7 cursor-pointer items-center justify-center rounded-full text-gray-400 hover:bg-gray-200 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
                         >
                           ×
                         </button>
@@ -881,6 +990,9 @@ export default function ModalNewRecord() {
                       }
                       mode="multi"
                       label={`2. Hembras ${selectedMontaMale.type}`}
+                      secondaryLabel={(animal) =>
+                        breedingWarnings(animal, selectedMontaMale, animals).join(' · ')
+                      }
                       placeholder={`Buscar hembra ${selectedMontaMale.type}...`}
                       filterFn={
                         onlyAvailableMontaFemales
@@ -911,15 +1023,14 @@ export default function ModalNewRecord() {
                 </div>
               ) : (
                 <InputSelectAnimals
-                  animals={animals.filter(
-                    (a) =>
-                      (a.status ?? 'activo') === 'activo' &&
-                      (selectedOption === 'destete'
-                        ? a.stage === 'cria' && !a.isWeaned
-                        : selectedOption === 'parto'
-                          ? a.gender === 'hembra' && Boolean(a.pregnantAt)
-                          : true),
-                  )}
+                  animals={animals.filter((a) => {
+                    if ((a.status ?? 'activo') !== 'activo') return false
+                    if (selectedOption === 'destete') return a.stage === 'cria' && !a.isWeaned
+                    if (selectedOption === 'parto')
+                      return a.gender === 'hembra' && Boolean(a.pregnantAt)
+                    if (selectedOption === 'leche') return a.gender === 'hembra'
+                    return true
+                  })}
                   selectedIds={selectedAnimalIds}
                   onAdd={(animalId) => {
                     setSelectedAnimalIds((current) => [...current, animalId])
@@ -928,7 +1039,13 @@ export default function ModalNewRecord() {
                   onRemove={(animalId) =>
                     setSelectedAnimalIds((current) => current.filter((id) => id !== animalId))
                   }
-                  mode={selectedOption === 'parto' ? 'single' : 'multi'}
+                  mode={
+                    selectedOption === 'parto' ||
+                    selectedOption === 'peso' ||
+                    selectedOption === 'leche'
+                      ? 'single'
+                      : 'multi'
+                  }
                   label="Animales a los que aplica"
                   placeholder="Buscar por número, nombre, tipo o raza..."
                   compactDropdown
@@ -1174,6 +1291,150 @@ export default function ModalNewRecord() {
                         </div>
                       )}
                     </>
+                  )}
+
+                  {selectedOption === 'peso' && (
+                    <div className="space-y-3">
+                      <div>
+                        <label
+                          htmlFor="new-record-weight-date"
+                          className="mb-1 block text-sm font-medium text-gray-700"
+                        >
+                          Fecha del pesaje
+                        </label>
+                        <input
+                          id="new-record-weight-date"
+                          type="date"
+                          value={actionDate}
+                          max={toInputDate(new Date())}
+                          onChange={(event) => setActionDate(event.target.value)}
+                          className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-base outline-none transition focus:border-violet-600 focus:ring-2 focus:ring-violet-200"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="new-record-weight-value"
+                          className="mb-1 block text-sm font-medium text-gray-700"
+                        >
+                          Peso (kg)
+                        </label>
+                        <input
+                          id="new-record-weight-value"
+                          type="number"
+                          inputMode="decimal"
+                          min="0.1"
+                          step="0.1"
+                          value={weightValue}
+                          onChange={(event) => setWeightValue(event.target.value)}
+                          placeholder="Ej. 32.5"
+                          className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-base outline-none transition focus:border-violet-600 focus:ring-2 focus:ring-violet-200"
+                        />
+                      </div>
+                      <label className="block text-sm">
+                        Notas (opcional)
+                        <textarea
+                          value={movementNotes}
+                          onChange={(event) => setMovementNotes(event.target.value)}
+                          rows={2}
+                          className="mt-1 w-full resize-y rounded-lg border border-gray-300 p-2"
+                          placeholder="Condición o comentario del pesaje..."
+                        />
+                      </label>
+                      <Button
+                        type="button"
+                        color="info"
+                        onClick={registerWeight}
+                        disabled={isActionSubmitting || !weightValue}
+                        className="w-full"
+                      >
+                        {isActionSubmitting ? 'Registrando...' : 'Registrar peso'}
+                      </Button>
+                    </div>
+                  )}
+
+                  {selectedOption === 'leche' && (
+                    <div className="space-y-3">
+                      <div>
+                        <label
+                          htmlFor="new-record-milk-date"
+                          className="mb-1 block text-sm font-medium text-gray-700"
+                        >
+                          Fecha del ordeño
+                        </label>
+                        <input
+                          id="new-record-milk-date"
+                          type="date"
+                          value={actionDate}
+                          max={toInputDate(new Date())}
+                          onChange={(event) => setActionDate(event.target.value)}
+                          className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-base outline-none transition focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="new-record-milk-amount"
+                          className="mb-1 block text-sm font-medium text-gray-700"
+                        >
+                          Cantidad (litros)
+                        </label>
+                        <input
+                          id="new-record-milk-amount"
+                          type="number"
+                          inputMode="decimal"
+                          min="0.01"
+                          step="0.01"
+                          value={milkAmount}
+                          onChange={(event) => setMilkAmount(event.target.value)}
+                          placeholder="Ej. 8.5"
+                          className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-base outline-none transition focus:border-cyan-600 focus:ring-2 focus:ring-cyan-200"
+                        />
+                      </div>
+                      <fieldset>
+                        <legend className="mb-2 text-sm font-medium text-gray-700">Turno</legend>
+                        <div className="grid grid-cols-3 gap-2">
+                          {(
+                            [
+                              ['morning', '🌅 Mañana'],
+                              ['afternoon', '☀️ Tarde'],
+                              ['evening', '🌙 Noche'],
+                            ] as const
+                          ).map(([value, label]) => (
+                            <button
+                              key={value}
+                              type="button"
+                              aria-pressed={milkSession === value}
+                              onClick={() => setMilkSession(value)}
+                              className={`min-h-11 rounded-lg border px-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2 ${
+                                milkSession === value
+                                  ? 'border-cyan-600 bg-cyan-100 text-cyan-900'
+                                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </fieldset>
+                      <label className="block text-sm">
+                        Notas (opcional)
+                        <textarea
+                          value={movementNotes}
+                          onChange={(event) => setMovementNotes(event.target.value)}
+                          rows={2}
+                          className="mt-1 w-full resize-y rounded-lg border border-gray-300 p-2"
+                          placeholder="Calidad, incidencia o destino de la leche..."
+                        />
+                      </label>
+                      <Button
+                        type="button"
+                        color="info"
+                        onClick={registerMilk}
+                        disabled={isActionSubmitting || !milkAmount}
+                        className="w-full"
+                      >
+                        {isActionSubmitting ? 'Registrando...' : 'Registrar leche'}
+                      </Button>
+                    </div>
                   )}
 
                   {selectedOption === 'venta' && (

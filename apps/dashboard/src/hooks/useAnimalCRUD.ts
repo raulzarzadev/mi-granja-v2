@@ -44,6 +44,7 @@ function latestWeightGrams(records: AnimalRecord[]): number | null {
     .filter(
       (record): record is AnimalWeightRecord =>
         record.type === 'weight' &&
+        !record.undoneAt &&
         typeof record.weightGrams === 'number' &&
         record.weightGrams > 0,
     )

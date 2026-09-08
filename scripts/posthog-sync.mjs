@@ -175,6 +175,20 @@ const desiredInsights = [
     }),
   },
   {
+    name: 'Uso de Nuevo Registro – panel',
+    description: 'Aperturas, envíos, registros completados y errores del flujo de Nuevo Registro.',
+    query: trendsQuery({
+      series: [
+        event('new_record_opened', 'Abrió Nuevo Registro', 'dau'),
+        event('new_record_submitted', 'Envió un registro', 'dau'),
+        event('new_record_completed', 'Completó un registro', 'dau'),
+        event('new_record_failed', 'Falló un registro'),
+      ],
+      interval: 'week',
+      from: '-90d',
+    }),
+  },
+  {
     name: 'Conversión a plan pagado – panel',
     description: 'Embudo desde la página de planes hasta una suscripción activada.',
     query: funnelQuery({

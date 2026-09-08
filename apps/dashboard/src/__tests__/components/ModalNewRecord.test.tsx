@@ -24,6 +24,8 @@ const mockAnimals = [
   },
 ]
 const mockDeath = jest.fn()
+const mockWeight = jest.fn()
+const mockMilk = jest.fn()
 const mockUndo = jest.fn()
 jest.mock('@/hooks/useAnimalCRUD', () => ({ useAnimalCRUD: () => ({ animals: mockAnimals }) }))
 jest.mock('@/hooks/useBreedingCRUD', () => ({ useBreedingCRUD: () => ({ breedingRecords: [] }) }))
@@ -31,6 +33,8 @@ jest.mock('@/hooks/useRecordMovements', () => ({
   useRecordMovements: () => ({
     context: { userId: 'u', farmId: 'f' },
     death: mockDeath,
+    weight: mockWeight,
+    milk: mockMilk,
     undo: mockUndo,
   }),
 }))
@@ -148,4 +152,17 @@ it('destete solo ofrece crías activas', () => {
   fireEvent.click(screen.getByRole('button', { name: /Destete/ }))
   expect(screen.queryByRole('button', { name: 'Elegir H1' })).toBeNull()
   expect(screen.getByRole('button', { name: 'Elegir C1' })).toBeTruthy()
+})
+
+it('ofrece Peso y Leche como registros rápidos con formularios propios', () => {
+  render(<ModalNewRecord />)
+  fireEvent.click(screen.getByRole('button', { name: /Nuevo Registro/ }))
+  expect(screen.getByRole('button', { name: /Peso/ })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /Leche/ })).toBeInTheDocument()
+
+  fireEvent.click(screen.getByRole('button', { name: /Peso/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Elegir H1' }))
+  expect(screen.getByLabelText('Peso (kg)')).toBeInTheDocument()
+  fireEvent.change(screen.getByLabelText('Peso (kg)'), { target: { value: '32.5' } })
+  expect(screen.getByRole('button', { name: 'Registrar peso' })).toBeInTheDocument()
 })

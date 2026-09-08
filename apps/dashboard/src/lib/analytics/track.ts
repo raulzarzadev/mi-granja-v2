@@ -25,6 +25,32 @@ export const trackFarmCreated = (props?: {
 export const trackRecordCreated = (props: { record_type: string; category?: string }) =>
   track(ANALYTICS_EVENTS.record_created, props)
 
+type NewRecordAnalyticsProps = { record_type: string; animal_count?: number }
+
+export const trackNewRecordOpened = (draft_count: number) =>
+  track(ANALYTICS_EVENTS.new_record_opened, { draft_count })
+
+export const trackNewRecordTypeSelected = (record_type: string) =>
+  track(ANALYTICS_EVENTS.new_record_type_selected, { record_type })
+
+export const trackNewRecordDraftSaved = (props: NewRecordAnalyticsProps) =>
+  track(ANALYTICS_EVENTS.new_record_draft_saved, props)
+
+export const trackNewRecordDraftRestored = (record_type: string) =>
+  track(ANALYTICS_EVENTS.new_record_draft_restored, { record_type })
+
+export const trackNewRecordSubmitted = (props: NewRecordAnalyticsProps) =>
+  track(ANALYTICS_EVENTS.new_record_submitted, props)
+
+export const trackNewRecordCompleted = (props: NewRecordAnalyticsProps) =>
+  track(ANALYTICS_EVENTS.new_record_completed, props)
+
+export const trackNewRecordFailed = (props: NewRecordAnalyticsProps) =>
+  track(ANALYTICS_EVENTS.new_record_failed, props)
+
+export const trackNewRecordUndone = (props: NewRecordAnalyticsProps) =>
+  track(ANALYTICS_EVENTS.new_record_undone, props)
+
 export const trackReminderCreated = (props: {
   reminder_type: string
   priority: string

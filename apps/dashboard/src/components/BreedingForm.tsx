@@ -8,6 +8,7 @@ import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useZodForm } from '@/hooks/useZodForm'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
+import { breedingWarnings } from '@/lib/breeding-warnings'
 import { Animal } from '@/types/animals'
 import { BreedingRecord, generateBreedingId } from '@/types/breedings'
 import ButtonClose from './buttons/ButtonClose'
@@ -204,7 +205,6 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
       if ((animal.status ?? 'activo') !== 'activo') return false
       if (animal.gender !== 'hembra') return false
       if (animal.type !== selectedMale.type) return false
-      if ((animal.computedStage ?? animal.stage) !== 'reproductor') return false
       if (onlyAvailable) {
         if (animal.pregnantAt || animal.birthedAt) return false
         if (busyFemaleIds.has(animal.id)) return false
@@ -540,12 +540,33 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
             showOmitButton
             secondaryLabel={(animal) => {
               const brId = getFemaleBreedingId(animal.id)
-              return brId ? `Empadre: ${brId}` : undefined
+              return [
+                brId ? `Empadre: ${brId}` : '',
+                ...breedingWarnings(animal, selectedMale, animals),
+              ]
+                .filter(Boolean)
+                .join(' · ')
             }}
           />
 
           {femaleIds.length > 0 ? (
             <div className="space-y-3">
+              <aside
+                className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+                aria-label="Edad y parentesco de las hembras"
+              >
+                <p className="font-semibold">
+                  Edad y parentesco · información, no bloquea el empadre
+                </p>
+                {animals
+                  .filter((animal) => femaleIds.includes(animal.id))
+                  .map((female) => (
+                    <p key={female.id} className="mt-2">
+                      <strong>#{female.animalNumber}:</strong>{' '}
+                      {breedingWarnings(female, selectedMale, animals).join(' ')}
+                    </p>
+                  ))}
+              </aside>
               {femalesInOtherBreeding.length > 0 ? (
                 <div className="mb-3 p-2 rounded bg-orange-100 border border-orange-300 text-orange-900 text-sm flex items-center gap-2">
                   <span className="text-xl">⚠️</span>

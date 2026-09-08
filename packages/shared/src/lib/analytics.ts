@@ -27,6 +27,14 @@ export const ANALYTICS_EVENTS = {
   // Core product usage
   farm_created: 'farm_created',
   record_created: 'record_created',
+  new_record_opened: 'new_record_opened',
+  new_record_type_selected: 'new_record_type_selected',
+  new_record_draft_saved: 'new_record_draft_saved',
+  new_record_draft_restored: 'new_record_draft_restored',
+  new_record_submitted: 'new_record_submitted',
+  new_record_completed: 'new_record_completed',
+  new_record_failed: 'new_record_failed',
+  new_record_undone: 'new_record_undone',
   reminder_created: 'reminder_created',
   invitation_sent: 'invitation_sent',
 

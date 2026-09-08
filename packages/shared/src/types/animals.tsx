@@ -348,11 +348,12 @@ export const record_event_type_icons: Record<AnimalRecordEventType, string> = {
 
 export const isMilkRecord = (record: AnimalRecord): record is AnimalMilkRecord =>
   record.type === 'milk' &&
+  !record.undoneAt &&
   typeof record.amountMl === 'number' &&
   typeof record.session === 'string'
 
 export const isWeightRecord = (record: AnimalRecord): record is AnimalWeightRecord =>
-  record.type === 'weight' && typeof record.weightGrams === 'number'
+  record.type === 'weight' && !record.undoneAt && typeof record.weightGrams === 'number'
 
 export const record_categories = [
   'general',
