@@ -767,9 +767,27 @@ export default function ModalNewRecord() {
               )}
               <div className="flex justify-end gap-2">
                 {!completedRecord.undoneAt && (
-                  <Button type="button" onClick={undoCompleted} disabled={isUndoingDeath}>
-                    {isUndoingDeath ? 'Deshaciendo…' : '↶ Deshacer'}
-                  </Button>
+                  <button
+                    type="button"
+                    onClick={undoCompleted}
+                    disabled={isUndoingDeath}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-50"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      className="h-5 w-5 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M9 14 4 9l5-5" />
+                      <path d="M4 9h10.5a4.5 4.5 0 0 1 0 9H13" />
+                    </svg>
+                    {isUndoingDeath ? 'Deshaciendo…' : 'Deshacer'}
+                  </button>
                 )}
                 <Button type="button" onClick={closeModal} disabled={isUndoingDeath}>
                   Cerrar
