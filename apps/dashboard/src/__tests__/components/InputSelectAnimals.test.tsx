@@ -66,13 +66,14 @@ const renderSelector = () => {
 describe('InputSelectAnimals', () => {
   it('ordena por agregación, arete o edad', () => {
     renderSelector()
-    const sort = screen.getByRole('button', { name: 'Ordenar por' })
+    const sort = screen.getByRole('button', { name: 'Ordenar por: Arete' })
 
     expect(getDropdownNumbers()).toEqual(['2-A', '10-A'])
     expect(getSelectedIds()).toEqual(['2', '1'])
 
     fireEvent.click(sort)
     fireEvent.click(screen.getByRole('menuitemradio', { name: 'Agregación' }))
+    expect(screen.getByRole('button', { name: 'Ordenar por: Agregación' })).toBeInTheDocument()
     expect(getDropdownNumbers()).toEqual(['10-A', '2-A'])
     expect(getSelectedIds()).toEqual(['1', '2'])
 
@@ -90,6 +91,32 @@ describe('InputSelectAnimals', () => {
     expect(screen.getByRole('menuitemradio', { name: 'Agregación' })).toBeInTheDocument()
     fireEvent.mouseDown(document.body)
     expect(screen.queryByRole('menuitemradio', { name: 'Agregación' })).not.toBeInTheDocument()
+  })
+
+  it('encuentra aretes aunque se omitan separadores', () => {
+    render(
+      <InputSelectAnimals
+        animals={[
+          {
+            id: 'search-55-h',
+            animalNumber: '55-H',
+            type: 'oveja',
+            gender: 'hembra',
+            stage: 'reproductor',
+          } as (typeof animals)[number],
+        ]}
+        selectedIds={[]}
+        onAdd={jest.fn()}
+        onRemove={jest.fn()}
+        renderOption={(animal) => animal.animalNumber}
+      />,
+    )
+
+    fireEvent.change(screen.getByPlaceholderText(/Buscar por numero/i), {
+      target: { value: '55h' },
+    })
+
+    expect(getDropdownNumbers()).toEqual(['55-H'])
   })
 
   it('oculta el orden cuando solo hay un animal seleccionado', () => {

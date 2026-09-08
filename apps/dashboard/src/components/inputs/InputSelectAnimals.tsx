@@ -56,6 +56,13 @@ const animalSortOptions: Array<{ value: AnimalSortOption; label: string }> = [
   { value: 'age-asc', label: 'Edad' },
 ]
 
+const normalizeAnimalSearch = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '')
+
 const compareAnimalNumbers = (a: Animal, b: Animal, direction: AnimalSortDirection) => {
   const comparison = (a.animalNumber || '').localeCompare(b.animalNumber || '', undefined, {
     numeric: true,
@@ -151,14 +158,16 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     if (!query.trim()) {
       return pool.slice(0, 30)
     }
-    const q = query.toLowerCase()
+    const q = normalizeAnimalSearch(query)
+    if (!q) {
+      return pool.slice(0, 30)
+    }
+
     return pool
-      .filter(
-        (a) =>
-          (a.animalNumber || '').toLowerCase().includes(q) ||
-          (a.name || '').toLowerCase().includes(q) ||
-          (a.type || '').toLowerCase().includes(q) ||
-          (a.breed || '').toLowerCase().includes(q),
+      .filter((a) =>
+        [a.animalNumber, a.name, a.type, a.breed].some((value) =>
+          normalizeAnimalSearch(value || '').includes(q),
+        ),
       )
       .slice(0, 30)
   }, [animals, selectedIds, query, filterFn, sortOption, sortDirection])
@@ -214,11 +223,21 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     updateDropdownPosition()
     window.addEventListener('resize', updateDropdownPosition)
     window.addEventListener('scroll', updateDropdownPosition, true)
+
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined' && containerRef.current
+        ? new ResizeObserver(updateDropdownPosition)
+        : null
+    if (resizeObserver && containerRef.current) {
+      resizeObserver.observe(containerRef.current)
+    }
+
     return () => {
       window.removeEventListener('resize', updateDropdownPosition)
       window.removeEventListener('scroll', updateDropdownPosition, true)
+      resizeObserver?.disconnect()
     }
-  }, [compactDropdown, isOpen])
+  }, [compactDropdown, isOpen, selectedIds.length])
 
   // Scroll into view on keyboard nav
   useEffect(() => {
@@ -315,19 +334,21 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
 
   const hiddenCount =
     visibleChipCount !== null && !chipsExpanded ? selectedAnimals.length - visibleChipCount : 0
+  const selectedSortLabel =
+    animalSortOptions.find((option) => option.value === sortOption)?.label ?? 'Arete'
 
   const sortControl = selectedAnimals.length > 1 && (
     <div ref={sortMenuRef} className="relative flex shrink-0 items-center gap-1">
       <button
         type="button"
-        aria-label="Ordenar por"
+        aria-label={`Ordenar por: ${selectedSortLabel}`}
         aria-haspopup="menu"
         aria-expanded={isSortMenuOpen}
         aria-controls={sortId}
         onClick={() => setIsSortMenuOpen((open) => !open)}
         className="inline-flex h-8 cursor-pointer items-center rounded-md border border-gray-300 bg-white px-2 text-xs font-medium text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-50 focus:border-green-400 focus:outline-none focus:ring-1 focus:ring-green-200"
       >
-        Ordenar por
+        Ordenar por: {selectedSortLabel}
       </button>
       {isSortMenuOpen && (
         <div
