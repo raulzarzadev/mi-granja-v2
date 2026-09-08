@@ -77,6 +77,12 @@ const RecordsTab: React.FC = () => {
   const [sortKey, setSortKey] = useState<SortKey>('date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [historyFrom, setHistoryFrom] = useState(() => {
+    const date = new Date()
+    date.setHours(0, 0, 0, 0)
+    date.setDate(date.getDate() - 6)
+    return date.getTime()
+  })
   const [detailRecord, setDetailRecord] = useState<TableRow | null>(null)
 
   // ─── URL sync ───
@@ -259,8 +265,30 @@ const RecordsTab: React.FC = () => {
     }
   }
 
+  const customDateRange = Boolean(filters.dateFrom || filters.dateTo)
+  const periodRows = useMemo(
+    () =>
+      groupedRows.filter(
+        (row) => customDateRange || getRecordCreationDate(row).getTime() >= historyFrom,
+      ),
+    [groupedRows, customDateRange, historyFrom],
+  )
+  const hasOlderRecords =
+    !customDateRange &&
+    groupedRows.some((row) => getRecordCreationDate(row).getTime() < historyFrom)
+  const loadOlderRecords = () => {
+    const olderDates = groupedRows
+      .map((row) => getRecordCreationDate(row).getTime())
+      .filter((date) => date < historyFrom)
+    const next = new Date(Math.max(...olderDates))
+    next.setHours(0, 0, 0, 0)
+    next.setDate(next.getDate() - 6)
+    setHistoryFrom(next.getTime())
+    setVisibleCount((count) => Math.max(count, periodRows.length) + PAGE_SIZE)
+  }
+
   const sortedRows = useMemo(() => {
-    const rows = [...groupedRows]
+    const rows = [...periodRows]
     const dir = sortDir === 'asc' ? 1 : -1
 
     rows.sort((a, b) => {
@@ -302,7 +330,7 @@ const RecordsTab: React.FC = () => {
     })
 
     return rows
-  }, [groupedRows, sortKey, sortDir])
+  }, [periodRows, sortKey, sortDir])
 
   // Paginated
   const visibleRows = sortedRows.slice(0, visibleCount)
@@ -642,6 +670,7 @@ const RecordsTab: React.FC = () => {
             )}
           </div>
           <span className="text-xs text-gray-500 whitespace-nowrap">
+            {!customDateRange && <span>Desde {format(historyFrom, 'dd/MM/yyyy')} · </span>}
             <span className="font-semibold text-gray-700">{sortedRows.length}</span> registros
           </span>
         </div>
@@ -819,6 +848,17 @@ const RecordsTab: React.FC = () => {
               Mostrando {visibleRows.length} de {sortedRows.length}
             </div>
           </>
+        )}
+        {!hasMore && hasOlderRecords && (
+          <div className="border-t px-4 py-3 text-center">
+            <button
+              type="button"
+              onClick={loadOlderRecords}
+              className="text-sm font-medium text-gray-600 hover:text-gray-900"
+            >
+              Cargar más · registros anteriores
+            </button>
+          </div>
         )}
       </div>
 
