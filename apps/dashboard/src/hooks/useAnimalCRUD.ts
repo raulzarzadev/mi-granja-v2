@@ -10,11 +10,13 @@ import {
   onSnapshot,
   orderBy,
   query,
+  setDoc,
   updateDoc,
   where,
 } from 'firebase/firestore'
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { addAnimalRecord } from '@/features/animalRecords/animalRecordsSlice'
 import { selectAnimalsWithComputedStage } from '@/features/animals/animalsSelectors'
 import { setAnimals } from '@/features/animals/animalsSlice'
 import { setError } from '@/features/auth/authSlice'
@@ -27,13 +29,14 @@ import {
   trackAnimalUpdated,
   trackRecordCreated,
 } from '@/lib/analytics/track'
+import { animalMatchesSearch } from '@/lib/animal-search'
 import { computeAnimalStage, isActiveCalf } from '@/lib/animal-utils'
-import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { db } from '@/lib/firebase'
 import {
   Animal,
   type AnimalMilkRecord,
   AnimalRecord,
+  AnimalRecordDocument,
   AnimalStatus,
   type AnimalWeightRecord,
   WeanNextStage,
@@ -52,6 +55,8 @@ function latestWeightGrams(records: AnimalRecord[]): number | null {
   return latest?.weightGrams ?? null
 }
 
+const EMPTY_ANIMAL_RECORDS: AnimalRecordDocument[] = []
+
 /**
  * Hook personalizado para el manejo de animales
  * Gestiona CRUD operations con Firestore y estado global con Redux
@@ -63,7 +68,38 @@ export const useAnimalCRUD = () => {
   const { currentFarm } = useSelector((state: RootState) => state.farm)
   const { wrapWithAdminMetadata } = useAdminActions()
   // Animales con `computedStage` pre-calculado (usa breedingRecords + lista completa)
-  const animals = useSelector(selectAnimalsWithComputedStage)
+  const storedAnimals = useSelector(selectAnimalsWithComputedStage)
+  const animalRecords = useSelector(
+    (state: RootState) => state.animalRecords?.records ?? EMPTY_ANIMAL_RECORDS,
+  )
+
+  // Los registros masivos viven en su propio documento. Se mezclan sólo en
+  // memoria para mantener compatibles las pantallas que consumen `animal.records`.
+  const animals = useMemo(() => {
+    if (animalRecords.length === 0) return storedAnimals
+
+    const recordsByAnimal = new Map<string, AnimalRecordDocument[]>()
+    for (const record of animalRecords) {
+      for (const animalId of record.animals) {
+        const records = recordsByAnimal.get(animalId) || []
+        records.push(record)
+        recordsByAnimal.set(animalId, records)
+      }
+    }
+
+    return storedAnimals.map((animal) => {
+      const existingIds = new Set((animal.records || []).map((record) => record.id))
+      const additionalRecords = (recordsByAnimal.get(animal.id) || [])
+        .filter((record) => !existingIds.has(record.id))
+        .map((record) => ({
+          ...record,
+          appliedToAnimals: record.appliedToAnimals ?? record.animals,
+        }))
+      return additionalRecords.length > 0
+        ? { ...animal, records: [...(animal.records || []), ...additionalRecords] }
+        : animal
+    })
+  }, [animalRecords, storedAnimals])
 
   const [isLoading, setIsLoading] = useState(false)
 
@@ -389,19 +425,7 @@ export const useAnimalCRUD = () => {
       if (filters.breed && animal.breed !== filters.breed) return false
       if (filters.stage && computeAnimalStage(animal) !== filters.stage) return false
       if (filters.gender && animal.gender !== filters.gender) return false
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase()
-        if (
-          !(
-            animal.animalNumber.toLowerCase().includes(searchLower) ||
-            animal.id.toLowerCase().includes(searchLower) ||
-            animal.name?.toLowerCase().includes(searchLower) ||
-            animal.breed?.toLowerCase().includes(searchLower) ||
-            animal.notes?.toLowerCase().includes(searchLower)
-          )
-        )
-          return false
-      }
+      if (filters.search && !animalMatchesSearch(animal, filters.search)) return false
       return true
     })
   }
@@ -615,35 +639,41 @@ export const useAnimalCRUD = () => {
       return undefined
     }
 
+    if (!currentFarm?.id) {
+      dispatch(setError('Selecciona una granja antes de crear registros'))
+      return undefined
+    }
+
     if (animalIds.length === 0) {
       dispatch(setError('No se han seleccionado animales'))
       return undefined
     }
 
+    const uniqueAnimalIds = [...new Set(animalIds)]
     const cleanedRecordData = cleanUndefinedFields(recordData)
 
     const newRecord: AnimalRecord = cleanUndefinedFields({
       ...cleanedRecordData,
       id: crypto.randomUUID(),
-      appliedToAnimals: animalIds,
+      appliedToAnimals: uniqueAnimalIds,
       isBulkApplication: true,
       createdAt: new Date(),
       createdBy: user.id,
     })
 
-    const existingRecordsById = new Map<string, AnimalRecord[]>()
-    for (const id of animalIds) {
-      const animal = animals.find((a) => a.id === id)
-      if (animal) existingRecordsById.set(id, animal.records || [])
+    const { appliedToAnimals: _appliedToAnimals, ...recordFields } = newRecord
+    const recordDocument: AnimalRecordDocument = {
+      ...recordFields,
+      farmId: currentFarm.id,
+      animals: uniqueAnimalIds,
     }
 
-    await batchUpdateAnimals(
-      animalIds.filter((id) => existingRecordsById.has(id)),
-      ({ id }) => ({
-        records: [...(existingRecordsById.get(id) || []), newRecord],
-      }),
-      { onProgress: opts?.onProgress },
-    )
+    // Una sola escritura pequeña. No vuelve a enviar los documentos ni los
+    // historiales completos de los animales seleccionados.
+    await setDoc(doc(db, 'animalRecords', newRecord.id), cleanUndefinedFields(recordDocument))
+    dispatch(addAnimalRecord(recordDocument))
+    opts?.onProgress?.(uniqueAnimalIds.length, uniqueAnimalIds.length)
+    trackRecordCreated({ record_type: newRecord.type, category: newRecord.category })
     console.log('Registro masivo aplicado a:', animalIds.length, 'animales')
     return newRecord.id
   }

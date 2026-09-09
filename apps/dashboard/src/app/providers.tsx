@@ -10,6 +10,7 @@ import { setUser } from '@/features/auth/authSlice'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { RootState, store } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useAnimalRecords } from '@/hooks/useAnimalRecords'
 import { useBilling } from '@/hooks/useBilling'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
@@ -70,6 +71,7 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
 
   //* ==================================== FARM ANIMALS LISTENER
   const { getFarmAnimals } = useAnimalCRUD()
+  const { getFarmRecords } = useAnimalRecords()
   const currentFarm = useSelector((state: RootState) => state.farm.currentFarm)
   useEffect(() => {
     if (currentFarm) {
@@ -77,6 +79,12 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
       return () => unsub?.()
     }
   }, [currentFarm?.id])
+
+  //* ==================================== MASS RECORDS LISTENER
+  useEffect(() => {
+    const unsub = getFarmRecords()
+    return () => unsub?.()
+  }, [getFarmRecords])
 
   //* ==================================== BREEDINGS LISTENER
   const { getFarmBreedings } = useBreedingCRUD()

@@ -3,6 +3,7 @@ import type { SaleCompletionSummary } from '@/components/ModalSaleForm'
 import type { RootState } from '@/features/store'
 import { animalDeathReasonLabels } from '@/lib/animal-discharge'
 import {
+  commitCentralRecord,
   commitMovement,
   type MovementChange,
   type MovementPlan,
@@ -46,6 +47,17 @@ export function useRecordMovements(animals: Animal[] = []) {
   const active = (animal: any) => {
     if (!animal || (animal.status ?? 'activo') !== 'activo')
       throw new Error('Selecciona animales activos.')
+  }
+  const validateSelectedAnimals = (ids: string[]) => {
+    const uniqueIds = [...new Set(ids)]
+    if (!uniqueIds.length) throw new Error('Selecciona al menos un animal.')
+    for (const animalId of uniqueIds) {
+      const animal = animals.find((candidate) => candidate.id === animalId)
+      if (!animal || (animal.farmId && animal.farmId !== context.farmId))
+        throw new Error('Un animal no pertenece a la granja o ya no existe.')
+      active(animal)
+    }
+    return uniqueIds
   }
   const execute = (
     id: string,
@@ -385,45 +397,34 @@ export function useRecordMovements(animals: Animal[] = []) {
       if (input.cost != null && (!Number.isFinite(input.cost) || input.cost < 0))
         throw new Error('Ingresa un costo válido.')
 
-      return execute(id, ids, [], (docs) => {
-        const description = input.description?.trim() ?? ''
-        const treatment = input.treatment?.trim() ?? ''
-        const batch = input.batch?.trim() ?? ''
-        const veterinarian = input.veterinarian?.trim() ?? ''
-        const changes: MovementChange[] = ids.map((animalId) => {
-          active(docs.get(`animals/${animalId}`))
-          return {
-            path: `animals/${animalId}`,
-            data: {},
-          }
-        })
+      const selectedIds = validateSelectedAnimals(ids)
+      const description = input.description?.trim() ?? ''
+      const treatment = input.treatment?.trim() ?? ''
+      const batch = input.batch?.trim() ?? ''
+      const veterinarian = input.veterinarian?.trim() ?? ''
 
-        return {
-          changes,
-          record: {
-            type: 'health',
-            category: input.category,
-            title,
-            date: input.date,
-            description,
-            notes: description,
-            ...(input.severity ? { severity: input.severity } : {}),
-            ...(input.isResolved ? { isResolved: true } : {}),
-            ...(input.resolvedDate ? { resolvedDate: input.resolvedDate } : {}),
-            ...(treatment ? { treatment } : {}),
-            ...(input.nextDueDate ? { nextDueDate: input.nextDueDate } : {}),
-            ...(batch ? { batch } : {}),
-            ...(veterinarian ? { veterinarian } : {}),
-            ...(input.cost != null ? { cost: input.cost } : {}),
-            details: {
-              Tipo: record_category_labels[input.category],
-              ...(treatment ? { Tratamiento: treatment } : {}),
-              ...(input.nextDueDate
-                ? { 'Próxima fecha': input.nextDueDate.toLocaleDateString('es-MX') }
-                : {}),
-            },
-          },
-        }
+      return commitCentralRecord(context, id, selectedIds, {
+        type: 'health',
+        category: input.category,
+        title,
+        date: input.date,
+        description,
+        notes: description,
+        ...(input.severity ? { severity: input.severity } : {}),
+        ...(input.isResolved ? { isResolved: true } : {}),
+        ...(input.resolvedDate ? { resolvedDate: input.resolvedDate } : {}),
+        ...(treatment ? { treatment } : {}),
+        ...(input.nextDueDate ? { nextDueDate: input.nextDueDate } : {}),
+        ...(batch ? { batch } : {}),
+        ...(veterinarian ? { veterinarian } : {}),
+        ...(input.cost != null ? { cost: input.cost } : {}),
+        details: {
+          Tipo: record_category_labels[input.category],
+          ...(treatment ? { Tratamiento: treatment } : {}),
+          ...(input.nextDueDate
+            ? { 'Próxima fecha': input.nextDueDate.toLocaleDateString('es-MX') }
+            : {}),
+        },
       })
     },
     birth: (id: string, form: BirthRecord, breeding: BreedingRecord | null) => {

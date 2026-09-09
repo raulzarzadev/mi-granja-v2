@@ -52,6 +52,16 @@ export interface AnimalRecord {
   updatedAt?: Date
 }
 
+/**
+ * Registro persistido una sola vez para una aplicación masiva.
+ * `animals` contiene únicamente los IDs afectados; no duplica el registro
+ * dentro de cada documento de animal.
+ */
+export interface AnimalRecordDocument extends AnimalRecord {
+  farmId: string
+  animals: string[]
+}
+
 export type LactationPurpose = 'offspring' | 'dairy' | 'dual'
 export type LactationStatus = 'active' | 'dry'
 export type MilkingSession = 'morning' | 'afternoon' | 'evening' | 'total'

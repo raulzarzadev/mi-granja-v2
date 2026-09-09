@@ -4,6 +4,7 @@ import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import AnimalBadges from '@/components/AnimalBadges'
 import ButtonClose from '@/components/buttons/ButtonClose'
+import { animalMatchesSearch } from '@/lib/animal-search'
 import { animalAge } from '@/lib/animal-utils'
 import { Animal } from '@/types/animals'
 
@@ -24,6 +25,8 @@ export interface InputSelectAnimalsProps {
   label?: string
   /** Contenido auxiliar alineado con el input, como filtros del selector */
   inputAccessory?: React.ReactNode
+  /** Acción opcional junto al input, como lectura de una lista de imágenes */
+  searchAction?: React.ReactNode
   /** IDs que no se pueden quitar (pre-seleccionados fijos) */
   fixedIds?: string[]
   /** Filtro adicional sobre los animales disponibles */
@@ -55,13 +58,6 @@ const animalSortOptions: Array<{ value: AnimalSortOption; label: string }> = [
   { value: 'number', label: 'Arete' },
   { value: 'age-asc', label: 'Edad' },
 ]
-
-const normalizeAnimalSearch = (value: string) =>
-  value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]/g, '')
 
 const compareAnimalNumbers = (a: Animal, b: Animal, direction: AnimalSortDirection) => {
   const comparison = (a.animalNumber || '').localeCompare(b.animalNumber || '', undefined, {
@@ -108,6 +104,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   placeholder = 'Buscar por numero, nombre, tipo o raza...',
   label,
   inputAccessory,
+  searchAction,
   fixedIds = [],
   filterFn,
   renderOption,
@@ -158,18 +155,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     if (!query.trim()) {
       return pool.slice(0, 30)
     }
-    const q = normalizeAnimalSearch(query)
-    if (!q) {
-      return pool.slice(0, 30)
-    }
-
-    return pool
-      .filter((a) =>
-        [a.animalNumber, a.name, a.type, a.breed].some((value) =>
-          normalizeAnimalSearch(value || '').includes(q),
-        ),
-      )
-      .slice(0, 30)
+    return pool.filter((animal) => animalMatchesSearch(animal, query)).slice(0, 30)
   }, [animals, selectedIds, query, filterFn, sortOption, sortDirection])
 
   // Close on outside click
@@ -241,8 +227,13 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
 
   // Scroll into view on keyboard nav
   useEffect(() => {
-    if (highlightIndex >= 0 && itemRefs.current[highlightIndex]) {
-      itemRefs.current[highlightIndex]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    const highlightedItem = itemRefs.current[highlightIndex]
+    if (
+      highlightIndex >= 0 &&
+      highlightedItem &&
+      typeof highlightedItem.scrollIntoView === 'function'
+    ) {
+      highlightedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
     }
   }, [highlightIndex])
 
@@ -264,7 +255,11 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       setIsOpen(true)
-      setHighlightIndex((prev) => (prev < dropdownItems.length - 1 ? prev + 1 : prev))
+      setHighlightIndex((prev) => {
+        if (dropdownItems.length <= 1) return 0
+        if (prev < 0) return 1
+        return prev < dropdownItems.length - 1 ? prev + 1 : prev
+      })
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setHighlightIndex((prev) => (prev > 0 ? prev - 1 : -1))
@@ -475,29 +470,32 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
         <>
           {inputAccessory && <div className="mb-1 flex justify-end">{inputAccessory}</div>}
           <div className="relative">
-            <input
-              ref={inputRef}
-              id={inputId}
-              type="text"
-              role="combobox"
-              aria-expanded={isOpen}
-              aria-autocomplete="list"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value)
-                setIsOpen(true)
-                setHighlightIndex(-1)
-              }}
-              onFocus={() => setIsOpen(true)}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              disabled={disabled}
-              className={`w-full border rounded-lg px-3 py-2 text-sm transition-colors ${
-                isOpen
-                  ? 'ring-1 ring-green-400 border-green-400'
-                  : 'border-gray-300 focus:ring-1 focus:ring-green-400 focus:border-green-400'
-              } disabled:bg-gray-100 disabled:cursor-not-allowed`}
-            />
+            <div className="flex items-start gap-2">
+              <input
+                ref={inputRef}
+                id={inputId}
+                type="text"
+                role="combobox"
+                aria-expanded={isOpen}
+                aria-autocomplete="list"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value)
+                  setIsOpen(true)
+                  setHighlightIndex(-1)
+                }}
+                onFocus={() => setIsOpen(true)}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
+                disabled={disabled}
+                className={`min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                  isOpen
+                    ? 'border-green-400 ring-1 ring-green-400'
+                    : 'border-gray-300 focus:border-green-400 focus:ring-1 focus:ring-green-400'
+                } disabled:cursor-not-allowed disabled:bg-gray-100`}
+              />
+              {searchAction && <div className="shrink-0">{searchAction}</div>}
+            </div>
             {mode === 'multi' && !isOpen && selectedIds.length === 0 && (
               <p className="text-xs text-gray-400 mt-1">
                 Escribe un numero o nombre y presiona Enter para agregar.
@@ -520,29 +518,52 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                   }}
                   className="z-[100] overflow-y-auto rounded-lg border border-gray-100 bg-white shadow-lg"
                 >
-                  {/* Cerrar selector */}
-                  <div className="sticky top-0 z-10 flex justify-end border-b border-gray-100 bg-white/95 px-3 py-1.5 backdrop-blur-sm">
+                  {/* Ayuda y cerrar selector */}
+                  <div className="sticky top-0 z-10 flex min-w-0 items-center justify-between gap-2 border-b border-gray-100 bg-white/95 px-3 py-1.5 backdrop-blur-sm">
+                    {dropdownItems.length > 0 ? (
+                      <span className="min-w-0 truncate text-[11px] text-gray-500">
+                        {query.trim() ? (
+                          <>
+                            <kbd className="inline-flex h-5 items-center rounded border border-gray-300 bg-white px-1.5 font-mono text-[10px] leading-none">
+                              Enter
+                            </kbd>{' '}
+                            agrega primero ·{' '}
+                            <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-gray-300 bg-white px-1.5 font-mono text-[10px] leading-none">
+                              ↓
+                            </kbd>{' '}
+                            selecciona otra
+                          </>
+                        ) : (
+                          <>
+                            <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-gray-300 bg-white px-1.5 font-mono text-[10px] leading-none">
+                              ↓
+                            </kbd>{' '}
+                            seleccionar
+                            {selectedIds.length > 0 && (
+                              <>
+                                {' · '}
+                                <kbd className="inline-flex h-5 items-center rounded border border-gray-300 bg-white px-1.5 font-mono text-[10px] leading-none">
+                                  Enter
+                                </kbd>{' '}
+                                agregar
+                              </>
+                            )}
+                          </>
+                        )}
+                      </span>
+                    ) : (
+                      <span />
+                    )}
                     <ButtonClose
                       showTitle="Cerrar selector"
                       title="Cerrar"
-                      className="text-gray-400 hover:text-gray-600"
+                      className="shrink-0 text-gray-400 hover:text-gray-600"
                       onClick={() => {
                         setIsOpen(false)
                         setHighlightIndex(-1)
                       }}
                     />
                   </div>
-
-                  {/* Indicacion de Enter */}
-                  {query.trim() && dropdownItems.length > 0 && (
-                    <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
-                      Presiona{' '}
-                      <kbd className="px-1 py-0.5 bg-white border border-gray-300 rounded text-[10px] font-mono">
-                        Enter
-                      </kbd>{' '}
-                      para agregar el primero
-                    </div>
-                  )}
 
                   {dropdownItems.length > 0 ? (
                     dropdownItems.map((animal, index) => {
@@ -556,7 +577,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                             itemRefs.current[index] = el
                           }}
                           role="option"
-                          aria-selected={isHighlighted}
+                          aria-selected={isHighlighted || Boolean(isFirstMatch)}
                           onMouseDown={(e) => {
                             e.preventDefault()
                             handleSelect(animal.id)

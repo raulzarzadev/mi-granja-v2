@@ -127,6 +127,30 @@ export const aiModelResponseSchema = z.discriminatedUnion('kind', [
 
 export type AiModelResponse = z.infer<typeof aiModelResponseSchema>
 
+export const animalListAiResponseSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        raw: z.string().trim().min(1),
+        candidate: z.string().trim().min(1),
+        confidence: z.enum(['high', 'medium', 'low']),
+        imageIndex: z.number().int().min(0).max(5),
+        box: z
+          .object({
+            x: z.number().min(0).max(1000),
+            y: z.number().min(0).max(1000),
+            width: z.number().positive().max(1000),
+            height: z.number().positive().max(1000),
+          })
+          .optional(),
+      }),
+    )
+    .max(150),
+  notes: z.string().trim().default(''),
+})
+
+export type AnimalListAiResponse = z.infer<typeof animalListAiResponseSchema>
+
 export interface AiUsageResult {
   limit: number
   used: number

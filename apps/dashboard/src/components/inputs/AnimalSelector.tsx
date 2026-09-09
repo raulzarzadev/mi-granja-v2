@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import AnimalBadges from '@/components/AnimalBadges'
+import { animalMatchesSearch } from '@/lib/animal-search'
 import { animalAge } from '@/lib/animal-utils'
 import { Animal, animal_icon, gender_icon } from '@/types/animals'
 
@@ -51,16 +52,7 @@ const AnimalSelector: React.FC<AnimalSelectorProps> = ({
     let available = animals.filter((a) => !selectedIds.includes(a.id))
     if (filterFn) available = available.filter(filterFn)
     if (!query.trim()) return available.slice(0, 20)
-    const q = query.toLowerCase()
-    return available
-      .filter(
-        (a) =>
-          (a.animalNumber || '').toLowerCase().includes(q) ||
-          (a.name || '').toLowerCase().includes(q) ||
-          (a.type || '').toLowerCase().includes(q) ||
-          (a.breed || '').toLowerCase().includes(q),
-      )
-      .slice(0, 20)
+    return available.filter((animal) => animalMatchesSearch(animal, query)).slice(0, 20)
   }, [animals, selectedIds, query, filterFn])
 
   // Close on outside click

@@ -5,6 +5,8 @@ import BreedingForm from '@/components/BreedingForm'
 import Button from '@/components/buttons/Button'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
 import { Modal } from '@/components/Modal'
+import ModalAnimalListReader from '@/components/ModalAnimalListReader'
+import { ANIMAL_LIST_READER_ENABLED } from '@/lib/animal-list-feature'
 import ModalBirthForm from '@/components/ModalBirthForm'
 import type { SaleCompletionSummary } from '@/components/ModalSaleForm'
 import ModalSaleForm from '@/components/ModalSaleForm'
@@ -274,6 +276,7 @@ export default function ModalNewRecord() {
   const [selectedOption, setSelectedOption] = useState<RecordOptionId | null>(null)
   const [selectedAnimalIds, setSelectedAnimalIds] = useState<string[]>([])
   const [isMontaFormOpen, setIsMontaFormOpen] = useState(false)
+  const [isAnimalListReaderOpen, setIsAnimalListReaderOpen] = useState(false)
   const [onlyAvailableMontaFemales, setOnlyAvailableMontaFemales] = useState(true)
   const [isSaleOpen, setIsSaleOpen] = useState(false)
   const [isBirthOpen, setIsBirthOpen] = useState(false)
@@ -395,6 +398,18 @@ export default function ModalNewRecord() {
           .map((animal) => animal.id),
       ),
     [busyMontaFemaleIds, montaFemales],
+  )
+  const selectableAnimals = useMemo(
+    () =>
+      animals.filter((animal) => {
+        if ((animal.status ?? 'activo') !== 'activo') return false
+        if (selectedOption === 'destete') return animal.stage === 'cria' && !animal.isWeaned
+        if (selectedOption === 'parto')
+          return animal.gender === 'hembra' && Boolean(animal.pregnantAt)
+        if (selectedOption === 'leche') return animal.gender === 'hembra'
+        return true
+      }),
+    [animals, selectedOption],
   )
   const selectedBirthAnimal = selectedAnimalIds.length === 1 ? selectedAnimals[0] : undefined
   const selectedBirthRecord = useMemo(() => {
@@ -547,6 +562,7 @@ export default function ModalNewRecord() {
     setSelectedAnimalIds([])
     setActiveDraftId(null)
     setIsMontaFormOpen(false)
+    setIsAnimalListReaderOpen(false)
     setIsSaleOpen(false)
     setIsBirthOpen(false)
     setActionDate(toInputDate(new Date()))
@@ -1172,14 +1188,7 @@ export default function ModalNewRecord() {
                 </div>
               ) : (
                 <InputSelectAnimals
-                  animals={animals.filter((a) => {
-                    if ((a.status ?? 'activo') !== 'activo') return false
-                    if (selectedOption === 'destete') return a.stage === 'cria' && !a.isWeaned
-                    if (selectedOption === 'parto')
-                      return a.gender === 'hembra' && Boolean(a.pregnantAt)
-                    if (selectedOption === 'leche') return a.gender === 'hembra'
-                    return true
-                  })}
+                  animals={selectableAnimals}
                   selectedIds={selectedAnimalIds}
                   onAdd={(animalId) => {
                     setSelectedAnimalIds((current) => [...current, animalId])
@@ -1197,6 +1206,18 @@ export default function ModalNewRecord() {
                   }
                   label="Animales a los que aplica"
                   placeholder="Buscar por número, nombre, tipo o raza..."
+                  searchAction={
+                    ANIMAL_LIST_READER_ENABLED &&
+                    <button
+                      type="button"
+                      onClick={() => setIsAnimalListReaderOpen(true)}
+                      aria-label="Leer lista de aretes con imágenes"
+                      title="Leer lista de aretes con imágenes"
+                      className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border border-green-300 bg-green-50 px-2 text-lg text-green-700 transition hover:border-green-500 hover:bg-green-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2"
+                    >
+                      <span aria-hidden="true">✨</span>
+                    </button>
+                  }
                   compactDropdown
                 />
               )}
@@ -1898,6 +1919,18 @@ export default function ModalNewRecord() {
           )}
         </fieldset>
       </Modal>
+
+      <ModalAnimalListReader
+        isOpen={ANIMAL_LIST_READER_ENABLED && isAnimalListReaderOpen}
+        onClose={() => setIsAnimalListReaderOpen(false)}
+        farmId={movements.context.farmId}
+        animals={selectableAnimals}
+        selectedIds={selectedAnimalIds}
+        onApply={(animalIds) => {
+          setSelectedAnimalIds((current) => [...new Set([...current, ...animalIds])])
+          setActionError(null)
+        }}
+      />
 
       <ModalSaleForm
         isOpen={isSaleOpen}

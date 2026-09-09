@@ -1,4 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit'
+import { animalRecordsReducer } from './animalRecords/animalRecordsSlice'
 import { animalsReducer } from './animals/animalsSlice'
 import { authReducer } from './auth/authSlice'
 import { billingReducer } from './billing/billingSlice'
@@ -12,6 +13,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     animals: animalsReducer,
+    animalRecords: animalRecordsReducer,
     billing: billingReducer,
     breeding: breedingReducer,
     reminders: remindersReducer,

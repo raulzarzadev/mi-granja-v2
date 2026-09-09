@@ -3,7 +3,11 @@
 import { toDate } from 'date-fns'
 import React, { useEffect, useMemo, useState } from 'react'
 import { Controller, useWatch } from 'react-hook-form'
+import { useSelector } from 'react-redux'
 import { z } from 'zod'
+import ModalAnimalListReader from '@/components/ModalAnimalListReader'
+import { ANIMAL_LIST_READER_ENABLED } from '@/lib/animal-list-feature'
+import type { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useZodForm } from '@/hooks/useZodForm'
@@ -81,6 +85,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
 }) => {
   const { remove } = useAnimalCRUD()
   const { breedingRecords } = useBreedingCRUD()
+  const { currentFarm } = useSelector((state: RootState) => state.farm)
 
   const defaultValues = useMemo<FormSchema>(() => {
     const normalizedFemaleInfo: FormSchema['femaleBreedingInfo'] =
@@ -184,6 +189,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   }, [animals, maleId])
 
   const [onlyAvailable, setOnlyAvailable] = useState(true)
+  const [isAnimalListReaderOpen, setIsAnimalListReaderOpen] = useState(false)
 
   // IDs de hembras en empadres activos (gestantes o pendientes de parto)
   const busyFemaleIds = useMemo(() => {
@@ -440,7 +446,8 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   const { errors, isSubmitting } = form.formState
 
   return (
-    <Form form={form} onSubmit={onSubmitForm} className="space-y-4">
+    <>
+      <Form form={form} onSubmit={onSubmitForm} className="space-y-4">
       <TextField
         name="breedingId"
         label="ID de Empadre"
@@ -534,6 +541,18 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                 Solo hembras disponibles
                 <span className="text-gray-400">({filteredFemales.length})</span>
               </label>
+            }
+            searchAction={
+              ANIMAL_LIST_READER_ENABLED &&
+              <button
+                type="button"
+                onClick={() => setIsAnimalListReaderOpen(true)}
+                aria-label="Leer lista de aretes con imágenes"
+                title="Leer lista de aretes con imágenes"
+                className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border border-green-300 bg-green-50 px-2 text-lg text-green-700 transition hover:border-green-500 hover:bg-green-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2"
+              >
+                <span aria-hidden="true">✨</span>
+              </button>
             }
             placeholder={`Buscar hembra ${selectedMale.type} por numero...`}
             disabled={!selectedMale || isLoading || isSubmitting}
@@ -743,7 +762,22 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                     : 'Registrar Empadre'}
         </button>
       </div>
-    </Form>
+      </Form>
+      <ModalAnimalListReader
+        isOpen={ANIMAL_LIST_READER_ENABLED && isAnimalListReaderOpen}
+        onClose={() => setIsAnimalListReaderOpen(false)}
+        farmId={currentFarm?.id ?? ''}
+        animals={filteredFemales}
+        selectedIds={femaleIds}
+        onApply={(animalIds) => {
+          form.setValue('femaleIds', [...new Set([...femaleIds, ...animalIds])], {
+            shouldDirty: true,
+            shouldValidate: true,
+          })
+          form.clearErrors('femaleIds')
+        }}
+      />
+    </>
   )
 }
 

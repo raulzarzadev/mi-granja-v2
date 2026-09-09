@@ -1,7 +1,8 @@
 import { getAdminFirestore } from '@/lib/firebase-admin'
+import { parseAnimalListResponse } from './animal-list-response'
 import { type AiProvider, getAiModelConfig, getEnabledProviderOrder } from './model-config'
 import { resolveAiApiKey } from './provider-credentials'
-import { AiModelResponse, aiModelResponseSchema } from './types'
+import { AiModelResponse, AnimalListAiResponse, aiModelResponseSchema } from './types'
 
 const responseSchema = {
   type: 'object',
@@ -11,6 +12,29 @@ const responseSchema = {
     message: { type: 'string' },
   },
   required: ['kind', 'message'],
+}
+
+const animalListResponseSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    items: {
+      type: 'array',
+      // Gemini rejects large maxItems constraints; enforce the limit with Zod instead.
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          t: { type: 'string' },
+          c: { enum: ['high', 'medium', 'low'] },
+          i: { type: 'integer' },
+        },
+        required: ['t', 'c', 'i'],
+      },
+    },
+    notes: { type: 'string' },
+  },
+  required: ['items', 'notes'],
 }
 
 const CURRENT_DOMAIN_RULES = `
@@ -328,4 +352,183 @@ export async function callAiProvider({
       ? 'No hay proveedores de IA habilitados.'
       : 'El asistente no está disponible. El administrador debe revisar sus proveedores.',
   )
+}
+
+const ANIMAL_LIST_SYSTEM_PROMPT = `Eres un lector de listas de aretes para Mi Granja.
+
+Analiza todas las imágenes y transcribe únicamente los números o identificadores de arete que aparezcan en listas manuscritas o impresas. Cada renglón o elemento es un item y debes conservar duplicados porque la cantidad de renglones importa.
+
+Reglas:
+- No inventes animales ni completes una lista con datos que no se vean.
+- t es la transcripción del arete conservando letras, números y separadores visibles. No completes caracteres dudosos.
+- c es high, medium o low según la legibilidad.
+- i es el índice de imagen empezando en 0. Solo transcribe los aretes; no devuelvas coordenadas ni recortes.
+- Si una marca no parece un arete, omítela.
+- Si una imagen no contiene aretes legibles, devuelve cero items y explica brevemente por qué en notes.
+- Devuelve como máximo 150 items y mantén notes muy breve.
+- Responde con JSON compacto, sin sangría ni saltos de línea: {"items":[{"t":"147A","c":"high","i":0}],"notes":""}. No repitas un arete salvo que realmente aparezca otra vez en la foto.`
+
+async function callAnimalListProviderOnce({
+  provider,
+  apiKey,
+  model,
+  images,
+}: {
+  provider: AiProvider
+  apiKey: string
+  model: string
+  images: string[]
+}): Promise<{
+  parsed: AnimalListAiResponse
+  model: string
+  provider: AiProvider
+  usage?: unknown
+}> {
+  let res: Response
+  try {
+    res = await fetch(PROVIDER_ENDPOINTS[provider], {
+      method: 'POST',
+      signal: AbortSignal.timeout(120_000),
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        ...(provider === 'openrouter'
+          ? {
+              'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://dashboard.migranja.app',
+              'X-Title': 'Mi Granja',
+            }
+          : {}),
+      },
+      body: JSON.stringify({
+        model,
+        ...(provider === 'kimi'
+          ? {
+              max_tokens: 16000,
+              response_format: { type: 'json_object' },
+            }
+          : {
+              max_completion_tokens: 16000,
+              ...(provider === 'openrouter' && model.startsWith('google/gemini-2.5-')
+                ? { reasoning: { max_tokens: 1024, exclude: true } }
+                : {}),
+              response_format: {
+                type: 'json_schema',
+                json_schema: {
+                  name: 'mi_granja_animal_list_response',
+                  strict: true,
+                  schema: animalListResponseSchema,
+                },
+              },
+            }),
+        messages: [
+          { role: 'system', content: ANIMAL_LIST_SYSTEM_PROMPT },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Lee los aretes de todas las imágenes adjuntas y conserva el orden de lectura de cada imagen.',
+              },
+              ...images.map((url) => ({
+                type: 'image_url',
+                image_url: { url },
+              })),
+            ],
+          },
+        ],
+      }),
+    })
+  } catch (error) {
+    if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+      throw error
+    }
+    throw new Error(
+      'No pude comunicarme con el lector de imágenes. Intenta de nuevo en unos momentos.',
+    )
+  }
+
+  if (!res.ok) {
+    const providerError = await res.json().catch(() => null)
+    const providerMessage = providerError?.error?.message
+    if (res.status === 402) {
+      throw new Error('El asistente no tiene crédito disponible. Contacta al administrador.')
+    }
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('La conexión del asistente necesita ser revisada por el administrador.')
+    }
+    if (res.status === 429) {
+      throw new Error('El lector de imágenes está ocupado. Intenta de nuevo en unos segundos.')
+    }
+    throw new Error(
+      typeof providerMessage === 'string' && providerMessage.trim()
+        ? providerMessage
+        : 'El lector de imágenes no pudo responder. Intenta nuevamente.',
+    )
+  }
+
+  const data = await res.json()
+  const choice = data.choices?.[0]
+  const content = choice?.message?.content
+  if (!content) {
+    // Log only response metadata, never the images, credentials or reasoning text.
+    console.error('Animal list returned no content', {
+      provider,
+      model,
+      responseId: data.id,
+      finishReason: choice?.finish_reason,
+      nativeFinishReason: choice?.native_finish_reason,
+      errorCode: data.error?.code,
+      completionTokens: data.usage?.completion_tokens,
+      reasoningTokens: data.usage?.completion_tokens_details?.reasoning_tokens,
+    })
+    throw new Error(
+      `El modelo ${model} terminó sin generar la lista (motivo: ${choice?.finish_reason || data.error?.code || 'no informado'}). Intenta analizar una imagen a la vez.`,
+    )
+  }
+
+  return {
+    parsed: parseAnimalListResponse(content, choice?.finish_reason, images.length),
+    model,
+    provider,
+    usage: data.usage,
+  }
+}
+
+export async function callAiAnimalListProvider({ images }: { images: string[] }): Promise<{
+  parsed: AnimalListAiResponse
+  model: string
+  provider: AiProvider
+  usage?: unknown
+}> {
+  const firestore = getAdminFirestore()
+  const config = await getAiModelConfig(firestore)
+  const provider = config.primaryProvider
+  const model =
+    (provider === 'openrouter' ? process.env.OPENROUTER_ANIMAL_LIST_MODEL?.trim() : '') ||
+    config.providers[provider].model
+  const apiKey = await resolveAiApiKey(firestore, provider)
+  if (!config.providers[provider].enabled || !apiKey) {
+    throw new AiProviderChainError([
+      {
+        provider,
+        model,
+        status: 'error',
+        error: !apiKey ? 'Sin API key' : 'Proveedor principal deshabilitado',
+      },
+    ])
+  }
+
+  try {
+    return await callAnimalListProviderOnce({ provider, apiKey, model, images })
+  } catch (error) {
+    const timedOut =
+      error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')
+    const message = timedOut
+      ? 'La lectura tardó más de dos minutos. Prueba con una imagen a la vez. No se realizó ningún reintento automático.'
+      : error instanceof Error
+        ? error.message
+        : 'error desconocido'
+    console.error('Proveedor principal falló al leer la lista:', `${provider}: ${message}`)
+    throw new AiProviderChainError([{ provider, model, status: 'error', error: message }])
+  }
 }

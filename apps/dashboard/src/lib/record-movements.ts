@@ -38,6 +38,57 @@ const clean = (value: unknown): any => {
   return value
 }
 
+// Sanidad masiva es un evento compartido: se guarda una sola vez y sólo
+// conserva los IDs afectados. No necesita leer ni reescribir cada animal.
+export async function commitCentralRecord(
+  context: MovementContext,
+  id: string,
+  animalIds: string[],
+  input: Omit<AnimalRecord, 'id' | 'createdAt' | 'createdBy'>,
+): Promise<AnimalRecord> {
+  if (!context.userId || !context.farmId || !id || !animalIds.length)
+    throw new Error('Selecciona una granja y animales válidos.')
+
+  const ids = [...new Set(animalIds)]
+  return runTransaction(db, async (tx) => {
+    const receiptRef = doc(db, 'recordMovements', id)
+    const receipt = await tx.get(receiptRef)
+    if (receipt.exists()) {
+      const previous = receipt.data()!
+      if (previous.farmId !== context.farmId)
+        throw new Error('El movimiento pertenece a otra granja.')
+      if (previous.record.undoneAt)
+        throw new Error('Este movimiento ya fue deshecho. Inicia un registro nuevo.')
+      return previous.record as AnimalRecord
+    }
+
+    const now = new Date()
+    const record = clean({
+      ...input,
+      id,
+      createdAt: now,
+      createdBy: context.userId,
+      movementFarmId: context.farmId,
+      appliedToAnimals: ids,
+      isBulkApplication: ids.length > 1,
+    }) as AnimalRecord
+    const { appliedToAnimals: _appliedToAnimals, ...storedRecord } = record
+
+    tx.set(receiptRef, {
+      farmId: context.farmId,
+      farmerId: context.userId,
+      storage: 'animalRecords',
+      record,
+    })
+    tx.set(doc(db, 'animalRecords', id), {
+      ...storedRecord,
+      farmId: context.farmId,
+      animals: ids,
+    })
+    return record
+  })
+}
+
 // All reads precede all writes. A stable record ID is the idempotency receipt.
 export async function commitMovement(
   context: MovementContext,
@@ -138,6 +189,22 @@ export async function undoMovement(context: MovementContext, input: AnimalRecord
     const receipt = await tx.get(receiptRef)
     if (receipt.exists() && receipt.data()?.farmId !== context.farmId)
       throw new Error('El movimiento pertenece a otra granja.')
+
+    if (receipt.exists() && receipt.data()?.storage === 'animalRecords') {
+      const centralRef = doc(db, 'animalRecords', input.id)
+      const central = await tx.get(centralRef)
+      const record = (central.exists() ? central.data() : receipt.data()?.record) as AnimalRecord
+      if (!record) throw new Error('Registro central no encontrado.')
+      if (record.undoneAt) return
+
+      const now = new Date()
+      tx.update(centralRef, { undoneAt: now, undoneBy: context.userId, updatedAt: now })
+      tx.update(receiptRef, {
+        record: { ...record, undoneAt: now, undoneBy: context.userId },
+      })
+      return
+    }
+
     const anchor = await tx.get(doc(db, 'animals', ids[0]))
     if (anchor.data()?.farmId !== context.farmId)
       throw new Error('El movimiento no pertenece a esta granja.')

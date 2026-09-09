@@ -119,6 +119,50 @@ describe('InputSelectAnimals', () => {
     expect(getDropdownNumbers()).toEqual(['55-H'])
   })
 
+  it('encuentra aretes con o sin ceros iniciales', () => {
+    render(
+      <InputSelectAnimals
+        animals={[
+          {
+            id: 'search-05-d',
+            animalNumber: '05-D',
+            type: 'oveja',
+            gender: 'hembra',
+            stage: 'reproductor',
+          } as (typeof animals)[number],
+        ]}
+        selectedIds={[]}
+        onAdd={jest.fn()}
+        onRemove={jest.fn()}
+        renderOption={(animal) => animal.animalNumber}
+      />,
+    )
+
+    fireEvent.change(screen.getByPlaceholderText(/Buscar por numero/i), {
+      target: { value: '5d' },
+    })
+
+    expect(getDropdownNumbers()).toEqual(['05-D'])
+  })
+
+  it('avanza a la siguiente coincidencia con la flecha abajo', () => {
+    render(
+      <InputSelectAnimals
+        animals={animals}
+        selectedIds={[]}
+        onAdd={jest.fn()}
+        onRemove={jest.fn()}
+        renderOption={(animal) => animal.animalNumber}
+      />,
+    )
+    const input = screen.getByPlaceholderText(/Buscar por numero/i)
+    fireEvent.change(input, { target: { value: '2' } })
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+
+    const options = screen.getAllByRole('option')
+    expect(options[1]).toHaveAttribute('aria-selected', 'true')
+  })
+
   it('oculta el orden cuando solo hay un animal seleccionado', () => {
     render(
       <InputSelectAnimals

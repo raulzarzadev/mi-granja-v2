@@ -7,6 +7,7 @@ import Button from '@/components/buttons/Button'
 import { Modal } from '@/components/Modal'
 import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import { animalMatchesSearch } from '@/lib/animal-search'
 import { computeAnimalStage } from '@/lib/animal-utils'
 import { type Animal, animal_icon, animal_stage_config } from '@/types/animals'
 import { FARM_AREA_TYPES, type FarmArea } from '@/types/farm'
@@ -755,17 +756,12 @@ export default function FarmMapEditor({
 
   const selectedAreaAnimals = selectedAreaId ? (animalsByArea.get(selectedAreaId) ?? []) : []
   const assignableAnimals = useMemo(() => {
-    const searchValue = assignAnimalSearch.trim().toLowerCase()
-    if (!selectedAreaId || !searchValue) return []
+    if (!selectedAreaId || !assignAnimalSearch.trim()) return []
 
     return Array.from(animalsByArea.entries())
       .filter(([areaId]) => areaId !== selectedAreaId)
       .flatMap(([, group]) => group)
-      .filter((animal) =>
-        [animal.animalNumber, animal.name, animal.breed, animal.notes]
-          .filter(Boolean)
-          .some((item) => item!.toLowerCase().includes(searchValue)),
-      )
+      .filter((animal) => animalMatchesSearch(animal, assignAnimalSearch))
       .sort((a, b) => a.animalNumber.localeCompare(b.animalNumber, 'es', { numeric: true }))
       .slice(0, 8)
   }, [animalsByArea, assignAnimalSearch, selectedAreaId])
@@ -775,14 +771,9 @@ export default function FarmMapEditor({
     [animalsByArea],
   )
   const visibleUnassignedAnimals = useMemo(() => {
-    const value = unassignedSearch.trim().toLowerCase()
-    if (!value) return unassignedAnimals
+    if (!unassignedSearch.trim()) return unassignedAnimals
 
-    return unassignedAnimals.filter((animal) =>
-      [animal.animalNumber, animal.name, animal.breed, animal.notes]
-        .filter(Boolean)
-        .some((item) => item!.toLowerCase().includes(value)),
-    )
+    return unassignedAnimals.filter((animal) => animalMatchesSearch(animal, unassignedSearch))
   }, [unassignedAnimals, unassignedSearch])
 
   return (
