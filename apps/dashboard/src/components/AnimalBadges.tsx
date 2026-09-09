@@ -48,6 +48,7 @@ interface AnimalBadgesProps {
   compact?: boolean
   showSpecies?: boolean
   showStateLabel?: boolean
+  showState?: boolean
 }
 
 const AnimalBadges: React.FC<AnimalBadgesProps> = ({
@@ -57,6 +58,7 @@ const AnimalBadges: React.FC<AnimalBadgesProps> = ({
   compact = false,
   showSpecies = true,
   showStateLabel = true,
+  showState = true,
 }) => {
   const age = getAgeLabel(animal, ageFormat)
   const stage = animal.computedStage ?? computeAnimalStage(animal)
@@ -91,10 +93,12 @@ const AnimalBadges: React.FC<AnimalBadgesProps> = ({
         >
           <Icon icon={animal_gender_config[animal.gender].iconName as IconName} size={3} />
         </span>
-        <span className="inline-flex items-center gap-1 text-gray-600" title={stateLabel}>
-          <span aria-hidden="true">{stateIcon}</span>
-          {showStateLabel ? <span className="hidden sm:inline">{stateLabel}</span> : null}
-        </span>
+        {showState ? (
+          <span className="inline-flex items-center gap-1 text-gray-600" title={stateLabel}>
+            <span aria-hidden="true">{stateIcon}</span>
+            {showStateLabel ? <span className="hidden sm:inline">{stateLabel}</span> : null}
+          </span>
+        ) : null}
         <span className="shrink-0 tabular-nums text-gray-500">{age ?? '--'}</span>
       </span>
     )

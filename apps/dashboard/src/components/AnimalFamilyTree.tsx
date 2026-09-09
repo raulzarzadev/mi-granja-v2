@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react'
 import AnimalBadges from '@/components/AnimalBadges'
 import { Modal } from '@/components/Modal'
-import { Animal, animal_icon, gender_icon } from '@/types/animals'
+import { Animal } from '@/types/animals'
 
 interface Props {
   animal: Animal
@@ -154,20 +154,15 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
         className={`border rounded-lg ${sizeClasses[size]} ${highlight ? 'border-green-500 bg-green-50 ring-2 ring-green-200' : 'border-gray-200 bg-white'}`}
       >
         <div className="text-[10px] text-gray-400 mb-0.5">{label}</div>
-        <div className="flex items-center gap-1.5">
-          <span className={size === 'sm' ? 'text-sm' : size === 'lg' ? 'text-lg' : 'text-base'}>
-            {animal_icon[a.type] || '🐾'}
-          </span>
-          <div className="min-w-0">
-            <div className="font-semibold truncate flex items-center gap-1">
-              #{a.animalNumber}
-              <span className={a.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}>
-                {gender_icon[a.gender]}
-              </span>
-            </div>
-            {a.breed && <div className="text-gray-400 truncate">{a.breed}</div>}
-          </div>
-        </div>
+        <AnimalBadges
+          animal={a}
+          ageFormat="rounded"
+          variant="tag"
+          compact
+          showSpecies={false}
+          showState={false}
+          showStateLabel={false}
+        />
       </div>
     )
   }
@@ -228,7 +223,7 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
       {/* Abuelos */}
       {hasGrandparents && (
         <div className="mb-0">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 min-[480px]:gap-6">
             {/* Abuelos maternos */}
             <div>
               <div className="grid grid-cols-2 gap-1">
@@ -323,7 +318,16 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
           {/* Lista de hijos */}
           <div className="flex flex-wrap justify-center gap-1.5">
             {tree.children.slice(0, 20).map((child) => (
-              <AnimalBadges key={child.id} animal={child} ageFormat="rounded" variant="tag" />
+              <AnimalBadges
+                key={child.id}
+                animal={child}
+                ageFormat="rounded"
+                variant="tag"
+                compact
+                showSpecies={false}
+                showState={false}
+                showStateLabel={false}
+              />
             ))}
           </div>
           {tree.children.length > 20 && (
@@ -362,18 +366,15 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
                 key={sib.id}
                 className="flex items-center gap-2 px-3 py-2 border border-gray-100 rounded-lg text-sm"
               >
-                <span>{animal_icon[sib.type] || '🐾'}</span>
-                <span className="font-medium">#{sib.animalNumber}</span>
-                <span className={sib.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}>
-                  {gender_icon[sib.gender]}
-                </span>
-                {sib.name && <span className="text-gray-400 text-xs">{sib.name}</span>}
-                {sib.breed && <span className="text-gray-400 text-xs">{sib.breed}</span>}
-                {sib.status !== 'activo' && (
-                  <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
-                    {sib.status}
-                  </span>
-                )}
+                <AnimalBadges
+                  animal={sib}
+                  ageFormat="rounded"
+                  variant="tag"
+                  compact
+                  showSpecies={false}
+                  showState={false}
+                  showStateLabel={false}
+                />
               </div>
             ))}
             {(siblingModal === 'completos'
