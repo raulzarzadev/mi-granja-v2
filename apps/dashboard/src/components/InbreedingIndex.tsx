@@ -3,6 +3,7 @@ import type { InbreedingEstimate } from '@/lib/inbreeding'
 
 interface InbreedingIndexProps {
   estimate: InbreedingEstimate
+  compact?: boolean
 }
 
 const levels = {
@@ -14,7 +15,7 @@ const levels = {
   10: 'border-red-600 bg-red-200 text-red-800',
 } as const
 
-export function InbreedingIndex({ estimate }: InbreedingIndexProps) {
+export function InbreedingIndex({ estimate, compact = false }: InbreedingIndexProps) {
   const tooltipId = useId()
   const percentage = estimate.percentage.toLocaleString('es-MX', {
     maximumFractionDigits: 2,
@@ -27,7 +28,11 @@ export function InbreedingIndex({ estimate }: InbreedingIndexProps) {
         onClick={(event) => event.stopPropagation()}
         aria-describedby={tooltipId}
         aria-label={`Índice de consanguinidad ${estimate.index} de 10; coeficiente estimado ${percentage} por ciento`}
-        className={`inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-full border px-2 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${levels[estimate.index as keyof typeof levels] ?? levels[10]}`}
+        className={`relative inline-flex items-center justify-center gap-1 rounded-full border text-xs font-semibold transition-colors before:absolute focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${
+          compact
+            ? 'h-8 min-w-9 px-1.5 before:-inset-x-1 before:-inset-y-1.5'
+            : 'min-h-11 min-w-11 px-2 before:inset-0'
+        } ${levels[estimate.index as keyof typeof levels] ?? levels[10]}`}
       >
         <span aria-hidden="true" className="text-sm leading-none">
           🩸

@@ -447,59 +447,56 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                   onAddBirth={onAddBirth}
                   onAbort={onAbort}
                   triggerComponent={
-                    <div className="cursor-pointer rounded-md bg-gray-50 p-2 transition-colors hover:bg-gray-100">
-                      <div className="flex min-w-0 items-center justify-between gap-2">
-                        <div className="flex min-w-0 items-center gap-2">
+                    <div className="cursor-pointer overflow-hidden rounded-md bg-gray-50 px-2 py-1.5 transition-colors hover:bg-gray-100">
+                      <div className="flex min-w-0 items-start justify-between gap-1.5">
+                        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
                           <span className="font-medium text-gray-800">
                             {femaleAnimal.animalNumber}
                           </span>
-                          <span className="shrink-0 rounded-full bg-gray-200 px-2 py-1 text-xs text-gray-600">
-                            {femaleAnimal.type}
-                          </span>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-1">
-                          {femaleAnimal.inbreedingEstimate ? (
-                            <InbreedingIndex estimate={femaleAnimal.inbreedingEstimate} />
-                          ) : null}
-                          <Icon icon="view" className="w-4 h-4 text-gray-400" />
-                        </div>
-                      </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                        <span className="inline-flex items-center gap-1">
-                          {femaleAnimal.status === 'parida' ? (
-                            <span className="rounded bg-pink-100 px-2 py-1 text-xs font-medium text-pink-800">
-                              Parida
-                              {femaleAnimal.actualBirthDate
-                                ? ` ${formatDate(femaleAnimal.actualBirthDate, 'dd/MM/yy')}`
-                                : ''}
-                            </span>
-                          ) : (
-                            <BadgeAnimalStatus status={femaleAnimal.status} />
-                          )}
-                          {femaleAnimal.status === 'parida' ? (
-                            <span className="text-xs font-semibold text-pink-700">
-                              ({femaleAnimal.offspring.length})
-                            </span>
-                          ) : null}
-                        </span>
-                        {femaleAnimal.status === 'embarazada' && (
-                          <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800">
-                            <span className="font-medium">Parto </span>
-                            {fromNow(femaleAnimal.expectedBirthDate)}
-                          </span>
-                        )}
-                        {femaleAnimal.status === 'parida' &&
-                          femaleAnimal.offspring.map((offspringId) => {
-                            const offspringAnimal = animals.find((item) => item.id === offspringId)
-                            return (
-                              <span
-                                key={offspringId}
-                                className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800"
-                              >
-                                {offspringAnimal?.animalNumber ?? offspringId}
+                          <span className="inline-flex items-center gap-1">
+                            {femaleAnimal.status === 'parida' ? (
+                              <span className="rounded bg-pink-100 px-2 py-1 text-xs font-medium text-pink-800">
+                                Parida
+                                {femaleAnimal.actualBirthDate
+                                  ? ` ${formatDate(femaleAnimal.actualBirthDate, 'dd/MM/yy')}`
+                                  : ''}
                               </span>
-                            )
-                          })}
+                            ) : (
+                              <BadgeAnimalStatus status={femaleAnimal.status} />
+                            )}
+                            {femaleAnimal.status === 'parida' ? (
+                              <span className="text-xs font-semibold text-pink-700">
+                                ({femaleAnimal.offspring.length})
+                              </span>
+                            ) : null}
+                          </span>
+                          {femaleAnimal.status === 'embarazada' && (
+                            <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800">
+                              <span className="font-medium">Parto </span>
+                              {fromNow(femaleAnimal.expectedBirthDate)}
+                            </span>
+                          )}
+                          {femaleAnimal.status === 'parida' &&
+                            femaleAnimal.offspring.map((offspringId) => {
+                              const offspringAnimal = animals.find(
+                                (item) => item.id === offspringId,
+                              )
+                              return (
+                                <span
+                                  key={offspringId}
+                                  className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800"
+                                >
+                                  {offspringAnimal?.animalNumber ?? offspringId}
+                                </span>
+                              )
+                            })}
+                        </div>
+                        <div className="flex shrink-0 items-center gap-0.5">
+                          {femaleAnimal.inbreedingEstimate ? (
+                            <InbreedingIndex estimate={femaleAnimal.inbreedingEstimate} compact />
+                          ) : null}
+                          <Icon icon="view" className="h-4 w-4 text-gray-400" />
+                        </div>
                       </div>
                     </div>
                   }
