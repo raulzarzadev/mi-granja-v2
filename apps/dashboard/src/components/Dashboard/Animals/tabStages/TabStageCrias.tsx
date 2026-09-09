@@ -70,34 +70,11 @@ export default function TabStageCrias({ allCrias, columns, openBulkWean, onChang
             )}
           </>
         )}
-        onView={(row) => (
-          <ModalAnimalDetails
-            animal={row.animal}
-            triggerComponent={
-              <Button size="xs" variant="ghost" color="primary" icon="view">
-                Ver
-              </Button>
-            }
-          />
+        renderRowDetails={(row, { onClose }) => (
+          <ModalAnimalDetails animal={row.animal} isOpen onClose={onClose} />
         )}
         renderActions={(row) => (
           <>
-            <Button
-              size="xs"
-              variant="ghost"
-              color="warning"
-              onClick={() => openBulkWean('engorda', new Set([row.animal.id]))}
-            >
-              {animal_stage_config.engorda.icon} Engorda
-            </Button>
-            <Button
-              size="xs"
-              variant="ghost"
-              color="error"
-              onClick={() => openBulkWean('reproductor', new Set([row.animal.id]))}
-            >
-              {animal_stage_config.reproductor.icon} Reproductor
-            </Button>
             {onChangeStage && (
               <Button
                 size="xs"

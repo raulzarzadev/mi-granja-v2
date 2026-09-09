@@ -497,23 +497,10 @@ const FemaleProductivitySection: React.FC<{
                   Cerrar grupo
                 </button>
               }
-              onView={(item) => {
+              renderRowDetails={(item, { onClose }) => {
                 const animal = animalById.get(item.femaleId)
                 if (!animal) return null
-                return (
-                  <ModalAnimalDetails
-                    animal={animal}
-                    triggerComponent={
-                      <button
-                        type="button"
-                        className="min-h-11 rounded-md px-2 font-semibold text-green-700 outline-none hover:bg-green-100 focus-visible:ring-2 focus-visible:ring-green-600 md:min-h-8"
-                        aria-label={`Abrir ficha de la hembra ${item.animalNumber}`}
-                      >
-                        Ver
-                      </button>
-                    }
-                  />
-                )
+                return <ModalAnimalDetails animal={animal} isOpen onClose={onClose} />
               }}
             />
           </div>

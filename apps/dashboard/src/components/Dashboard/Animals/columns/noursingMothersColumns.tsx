@@ -1,7 +1,6 @@
 import AnimalTag from '@/components/AnimalTag'
 import type { ColumnDef } from '@/components/DataTable'
 import { Icon } from '@/components/Icon/icon'
-import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import { WeanAnimalButton } from '@/components/WeanedAnimal'
 import { findAnimalByRef, getWeaningStatusFromDays } from '@/lib/animal-utils'
 import { type Animal, animal_gender_config } from '@/types/animals'
@@ -24,16 +23,7 @@ export const buildNoursingColumns = (animals: Animal[]): ColumnDef<NoursingMothe
       (a.animal.animalNumber || '').localeCompare(b.animal.animalNumber || '', 'es', {
         numeric: true,
       }),
-    render: (row) => (
-      <ModalAnimalDetails
-        animal={row.animal}
-        triggerComponent={
-          <span className="font-medium text-gray-900 cursor-pointer hover:text-green-700 transition-colors">
-            {row.animal.animalNumber}
-          </span>
-        }
-      />
-    ),
+    render: (row) => <span className="font-medium text-gray-900">{row.animal.animalNumber}</span>,
     className: 'whitespace-nowrap',
   },
   {
@@ -71,7 +61,7 @@ export const buildNoursingColumns = (animals: Animal[]): ColumnDef<NoursingMothe
               key={cria.id}
               className="flex min-h-11 flex-wrap items-center justify-between gap-2 rounded-xl border border-gray-200 bg-gray-50 p-2"
             >
-              <AnimalTag animal={cria} showModalOnClick showAge />
+              <AnimalTag animal={cria} showAge />
               <WeanAnimalButton animal={cria} />
             </div>
           ))}

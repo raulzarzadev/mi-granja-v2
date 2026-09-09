@@ -76,15 +76,8 @@ export default function TabStageNoursingMothers({
             </>
           )
         }}
-        onView={(row) => (
-          <ModalAnimalDetails
-            animal={row.animal}
-            triggerComponent={
-              <Button size="xs" variant="ghost" color="primary" icon="view">
-                Ver
-              </Button>
-            }
-          />
+        renderRowDetails={(row, { onClose }) => (
+          <ModalAnimalDetails animal={row.animal} isOpen onClose={onClose} />
         )}
         renderActions={(row) => {
           return (

@@ -1,6 +1,5 @@
 import type { ColumnDef } from '@/components/DataTable'
 import { Icon } from '@/components/Icon/icon'
-import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import { animalAge, formatWeight } from '@/lib/animal-utils'
 import {
   type Animal,
@@ -21,16 +20,7 @@ export const buildAnimalColumns = (): ColumnDef<Animal>[] => [
     sortable: true,
     sortFn: (a, b) =>
       (a.animalNumber || '').localeCompare(b.animalNumber || '', 'es', { numeric: true }),
-    render: (row) => (
-      <ModalAnimalDetails
-        animal={row}
-        triggerComponent={
-          <span className="font-medium text-gray-900 cursor-pointer hover:text-green-700 transition-colors">
-            {row.animalNumber}
-          </span>
-        }
-      />
-    ),
+    render: (row) => <span className="font-medium text-gray-900">{row.animalNumber}</span>,
   },
   {
     key: 'type',

@@ -41,6 +41,8 @@ export interface DataTableProps<T> {
   viewModeKey?: string
   /** Page size (default 10). Set to 0 to disable pagination. */
   pageSize?: number
+  /** Opens row details when a table row is clicked. */
+  renderRowDetails?: (row: T, controls: { onClose: () => void }) => React.ReactNode
   /** If provided, adds a default "Ver" button in actions that calls this with the row */
   onView?: (row: T) => React.ReactNode
 }
@@ -108,6 +110,7 @@ function DataTable<T>({
   renderCard,
   viewModeKey,
   pageSize: initialPageSize = 10,
+  renderRowDetails,
   onView,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(defaultSortKey ?? null)
@@ -136,6 +139,7 @@ function DataTable<T>({
   }
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [rowDetails, setRowDetails] = useState<T | null>(null)
   const [lastClickedId, setLastClickedId] = useState<string | null>(() => {
     if (!sessionStorageKey || typeof window === 'undefined') return null
     try {
@@ -175,8 +179,6 @@ function DataTable<T>({
     pageSize > 0
       ? sortedData.slice(safePage * pageSize, safePage * pageSize + pageSize)
       : sortedData
-  const start = safePage * pageSize + 1
-  const end = Math.min(safePage * pageSize + pageSize, sortedData.length)
 
   const toggleSelection = (id: string) => {
     setSelectedIds((prev) => {
@@ -204,6 +206,7 @@ function DataTable<T>({
         sessionStorage.setItem(sessionStorageKey, id)
       } catch {}
     }
+    if (renderRowDetails) setRowDetails(row)
     onRowClick?.(row)
   }
 
@@ -240,9 +243,12 @@ function DataTable<T>({
               <path d="m12.5 15-5-5 5-5" />
             </svg>
           </button>
-          <span className="whitespace-nowrap text-sm font-semibold text-gray-700" aria-live="polite">
-            {safePage + 1} <span className="font-normal text-gray-500">de</span>{' '}
-            {totalPages} <span className="font-normal text-gray-500">páginas</span>
+          <span
+            className="whitespace-nowrap text-sm font-semibold text-gray-700"
+            aria-live="polite"
+          >
+            {safePage + 1} <span className="font-normal text-gray-500">de</span> {totalPages}{' '}
+            <span className="font-normal text-gray-500">páginas</span>
           </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
@@ -283,6 +289,8 @@ function DataTable<T>({
         </select>
       </div>
     ) : null
+
+  const isRowInteractive = Boolean(onRowClick || renderRowDetails || isSelectionMode)
 
   return (
     <div>
@@ -347,53 +355,53 @@ function DataTable<T>({
         <div className="px-2 py-2 flex items-center justify-between gap-3 text-sm flex-wrap">
           <div className="flex items-center gap-2 text-sm flex-wrap">
             {!isSelectionMode ? (
-            <>
-              <button
-                onClick={() => setIsSelectionMode(true)}
-                className="min-h-11 text-blue-600 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-colors cursor-pointer"
-              >
-                Seleccionar
-              </button>
-              {selectionAction && (
-                <>
-                  <span className="text-gray-300" aria-hidden="true">
-                    |
-                  </span>
-                  {selectionAction}
-                </>
-              )}
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => {
-                  setSelectedIds(new Set(sortedData.map((r) => rowKey(r))))
-                }}
-                className="text-green-600 hover:text-green-800 transition-colors cursor-pointer"
-              >
-                Todos ({sortedData.length})
-              </button>
-              <span className="text-gray-300">|</span>
-              <button
-                onClick={clearSelection}
-                className="text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
-              >
-                Cancelar
-              </button>
-              {selectedIds.size > 0 && (
-                <>
-                  <span className="text-gray-300">|</span>
-                  <span className="text-gray-500">{selectedIds.size} seleccionados</span>
-                  {renderBulkActions?.(selectedIds, clearSelection)}
-                </>
-              )}
-              {selectionModeAction && (
-                <>
-                  <span className="text-gray-300">|</span>
-                  {selectionModeAction(selectedIds)}
-                </>
-              )}
-            </>
+              <>
+                <button
+                  onClick={() => setIsSelectionMode(true)}
+                  className="min-h-11 text-blue-600 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-colors cursor-pointer"
+                >
+                  Seleccionar
+                </button>
+                {selectionAction && (
+                  <>
+                    <span className="text-gray-300" aria-hidden="true">
+                      |
+                    </span>
+                    {selectionAction}
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setSelectedIds(new Set(sortedData.map((r) => rowKey(r))))
+                  }}
+                  className="text-green-600 hover:text-green-800 transition-colors cursor-pointer"
+                >
+                  Todos ({sortedData.length})
+                </button>
+                <span className="text-gray-300">|</span>
+                <button
+                  onClick={clearSelection}
+                  className="text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                {selectedIds.size > 0 && (
+                  <>
+                    <span className="text-gray-300">|</span>
+                    <span className="text-gray-500">{selectedIds.size} seleccionados</span>
+                    {renderBulkActions?.(selectedIds, clearSelection)}
+                  </>
+                )}
+                {selectionModeAction && (
+                  <>
+                    <span className="text-gray-300">|</span>
+                    {selectionModeAction(selectedIds)}
+                  </>
+                )}
+              </>
             )}
           </div>
           {paginationControls}
@@ -442,9 +450,22 @@ function DataTable<T>({
                   <tr
                     key={id}
                     onClick={() => handleRowClick(row)}
+                    onKeyDown={(event) => {
+                      if (
+                        isRowInteractive &&
+                        event.target === event.currentTarget &&
+                        (event.key === 'Enter' || event.key === ' ')
+                      ) {
+                        event.preventDefault()
+                        handleRowClick(row)
+                      }
+                    }}
+                    tabIndex={isRowInteractive ? 0 : undefined}
                     className={[
                       'border-t border-gray-100 transition-colors',
-                      onRowClick || isSelectionMode ? 'cursor-pointer' : '',
+                      isRowInteractive
+                        ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-green-600'
+                        : '',
                       isSelected
                         ? 'bg-blue-50'
                         : lastClickedId === id
@@ -489,11 +510,8 @@ function DataTable<T>({
           </table>
         </div>
       )}
-      {paginationControls && (
-        <div className="flex justify-end px-2 py-3">
-          {paginationControls}
-        </div>
-      )}
+      {rowDetails && renderRowDetails?.(rowDetails, { onClose: () => setRowDetails(null) })}
+      {paginationControls && <div className="flex justify-end px-2 py-3">{paginationControls}</div>}
     </div>
   )
 }

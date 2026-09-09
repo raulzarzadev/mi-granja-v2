@@ -1,8 +1,8 @@
 import { differenceInCalendarDays } from 'date-fns'
 import type { ColumnDef } from '@/components/DataTable'
 import { Icon } from '@/components/Icon/icon'
-import ModalAnimalDetails from '@/components/ModalAnimalDetails'
-import { findAnimalByRef, getWeaningStatus } from '@/lib/animal-utils'
+import { WeanAnimalButton } from '@/components/WeanedAnimal'
+import { findAnimalByRef } from '@/lib/animal-utils'
 import { toDate } from '@/lib/dates'
 import { type Animal, animal_gender_config } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
@@ -26,16 +26,7 @@ export const buildDestetesColumns = (animals: Animal[]): ColumnDef<UnweanedRow>[
       (a.animal.animalNumber || '').localeCompare(b.animal.animalNumber || '', 'es', {
         numeric: true,
       }),
-    render: (row) => (
-      <ModalAnimalDetails
-        animal={row.animal}
-        triggerComponent={
-          <span className="font-medium text-gray-900 cursor-pointer hover:text-green-700 transition-colors">
-            {row.animal.animalNumber}
-          </span>
-        }
-      />
-    ),
+    render: (row) => <span className="font-medium text-gray-900">{row.animal.animalNumber}</span>,
     className: 'whitespace-nowrap',
   },
   {
@@ -68,14 +59,7 @@ export const buildDestetesColumns = (animals: Animal[]): ColumnDef<UnweanedRow>[
     render: (row) => {
       const mother = findAnimalByRef(animals, row.motherId)
       return mother ? (
-        <ModalAnimalDetails
-          animal={mother}
-          triggerComponent={
-            <span className="text-gray-700 cursor-pointer hover:text-green-700 transition-colors">
-              {mother.animalNumber}
-            </span>
-          }
-        />
+        <span className="text-gray-700">{mother.animalNumber}</span>
       ) : (
         <span className="text-gray-400">—</span>
       )
@@ -107,23 +91,7 @@ export const buildDestetesColumns = (animals: Animal[]): ColumnDef<UnweanedRow>[
       if (b.daysUntilWean === null) return -1
       return a.daysUntilWean - b.daysUntilWean
     },
-    render: (row) => {
-      const status = getWeaningStatus(row.animal)
-      return (
-        <span
-          title={status.description}
-          className={`inline-flex px-1.5 py-0.5 rounded-full text-xs font-medium ${
-            status.tone === 'danger'
-              ? 'bg-red-100 text-red-700'
-              : status.tone === 'warning'
-                ? 'bg-yellow-100 text-yellow-700'
-                : 'bg-gray-100 text-gray-600'
-          }`}
-        >
-          {status.label}
-        </span>
-      )
-    },
+    render: (row) => <WeanAnimalButton animal={row.animal} />,
     className: 'whitespace-nowrap',
   },
 ]

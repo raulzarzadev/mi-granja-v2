@@ -82,15 +82,28 @@ export const WeanedAnimal = ({ animal }: WeanedAnimalProps) => {
 export const WeanAnimalButton = ({ animal }: { animal: Animal }) => {
   const [showWeanModal, setShowWeanModal] = useState(false)
   const targetWeanDate = getWeaningDueDate(animal) ?? new Date()
+  const status = getWeaningStatus(animal)
+  const buttonTone =
+    status.daysUntilDue === null || status.daysUntilDue > 14
+      ? 'border-gray-300 bg-transparent text-gray-600 hover:border-gray-400 hover:bg-gray-50'
+      : status.daysUntilDue >= 0
+        ? 'border-green-300 bg-green-50 text-green-800 hover:border-green-400 hover:bg-green-100'
+        : status.daysUntilDue >= -7
+          ? 'border-yellow-300 bg-yellow-50 text-yellow-800 hover:border-yellow-400 hover:bg-yellow-100'
+          : 'border-red-300 bg-red-50 text-red-800 hover:border-red-400 hover:bg-red-100'
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setShowWeanModal(true)}
-        className="inline-flex min-h-11 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 px-3 text-xs font-semibold text-amber-800 transition-colors hover:border-amber-400 hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
+        onClick={(event) => {
+          event.stopPropagation()
+          setShowWeanModal(true)
+        }}
+        className={`inline-flex min-h-10 items-center justify-center gap-1 rounded-md border px-2.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${buttonTone}`}
       >
-        Destetar
+        <Icon icon="babyBottleOff" className="h-3.5 w-3.5" />
+        <span>Destetar: {status.label}</span>
       </button>
       {showWeanModal ? (
         <ModalWeanAnimal

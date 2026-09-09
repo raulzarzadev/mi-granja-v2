@@ -1,3 +1,4 @@
+import type { IconType } from 'react-icons'
 import {
   FaBell,
   FaCalendarAlt,
@@ -25,6 +26,16 @@ import { IoBedSharp } from 'react-icons/io5'
 import { LuBaby } from 'react-icons/lu'
 import { MdOutlinePregnantWoman } from 'react-icons/md'
 import { TbBabyBottle } from 'react-icons/tb'
+
+const BabyBottleOffIcon: IconType = ({ className }) => (
+  <span aria-hidden="true" className={`relative inline-flex ${className ?? ''}`}>
+    <TbBabyBottle aria-hidden="true" className="absolute inset-0 h-full w-full" />
+    <span
+      aria-hidden="true"
+      className="absolute left-1/2 top-1/2 h-0.5 w-[125%] -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-full bg-current"
+    />
+  </span>
+)
 
 export interface IconProps {
   icon: IconName
@@ -56,6 +67,7 @@ export const icons = {
   close: IoMdCloseCircleOutline,
   check_circle: FaCheckCircle,
   babyBottle: TbBabyBottle,
+  babyBottleOff: BabyBottleOffIcon,
   notes: FaStickyNote,
   comments: FaCommentDots,
 } as const

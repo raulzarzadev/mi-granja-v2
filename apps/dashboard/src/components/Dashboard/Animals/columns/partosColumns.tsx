@@ -1,5 +1,4 @@
 import type { ColumnDef } from '@/components/DataTable'
-import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import type { Animal } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
 
@@ -27,16 +26,7 @@ export const buildPartosColumns = (): ColumnDef<EnrichedPregnant>[] => [
       (a.animal.animalNumber || '').localeCompare(b.animal.animalNumber || '', 'es', {
         numeric: true,
       }),
-    render: (row) => (
-      <ModalAnimalDetails
-        animal={row.animal}
-        triggerComponent={
-          <span className="font-medium text-gray-900 cursor-pointer hover:text-green-700 transition-colors">
-            {row.animal.animalNumber}
-          </span>
-        }
-      />
-    ),
+    render: (row) => <span className="font-medium text-gray-900">{row.animal.animalNumber}</span>,
     className: 'whitespace-nowrap',
   },
   {
@@ -50,16 +40,7 @@ export const buildPartosColumns = (): ColumnDef<EnrichedPregnant>[] => [
     },
     render: (row) => {
       if (row.father) {
-        return (
-          <ModalAnimalDetails
-            animal={row.father}
-            triggerComponent={
-              <span className="text-gray-700 cursor-pointer hover:text-green-700 transition-colors">
-                {row.father.animalNumber}
-              </span>
-            }
-          />
-        )
+        return <span className="text-gray-700">{row.father.animalNumber}</span>
       }
       if (row.animal.pregnantBy) {
         return <span className="text-gray-600">{row.animal.pregnantBy}</span>

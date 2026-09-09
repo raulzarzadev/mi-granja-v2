@@ -223,15 +223,8 @@ const TabAllAnimals: React.FC<Props> = ({
             </Button>
           </>
         )}
-        onView={(row) => (
-          <ModalAnimalDetails
-            animal={row}
-            triggerComponent={
-              <Button size="xs" variant="ghost" color="primary" icon="view">
-                Ver
-              </Button>
-            }
-          />
+        renderRowDetails={(row, { onClose }) => (
+          <ModalAnimalDetails animal={row} isOpen onClose={onClose} />
         )}
       />
     </>

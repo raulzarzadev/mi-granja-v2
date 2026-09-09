@@ -69,16 +69,11 @@ const TabStagePerdidos: React.FC<Props> = ({ animals, onChangeStage }) => {
             }
           : undefined
       }
-      onView={(row) => (
-        <div className="flex items-center gap-2">
-          <ModalAnimalDetails
-            animal={row}
-            triggerComponent={
-              <Button size="xs" variant="ghost" color="primary" icon="view">
-                Ver
-              </Button>
-            }
-          />
+      renderRowDetails={(row, { onClose }) => (
+        <ModalAnimalDetails animal={row} isOpen onClose={onClose} />
+      )}
+      renderActions={(row) => (
+        <>
           <Button
             size="xs"
             variant="outline"
@@ -93,7 +88,7 @@ const TabStagePerdidos: React.FC<Props> = ({ animals, onChangeStage }) => {
               ⇄ Cambiar etapa
             </Button>
           )}
-        </div>
+        </>
       )}
     />
   )

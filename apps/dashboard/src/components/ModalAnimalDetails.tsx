@@ -11,31 +11,42 @@ import AnimalDetailView from './AnimalDetailView'
 interface ModalAnimalDetailsProps {
   animal: Animal
   triggerComponent?: React.ReactNode
+  isOpen?: boolean
+  onClose?: () => void
 }
 
 /**
  * Modal que contiene el formulario de animales
  * Incluye botón trigger y manejo del modal
  */
-const ModalAnimalDetails: React.FC<ModalAnimalDetailsProps> = ({ animal, triggerComponent }) => {
-  const { isOpen, openModal, closeModal } = useModal()
+const ModalAnimalDetails: React.FC<ModalAnimalDetailsProps> = ({
+  animal,
+  triggerComponent,
+  isOpen: controlledIsOpen,
+  onClose: controlledOnClose,
+}) => {
+  const { isOpen: uncontrolledIsOpen, openModal, closeModal: closeUncontrolledModal } = useModal()
+  const isControlled = controlledIsOpen !== undefined
+  const isOpen = isControlled ? controlledIsOpen : uncontrolledIsOpen
+  const closeModal = controlledOnClose ?? closeUncontrolledModal
   const freshAnimal =
     useSelector((state: RootState) => state.animals.animals.find((a) => a.id === animal.id)) ??
     animal
   return (
     <>
-      {triggerComponent ? (
-        <div onClick={openModal} className="cursor-pointer">
-          {triggerComponent}
-        </div>
-      ) : (
-        <button
-          onClick={openModal}
-          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-        >
-          Información
-        </button>
-      )}
+      {!isControlled &&
+        (triggerComponent ? (
+          <div onClick={openModal} className="cursor-pointer">
+            {triggerComponent}
+          </div>
+        ) : (
+          <button
+            onClick={openModal}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+          >
+            Información
+          </button>
+        ))}
       <Modal
         isOpen={isOpen}
         onClose={closeModal}
