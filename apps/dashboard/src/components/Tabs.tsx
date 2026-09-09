@@ -28,6 +28,10 @@ type TabsProps = {
   trailingAction?: ReactNode
   /** Oculta la barra visual manteniendo el desplazamiento horizontal */
   hideScrollbar?: boolean
+  /** Muestra todas las secciones y sincroniza el tab activo con el scroll vertical */
+  scrollSpy?: boolean
+  /** Distancia adicional desde los tabs para activar la siguiente sección */
+  scrollSpyOffset?: number
 }
 
 /** Genera un slug a partir del label del tab, quitando emojis */
@@ -54,6 +58,16 @@ const setParam = (key: string, value: string) => {
   window.history.pushState({}, '', url)
 }
 
+const getScrollableParent = (element: HTMLElement): HTMLElement | Window => {
+  let parent = element.parentElement
+  while (parent) {
+    const overflowY = window.getComputedStyle(parent).overflowY
+    if (/(auto|scroll|overlay)/.test(overflowY)) return parent
+    parent = parent.parentElement
+  }
+  return window
+}
+
 const Tabs: React.FC<TabsProps> = ({
   tabs,
   initialActiveTab = 0,
@@ -61,6 +75,8 @@ const Tabs: React.FC<TabsProps> = ({
   persistState = true,
   trailingAction,
   hideScrollbar = false,
+  scrollSpy = false,
+  scrollSpyOffset = 160,
 }) => {
   const paramKey = tabsId || 'tab'
 
@@ -85,6 +101,8 @@ const Tabs: React.FC<TabsProps> = ({
 
   const [activeTab, setActiveTab] = useState(resolveTab)
   const tabListRef = useRef<HTMLDivElement>(null)
+  const sectionRefs = useRef<Array<HTMLElement | null>>([])
+  const initialSectionScrollRef = useRef(false)
   const [scrollbar, setScrollbar] = useState({
     visible: false,
     thumbWidth: 0,
@@ -124,9 +142,12 @@ const Tabs: React.FC<TabsProps> = ({
     tabList.addEventListener('scroll', updateScrollbar, { passive: true })
     window.addEventListener('resize', updateScrollbar)
 
-    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateScrollbar) : null
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateScrollbar) : null
     resizeObserver?.observe(tabList)
-    Array.from(tabList.children).forEach((child) => resizeObserver?.observe(child))
+    Array.from(tabList.children).forEach((child) => {
+      resizeObserver?.observe(child)
+    })
 
     return () => {
       tabList.removeEventListener('scroll', updateScrollbar)
@@ -144,15 +165,119 @@ const Tabs: React.FC<TabsProps> = ({
     return () => window.removeEventListener('popstate', onPopState)
   }, [resolveTab])
 
+  const scrollToSection = useCallback((index: number) => {
+    const section = sectionRefs.current[index]
+    if (!section) return
+
+    const scrollParent = getScrollableParent(section)
+    const tabShell = tabListRef.current?.parentElement
+    const stickyOffset = (tabShell?.getBoundingClientRect().height ?? 0) + 8
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const behavior = prefersReducedMotion ? 'auto' : 'smooth'
+
+    if (scrollParent instanceof HTMLElement) {
+      const parentRect = scrollParent.getBoundingClientRect()
+      const top =
+        scrollParent.scrollTop + section.getBoundingClientRect().top - parentRect.top - stickyOffset
+      const previousScrollTop = scrollParent.scrollTop
+      try {
+        scrollParent.scrollTo({ top, behavior })
+      } catch {
+        scrollParent.scrollTop = top
+      }
+      requestAnimationFrame(() => {
+        if (scrollParent.scrollTop === previousScrollTop) scrollParent.scrollTop = top
+      })
+      return
+    }
+
+    const top = window.scrollY + section.getBoundingClientRect().top - stickyOffset
+    const previousScrollY = window.scrollY
+    try {
+      window.scrollTo({ top, behavior })
+    } catch {
+      window.scrollTo(0, top)
+    }
+    requestAnimationFrame(() => {
+      if (window.scrollY === previousScrollY) window.scrollTo(0, top)
+    })
+  }, [])
+
   const changeActiveTab = useCallback(
-    (newIndex: number) => {
+    (newIndex: number, shouldScroll = false) => {
       setActiveTab(newIndex)
       if (persistState) {
         setParam(paramKey, slugs[newIndex])
       }
+      if (shouldScroll) {
+        scrollToSection(newIndex)
+      }
     },
-    [paramKey, slugs, persistState],
+    [paramKey, persistState, scrollToSection, slugs],
   )
+
+  const updateActiveFromScroll = useCallback(() => {
+    if (!scrollSpy) return
+
+    const tabListBottom = tabListRef.current?.getBoundingClientRect().bottom ?? 0
+    let nextActiveTab = 0
+
+    sectionRefs.current.forEach((section, index) => {
+      if (section && section.getBoundingClientRect().top <= tabListBottom + scrollSpyOffset) {
+        nextActiveTab = index
+      }
+    })
+
+    setActiveTab((current) => (current === nextActiveTab ? current : nextActiveTab))
+  }, [scrollSpy, scrollSpyOffset])
+
+  useEffect(() => {
+    if (!scrollSpy) return
+
+    const firstSection = sectionRefs.current.find(Boolean)
+    if (!firstSection) return
+
+    const scrollParent = getScrollableParent(firstSection)
+
+    let frame = 0
+    const handleScroll = () => {
+      if (frame) cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        updateActiveFromScroll()
+      })
+    }
+
+    scrollParent.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('resize', handleScroll)
+    handleScroll()
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame)
+      scrollParent.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', handleScroll)
+    }
+  }, [scrollSpy, slugs, updateActiveFromScroll])
+
+  useEffect(() => {
+    if (!scrollSpy || activeTab === 0) return
+
+    const tab = tabListRef.current?.querySelector<HTMLElement>(`#tab-${slugs[activeTab]}`)
+    tab?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+  }, [activeTab, scrollSpy, slugs])
+
+  useEffect(() => {
+    if (!scrollSpy || initialSectionScrollRef.current) return
+
+    initialSectionScrollRef.current = true
+    if (activeTab === 0) return
+
+    const frame = requestAnimationFrame(() => {
+      scrollToSection(activeTab)
+    })
+
+    return () => cancelAnimationFrame(frame)
+  }, [activeTab, scrollSpy, scrollToSection])
 
   const handleKey = (e: KeyboardEvent<HTMLDivElement>) => {
     if (['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) {
@@ -179,7 +304,13 @@ const Tabs: React.FC<TabsProps> = ({
           height: 0 !important;
         }
       `}</style>
-      <div className="tabs-scrollbar-shell">
+      <div
+        className={`tabs-scrollbar-shell ${
+          scrollSpy
+            ? 'sticky top-0 z-20 -mx-3 bg-white/95 px-3 pb-2 pt-2 backdrop-blur sm:-mx-4 sm:px-4'
+            : ''
+        }`}
+      >
         <div
           ref={tabListRef}
           role="tablist"
@@ -200,7 +331,7 @@ const Tabs: React.FC<TabsProps> = ({
                 aria-selected={isActive}
                 aria-controls={`tab-panel-${slugs[index]}`}
                 id={`tab-${slugs[index]}`}
-                onClick={() => changeActiveTab(index)}
+                onClick={() => changeActiveTab(index, scrollSpy)}
                 className={`group relative flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium outline-none transition-all cursor-pointer ${
                   isActive
                     ? 'bg-green-600 text-white border-green-600 shadow-sm'
@@ -254,17 +385,34 @@ const Tabs: React.FC<TabsProps> = ({
         )}
       </div>
       {tabs[activeTab]?.description && (
-        <p className="mt-1 px-2 text-xs leading-4 text-gray-500">
-          {tabs[activeTab].description}
-        </p>
+        <p className="mt-1 px-2 text-xs leading-4 text-gray-500">{tabs[activeTab].description}</p>
       )}
-      <div
-        id={`tab-panel-${slugs[activeTab]}`}
-        role="tabpanel"
-        aria-labelledby={`tab-${slugs[activeTab]}`}
-      >
-        {tabs[activeTab]?.content}
-      </div>
+      {scrollSpy ? (
+        <div className="space-y-8">
+          {tabs.map((tab, index) => (
+            <section
+              key={slugs[index]}
+              ref={(element) => {
+                sectionRefs.current[index] = element
+              }}
+              id={`tab-panel-${slugs[index]}`}
+              role="tabpanel"
+              aria-labelledby={`tab-${slugs[index]}`}
+              className="scroll-mt-20"
+            >
+              {tab.content}
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div
+          id={`tab-panel-${slugs[activeTab]}`}
+          role="tabpanel"
+          aria-labelledby={`tab-${slugs[activeTab]}`}
+        >
+          {tabs[activeTab]?.content}
+        </div>
+      )}
     </div>
   )
 }

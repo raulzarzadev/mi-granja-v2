@@ -527,7 +527,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
 
       {/* Tabs */}
       <div className="px-4 pt-3 sm:px-5">
-        <Tabs tabs={tabs} tabsId={`animal-detail-${animal.id}`} />
+        <Tabs tabs={tabs} tabsId={`animal-detail-${animal.id}`} scrollSpy scrollSpyOffset={160} />
       </div>
 
       <ModalChangeStage

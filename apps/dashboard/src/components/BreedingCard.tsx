@@ -406,7 +406,6 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                       {male.type}
                     </span>
                   </div>
-                  <Icon icon="view" className="w-4 h-4 text-gray-400" />
                 </div>
               }
             />
@@ -513,7 +512,6 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                           {femaleAnimal.inbreedingEstimate ? (
                             <InbreedingIndex estimate={femaleAnimal.inbreedingEstimate} compact />
                           ) : null}
-                          <Icon icon="view" className="h-4 w-4 text-gray-400" />
                         </div>
                       </div>
                     </div>

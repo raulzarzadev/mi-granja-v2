@@ -9,9 +9,11 @@ import { formatDate } from '@/lib/dates'
 import { Animal } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 import type { AbortPregnancyInput, BreedingActionHandlers } from '@/types/components/breeding'
+import AnimalBadges from './AnimalBadges'
 import { BadgeAnimalStatus } from './Badges/BadgeAnimalStatus'
 import type { FemaleBreedingStatus } from './Dashboard/Animals/helpers/breedingViewHelpers'
 import { Icon, IconName } from './Icon/icon'
+import ModalAnimalDetails from './ModalAnimalDetails'
 
 interface ModalBreedingAnimalDetailsProps extends BreedingActionHandlers {
   animal: Animal
@@ -298,12 +300,28 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                 <div className="flex flex-wrap gap-2">
                   {femaleInfo.offspring.map((offspringId) => {
                     const offspring = animals.find((a) => a.id === offspringId)
-                    return (
+                    return offspring ? (
+                      <div key={offspringId} onClick={(event) => event.stopPropagation()}>
+                        <ModalAnimalDetails
+                          animal={offspring}
+                          triggerComponent={
+                            <AnimalBadges
+                              animal={offspring}
+                              ageFormat="rounded"
+                              variant="tag"
+                              compact
+                              showSpecies={false}
+                              showStateLabel={false}
+                            />
+                          }
+                        />
+                      </div>
+                    ) : (
                       <span
                         key={offspringId}
-                        className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full"
+                        className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600"
                       >
-                        {offspring?.animalNumber || `ID: ${offspringId}`}
+                        <strong>{offspringId}</strong>
                       </span>
                     )
                   })}
