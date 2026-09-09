@@ -45,12 +45,18 @@ interface AnimalBadgesProps {
   animal: Animal
   ageFormat?: AgeLabelFormat
   variant?: 'row' | 'tag'
+  compact?: boolean
+  showSpecies?: boolean
+  showStateLabel?: boolean
 }
 
 const AnimalBadges: React.FC<AnimalBadgesProps> = ({
   animal,
   ageFormat = 'full',
   variant = 'row',
+  compact = false,
+  showSpecies = true,
+  showStateLabel = true,
 }) => {
   const age = getAgeLabel(animal, ageFormat)
   const stage = animal.computedStage ?? computeAnimalStage(animal)
@@ -66,13 +72,19 @@ const AnimalBadges: React.FC<AnimalBadgesProps> = ({
 
     return (
       <span
-        className="inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700"
+        className={`inline-flex max-w-full items-center rounded-md border border-gray-200 bg-white text-gray-700 ${
+          compact
+            ? 'gap-1 px-1.5 py-0.5 text-[11px] leading-4'
+            : 'min-h-9 gap-1.5 px-2 py-1 text-xs'
+        }`}
         title={`${animal.animalNumber} · ${animal_gender_config[animal.gender].label} · ${stateLabel}${age ? ` · ${age}` : ''}`}
       >
-        <span aria-hidden="true">{animal_icon[animal.type]}</span>
-        <span className="max-w-28 truncate font-semibold text-gray-900">
-          #{animal.animalNumber}
-        </span>
+        {showSpecies ? (
+          <span aria-hidden="true" className={compact ? 'text-xs' : undefined}>
+            {animal_icon[animal.type]}
+          </span>
+        ) : null}
+        <span className="max-w-28 truncate font-bold text-gray-900">{animal.animalNumber}</span>
         <span
           className={animal_gender_config[animal.gender].color}
           title={animal_gender_config[animal.gender].label}
@@ -81,7 +93,7 @@ const AnimalBadges: React.FC<AnimalBadgesProps> = ({
         </span>
         <span className="inline-flex items-center gap-1 text-gray-600" title={stateLabel}>
           <span aria-hidden="true">{stateIcon}</span>
-          <span className="hidden sm:inline">{stateLabel}</span>
+          {showStateLabel ? <span className="hidden sm:inline">{stateLabel}</span> : null}
         </span>
         <span className="shrink-0 tabular-nums text-gray-500">{age ?? '--'}</span>
       </span>

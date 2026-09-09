@@ -95,7 +95,11 @@ describe('BreedingCard', () => {
 
     renderWithProviders(<BreedingCard record={record} animals={[...mockAnimals, calf]} />)
 
-    expect(screen.getByText('C001')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('C001'))
+
+    const dialogs = screen.getAllByRole('dialog')
+    expect(dialogs).toHaveLength(1)
+    expect(within(dialogs[0]).getByText('C001')).toBeInTheDocument()
     expect(screen.getByText('Parida 01/10/24')).toBeInTheDocument()
     expect(screen.queryByText(/Parto:/)).not.toBeInTheDocument()
     expect(screen.getByText(/1 parto \(1\)/)).toBeInTheDocument()

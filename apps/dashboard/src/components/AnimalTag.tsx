@@ -114,7 +114,7 @@ const AnimalTag: React.FC<AnimalTagProps> = ({
             <Icon icon={genderCfg.iconName as IconName} size={genderIconSize} />
           </span>
         ) : null}
-        <span className="font-bold">#{animal.animalNumber}</span>
+        <strong>{animal.animalNumber}</strong>
         {isHeader && (
           <span
             className={`inline-flex items-center justify-center rounded-full font-bold ${

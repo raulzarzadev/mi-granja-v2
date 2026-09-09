@@ -11,6 +11,7 @@ import { Animal } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 import { NewCommentInput } from '@/types/comment'
 import { BreedingActionHandlers } from '@/types/components/breeding'
+import AnimalBadges from './AnimalBadges'
 import { BadgeAnimalStatus } from './Badges/BadgeAnimalStatus'
 import { Comments } from './comments/modal-comments'
 import {
@@ -19,6 +20,7 @@ import {
 } from './Dashboard/Animals/helpers/breedingViewHelpers'
 import { Icon } from './Icon/icon'
 import { InbreedingIndex } from './InbreedingIndex'
+import ModalAnimalDetails from './ModalAnimalDetails'
 import ModalBreedingAnimalDetails from './ModalBreedingAnimalDetails'
 import { PersistentVerticalScrollArea } from './PersistentVerticalScrollArea'
 
@@ -481,12 +483,28 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
                               const offspringAnimal = animals.find(
                                 (item) => item.id === offspringId,
                               )
-                              return (
+                              return offspringAnimal ? (
+                                <div key={offspringId} onClick={(event) => event.stopPropagation()}>
+                                  <ModalAnimalDetails
+                                    animal={offspringAnimal}
+                                    triggerComponent={
+                                      <AnimalBadges
+                                        animal={offspringAnimal}
+                                        ageFormat="rounded"
+                                        variant="tag"
+                                        compact
+                                        showSpecies={false}
+                                        showStateLabel={false}
+                                      />
+                                    }
+                                  />
+                                </div>
+                              ) : (
                                 <span
                                   key={offspringId}
-                                  className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800"
+                                  className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600"
                                 >
-                                  {offspringAnimal?.animalNumber ?? offspringId}
+                                  <strong>{offspringId}</strong>
                                 </span>
                               )
                             })}
