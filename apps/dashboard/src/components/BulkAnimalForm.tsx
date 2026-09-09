@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { normalizeAnimalSearch } from '@/lib/animal-search'
 import {
   Animal,
   AnimalGender,
@@ -130,7 +131,9 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
   }, [defaults, quantity, animals, generated])
 
   const generateList = useCallback(() => {
-    const existingNumbers = new Set(existingAnimals.map((a) => a.animalNumber.trim().toLowerCase()))
+    const existingNumbers = new Set(
+      existingAnimals.map((animal) => normalizeAnimalSearch(animal.animalNumber)),
+    )
     const newAnimals: BulkAnimalEntry[] = []
 
     // Buscar el siguiente número disponible basado en los existentes
@@ -143,8 +146,11 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
       while (true) {
         animalNumber = `${typePrefix}-${String(counter).padStart(3, '0')}`
         if (
-          !existingNumbers.has(animalNumber.toLowerCase()) &&
-          !newAnimals.some((a) => a.animalNumber.toLowerCase() === animalNumber.toLowerCase())
+          !existingNumbers.has(normalizeAnimalSearch(animalNumber)) &&
+          !newAnimals.some(
+            (animal) =>
+              normalizeAnimalSearch(animal.animalNumber) === normalizeAnimalSearch(animalNumber),
+          )
         ) {
           break
         }
@@ -193,23 +199,25 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {}
-    const allNumbers = new Set(existingAnimals.map((a) => a.animalNumber.trim().toLowerCase()))
+    const allNumbers = new Set(
+      existingAnimals.map((animal) => normalizeAnimalSearch(animal.animalNumber)),
+    )
 
     for (const animal of animals) {
       const num = animal.animalNumber.trim()
       if (!num) {
         newErrors[`${animal.tempId}-animalNumber`] = 'Requerido'
-      } else if (allNumbers.has(num.toLowerCase())) {
+      } else if (allNumbers.has(normalizeAnimalSearch(num))) {
         newErrors[`${animal.tempId}-animalNumber`] = 'Ya existe'
       } else {
         // Verificar duplicados dentro de la lista
         const dupes = animals.filter(
-          (a) => a.animalNumber.trim().toLowerCase() === num.toLowerCase(),
+          (animal) => normalizeAnimalSearch(animal.animalNumber) === normalizeAnimalSearch(num),
         )
         if (dupes.length > 1) {
           newErrors[`${animal.tempId}-animalNumber`] = 'Duplicado en lista'
         }
-        allNumbers.add(num.toLowerCase())
+        allNumbers.add(normalizeAnimalSearch(num))
       }
 
       if (animal.weight && (Number.isNaN(Number(animal.weight)) || Number(animal.weight) <= 0)) {

@@ -22,6 +22,7 @@ import {
   YAxis,
 } from 'recharts'
 import { RootState } from '@/features/store'
+import { animalMatchesSearch, normalizeAnimalSearch, valuesMatchSearch } from '@/lib/animal-search'
 import { isAvailableToSale } from '@/lib/animal-utils'
 import { toDate } from '@/lib/dates'
 import { isDateInMonthBuckets } from '@/lib/statistics-period'
@@ -82,13 +83,6 @@ const formatAnimalAgeInMonths = (months: number | null) => {
   if (years === 0) return `${remainingMonths}m`
   return remainingMonths === 0 ? `${years}a` : `${years}a ${remainingMonths}m`
 }
-const normalizeProductivitySearch = (value: string) =>
-  value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .replace(/^#/, '')
-    .toLocaleLowerCase('es-MX')
 const productivityItemMatches = (
   item: FemaleProductivityResult,
   query: string,
@@ -96,9 +90,7 @@ const productivityItemMatches = (
 ) => {
   if (!query) return true
   const animal = animalById.get(item.femaleId)
-  return [item.animalNumber, animal?.name, animal?.breed].some((value) =>
-    value ? normalizeProductivitySearch(String(value)).includes(query) : false,
-  )
+  return animal ? animalMatchesSearch(animal, query) : valuesMatchSearch([item.animalNumber], query)
 }
 
 const FemaleProductivitySection: React.FC<{
@@ -154,7 +146,7 @@ const FemaleProductivitySection: React.FC<{
       : speciesFiltered[0]?.targetPerYear ||
         ranking.find((item) => item.species === selectedSpecies)?.targetPerYear
   const selectedGroup = selectedBin === null ? null : distribution[selectedBin]
-  const normalizedSearch = normalizeProductivitySearch(tableSearch)
+  const normalizedSearch = normalizeAnimalSearch(tableSearch)
   const searchResultCount = useMemo(
     () =>
       normalizedSearch
@@ -251,7 +243,7 @@ const FemaleProductivitySection: React.FC<{
   const handleSearchChange = (value: string) => {
     setTableSearch(value)
 
-    const query = normalizeProductivitySearch(value)
+    const query = normalizeAnimalSearch(value)
     if (!query) return
 
     const matchingAnimals = speciesFiltered.filter((item) =>
@@ -260,8 +252,7 @@ const FemaleProductivitySection: React.FC<{
     const exactMatch = matchingAnimals.find((item) => {
       const animal = animalById.get(item.femaleId)
       return [item.animalNumber, animal?.name].some(
-        (searchableValue) =>
-          searchableValue && normalizeProductivitySearch(String(searchableValue)) === query,
+        (searchableValue) => searchableValue && normalizeAnimalSearch(searchableValue) === query,
       )
     })
     const match = exactMatch || matchingAnimals[0]

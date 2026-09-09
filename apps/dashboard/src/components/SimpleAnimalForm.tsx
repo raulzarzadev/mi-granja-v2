@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { useZodForm } from '@/hooks/useZodForm'
+import { normalizeAnimalSearch } from '@/lib/animal-search'
 import { ANIMAL_BREEDING_CONFIGS } from '@/lib/animalBreedingConfig'
 import { auth, storage } from '@/lib/firebase'
 import {
@@ -265,7 +266,7 @@ export default function SimpleAnimalForm({
     const duplicate = existingAnimals.some(
       (animal) =>
         animal.id !== initialData?.id &&
-        animal.animalNumber.trim().toLowerCase() === animalNumber.toLowerCase(),
+        normalizeAnimalSearch(animal.animalNumber) === normalizeAnimalSearch(animalNumber),
     )
     if (duplicate) {
       form.setError('animalNumber', {

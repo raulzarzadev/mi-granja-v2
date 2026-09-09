@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useMemo, useState } from 'react'
 import ModalRecordDetail from '@/components/ModalRecordDetail'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { valuesMatchSearch } from '@/lib/animal-search'
 import {
   AnimalRecord,
   getRecordTypeIcon,
@@ -190,7 +191,6 @@ const RecordsTab: React.FC = () => {
       }
 
       if (filters.search) {
-        const q = filters.search.trim().toLowerCase()
         const parts = [
           record.title,
           record.description || '',
@@ -205,7 +205,7 @@ const RecordsTab: React.FC = () => {
           record_type_labels[record.type],
           getRecordTypeLabel(record),
         ]
-        if (!parts.join(' ').toLowerCase().includes(q)) return false
+        if (!valuesMatchSearch(parts, filters.search)) return false
       }
 
       return true

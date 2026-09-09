@@ -12,17 +12,21 @@ export const normalizeAnimalSearch = (value: unknown): string =>
     .replace(/[^a-z0-9]/g, '')
 
 type SearchableAnimal = Pick<Animal, 'id' | 'animalNumber' | 'name' | 'type' | 'breed' | 'notes'>
+type IdentifiableAnimal = Pick<Animal, 'id' | 'animalNumber' | 'name'>
 
-export const animalMatchesSearch = (animal: SearchableAnimal, query: string): boolean => {
+export const valuesMatchSearch = (values: readonly unknown[], query: string): boolean => {
   const normalizedQuery = normalizeAnimalSearch(query)
   if (!normalizedQuery) return true
 
-  return [
-    animal.animalNumber,
-    animal.id,
-    animal.name,
-    animal.type,
-    animal.breed,
-    animal.notes,
-  ].some((value) => normalizeAnimalSearch(value).includes(normalizedQuery))
+  return values.some((value) => normalizeAnimalSearch(value).includes(normalizedQuery))
 }
+
+export const animalMatchesSearch = (animal: SearchableAnimal, query: string): boolean => {
+  return valuesMatchSearch(
+    [animal.animalNumber, animal.id, animal.name, animal.type, animal.breed, animal.notes],
+    query,
+  )
+}
+
+export const animalIdentityMatchesSearch = (animal: IdentifiableAnimal, query: string): boolean =>
+  valuesMatchSearch([animal.id, animal.animalNumber, animal.name], query)

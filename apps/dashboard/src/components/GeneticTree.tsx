@@ -11,6 +11,7 @@ import React, { useMemo, useState } from 'react'
 import AnimalDetailView from '@/components/AnimalDetailView'
 import AnimalTag from '@/components/AnimalTag'
 import { Modal } from '@/components/Modal'
+import { animalMatchesSearch, valuesMatchSearch } from '@/lib/animal-search'
 import { Animal } from '@/types/animals'
 
 interface GeneticTreeProps {
@@ -362,36 +363,25 @@ const GeneticTree: React.FC<GeneticTreeProps> = ({ animals }) => {
 
   const filteredFamilies = useMemo(() => {
     if (!search) return sireFamilies
-    const q = search.toLowerCase()
     return sireFamilies.filter((sf) => {
-      if (sf.father?.animalNumber.toLowerCase().includes(q)) return true
-      if (sf.father?.name?.toLowerCase().includes(q)) return true
-      if (sf.rawFatherId?.toLowerCase().includes(q)) return true
+      if (sf.father && animalMatchesSearch(sf.father, search)) return true
+      if (valuesMatchSearch([sf.rawFatherId], search)) return true
       return sf.mates.some((m) => {
-        if (m.mother?.animalNumber.toLowerCase().includes(q)) return true
-        if (m.mother?.name?.toLowerCase().includes(q)) return true
-        if (m.rawMotherId?.toLowerCase().includes(q)) return true
-        return m.offspring.some(
-          (a) => a.animalNumber.toLowerCase().includes(q) || a.name?.toLowerCase().includes(q),
-        )
+        if (m.mother && animalMatchesSearch(m.mother, search)) return true
+        if (valuesMatchSearch([m.rawMotherId], search)) return true
+        return m.offspring.some((animal) => animalMatchesSearch(animal, search))
       })
     })
   }, [sireFamilies, search])
 
   const filteredOrphans = useMemo(() => {
     if (!search) return orphans
-    const q = search.toLowerCase()
-    return orphans.filter(
-      (a) => a.animalNumber.toLowerCase().includes(q) || a.name?.toLowerCase().includes(q),
-    )
+    return orphans.filter((animal) => animalMatchesSearch(animal, search))
   }, [orphans, search])
 
   const filteredAnimals = useMemo(() => {
     if (!search) return animals
-    const q = search.toLowerCase()
-    return animals.filter(
-      (a) => a.animalNumber.toLowerCase().includes(q) || a.name?.toLowerCase().includes(q),
-    )
+    return animals.filter((animal) => animalMatchesSearch(animal, search))
   }, [animals, search])
 
   const stats = useMemo(() => {

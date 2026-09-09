@@ -5,6 +5,7 @@ import React, { useMemo } from 'react'
 import { Controller, UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
 import { useZodForm } from '@/hooks/useZodForm'
+import { normalizeAnimalSearch } from '@/lib/animal-search'
 import {
   Animal,
   animal_icon,
@@ -293,8 +294,8 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
     const trimmedAnimalNumber = values.animalNumber.trim()
 
     const isDuplicate = existingAnimals.some((animal) => {
-      const currentNumber = animal.animalNumber.trim().toLowerCase()
-      const submittedNumber = trimmedAnimalNumber.toLowerCase()
+      const currentNumber = normalizeAnimalSearch(animal.animalNumber)
+      const submittedNumber = normalizeAnimalSearch(trimmedAnimalNumber)
       return currentNumber === submittedNumber && animal.id !== initialData?.id
     })
 

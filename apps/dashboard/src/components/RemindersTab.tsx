@@ -9,6 +9,7 @@ import Tabs from '@/components/Tabs'
 import type { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useReminders } from '@/hooks/useReminders'
+import { normalizeAnimalSearch, valuesMatchSearch } from '@/lib/animal-search'
 import { Reminder } from '@/types'
 import { AnimalType } from '@/types/animals'
 
@@ -67,8 +68,7 @@ const RemindersTab: React.FC<RemindersTabProps> = ({ speciesFilter = '' }) => {
     }
 
     // Apply search filter
-    const q = search.trim().toLowerCase()
-    if (!q) return result
+    if (!normalizeAnimalSearch(search)) return result
     return result.filter((r) => {
       const parts = [
         r.title || '',
@@ -76,7 +76,7 @@ const RemindersTab: React.FC<RemindersTabProps> = ({ speciesFilter = '' }) => {
         r.animalNumber || '',
         ...(r.animalNumbers || []),
       ]
-      return parts.join(' ').toLowerCase().includes(q)
+      return valuesMatchSearch(parts, search)
     })
   }, [reminders, animals, search, speciesAnimalNumbers, onlyMine, currentUserId])
 

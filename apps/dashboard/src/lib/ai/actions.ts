@@ -1,4 +1,5 @@
 import { Timestamp } from 'firebase-admin/firestore'
+import { animalIdentityMatchesSearch } from '@/lib/animal-search'
 import {
   activeUnweanedOffspring,
   computeAnimalEffectiveStage,
@@ -54,14 +55,7 @@ async function getFarmAnimals(farmId: string): Promise<Animal[]> {
 }
 
 function resolveAnimal(animals: Animal[], ref: string): Animal {
-  const q = ref.trim().toLowerCase()
-  const matches = animals.filter((animal) => {
-    return (
-      animal.id.toLowerCase() === q ||
-      animal.animalNumber?.toLowerCase() === q ||
-      animal.name?.toLowerCase() === q
-    )
-  })
+  const matches = animals.filter((animal) => animalIdentityMatchesSearch(animal, ref))
   if (matches.length === 0) throw new Error(`No encontré el animal "${ref}" en esta granja`)
   if (matches.length > 1)
     throw new Error(`"${ref}" coincide con más de un animal. Usa el número exacto`)

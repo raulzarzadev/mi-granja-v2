@@ -19,6 +19,7 @@ import Tabs from '@/components/Tabs'
 import type { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
+import { animalMatchesSearch, normalizeAnimalSearch, valuesMatchSearch } from '@/lib/animal-search'
 import {
   computeAnimalStage,
   findAnimalByRef,
@@ -264,15 +265,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       if (filters.breed && animal.breed !== filters.breed) return false
       if (filters.gender && animal.gender !== filters.gender) return false
       if (filters.stage && computeAnimalStage(animal) !== filters.stage) return false
-      if (!skipSearch) {
-        const q = filters.search.trim().toLowerCase()
-        if (q) {
-          const num = animal.animalNumber?.toLowerCase() || ''
-          const name = animal.name?.toLowerCase() || ''
-          const notes = animal.notes?.toLowerCase() || ''
-          if (!num.includes(q) && !name.includes(q) && !notes.includes(q)) return false
-        }
-      }
+      if (!skipSearch && !animalMatchesSearch(animal, filters.search)) return false
       return true
     },
     [filters],
@@ -296,21 +289,18 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   // --- Empadres filtrados por tipo/raza/género/búsqueda ---
   const filteredBreedingRecords = useMemo(() => {
     const hasFilters = filters.type || filters.breed || filters.gender
-    const q = filters.search.trim().toLowerCase()
-    if (!hasFilters && !q) return breedingRecords
+    const hasSearch = Boolean(normalizeAnimalSearch(filters.search))
+    if (!hasFilters && !hasSearch) return breedingRecords
     return breedingRecords.filter((r) => {
       const male = animals.find((a) => a.id === r.maleId)
       const females = r.femaleBreedingInfo.map((f) => animals.find((a) => a.id === f.femaleId))
       const involved = [male, ...females]
       if (hasFilters && !involved.some((a) => matchesEtapasFilters(a))) return false
-      if (q) {
-        const idMatch = (r.breedingId || r.id || '').toLowerCase().includes(q)
-        const animalMatch = involved.some((a) => {
-          if (!a) return false
-          const num = a.animalNumber?.toLowerCase() || ''
-          const name = a.name?.toLowerCase() || ''
-          return num.includes(q) || name.includes(q)
-        })
+      if (hasSearch) {
+        const idMatch = valuesMatchSearch([r.breedingId, r.id], filters.search)
+        const animalMatch = involved.some((animal) =>
+          animal ? animalMatchesSearch(animal, filters.search) : false,
+        )
         if (!idMatch && !animalMatch) return false
       }
       return true
@@ -387,20 +377,12 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
             isActiveCalf(a) &&
             matchesEtapasFilters(a, { skipSearch: true }) &&
             (() => {
-              const q = filters.search.trim().toLowerCase()
-              if (!q) return true
-              const num = a.animalNumber?.toLowerCase() || ''
-              const name = a.name?.toLowerCase() || ''
-              const brId = (record.breedingId || record.id || '').toLowerCase()
+              if (!normalizeAnimalSearch(filters.search)) return true
               const mother = animals.find((an) => an.id === fi.femaleId)
-              const motherNum = mother?.animalNumber?.toLowerCase() || ''
-              const motherName = mother?.name?.toLowerCase() || ''
               return (
-                num.includes(q) ||
-                name.includes(q) ||
-                brId.includes(q) ||
-                motherNum.includes(q) ||
-                motherName.includes(q)
+                animalMatchesSearch(a, filters.search) ||
+                valuesMatchSearch([record.breedingId, record.id], filters.search) ||
+                (mother ? animalMatchesSearch(mother, filters.search) : false)
               )
             })()
           ) {
@@ -681,17 +663,12 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
         return { animal: a, motherId, record: record as any, weanDate, daysUntilWean }
       })
       .filter((entry) => {
-        const q = filters.search.trim().toLowerCase()
-        if (!q) return true
-        const num = entry.animal.animalNumber?.toLowerCase() || ''
-        const name = entry.animal.name?.toLowerCase() || ''
-        if (num.includes(q) || name.includes(q)) return true
+        if (!normalizeAnimalSearch(filters.search)) return true
+        if (animalMatchesSearch(entry.animal, filters.search)) return true
         // Buscar también por número/nombre de madre
         if (entry.motherId) {
           const mother = findAnimalByRef(animals, entry.motherId)
-          const motherNum = mother?.animalNumber?.toLowerCase() || ''
-          const motherName = mother?.name?.toLowerCase() || ''
-          if (motherNum.includes(q) || motherName.includes(q)) return true
+          if (mother && animalMatchesSearch(mother, filters.search)) return true
         }
         return false
       })
