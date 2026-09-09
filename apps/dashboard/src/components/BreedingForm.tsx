@@ -6,20 +6,21 @@ import { Controller, useWatch } from 'react-hook-form'
 import { useSelector } from 'react-redux'
 import { z } from 'zod'
 import ModalAnimalListReader from '@/components/ModalAnimalListReader'
-import { ANIMAL_LIST_READER_ENABLED } from '@/lib/animal-list-feature'
 import type { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useZodForm } from '@/hooks/useZodForm'
+import { ANIMAL_LIST_READER_ENABLED } from '@/lib/animal-list-feature'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { breedingWarnings } from '@/lib/breeding-warnings'
+import { estimateOffspringInbreeding } from '@/lib/inbreeding'
 import { Animal } from '@/types/animals'
 import { BreedingRecord, generateBreedingId } from '@/types/breedings'
 import ButtonClose from './buttons/ButtonClose'
 import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Form } from './forms/Form'
 import { TextField } from './forms/TextField'
-
+import { InbreedingIndex } from './InbreedingIndex'
 import InfoNote from './InfoNote'
 import InputSelectAnimals from './inputs/InputSelectAnimals'
 
@@ -299,6 +300,16 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
       .filter((animal): animal is Animal => Boolean(animal))
   }, [animals, femaleBreedingInfo])
 
+  const inbreedingByFemaleId = useMemo(() => {
+    const estimates = new Map<string, ReturnType<typeof estimateOffspringInbreeding>>()
+    if (!selectedMale) return estimates
+
+    for (const female of selectedFemales) {
+      estimates.set(female.id, estimateOffspringInbreeding(female, selectedMale, animals))
+    }
+    return estimates
+  }, [animals, selectedFemales, selectedMale])
+
   const femalesInOtherBreeding = useMemo(() => {
     return selectedFemales.filter((animal) => {
       const brId = getFemaleBreedingId(animal.id)
@@ -448,320 +459,314 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
   return (
     <>
       <Form form={form} onSubmit={onSubmitForm} className="space-y-4">
-      <TextField
-        name="breedingId"
-        label="ID de Empadre"
-        placeholder="Ej: 26520"
-        helperText="Año + semana ISO + consecutivo. Ejemplo: 26520."
-        required
-      />
+        <TextField
+          name="breedingId"
+          label="ID de Empadre"
+          placeholder="Ej: 26520"
+          helperText="Año + semana ISO + consecutivo. Ejemplo: 26520."
+          required
+        />
 
-      {selectedMale ? (
-        <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-          <span className="mr-1">
-            {selectedMale.type === 'oveja' && '🐑'}
-            {selectedMale.type === 'cabra' && '🐐'}
-            {selectedMale.type === 'vaca' && '🐄'}
-            {selectedMale.type === 'cerdo' && '🐷'}
-          </span>
-          {selectedMale.type.charAt(0).toUpperCase() + selectedMale.type.slice(1).replace('_', ' ')}
-        </div>
-      ) : null}
-
-      <Controller
-        control={form.control}
-        name="breedingDate"
-        render={({ field, fieldState }) => (
-          <div className="space-y-1">
-            <DatePickerButtons
-              value={field.value ?? ''}
-              onChange={field.onChange}
-              label="Fecha de Empadre"
-              showToday
-            />
-            {fieldState.error?.message ? (
-              <p className="text-xs text-red-600">{fieldState.error.message}</p>
-            ) : null}
+        {selectedMale ? (
+          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+            <span className="mr-1">
+              {selectedMale.type === 'oveja' && '🐑'}
+              {selectedMale.type === 'cabra' && '🐐'}
+              {selectedMale.type === 'vaca' && '🐄'}
+              {selectedMale.type === 'cerdo' && '🐷'}
+            </span>
+            {selectedMale.type.charAt(0).toUpperCase() +
+              selectedMale.type.slice(1).replace('_', ' ')}
           </div>
-        )}
-      />
+        ) : null}
 
-      {!selectedMale ? (
-        <p className="text-sm text-gray-600 font-medium">
-          Primero selecciona un macho para ver las hembras compatibles
-        </p>
-      ) : femaleIds.length === 0 ? (
-        <p className="text-sm text-gray-600 font-medium">
-          Debes seleccionar al menos una hembra {selectedMale.type}
-        </p>
-      ) : null}
-
-      <InputSelectAnimals
-        animals={males}
-        selectedIds={maleId ? [maleId] : []}
-        onAdd={(id) => {
-          form.setValue('maleId', id, { shouldDirty: true })
-          form.clearErrors('maleId')
-        }}
-        onRemove={() => form.setValue('maleId', '', { shouldDirty: true })}
-        mode="single"
-        label="Macho"
-        placeholder="Buscar macho reproductor..."
-        disabled={isLoading || isSubmitting}
-      />
-
-      {males.length === 0 ? (
-        <p className="text-sm text-gray-600 font-medium">No hay machos reproductores disponibles</p>
-      ) : null}
-      <InfoNote>
-        Solo aparecen machos sin empadre activo. Un macho solo puede estar con un grupo de hembras a
-        la vez.
-      </InfoNote>
-
-      {selectedMale ? (
-        <>
-          <InputSelectAnimals
-            animals={filteredFemales}
-            selectedIds={femaleIds}
-            onAdd={(id) => {
-              form.setValue('femaleIds', [...femaleIds, id], { shouldDirty: true })
-              form.clearErrors('femaleIds')
-            }}
-            onRemove={(id) => handleRemoveFemale(id)}
-            label="Hembras"
-            inputAccessory={
-              <label className="inline-flex min-h-9 cursor-pointer select-none items-center gap-2 rounded-md px-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50">
-                <input
-                  type="checkbox"
-                  checked={onlyAvailable}
-                  onChange={(e) => setOnlyAvailable(e.target.checked)}
-                  aria-label="Mostrar solo hembras disponibles"
-                  className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
-                />
-                Solo hembras disponibles
-                <span className="text-gray-400">({filteredFemales.length})</span>
-              </label>
-            }
-            searchAction={
-              ANIMAL_LIST_READER_ENABLED &&
-              <button
-                type="button"
-                onClick={() => setIsAnimalListReaderOpen(true)}
-                aria-label="Leer lista de aretes con imágenes"
-                title="Leer lista de aretes con imágenes"
-                className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border border-green-300 bg-green-50 px-2 text-lg text-green-700 transition hover:border-green-500 hover:bg-green-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2"
-              >
-                <span aria-hidden="true">✨</span>
-              </button>
-            }
-            placeholder={`Buscar hembra ${selectedMale.type} por numero...`}
-            disabled={!selectedMale || isLoading || isSubmitting}
-            showOmitButton
-            secondaryLabel={(animal) => {
-              const brId = getFemaleBreedingId(animal.id)
-              return [
-                brId ? `Empadre: ${brId}` : '',
-                ...breedingWarnings(animal, selectedMale, animals),
-              ]
-                .filter(Boolean)
-                .join(' · ')
-            }}
-          />
-
-          {femaleIds.length > 0 ? (
-            <div className="space-y-3">
-              <aside
-                className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
-                aria-label="Edad y parentesco de las hembras"
-              >
-                <p className="font-semibold">
-                  Edad y parentesco · información, no bloquea el empadre
-                </p>
-                {animals
-                  .filter((animal) => femaleIds.includes(animal.id))
-                  .map((female) => (
-                    <p key={female.id} className="mt-2">
-                      <strong>#{female.animalNumber}:</strong>{' '}
-                      {breedingWarnings(female, selectedMale, animals).join(' ')}
-                    </p>
-                  ))}
-              </aside>
-              {femalesInOtherBreeding.length > 0 ? (
-                <div className="mb-3 p-2 rounded bg-orange-100 border border-orange-300 text-orange-900 text-sm flex items-center gap-2">
-                  <span className="text-xl">⚠️</span>
-                  <span>
-                    Las siguientes hembras ya pertenecen a otro empadre:
-                    {femalesInOtherBreeding.map((animal) => (
-                      <span key={animal.id} className="ml-2 font-semibold">
-                        {animal.animalNumber}
-                        {(() => {
-                          const brId = getFemaleBreedingId(animal.id)
-                          return brId ? (
-                            <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-200 text-orange-800">
-                              empadre {brId}
-                            </span>
-                          ) : null
-                        })()}
-                      </span>
-                    ))}
-                    . Puedes ignorar y continuar, o hacerlo manualmente más tarde.
-                  </span>
-                </div>
+        <Controller
+          control={form.control}
+          name="breedingDate"
+          render={({ field, fieldState }) => (
+            <div className="space-y-1">
+              <DatePickerButtons
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                label="Fecha de Empadre"
+                showToday
+              />
+              {fieldState.error?.message ? (
+                <p className="text-xs text-red-600">{fieldState.error.message}</p>
               ) : null}
+            </div>
+          )}
+        />
 
-              <label className="block text-sm font-medium text-gray-700">
-                Hembras seleccionadas ({femaleIds.length})
-              </label>
+        {!selectedMale ? (
+          <p className="text-sm text-gray-600 font-medium">
+            Primero selecciona un macho para ver las hembras compatibles
+          </p>
+        ) : femaleIds.length === 0 ? (
+          <p className="text-sm text-gray-600 font-medium">
+            Debes seleccionar al menos una hembra {selectedMale.type}
+          </p>
+        ) : null}
 
-              <div className="space-y-3 bg-gray-50 rounded-md">
-                {[...femaleBreedingInfo]
-                  .sort((a, b) => {
-                    const anA = animals.find((x) => x.id === a.femaleId)?.animalNumber || ''
-                    const anB = animals.find((x) => x.id === b.femaleId)?.animalNumber || ''
-                    return anA.localeCompare(anB, 'es', { numeric: true })
-                  })
-                  .map((info, _index) => {
-                    const animal = animals.find((item) => item.id === info.femaleId)
-                    if (!animal) {
-                      return null
-                    }
+        <InputSelectAnimals
+          animals={males}
+          selectedIds={maleId ? [maleId] : []}
+          onAdd={(id) => {
+            form.setValue('maleId', id, { shouldDirty: true })
+            form.clearErrors('maleId')
+          }}
+          onRemove={() => form.setValue('maleId', '', { shouldDirty: true })}
+          mode="single"
+          label="Macho"
+          placeholder="Buscar macho reproductor..."
+          disabled={isLoading || isSubmitting}
+        />
 
-                    const femaleBreedingId = getFemaleBreedingId(animal.id)
+        {males.length === 0 ? (
+          <p className="text-sm text-gray-600 font-medium">
+            No hay machos reproductores disponibles
+          </p>
+        ) : null}
+        <InfoNote>
+          Solo aparecen machos sin empadre activo. Un macho solo puede estar con un grupo de hembras
+          a la vez.
+        </InfoNote>
 
-                    return (
-                      <div
-                        key={animal.id}
-                        className="bg-white p-3 rounded-lg border border-gray-100"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-medium text-gray-900 flex items-center gap-2">
-                            {animal.animalNumber} - {animal.type}
-                            {femaleBreedingId ? (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-100 text-orange-800">
-                                empadre {femaleBreedingId}
+        {selectedMale ? (
+          <>
+            <InputSelectAnimals
+              animals={filteredFemales}
+              selectedIds={femaleIds}
+              onAdd={(id) => {
+                form.setValue('femaleIds', [...femaleIds, id], { shouldDirty: true })
+                form.clearErrors('femaleIds')
+              }}
+              onRemove={(id) => handleRemoveFemale(id)}
+              label="Hembras"
+              inputAccessory={
+                <label className="inline-flex min-h-9 cursor-pointer select-none items-center gap-2 rounded-md px-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={onlyAvailable}
+                    onChange={(e) => setOnlyAvailable(e.target.checked)}
+                    aria-label="Mostrar solo hembras disponibles"
+                    className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+                  />
+                  Solo hembras disponibles
+                  <span className="text-gray-400">({filteredFemales.length})</span>
+                </label>
+              }
+              searchAction={
+                ANIMAL_LIST_READER_ENABLED && (
+                  <button
+                    type="button"
+                    onClick={() => setIsAnimalListReaderOpen(true)}
+                    aria-label="Leer lista de aretes con imágenes"
+                    title="Leer lista de aretes con imágenes"
+                    className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border border-green-300 bg-green-50 px-2 text-lg text-green-700 transition hover:border-green-500 hover:bg-green-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2"
+                  >
+                    <span aria-hidden="true">✨</span>
+                  </button>
+                )
+              }
+              placeholder={`Buscar hembra ${selectedMale.type} por numero...`}
+              disabled={!selectedMale || isLoading || isSubmitting}
+              showOmitButton
+              secondaryLabel={(animal) => {
+                const brId = getFemaleBreedingId(animal.id)
+                return [
+                  brId ? `Empadre: ${brId}` : '',
+                  ...breedingWarnings(animal, selectedMale, animals),
+                ]
+                  .filter(Boolean)
+                  .join(' · ')
+              }}
+            />
+
+            {femaleIds.length > 0 ? (
+              <div className="space-y-3">
+                {femalesInOtherBreeding.length > 0 ? (
+                  <div className="mb-3 p-2 rounded bg-orange-100 border border-orange-300 text-orange-900 text-sm flex items-center gap-2">
+                    <span className="text-xl">⚠️</span>
+                    <span>
+                      Las siguientes hembras ya pertenecen a otro empadre:
+                      {femalesInOtherBreeding.map((animal) => (
+                        <span key={animal.id} className="ml-2 font-semibold">
+                          {animal.animalNumber}
+                          {(() => {
+                            const brId = getFemaleBreedingId(animal.id)
+                            return brId ? (
+                              <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-200 text-orange-800">
+                                empadre {brId}
                               </span>
-                            ) : null}
-                          </span>
-                          <ButtonClose
-                            onClick={() => handleRemoveFemale(animal.id)}
-                            showTitle="Omitir"
-                            title="Quitar hembra"
-                          />
-                        </div>
+                            ) : null
+                          })()}
+                        </span>
+                      ))}
+                      . Puedes ignorar y continuar, o hacerlo manualmente más tarde.
+                    </span>
+                  </div>
+                ) : null}
 
-                        <label className="mt-2 flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={!!info.pregnancyConfirmedDate}
-                            onChange={(e) =>
-                              handleFemaleBreedingChange(
-                                animal.id,
-                                'pregnancyConfirmed',
-                                e.target.checked,
-                              )
-                            }
-                            className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                          />
-                          <span className="text-sm text-gray-700">Gestación confirmada</span>
-                        </label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Hembras seleccionadas ({femaleIds.length})
+                </label>
 
-                        {info.pregnancyConfirmedDate ? (
-                          <div className="mt-2 space-y-2">
-                            <DatePickerButtons
-                              value={info.pregnancyConfirmedDate ?? ''}
-                              onChange={(val) =>
+                <div className="space-y-3 bg-gray-50 rounded-md">
+                  {[...femaleBreedingInfo]
+                    .sort((a, b) => {
+                      const anA = animals.find((x) => x.id === a.femaleId)?.animalNumber || ''
+                      const anB = animals.find((x) => x.id === b.femaleId)?.animalNumber || ''
+                      return anA.localeCompare(anB, 'es', { numeric: true })
+                    })
+                    .map((info, _index) => {
+                      const animal = animals.find((item) => item.id === info.femaleId)
+                      if (!animal) {
+                        return null
+                      }
+
+                      const femaleBreedingId = getFemaleBreedingId(animal.id)
+                      const inbreedingEstimate = inbreedingByFemaleId.get(animal.id)
+
+                      return (
+                        <div
+                          key={animal.id}
+                          className="bg-white p-3 rounded-lg border border-gray-100"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium text-gray-900 flex items-center gap-2">
+                              {animal.animalNumber} - {animal.type}
+                              {femaleBreedingId ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-100 text-orange-800">
+                                  empadre {femaleBreedingId}
+                                </span>
+                              ) : null}
+                            </span>
+                            <span className="flex shrink-0 items-center gap-1">
+                              {inbreedingEstimate ? (
+                                <InbreedingIndex estimate={inbreedingEstimate} />
+                              ) : null}
+                              <ButtonClose
+                                onClick={() => handleRemoveFemale(animal.id)}
+                                showTitle="Omitir"
+                                title="Quitar hembra"
+                              />
+                            </span>
+                          </div>
+
+                          <label className="mt-2 flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={!!info.pregnancyConfirmedDate}
+                              onChange={(e) =>
                                 handleFemaleBreedingChange(
                                   animal.id,
-                                  'pregnancyConfirmedDate',
-                                  val || null,
+                                  'pregnancyConfirmed',
+                                  e.target.checked,
                                 )
                               }
-                              label="Fecha de confirmación"
-                              showToday
+                              className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                             />
-                            {info.expectedBirthDate ? (
-                              <p className="text-xs text-gray-400">
-                                Parto esperado: {info.expectedBirthDate}
-                              </p>
-                            ) : null}
-                          </div>
-                        ) : null}
+                            <span className="text-sm text-gray-700">Gestación confirmada</span>
+                          </label>
 
-                        {info.actualBirthDate ? (
-                          <div className="mt-3 space-y-2">
-                            <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-medium">
-                              🍼 Parto registrado
-                            </span>
-                            {info.offspring && info.offspring.length > 0 ? (
-                              <div className="flex items-center flex-wrap gap-1 text-xs text-gray-600">
-                                <span>Descendencia:</span>
-                                {info.offspring.map((offspringId) => {
-                                  const offspring = animals.find(
-                                    (animalItem) => animalItem.id === offspringId,
+                          {info.pregnancyConfirmedDate ? (
+                            <div className="mt-2 space-y-2">
+                              <DatePickerButtons
+                                value={info.pregnancyConfirmedDate ?? ''}
+                                onChange={(val) =>
+                                  handleFemaleBreedingChange(
+                                    animal.id,
+                                    'pregnancyConfirmedDate',
+                                    val || null,
                                   )
-                                  return offspring ? (
-                                    <span
-                                      key={offspringId}
-                                      className="inline-flex items-center px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded"
-                                    >
-                                      {offspring.animalNumber}
-                                    </span>
-                                  ) : (
-                                    <span
-                                      key={offspringId}
-                                      className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-600 rounded"
-                                    >
-                                      ID: {offspringId}
-                                    </span>
-                                  )
-                                })}
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
-                      </div>
-                    )
-                  })}
+                                }
+                                label="Fecha de confirmación"
+                                showToday
+                              />
+                              {info.expectedBirthDate ? (
+                                <p className="text-xs text-gray-400">
+                                  Parto esperado: {info.expectedBirthDate}
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : null}
+
+                          {info.actualBirthDate ? (
+                            <div className="mt-3 space-y-2">
+                              <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-medium">
+                                🍼 Parto registrado
+                              </span>
+                              {info.offspring && info.offspring.length > 0 ? (
+                                <div className="flex items-center flex-wrap gap-1 text-xs text-gray-600">
+                                  <span>Descendencia:</span>
+                                  {info.offspring.map((offspringId) => {
+                                    const offspring = animals.find(
+                                      (animalItem) => animalItem.id === offspringId,
+                                    )
+                                    return offspring ? (
+                                      <span
+                                        key={offspringId}
+                                        className="inline-flex items-center px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded"
+                                      >
+                                        {offspring.animalNumber}
+                                      </span>
+                                    ) : (
+                                      <span
+                                        key={offspringId}
+                                        className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-600 rounded"
+                                      >
+                                        ID: {offspringId}
+                                      </span>
+                                    )
+                                  })}
+                                </div>
+                              ) : null}
+                            </div>
+                          ) : null}
+                        </div>
+                      )
+                    })}
+                </div>
               </div>
-            </div>
-          ) : null}
-        </>
-      ) : null}
+            ) : null}
+          </>
+        ) : null}
 
-      <div className="flex gap-3 pt-4">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={
-            isLoading ||
-            isSubmitting ||
-            !maleId ||
-            femaleIds.length === 0 ||
-            Boolean(errors.breedingId)
-          }
-          className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
-        >
-          {isSubmitting || isLoading
-            ? initialData
-              ? 'Actualizando...'
-              : 'Registrando...'
-            : !maleId
-              ? 'Selecciona un macho'
-              : femaleIds.length === 0
-                ? 'Selecciona hembras'
-                : errors.breedingId
-                  ? 'ID duplicado'
-                  : initialData
-                    ? 'Actualizar Empadre'
-                    : 'Registrar Empadre'}
-        </button>
-      </div>
+        <div className="flex gap-3 pt-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={
+              isLoading ||
+              isSubmitting ||
+              !maleId ||
+              femaleIds.length === 0 ||
+              Boolean(errors.breedingId)
+            }
+            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
+          >
+            {isSubmitting || isLoading
+              ? initialData
+                ? 'Actualizando...'
+                : 'Registrando...'
+              : !maleId
+                ? 'Selecciona un macho'
+                : femaleIds.length === 0
+                  ? 'Selecciona hembras'
+                  : errors.breedingId
+                    ? 'ID duplicado'
+                    : initialData
+                      ? 'Actualizar Empadre'
+                      : 'Registrar Empadre'}
+          </button>
+        </div>
       </Form>
       <ModalAnimalListReader
         isOpen={ANIMAL_LIST_READER_ENABLED && isAnimalListReaderOpen}

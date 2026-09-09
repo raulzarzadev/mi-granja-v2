@@ -260,40 +260,56 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
         </div>
       )}
 
-      {/* ═══ ANIMAL (centrado, protagonista) ═══ */}
-      <div className="max-w-xs mx-auto">
+      {/* ═══ ANIMAL + HERMANOS ═══ */}
+      <div className={`relative mx-auto max-w-xs ${hasSiblings ? 'pb-10 max-[480px]:pb-0' : ''}`}>
         <Node a={animal} label="Animal" highlight size="lg" />
-      </div>
 
-      {/* ═══ HERMANOS (secundario, debajo) ═══ */}
-      {hasSiblings && (
-        <div className="flex items-center justify-center gap-2 flex-wrap pt-1">
-          {tree.fullCount > 0 && (
-            <button
-              onClick={() => setSiblingModal('completos')}
-              className="inline-flex items-center gap-1.5 px-2 py-1 text-[10px] text-gray-400 border border-gray-100 rounded-full hover:bg-gray-50 transition-colors cursor-pointer"
-            >
-              Completos <span className="font-semibold text-gray-500">{tree.fullCount}</span>
-            </button>
-          )}
-          {tree.maternalCount > 0 && (
-            <button
-              onClick={() => setSiblingModal('madre')}
-              className="inline-flex items-center gap-1.5 px-2 py-1 text-[10px] text-gray-400 border border-gray-100 rounded-full hover:bg-gray-50 transition-colors cursor-pointer"
-            >
-              1/2 madre <span className="font-semibold text-gray-500">{tree.maternalCount}</span>
-            </button>
-          )}
-          {tree.paternalCount > 0 && (
-            <button
-              onClick={() => setSiblingModal('padre')}
-              className="inline-flex items-center gap-1.5 px-2 py-1 text-[10px] text-gray-400 border border-gray-100 rounded-full hover:bg-gray-50 transition-colors cursor-pointer"
-            >
-              1/2 padre <span className="font-semibold text-gray-500">{tree.paternalCount}</span>
-            </button>
-          )}
-        </div>
-      )}
+        {hasSiblings && (
+          <aside
+            aria-label="Hermanos"
+            className="absolute left-full top-0 ml-1 w-24 max-[480px]:static max-[480px]:mt-2 max-[480px]:ml-0 max-[480px]:w-full"
+          >
+            <p className="mb-0.5 px-1 text-[9px] font-semibold uppercase tracking-wide text-gray-500">
+              Hermanos
+            </p>
+            <div className="space-y-0.5 max-[480px]:flex max-[480px]:flex-wrap max-[480px]:gap-1 max-[480px]:space-y-0">
+              {tree.fullCount > 0 && (
+                <button
+                  type="button"
+                  aria-label={`Ver ${tree.fullCount} hermanos completos`}
+                  onClick={() => setSiblingModal('completos')}
+                  className="flex min-h-7 w-full cursor-pointer items-center justify-between gap-1 rounded-md border border-gray-200 bg-white px-1.5 text-[10px] text-gray-600 transition-colors hover:border-green-300 hover:bg-green-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1 max-[480px]:w-auto"
+                >
+                  <span>Completos</span>
+                  <span className="font-semibold text-gray-800">{tree.fullCount}</span>
+                </button>
+              )}
+              {tree.maternalCount > 0 && (
+                <button
+                  type="button"
+                  aria-label={`Ver ${tree.maternalCount} medios hermanos por madre`}
+                  onClick={() => setSiblingModal('madre')}
+                  className="flex min-h-7 w-full cursor-pointer items-center justify-between gap-1 rounded-md border border-gray-200 bg-white px-1.5 text-[10px] text-gray-600 transition-colors hover:border-green-300 hover:bg-green-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1 max-[480px]:w-auto"
+                >
+                  <span>1/2 madre</span>
+                  <span className="font-semibold text-gray-800">{tree.maternalCount}</span>
+                </button>
+              )}
+              {tree.paternalCount > 0 && (
+                <button
+                  type="button"
+                  aria-label={`Ver ${tree.paternalCount} medios hermanos por padre`}
+                  onClick={() => setSiblingModal('padre')}
+                  className="flex min-h-7 w-full cursor-pointer items-center justify-between gap-1 rounded-md border border-gray-200 bg-white px-1.5 text-[10px] text-gray-600 transition-colors hover:border-green-300 hover:bg-green-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1 max-[480px]:w-auto"
+                >
+                  <span>1/2 padre</span>
+                  <span className="font-semibold text-gray-800">{tree.paternalCount}</span>
+                </button>
+              )}
+            </div>
+          </aside>
+        )}
+      </div>
 
       {/* ═══ DESCENDENCIA ═══ */}
       {tree.children.length > 0 && (

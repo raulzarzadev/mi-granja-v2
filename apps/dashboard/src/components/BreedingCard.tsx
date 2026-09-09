@@ -6,6 +6,7 @@ import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import catchError from '@/lib/catchError'
 import { formatDate, fromNow } from '@/lib/dates'
+import { estimateOffspringInbreeding } from '@/lib/inbreeding'
 import { Animal } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 import { NewCommentInput } from '@/types/comment'
@@ -17,7 +18,9 @@ import {
   getFemaleBreedingStatus,
 } from './Dashboard/Animals/helpers/breedingViewHelpers'
 import { Icon } from './Icon/icon'
+import { InbreedingIndex } from './InbreedingIndex'
 import ModalBreedingAnimalDetails from './ModalBreedingAnimalDetails'
+import { PersistentVerticalScrollArea } from './PersistentVerticalScrollArea'
 
 interface BreedingCardProps extends BreedingActionHandlers {
   record: BreedingRecord
@@ -158,7 +161,10 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         pregnancyConfirmedDate: pregnancyDate || null,
         expectedBirthDate: expected,
         actualBirthDate: info.actualBirthDate || null,
+        offspring: info.offspring ?? [],
         status,
+        inbreedingEstimate:
+          animalInfo && male ? estimateOffspringInbreeding(animalInfo, male, animals) : undefined,
       }
     }) || []
 
@@ -334,7 +340,7 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
             <span className="text-green-600">
               <Icon icon="baby" className="inline mr-1" />
               {femaleStatuses.births} parto
-              {femaleStatuses.births !== 1 ? 's' : ''}
+              {femaleStatuses.births !== 1 ? 's' : ''} ({offspring.length})
             </span>
           )}
           {femaleStatuses.pregnancies > 0 && (
@@ -422,98 +428,95 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
         {femalesBreedingInfo.length === 0 && (
           <p className="text-sm text-gray-500 mb-2">No hay hembras involucradas</p>
         )}
-        <div className="ml-6 mb-2 space-y-2 max-h-60 overflow-y-scroll pr-2 female-list">
-          {sortedFemales.map((femaleAnimal) => {
-            const animal = animals.find((a) => a.id === femaleAnimal.animalId)
-            return animal ? (
-              <ModalBreedingAnimalDetails
-                key={femaleAnimal.animalId}
-                animal={animal}
-                record={record}
-                animalType="female"
-                status={femaleAnimal.status}
-                animals={animals}
-                onConfirmPregnancy={onConfirmPregnancy}
-                onUnconfirmPregnancy={onUnconfirmPregnancy}
-                onRemoveFromBreeding={onRemoveFromBreeding}
-                onDeleteBirth={onDeleteBirth}
-                onAddBirth={onAddBirth}
-                onAbort={onAbort}
-                triggerComponent={
-                  <div className="p-2 bg-gray-50 rounded-md hover:bg-gray-100 cursor-pointer transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-800">
-                          {femaleAnimal.animalNumber}
+        <PersistentVerticalScrollArea ariaLabel="Hembras del empadre" className="mb-2 ml-6 h-60">
+          <div className="space-y-2">
+            {sortedFemales.map((femaleAnimal) => {
+              const animal = animals.find((a) => a.id === femaleAnimal.animalId)
+              return animal ? (
+                <ModalBreedingAnimalDetails
+                  key={femaleAnimal.animalId}
+                  animal={animal}
+                  record={record}
+                  animalType="female"
+                  status={femaleAnimal.status}
+                  animals={animals}
+                  onConfirmPregnancy={onConfirmPregnancy}
+                  onUnconfirmPregnancy={onUnconfirmPregnancy}
+                  onRemoveFromBreeding={onRemoveFromBreeding}
+                  onDeleteBirth={onDeleteBirth}
+                  onAddBirth={onAddBirth}
+                  onAbort={onAbort}
+                  triggerComponent={
+                    <div className="cursor-pointer rounded-md bg-gray-50 p-2 transition-colors hover:bg-gray-100">
+                      <div className="flex min-w-0 items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="font-medium text-gray-800">
+                            {femaleAnimal.animalNumber}
+                          </span>
+                          <span className="shrink-0 rounded-full bg-gray-200 px-2 py-1 text-xs text-gray-600">
+                            {femaleAnimal.type}
+                          </span>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1">
+                          {femaleAnimal.inbreedingEstimate ? (
+                            <InbreedingIndex estimate={femaleAnimal.inbreedingEstimate} />
+                          ) : null}
+                          <Icon icon="view" className="w-4 h-4 text-gray-400" />
+                        </div>
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1">
+                          {femaleAnimal.status === 'parida' ? (
+                            <span className="rounded bg-pink-100 px-2 py-1 text-xs font-medium text-pink-800">
+                              Parida
+                              {femaleAnimal.actualBirthDate
+                                ? ` ${formatDate(femaleAnimal.actualBirthDate, 'dd/MM/yy')}`
+                                : ''}
+                            </span>
+                          ) : (
+                            <BadgeAnimalStatus status={femaleAnimal.status} />
+                          )}
+                          {femaleAnimal.status === 'parida' ? (
+                            <span className="text-xs font-semibold text-pink-700">
+                              ({femaleAnimal.offspring.length})
+                            </span>
+                          ) : null}
                         </span>
-                        <span className="text-xs px-2 py-1 bg-gray-200 rounded-full text-gray-600">
-                          {femaleAnimal.type}
-                        </span>
-
-                        <BadgeAnimalStatus status={femaleAnimal.status} />
                         {femaleAnimal.status === 'embarazada' && (
-                          <div className="flex items-center gap-2">
-                            <div className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                              <span className="text-xs font-medium text-blue-800">Parto </span>
-                              {fromNow(femaleAnimal.expectedBirthDate)}
-                            </div>
-                          </div>
-                        )}
-                        {femaleAnimal.status === 'parida' && femaleAnimal.actualBirthDate && (
-                          <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
-                            Parto: {formatDate(femaleAnimal.actualBirthDate)}
+                          <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800">
+                            <span className="font-medium">Parto </span>
+                            {fromNow(femaleAnimal.expectedBirthDate)}
                           </span>
                         )}
+                        {femaleAnimal.status === 'parida' &&
+                          femaleAnimal.offspring.map((offspringId) => {
+                            const offspringAnimal = animals.find((item) => item.id === offspringId)
+                            return (
+                              <span
+                                key={offspringId}
+                                className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800"
+                              >
+                                {offspringAnimal?.animalNumber ?? offspringId}
+                              </span>
+                            )
+                          })}
                       </div>
-                      <Icon icon="view" className="w-4 h-4 text-gray-400" />
                     </div>
-                  </div>
-                }
-              />
-            ) : (
-              <AnimalNotFound
-                key={femaleAnimal.animalId || 'unknown'}
-                animalId={femaleAnimal.animalId || ''}
-                onDelete={async () => {
-                  return onRemoveFromBreeding?.(record, femaleAnimal.animalId || '')
-                }}
-              />
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Crías */}
-      {offspring.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-gray-100">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">Crías registradas:</span>
-            <span className="text-sm font-medium text-green-600">
-              {offspring.length} animal
-              {offspring.length !== 1 ? 'es' : ''}
-            </span>
-          </div>
-
-          {/* Mostrar resumen por hembra que ya parió */}
-          {record.femaleBreedingInfo
-            .filter((info) => info.actualBirthDate && info.offspring && info.offspring.length > 0)
-            .map((info) => {
-              const femaleAnimal = animals.find((a) => a.id === info.femaleId)
-              return (
-                <div key={info.femaleId} className="text-xs text-gray-600 mb-1">
-                  <span className=" font-bold">{femaleAnimal?.animalNumber || 'Desconocido'}</span>{' '}
-                  parió {info.offspring?.length || 0} cría
-                  {(info.offspring?.length || 0) !== 1 ? 's' : ''}
-                  {info.actualBirthDate && (
-                    <span className="ml-2 text-gray-500">
-                      el {formatDate(info.actualBirthDate)}
-                    </span>
-                  )}
-                </div>
+                  }
+                />
+              ) : (
+                <AnimalNotFound
+                  key={femaleAnimal.animalId || 'unknown'}
+                  animalId={femaleAnimal.animalId || ''}
+                  onDelete={async () => {
+                    return onRemoveFromBreeding?.(record, femaleAnimal.animalId || '')
+                  }}
+                />
               )
             })}
-        </div>
-      )}
+          </div>
+        </PersistentVerticalScrollArea>
+      </div>
 
       <div className="space-y-3">
         <Comments

@@ -79,6 +79,30 @@ describe('BreedingCard', () => {
     expect(container).toBeTruthy()
   })
 
+  it('muestra las crías junto a su madre y solo el total en el resumen', () => {
+    const calf = { ...mockAnimals[1], id: 'calf1', animalNumber: 'C001', stage: 'cria' } as Animal
+    const record: BreedingRecord = {
+      ...mockRecord,
+      femaleBreedingInfo: [
+        {
+          femaleId: 'female1',
+          pregnancyConfirmedDate: null,
+          actualBirthDate: new Date(2024, 9, 1),
+          offspring: [calf.id],
+        },
+      ],
+    }
+
+    renderWithProviders(<BreedingCard record={record} animals={[...mockAnimals, calf]} />)
+
+    expect(screen.getByText('C001')).toBeInTheDocument()
+    expect(screen.getByText('Parida 01/10/24')).toBeInTheDocument()
+    expect(screen.queryByText(/Parto:/)).not.toBeInTheDocument()
+    expect(screen.getByText(/1 parto \(1\)/)).toBeInTheDocument()
+    expect(screen.queryByText(/Crías registradas/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/F001 parió/)).not.toBeInTheDocument()
+  })
+
   it('allows finishing an active breeding from the action menu', async () => {
     const onFinish = jest.fn()
     renderWithProviders(

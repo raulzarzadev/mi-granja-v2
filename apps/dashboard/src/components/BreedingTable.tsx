@@ -6,9 +6,11 @@ import ButtonConfirm from '@/components/buttons/ButtonConfirm'
 import DataTable, { ColumnDef } from '@/components/DataTable'
 import { Modal } from '@/components/Modal'
 import { formatDate } from '@/lib/dates'
+import { highestOffspringInbreeding } from '@/lib/inbreeding'
 import { Animal, animals_types_labels } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 import { getFemaleBreedingStatus } from './Dashboard/Animals/helpers/breedingViewHelpers'
+import { InbreedingIndex } from './InbreedingIndex'
 import InfoNote from './InfoNote'
 
 interface BreedingTableProps {
@@ -80,6 +82,7 @@ type EnrichedBreeding = {
   record: BreedingRecord
   male: Animal | undefined
   status: ReturnType<typeof getBreedingStatus>
+  highestInbreeding: ReturnType<typeof highestOffspringInbreeding>
 }
 
 const BreedingTable: React.FC<BreedingTableProps> = ({
@@ -107,6 +110,11 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
         record: r,
         male: animals.find((a) => a.id === r.maleId),
         status: getBreedingStatus(r, animals),
+        highestInbreeding: highestOffspringInbreeding(
+          animals.find((a) => a.id === r.maleId),
+          r.femaleBreedingInfo.map((info) => info.femaleId),
+          animals,
+        ),
       })),
     [records, animals],
   )
@@ -191,6 +199,15 @@ const BreedingTable: React.FC<BreedingTableProps> = ({
             </span>
           ),
         className: 'whitespace-nowrap',
+      },
+      {
+        key: 'inbreeding',
+        label: 'Consang.',
+        sortable: true,
+        sortFn: (a, b) => a.highestInbreeding.index - b.highestInbreeding.index,
+        render: (row) => <InbreedingIndex estimate={row.highestInbreeding} />,
+        className: 'text-center whitespace-nowrap',
+        headerClassName: 'text-center',
       },
       {
         key: 'offspring',
