@@ -880,6 +880,11 @@ export async function buildAiContext(
             empadresActivos: farmBreedingRecords.filter(
               (record) => (record.status || 'active') !== 'finished',
             ).length,
+            hembrasEnEmpadresActivos: new Set(
+              farmBreedingRecords
+                .filter((record) => (record.status || 'active') !== 'finished')
+                .flatMap((record) => record.femaleBreedingInfo.map((info) => info.femaleId)),
+            ).size,
             embarazosPendientesParto: expectedBirths.length,
             hembrasPendientesConfirmarEmbarazo: pregnancyPendingFemales,
             madresLactantes: nursingMothers.length,
