@@ -46,6 +46,40 @@ import { BreedingRecord, generateBreedingId as buildBreedingId } from '@/types/b
 import { Comment, NewCommentInput } from '@/types/comment'
 import { getBreedingUpcomingBirths } from './libs/breeding-helpers'
 
+const breedingDateKey = (value: unknown) => {
+  const date = safeToDate(value)
+  if (!date) return null
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const normalizeFemaleBreedingInfo = (value: unknown) => {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((raw) => {
+      const info = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
+      return {
+        femaleId: String(info.femaleId ?? ''),
+        pregnancyConfirmedDate: breedingDateKey(info.pregnancyConfirmedDate),
+        expectedBirthDate: breedingDateKey(info.expectedBirthDate),
+        actualBirthDate: breedingDateKey(info.actualBirthDate),
+        diagnosedAt: breedingDateKey(info.diagnosedAt),
+        offspring: Array.isArray(info.offspring)
+          ? info.offspring.map(String).sort((a, b) => a.localeCompare(b))
+          : [],
+        outcome: info.outcome ?? null,
+        outcomeNotes: info.outcomeNotes ?? null,
+        legacyStatus: info.legacyStatus ?? null,
+      }
+    })
+    .sort((a, b) => a.femaleId.localeCompare(b.femaleId))
+}
+
+export const breedingParticipantsEqual = (a: unknown, b: unknown) =>
+  movementEqual(normalizeFemaleBreedingInfo(a), normalizeFemaleBreedingInfo(b))
+
 export const useBreedingCRUD = () => {
   const dispatch = useDispatch()
 
@@ -172,7 +206,10 @@ export const useBreedingCRUD = () => {
           const previous = docs.get(`breedingRecords/${id}`)
           if (!previous) throw new Error('Empadre no encontrado')
           if (
-            !movementEqual(previous.femaleBreedingInfo, currentRecord.femaleBreedingInfo) ||
+            !breedingParticipantsEqual(
+              previous.femaleBreedingInfo,
+              currentRecord.femaleBreedingInfo,
+            ) ||
             previous.maleId !== currentRecord.maleId
           )
             throw new Error('El empadre cambió. Actualiza la pantalla antes de continuar.')

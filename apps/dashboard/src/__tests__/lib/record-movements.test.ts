@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
-import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
+import { breedingParticipantsEqual, useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useRecordMovements } from '@/hooks/useRecordMovements'
-import { commitMovement, undoMovement } from '@/lib/record-movements'
+import { commitMovement, movementEqual, undoMovement } from '@/lib/record-movements'
 import type { BirthRecord } from '@/types'
 import type { Animal } from '@/types/animals'
 
@@ -69,6 +69,58 @@ jest.mock('firebase/firestore', () => ({
 
 const context = { userId: 'u', farmId: 'f' }
 const date = new Date('2025-01-01T12:00:00')
+
+it('compara como iguales las fechas serializadas de Redux y Firestore', () => {
+  const milliseconds = date.getTime()
+  const seconds = Math.floor(milliseconds / 1000)
+
+  expect(
+    movementEqual(
+      [
+        {
+          femaleId: 'h',
+          pregnancyConfirmedDate: { seconds, nanoseconds: 0 },
+          expectedBirthDate: null,
+        },
+      ],
+      [
+        {
+          femaleId: 'h',
+          pregnancyConfirmedDate: milliseconds,
+          actualBirthDate: undefined,
+        },
+      ],
+    ),
+  ).toBe(true)
+  expect(movementEqual(date, milliseconds + 1)).toBe(false)
+})
+
+it('compara empadres antiguos por día y campos operativos', () => {
+  const seconds = Math.floor(date.getTime() / 1000)
+
+  expect(
+    breedingParticipantsEqual(
+      [
+        {
+          femaleId: 'h',
+          animalNumber: 'H-1',
+          pregnancyConfirmedDate: { seconds, nanoseconds: 0 },
+        },
+      ],
+      [
+        {
+          femaleId: 'h',
+          pregnancyConfirmedDate: date.getTime(),
+          expectedBirthDate: undefined,
+        },
+      ],
+    ),
+  ).toBe(true)
+  expect(breedingParticipantsEqual([{ femaleId: 'h', outcome: 'open' }], [{ femaleId: 'h' }])).toBe(
+    false,
+  )
+})
+
 const animal = (id: string, extra: object = {}) => {
   const value = {
     id,

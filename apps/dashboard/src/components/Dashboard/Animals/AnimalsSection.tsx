@@ -74,7 +74,7 @@ export { groupFemalesByStatus, sortFemalesByAnimalNumber, CHIP_COLORS }
  * Sección de Animales con sub-tabs: Todos, Etapas, Estadísticas
  */
 const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) => {
-  const { confirmAction } = useAppFeedback()
+  const { confirmAction, notify } = useAppFeedback()
   const router = useRouter()
   const currentFarm = useSelector((state: RootState) => state.farm.currentFarm)
   const {
@@ -130,6 +130,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
   const [viewingBreedingRecord, setViewingBreedingRecord] = useState<BreedingRecord | null>(null)
   const [viewingConfirming, setViewingConfirming] = useState(false)
+  const [isFinishingBreeding, setIsFinishingBreeding] = useState(false)
 
   const editRecord = (record: BreedingRecord) => router.push(`/empadre/${record.id}/editar`)
 
@@ -1181,6 +1182,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                         size="sm"
                         variant="outline"
                         color="neutral"
+                        disabled={isFinishingBreeding}
                         onClick={() => setViewingConfirming(false)}
                         className="flex-1"
                       >
@@ -1189,15 +1191,58 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                       <Button
                         size="sm"
                         color="warning"
-                        icon="check_circle"
+                        icon={isFinishingBreeding ? undefined : 'check_circle'}
+                        disabled={isFinishingBreeding}
+                        aria-busy={isFinishingBreeding}
                         className="flex-1"
                         onClick={async () => {
-                          await updateBreedingRecord(r.id, { status: 'finished' })
-                          setViewingBreedingRecord(null)
-                          setViewingConfirming(false)
+                          if (isFinishingBreeding) return
+                          setIsFinishingBreeding(true)
+                          try {
+                            await updateBreedingRecord(r.id, { status: 'finished' })
+                            setViewingBreedingRecord(null)
+                            setViewingConfirming(false)
+                          } catch (error) {
+                            const message =
+                              error instanceof Error
+                                ? error.message
+                                : 'No se pudo finalizar el empadre.'
+                            notify(message)
+                            if (message.includes('El empadre cambió')) {
+                              setViewingBreedingRecord(null)
+                              setViewingConfirming(false)
+                            }
+                          } finally {
+                            setIsFinishingBreeding(false)
+                          }
                         }}
                       >
-                        Confirmar
+                        {isFinishingBreeding ? (
+                          <span className="inline-flex items-center gap-2">
+                            <svg
+                              aria-hidden="true"
+                              viewBox="0 0 24 24"
+                              className="size-4 animate-spin motion-reduce:animate-none"
+                            >
+                              <circle
+                                cx="12"
+                                cy="12"
+                                r="9"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="3"
+                                className="opacity-30"
+                              />
+                              <path
+                                fill="currentColor"
+                                d="M21 12a9 9 0 0 0-9-9v3a6 6 0 0 1 6 6h3Z"
+                              />
+                            </svg>
+                            Terminando...
+                          </span>
+                        ) : (
+                          'Confirmar'
+                        )}
                       </Button>
                     </div>
                   </div>
