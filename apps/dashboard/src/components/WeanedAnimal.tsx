@@ -100,9 +100,9 @@ export const WeanAnimalButton = ({ animal }: { animal: Animal }) => {
           event.stopPropagation()
           setShowWeanModal(true)
         }}
-        className={`inline-flex min-h-10 items-center justify-center gap-1 rounded-md border px-2.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${buttonTone}`}
+        className={`inline-flex min-h-8 items-center justify-center gap-0.5 rounded-md border px-2 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${buttonTone}`}
       >
-        <Icon icon="babyBottleOff" className="h-3.5 w-3.5" />
+        <Icon icon="babyBottleOff" className="h-3 w-3" />
         <span>Destetar: {status.label}</span>
       </button>
       {showWeanModal ? (

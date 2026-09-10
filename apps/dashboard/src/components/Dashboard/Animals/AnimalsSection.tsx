@@ -1207,16 +1207,18 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
             ...r,
             ...(allConfirmed ? { status: 'finished' } : {}),
           })
-          for (const fi of r.femaleBreedingInfo) {
-            if (fi.pregnancyConfirmedDate) {
-              await update(fi.femaleId, {
-                pregnantAt: fi.pregnancyConfirmedDate,
-                pregnantBy: r.maleId,
-                pregnantBreedingRecordId: r.id,
-                pregnantBreedingId: r.breedingId ?? null,
-              })
-            }
-          }
+          await Promise.all(
+            r.femaleBreedingInfo
+              .filter((fi) => fi.pregnancyConfirmedDate)
+              .map((fi) =>
+                update(fi.femaleId, {
+                  pregnantAt: fi.pregnancyConfirmedDate,
+                  pregnantBy: r.maleId,
+                  pregnantBreedingRecordId: r.id,
+                  pregnantBreedingId: r.breedingId ?? null,
+                }),
+              ),
+          )
         }}
         isLoading={false}
         selectedAnimal={selectedAnimal}

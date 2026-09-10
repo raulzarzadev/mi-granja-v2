@@ -18,6 +18,28 @@ interface ModalConfirmPregnancyProps {
   selectedAnimal: string | null
 }
 
+const CONFIRMATION_WRITE_TIMEOUT_MS = 15000
+const CONFIRMATION_TIMEOUT_MESSAGE =
+  'La confirmación tardó demasiado. Revisa tu conexión e inténtalo de nuevo.'
+
+const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+  let timeoutId: number | undefined
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(
+          () => reject(new Error(CONFIRMATION_TIMEOUT_MESSAGE)),
+          timeoutMs,
+        )
+      }),
+    ])
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId)
+  }
+}
+
 /**
  * Modal para confirmar gestaciones de hembras en un empadre
  */
@@ -54,6 +76,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
 
   const [selectedFemales, setSelectedFemales] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const [isEditingBreedingDate, setIsEditingBreedingDate] = useState(false)
   const [confirmationDate, setConfirmationDate] = useState(() =>
     breedingRecord?.breedingDate
@@ -69,10 +92,12 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
   const handleBreedingDateChange = (value: string) => {
     const [year, month, day] = value.split('-').map(Number)
     if (!year || !month || !day) return
+    setSubmitError('')
     setConfirmationDate(new Date(year, month - 1, day))
   }
 
   const handleFemaleToggle = (animalNumber: string) => {
+    setSubmitError('')
     setSelectedFemales((prev) =>
       prev.includes(animalNumber)
         ? prev.filter((id) => id !== animalNumber)
@@ -121,12 +146,19 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
     }
 
     setSubmitting(true)
+    setSubmitError('')
     try {
-      await onSubmit(updatedRecord)
+      await withTimeout(onSubmit(updatedRecord), CONFIRMATION_WRITE_TIMEOUT_MS)
       setSelectedFemales([])
       onClose()
     } catch (error) {
       console.error('Error confirmando gestaciones:', error)
+      const message =
+        error instanceof Error && error.message === CONFIRMATION_TIMEOUT_MESSAGE
+          ? error.message
+          : 'No se pudo guardar la confirmación. Revisa tu conexión e inténtalo de nuevo.'
+      setSubmitError(message)
+      notify(message, 'error')
     } finally {
       setSubmitting(false)
     }
@@ -134,6 +166,7 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
 
   const handleCancel = () => {
     setSelectedFemales([])
+    setSubmitError('')
     onClose()
   }
 
@@ -312,6 +345,16 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
                 </div>
               </div>
             )}
+
+            {submitError ? (
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+              >
+                {submitError}
+              </div>
+            ) : null}
 
             {/* Botones */}
             <div className="flex gap-3 pt-4">

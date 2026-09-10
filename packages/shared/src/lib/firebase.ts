@@ -17,6 +17,9 @@ const firebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_CONFIG
 const isNewApp = getApps().length === 0
 const app = isNewApp ? initializeApp(firebaseConfig) : getApp()
 
+const useEmulator =
+  typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_USE_EMULATOR === 'true'
+
 // Inicializar Firebase Auth y obtener una referencia al servicio
 export const auth = getAuth(app)
 
@@ -24,6 +27,8 @@ export const auth = getAuth(app)
 // initializeFirestore solo se puede llamar una vez; en HMR usamos getFirestore
 export const db = isNewApp
   ? initializeFirestore(app, {
+      // El emulador local puede saturar WebChannel con HMR y listeners persistentes.
+      experimentalForceLongPolling: useEmulator,
       localCache: persistentLocalCache({
         tabManager: persistentMultipleTabManager(),
       }),
@@ -34,15 +39,13 @@ export const db = isNewApp
 export const storage = getStorage(app)
 
 // Conectar a emuladores en desarrollo
-const useEmulator =
-  typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_USE_EMULATOR === 'true'
-
 if (useEmulator) {
   console.log('🔧 Conectando a Firebase Emulators...')
   try {
-    connectAuthEmulator(auth, 'http://localhost:9299', { disableWarnings: false })
-    connectFirestoreEmulator(db, 'localhost', 8180)
-    connectStorageEmulator(storage, 'localhost', 9399)
+    const emulatorHost = '127.0.0.1'
+    connectAuthEmulator(auth, `http://${emulatorHost}:9299`, { disableWarnings: false })
+    connectFirestoreEmulator(db, emulatorHost, 8180)
+    connectStorageEmulator(storage, emulatorHost, 9399)
     console.log('✅ Firebase Emulators conectados')
   } catch (_e) {
     // Emuladores ya conectados (HMR)
