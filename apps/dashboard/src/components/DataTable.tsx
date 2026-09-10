@@ -221,8 +221,8 @@ function DataTable<T>({
 
   const paginationControls =
     pageSize > 0 && sortedData.length > 0 ? (
-      <div className="flex shrink-0 items-center gap-2 text-sm text-gray-700">
-        <div className="flex items-center gap-1">
+      <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1 text-sm text-gray-700 sm:w-auto sm:flex-nowrap">
+        <div className="flex min-w-0 items-center gap-1">
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={safePage === 0}
@@ -247,8 +247,8 @@ function DataTable<T>({
             className="whitespace-nowrap text-sm font-semibold text-gray-700"
             aria-live="polite"
           >
-            {safePage + 1} <span className="font-normal text-gray-500">de</span> {totalPages}{' '}
-            <span className="font-normal text-gray-500">páginas</span>
+            {safePage + 1} <span className="font-normal text-gray-500">de</span> {totalPages}
+            <span className="hidden font-normal text-gray-500 min-[360px]:inline"> páginas</span>
           </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
@@ -293,11 +293,11 @@ function DataTable<T>({
   const isRowInteractive = Boolean(onRowClick || renderRowDetails || isSelectionMode)
 
   return (
-    <div>
+    <div className="w-full min-w-0 max-w-full">
       {/* Header bar: toolbar + view toggle */}
       {(toolbar || renderCard) && (
-        <div className="px-2 py-2 flex items-center justify-end gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 px-2 py-2">
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
             {toolbar}
             {renderCard && (
               <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
@@ -352,8 +352,8 @@ function DataTable<T>({
       )}
       {/* Selection toolbar */}
       {selectable && (
-        <div className="px-2 py-2 flex items-center justify-between gap-3 text-sm flex-wrap">
-          <div className="flex items-center gap-2 text-sm flex-wrap">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 px-2 py-2 text-sm">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
             {!isSelectionMode ? (
               <>
                 <button
@@ -408,7 +408,7 @@ function DataTable<T>({
         </div>
       )}
       {!selectable && paginationControls && (
-        <div className="px-2 py-2 flex justify-end">{paginationControls}</div>
+        <div className="flex min-w-0 justify-end px-2 py-2">{paginationControls}</div>
       )}
 
       {sortedData.length === 0 ? (
@@ -511,7 +511,9 @@ function DataTable<T>({
         </div>
       )}
       {rowDetails && renderRowDetails?.(rowDetails, { onClose: () => setRowDetails(null) })}
-      {paginationControls && <div className="flex justify-end px-2 py-3">{paginationControls}</div>}
+      {paginationControls && (
+        <div className="flex min-w-0 justify-end px-2 py-3">{paginationControls}</div>
+      )}
     </div>
   )
 }

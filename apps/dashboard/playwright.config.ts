@@ -8,7 +8,7 @@ export default defineConfig({
   retries: 0,
   workers: 1,
   use: {
-    baseURL: 'https://dashboard.localhost:1355',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'https://dashboard.localhost:1355',
     ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',

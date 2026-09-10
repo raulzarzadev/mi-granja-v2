@@ -59,10 +59,10 @@ const Dashboard: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen w-full min-w-0 max-w-full bg-gray-50">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+      <main className="mx-auto w-full min-w-0 max-w-7xl px-2 py-2 min-[360px]:px-4 sm:px-6 lg:px-8">
         <OnboardingCard />
 
         {/* Titulo de la granja + filtro global por tipo */}
@@ -94,7 +94,7 @@ const Dashboard: React.FC = () => {
         )}
 
         <ModalOnboarding isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
-      </div>
+      </main>
     </div>
   )
 }

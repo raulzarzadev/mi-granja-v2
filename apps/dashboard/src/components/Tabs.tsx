@@ -292,7 +292,7 @@ const Tabs: React.FC<TabsProps> = ({
   }
 
   return (
-    <div>
+    <div className="w-full min-w-0 max-w-full overflow-x-clip">
       <style>{`
         .tabs-scrollbar-native-hidden {
           scrollbar-width: none !important;
@@ -305,7 +305,7 @@ const Tabs: React.FC<TabsProps> = ({
         }
       `}</style>
       <div
-        className={`tabs-scrollbar-shell ${
+        className={`tabs-scrollbar-shell max-w-full overflow-x-hidden ${
           scrollSpy
             ? 'sticky top-0 z-20 -mx-3 bg-white/95 px-3 pb-2 pt-2 backdrop-blur sm:-mx-4 sm:px-4'
             : ''
