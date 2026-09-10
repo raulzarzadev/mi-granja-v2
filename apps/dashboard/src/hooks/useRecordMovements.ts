@@ -69,6 +69,31 @@ export function useRecordMovements(animals: Animal[] = []) {
   return {
     context,
     undo: (record: AnimalRecord) => undoMovement(context, record),
+    unconfirmPregnancy: (id: string, animalId: string) =>
+      execute(id, [animalId], [], (docs) => {
+        const animal = docs.get(`animals/${animalId}`)
+        if (!animal?.pregnantAt) throw new Error('El animal no tiene gestación activa.')
+        return {
+          changes: [
+            {
+              path: `animals/${animalId}`,
+              data: {
+                pregnantAt: null,
+                pregnantBy: null,
+                pregnantBreedingRecordId: null,
+                pregnantBreedingId: null,
+              },
+            },
+          ],
+          record: {
+            type: 'event',
+            category: 'other',
+            eventType: 'monta',
+            title: 'Confirmación de gestación retirada',
+            date: new Date(),
+          },
+        }
+      }),
     death: (id: string, ids: string[], date: Date, reason: AnimalDeathReason, notes: string) => {
       validateDate(date)
       if (!animalDeathReasonLabels[reason]) throw new Error('Selecciona el motivo de la muerte.')

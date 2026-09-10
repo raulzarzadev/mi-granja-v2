@@ -298,6 +298,7 @@ export type AnimalRecordUndoData = {
     path: string
     before: Record<string, unknown> | null
     after: Record<string, unknown>
+    deleted?: boolean
   }>
   previousAnimalStates?: Array<{
     id: string

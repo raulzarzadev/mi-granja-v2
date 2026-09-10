@@ -1,77 +1,40 @@
 'use client'
 
 import { useCallback } from 'react'
-import type { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import type { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
+import { useRecordMovements } from '@/hooks/useRecordMovements'
+import { movementEqual } from '@/lib/record-movements'
 import type { Animal } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
 import type { AbortPregnancyInput } from '@/types/components/breeding'
 
 interface Params {
   animals: Animal[]
-  update: ReturnType<typeof useAnimalCRUD>['update']
-  remove: ReturnType<typeof useAnimalCRUD>['remove']
-  wean: ReturnType<typeof useAnimalCRUD>['wean']
-  addRecord: ReturnType<typeof useAnimalCRUD>['addRecord']
   updateBreedingRecord: ReturnType<typeof useBreedingCRUD>['updateBreedingRecord']
   deleteBreedingRecord: ReturnType<typeof useBreedingCRUD>['deleteBreedingRecord']
 }
 
 export const useBreedingHandlers = ({
   animals,
-  update,
-  remove,
-  wean,
-  addRecord,
   updateBreedingRecord,
   deleteBreedingRecord,
 }: Params) => {
-  // Conserva gestación, padre y referencia al empadre en el animal cuando se le
-  // saca del empadre con gestación confirmada, para poder registrar el parto después.
-  const preservePregnancyOnRemoval = useCallback(
-    async (record: BreedingRecord, info: BreedingRecord['femaleBreedingInfo'][number]) => {
-      const animal = animals.find((a) => a.id === info.femaleId)
-      await update(info.femaleId, {
-        pregnantAt: animal?.pregnantAt ?? info.pregnancyConfirmedDate ?? null,
-        pregnantBy: animal?.pregnantBy ?? record.maleId,
-        pregnantBreedingRecordId: record.id,
-        pregnantBreedingId: record.breedingId ?? null,
-      })
-      await addRecord(info.femaleId, {
-        type: 'note',
-        category: 'general',
-        title: 'Removida del empadre',
-        description: `Se removió del empadre ${record.breedingId || record.id} conservando la gestación.`,
-        date: new Date(),
-      })
-    },
-    [addRecord, animals, update],
-  )
+  const movements = useRecordMovements(animals)
 
   const handleRemoveFromBreeding = useCallback(
     async (record: BreedingRecord, animalId: string) => {
       if (record.maleId === animalId) {
-        const pregnantInfos = record.femaleBreedingInfo.filter(
-          (i) => i.pregnancyConfirmedDate && !i.actualBirthDate,
-        )
-        for (const info of pregnantInfos) {
-          await preservePregnancyOnRemoval(record, info)
-        }
         await deleteBreedingRecord(record.id)
         return
       }
-      const removedInfo = record.femaleBreedingInfo.find((i) => i.femaleId === animalId)
       const updatedFemaleInfo = record.femaleBreedingInfo.filter((i) => i.femaleId !== animalId)
       if (updatedFemaleInfo.length === 0) {
         await deleteBreedingRecord(record.id)
       } else {
         await updateBreedingRecord(record.id, { femaleBreedingInfo: updatedFemaleInfo })
       }
-      if (removedInfo?.pregnancyConfirmedDate && !removedInfo.actualBirthDate) {
-        await preservePregnancyOnRemoval(record, removedInfo)
-      }
     },
-    [deleteBreedingRecord, preservePregnancyOnRemoval, updateBreedingRecord],
+    [deleteBreedingRecord, updateBreedingRecord],
   )
 
   const handleUnconfirmPregnancy = useCallback(
@@ -82,14 +45,8 @@ export const useBreedingHandlers = ({
           : info,
       )
       await updateBreedingRecord(record.id, { femaleBreedingInfo: updatedFemaleInfo })
-      await update(femaleId, {
-        pregnantAt: null,
-        pregnantBy: null,
-        pregnantBreedingRecordId: null,
-        pregnantBreedingId: null,
-      })
     },
-    [update, updateBreedingRecord],
+    [updateBreedingRecord],
   )
 
   const handleAbortPregnancy = useCallback(
@@ -103,6 +60,7 @@ export const useBreedingHandlers = ({
           ? {
               ...info,
               outcome: 'aborted' as const,
+              outcomeNotes: input.note?.trim() ?? '',
               diagnosedAt: abortedAt,
               actualBirthDate: null,
               expectedBirthDate: null,
@@ -111,74 +69,33 @@ export const useBreedingHandlers = ({
       )
 
       await updateBreedingRecord(record.id, { femaleBreedingInfo: updatedFemaleInfo })
-      await update(femaleId, {
-        pregnantAt: null,
-        pregnantBy: null,
-        pregnantBreedingRecordId: null,
-        pregnantBreedingId: null,
-      })
-      await addRecord(femaleId, {
-        type: 'note',
-        category: 'general',
-        title: 'Aborto registrado',
-        description: [
-          `Se registró un aborto en el empadre ${record.breedingId || record.id}.`,
-          input.note?.trim() ? `Nota: ${input.note.trim()}` : null,
-        ]
-          .filter(Boolean)
-          .join(' '),
-        date: abortedAt,
-      })
     },
-    [addRecord, update, updateBreedingRecord],
+    [updateBreedingRecord],
   )
 
   const handleRevertBirth = useCallback(
-    async (record: BreedingRecord, femaleId: string) => {
-      const femaleInfo = record.femaleBreedingInfo.find((fi) => fi.femaleId === femaleId)
-      if (!femaleInfo) return
-
-      if (femaleInfo.offspring?.length) {
-        for (const offspringId of femaleInfo.offspring) {
-          await remove(offspringId)
-        }
-      }
-
-      const updatedFemaleInfo = record.femaleBreedingInfo.map((fi) =>
-        fi.femaleId === femaleId ? { ...fi, actualBirthDate: null, offspring: [] } : fi,
-      )
-      await updateBreedingRecord(record.id, { femaleBreedingInfo: updatedFemaleInfo })
-
-      const mother = animals.find((a) => a.id === femaleId)
-      const keepsMilking =
-        mother?.lactationPurpose === 'dairy' || mother?.lactationPurpose === 'dual'
-      await update(femaleId, {
-        birthedAt: null,
-        ...(keepsMilking
-          ? { lactationStatus: 'active' as const }
-          : { lactationStatus: 'dry' as const, driedAt: new Date() }),
-        pregnantAt: femaleInfo.pregnancyConfirmedDate ?? null,
-        pregnantBy: femaleInfo.pregnancyConfirmedDate ? record.maleId : null,
-        pregnantBreedingRecordId: femaleInfo.pregnancyConfirmedDate ? record.id : null,
-        pregnantBreedingId: femaleInfo.pregnancyConfirmedDate ? (record.breedingId ?? null) : null,
-      })
-
-      await addRecord(femaleId, {
-        type: 'note',
-        category: 'general',
-        title: 'Parto revertido',
-        description: `Se revirtió el parto de ${mother?.animalNumber || femaleId}. ${femaleInfo.offspring?.length || 0} cría(s) eliminada(s).`,
-        date: new Date(),
-      })
+    async (breeding: BreedingRecord, femaleId: string) => {
+      const mother = animals.find((animal) => animal.id === femaleId)
+      const birth = [...(mother?.records ?? [])]
+        .reverse()
+        .find(
+          (record) =>
+            record.eventType === 'parto' &&
+            !record.undoneAt &&
+            record.undoData?.documents &&
+            movementEqual(
+              record.date,
+              breeding.femaleBreedingInfo.find((info) => info.femaleId === femaleId)
+                ?.actualBirthDate,
+            ),
+        )
+      if (!birth)
+        throw new Error(
+          'Este parto anterior no conserva los datos necesarios para deshacerlo de forma segura.',
+        )
+      await movements.undo(birth)
     },
-    [addRecord, animals, remove, update, updateBreedingRecord],
-  )
-
-  const weanAndUpdateMother = useCallback(
-    async (animalId: string, opts: { stageDecision: 'engorda' | 'reproductor' }) => {
-      await wean(animalId, opts)
-    },
-    [wean],
+    [animals, movements],
   )
 
   return {
@@ -186,6 +103,5 @@ export const useBreedingHandlers = ({
     handleUnconfirmPregnancy,
     handleAbortPregnancy,
     handleRevertBirth,
-    weanAndUpdateMother,
   }
 }

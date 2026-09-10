@@ -2,9 +2,11 @@
 
 import { format, parseISO, toDate } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useAnimalCRUD, WeanNextStage } from '@/hooks/useAnimalCRUD'
+import { useRecordMovements } from '@/hooks/useRecordMovements'
 import { getWeaningDueDate, getWeaningStatus, isCalf } from '@/lib/animal-utils'
+import { createMovementId } from '@/lib/record-movements'
 import { Animal } from '@/types/animals'
 import Button from './buttons/Button'
 import { Icon } from './Icon/icon'
@@ -124,7 +126,9 @@ interface ModalWeanAnimalProps {
 }
 
 const ModalWeanAnimal = ({ animal, targetWeanDate, onClose }: ModalWeanAnimalProps) => {
-  const { wean } = useAnimalCRUD()
+  const { animals } = useAnimalCRUD()
+  const { wean } = useRecordMovements(animals)
+  const movementIdRef = useRef<string | null>(null)
 
   const [weanDate, setWeanDate] = useState<Date>(
     animal.weanedAt ? toDate(animal.weanedAt) : new Date(),
@@ -133,14 +137,12 @@ const ModalWeanAnimal = ({ animal, targetWeanDate, onClose }: ModalWeanAnimalPro
   const [error, setError] = useState('')
 
   const handleWean = async (stageDecision: WeanNextStage) => {
-    if (!wean) return
     setIsLoading(true)
     setError('')
     try {
-      await wean(animal.id, {
-        weanDate,
-        stageDecision,
-      })
+      const movementId = movementIdRef.current ?? createMovementId()
+      movementIdRef.current = movementId
+      await wean(movementId, [animal.id], weanDate, stageDecision, '')
       onClose()
     } catch (caughtError) {
       setError(

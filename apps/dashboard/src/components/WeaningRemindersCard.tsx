@@ -2,7 +2,9 @@
 
 import React from 'react'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useRecordMovements } from '@/hooks/useRecordMovements'
 import { getWeaningDueDate, getWeaningStatus, isActiveCalf } from '@/lib/animal-utils'
+import { createMovementId } from '@/lib/record-movements'
 import { Animal } from '@/types/animals'
 import AnimalBadges from './AnimalBadges'
 
@@ -39,7 +41,8 @@ const WeaningItemActions: React.FC<{
 )
 
 const WeaningRemindersCard: React.FC = () => {
-  const { animals, wean } = useAnimalCRUD()
+  const { animals } = useAnimalCRUD()
+  const { wean } = useRecordMovements(animals)
   const allPending = animals
     .filter(isActiveCalf)
     .flatMap((a) => {
@@ -58,7 +61,13 @@ const WeaningRemindersCard: React.FC = () => {
     options?: { stageDecision?: 'engorda' | 'reproductor' },
   ) => {
     try {
-      await wean(animalId, options)
+      await wean(
+        createMovementId(),
+        [animalId],
+        new Date(),
+        options?.stageDecision ?? 'reproductor',
+        '',
+      )
     } catch (e) {
       console.error('Error marcando destete:', e)
     }

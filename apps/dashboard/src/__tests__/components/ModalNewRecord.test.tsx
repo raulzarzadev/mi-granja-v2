@@ -156,6 +156,23 @@ it('destete solo ofrece crías activas', () => {
   expect(screen.getByRole('button', { name: 'Elegir C1' })).toBeTruthy()
 })
 
+it('conserva el animal inicial al abrirse desde sus detalles', () => {
+  render(
+    <ModalNewRecord
+      initialAnimalIds={['h']}
+      trigger={(open) => (
+        <button type="button" onClick={open}>
+          + Nuevo registro
+        </button>
+      )}
+    />,
+  )
+  fireEvent.click(screen.getByRole('button', { name: '+ Nuevo registro' }))
+  fireEvent.click(screen.getByRole('button', { name: /Peso/ }))
+
+  expect(screen.queryByRole('button', { name: 'Elegir H1' })).toBeNull()
+})
+
 it('ofrece Peso y Leche como registros rápidos con formularios propios', () => {
   render(<ModalNewRecord />)
   fireEvent.click(screen.getByRole('button', { name: /Nuevo Registro/ }))

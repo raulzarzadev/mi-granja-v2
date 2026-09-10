@@ -1,23 +1,18 @@
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  orderBy,
-  query,
-  Timestamp,
-  updateDoc,
-  where,
-  writeBatch,
-} from 'firebase/firestore'
+import { collection, onSnapshot, orderBy, query, Timestamp, where } from 'firebase/firestore'
 import { useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { setBreedingRecords } from '@/features/breeding/breedingSlice'
 import { deserializeObj, serializeObj } from '@/features/libs/serializeObj'
 import { RootState } from '@/features/store'
 import { toDate, toLocalDateStart } from '@/lib/dates'
+import {
+  commitMovement,
+  createMovementId,
+  type MovementChange,
+  movementEqual,
+} from '@/lib/record-movements'
 import { isActivePregnancy } from '@/types/animals'
+import { useRecordMovements } from './useRecordMovements'
 
 /** Convierte de forma segura un valor (Timestamp, Date, string, number) a Date */
 const safeToDate = (val: unknown): Date | null => {
@@ -60,6 +55,7 @@ export const useBreedingCRUD = () => {
   const { animals } = useSelector((state: RootState) => state.animals)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { currentFarm } = useSelector((state: RootState) => state.farm)
+  const movements = useRecordMovements(animals)
 
   // Función para generar ID legible por humanos
   const generateBreedingId = (breedingDate: Date): string => {
@@ -75,65 +71,18 @@ export const useBreedingCRUD = () => {
 
     setIsSubmitting(true)
     try {
-      const now = Timestamp.now()
       const breedingDate = data.breedingDate ? new Date(data.breedingDate) : new Date()
-      const breedingId = generateBreedingId(breedingDate)
-
-      const docData = {
-        breedingId,
-        farmerId: user.id,
-        farmId: currentFarm.id,
-        maleId: data.maleId,
-        breedingDate: data.breedingDate
-          ? Timestamp.fromDate(toLocalDateStart(new Date(data.breedingDate)))
-          : null,
-
-        femaleBreedingInfo:
-          data.femaleBreedingInfo?.map((info) => ({
-            ...info,
-            pregnancyConfirmedDate: info.pregnancyConfirmedDate
-              ? Timestamp.fromDate(toLocalDateStart(new Date(info.pregnancyConfirmedDate)))
-              : null,
-            expectedBirthDate: info.expectedBirthDate
-              ? Timestamp.fromDate(toLocalDateStart(new Date(info.expectedBirthDate)))
-              : null,
-            actualBirthDate: info.actualBirthDate
-              ? Timestamp.fromDate(toLocalDateStart(new Date(info.actualBirthDate)))
-              : null,
-          })) || [],
-
-        notes: data.notes || '',
-        // Si todas las hembras ya tienen gestación confirmada, marcar como terminada
-        ...(data.femaleBreedingInfo?.length &&
-        data.femaleBreedingInfo.every((info) => !!info.pregnancyConfirmedDate)
-          ? { status: 'finished' }
-          : {}),
-        createdAt: now,
-        updatedAt: now,
-      }
-
-      const docRef = await addDoc(collection(db, 'breedingRecords'), docData)
+      await movements.breeding(createMovementId(), {
+        ...data,
+        breedingDate,
+        breedingId: generateBreedingId(breedingDate),
+        status:
+          data.femaleBreedingInfo.length &&
+          data.femaleBreedingInfo.every((info) => info.pregnancyConfirmedDate)
+            ? 'finished'
+            : 'active',
+      })
       trackReproductionEventCreated({ type: 'breeding' })
-
-      // Actualizar animales confirmados como gestantes en un solo batch
-      const confirmedFemales =
-        data.femaleBreedingInfo?.filter((info) => !!info.pregnancyConfirmedDate) || []
-      if (confirmedFemales.length > 0) {
-        trackGestationTracked()
-        const batch = writeBatch(db)
-        for (const info of confirmedFemales) {
-          batch.update(doc(db, 'animals', info.femaleId), {
-            pregnantAt: Timestamp.fromDate(
-              toLocalDateStart(new Date(info.pregnancyConfirmedDate!)),
-            ),
-            pregnantBy: data.maleId,
-            pregnantBreedingRecordId: docRef.id,
-            pregnantBreedingId: breedingId,
-            updatedAt: now,
-          })
-        }
-        await batch.commit()
-      }
     } catch (error) {
       console.error('Error creating breeding record:', error)
       throw error
@@ -146,11 +95,10 @@ export const useBreedingCRUD = () => {
   const updateBreedingRecord = async (
     id: string,
     updates: Partial<Omit<BreedingRecord, 'id' | 'farmerId' | 'createdAt'>>,
+    deleteRecord = false,
   ) => {
     setIsSubmitting(true)
     try {
-      const docRef = doc(db, 'breedingRecords', id)
-
       const updateData: Record<string, unknown> = {
         updatedAt: Timestamp.now(),
       }
@@ -205,7 +153,137 @@ export const useBreedingCRUD = () => {
         updateData.comments = updates.comments?.map(commentToFirestore) ?? []
       }
 
-      await updateDoc(docRef, updateData)
+      const currentRecord = breedingRecords.find((record) => record.id === id)
+      if (!currentRecord) throw new Error('Empadre no encontrado')
+      const ids = [
+        ...new Set([
+          currentRecord.maleId,
+          ...currentRecord.femaleBreedingInfo.map((info) => info.femaleId),
+          updates.maleId ?? currentRecord.maleId,
+          ...(updates.femaleBreedingInfo ?? []).map((info) => info.femaleId),
+        ]),
+      ]
+      await commitMovement(
+        movements.context,
+        createMovementId(),
+        ids,
+        [`breedingRecords/${id}`],
+        (docs) => {
+          const previous = docs.get(`breedingRecords/${id}`)
+          if (!previous) throw new Error('Empadre no encontrado')
+          if (
+            !movementEqual(previous.femaleBreedingInfo, currentRecord.femaleBreedingInfo) ||
+            previous.maleId !== currentRecord.maleId
+          )
+            throw new Error('El empadre cambió. Actualiza la pantalla antes de continuar.')
+          const changes: MovementChange[] = [
+            { path: `breedingRecords/${id}`, data: updateData, delete: deleteRecord },
+          ]
+          for (const animalId of ids) {
+            const animal = docs.get(`animals/${animalId}`)
+            const before = previous.femaleBreedingInfo.find(
+              (info: any) => info.femaleId === animalId,
+            )
+            const after = updates.femaleBreedingInfo?.find((info) => info.femaleId === animalId)
+            let data: Record<string, unknown> = {}
+            if (
+              after &&
+              !after.actualBirthDate &&
+              (!movementEqual(before?.pregnancyConfirmedDate, after.pregnancyConfirmedDate) ||
+                before?.outcome !== after.outcome)
+            ) {
+              if (
+                after.outcome === 'aborted' ||
+                (!after.pregnancyConfirmedDate && before?.pregnancyConfirmedDate)
+              ) {
+                data = {
+                  pregnantAt: null,
+                  pregnantBy: null,
+                  pregnantBreedingRecordId: null,
+                  pregnantBreedingId: null,
+                }
+              } else if (after.pregnancyConfirmedDate) {
+                data = {
+                  pregnantAt: toDate(after.pregnancyConfirmedDate),
+                  pregnantBy: updates.maleId ?? previous.maleId,
+                  pregnantBreedingRecordId: id,
+                  pregnantBreedingId: updates.breedingId ?? previous.breedingId ?? null,
+                }
+              }
+            } else if (
+              updates.femaleBreedingInfo &&
+              !after &&
+              before?.pregnancyConfirmedDate &&
+              before.outcome !== 'aborted' &&
+              !before.actualBirthDate
+            ) {
+              data = {
+                pregnantAt: animal?.pregnantAt ?? before.pregnancyConfirmedDate,
+                pregnantBy: animal?.pregnantBy ?? previous.maleId,
+                pregnantBreedingRecordId: id,
+                pregnantBreedingId: previous.breedingId ?? null,
+              }
+            }
+            changes.push({ path: `animals/${animalId}`, data })
+          }
+          const nextInfo = updates.femaleBreedingInfo
+          const removed = previous.femaleBreedingInfo.filter(
+            (info: any) => nextInfo && !nextInfo.some((next) => next.femaleId === info.femaleId),
+          )
+          const added =
+            nextInfo?.filter(
+              (info) =>
+                !previous.femaleBreedingInfo.some((old: any) => old.femaleId === info.femaleId),
+            ) ?? []
+          const aborted = nextInfo?.some(
+            (info) =>
+              info.outcome === 'aborted' &&
+              previous.femaleBreedingInfo.find((old: any) => old.femaleId === info.femaleId)
+                ?.outcome !== 'aborted',
+          )
+          const gestation = nextInfo?.some(
+            (info) =>
+              !movementEqual(
+                info.pregnancyConfirmedDate,
+                previous.femaleBreedingInfo.find((old: any) => old.femaleId === info.femaleId)
+                  ?.pregnancyConfirmedDate,
+              ),
+          )
+          const title = aborted
+            ? 'Aborto registrado'
+            : gestation
+              ? 'Gestación actualizada'
+              : added.length || removed.length
+                ? 'Entrada o salida de empadre'
+                : 'Empadre actualizado'
+          return {
+            changes,
+            record: {
+              type: 'event',
+              category: 'other',
+              eventType: 'monta',
+              title,
+              date: new Date(),
+              details: {
+                Empadre: previous.breedingId ?? id,
+                Entradas:
+                  added
+                    .map(
+                      (info) => docs.get(`animals/${info.femaleId}`)?.animalNumber ?? info.femaleId,
+                    )
+                    .join(', ') || '—',
+                Salidas:
+                  removed
+                    .map(
+                      (info: any) =>
+                        docs.get(`animals/${info.femaleId}`)?.animalNumber ?? info.femaleId,
+                    )
+                    .join(', ') || '—',
+              },
+            },
+          }
+        },
+      )
       // birth registered = parto type; confirmed pregnancy = gestation
       const hasBirth = updates.femaleBreedingInfo?.some((i) => i.actualBirthDate)
       const eventType = hasBirth ? 'parto' : 'breeding'
@@ -225,7 +303,7 @@ export const useBreedingCRUD = () => {
   const deleteBreedingRecord = async (id: string) => {
     setIsSubmitting(true)
     try {
-      await deleteDoc(doc(db, 'breedingRecords', id))
+      await updateBreedingRecord(id, { status: 'finished', femaleBreedingInfo: [] }, true)
     } catch (error) {
       console.error('Error deleting breeding record:', error)
       throw error

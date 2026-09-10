@@ -1,6 +1,5 @@
 'use client'
 
-import { doc, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -19,6 +18,7 @@ import Tabs from '@/components/Tabs'
 import type { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
+import { useRecordMovements } from '@/hooks/useRecordMovements'
 import { animalMatchesSearch, normalizeAnimalSearch, valuesMatchSearch } from '@/lib/animal-search'
 import {
   computeAnimalStage,
@@ -30,7 +30,7 @@ import {
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { formatDate, toDate } from '@/lib/dates'
-import { db } from '@/lib/firebase'
+import { createMovementId } from '@/lib/record-movements'
 import { Animal, AnimalStageKey, animal_stage_config, animals_types_labels } from '@/types/animals'
 import { BreedingRecord } from '@/types/breedings'
 import { BreedingActionHandlers } from '@/types/components/breeding'
@@ -80,15 +80,13 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   const {
     animals,
     isLoading: isLoadingAnimals,
-    wean,
-    create,
-    addRecord,
     update,
     remove,
     queryAnimalsByStatus,
   } = useAnimalCRUD()
   const { breedingRecords, updateBreedingRecord, deleteBreedingRecord, getBirthsWindow } =
     useBreedingCRUD()
+  const { wean: recordWean, birth: recordBirth, unconfirmPregnancy } = useRecordMovements(animals)
 
   const {
     filteredAnimals,
@@ -142,10 +140,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     handleRevertBirth,
   } = useBreedingHandlers({
     animals,
-    update,
-    remove,
-    wean,
-    addRecord,
     updateBreedingRecord,
     deleteBreedingRecord,
   })
@@ -169,62 +163,14 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
     const total = weanConfirm.animals.length
     setWeanProgress({ current: 0, total })
     try {
-      const nextStage = weanConfirm.decision === 'engorda' ? 'engorda' : 'juvenil'
-      const weanedAt = Timestamp.fromDate(new Date())
-      const weanedIds = new Set(weanConfirm.animals.map((a) => a.id))
-
-      // Batch wean writes en chunks de 400 (límite Firestore = 500)
-      const CHUNK = 400
-      for (let i = 0; i < weanConfirm.animals.length; i += CHUNK) {
-        const chunk = weanConfirm.animals.slice(i, i + CHUNK)
-        const batch = writeBatch(db)
-        for (const a of chunk) {
-          batch.update(doc(db, 'animals', a.id), {
-            isWeaned: true,
-            weanedAt,
-            stage: nextStage,
-            weaningDestination: weanConfirm.decision,
-            updatedAt: serverTimestamp(),
-          })
-        }
-        await batch.commit()
-        setWeanProgress({ current: Math.min(i + CHUNK, total), total })
-      }
-
-      // Detectar madres cuyas últimas crías fueron destetadas en esta tanda
-      const mothersToUpdate: Animal[] = []
-      const byMother = new Map<string, Set<string>>()
-      for (const a of animals) {
-        if (!isActiveCalf(a)) continue
-        if (!a.motherId) continue
-        if (!byMother.has(a.motherId)) byMother.set(a.motherId, new Set())
-        byMother.get(a.motherId)!.add(a.id)
-      }
-      for (const [motherId, criaIds] of byMother) {
-        const remaining = [...criaIds].filter((id) => !weanedIds.has(id))
-        if (remaining.length === 0) {
-          const mother = animals.find((animal) =>
-            [animal.id, animal.animalNumber].includes(motherId),
-          )
-          if (mother) mothersToUpdate.push(mother)
-        }
-      }
-      if (mothersToUpdate.length > 0) {
-        const batch = writeBatch(db)
-        const weanedMotherAt = Timestamp.fromDate(new Date())
-        for (const mother of mothersToUpdate) {
-          const keepsMilking =
-            mother.lactationPurpose === 'dairy' || mother.lactationPurpose === 'dual'
-          batch.update(doc(db, 'animals', mother.id), {
-            weanedMotherAt,
-            ...(keepsMilking
-              ? { lactationStatus: 'active' }
-              : { birthedAt: null, lactationStatus: 'dry', driedAt: weanedMotherAt }),
-            updatedAt: serverTimestamp(),
-          })
-        }
-        await batch.commit()
-      }
+      await recordWean(
+        createMovementId(),
+        weanConfirm.animals.map((animal) => animal.id),
+        new Date(),
+        weanConfirm.decision,
+        '',
+      )
+      setWeanProgress({ current: total, total })
 
       setWeanSuccess({
         animalNumbers: weanConfirm.animals.map((a) => a.number),
@@ -508,99 +454,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   }, [activeAnimals])
 
   // --- Birth form submit handler ---
-  const handleBirthSubmit = async (form: {
-    animalId: string
-    birthDate: string
-    birthTime: string
-    totalOffspring: number
-    notes?: string
-    offspring: {
-      animalNumber: string
-      gender: 'macho' | 'hembra'
-      weight?: string | number | null
-      color?: string
-      healthIssues?: string
-      status?: string
-    }[]
-  }) => {
-    try {
-      const mother = animals.find((a) => a.id === form.animalId)
-      if (!mother) throw new Error('Madre no encontrada')
-
-      const [y, m, d] = form.birthDate.split('-').map((n) => parseInt(n, 10))
-      const [hh, mm] = form.birthTime.split(':').map((n) => parseInt(n, 10))
-      const actualDate = new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0)
-
-      const offspringIds: string[] = []
-      for (const off of form.offspring) {
-        const weightVal =
-          typeof off.weight === 'string'
-            ? off.weight === ''
-              ? null
-              : parseFloat(off.weight)
-            : (off.weight ?? null)
-        const notesParts = [
-          off.color ? `Color: ${off.color}` : null,
-          off.healthIssues ? `Salud: ${off.healthIssues}` : null,
-        ].filter(Boolean)
-
-        const isDead = off.status === 'muerto'
-
-        const createdId = await create({
-          animalNumber: off.animalNumber,
-          type: mother.type,
-          stage: 'cria',
-          weight: weightVal,
-          birthDate: actualDate,
-          gender: off.gender,
-          motherId: mother.id,
-          fatherId: birthRecord?.maleId ?? mother.pregnantBy ?? undefined,
-          ...(notesParts.length > 0 && { notes: notesParts.join(' · ') }),
-          ...(isDead && { status: 'muerto' as const, statusAt: actualDate }),
-        })
-        if (createdId) offspringIds.push(createdId)
-      }
-
-      // Actualizar el empadre solo si existe y aún rastrea a esta hembra
-      if (birthRecord?.femaleBreedingInfo.some((fi) => fi.femaleId === form.animalId)) {
-        const updatedFemaleInfo = birthRecord.femaleBreedingInfo.map((fi) =>
-          fi.femaleId === form.animalId
-            ? {
-                ...fi,
-                actualBirthDate: actualDate,
-                offspring: [...(fi.offspring || []), ...offspringIds],
-              }
-            : fi,
-        )
-        await updateBreedingRecord(birthRecord.id, { femaleBreedingInfo: updatedFemaleInfo })
-      }
-      // Actualizar estado reproductivo de la madre
-      await update(form.animalId, {
-        birthedAt: actualDate,
-        lactationStatus: 'active',
-        lactationPurpose:
-          mother?.lactationPurpose === 'dairy' ? 'dual' : (mother?.lactationPurpose ?? 'offspring'),
-        driedAt: null,
-        pregnantAt: null,
-        pregnantBy: null,
-        pregnantBreedingRecordId: null,
-        pregnantBreedingId: null,
-      })
-
-      const offspringSummary = form.offspring
-        .map((o) => `#${o.animalNumber} (${o.gender}${o.weight ? `, ${o.weight}kg` : ''})`)
-        .join(', ')
-      await addRecord(form.animalId, {
-        type: 'birth',
-        category: 'general',
-        title: `Parto: ${form.totalOffspring} cría${form.totalOffspring > 1 ? 's' : ''}`,
-        description: offspringSummary,
-        date: actualDate,
-        notes: form.notes || undefined,
-      })
-    } catch (e) {
-      console.error(e)
-    }
+  const handleBirthSubmit = async (form: import('@/types').BirthRecord) => {
+    await recordBirth(createMovementId(), form, birthRecord)
   }
 
   // ========================
@@ -1207,18 +1062,6 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
             ...r,
             ...(allConfirmed ? { status: 'finished' } : {}),
           })
-          await Promise.all(
-            r.femaleBreedingInfo
-              .filter((fi) => fi.pregnancyConfirmedDate)
-              .map((fi) =>
-                update(fi.femaleId, {
-                  pregnantAt: fi.pregnancyConfirmedDate,
-                  pregnantBy: r.maleId,
-                  pregnantBreedingRecordId: r.id,
-                  pregnantBreedingId: r.breedingId ?? null,
-                }),
-              ),
-          )
         }}
         isLoading={false}
         selectedAnimal={selectedAnimal}
@@ -1579,12 +1422,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
           if (record) {
             void handleUnconfirmPregnancy(record, animal.id)
           } else {
-            void update(animal.id, {
-              pregnantAt: null,
-              pregnantBy: null,
-              pregnantBreedingRecordId: null,
-              pregnantBreedingId: null,
-            })
+            void unconfirmPregnancy(createMovementId(), animal.id)
           }
         }}
         onRegisterBirth={(animal) => {

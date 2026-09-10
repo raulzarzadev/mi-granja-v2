@@ -1,7 +1,7 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import React, { useMemo, useState } from 'react'
+import ModalNewRecord from '@/components/ModalNewRecord'
 import ModalRecordDetail, { RecordDetailRow } from '@/components/ModalRecordDetail'
 import RecordRow from '@/components/RecordRow'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -78,7 +78,6 @@ const filterTypes: Array<{ value: RecordFilter; label: string; icon: string }> =
 ]
 
 const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
-  const router = useRouter()
   const { animals } = useAnimalCRUD()
   const { getRemindersByAnimal, markAnimalCompleted } = useReminders()
   const [detailRecord, setDetailRecord] = useState<RecordDetailRow | null>(null)
@@ -167,12 +166,18 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
     <div className="space-y-4 pb-24">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Registros</h3>
-        <button
-          onClick={() => router.push(`/registro/nuevo?animalIds=${animal.id}`)}
-          className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700"
-        >
-          + Nuevo registro
-        </button>
+        <ModalNewRecord
+          initialAnimalIds={[animal.id]}
+          trigger={(open) => (
+            <button
+              type="button"
+              onClick={open}
+              className="min-h-11 rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+            >
+              + Nuevo registro
+            </button>
+          )}
+        />
       </div>
 
       {/* Recordatorios pendientes del animal */}

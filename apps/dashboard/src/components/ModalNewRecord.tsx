@@ -1,12 +1,12 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import BreedingForm from '@/components/BreedingForm'
 import Button from '@/components/buttons/Button'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
 import { Modal } from '@/components/Modal'
 import ModalAnimalListReader from '@/components/ModalAnimalListReader'
-import { ANIMAL_LIST_READER_ENABLED } from '@/lib/animal-list-feature'
 import ModalBirthForm from '@/components/ModalBirthForm'
 import type { SaleCompletionSummary } from '@/components/ModalSaleForm'
 import ModalSaleForm from '@/components/ModalSaleForm'
@@ -24,6 +24,7 @@ import {
   trackNewRecordUndone,
 } from '@/lib/analytics/track'
 import { animalDeathReasonLabels } from '@/lib/animal-discharge'
+import { ANIMAL_LIST_READER_ENABLED } from '@/lib/animal-list-feature'
 import { activeUnweanedOffspring } from '@/lib/animal-utils'
 import { breedingWarnings } from '@/lib/breeding-warnings'
 import type { BirthRecord } from '@/types'
@@ -261,7 +262,12 @@ const formatInputDate = (value: string) =>
     dateStyle: 'long',
   })
 
-export default function ModalNewRecord() {
+interface ModalNewRecordProps {
+  initialAnimalIds?: string[]
+  trigger?: (open: () => void) => ReactNode
+}
+
+export default function ModalNewRecord({ initialAnimalIds = [], trigger }: ModalNewRecordProps) {
   const { animals } = useAnimalCRUD()
   const { breedingRecords } = useBreedingCRUD()
   const movements = useRecordMovements(animals)
@@ -302,6 +308,11 @@ export default function ModalNewRecord() {
   const [isUndoingMovement, setIsUndoingMovement] = useState(false)
   const [isActionSubmitting, setIsActionSubmitting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const initialAnimalIdsKey = initialAnimalIds.join('|')
+  const preselectedAnimalIds = useMemo(
+    () => [...new Set(initialAnimalIdsKey.split('|').filter(Boolean))],
+    [initialAnimalIdsKey],
+  )
 
   useEffect(() => {
     // Claim the old unscoped drafts once; subsequent storage is isolated by account and farm.
@@ -411,6 +422,24 @@ export default function ModalNewRecord() {
       }),
     [animals, selectedOption],
   )
+  const getInitialAnimalIdsForOption = (optionId: RecordOptionId) => {
+    const eligibleAnimalIds = new Set(
+      animals
+        .filter((animal) => {
+          if ((animal.status ?? 'activo') !== 'activo') return false
+          if (optionId === 'destete') return animal.stage === 'cria' && !animal.isWeaned
+          if (optionId === 'parto') return animal.gender === 'hembra' && Boolean(animal.pregnantAt)
+          if (optionId === 'leche') return animal.gender === 'hembra'
+          if (optionId === 'monta') {
+            return animal.gender === 'hembra' || animal.computedStage === 'reproductor'
+          }
+          return true
+        })
+        .map((animal) => animal.id),
+    )
+
+    return preselectedAnimalIds.filter((animalId) => eligibleAnimalIds.has(animalId))
+  }
   const selectedBirthAnimal = selectedAnimalIds.length === 1 ? selectedAnimals[0] : undefined
   const selectedBirthRecord = useMemo(() => {
     if (!selectedBirthAnimal) return null
@@ -559,7 +588,7 @@ export default function ModalNewRecord() {
 
   const resetActionState = () => {
     setSelectedOption(null)
-    setSelectedAnimalIds([])
+    setSelectedAnimalIds(preselectedAnimalIds)
     setActiveDraftId(null)
     setIsMontaFormOpen(false)
     setIsAnimalListReaderOpen(false)
@@ -750,7 +779,7 @@ export default function ModalNewRecord() {
     trackNewRecordTypeSelected(optionId)
     resetActionState()
     setSelectedOption(optionId)
-    setSelectedAnimalIds([])
+    setSelectedAnimalIds(getInitialAnimalIdsForOption(optionId))
     setActiveDraftId(createDraftId())
     setIsMontaFormOpen(false)
     setActionError(null)
@@ -953,22 +982,27 @@ export default function ModalNewRecord() {
     perform((id) => movements.sale(id, summary))
   const openNewRecordModal = () => {
     trackNewRecordOpened(storedDrafts.length)
+    setSelectedAnimalIds(preselectedAnimalIds)
     setIsOpen(true)
   }
 
   return (
     <>
-      <Button
-        type="button"
-        size="sm"
-        color="primary"
-        icon="add"
-        className="min-h-11 whitespace-nowrap"
-        onClick={openNewRecordModal}
-        aria-label="Abrir opciones de nuevo registro"
-      >
-        Nuevo Registro{storedDrafts.length > 0 ? ` (${storedDrafts.length})` : ''}
-      </Button>
+      {trigger ? (
+        trigger(openNewRecordModal)
+      ) : (
+        <Button
+          type="button"
+          size="sm"
+          color="primary"
+          icon="add"
+          className="min-h-11 whitespace-nowrap"
+          onClick={openNewRecordModal}
+          aria-label="Abrir opciones de nuevo registro"
+        >
+          Nuevo Registro{storedDrafts.length > 0 ? ` (${storedDrafts.length})` : ''}
+        </Button>
+      )}
 
       <Modal isOpen={isOpen} onClose={closeModal} title="Nuevo Registro" size="md">
         <fieldset disabled={isActionSubmitting || isUndoingMovement} className="min-w-0 space-y-4">
@@ -1207,16 +1241,17 @@ export default function ModalNewRecord() {
                   label="Animales a los que aplica"
                   placeholder="Buscar por número, nombre, tipo o raza..."
                   searchAction={
-                    ANIMAL_LIST_READER_ENABLED &&
-                    <button
-                      type="button"
-                      onClick={() => setIsAnimalListReaderOpen(true)}
-                      aria-label="Leer lista de aretes con imágenes"
-                      title="Leer lista de aretes con imágenes"
-                      className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border border-green-300 bg-green-50 px-2 text-lg text-green-700 transition hover:border-green-500 hover:bg-green-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2"
-                    >
-                      <span aria-hidden="true">✨</span>
-                    </button>
+                    ANIMAL_LIST_READER_ENABLED && (
+                      <button
+                        type="button"
+                        onClick={() => setIsAnimalListReaderOpen(true)}
+                        aria-label="Leer lista de aretes con imágenes"
+                        title="Leer lista de aretes con imágenes"
+                        className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border border-green-300 bg-green-50 px-2 text-lg text-green-700 transition hover:border-green-500 hover:bg-green-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2"
+                      >
+                        <span aria-hidden="true">✨</span>
+                      </button>
+                    )
                   }
                   compactDropdown
                 />

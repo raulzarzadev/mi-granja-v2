@@ -12,6 +12,7 @@ export interface FemaleBreedingInfo {
   outcome?: BreedingOutcome
   /** Fecha en que se confirmó el resultado reproductivo. */
   diagnosedAt?: Date | null
+  outcomeNotes?: string
   /** Compatibilidad y trazabilidad con respaldos de la aplicación anterior. */
   legacyStatus?: 'PENDING' | 'PREGNANT' | 'EMPTY' | 'BIRTH'
 }

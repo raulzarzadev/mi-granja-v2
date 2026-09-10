@@ -12,7 +12,7 @@ export default function EditarEmpadrePage() {
   const { confirmAction } = useAppFeedback()
   const router = useRouter()
   const params = useParams<{ id: string }>()
-  const { animals, update } = useAnimalCRUD()
+  const { animals } = useAnimalCRUD()
   const { breedingRecords, updateBreedingRecord, deleteBreedingRecord, isSubmitting } =
     useBreedingCRUD()
 
@@ -24,35 +24,6 @@ export default function EditarEmpadrePage() {
     if (!record) return
     await updateBreedingRecord(record.id, data)
 
-    const newInfoByFemale = new Map(data.femaleBreedingInfo.map((i) => [i.femaleId, i]))
-    // Hembras removidas con gestación confirmada: conservar gestación, padre y referencia al empadre
-    for (const oldInfo of record.femaleBreedingInfo) {
-      if (
-        !newInfoByFemale.has(oldInfo.femaleId) &&
-        oldInfo.pregnancyConfirmedDate &&
-        !oldInfo.actualBirthDate
-      ) {
-        const animal = animals.find((a) => a.id === oldInfo.femaleId)
-        await update(oldInfo.femaleId, {
-          pregnantAt: animal?.pregnantAt ?? oldInfo.pregnancyConfirmedDate ?? null,
-          pregnantBy: animal?.pregnantBy ?? record.maleId,
-          pregnantBreedingRecordId: record.id,
-          pregnantBreedingId: record.breedingId ?? null,
-        })
-      }
-    }
-    // Hembras recién confirmadas desde el form: sincronizar estado reproductivo del animal
-    for (const newInfo of data.femaleBreedingInfo) {
-      const oldInfo = record.femaleBreedingInfo.find((i) => i.femaleId === newInfo.femaleId)
-      if (newInfo.pregnancyConfirmedDate && !oldInfo?.pregnancyConfirmedDate) {
-        await update(newInfo.femaleId, {
-          pregnantAt: newInfo.pregnancyConfirmedDate,
-          pregnantBy: data.maleId,
-          pregnantBreedingRecordId: record.id,
-          pregnantBreedingId: data.breedingId ?? record.breedingId ?? null,
-        })
-      }
-    }
     router.back()
   }
 

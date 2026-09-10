@@ -1,4 +1,5 @@
-import { renderHook } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
+import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useRecordMovements } from '@/hooks/useRecordMovements'
 import { commitMovement, undoMovement } from '@/lib/record-movements'
 import type { BirthRecord } from '@/types'
@@ -8,11 +9,32 @@ const mockDocuments = new Map<string, any>()
 let mockFailCommit = false
 jest.mock('@/lib/firebase', () => ({ db: {} }))
 jest.mock('react-redux', () => ({
+  useDispatch: () => jest.fn(),
   useSelector: (selector: any) =>
-    selector({ auth: { user: { id: 'u' } }, farm: { currentFarm: { id: 'f' } } }),
+    selector({
+      auth: { user: { id: 'u' } },
+      farm: { currentFarm: { id: 'f' } },
+      animals: {
+        animals: [...mockDocuments.entries()]
+          .filter(([path]) => path.startsWith('animals/'))
+          .map(([, value]) => value),
+      },
+      breeding: {
+        breedingRecords: [...mockDocuments.entries()]
+          .filter(([path]) => path.startsWith('breedingRecords/'))
+          .map(([path, value]) => ({ ...value, id: path.split('/')[1] })),
+      },
+    }),
 }))
 jest.mock('firebase/firestore', () => ({
-  Timestamp: class Timestamp {},
+  Timestamp: class Timestamp {
+    static now() {
+      return new Date()
+    }
+    static fromDate(date: Date) {
+      return date
+    }
+  },
   doc: (_db: unknown, ...parts: string[]) => parts.join('/'),
   runTransaction: async (_db: unknown, work: any) => {
     const pending = new Map(mockDocuments)
@@ -64,6 +86,84 @@ const animal = (id: string, extra: object = {}) => {
   return value as Animal
 }
 const api = (animals: Animal[] = []) => renderHook(() => useRecordMovements(animals)).result.current
+const breedingApi = () => {
+  const api = renderHook(() => useBreedingCRUD()).result.current
+  return {
+    updateBreedingRecord: (...args: Parameters<typeof api.updateBreedingRecord>) =>
+      act(async () => {
+        await api.updateBreedingRecord(...args)
+      }),
+    deleteBreedingRecord: (id: string) =>
+      act(async () => {
+        await api.deleteBreedingRecord(id)
+      }),
+  }
+}
+
+it('confirmar gestación y deshacer restaura el empadre y la hembra juntos', async () => {
+  animal('m', { gender: 'macho' })
+  animal('h')
+  mockDocuments.set('breedingRecords/b', {
+    farmId: 'f',
+    maleId: 'm',
+    femaleBreedingInfo: [{ femaleId: 'h', pregnancyConfirmedDate: null }],
+  })
+  await breedingApi().updateBreedingRecord('b', {
+    femaleBreedingInfo: [{ femaleId: 'h', pregnancyConfirmedDate: date }],
+  })
+  const record = mockDocuments.get('animals/h').records[0]
+  expect(mockDocuments.get('animals/h').pregnantBreedingRecordId).toBe('b')
+  expect(record.undoData.documents).toHaveLength(3)
+  await undoMovement(context, record)
+  expect(mockDocuments.get('animals/h').pregnantAt).toBeNull()
+  expect(
+    mockDocuments.get('breedingRecords/b').femaleBreedingInfo[0].pregnancyConfirmedDate,
+  ).toBeNull()
+})
+
+it('salir y eliminar un empadre conserva la gestación y permite restaurar el documento', async () => {
+  animal('m', { gender: 'macho' })
+  animal('h', { pregnantAt: date, pregnantBy: 'm', pregnantBreedingRecordId: 'b' })
+  mockDocuments.set('breedingRecords/b', {
+    farmId: 'f',
+    maleId: 'm',
+    femaleBreedingInfo: [{ femaleId: 'h', pregnancyConfirmedDate: date }],
+  })
+  await breedingApi().deleteBreedingRecord('b')
+  const record = mockDocuments.get('animals/h').records[0]
+  expect(mockDocuments.has('breedingRecords/b')).toBe(false)
+  expect(mockDocuments.get('animals/h').pregnantAt).toEqual(date)
+  await undoMovement(context, record)
+  expect(mockDocuments.get('breedingRecords/b').femaleBreedingInfo[0].femaleId).toBe('h')
+  expect(mockDocuments.get('animals/h').pregnantAt).toEqual(date)
+})
+
+it('entrada y aborto se revierten sin perder la información anterior', async () => {
+  animal('m', { gender: 'macho' })
+  animal('h')
+  mockDocuments.set('breedingRecords/b', { farmId: 'f', maleId: 'm', femaleBreedingInfo: [] })
+  await breedingApi().updateBreedingRecord('b', {
+    femaleBreedingInfo: [{ femaleId: 'h', pregnancyConfirmedDate: date }],
+  })
+  const entry = mockDocuments.get('animals/h').records[0]
+  await breedingApi().updateBreedingRecord('b', {
+    femaleBreedingInfo: [
+      {
+        femaleId: 'h',
+        pregnancyConfirmedDate: date,
+        outcome: 'aborted',
+        diagnosedAt: date,
+        outcomeNotes: 'Observación',
+      },
+    ],
+  })
+  const abortion = mockDocuments.get('animals/h').records[1]
+  expect(mockDocuments.get('animals/h').pregnantAt).toBeNull()
+  await undoMovement(context, abortion)
+  expect(mockDocuments.get('animals/h').pregnantAt).toEqual(date)
+  await undoMovement(context, entry)
+  expect(mockDocuments.get('breedingRecords/b').femaleBreedingInfo).toEqual([])
+})
 beforeEach(() => {
   mockDocuments.clear()
   mockFailCommit = false

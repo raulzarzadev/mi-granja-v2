@@ -2,12 +2,25 @@ import { type DocumentData, doc, runTransaction, Timestamp } from 'firebase/fire
 import { db } from '@/lib/firebase'
 import type { AnimalRecord } from '@/types/animals'
 
-export type MovementChange = { path: string; data: DocumentData; create?: boolean }
+export type MovementChange = {
+  path: string
+  data: DocumentData
+  create?: boolean
+  delete?: boolean
+}
 export type MovementPlan = {
   changes: MovementChange[]
   record: Omit<AnimalRecord, 'id' | 'createdAt' | 'createdBy'>
 }
 export type MovementContext = { userId: string; farmId: string }
+
+export const createMovementId = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `movement-${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
 export const movementEqual = (a: unknown, b: unknown): boolean => {
   const normalize = (value: unknown): unknown => {
     if (value instanceof Date) return value.toISOString()
@@ -145,6 +158,7 @@ export async function commitMovement(
       if (previous && previous.farmId !== context.farmId)
         throw new Error('Movimiento fuera de la granja.')
       if (change.create) return { path: change.path, before: null, after: change.data }
+      if (change.delete) return { path: change.path, before: previous!, after: {}, deleted: true }
       return {
         path: change.path,
         before: Object.fromEntries(Object.keys(change.data).map((k) => [k, previous?.[k] ?? null])),
@@ -173,7 +187,8 @@ export async function commitMovement(
     if (writes.size > 450) throw new Error('Selecciona menos animales para este movimiento.')
     tx.set(receiptRef, { farmId: context.farmId, farmerId: context.userId, record })
     for (const [path, data] of writes) {
-      if (docs.get(path) === null) tx.set(doc(db, path), data)
+      if (changes.find((change) => change.path === path)?.delete) tx.delete(doc(db, path))
+      else if (docs.get(path) === null) tx.set(doc(db, path), data)
       else tx.update(doc(db, path), data)
     }
     return record
@@ -257,10 +272,18 @@ export async function undoMovement(context: MovementContext, input: AnimalRecord
     const snapshots = await Promise.all(paths.map((path) => tx.get(doc(db, path))))
     const docs = new Map(paths.map((path, i) => [path, snapshots[i].data()]))
     for (const path of paths) {
+      if (journal.some((item) => item.path === path && item.deleted)) {
+        const deleted = journal.find((item) => item.path === path && item.deleted)!
+        if (deleted.before?.farmId !== context.farmId)
+          throw new Error('El documento no pertenece a esta granja.')
+        if (docs.get(path)) throw new Error('El documento eliminado fue creado nuevamente.')
+        continue
+      }
       if (docs.get(path)?.farmId !== context.farmId)
         throw new Error('Un documento del movimiento cambió o ya no existe.')
     }
     for (const item of journal) {
+      if (item.deleted) continue
       const current = docs.get(item.path)!
       // lastMovementId protects the order while allowing earlier undo after a later undo.
       const matches =
@@ -293,6 +316,9 @@ export async function undoMovement(context: MovementContext, input: AnimalRecord
     for (const item of journal) if (item.before === null) tx.delete(doc(db, item.path))
     if (receipt.exists())
       tx.update(receiptRef, { record: { ...record, undoneAt: now, undoneBy: context.userId } })
-    for (const [path, data] of writes) tx.update(doc(db, path), data)
+    for (const [path, data] of writes) {
+      if (journal.some((item) => item.path === path && item.deleted)) tx.set(doc(db, path), data)
+      else tx.update(doc(db, path), data)
+    }
   })
 }
