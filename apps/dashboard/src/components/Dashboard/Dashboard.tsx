@@ -11,7 +11,6 @@ import Tabs from '@/components/Tabs'
 import { RootState } from '@/features/store'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useReminders } from '@/hooks/useReminders'
-import { AnimalType, animal_icon, animals_types_labels } from '@/types/animals'
 import FarmSwitcherBar from '../FarmSwitcherBar'
 import ModalOnboarding from '../onboarding/ModalOnboarding'
 import OnboardingCard from '../onboarding/OnboardingCard'
@@ -27,16 +26,9 @@ const Dashboard: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth)
   const { farms, currentFarm } = useFarmCRUD()
 
-  const { filters, setFilters, animals, availableTypes } = useAnimalFilters()
+  const { filters, setFilters } = useAnimalFilters()
   const { getBadgeCount } = useReminders()
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const totalFilteredAnimals = animals.filter(
-    (a) => (a.status ?? 'activo') === filters.status,
-  ).length
-  const getTypeCount = (type: AnimalType | string) =>
-    animals.filter((a) => a.type === type && (a.status ?? 'activo') === filters.status).length
-  const onlyTypeCount = availableTypes.length === 1 ? getTypeCount(availableTypes[0]) : 0
-  const showAllTypeFilter = !(availableTypes.length === 1 && onlyTypeCount === totalFilteredAnimals)
 
   if (!user) {
     return null
@@ -76,58 +68,7 @@ const Dashboard: React.FC = () => {
         {/* Titulo de la granja + filtro global por tipo */}
         {currentFarm && (
           <div className="mb-3">
-            <FarmSwitcherBar trailingAction={<AiAssistant />}>
-              <div className="flex items-center justify-start gap-2 overflow-x-auto py-1 md:justify-end">
-                {showAllTypeFilter && (
-                  <button
-                    type="button"
-                    onClick={() => setFilters((prev) => ({ ...prev, type: '' }))}
-                    className={`flex h-12 min-w-[58px] flex-col items-center justify-center rounded-full border-2 px-2 text-xs font-semibold transition-all duration-200 ${
-                      filters.type === ''
-                        ? 'border-green-500 bg-green-100 text-green-800'
-                        : 'border-transparent bg-gray-100 text-gray-500 hover:border-green-200 hover:bg-green-50 hover:text-green-700'
-                    }`}
-                    title={`Todos (${totalFilteredAnimals})`}
-                  >
-                    <span>Todos</span>
-                    <span className="text-[10px] font-bold leading-none">
-                      {totalFilteredAnimals}
-                    </span>
-                  </button>
-                )}
-                {availableTypes.map((t) => {
-                  const typeKey = t as AnimalType
-                  const isSelected = filters.type === t || !showAllTypeFilter
-                  const hasFilter = filters.type !== ''
-                  const count = getTypeCount(t)
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          type: prev.type === t ? '' : (t as AnimalType),
-                        }))
-                      }
-                      className={`flex h-12 min-w-[52px] flex-col items-center justify-center rounded-full border-2 px-2 text-lg transition-all duration-200 ${
-                        isSelected
-                          ? 'border-green-500 bg-green-100 shadow-sm'
-                          : hasFilter
-                            ? 'border-transparent bg-gray-100 opacity-40 grayscale hover:opacity-70 hover:grayscale-0'
-                            : 'border-transparent bg-gray-100 hover:border-green-200 hover:bg-green-50'
-                      }`}
-                      title={`${animals_types_labels[typeKey] || t} (${count})`}
-                    >
-                      <span className="leading-none">{animal_icon[typeKey] || '🐾'}</span>
-                      <span className="mt-0.5 text-[10px] font-bold leading-none text-gray-700">
-                        {count}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </FarmSwitcherBar>
+            <FarmSwitcherBar trailingAction={<AiAssistant />} />
           </div>
         )}
 

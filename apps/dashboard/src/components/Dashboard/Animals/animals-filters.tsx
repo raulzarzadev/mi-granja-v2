@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import ModalAnimalForm from '@/components/ModalAnimalForm'
 import ModalNewRecord from '@/components/ModalNewRecord'
@@ -161,9 +162,6 @@ export const useAnimalFilters = (externalState?: {
 
   // Opciones disponibles basadas en los animales reales de la granja
   const availableTypes = [...new Set(animals.map((a) => a.type))].sort()
-  const availableBreeds = [
-    ...new Set(animals.map((a) => a.breed).filter(Boolean)),
-  ].sort() as string[]
   const availableStages = [...new Set(animals.map((a) => computeAnimalStage(a)))].sort()
   const availableGenders = [...new Set(animals.map((a) => a.gender))].sort()
 
@@ -186,7 +184,6 @@ export const useAnimalFilters = (externalState?: {
     formatStatLabel,
     activeFilterCount,
     availableTypes,
-    availableBreeds,
     availableStages,
     availableGenders,
   }
@@ -194,12 +191,12 @@ export const useAnimalFilters = (externalState?: {
 
 // Props para el componente AnimalsFilters
 export interface AnimalsFiltersProps {
+  speciesAnimals: Animal[]
   filters: AnimalFilters
   setFilters: React.Dispatch<React.SetStateAction<AnimalFilters>>
   filteredCount: number
   activeFilterCount: number
   availableTypes: string[]
-  availableBreeds: string[]
   availableStages: string[]
   availableGenders: string[]
   crossTabDuplicatesCount: number
@@ -227,7 +224,7 @@ const FilterIcon = ({ active }: { active: boolean }) => (
 
 type QuickFilterMenuProps = {
   label: string
-  selectedLabel: string
+  selectedLabel: ReactNode
   value: string
   allLabel: string
   options: Array<{ value: string; label: string }>
@@ -317,19 +314,52 @@ const QuickFilterMenu = ({
 )
 
 export const AnimalsFilters = ({
+  speciesAnimals,
   filters,
   setFilters,
   filteredCount,
   activeFilterCount,
   availableTypes,
-  availableBreeds,
   crossTabDuplicatesCount,
   onShowDuplicates,
   formatStatLabel,
   tabsTotal,
 }: AnimalsFiltersProps) => {
   const [showFilters, setShowFilters] = useState(false)
-  const [openQuickFilter, setOpenQuickFilter] = useState<'gender' | 'stage' | null>(null)
+  const [openQuickFilter, setOpenQuickFilter] = useState<'type' | 'gender' | 'stage' | null>(null)
+  const speciesCounts = speciesAnimals.reduce<Record<string, number>>((counts, animal) => {
+    counts[animal.type] = (counts[animal.type] ?? 0) + 1
+    return counts
+  }, {})
+  const speciesOptions = Object.keys(speciesCounts)
+    .sort()
+    .map((value) => ({
+      value,
+      label: `${animals_types_labels[value as AnimalType] || value} (${speciesCounts[value]})`,
+    }))
+  const allSpeciesLabel = `Todos (${speciesAnimals.length})`
+  const speciesSummaryIndicator =
+    !filters.type &&
+    typeof tabsTotal === 'number' &&
+    (tabsTotal === filteredCount ? (
+      <svg
+        aria-label="Todos los animales visibles"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 16 16"
+        fill="currentColor"
+        className="size-3.5 text-green-500"
+      >
+        <path
+          fillRule="evenodd"
+          d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 1 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207l.207.207Z"
+          clipRule="evenodd"
+        />
+      </svg>
+    ) : (
+      <span className="text-amber-500 font-medium" aria-label={`${tabsTotal} de ${filteredCount}`}>
+        {tabsTotal}/{filteredCount}
+      </span>
+    ))
   const quickFiltersRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -469,26 +499,6 @@ export const AnimalsFilters = ({
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-medium text-gray-500">Raza</label>
-              <select
-                value={filters.breed}
-                onChange={(e) => setFilters((prev) => ({ ...prev, breed: e.target.value }))}
-                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.breed !== ''
-                    ? 'border-green-500 bg-green-50 text-green-800'
-                    : 'border-gray-300'
-                }`}
-              >
-                <option value="">Todas</option>
-                {availableBreeds.map((breed) => (
-                  <option key={breed} value={breed}>
-                    {breed}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1">
               <label className="text-[11px] font-medium text-gray-500">Etapa</label>
               <select
                 value={filters.stage}
@@ -565,6 +575,26 @@ export const AnimalsFilters = ({
       <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between gap-2 flex-wrap">
         <div ref={quickFiltersRef} className="flex items-center gap-1.5 flex-wrap">
           <QuickFilterMenu
+            label="Especie"
+            selectedLabel={
+              <span className="inline-flex items-center gap-1">
+                {filters.type
+                  ? `${formatStatLabel(filters.type)} (${speciesCounts[filters.type] ?? 0})`
+                  : allSpeciesLabel}
+                {speciesSummaryIndicator}
+              </span>
+            }
+            value={filters.type}
+            allLabel={allSpeciesLabel}
+            options={speciesOptions}
+            open={openQuickFilter === 'type'}
+            onToggle={() => setOpenQuickFilter((current) => (current === 'type' ? null : 'type'))}
+            onChange={(value) => {
+              setFilters((prev) => ({ ...prev, type: value as AnimalType | '' }))
+              setOpenQuickFilter(null)
+            }}
+          />
+          <QuickFilterMenu
             label="Género"
             selectedLabel={filters.gender ? formatStatLabel(filters.gender) : ''}
             value={filters.gender}
@@ -618,19 +648,9 @@ export const AnimalsFilters = ({
           )}
           {hasActiveFilters && (
             <>
-              {filters.type && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  {formatStatLabel(filters.type)}
-                </span>
-              )}
               {filters.status !== 'activo' && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                   {formatStatLabel(filters.status)}
-                </span>
-              )}
-              {filters.breed && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                  {filters.breed}
                 </span>
               )}
               {filters.breedingStatus && (
@@ -641,29 +661,6 @@ export const AnimalsFilters = ({
             </>
           )}
         </div>
-        <span className="text-xs text-gray-500 whitespace-nowrap flex items-center gap-1">
-          <span>Animales totales: </span>
-          <span className="font-semibold text-gray-700">{filteredCount}</span>
-          {typeof tabsTotal === 'number' &&
-            (tabsTotal === filteredCount ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 16 16"
-                fill="currentColor"
-                className="size-3.5 text-green-500"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            ) : (
-              <span className="text-amber-500 font-medium">
-                {tabsTotal}/{filteredCount}
-              </span>
-            ))}
-        </span>
       </div>
     </div>
   )

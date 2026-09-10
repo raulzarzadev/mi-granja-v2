@@ -91,10 +91,10 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   const {
     filteredAnimals,
     animals: allAnimals,
+    statusAnimals,
     formatStatLabel,
     activeFilterCount,
     availableTypes,
-    availableBreeds,
     availableStages,
     availableGenders,
   } = useAnimalFilters({ filters, setFilters })
@@ -789,12 +789,12 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
   return (
     <>
       <AnimalsFilters
+        speciesAnimals={filters.status === 'activo' ? animals : statusAnimals}
         filters={filters}
         setFilters={setFilters}
         filteredCount={filteredAnimals.length}
         activeFilterCount={activeFilterCount}
         availableTypes={availableTypes}
-        availableBreeds={availableBreeds}
         availableStages={availableStages}
         availableGenders={availableGenders}
         crossTabDuplicatesCount={crossTabDuplicates.length}
