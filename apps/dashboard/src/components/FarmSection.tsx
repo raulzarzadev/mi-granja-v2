@@ -13,7 +13,7 @@ import { useFarmMembers } from '@/hooks/useFarmMembers'
 import { useMyInvitations } from '@/hooks/useMyInvitations'
 import { formatDate, toDate } from '@/lib/dates'
 import { FarmCollaborator } from '@/types/collaborators'
-import { FARM_AREA_TYPES, FarmInvitation } from '@/types/farm'
+import { FARM_AREA_TYPES, Farm, FarmInvitation } from '@/types/farm'
 import BackupSection from './BackupSection'
 import BreedingConfigTab from './BreedingConfigTab'
 import MigrationBanner from './billing/MigrationBanner'
@@ -22,7 +22,12 @@ import ModalCreateFarm from './ModalCreateFarm'
 import ModalEditCollaborator from './ModalEditCollaborator'
 import ModalInviteCollaborator from './ModalInviteCollaborator'
 
-const FarmSection: React.FC = () => {
+type FarmSectionProps = {
+  /** Se llama al crear la primera granja (estado vacío) */
+  onFarmCreated?: (farm: Farm) => void
+}
+
+const FarmSection: React.FC<FarmSectionProps> = ({ onFarmCreated }) => {
   const { confirmAction, notify } = useAppFeedback()
   const { farms, currentFarm, isLoading: farmsLoading, loadAndSwitchFarm } = useFarmCRUD()
 
@@ -66,6 +71,27 @@ const FarmSection: React.FC = () => {
     )
   }
 
+  const hasInvitations = myInv.getPending().length > 0 || myInv.getAccepted().length > 0
+
+  // Usuario nuevo sin invitaciones: lo primero es crear su granja
+  if (farms.length === 0 && !myInv.isLoading && !hasInvitations) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-12 text-center">
+        <span className="text-5xl" aria-hidden="true">
+          🚜
+        </span>
+        <h2 className="mt-4 text-2xl font-bold text-gray-900">¡Bienvenido a Mi Granja!</h2>
+        <p className="mt-2 text-gray-600">
+          Para comenzar necesitas una granja. Configúrala en un minuto y te preparamos todo lo
+          necesario.
+        </p>
+        <div className="mt-6 flex justify-center">
+          <ModalCreateFarm onCreated={onFarmCreated} />
+        </div>
+      </div>
+    )
+  }
+
   if (farms.length === 0) {
     return (
       <div className="space-y-6">
@@ -75,13 +101,6 @@ const FarmSection: React.FC = () => {
             <div className="flex items-center">
               <LoadingSpinner />
               <span className="ml-3 text-gray-600">Cargando invitaciones...</span>
-            </div>
-          ) : myInv.getPending().length === 0 && myInv.getAccepted().length === 0 ? (
-            <div className="space-y-4">
-              <p className="text-gray-600 text-sm">No tienes invitaciones por ahora.</p>
-              <div className="flex justify-center">
-                <ModalCreateFarm />
-              </div>
             </div>
           ) : (
             <div className="grid gap-4">
@@ -161,7 +180,7 @@ const FarmSection: React.FC = () => {
               ))}
               <div className="border rounded-lg p-4 flex flex-col items-center justify-center">
                 <p className="text-sm text-gray-600 mb-3">Quieres crear tu propia granja?</p>
-                <ModalCreateFarm />
+                <ModalCreateFarm onCreated={onFarmCreated} />
               </div>
             </div>
           )}

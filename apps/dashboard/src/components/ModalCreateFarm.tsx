@@ -17,6 +17,7 @@ import type {
   FarmProductionPurpose,
 } from '@/types/farm'
 import Button from './buttons/Button'
+import LoadingSpinner from './LoadingSpinner'
 import { Modal } from './Modal'
 
 type ModalCreateFarmProps = {
@@ -247,7 +248,11 @@ const ModalCreateFarm = ({
         productionProfile,
       }
 
-      const created = await createFarm(farmData)
+      // Mínimo visible del estado "creando" para que no parpadee
+      const [created] = await Promise.all([
+        createFarm(farmData),
+        new Promise((resolve) => setTimeout(resolve, 1200)),
+      ])
       onCreated?.(created)
       resetForm()
       closeModal()
@@ -307,6 +312,20 @@ const ModalCreateFarm = ({
               <Button variant="ghost" color="neutral" size="md" onClick={handleClose}>
                 Cerrar
               </Button>
+            </div>
+          </div>
+        ) : isLoading ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex flex-col items-center justify-center gap-4 py-16 text-center"
+          >
+            <LoadingSpinner size="lg" text="" />
+            <div>
+              <p className="text-lg font-bold text-slate-900">Estamos creando todo lo necesario…</p>
+              <p className="mt-1 text-sm text-slate-600">
+                Preparando {formData.name.trim() || 'tu granja'}. Esto toma solo un momento.
+              </p>
             </div>
           </div>
         ) : (

@@ -13,6 +13,7 @@ import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useReminders } from '@/hooks/useReminders'
 import FarmSwitcherBar from '../FarmSwitcherBar'
 import ModalOnboarding from '../onboarding/ModalOnboarding'
+import ModalWelcomeFarm from '../onboarding/ModalWelcomeFarm'
 import OnboardingCard from '../onboarding/OnboardingCard'
 import RecordsTab from '../RecordsTab'
 import AnimalsSection from './Animals/AnimalsSection'
@@ -29,6 +30,7 @@ const Dashboard: React.FC = () => {
   const { filters, setFilters } = useAnimalFilters()
   const { getBadgeCount } = useReminders()
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [welcomeFarmName, setWelcomeFarmName] = useState<string | null>(null)
 
   if (!user) {
     return null
@@ -74,7 +76,7 @@ const Dashboard: React.FC = () => {
 
         {/* Si no hay granjas, priorizar creacion/seleccion */}
         {farms.length === 0 ? (
-          <FarmSection />
+          <FarmSection onFarmCreated={(farm) => setWelcomeFarmName(farm.name)} />
         ) : (
           <Tabs
             tabs={tabs}
@@ -94,6 +96,14 @@ const Dashboard: React.FC = () => {
         )}
 
         <ModalOnboarding isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
+        <ModalWelcomeFarm
+          farmName={welcomeFarmName}
+          onClose={() => setWelcomeFarmName(null)}
+          onShowGuide={() => {
+            setWelcomeFarmName(null)
+            setShowOnboarding(true)
+          }}
+        />
       </main>
     </div>
   )
