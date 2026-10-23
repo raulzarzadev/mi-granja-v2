@@ -5,6 +5,7 @@ import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import BrandLogo from '@/components/BrandLogo'
+import HelpMenu from '@/components/HelpMenu'
 import { RootState } from '@/features/store'
 import { useAuth } from '@/hooks/useAuth'
 import { isUserAdmin } from '@/lib/userUtils'
@@ -99,7 +100,10 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Lado derecho */}
-          <div className="ml-auto flex min-w-0 items-center gap-1 min-[360px]:gap-2 sm:gap-3" ref={menuRef}>
+          <div
+            className="ml-auto flex min-w-0 items-center gap-1 min-[360px]:gap-2 sm:gap-3"
+            ref={menuRef}
+          >
             {/* Impersonación (mobile) */}
             {impersonatingUser && originalUser && (
               <div className="md:hidden flex items-center gap-1 bg-yellow-500 text-black px-2 py-1 rounded text-[10px] font-medium">
@@ -138,7 +142,11 @@ const Navbar: React.FC = () => {
 
             {/* Si hay usuario mostrar avatar y menú */}
             {user && (
-              <div className="flex min-w-0 items-center gap-1 min-[360px]:gap-2 sm:gap-3" ref={menuRef}>
+              <div
+                className="flex min-w-0 items-center gap-1 min-[360px]:gap-2 sm:gap-3"
+                ref={menuRef}
+              >
+                <HelpMenu onShowGuide={() => setShowOnboarding(true)} />
                 <NotificationsBell />
 
                 <div className="relative">

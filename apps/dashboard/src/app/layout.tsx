@@ -1,10 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
-import { BetaBanner } from '@/components/BetaBanner'
 import { OfflineBanner } from '@/components/OfflineBanner'
 import { ServiceWorkerRegistrar } from '@/components/ServiceWorkerRegistrar'
-import WhatsAppCommunityFab from '@/components/WhatsAppCommunityFab'
 import { Providers } from './providers'
 
 const geistSans = Geist({
@@ -66,9 +64,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}>
         <ServiceWorkerRegistrar />
         <OfflineBanner />
-        <BetaBanner />
         <Providers>{children}</Providers>
-        <WhatsAppCommunityFab />
       </body>
     </html>
   )
