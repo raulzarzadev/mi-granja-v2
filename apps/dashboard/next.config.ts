@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
             "img-src 'self' data: blob: https://*.googleapis.com https://*.googleusercontent.com https://*.i.posthog.com",
             "worker-src 'self' blob:",
             `connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.firebase.google.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://accounts.google.com https://apis.google.com https://*.posthog.com https://*.i.posthog.com${isDev ? ' http://localhost:* http://127.0.0.1:*' : ''}`,
-            "frame-src 'self' https://apis.google.com https://accounts.google.com https://*.firebaseapp.com https://*.firebase.google.com",
+            `frame-src 'self' https://apis.google.com https://accounts.google.com https://*.firebaseapp.com https://*.firebase.google.com${isDev ? ' http://localhost:* http://127.0.0.1:*' : ''}`,
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self'",

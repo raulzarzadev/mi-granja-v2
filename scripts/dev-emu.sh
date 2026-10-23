@@ -73,6 +73,14 @@ STRIPE_TEST_KEY="$(
     "$STRIPE_CONFIG_FILE"
 )"
 
+# `stripe login --interactive` no guarda account_id; se resuelve con la clave
+if [[ -z "$CONFIGURED_STRIPE_ACCOUNT_ID" && -n "$STRIPE_TEST_KEY" ]]; then
+  CONFIGURED_STRIPE_ACCOUNT_ID="$(
+    curl -s https://api.stripe.com/v1/account -u "$STRIPE_TEST_KEY:" |
+      grep -Eo '"id": *"acct_[A-Za-z0-9]+"' | head -n 1 | grep -Eo 'acct_[A-Za-z0-9]+' || true
+  )"
+fi
+
 if [[ "$CONFIGURED_STRIPE_ACCOUNT_ID" != "$STRIPE_ACCOUNT_ID" ]]; then
   echo "Error: Stripe CLI no está conectado a MiGranjaApp sandbox."
   echo "Cuenta esperada: $STRIPE_ACCOUNT_ID"
