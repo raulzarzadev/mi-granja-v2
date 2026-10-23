@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import InventoryTab from '@/components/InventoryTab'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import SalesTab from '@/components/SalesTab'
@@ -205,9 +206,9 @@ const FarmSection: React.FC<FarmSectionProps> = ({ onFarmCreated }) => {
           )}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="bg-white rounded-lg shadow p-4 flex items-center gap-3">
-              <span className="text-2xl">🏗️</span>
+              <span className="text-2xl"><EmojiIcon emoji="⛳" /></span>
               <div>
-                <p className="text-sm font-medium text-gray-500">Areas</p>
+                <p className="text-sm font-medium text-gray-500">Áreas</p>
                 <p className="text-xl font-bold text-gray-900">{areaStats.total}</p>
               </div>
             </div>

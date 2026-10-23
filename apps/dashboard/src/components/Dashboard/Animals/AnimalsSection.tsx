@@ -750,7 +750,7 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       content: <NumbersTab animals={filteredAnimals} />,
     },
     {
-      label: '📍 Áreas',
+      label: '⛳ Áreas',
       content: <TabAreas animals={filteredAnimals} areas={currentFarm?.areas || []} />,
     },
     {

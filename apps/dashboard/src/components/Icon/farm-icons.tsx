@@ -264,3 +264,19 @@ export const Calf = farmIcon(
   </>,
   'Calf',
 )
+
+/** Campo con banderín para las áreas de la granja. */
+export const FieldFlag = farmIcon(
+  <g
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="16"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M128 176 V32 L200 64 L128 96" />
+    <path d="M96 132 C52 136 24 152 24 176 C24 204 70 224 128 224 C186 224 232 204 232 176 C232 152 204 136 160 132" />
+    <path d="M104 176 C104 184 152 184 152 176" />
+  </g>,
+  'FieldFlag',
+)

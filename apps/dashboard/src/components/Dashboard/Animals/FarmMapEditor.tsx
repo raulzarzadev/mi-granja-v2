@@ -4,6 +4,7 @@ import type { DragEvent, FormEvent, PointerEvent } from 'react'
 import { useMemo, useRef, useState } from 'react'
 import AnimalTag from '@/components/AnimalTag'
 import Button from '@/components/buttons/Button'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { Modal } from '@/components/Modal'
 import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
@@ -778,6 +779,50 @@ export default function FarmMapEditor({
 
   return (
     <div>
+      {activeAreas.length === 0 && !isCreating && !pendingLayout ? (
+        <section
+          aria-labelledby="first-area-title"
+          className="mt-4 rounded-[2rem] border border-green-200 bg-[#fbfdf8] px-5 py-10 text-center shadow-sm sm:px-8 sm:py-14"
+        >
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-green-700 text-4xl text-white shadow-[0_8px_0_#bbf7d0]">
+            <EmojiIcon emoji="⛳" />
+          </div>
+          <p className="mt-8 text-sm font-bold uppercase tracking-[0.16em] text-green-800">
+            Cada animal en su lugar
+          </p>
+          <h2
+            id="first-area-title"
+            className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"
+          >
+            Crea tu primera área
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
+            Distribuye a tus animales de forma visual o en una tabla. Organiza tus corrales y
+            potreros para llevar el control y conteo de cada área.
+          </p>
+          <button
+            type="button"
+            onClick={beginCreatePolygon}
+            className="mt-7 min-h-14 w-full max-w-xs rounded-2xl bg-green-700 px-6 py-3 text-base font-bold text-white shadow-[0_6px_0_#14532d] transition hover:bg-green-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-green-300 focus-visible:ring-offset-2"
+          >
+            Crear mi primera área
+          </button>
+          <div className="mx-auto mt-10 grid max-w-2xl gap-3 text-left sm:grid-cols-2">
+            <div className="rounded-2xl border border-green-100 bg-white p-5">
+              <h3 className="font-bold text-slate-900">Distribución visual</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Dibuja tus áreas y mueve a tus animales entre ellas.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-green-100 bg-white p-5">
+              <h3 className="font-bold text-slate-900">Control y conteo</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Consulta tus animales en tabla y revisa cuántos hay en cada área.
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : (
       <section className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
@@ -1075,6 +1120,7 @@ export default function FarmMapEditor({
           ) : null}
         </div>
       </section>
+      )}
 
       <Modal
         isOpen={isUnassignedOpen}
