@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 import { Controller } from 'react-hook-form'
 import { z } from 'zod'
+import InputIconSelect from '@/components/inputs/InputIconSelect'
 import { useZodForm } from '@/hooks/useZodForm'
 import { normalizeAnimalSearch } from '@/lib/animal-search'
 import { ANIMAL_BREEDING_CONFIGS } from '@/lib/animalBreedingConfig'
@@ -13,6 +14,7 @@ import {
   type Animal,
   type AnimalStage,
   animal_icon,
+  animal_stage_icons,
   animal_status_icons,
   animal_status_labels,
   animal_statuses,
@@ -37,7 +39,7 @@ const lifecycleOptions = [
   'embarazada',
   'lechera',
 ] as const
-const visibleStageOptions = ['cria', 'engorda', 'reproductor', 'descarte'] as const
+const visibleStageOptions = ['cria', 'reproductor', 'embarazada', 'lechera', 'descarte'] as const
 
 const schema = z
   .object({
@@ -418,18 +420,49 @@ export default function SimpleAnimalForm({
           </label>
         </div>
 
-        <label className="block space-y-1.5">
-          <span className="text-sm font-semibold text-slate-700">Etapa o condición *</span>
-          <select {...form.register('lifecycle')} disabled={isBusy} className={selectClassName}>
-            {visibleStageOptions.map((stage) => (
-              <option key={stage} value={stage}>
-                {animals_stages_labels[stage]}
-              </option>
-            ))}
-            {selectedGender === 'hembra' && <option value="embarazada">Gestante</option>}
-            {selectedGender === 'hembra' && <option value="lechera">Madre / Lechera</option>}
-          </select>
-        </label>
+        <div className="space-y-1.5">
+          <span id="animal-lifecycle-label" className="block text-sm font-semibold text-slate-700">
+            Etapa o condición *
+          </span>
+          <Controller
+            control={form.control}
+            name="lifecycle"
+            render={({ field, fieldState }) => (
+              <InputIconSelect
+                aria-labelledby="animal-lifecycle-label"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                disabled={isBusy}
+                invalid={!!fieldState.error}
+                className="min-h-12 rounded-xl border-slate-300"
+                options={visibleStageOptions
+                  .filter(
+                    (stage) =>
+                      selectedGender === 'hembra' || !['embarazada', 'lechera'].includes(stage),
+                  )
+                  .map((stage) => ({
+                    value: stage,
+                    label:
+                      stage === 'embarazada'
+                        ? 'Gestante'
+                        : stage === 'lechera'
+                          ? 'Madre / Lechera'
+                          : animals_stages_labels[stage],
+                    icon:
+                      stage === 'embarazada'
+                        ? '🤰'
+                        : stage === 'lechera'
+                          ? '🍼'
+                          : animal_stage_icons[stage],
+                  }))}
+              />
+            )}
+          />
+          {form.formState.errors.lifecycle && (
+            <p className="text-xs text-red-600">{form.formState.errors.lifecycle.message}</p>
+          )}
+        </div>
 
         <div className="rounded-2xl border border-green-200 bg-green-50/70 p-4">
           {selectedLifecycle === 'cria' && (
