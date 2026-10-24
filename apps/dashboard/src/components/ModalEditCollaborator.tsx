@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
+import InputIconSelect from '@/components/inputs/InputIconSelect'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 import { formatDate, toDate } from '@/lib/dates'
 import { COLLABORATOR_ROLES, DEFAULT_PERMISSIONS, FarmCollaborator } from '@/types/collaborators'
@@ -81,7 +83,9 @@ const ModalEditCollaborator: React.FC<ModalEditCollaboratorProps> = ({
         {/* Información del colaborador (no editable) */}
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">{selectedRole?.icon || '👤'}</span>
+            <span className="text-2xl">
+              <EmojiIcon emoji={selectedRole?.icon || '👤'} />
+            </span>
             <div>
               <h4 className="font-semibold text-gray-900">
                 {collaborator.email || collaborator.userId}
@@ -104,19 +108,16 @@ const ModalEditCollaborator: React.FC<ModalEditCollaboratorProps> = ({
           >
             Rol en la Granja *
           </label>
-          <select
+          <InputIconSelect
             id="collaboratorRole"
-            required
             value={formData.role}
-            onChange={(e) => handleChange('role', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {COLLABORATOR_ROLES.map((role) => (
-              <option key={role.value} value={role.value}>
-                {role.icon} {role.label}
-              </option>
-            ))}
-          </select>
+            onChange={(role) => handleChange('role', role)}
+            options={COLLABORATOR_ROLES.map((role) => ({
+              value: role.value,
+              label: role.label,
+              icon: role.icon,
+            }))}
+          />
 
           {selectedRole && <p className="text-sm text-gray-600 mt-2">{selectedRole.description}</p>}
         </div>

@@ -1,3 +1,4 @@
+import { IconLabel } from '@/components/Icon/emoji-icons'
 import type { FarmProfileStats, ProfileBreakdownItem } from '@/lib/admin/farm-profile-stats'
 
 function BreakdownChart({
@@ -25,7 +26,9 @@ function BreakdownChart({
           {items.map((item) => (
             <li key={item.key}>
               <div className="mb-1 flex items-center justify-between gap-3 text-sm">
-                <span className="min-w-0 truncate font-medium text-slate-700">{item.label}</span>
+                <span className="min-w-0 truncate font-medium text-slate-700">
+                  <IconLabel label={item.label} />
+                </span>
                 <span className="shrink-0 font-semibold tabular-nums text-slate-900">
                   {item.count}
                 </span>

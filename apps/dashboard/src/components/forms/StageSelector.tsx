@@ -1,6 +1,7 @@
 'use client'
 
 import { Controller, FieldPath, FieldValues, useFormContext } from 'react-hook-form'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import {
   AnimalType,
   animal_stage_descriptions,
@@ -76,7 +77,9 @@ export function StageSelector<TFieldValues extends FieldValues>({
                           : 'border-transparent bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700'
                       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
-                      <span className="text-sm leading-none">{animal_stage_icons[stage]}</span>
+                      <span className="text-sm leading-none">
+                        <EmojiIcon emoji={animal_stage_icons[stage]} />
+                      </span>
                       <span>{animals_stages_labels[stage]}</span>
                     </button>
                   )

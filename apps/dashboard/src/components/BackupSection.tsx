@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { RootState } from '@/features/store'
 import { useBackup } from '@/hooks/useBackup'
 import ModalRestoreBackup from './ModalRestoreBackup'
@@ -114,7 +115,9 @@ const BackupSection: React.FC = () => {
     <div className="space-y-6">
       {/* Disclaimer */}
       <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex items-start gap-3">
-        <span className="text-2xl flex-shrink-0">⚠️</span>
+        <span className="text-2xl flex-shrink-0">
+          <EmojiIcon emoji="⚠️" />
+        </span>
         <div>
           <p className="text-sm font-semibold text-amber-900">Funcionalidad en prueba</p>
           <p className="text-sm text-amber-800 mt-1">
@@ -136,7 +139,9 @@ const BackupSection: React.FC = () => {
           {/* Tarjeta Exportar */}
           <div className="border border-gray-200 rounded-lg p-5 space-y-4">
             <div className="flex items-start gap-3">
-              <span className="text-3xl">💾</span>
+              <span className="text-3xl">
+                <EmojiIcon emoji="💾" />
+              </span>
               <div>
                 <h4 className="font-medium text-gray-900">Exportar Respaldo</h4>
                 <p className="text-sm text-gray-500 mt-1">
@@ -169,7 +174,9 @@ const BackupSection: React.FC = () => {
           {/* Tarjeta Restaurar */}
           <div className="border border-gray-200 rounded-lg p-5 space-y-4">
             <div className="flex items-start gap-3">
-              <span className="text-3xl">📥</span>
+              <span className="text-3xl">
+                <EmojiIcon emoji="📥" />
+              </span>
               <div>
                 <h4 className="font-medium text-gray-900">Restaurar Respaldo</h4>
                 <p className="text-sm text-gray-500 mt-1">
@@ -195,7 +202,9 @@ const BackupSection: React.FC = () => {
 
         {history.length === 0 ? (
           <div className="text-center py-8">
-            <span className="text-4xl block mb-3">📋</span>
+            <span className="text-4xl block mb-3">
+              <EmojiIcon emoji="📋" />
+            </span>
             <p className="text-sm text-gray-500">
               Aún no hay registros de respaldos. Cuando exportes o restaures un respaldo, aparecerá
               aquí.
@@ -212,7 +221,7 @@ const BackupSection: React.FC = () => {
                       : 'bg-green-100 text-green-600'
                   }`}
                 >
-                  {entry.type === 'export' ? '💾' : '📥'}
+                  <IconLabel label={entry.type === 'export' ? '💾' : '📥'} />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">

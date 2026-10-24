@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { useSelector } from 'react-redux'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { RootState } from '@/features/store'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 import { collaborator_roles_label } from '@/types/collaborators'
@@ -49,7 +50,7 @@ const MyRole: React.FC<MyRoleProps> = ({ farm }) => {
     <span
       className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-medium ${color} `}
     >
-      <span>{icon}</span>
+      <EmojiIcon emoji={icon} />
       {getRoleLabel(role)}
     </span>
   )

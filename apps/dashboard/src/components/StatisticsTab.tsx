@@ -21,6 +21,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { RootState } from '@/features/store'
 import { animalMatchesSearch, normalizeAnimalSearch, valuesMatchSearch } from '@/lib/animal-search'
 import { isAvailableToSale } from '@/lib/animal-utils'
@@ -1098,7 +1099,7 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
               .map(([type, data]) => (
                 <div key={type} className="flex items-center gap-2">
                   <span className="text-xs text-gray-500 w-24 text-right shrink-0">
-                    {animal_icon[type]} {animals_types_labels[type]}
+                    <EmojiIcon emoji={animal_icon[type]} /> {animals_types_labels[type]}
                   </span>
                   <div className="flex-1 bg-gray-100 rounded-full h-5 relative overflow-hidden">
                     <div
@@ -1156,7 +1157,7 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ animals: animalsProp }) =
             .map(([type, data]) => (
               <div key={type} className="flex items-center gap-2">
                 <span className="text-xs text-gray-500 w-24 text-right shrink-0">
-                  {animal_icon[type]} {animals_types_labels[type]}
+                  <EmojiIcon emoji={animal_icon[type]} /> {animals_types_labels[type]}
                 </span>
                 <div className="flex-1 bg-gray-100 rounded-full h-5 relative overflow-hidden">
                   <div

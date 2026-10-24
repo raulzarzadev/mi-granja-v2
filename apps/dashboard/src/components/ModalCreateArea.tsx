@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
+import InputIconSelect from '@/components/inputs/InputIconSelect'
 import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useModal } from '@/hooks/useModal'
@@ -75,7 +77,9 @@ const ModalCreateArea: React.FC = () => {
         onClick={openModal}
         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
       >
-        <span>➕</span>
+        <span>
+          <EmojiIcon emoji="➕" />
+        </span>
         Nueva Área
       </button>
 
@@ -102,19 +106,16 @@ const ModalCreateArea: React.FC = () => {
             <label htmlFor="areaType" className="block text-sm font-medium text-gray-700 mb-2">
               Tipo de Área *
             </label>
-            <select
+            <InputIconSelect
               id="areaType"
-              required
               value={formData.type}
-              onChange={(e) => handleChange('type', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              {FARM_AREA_TYPES.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.icon} {type.label}
-                </option>
-              ))}
-            </select>
+              onChange={(type) => handleChange('type', type)}
+              options={FARM_AREA_TYPES.map((type) => ({
+                value: type.value,
+                label: type.label,
+                icon: type.icon,
+              }))}
+            />
           </div>
 
           {/* Descripción */}
@@ -191,7 +192,9 @@ const ModalCreateArea: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <span>🏗️</span>
+                  <span>
+                    <EmojiIcon emoji="🏗️" />
+                  </span>
                   Crear Área
                 </>
               )}

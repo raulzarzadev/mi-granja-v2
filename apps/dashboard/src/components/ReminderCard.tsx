@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { Reminder } from '@/types'
 
 interface ReminderCardProps {
@@ -112,7 +113,9 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-lg flex-shrink-0">{getTypeIcon()}</span>
+          <span className="text-lg flex-shrink-0">
+            <EmojiIcon emoji={getTypeIcon()} />
+          </span>
           <div className="min-w-0">
             <h3
               className={`font-medium ${
@@ -137,7 +140,11 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
                 ? 'Media'
                 : 'Baja'}
           </span>
-          {reminder.completed && <span className="text-green-500 text-sm">✓</span>}
+          {reminder.completed && (
+            <span className="text-green-500 text-sm">
+              <EmojiIcon emoji="✓" />
+            </span>
+          )}
         </div>
       </div>
 
@@ -190,7 +197,7 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
                         />
                       ) : (
                         <span className={info.completed ? 'text-green-500' : 'text-gray-300'}>
-                          {info.completed ? '✓' : '○'}
+                          <IconLabel label={info.completed ? '✓' : '○'} />
                         </span>
                       )}
                       <span
@@ -218,7 +225,9 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
       {/* Asignados */}
       {reminder.assigneeIds && reminder.assigneeIds.length > 0 && (
         <div className="flex items-center gap-1 mb-3 text-xs text-gray-600">
-          <span>👥 Asignado a {reminder.assigneeIds.length}</span>
+          <span>
+            <EmojiIcon emoji="👥" /> Asignado a {reminder.assigneeIds.length}
+          </span>
         </div>
       )}
 

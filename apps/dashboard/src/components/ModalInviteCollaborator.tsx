@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
+import InputIconSelect from '@/components/inputs/InputIconSelect'
 import { RootState } from '@/features/store'
 import { useBilling } from '@/hooks/useBilling'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
@@ -100,7 +102,9 @@ const ModalInviteCollaborator: React.FC<ModalInviteCollaboratorProps> = ({
         {!canInviteCollaborator() ? (
           <div className="space-y-4 py-4">
             <div className="text-center">
-              <span className="text-4xl">👥</span>
+              <span className="text-4xl">
+                <EmojiIcon emoji="👥" />
+              </span>
               <h3 className="text-lg font-semibold text-gray-900 mt-2">
                 No se puede enviar la invitación
               </h3>
@@ -166,19 +170,16 @@ const ModalInviteCollaborator: React.FC<ModalInviteCollaboratorProps> = ({
               >
                 Rol en la Granja *
               </label>
-              <select
+              <InputIconSelect
                 id="collaboratorRole"
-                required
                 value={formData.role}
-                onChange={(e) => handleChange('role', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {COLLABORATOR_ROLES.map((role) => (
-                  <option key={role.value} value={role.value}>
-                    {role.icon} {role.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(role) => handleChange('role', role)}
+                options={COLLABORATOR_ROLES.map((role) => ({
+                  value: role.value,
+                  label: role.label,
+                  icon: role.icon,
+                }))}
+              />
 
               {selectedRole && (
                 <p className="text-sm text-gray-600 mt-2">{selectedRole.description}</p>
@@ -211,7 +212,9 @@ const ModalInviteCollaborator: React.FC<ModalInviteCollaboratorProps> = ({
 
             {/* Información adicional */}
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-yellow-800 mb-2">📧 Proceso de invitación</h4>
+              <h4 className="text-sm font-medium text-yellow-800 mb-2">
+                <EmojiIcon emoji="📧" /> Proceso de invitación
+              </h4>
               <ul className="text-sm text-yellow-700 space-y-1">
                 <li>• Se enviará una invitación por correo electrónico</li>
                 <li>• La invitación expirará en 7 días</li>

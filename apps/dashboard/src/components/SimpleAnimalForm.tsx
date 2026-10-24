@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 import { Controller } from 'react-hook-form'
 import { z } from 'zod'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import InputIconSelect from '@/components/inputs/InputIconSelect'
 import { useZodForm } from '@/hooks/useZodForm'
 import { normalizeAnimalSearch } from '@/lib/animal-search'
@@ -173,9 +174,6 @@ function inputToDate(value?: string): Date | undefined {
   const [year, month, day] = value.split('-').map(Number)
   return new Date(year, month - 1, day)
 }
-
-const selectClassName =
-  'min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-200 disabled:cursor-not-allowed disabled:bg-slate-100'
 
 export default function SimpleAnimalForm({
   onSubmit,
@@ -388,36 +386,78 @@ export default function SimpleAnimalForm({
             disabled={isBusy}
             className="min-h-12 rounded-xl text-base"
           />
-          <label className="block space-y-1.5">
-            <span className="text-sm font-semibold text-slate-700">Especie *</span>
-            <select {...form.register('type')} disabled={isBusy} className={selectClassName}>
-              {animals_types.map((type) => (
-                <option key={type} value={type}>
-                  {animal_icon[type]} {animals_types_labels[type]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block space-y-1.5">
-            <span className="text-sm font-semibold text-slate-700">Estado *</span>
-            <select {...form.register('status')} disabled={isBusy} className={selectClassName}>
-              {animal_statuses.map((status) => (
-                <option key={status} value={status}>
-                  {animal_status_icons[status]} {animal_status_labels[status]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block space-y-1.5">
-            <span className="text-sm font-semibold text-slate-700">Género *</span>
-            <select {...form.register('gender')} disabled={isBusy} className={selectClassName}>
-              {animals_genders.map((gender) => (
-                <option key={gender} value={gender}>
-                  {gender === 'hembra' ? '♀' : '♂'} {animals_genders_labels[gender]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="space-y-1.5">
+            <span id="animal-type-label" className="block text-sm font-semibold text-slate-700">
+              Especie *
+            </span>
+            <Controller
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <InputIconSelect
+                  aria-labelledby="animal-type-label"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  disabled={isBusy}
+                  className="min-h-12 rounded-xl border-slate-300"
+                  options={animals_types.map((type) => ({
+                    value: type,
+                    label: animals_types_labels[type],
+                    icon: animal_icon[type],
+                  }))}
+                />
+              )}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <span id="animal-status-label" className="block text-sm font-semibold text-slate-700">
+              Estado *
+            </span>
+            <Controller
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <InputIconSelect
+                  aria-labelledby="animal-status-label"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  disabled={isBusy}
+                  className="min-h-12 rounded-xl border-slate-300"
+                  options={animal_statuses.map((status) => ({
+                    value: status,
+                    label: animal_status_labels[status],
+                    icon: animal_status_icons[status],
+                  }))}
+                />
+              )}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <span id="animal-gender-label" className="block text-sm font-semibold text-slate-700">
+              Género *
+            </span>
+            <Controller
+              control={form.control}
+              name="gender"
+              render={({ field }) => (
+                <InputIconSelect
+                  aria-labelledby="animal-gender-label"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  disabled={isBusy}
+                  className="min-h-12 rounded-xl border-slate-300"
+                  options={animals_genders.map((gender) => ({
+                    value: gender,
+                    label: animals_genders_labels[gender],
+                    icon: gender === 'hembra' ? '♀' : '♂',
+                  }))}
+                />
+              )}
+            />
+          </div>
         </div>
 
         <div className="space-y-1.5">
@@ -712,7 +752,9 @@ export default function SimpleAnimalForm({
                 />
               ) : (
                 <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white text-3xl">
-                  <span aria-hidden="true">{animal_icon[selectedType]}</span>
+                  <span aria-hidden="true">
+                    <EmojiIcon emoji={animal_icon[selectedType]} />
+                  </span>
                 </div>
               )}
               <div className="flex-1">

@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 
 export interface RadioCardOption<T extends string = string> {
   value: T
@@ -51,8 +52,12 @@ export function InputRadioCards<T extends string = string>({
                 : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-700'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            {opt.icon && <span className="mr-1">{opt.icon}</span>}
-            {opt.label}
+            {opt.icon && (
+              <span className="mr-1">
+                {typeof opt.icon === 'string' ? <EmojiIcon emoji={opt.icon} /> : opt.icon}
+              </span>
+            )}
+            <IconLabel label={opt.label} />
           </button>
         ))}
       </div>

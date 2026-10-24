@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import catchError from '@/lib/catchError'
@@ -368,12 +369,12 @@ const BreedingCard: React.FC<BreedingCardProps> = ({
           )}
           {femaleStatuses.open > 0 && (
             <span className="text-red-600 ml-2">
-              ⚠️ {femaleStatuses.open} sin gestación confirmada
+              <EmojiIcon emoji="⚠️" /> {femaleStatuses.open} sin gestación confirmada
             </span>
           )}
           {femaleStatuses.aborted > 0 && (
             <span className="text-red-600 ml-2">
-              ⚠️ {femaleStatuses.aborted} aborto
+              <EmojiIcon emoji="⚠️" /> {femaleStatuses.aborted} aborto
               {femaleStatuses.aborted !== 1 ? 's' : ''}
             </span>
           )}

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { RootState } from '@/features/store'
 import { auth } from '@/lib/firebase'
 
@@ -48,7 +49,9 @@ const ProFeatureBanner: React.FC<ProFeatureBannerProps> = ({ feature = 'Esta fun
   if (status === 'sent') {
     return (
       <div className="flex items-start gap-3 bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-        <span className="text-xl flex-shrink-0">✅</span>
+        <span className="text-xl flex-shrink-0">
+          <EmojiIcon emoji="✅" />
+        </span>
         <div>
           <p className="text-sm font-semibold text-green-800">¡Solicitud enviada!</p>
           <p className="text-sm text-green-700 mt-0.5">
@@ -63,7 +66,9 @@ const ProFeatureBanner: React.FC<ProFeatureBannerProps> = ({ feature = 'Esta fun
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
       <div className="flex items-start gap-3">
-        <span className="text-xl flex-shrink-0">⭐</span>
+        <span className="text-xl flex-shrink-0">
+          <EmojiIcon emoji="⭐" />
+        </span>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-amber-800">
             {feature} es exclusiva del plan Pro
@@ -117,7 +122,9 @@ const ProFeatureBanner: React.FC<ProFeatureBannerProps> = ({ feature = 'Esta fun
                   <span className="animate-spin text-xs">⏳</span> Enviando…
                 </>
               ) : (
-                <>✉️ Solicitar período de prueba</>
+                <>
+                  <EmojiIcon emoji="✉️" /> Solicitar período de prueba
+                </>
               )}
             </button>
           </form>

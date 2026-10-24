@@ -3,6 +3,7 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import React from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import {
   AnimalRecord,
   record_category_colors,
@@ -34,7 +35,8 @@ const RecordRow: React.FC<RecordRowProps> = ({ rec, onClick }) => {
                 record_category_colors[rec.category]
               }`}
             >
-              {record_category_icons[rec.category]} {record_category_labels[rec.category]}
+              <EmojiIcon emoji={record_category_icons[rec.category]} />{' '}
+              {record_category_labels[rec.category]}
             </span>
             <span className="font-medium truncate">{rec.title}</span>
           </div>

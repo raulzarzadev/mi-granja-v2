@@ -2,6 +2,7 @@
 
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { useAdminStats } from '@/hooks/admin/useAdminStats'
 
 export default function AdminRecentActivity() {
@@ -52,7 +53,9 @@ export default function AdminRecentActivity() {
           {activities.map((activity, index) => (
             <div key={index} className="flex items-start space-x-3">
               <div className="flex-shrink-0">
-                <span className="text-lg">{activity.icon}</span>
+                <span className="text-lg">
+                  <EmojiIcon emoji={activity.icon} />
+                </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900">{activity.title}</p>

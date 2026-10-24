@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import React from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { computeAnimalStage, formatWeight } from '@/lib/animal-utils'
 import {
   Animal,
@@ -69,7 +70,7 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
             />
           ) : (
             <span className="text-xl leading-none" aria-hidden="true">
-              {animal_icon[animal.type]}
+              <EmojiIcon emoji={animal_icon[animal.type]} />
             </span>
           )}
 
@@ -98,7 +99,9 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
             <span
               className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold ${animal_status_colors[animal.status!]}`}
             >
-              <span aria-hidden="true">{animal_status_icons[animal.status!]}</span>
+              <span aria-hidden="true">
+                <EmojiIcon emoji={animal_status_icons[animal.status!]} />
+              </span>
               <span>{animal_status_labels[animal.status!]}</span>
             </span>
           )}
@@ -113,7 +116,9 @@ const AnimalCard: React.FC<AnimalCardProps> = ({ animal, onClick }) => {
         <span
           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${stageCfg.color}`}
         >
-          <span aria-hidden="true">{stageCfg.icon}</span>
+          <span aria-hidden="true">
+            <EmojiIcon emoji={stageCfg.icon} />
+          </span>
           {stageCfg.label}
         </span>
 

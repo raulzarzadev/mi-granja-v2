@@ -3,6 +3,7 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import React from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { record_category_icons } from '@/types/animals'
 
@@ -36,7 +37,9 @@ const HealthRemindersCard: React.FC = () => {
   return (
     <div className="bg-white rounded-lg shadow-md p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <span className="text-2xl">💉</span>
+        <span className="text-2xl">
+          <EmojiIcon emoji="💉" />
+        </span>
         <h3 className="text-lg font-semibold text-gray-900">Recordatorios de Salud</h3>
         <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
           {upcoming.length}
@@ -53,12 +56,14 @@ const HealthRemindersCard: React.FC = () => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span>{getUrgencyIcon(daysUntilDue)}</span>
+                  <span>
+                    <EmojiIcon emoji={getUrgencyIcon(daysUntilDue)} />
+                  </span>
                   <span className="font-medium text-sm">
                     {animal.animalNumber || `#${animal.id.slice(0, 6)}`}
                   </span>
                   <span className="text-xs bg-white bg-opacity-50 px-2 py-1 rounded">
-                    {record_category_icons[record.category]} {record.title}
+                    <EmojiIcon emoji={record_category_icons[record.category]} /> {record.title}
                   </span>
                 </div>
                 <div className="text-xs space-y-1">
@@ -88,12 +93,14 @@ const HealthRemindersCard: React.FC = () => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span>{getUrgencyIcon(daysUntilDue)}</span>
+                  <span>
+                    <EmojiIcon emoji={getUrgencyIcon(daysUntilDue)} />
+                  </span>
                   <span className="font-medium text-sm">
                     {animal.animalNumber || `#${animal.id.slice(0, 6)}`}
                   </span>
                   <span className="text-xs bg-white bg-opacity-50 px-2 py-1 rounded">
-                    {record_category_icons[record.category]} {record.title}
+                    <EmojiIcon emoji={record_category_icons[record.category]} /> {record.title}
                   </span>
                 </div>
                 <div className="text-xs space-y-1">
@@ -123,12 +130,14 @@ const HealthRemindersCard: React.FC = () => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span>{getUrgencyIcon(daysUntilDue)}</span>
+                  <span>
+                    <EmojiIcon emoji={getUrgencyIcon(daysUntilDue)} />
+                  </span>
                   <span className="font-medium text-sm">
                     {animal.animalNumber || `#${animal.id.slice(0, 6)}`}
                   </span>
                   <span className="text-xs bg-white bg-opacity-50 px-2 py-1 rounded">
-                    {record_category_icons[record.category]} {record.title}
+                    <EmojiIcon emoji={record_category_icons[record.category]} /> {record.title}
                   </span>
                 </div>
                 <div className="text-xs space-y-1">
@@ -158,12 +167,14 @@ const HealthRemindersCard: React.FC = () => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span>{getUrgencyIcon(daysUntilDue)}</span>
+                  <span>
+                    <EmojiIcon emoji={getUrgencyIcon(daysUntilDue)} />
+                  </span>
                   <span className="font-medium text-sm">
                     {animal.animalNumber || `#${animal.id.slice(0, 6)}`}
                   </span>
                   <span className="text-xs bg-white bg-opacity-50 px-2 py-1 rounded">
-                    {record_category_icons[record.category]} {record.title}
+                    <EmojiIcon emoji={record_category_icons[record.category]} /> {record.title}
                   </span>
                 </div>
                 <div className="text-xs space-y-1">

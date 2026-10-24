@@ -1,4 +1,5 @@
 import React from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 
 interface Step {
   emoji: string
@@ -68,7 +69,7 @@ const OnboardingSteps: React.FC<OnboardingStepsProps> = ({ variant = 'compact' }
             <div className="min-w-0 flex-1">
               <h3 className="text-sm font-semibold text-gray-900">
                 <span className="mr-1.5" aria-hidden="true">
-                  {step.emoji}
+                  <EmojiIcon emoji={step.emoji} />
                 </span>
                 {step.title}
               </h3>
@@ -93,7 +94,7 @@ const OnboardingSteps: React.FC<OnboardingStepsProps> = ({ variant = 'compact' }
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-2">
               <span aria-hidden="true" className="text-xl leading-6">
-                {step.emoji}
+                <EmojiIcon emoji={step.emoji} />
               </span>
               <h4 className="text-base font-bold leading-6 text-slate-950">{step.title}</h4>
             </div>

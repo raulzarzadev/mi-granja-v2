@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import ModalAnimalForm from '@/components/ModalAnimalForm'
 import ModalNewRecord from '@/components/ModalNewRecord'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -289,7 +290,11 @@ const QuickFilterMenu = ({
           }`}
         >
           {allLabel}
-          {value === '' && <span aria-hidden="true">✓</span>}
+          {value === '' && (
+            <span aria-hidden="true">
+              <EmojiIcon emoji="✓" />
+            </span>
+          )}
         </button>
         {options.map((option) => (
           <button
@@ -304,8 +309,12 @@ const QuickFilterMenu = ({
                 : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
-            {option.label}
-            {value === option.value && <span aria-hidden="true">✓</span>}
+            <IconLabel label={option.label} />
+            {value === option.value && (
+              <span aria-hidden="true">
+                <EmojiIcon emoji="✓" />
+              </span>
+            )}
           </button>
         ))}
       </div>

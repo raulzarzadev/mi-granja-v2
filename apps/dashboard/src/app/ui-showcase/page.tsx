@@ -11,6 +11,8 @@ import {
   ExampleModalMd,
   ExampleModalSm,
 } from '@/components/examples/DatePickerAndModalSizeExamples'
+import IconShowcase from '@/components/examples/IconShowcase'
+import InputIconSelectExample from '@/components/examples/InputIconSelectExample'
 import {
   ExampleDisabled,
   ExampleFiltered,
@@ -29,6 +31,7 @@ import {
   ExampleModalReminderForm,
   ExampleSimpleModal,
 } from '@/components/examples/ModalExamples'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 
 /**
  * Página de demostración de componentes UI
@@ -40,7 +43,9 @@ export default function UIShowcasePage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">🎨 Showcase de Componentes UI</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            <EmojiIcon emoji="🎨" /> Showcase de Componentes UI
+          </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Demostración interactiva de todos los componentes, modales y formularios disponibles en
             la aplicación Mi Granja.
@@ -49,6 +54,36 @@ export default function UIShowcasePage() {
 
         {/* Grid de componentes */}
         <div className="space-y-12">
+          {/* Seccion: Iconos */}
+          <section id="iconos">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
+              <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
+                Iconos
+              </span>
+              Phosphor + iconos propios
+            </h2>
+            <p className="text-sm text-gray-600 mb-6">
+              Usa{' '}
+              <code>
+                &lt;EmojiIcon emoji="
+                <EmojiIcon emoji="🐄" />" /&gt;
+              </code>{' '}
+              para datos que traen emoji (configs de dominio),{' '}
+              <code>&lt;Icon icon="add" /&gt;</code> para acciones comunes, o importa directo desde{' '}
+              <code>react-icons/pi</code> y <code>@/components/Icon/farm-icons</code>.
+            </p>
+            <div className="mb-8 rounded-xl border border-gray-200 bg-white p-5">
+              <h3 className="mb-1 text-lg font-semibold text-gray-900">InputIconSelect</h3>
+              <p className="mb-4 text-sm text-gray-600">
+                Select con icono en el valor y en cada opción. Úsalo en lugar de{' '}
+                <code>&lt;select&gt;</code> cuando las opciones lleven icono:{' '}
+                <code>@/components/inputs/InputIconSelect</code>.
+              </p>
+              <InputIconSelectExample />
+            </div>
+            <IconShowcase />
+          </section>
+
           {/* Seccion: DatePickerButtons */}
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
@@ -258,7 +293,10 @@ export default function UIShowcasePage() {
               {/* Modal de Breeding */}
               <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
                 <div className="flex items-center mb-4">
-                  <span className="text-2xl mr-3">🐄💕</span>
+                  <span className="text-2xl mr-3">
+                    <EmojiIcon emoji="🐄" />
+                    <EmojiIcon emoji="💕" />
+                  </span>
                   <div>
                     <h3 className="font-medium text-gray-900">Modal de Empadre/Reproducción</h3>
                     <p className="text-sm text-gray-600">
@@ -283,7 +321,10 @@ export default function UIShowcasePage() {
               {/* Modal de Animal */}
               <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
                 <div className="flex items-center mb-4">
-                  <span className="text-2xl mr-3">🐄📝</span>
+                  <span className="text-2xl mr-3">
+                    <EmojiIcon emoji="🐄" />
+                    <EmojiIcon emoji="📝" />
+                  </span>
                   <div>
                     <h3 className="font-medium text-gray-900">Modal de Animales</h3>
                     <p className="text-sm text-gray-600">
@@ -320,7 +361,9 @@ export default function UIShowcasePage() {
               {/* Modal de Recordatorio */}
               <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
                 <div className="flex items-center mb-4">
-                  <span className="text-2xl mr-3">⏰📝</span>
+                  <span className="text-2xl mr-3">
+                    ⏰<EmojiIcon emoji="📝" />
+                  </span>
                   <div>
                     <h3 className="font-medium text-gray-900">Modal de Recordatorios</h3>
                     <p className="text-sm text-gray-600">
@@ -349,7 +392,9 @@ export default function UIShowcasePage() {
               {/* Placeholder para futuros modales */}
               <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 opacity-50">
                 <div className="flex items-center mb-4">
-                  <span className="text-2xl mr-3">📊</span>
+                  <span className="text-2xl mr-3">
+                    <EmojiIcon emoji="📊" />
+                  </span>
                   <div>
                     <h3 className="font-medium text-gray-900">Modal de Reportes</h3>
                     <p className="text-sm text-gray-600">Próximamente...</p>
@@ -359,7 +404,9 @@ export default function UIShowcasePage() {
 
               <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 opacity-50">
                 <div className="flex items-center mb-4">
-                  <span className="text-2xl mr-3">⚖️</span>
+                  <span className="text-2xl mr-3">
+                    <EmojiIcon emoji="⚖️" />
+                  </span>
                   <div>
                     <h3 className="font-medium text-gray-900">Modal de Peso</h3>
                     <p className="text-sm text-gray-600">Próximamente...</p>
@@ -369,7 +416,9 @@ export default function UIShowcasePage() {
 
               <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 opacity-50">
                 <div className="flex items-center mb-4">
-                  <span className="text-2xl mr-3">🥛</span>
+                  <span className="text-2xl mr-3">
+                    <EmojiIcon emoji="🥛" />
+                  </span>
                   <div>
                     <h3 className="font-medium text-gray-900">Modal de Producción</h3>
                     <p className="text-sm text-gray-600">Próximamente...</p>
@@ -420,27 +469,39 @@ export default function UIShowcasePage() {
                   </h3>
                   <div className="space-y-2 text-sm text-gray-600">
                     <div className="flex items-center">
-                      <span className="text-green-500 mr-2">✓</span>
+                      <span className="text-green-500 mr-2">
+                        <EmojiIcon emoji="✓" />
+                      </span>
                       Cierre con Escape o click fuera
                     </div>
                     <div className="flex items-center">
-                      <span className="text-green-500 mr-2">✓</span>
+                      <span className="text-green-500 mr-2">
+                        <EmojiIcon emoji="✓" />
+                      </span>
                       Animaciones suaves de entrada/salida
                     </div>
                     <div className="flex items-center">
-                      <span className="text-green-500 mr-2">✓</span>
+                      <span className="text-green-500 mr-2">
+                        <EmojiIcon emoji="✓" />
+                      </span>
                       Tamaños configurables (sm, md, lg, xl, full)
                     </div>
                     <div className="flex items-center">
-                      <span className="text-green-500 mr-2">✓</span>
+                      <span className="text-green-500 mr-2">
+                        <EmojiIcon emoji="✓" />
+                      </span>
                       Scroll interno automático
                     </div>
                     <div className="flex items-center">
-                      <span className="text-green-500 mr-2">✓</span>
+                      <span className="text-green-500 mr-2">
+                        <EmojiIcon emoji="✓" />
+                      </span>
                       Accesibilidad (ARIA, focus management)
                     </div>
                     <div className="flex items-center">
-                      <span className="text-green-500 mr-2">✓</span>
+                      <span className="text-green-500 mr-2">
+                        <EmojiIcon emoji="✓" />
+                      </span>
                       Botones trigger personalizables
                     </div>
                   </div>
@@ -453,7 +514,7 @@ export default function UIShowcasePage() {
           <section className="text-center py-8">
             <div className="bg-gradient-to-r from-blue-50 to-green-50 p-8 rounded-lg">
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                🚀 Sistema de Modales Completo
+                <EmojiIcon emoji="🚀" /> Sistema de Modales Completo
               </h3>
               <p className="text-gray-600 mb-4">
                 Todos los modales están construidos con el mismo patrón base, garantizando

@@ -4,7 +4,11 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useMemo, useState } from 'react'
+import FirstRecordEmptyState from '@/components/FirstRecordEmptyState'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
+import InputIconSelect from '@/components/inputs/InputIconSelect'
 import ModalRecordDetail from '@/components/ModalRecordDetail'
+import { useSidebarSubItems } from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { valuesMatchSearch } from '@/lib/animal-search'
 import {
@@ -60,7 +64,7 @@ const SortIcon: React.FC<{ active: boolean; dir: SortDir }> = ({ active, dir }) 
 )
 
 const RecordsTab: React.FC = () => {
-  const { animals } = useAnimalCRUD()
+  const { animals, isLoading } = useAnimalCRUD()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -365,12 +369,16 @@ const RecordsTab: React.FC = () => {
     })
   }
 
-  const getAvailableCategories = () => {
-    if (filters.type === 'note') return ['general', 'observation', 'other']
-    if (filters.type === 'health')
-      return record_categories.filter((c) => c !== 'general' && c !== 'observation')
-    return record_categories
-  }
+  const availableCategories = useMemo(
+    () =>
+      record_categories.filter((category) =>
+        allRecords.some(
+          (record) =>
+            record.category === category && (!filters.type || record.type === filters.type),
+        ),
+      ),
+    [allRecords, filters.type],
+  )
 
   // Labels for active filter chips
   const getAnimalLabel = () => {
@@ -396,6 +404,47 @@ const RecordsTab: React.FC = () => {
       </button>
     </th>
   )
+
+  // Tipos de registro como sub-items del menú lateral (escritorio)
+  const typeCounts = useMemo(() => {
+    const counts: Partial<Record<AnimalRecord['type'], number>> = {}
+    for (const r of allRecords) counts[r.type] = (counts[r.type] ?? 0) + 1
+    return counts
+  }, [allRecords])
+  const availableTypes = useMemo(
+    () => record_types.filter((type) => (typeCounts[type] ?? 0) > 0),
+    [typeCounts],
+  )
+
+  useEffect(() => {
+    if (isLoading) return
+    setFilters((prev) => {
+      if (prev.type && !availableTypes.includes(prev.type)) {
+        return { ...prev, type: '', category: '' }
+      }
+      if (prev.category && !availableCategories.includes(prev.category)) {
+        return { ...prev, category: '' }
+      }
+      return prev
+    })
+  }, [isLoading, availableTypes, availableCategories, filters.type, filters.category])
+
+  useSidebarSubItems({
+    labels: [
+      '📋 Todos',
+      ...availableTypes.map((type) => `${record_type_icons[type]} ${record_type_labels[type]}`),
+    ],
+    badges: [allRecords.length, ...availableTypes.map((type) => typeCounts[type])],
+    activeIndex: filters.type ? availableTypes.indexOf(filters.type) + 1 : 0,
+    onSelect: (index) =>
+      setFilters((prev) => ({
+        ...prev,
+        type: index === 0 ? '' : availableTypes[index - 1],
+        category: '',
+      })),
+  })
+
+  if (!isLoading && allRecords.length === 0) return <FirstRecordEmptyState />
 
   return (
     <div className="space-y-4">
@@ -483,27 +532,27 @@ const RecordsTab: React.FC = () => {
             type="button"
             onClick={() => setFilters((prev) => ({ ...prev, type: '', category: '' }))}
             aria-pressed={!filters.type}
-            className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${
+            className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium md:min-h-8 md:px-3 md:text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${
               !filters.type
                 ? 'bg-green-600 text-white'
                 : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
             }`}
           >
-            📋 Todos
+            <EmojiIcon emoji="📋" /> Todos
           </button>
-          {record_types.map((type) => (
+          {availableTypes.map((type) => (
             <button
               key={type}
               type="button"
               onClick={() => setFilters((prev) => ({ ...prev, type, category: '' }))}
               aria-pressed={filters.type === type}
-              className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${
+              className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium md:min-h-8 md:px-3 md:text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${
                 filters.type === type
                   ? 'bg-green-600 text-white'
                   : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
               }`}
             >
-              {record_type_icons[type]} {record_type_labels[type]}
+              <EmojiIcon emoji={record_type_icons[type]} /> {record_type_labels[type]}
             </button>
           ))}
         </nav>
@@ -530,49 +579,39 @@ const RecordsTab: React.FC = () => {
               </div>
             )}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-              <select
+              <InputIconSelect<AnimalRecord['type'] | ''>
+                aria-label="Tipo de registro"
                 value={filters.type}
-                onChange={(e) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    type: e.target.value as AnimalRecord['type'] | '',
-                    category: '',
-                  }))
-                }
-                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.type ? 'border-green-500 bg-green-50 text-green-800' : 'border-gray-300'
+                onChange={(type) => setFilters((prev) => ({ ...prev, type, category: '' }))}
+                className={`min-h-9 px-2 py-1.5 text-sm ${
+                  filters.type ? 'border-green-500 bg-green-50 text-green-800' : ''
                 }`}
-              >
-                <option value="">Tipo: Todos</option>
-                {record_types.map((type) => (
-                  <option key={type} value={type}>
-                    {record_type_icons[type]} {record_type_labels[type]}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: 'Tipo: Todos' },
+                  ...availableTypes.map((type) => ({
+                    value: type,
+                    label: record_type_labels[type],
+                    icon: record_type_icons[type],
+                  })),
+                ]}
+              />
 
-              <select
+              <InputIconSelect<AnimalRecord['category'] | ''>
+                aria-label="Categoría"
                 value={filters.category}
-                onChange={(e) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    category: e.target.value as AnimalRecord['category'] | '',
-                  }))
-                }
-                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.category
-                    ? 'border-green-500 bg-green-50 text-green-800'
-                    : 'border-gray-300'
+                onChange={(category) => setFilters((prev) => ({ ...prev, category }))}
+                className={`min-h-9 px-2 py-1.5 text-sm ${
+                  filters.category ? 'border-green-500 bg-green-50 text-green-800' : ''
                 }`}
-              >
-                <option value="">Categoria: Todas</option>
-                {getAvailableCategories().map((c) => (
-                  <option key={c} value={c}>
-                    {record_category_icons[c as keyof typeof record_category_icons]}{' '}
-                    {record_category_labels[c as keyof typeof record_category_labels]}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: 'Categoría: Todas' },
+                  ...availableCategories.map((c) => ({
+                    value: c as AnimalRecord['category'],
+                    label: record_category_labels[c as keyof typeof record_category_labels],
+                    icon: record_category_icons[c as keyof typeof record_category_icons],
+                  })),
+                ]}
+              />
 
               <select
                 value={filters.animalId}
@@ -640,12 +679,14 @@ const RecordsTab: React.FC = () => {
           <div className="flex items-center gap-2 flex-wrap">
             {filters.type && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                {record_type_icons[filters.type]} {record_type_labels[filters.type] || filters.type}
+                <EmojiIcon emoji={record_type_icons[filters.type]} />{' '}
+                {record_type_labels[filters.type] || filters.type}
               </span>
             )}
             {filters.category && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                {record_category_icons[filters.category]} {record_category_labels[filters.category]}
+                <EmojiIcon emoji={record_category_icons[filters.category]} />{' '}
+                {record_category_labels[filters.category]}
               </span>
             )}
             {filters.animalId && (
@@ -680,7 +721,9 @@ const RecordsTab: React.FC = () => {
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {sortedRows.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
-            <div className="text-4xl mb-2">📋</div>
+            <div className="text-4xl mb-2">
+              <EmojiIcon emoji="📋" />
+            </div>
             <p>No se encontraron registros con los filtros aplicados</p>
           </div>
         ) : (
@@ -746,7 +789,9 @@ const RecordsTab: React.FC = () => {
                         {/* Tipo */}
                         <td className="px-3 py-2.5 whitespace-nowrap text-sm">
                           <span className="inline-flex items-center gap-1">
-                            <span>{getRecordTypeIcon(record) || '📄'}</span>
+                            <span>
+                              <IconLabel label={getRecordTypeIcon(record) || '📄'} />
+                            </span>
                             <span className="text-gray-700">
                               {getRecordTypeLabel(record) || record.type || '—'}
                             </span>
@@ -770,7 +815,7 @@ const RecordsTab: React.FC = () => {
                         <td className="px-3 py-2.5 whitespace-nowrap">
                           {record.type === 'event' ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                              ⚡ Acción
+                              <EmojiIcon emoji="⚡" /> Acción
                             </span>
                           ) : (
                             <span
@@ -778,7 +823,7 @@ const RecordsTab: React.FC = () => {
                                 record_category_colors[record.category]
                               }`}
                             >
-                              {record_category_icons[record.category]}{' '}
+                              <EmojiIcon emoji={record_category_icons[record.category]} />{' '}
                               {record_category_labels[record.category]}
                             </span>
                           )}
@@ -802,7 +847,9 @@ const RecordsTab: React.FC = () => {
                         {/* Estado */}
                         <td className="px-3 py-2.5 whitespace-nowrap text-sm">
                           {record.undoneAt ? (
-                            <span className="text-gray-600">↶ Deshecho</span>
+                            <span className="text-gray-600">
+                              <EmojiIcon emoji="↶" /> Deshecho
+                            </span>
                           ) : showStatus ? (
                             <span
                               className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
@@ -811,7 +858,7 @@ const RecordsTab: React.FC = () => {
                                   : 'bg-yellow-100 text-yellow-800'
                               }`}
                             >
-                              {record.isResolved ? '✅ Resuelto' : '⏳ Activo'}
+                              <IconLabel label={record.isResolved ? '✅ Resuelto' : '⏳ Activo'} />
                             </span>
                           ) : record.nextDueDate ? (
                             <span className="text-xs text-orange-600">

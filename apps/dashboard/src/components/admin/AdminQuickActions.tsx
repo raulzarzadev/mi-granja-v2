@@ -1,5 +1,7 @@
 'use client'
 
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
+
 type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities'
 
 interface AdminQuickActionsProps {
@@ -56,7 +58,9 @@ export default function AdminQuickActions({ onSectionChange }: AdminQuickActions
             className={`w-full text-left p-4 rounded-lg ${action.color} text-white transition-colors`}
           >
             <div className="flex items-center space-x-3">
-              <span className="text-xl">{action.icon}</span>
+              <span className="text-xl">
+                <EmojiIcon emoji={action.icon} />
+              </span>
               <div>
                 <h4 className="font-medium">{action.title}</h4>
                 <p className="text-sm opacity-90">{action.description}</p>

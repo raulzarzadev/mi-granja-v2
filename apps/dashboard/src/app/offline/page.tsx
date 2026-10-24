@@ -1,10 +1,13 @@
 'use client'
 
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 export default function OfflinePage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="text-center max-w-md">
-        <div className="text-6xl mb-4">📡</div>
+        <div className="text-6xl mb-4">
+          <EmojiIcon emoji="📡" />
+        </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Sin conexión a internet</h1>
         <p className="text-gray-600 mb-6">
           No se puede conectar al servidor. Verifica tu conexión a internet e intenta de nuevo.

@@ -2,6 +2,7 @@
 
 import { addDays, format, isAfter, isBefore } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAdminReminders } from '@/hooks/admin/useAdminReminders'
 
@@ -98,7 +99,7 @@ export default function AdminRemindersComplete() {
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-medium text-red-700">
-              🚨 Recordatorios Vencidos ({overdue.length})
+              <EmojiIcon emoji="🚨" /> Recordatorios Vencidos ({overdue.length})
             </h3>
           </div>
           <div className="overflow-hidden">
@@ -129,7 +130,9 @@ export default function AdminRemindersComplete() {
                 {overdue.map((reminder) => (
                   <tr key={reminder.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className="text-2xl">{getTypeIcon(reminder.type)}</span>
+                      <span className="text-2xl">
+                        <EmojiIcon emoji={getTypeIcon(reminder.type)} />
+                      </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">{reminder.title}</div>
@@ -198,7 +201,7 @@ export default function AdminRemindersComplete() {
                 <td className="px-6 py-4 whitespace-nowrap">
                   {reminder.completed ? (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      ✅ Completado
+                      <EmojiIcon emoji="✅" /> Completado
                     </span>
                   ) : (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -207,7 +210,9 @@ export default function AdminRemindersComplete() {
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <span className="text-2xl">{getTypeIcon(reminder.type)}</span>
+                  <span className="text-2xl">
+                    <EmojiIcon emoji={getTypeIcon(reminder.type)} />
+                  </span>
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-sm font-medium text-gray-900">{reminder.title}</div>

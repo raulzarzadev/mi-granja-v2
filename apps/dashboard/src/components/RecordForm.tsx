@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useMemo, useState } from 'react'
+import InputIconSelect from '@/components/inputs/InputIconSelect'
 import {
   AnimalRecord,
-  ExpenseCategory,
   expense_categories,
   expense_category_icons,
   expense_category_labels,
@@ -74,10 +74,10 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
         {/* Tipo */}
         <div>
           <label className="block text-sm font-medium">Tipo</label>
-          <select
+          <InputIconSelect
+            aria-label="Tipo"
             value={value.type}
-            onChange={(e) => {
-              const t = e.target.value as RecordType
+            onChange={(t) => {
               if (t === 'weight' || t === 'birth' || t === 'expense') {
                 onChange({ ...value, type: t, category: 'general' })
               } else {
@@ -87,36 +87,30 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
                 onChange({ ...value, type: t, category: firstCat })
               }
             }}
-            className="w-full border rounded-lg px-2 py-1.5 text-sm"
-          >
-            {editableTypes.map((t) => (
-              <option key={t} value={t}>
-                {record_type_icons[t]} {record_type_labels[t]}
-              </option>
-            ))}
-          </select>
+            className="min-h-9 px-2 py-1.5 text-sm"
+            options={editableTypes.map((t) => ({
+              value: t,
+              label: record_type_labels[t],
+              icon: record_type_icons[t],
+            }))}
+          />
         </div>
 
         {/* Categoria — solo para nota/salud */}
         {isNoteOrHealth && (
           <div>
             <label className="block text-sm font-medium">Categoria</label>
-            <select
+            <InputIconSelect
+              aria-label="Categoría"
               value={value.category}
-              onChange={(e) =>
-                onChange({
-                  ...value,
-                  category: e.target.value as AnimalRecord['category'],
-                })
-              }
-              className="w-full border rounded-lg px-2 py-1.5 text-sm"
-            >
-              {availableCategories.map((c) => (
-                <option key={c} value={c}>
-                  {record_category_icons[c]} {record_category_labels[c]}
-                </option>
-              ))}
-            </select>
+              onChange={(category) => onChange({ ...value, category })}
+              className="min-h-9 px-2 py-1.5 text-sm"
+              options={availableCategories.map((c) => ({
+                value: c,
+                label: record_category_labels[c],
+                icon: record_category_icons[c],
+              }))}
+            />
           </div>
         )}
 
@@ -244,19 +238,17 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium">Categoría de gasto *</label>
-            <select
+            <InputIconSelect
+              aria-label="Categoría de gasto"
               value={value.expenseCategory}
-              onChange={(e) =>
-                onChange({ ...value, expenseCategory: e.target.value as ExpenseCategory })
-              }
-              className="w-full border rounded-lg px-2 py-1.5 text-sm"
-            >
-              {expense_categories.map((c) => (
-                <option key={c} value={c}>
-                  {expense_category_icons[c]} {expense_category_labels[c]}
-                </option>
-              ))}
-            </select>
+              onChange={(expenseCategory) => onChange({ ...value, expenseCategory })}
+              className="min-h-9 px-2 py-1.5 text-sm"
+              options={expense_categories.map((c) => ({
+                value: c,
+                label: expense_category_labels[c],
+                icon: expense_category_icons[c],
+              }))}
+            />
           </div>
           <MoneyInput
             label="Monto *"

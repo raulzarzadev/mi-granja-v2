@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
+import { IconLabel } from '@/components/Icon/emoji-icons'
 import ButtonClose from '../buttons/ButtonClose'
 
 export interface SelectSuggestOption<T = string> {
@@ -130,7 +131,9 @@ export function InputSelectSuggest<T = string>({
 
   const defaultRenderOption = (option: SelectSuggestOption<T>, _isSelected: boolean) => (
     <>
-      <div className="font-semibold text-gray-900">{option.label}</div>
+      <div className="font-semibold text-gray-900">
+        <IconLabel label={option.label} />
+      </div>
       {option.secondaryLabel && (
         <div className="text-sm text-gray-600 font-medium">({option.secondaryLabel})</div>
       )}

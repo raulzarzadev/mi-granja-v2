@@ -3,6 +3,7 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { useSelector } from 'react-redux'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import type { RootState } from '@/features/store'
 import { useBilling } from '@/hooks/useBilling'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
@@ -154,12 +155,12 @@ function MultiChoiceGrid<T extends string>({
             }`}
           >
             <span className="mr-2" aria-hidden="true">
-              {option.icon}
+              <EmojiIcon emoji={option.icon} />
             </span>
-            {option.label}
+            <IconLabel label={option.label} />
             {isSelected && (
               <span className="absolute right-2 top-2 text-green-700" aria-hidden="true">
-                ✓
+                <EmojiIcon emoji="✓" />
               </span>
             )}
           </button>
@@ -287,7 +288,7 @@ const ModalCreateFarm = ({
           <div className="space-y-4 py-4">
             <div className="text-center">
               <span className="text-4xl" aria-hidden="true">
-                🚜
+                <EmojiIcon emoji="🚜" />
               </span>
               <h3 className="mt-2 text-lg font-semibold text-gray-900">
                 Alcanzaste el límite de animales
@@ -422,10 +423,12 @@ const ModalCreateFarm = ({
                       >
                         <span className="flex items-start gap-3">
                           <span className="text-2xl" aria-hidden="true">
-                            {option.icon}
+                            <EmojiIcon emoji={option.icon} />
                           </span>
                           <span>
-                            <span className="block font-bold text-slate-900">{option.label}</span>
+                            <span className="block font-bold text-slate-900">
+                              <IconLabel label={option.label} />
+                            </span>
                             <span className="mt-0.5 block text-sm leading-5 text-slate-600">
                               {option.description}
                             </span>
@@ -527,10 +530,14 @@ const ModalCreateFarm = ({
                               }`}
                             >
                               <span className="mr-2" aria-hidden="true">
-                                {option.icon}
+                                <EmojiIcon emoji={option.icon} />
                               </span>
-                              {option.label}
-                              {isSelected && <span className="float-right text-green-700">✓</span>}
+                              <IconLabel label={option.label} />
+                              {isSelected && (
+                                <span className="float-right text-green-700">
+                                  <EmojiIcon emoji="✓" />
+                                </span>
+                              )}
                             </button>
                           )
                         })}

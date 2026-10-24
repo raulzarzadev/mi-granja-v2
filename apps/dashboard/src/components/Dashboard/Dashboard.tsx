@@ -81,6 +81,7 @@ const Dashboard: React.FC = () => {
           <Tabs
             tabs={tabs}
             tabsId="dashboard-main"
+            sidebarOnDesktop
             trailingAction={
               <button
                 type="button"

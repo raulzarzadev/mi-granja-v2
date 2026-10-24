@@ -1,5 +1,6 @@
 'use client'
 
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { useAuth } from '@/hooks/useAuth'
 
 export default function AdminHeader() {
@@ -11,7 +12,7 @@ export default function AdminHeader() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <h1 className="text-xl font-semibold text-gray-900">
-              🏪 Mi Granja - Panel Administrativo
+              <EmojiIcon emoji="🏪" /> Mi Granja - Panel Administrativo
             </h1>
           </div>
 
@@ -21,7 +22,7 @@ export default function AdminHeader() {
             </div>
             <div className="flex items-center space-x-2">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                👑 Admin
+                <EmojiIcon emoji="👑" /> Admin
               </span>
               <button onClick={logout} className="text-gray-400 hover:text-gray-600 text-sm">
                 Cerrar Sesión

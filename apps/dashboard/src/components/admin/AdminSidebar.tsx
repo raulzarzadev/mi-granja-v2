@@ -1,5 +1,7 @@
 'use client'
 
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
+
 type AdminSection = 'overview' | 'users' | 'animals' | 'breedings' | 'reminders' | 'activities'
 
 interface AdminSidebarProps {
@@ -36,8 +38,12 @@ export default function AdminSidebar({ activeSection, onSectionChange }: AdminSi
                   : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
-              <span className="text-lg">{item.icon}</span>
-              <span>{item.label}</span>
+              <span className="text-lg">
+                <EmojiIcon emoji={item.icon} />
+              </span>
+              <span>
+                <IconLabel label={item.label} />
+              </span>
             </button>
           ))}
         </div>

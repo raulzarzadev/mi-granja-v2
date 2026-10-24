@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { FaChevronLeft, FaChevronRight, FaClock } from 'react-icons/fa'
+import { PiCaretLeft, PiCaretRight, PiClock } from 'react-icons/pi'
 
 const MONTHS_SHORT = [
   'Ene',
@@ -256,7 +256,7 @@ export function DatePickerButtons({
             onClick={() => setActivePicker(activePicker === 'time' ? null : 'time')}
             className={`${btnBase} flex-none text-center flex items-center gap-1 px-2 ${activePicker === 'time' ? 'ring-2 ring-blue-500' : ''}`}
           >
-            <FaClock className="w-3 h-3 text-gray-400" />
+            <PiClock className="w-3 h-3 text-gray-400" />
             <span className={hasTime ? '' : 'text-gray-400'}>
               {hasTime
                 ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
@@ -359,7 +359,7 @@ export function DatePickerButtons({
                   className="p-1 rounded-md text-gray-600 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                   aria-label="Años más antiguos"
                 >
-                  <FaChevronLeft className="w-3 h-3" />
+                  <PiCaretLeft className="w-3 h-3" />
                 </button>
               </th>
               <th colSpan={8} className="text-center text-xs text-gray-500 font-medium">
@@ -373,7 +373,7 @@ export function DatePickerButtons({
                   className="p-1 rounded-md text-gray-600 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                   aria-label="Años más recientes"
                 >
-                  <FaChevronRight className="w-3 h-3" />
+                  <PiCaretRight className="w-3 h-3" />
                 </button>
               </th>
             </tr>

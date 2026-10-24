@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import AnimalBadges from '@/components/AnimalBadges'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { animalMatchesSearch } from '@/lib/animal-search'
 import { animalAge } from '@/lib/animal-utils'
 import { Animal, animal_icon, gender_icon } from '@/types/animals'
@@ -105,9 +106,11 @@ const AnimalSelector: React.FC<AnimalSelectorProps> = ({
               key={a.id}
               className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs bg-green-50 text-green-800 border border-green-200"
             >
-              <span>{animal_icon[a.type] || '🐾'}</span>
+              <span>
+                <EmojiIcon emoji={animal_icon[a.type] || '🐾'} />
+              </span>
               <span className={a.gender === 'macho' ? 'text-blue-500' : 'text-pink-500'}>
-                {gender_icon[a.gender]}
+                <EmojiIcon emoji={gender_icon[a.gender]} />
               </span>
               <span className="font-medium">#{a.animalNumber}</span>
               {!fixedIds.includes(a.id) && (

@@ -3,6 +3,7 @@
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore'
 import { useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { db } from '@/lib/firebase'
 import { User } from '@/types'
 
@@ -123,7 +124,7 @@ export default function AdminUserActions({ user, onClose }: AdminUserActionsProp
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium text-gray-900">Acciones para {user.email}</h3>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-              ✕
+              <EmojiIcon emoji="✕" />
             </button>
           </div>
 

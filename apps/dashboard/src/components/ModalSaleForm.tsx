@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
+import { IconLabel } from '@/components/Icon/emoji-icons'
 import AnimalSelector from '@/components/inputs/AnimalSelector'
 import DateTimeInput from '@/components/inputs/DateTimeInput'
 import { MoneyInput } from '@/components/inputs/MoneyInput'
@@ -537,9 +538,13 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
                   disabled={isCommitting || isSubmitting}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
-                  {completeProgress
-                    ? `Finalizando ${completeProgress.current}/${completeProgress.total}...`
-                    : '✅ Finalizar Venta'}
+                  <IconLabel
+                    label={
+                      completeProgress
+                        ? `Finalizando ${completeProgress.current}/${completeProgress.total}...`
+                        : '✅ Finalizar Venta'
+                    }
+                  />
                 </button>
               )}
 

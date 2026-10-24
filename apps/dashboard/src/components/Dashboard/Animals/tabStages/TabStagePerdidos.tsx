@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react'
 import Button from '@/components/buttons/Button'
 import DataTable from '@/components/DataTable'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { formatDate, toDate } from '@/lib/dates'
@@ -63,7 +64,7 @@ const TabStagePerdidos: React.FC<Props> = ({ animals, onChangeStage }) => {
               if (selected.length === 0) return null
               return (
                 <Button size="xs" color="primary" onClick={() => onChangeStage(selected)}>
-                  ⇄ Cambiar etapa ({selected.length})
+                  <EmojiIcon emoji="⇄" /> Cambiar etapa ({selected.length})
                 </Button>
               )
             }
@@ -81,11 +82,11 @@ const TabStagePerdidos: React.FC<Props> = ({ animals, onChangeStage }) => {
             onClick={() => handleMarkFound(row.id)}
             disabled={loadingId === row.id}
           >
-            {loadingId === row.id ? '...' : '✓ Encontrado'}
+            <IconLabel label={loadingId === row.id ? '...' : '✓ Encontrado'} />
           </Button>
           {onChangeStage && (
             <Button size="xs" variant="ghost" color="primary" onClick={() => onChangeStage([row])}>
-              ⇄ Cambiar etapa
+              <EmojiIcon emoji="⇄" /> Cambiar etapa
             </Button>
           )}
         </>

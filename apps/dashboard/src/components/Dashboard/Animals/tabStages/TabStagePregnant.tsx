@@ -3,6 +3,7 @@
 import Button from '@/components/buttons/Button'
 import ButtonConfirm from '@/components/buttons/ButtonConfirm'
 import DataTable, { type ColumnDef } from '@/components/DataTable'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import type { Animal } from '@/types/animals'
 import { animal_stage_config } from '@/types/animals'
@@ -72,7 +73,7 @@ export default function TabStagePregnant({
                 if (selected.length === 0) return null
                 return (
                   <Button size="xs" color="primary" onClick={() => onChangeStage(selected)}>
-                    ⇄ Cambiar etapa ({selected.length})
+                    <EmojiIcon emoji="⇄" /> Cambiar etapa ({selected.length})
                   </Button>
                 )
               }
@@ -130,7 +131,7 @@ export default function TabStagePregnant({
                 color="primary"
                 onClick={() => onChangeStage([row.animal])}
               >
-                ⇄ Cambiar etapa
+                <EmojiIcon emoji="⇄" /> Cambiar etapa
               </Button>
             )}
           </>

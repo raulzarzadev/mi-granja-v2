@@ -2,6 +2,7 @@
 
 import { WHATSAPP_COMMUNITY_URL } from '@mi-granja/shared'
 import React, { useEffect, useRef, useState } from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 
 const FEEDBACK_EMAIL = 'hola@migranja.app'
 
@@ -65,7 +66,10 @@ const HelpMenu: React.FC<HelpMenuProps> = ({ onShowGuide }) => {
               onShowGuide()
             }}
           >
-            <span aria-hidden="true">📘</span> Primeros pasos
+            <span aria-hidden="true">
+              <EmojiIcon emoji="📘" />
+            </span>{' '}
+            Primeros pasos
           </button>
           <a
             href={WHATSAPP_COMMUNITY_URL}
@@ -86,7 +90,10 @@ const HelpMenu: React.FC<HelpMenuProps> = ({ onShowGuide }) => {
             className={itemClass}
             onClick={() => setOpen(false)}
           >
-            <span aria-hidden="true">✉️</span> Enviar sugerencias
+            <span aria-hidden="true">
+              <EmojiIcon emoji="✉️" />
+            </span>{' '}
+            Enviar sugerencias
           </a>
         </div>
       )}

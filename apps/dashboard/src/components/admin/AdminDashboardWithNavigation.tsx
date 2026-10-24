@@ -5,6 +5,7 @@ import { collection, getDocs } from 'firebase/firestore'
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -1213,7 +1214,9 @@ export default function AdminDashboard() {
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14">
-            <h1 className="text-lg font-semibold text-gray-900">🏪 Panel Administrativo</h1>
+            <h1 className="text-lg font-semibold text-gray-900">
+              <EmojiIcon emoji="🏪" /> Panel Administrativo
+            </h1>
             <div className="flex items-center gap-3 text-sm">
               <span className="text-gray-500">{user?.email}</span>
               <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -1254,7 +1257,9 @@ export default function AdminDashboard() {
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{card.icon}</span>
+                    <span className="text-lg">
+                      <EmojiIcon emoji={card.icon} />
+                    </span>
                     <div>
                       <p className="text-[10px] font-medium text-gray-500">{card.label}</p>
                       <p className={`text-lg font-bold ${card.text} leading-tight`}>{card.value}</p>
@@ -1280,13 +1285,21 @@ export default function AdminDashboard() {
                     className="text-blue-600 hover:text-blue-800"
                     type="button"
                   >
-                    {item.icon && <span className="mr-0.5">{item.icon}</span>}
-                    {item.label}
+                    {item.icon && (
+                      <span className="mr-0.5">
+                        <EmojiIcon emoji={item.icon} />
+                      </span>
+                    )}
+                    <IconLabel label={item.label} />
                   </button>
                 ) : (
                   <span className="text-gray-900 font-medium">
-                    {item.icon && <span className="mr-0.5">{item.icon}</span>}
-                    {item.label}
+                    {item.icon && (
+                      <span className="mr-0.5">
+                        <EmojiIcon emoji={item.icon} />
+                      </span>
+                    )}
+                    <IconLabel label={item.label} />
                   </span>
                 )}
               </span>
@@ -1535,7 +1548,11 @@ export default function AdminDashboard() {
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      {row.icon && <span className="text-base shrink-0">{row.icon}</span>}
+                      {row.icon && (
+                        <span className="text-base shrink-0">
+                          <EmojiIcon emoji={row.icon} />
+                        </span>
+                      )}
                       <span className="text-sm text-gray-900 truncate">{row.label}</span>
                       {row.meta?.role && (
                         <span className="text-xs text-gray-400 capitalize">
@@ -1758,7 +1775,7 @@ export default function AdminDashboard() {
                 type="button"
                 disabled={isSendingMarketingEmail}
               >
-                ✕
+                <EmojiIcon emoji="✕" />
               </button>
             </div>
 

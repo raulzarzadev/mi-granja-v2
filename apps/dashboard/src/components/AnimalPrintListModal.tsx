@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import AnimalTag from '@/components/AnimalTag'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { Modal } from '@/components/Modal'
 import { animalAge } from '@/lib/animal-utils'
 import { type Animal, animal_gender_config } from '@/types/animals'
@@ -125,7 +126,7 @@ export default function AnimalPrintListModal({
           disabled={sorted.length === 0}
           className="min-h-11 px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
-          🖨️ Imprimir
+          <EmojiIcon emoji="🖨️" /> Imprimir
         </button>
       </div>
 

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 import { formatDate, toDate } from '@/lib/dates'
 import { COLLABORATOR_ROLES, FarmCollaborator } from '@/types/collaborators'
@@ -198,7 +199,9 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
 
       <div className="flex items-start justify-between mb-3 gap-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <span className="text-2xl flex-shrink-0">{roleInfo?.icon || '👤'}</span>
+          <span className="text-2xl flex-shrink-0">
+            <EmojiIcon emoji={roleInfo?.icon || '👤'} />
+          </span>
           <div className="min-w-0">
             <h4
               className="text-xs font-semibold text-gray-900 truncate"
@@ -241,7 +244,7 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
       {collaborator.notes && (
         <div className="mt-3 pt-3 border-t border-gray-100">
           <p className="text-xs text-gray-500 line-clamp-2" title={collaborator.notes}>
-            📝 {collaborator.notes}
+            <EmojiIcon emoji="📝" /> {collaborator.notes}
           </p>
         </div>
       )}

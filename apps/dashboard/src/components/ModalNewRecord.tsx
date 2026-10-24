@@ -4,6 +4,8 @@ import type { ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import BreedingForm from '@/components/BreedingForm'
 import Button from '@/components/buttons/Button'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
+import InputIconSelect from '@/components/inputs/InputIconSelect'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
 import { Modal } from '@/components/Modal'
 import ModalAnimalListReader from '@/components/ModalAnimalListReader'
@@ -1060,7 +1062,8 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
           {completedRecord ? (
             <div className="space-y-3" role="status">
               <p className="text-center text-lg font-semibold text-green-700">
-                ✓ {completedRecord.undoneAt ? 'Movimiento deshecho' : completedRecord.title}
+                <EmojiIcon emoji="✓" />{' '}
+                {completedRecord.undoneAt ? 'Movimiento deshecho' : completedRecord.title}
               </p>
               <p className="text-sm text-gray-700">{completedRecord.description}</p>
               {Object.entries(completedRecord.details ?? {}).map(([label, value]) => (
@@ -1121,10 +1124,12 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
                     className="flex min-h-24 items-start gap-3 rounded-xl border-2 border-gray-200 bg-white p-3 text-left text-gray-800 transition-colors hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
                   >
                     <span className="mt-0.5 text-2xl leading-none" aria-hidden="true">
-                      {option.icon}
+                      <EmojiIcon emoji={option.icon} />
                     </span>
                     <span className="min-w-0">
-                      <span className="block font-semibold">{option.label}</span>
+                      <span className="block font-semibold">
+                        <IconLabel label={option.label} />
+                      </span>
                       <span className="mt-1 block text-xs leading-4 text-gray-600">
                         {option.description}
                       </span>
@@ -1139,7 +1144,7 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
                 className={`flex items-center gap-3 rounded-xl border-2 p-3 ${selectedRecord.activeClass}`}
               >
                 <span className="text-2xl leading-none" aria-hidden="true">
-                  {selectedRecord.icon}
+                  <EmojiIcon emoji={selectedRecord.icon} />
                 </span>
                 <div className="min-w-0 flex-1">
                   <h3 className="font-semibold">{selectedRecord.label}</h3>
@@ -1249,7 +1254,9 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
                         title="Leer lista de aretes con imágenes"
                         className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border border-green-300 bg-green-50 px-2 text-lg text-green-700 transition hover:border-green-500 hover:bg-green-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2"
                       >
-                        <span aria-hidden="true">✨</span>
+                        <span aria-hidden="true">
+                          <EmojiIcon emoji="✨" />
+                        </span>
                       </button>
                     )
                   }
@@ -1263,7 +1270,9 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
                   aria-label="Recomendaciones para el registro"
                   className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-900"
                 >
-                  <p className="text-sm font-semibold">⚠️ Revisa antes de continuar</p>
+                  <p className="text-sm font-semibold">
+                    <EmojiIcon emoji="⚠️" /> Revisa antes de continuar
+                  </p>
                   <ul className="mt-1.5 space-y-1 text-sm leading-5">
                     {actionRecommendations.map((recommendation) => (
                       <li key={recommendation.key}>{recommendation.message}</li>
@@ -1651,20 +1660,16 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
                         >
                           Tipo de atención sanitaria
                         </label>
-                        <select
+                        <InputIconSelect
                           id="new-record-health-category"
                           value={sanitaryCategory}
-                          onChange={(event) =>
-                            setSanitaryCategory(event.target.value as SanitaryCategory)
-                          }
-                          className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
-                        >
-                          {sanitaryCategories.map((category) => (
-                            <option key={category} value={category}>
-                              {record_category_icons[category]} {record_category_labels[category]}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(category) => setSanitaryCategory(category)}
+                          options={sanitaryCategories.map((category) => ({
+                            value: category,
+                            label: record_category_labels[category],
+                            icon: record_category_icons[category],
+                          }))}
+                        />
                       </div>
 
                       <div>

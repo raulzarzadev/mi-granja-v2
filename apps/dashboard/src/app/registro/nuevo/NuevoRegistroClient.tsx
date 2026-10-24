@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react'
 import AnimalBadges from '@/components/AnimalBadges'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { DatePickerButtons } from '@/components/buttons/date-picker-buttons'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
 import PageShell from '@/components/PageShell'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -226,7 +227,9 @@ export default function NuevoRegistroClient() {
                     : 'bg-gray-100 text-gray-400'
               }`}
             >
-              <span>{s.icon}</span>
+              <span>
+                <EmojiIcon emoji={s.icon} />
+              </span>
               <span className="hidden sm:inline">{s.label}</span>
               <span className="sm:hidden">{i + 1}</span>
             </button>
@@ -271,7 +274,9 @@ export default function NuevoRegistroClient() {
                       : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  <span className="text-xl">{record_type_icons[t]}</span>
+                  <span className="text-xl">
+                    <EmojiIcon emoji={record_type_icons[t]} />
+                  </span>
                   <span>{record_type_labels[t]}</span>
                 </button>
               ))}
@@ -293,7 +298,9 @@ export default function NuevoRegistroClient() {
                         : 'border-gray-200 text-gray-600 hover:border-gray-300'
                     }`}
                   >
-                    <span>{record_category_icons[c]}</span>
+                    <span>
+                      <EmojiIcon emoji={record_category_icons[c]} />
+                    </span>
                     {record_category_labels[c]}
                   </button>
                 ))}
@@ -483,11 +490,12 @@ export default function NuevoRegistroClient() {
           <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600 space-y-1">
             <p className="font-medium text-gray-800">Resumen</p>
             <p>
-              {record_type_icons[formData.type]} {record_type_labels[formData.type]}
+              <EmojiIcon emoji={record_type_icons[formData.type]} />{' '}
+              {record_type_labels[formData.type]}
               {formData.type !== 'weight' && (
                 <span>
                   {' '}
-                  — {record_category_icons[formData.category]}{' '}
+                  — <EmojiIcon emoji={record_category_icons[formData.category]} />{' '}
                   {record_category_labels[formData.category]}
                 </span>
               )}

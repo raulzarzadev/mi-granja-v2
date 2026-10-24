@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import AnimalTag from '@/components/AnimalTag'
 import Button from '@/components/buttons/Button'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import AnimalSelector from '@/components/inputs/AnimalSelector'
 import DateTimeInput from '@/components/inputs/DateTimeInput'
 import { Modal } from '@/components/Modal'
@@ -259,7 +260,9 @@ const ModalChangeStage: React.FC<Props> = ({
                       }`}
                       disabled={applying}
                     >
-                      <span>{TARGET_ICON[t]}</span>
+                      <span>
+                        <EmojiIcon emoji={TARGET_ICON[t]} />
+                      </span>
                       <span>Destetar a {TARGET_LABEL[t]}</span>
                     </button>
                   )
@@ -283,7 +286,9 @@ const ModalChangeStage: React.FC<Props> = ({
                       }`}
                       disabled={applying}
                     >
-                      <span>{TARGET_ICON[t]}</span>
+                      <span>
+                        <EmojiIcon emoji={TARGET_ICON[t]} />
+                      </span>
                       <span>{TARGET_LABEL[t]}</span>
                     </button>
                   )
@@ -309,7 +314,9 @@ const ModalChangeStage: React.FC<Props> = ({
                     }`}
                     disabled={applying}
                   >
-                    <span>{TARGET_ICON[t]}</span>
+                    <span>
+                      <EmojiIcon emoji={TARGET_ICON[t]} />
+                    </span>
                     <span>{TARGET_LABEL[t]}</span>
                   </button>
                 )
@@ -442,7 +449,8 @@ const ModalChangeStage: React.FC<Props> = ({
                       }`}
                       disabled={applying}
                     >
-                      {animal_stage_config[t].icon} {animal_stage_config[t].label}
+                      <EmojiIcon emoji={animal_stage_config[t].icon} />{' '}
+                      {animal_stage_config[t].label}
                     </button>
                   ))}
                 </div>

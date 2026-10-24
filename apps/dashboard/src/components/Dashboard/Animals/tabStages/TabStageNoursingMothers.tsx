@@ -2,6 +2,7 @@
 
 import Button from '@/components/buttons/Button'
 import DataTable, { type ColumnDef } from '@/components/DataTable'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import ModalMilkRecord from '@/components/ModalMilkRecord'
 import type { Animal } from '@/types/animals'
@@ -70,7 +71,7 @@ export default function TabStageNoursingMothers({
             <>
               {onChangeStage && selectedMothers.length > 0 && (
                 <Button size="xs" color="primary" onClick={() => onChangeStage(selectedMothers)}>
-                  ⇄ Cambiar etapa ({selectedMothers.length})
+                  <EmojiIcon emoji="⇄" /> Cambiar etapa ({selectedMothers.length})
                 </Button>
               )}
             </>
@@ -90,7 +91,7 @@ export default function TabStageNoursingMothers({
                   color="primary"
                   onClick={() => onChangeStage([row.animal])}
                 >
-                  ⇄ Cambiar etapa
+                  <EmojiIcon emoji="⇄" /> Cambiar etapa
                 </Button>
               )}
             </>

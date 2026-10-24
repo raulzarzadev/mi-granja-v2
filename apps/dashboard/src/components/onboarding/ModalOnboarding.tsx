@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { Modal } from '../Modal'
 import OnboardingSteps from './OnboardingSteps'
 import StageGuidePage from './StageGuidePage'
@@ -57,7 +58,7 @@ const ModalOnboarding: React.FC<ModalOnboardingProps> = ({ isOpen, onClose }) =>
               }`}
             >
               <span aria-hidden="true" className="text-xl sm:text-2xl">
-                {t.icon}
+                <EmojiIcon emoji={t.icon} />
               </span>
               <span className="min-w-0">
                 <span className="block text-sm font-bold sm:text-base">{t.label}</span>

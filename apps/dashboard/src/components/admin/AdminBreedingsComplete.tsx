@@ -2,6 +2,7 @@
 
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAdminBreedings } from '@/hooks/admin/useAdminBreedings'
 
@@ -125,7 +126,7 @@ export default function AdminBreedingsComplete() {
                             key={index}
                             className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
                           >
-                            🐄 Nacido
+                            <EmojiIcon emoji="🐄" /> Nacido
                           </span>
                         )
                       } else if (info.pregnancyConfirmedDate) {
@@ -134,7 +135,7 @@ export default function AdminBreedingsComplete() {
                             key={index}
                             className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800"
                           >
-                            🤰 Gestante
+                            <EmojiIcon emoji="🤰" /> Gestante
                           </span>
                         )
                       } else {

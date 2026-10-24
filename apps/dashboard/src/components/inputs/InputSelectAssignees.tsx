@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { useSelector } from 'react-redux'
+import { IconLabel } from '@/components/Icon/emoji-icons'
 import type { RootState } from '@/features/store'
 import { useFarmMembers } from '@/hooks/useFarmMembers'
 
@@ -71,7 +72,7 @@ const InputSelectAssignees: React.FC<Props> = ({ value, onChange, label, helpTex
                   : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
               }`}
             >
-              {opt.label}
+              <IconLabel label={opt.label} />
             </button>
           )
         })}

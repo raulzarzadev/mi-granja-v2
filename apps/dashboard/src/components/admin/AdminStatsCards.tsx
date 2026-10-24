@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import {
   AdminFarmInfo,
@@ -141,7 +142,9 @@ export default function AdminStatsCards() {
             }`}
           >
             <div className="flex items-center gap-2">
-              <div className={`${s.iconBg} rounded-md p-1.5 text-white text-sm`}>{s.icon}</div>
+              <div className={`${s.iconBg} rounded-md p-1.5 text-white text-sm`}>
+                <EmojiIcon emoji={s.icon} />
+              </div>
               <div className="min-w-0">
                 <p className="text-[10px] font-medium text-gray-500 truncate">{s.title}</p>
                 <p className={`text-lg font-bold ${s.text} leading-tight`}>{s.value}</p>
@@ -296,7 +299,9 @@ function FarmDetailPanel({ farm, onBack }: { farm: AdminFarmInfo; onBack: () => 
             />
           </svg>
         </button>
-        <h3 className="text-sm font-semibold text-gray-900">🚜 {farm.name}</h3>
+        <h3 className="text-sm font-semibold text-gray-900">
+          <EmojiIcon emoji="🚜" /> {farm.name}
+        </h3>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -342,7 +347,7 @@ function SpeciesPanel({
           return (
             <div key={type} className="flex items-center gap-3">
               <span className="text-lg w-7 text-center">
-                {animal_icon[type as keyof typeof animal_icon] || '🐾'}
+                <EmojiIcon emoji={animal_icon[type as keyof typeof animal_icon] || '🐾'} />
               </span>
               <span className="text-sm text-gray-700 w-24">
                 {animals_types_labels[type as keyof typeof animals_types_labels] || type}

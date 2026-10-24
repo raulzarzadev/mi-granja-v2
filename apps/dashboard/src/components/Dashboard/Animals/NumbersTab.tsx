@@ -7,6 +7,7 @@ import {
 } from '@mi-granja/shared/types/animals'
 import React, { useMemo, useState } from 'react'
 import AnimalPrintListModal from '@/components/AnimalPrintListModal'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { animalAge, isAvailableToSale } from '@/lib/animal-utils'
 
@@ -98,7 +99,9 @@ const NumbersTab: React.FC<NumbersTabProps> = ({ animals: animalsProp }) => {
               onChange={() => setGender(opt.value)}
               className="cursor-pointer"
             />
-            <span>{opt.label}</span>
+            <span>
+              <IconLabel label={opt.label} />
+            </span>
           </label>
         ))}
       </div>
@@ -113,7 +116,9 @@ const NumbersTab: React.FC<NumbersTabProps> = ({ animals: animalsProp }) => {
             className="bg-white rounded-lg shadow p-4 text-left hover:shadow-md transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow ring-1 ring-blue-200"
           >
             <p className="text-xs text-gray-500 flex items-center gap-1">
-              <span>📊</span>
+              <span>
+                <EmojiIcon emoji="📊" />
+              </span>
               <span>Total</span>
             </p>
             <p className="text-2xl font-bold text-gray-900">{genderFiltered.length}</p>
@@ -130,7 +135,9 @@ const NumbersTab: React.FC<NumbersTabProps> = ({ animals: animalsProp }) => {
                 className="bg-white rounded-lg shadow p-4 text-left hover:shadow-md transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow"
               >
                 <p className="text-xs text-gray-500 flex items-center gap-1">
-                  <span>{cfg.icon}</span>
+                  <span>
+                    <EmojiIcon emoji={cfg.icon} />
+                  </span>
                   <span>{cfg.label}</span>
                 </p>
                 <p className="text-2xl font-bold text-gray-900">{list.length}</p>
@@ -177,7 +184,9 @@ const NumbersTab: React.FC<NumbersTabProps> = ({ animals: animalsProp }) => {
             className="bg-white rounded-lg shadow p-4 text-left hover:shadow-md transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow ring-1 ring-yellow-200"
           >
             <p className="text-xs text-gray-500 flex items-center gap-1">
-              <span>💲</span>
+              <span>
+                <EmojiIcon emoji="💲" />
+              </span>
               <span>Listos para venta</span>
             </p>
             <p className="text-2xl font-bold text-gray-900">{availableToSale.length}</p>

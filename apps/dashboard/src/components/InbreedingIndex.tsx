@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import type { InbreedingEstimate } from '@/lib/inbreeding'
 
 interface InbreedingIndexProps {
@@ -35,7 +36,7 @@ export function InbreedingIndex({ estimate, compact = false }: InbreedingIndexPr
         } ${levels[estimate.index as keyof typeof levels] ?? levels[10]}`}
       >
         <span aria-hidden="true" className="text-sm leading-none">
-          🩸
+          <EmojiIcon emoji="🩸" />
         </span>
         <span>{estimate.index}</span>
         <span className="sr-only">de 10</span>

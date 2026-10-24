@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import Button from '../buttons/Button'
 import { Modal } from '../Modal'
 
@@ -17,7 +18,7 @@ const ModalWelcomeFarm: React.FC<ModalWelcomeFarmProps> = ({ farmName, onClose, 
   <Modal isOpen={Boolean(farmName)} onClose={onClose} size="md">
     <div className="py-4 text-center">
       <span className="text-5xl" aria-hidden="true">
-        🎉
+        <EmojiIcon emoji="🎉" />
       </span>
       <h2 className="mt-3 text-2xl font-bold text-slate-900">¡Bienvenido!</h2>
       <p className="mt-2 text-slate-600">

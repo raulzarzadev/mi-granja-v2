@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { useReminders } from '@/hooks/useReminders'
 
 const formatDueDate = (d: Date | string): string => {
@@ -94,7 +95,9 @@ const NotificationsBell: React.FC = () => {
 
           {items.length === 0 ? (
             <div className="px-4 py-6 text-center text-sm text-gray-500">
-              <span className="block text-2xl mb-1">🎉</span>
+              <span className="block text-2xl mb-1">
+                <EmojiIcon emoji="🎉" />
+              </span>
               Sin recordatorios pendientes hoy.
             </div>
           ) : (
@@ -110,7 +113,7 @@ const NotificationsBell: React.FC = () => {
                     >
                       <div className="flex items-start gap-2">
                         <span className="text-lg leading-none mt-0.5">
-                          {TYPE_ICON[r.type] || '📝'}
+                          <IconLabel label={TYPE_ICON[r.type] || '📝'} />
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">{r.title}</p>

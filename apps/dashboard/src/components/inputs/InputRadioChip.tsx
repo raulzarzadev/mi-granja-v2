@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { IconLabel } from '@/components/Icon/emoji-icons'
 
 export interface InputRadioChipOption<T extends string> {
   value: T
@@ -63,7 +64,7 @@ function InputRadioChip<T extends string>({
                 disabled={disabled}
                 className="sr-only"
               />
-              {opt.label}
+              <IconLabel label={opt.label} />
             </label>
           )
         })}

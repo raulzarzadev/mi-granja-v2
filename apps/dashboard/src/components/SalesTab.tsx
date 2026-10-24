@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import ModalSaleForm from '@/components/ModalSaleForm'
 import SaleCard, { getTotalAmount, getTotalWeight } from '@/components/SaleCard'
 import { useSalesCRUD } from '@/hooks/useSalesCRUD'
@@ -199,7 +200,7 @@ const SalesTab: React.FC = () => {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {sale_status_icons[s]} {sale_status_labels[s]} ({count})
+              <EmojiIcon emoji={sale_status_icons[s]} /> {sale_status_labels[s]} ({count})
             </button>
           )
         })}
@@ -208,7 +209,9 @@ const SalesTab: React.FC = () => {
       {/* Contenido */}
       {filteredSales.length === 0 ? (
         <div className="text-center py-12">
-          <span className="text-5xl mb-4 block">💲</span>
+          <span className="text-5xl mb-4 block">
+            <EmojiIcon emoji="💲" />
+          </span>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             {sales.length === 0
               ? 'No hay ventas registradas'
@@ -332,7 +335,8 @@ const SalesTab: React.FC = () => {
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${sale_status_colors[sale.status]}`}
                         >
-                          {sale_status_icons[sale.status]} {sale_status_labels[sale.status]}
+                          <EmojiIcon emoji={sale_status_icons[sale.status]} />{' '}
+                          {sale_status_labels[sale.status]}
                         </span>
                       </td>
                       <td className="px-3 py-2 text-gray-600 whitespace-nowrap">

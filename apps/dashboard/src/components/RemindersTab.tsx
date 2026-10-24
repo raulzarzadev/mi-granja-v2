@@ -3,7 +3,9 @@
 import { useRouter } from 'next/navigation'
 import React, { useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
+import FirstReminderEmptyState from '@/components/FirstReminderEmptyState'
 import HealthRemindersCard from '@/components/HealthRemindersCard'
+import { IconLabel } from '@/components/Icon/emoji-icons'
 import ReminderCard from '@/components/ReminderCard'
 import Tabs from '@/components/Tabs'
 import type { RootState } from '@/features/store'
@@ -212,6 +214,16 @@ const RemindersTab: React.FC<RemindersTabProps> = ({ speciesFilter = '' }) => {
     },
   ]
 
+  // Granja sin recordatorios: solo el estado vacío (más los seguimientos de salud, si hay)
+  if (!isLoading && reminders.length === 0) {
+    return (
+      <div className="space-y-4">
+        <FirstReminderEmptyState />
+        <HealthRemindersCard />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-3">
       {/* Search + add header */}
@@ -266,7 +278,7 @@ const RemindersTab: React.FC<RemindersTabProps> = ({ speciesFilter = '' }) => {
                 : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
             }`}
           >
-            {onlyMine ? '✓ Asignados a mí' : 'Asignados a mí'}
+            <IconLabel label={onlyMine ? '✓ Asignados a mí' : 'Asignados a mí'} />
           </button>
           {search && (
             <span className="text-xs text-gray-500">

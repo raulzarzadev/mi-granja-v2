@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import React, { useCallback, useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { type AdminUser, useAdminUsers } from '@/hooks/admin/useAdminUsers'
 import { auth } from '@/lib/firebase'
@@ -193,9 +194,17 @@ export default function AdminUsers() {
                                   : 'bg-green-100 text-green-800'
                             }`}
                           >
-                            {role === 'admin' && '\uD83D\uDC51'}
-                            {role === 'vet' && '\uD83E\uDE7A'}
-                            {role === 'farmer' && '\uD83C\uDF3E'}
+                            <EmojiIcon
+                              emoji={
+                                role === 'admin'
+                                  ? '👑'
+                                  : role === 'vet'
+                                    ? '🩺'
+                                    : role === 'farmer'
+                                      ? '🌾'
+                                      : null
+                              }
+                            />
                             {role}
                           </span>
                         ))}
@@ -295,7 +304,9 @@ export default function AdminUsers() {
                                             key={summary.type}
                                             className="inline-flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1 text-xs font-medium text-gray-700"
                                           >
-                                            <span>{animal_icon[summary.type]}</span>
+                                            <span>
+                                              <EmojiIcon emoji={animal_icon[summary.type]} />
+                                            </span>
                                             <span>{animals_types_labels[summary.type]}</span>
                                             <span className="bg-gray-200 rounded-full px-1.5 text-gray-900 font-semibold">
                                               {summary.count}

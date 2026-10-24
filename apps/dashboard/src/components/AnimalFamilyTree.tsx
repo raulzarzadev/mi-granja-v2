@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react'
 import AnimalBadges from '@/components/AnimalBadges'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { Modal } from '@/components/Modal'
 import { Animal } from '@/types/animals'
 
@@ -341,7 +342,9 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
       {/* Sin familia */}
       {!hasAncestors && tree.children.length === 0 && !hasSiblings && (
         <div className="text-center py-8 text-gray-500">
-          <div className="text-4xl mb-2">🧬</div>
+          <div className="text-4xl mb-2">
+            <EmojiIcon emoji="🧬" />
+          </div>
           <p>No hay informacion genealogica</p>
           <p className="text-xs text-gray-400 mt-1">Asigna madre/padre para ver su arbol</p>
         </div>

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { Modal } from '@/components/Modal'
 import RecordForm, { RecordFormState } from '@/components/RecordForm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -146,7 +147,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
         {/* Información de animales seleccionados */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <h4 className="font-medium text-blue-900 mb-2">
-            📊 Animales Seleccionados: {selectedAnimals.length}
+            <EmojiIcon emoji="📊" /> Animales Seleccionados: {selectedAnimals.length}
           </h4>
           <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
             {selectedAnimals.map((animal) => (

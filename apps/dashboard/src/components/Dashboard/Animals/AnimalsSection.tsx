@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import Button from '@/components/buttons/Button'
 import NumbersTab from '@/components/Dashboard/Animals/NumbersTab'
+import { IconLabel } from '@/components/Icon/emoji-icons'
 import { Modal } from '@/components/Modal'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import ModalBirthForm from '@/components/ModalBirthForm'
@@ -41,6 +42,7 @@ import { buildAllAnimalColumns, buildAnimalColumns } from './columns/animalColum
 import { buildDestetesColumns, type UnweanedRow } from './columns/destetesColumns'
 import { buildNoursingColumns } from './columns/noursingMothersColumns'
 import { buildPartosColumns, type EnrichedPregnant } from './columns/partosColumns'
+import FirstAnimalEmptyState from './FirstAnimalEmptyState'
 import {
   CHIP_COLORS,
   groupFemalesByStatus,
@@ -742,23 +744,24 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
 
   const animalSubTabs = [
     {
-      label: 'Etapas',
-      content: <TabEtapas etapasTabs={etapasTabs} />,
+      label: '📊 Estadísticas',
+      content: (
+        <div className="space-y-8">
+          <NumbersTab animals={filteredAnimals} />
+          <StatisticsTab animals={filteredAnimals} />
+        </div>
+      ),
     },
     {
-      label: 'Números',
-      content: <NumbersTab animals={filteredAnimals} />,
+      label: '🔄 Etapas',
+      content: <TabEtapas etapasTabs={etapasTabs} />,
     },
     {
       label: '⛳ Áreas',
       content: <TabAreas animals={filteredAnimals} areas={currentFarm?.areas || []} />,
     },
     {
-      label: 'Estadísticas',
-      content: <StatisticsTab animals={filteredAnimals} />,
-    },
-    {
-      label: 'Todos',
+      label: '📋 Todos',
       content: (
         <TabAllAnimals
           filteredAnimals={filteredAnimals}
@@ -786,6 +789,11 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
       ),
     },
   ]
+
+  // Granja sin animales: solo el estado vacío, sin filtros ni sub-tabs
+  if (!isLoadingAnimals && allAnimals.length === 0) {
+    return <FirstAnimalEmptyState />
+  }
 
   return (
     <>
@@ -860,8 +868,8 @@ const AnimalsSection: React.FC<AnimalsSectionProps> = ({ filters, setFilters }) 
                     className="flex items-center justify-between gap-2 p-1.5 rounded bg-amber-50 border border-amber-200"
                   >
                     <span className="text-xs text-amber-900">
-                      {animals_types_labels[a.type] || a.type} · {a.gender === 'macho' ? '♂' : '♀'}{' '}
-                      · {a.id.slice(0, 6)}
+                      {animals_types_labels[a.type] || a.type} ·{' '}
+                      <IconLabel label={a.gender === 'macho' ? '♂' : '♀'} /> · {a.id.slice(0, 6)}
                     </span>
                     <div className="flex items-center gap-1.5">
                       <ModalAnimalDetails

@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { RootState } from '@/features/store'
 import {
   ExpenseCategory,
@@ -121,7 +122,9 @@ const InventoryTab: React.FC = () => {
 
       {allExpenses.length === 0 ? (
         <div className="text-center py-12">
-          <span className="text-5xl mb-4 block">📦</span>
+          <span className="text-5xl mb-4 block">
+            <EmojiIcon emoji="📦" />
+          </span>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No hay gastos registrados</h3>
           <p className="text-gray-600">
             Registra gastos desde la ficha de un animal usando el tipo &quot;Gasto&quot;
@@ -181,7 +184,8 @@ const InventoryTab: React.FC = () => {
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${expense_category_colors[cat]}`}
                         >
-                          {expense_category_icons[cat]} {expense_category_labels[cat]}
+                          <EmojiIcon emoji={expense_category_icons[cat]} />{' '}
+                          {expense_category_labels[cat]}
                         </span>
                         <span className="text-xs text-gray-400 ml-2">({data.count})</span>
                       </span>
@@ -226,7 +230,7 @@ const InventoryTab: React.FC = () => {
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${expense_category_colors[exp.expenseCategory]}`}
                       >
-                        {expense_category_icons[exp.expenseCategory]}{' '}
+                        <EmojiIcon emoji={expense_category_icons[exp.expenseCategory]} />{' '}
                         {expense_category_labels[exp.expenseCategory]}
                       </span>
                       <span className="text-xs text-gray-400">

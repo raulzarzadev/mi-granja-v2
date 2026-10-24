@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import Button from '@/components/buttons/Button'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { Icon } from '@/components/Icon/icon'
 import { useFormDraft } from '@/hooks/useFormDraft'
 import { toDate } from '@/lib/dates'
@@ -236,7 +237,7 @@ const OffspringFormModal: React.FC<{
                   onChange={() => setData((p) => ({ ...p, status: opt.value }))}
                   className="sr-only"
                 />
-                {opt.label}
+                <IconLabel label={opt.label} />
               </label>
             ))}
           </div>
@@ -476,7 +477,9 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                 }
                 return (
                   <>
-                    <span className="text-2xl">{animal_icon[female.type]}</span>
+                    <span className="text-2xl">
+                      <EmojiIcon emoji={animal_icon[female.type]} />
+                    </span>
                     <div>
                       <div className="text-sm font-semibold leading-tight">
                         <p>Madre: </p>
@@ -500,7 +503,9 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
               if (!male) return null
               return (
                 <div className="p-3 border border-blue-300 rounded-md bg-blue-50 flex items-center gap-3 flex-1">
-                  <span className="text-2xl">{animal_icon[male.type]}</span>
+                  <span className="text-2xl">
+                    <EmojiIcon emoji={animal_icon[male.type]} />
+                  </span>
                   <div>
                     <div className="text-sm font-semibold leading-tight">
                       <p>Padre: </p>
@@ -558,7 +563,9 @@ const ModalBirthForm: React.FC<ModalBirthFormProps> = ({
                       className="mr-3"
                     />
                     <div className="flex items-center gap-2 flex-1">
-                      <span className="text-lg">{animal_icon[female?.type || 'otro']}</span>
+                      <span className="text-lg">
+                        <EmojiIcon emoji={animal_icon[female?.type || 'otro']} />
+                      </span>
                       <div>
                         <div className="font-medium">{female?.animalNumber}</div>
                         <div className="text-sm text-gray-600">

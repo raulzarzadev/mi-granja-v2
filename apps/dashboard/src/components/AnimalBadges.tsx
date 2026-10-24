@@ -1,5 +1,6 @@
 import { differenceInCalendarDays } from 'date-fns'
 import React from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { computeAnimalStage } from '@/lib/animal-utils'
 import {
   Animal,
@@ -83,7 +84,7 @@ const AnimalBadges: React.FC<AnimalBadgesProps> = ({
       >
         {showSpecies ? (
           <span aria-hidden="true" className={compact ? 'text-xs' : undefined}>
-            {animal_icon[animal.type]}
+            <EmojiIcon emoji={animal_icon[animal.type]} />
           </span>
         ) : null}
         <span className="max-w-28 truncate font-bold text-gray-900">{animal.animalNumber}</span>
@@ -95,7 +96,7 @@ const AnimalBadges: React.FC<AnimalBadgesProps> = ({
         </span>
         {showState ? (
           <span className="inline-flex items-center gap-1 text-gray-600" title={stateLabel}>
-            <span aria-hidden="true">{stateIcon}</span>
+            <EmojiIcon emoji={stateIcon} />
             {showStateLabel ? <span className="hidden sm:inline">{stateLabel}</span> : null}
           </span>
         ) : null}
@@ -111,7 +112,9 @@ const AnimalBadges: React.FC<AnimalBadgesProps> = ({
           {animal.animalNumber}
         </span>
       </div>
-      <span title={animal.type}>{animal_icon[animal.type]}</span>
+      <span title={animal.type}>
+        <EmojiIcon emoji={animal_icon[animal.type]} />
+      </span>
       <span
         className={`${animal_gender_config[animal.gender].color}`}
         title={animal_gender_config[animal.gender].label}
@@ -119,9 +122,13 @@ const AnimalBadges: React.FC<AnimalBadgesProps> = ({
         <Icon icon={animal_gender_config[animal.gender].iconName as IconName} size={4} />
       </span>
       {animal.status && animal.status !== 'activo' ? (
-        <span title={animal.status}>{animal_status_icons[animal.status]}</span>
+        <span title={animal.status}>
+          <EmojiIcon emoji={animal_status_icons[animal.status]} />
+        </span>
       ) : (
-        <span title={stage}>{animal_stage_config[stage].icon}</span>
+        <span title={stage}>
+          <EmojiIcon emoji={animal_stage_config[stage].icon} />
+        </span>
       )}
       <span className="text-xs text-gray-500 w-10 text-left tabular-nums" title="Edad">
         {age ?? '--'}

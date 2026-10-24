@@ -1,5 +1,6 @@
 'use client'
 
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAdminStats } from '@/hooks/admin/useAdminStats'
 
@@ -38,7 +39,7 @@ export default function AdminDashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-semibold text-gray-900">
-                🏪 Mi Granja - Panel Administrativo
+                <EmojiIcon emoji="🏪" /> Mi Granja - Panel Administrativo
               </h1>
             </div>
           </div>
@@ -57,7 +58,9 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-blue-50 rounded-lg p-6 border">
               <div className="flex items-center">
-                <div className="bg-blue-500 rounded-lg p-3 text-white text-xl">👥</div>
+                <div className="bg-blue-500 rounded-lg p-3 text-white text-xl">
+                  <EmojiIcon emoji="👥" />
+                </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Usuarios</p>
                   <p className="text-2xl font-bold text-blue-700">{totalUsers}</p>
@@ -67,7 +70,9 @@ export default function AdminDashboard() {
 
             <div className="bg-green-50 rounded-lg p-6 border">
               <div className="flex items-center">
-                <div className="bg-green-500 rounded-lg p-3 text-white text-xl">🐄</div>
+                <div className="bg-green-500 rounded-lg p-3 text-white text-xl">
+                  <EmojiIcon emoji="🐄" />
+                </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Animales</p>
                   <p className="text-2xl font-bold text-green-700">{totalAnimals}</p>
@@ -77,7 +82,9 @@ export default function AdminDashboard() {
 
             <div className="bg-pink-50 rounded-lg p-6 border">
               <div className="flex items-center">
-                <div className="bg-pink-500 rounded-lg p-3 text-white text-xl">💕</div>
+                <div className="bg-pink-500 rounded-lg p-3 text-white text-xl">
+                  <EmojiIcon emoji="💕" />
+                </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Reproducciones</p>
                   <p className="text-2xl font-bold text-pink-700">{totalBreedings}</p>
@@ -107,7 +114,9 @@ export default function AdminDashboard() {
             </p>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900">✅ Funcionalidades Activas</h4>
+                <h4 className="font-medium text-gray-900">
+                  <EmojiIcon emoji="✅" /> Funcionalidades Activas
+                </h4>
                 <ul className="mt-2 text-sm text-gray-600">
                   <li>• Vista general de estadísticas</li>
                   <li>• Control de acceso por roles</li>
@@ -115,7 +124,9 @@ export default function AdminDashboard() {
                 </ul>
               </div>
               <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900">🚧 En Desarrollo</h4>
+                <h4 className="font-medium text-gray-900">
+                  <EmojiIcon emoji="🚧" /> En Desarrollo
+                </h4>
                 <ul className="mt-2 text-sm text-gray-600">
                   <li>• Gestión detallada de usuarios</li>
                   <li>• Administración de animales</li>

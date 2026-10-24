@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import React, { useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { Modal } from '@/components/Modal'
 import RecordForm, { RecordFormState } from '@/components/RecordForm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -287,17 +288,18 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
           <div className="flex items-center gap-2 flex-wrap">
             {isSystemEvent ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
-                ⚡ Acción
+                <EmojiIcon emoji="⚡" /> Acción
               </span>
             ) : (
               <span
                 className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${record_category_colors[record.category]}`}
               >
-                {record_category_icons[record.category]} {record_category_labels[record.category]}
+                <EmojiIcon emoji={record_category_icons[record.category]} />{' '}
+                {record_category_labels[record.category]}
               </span>
             )}
             <span className="inline-flex items-center gap-1 text-sm text-gray-500">
-              {getRecordTypeIcon(record)} {getRecordTypeLabel(record)}
+              <EmojiIcon emoji={getRecordTypeIcon(record)} /> {getRecordTypeLabel(record)}
             </span>
             {isGrouped && (
               <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">

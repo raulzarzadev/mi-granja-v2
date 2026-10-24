@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import {
   Sale,
   sale_price_type_labels,
@@ -51,7 +52,7 @@ const SaleCard: React.FC<SaleCardProps> = ({ sale, onClick }) => {
         <span
           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${sale_status_colors[sale.status]}`}
         >
-          {sale_status_icons[sale.status]} {sale_status_labels[sale.status]}
+          <EmojiIcon emoji={sale_status_icons[sale.status]} /> {sale_status_labels[sale.status]}
         </span>
         <span className="text-sm text-gray-500">{formatDate(sale.date)}</span>
       </div>

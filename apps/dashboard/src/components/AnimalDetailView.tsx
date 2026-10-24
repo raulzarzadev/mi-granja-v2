@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import AnimalFamilyTree from '@/components/AnimalFamilyTree'
 import AnimalRecordsSection from '@/components/AnimalRecordsSection'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import Tabs from '@/components/Tabs'
 import { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -219,7 +220,9 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
                   htmlFor={`animal-area-${animal.id}`}
                   className="flex items-center gap-2 text-sm font-semibold text-slate-700"
                 >
-                  <span aria-hidden="true">📍</span>
+                  <span aria-hidden="true">
+                    <EmojiIcon emoji="📍" />
+                  </span>
                   Ubicación
                   {isUpdatingArea && (
                     <span aria-live="polite" className="font-normal text-slate-500">
@@ -498,7 +501,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
               className="col-span-2 min-h-11 w-full whitespace-nowrap sm:w-auto sm:flex-none"
               onClick={() => setChangeStageOpen(true)}
             >
-              ⇄ Cambiar etapa
+              <EmojiIcon emoji="⇄" /> Cambiar etapa
             </Button>
             <ModalEditAnimal animal={animal} triggerClassName="w-full sm:w-auto sm:flex-none" />
             {effectiveStatus === 'activo' ? (

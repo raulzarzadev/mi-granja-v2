@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useMemo, useState } from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import ModalNewRecord from '@/components/ModalNewRecord'
 import ModalRecordDetail, { RecordDetailRow } from '@/components/ModalRecordDetail'
 import RecordRow from '@/components/RecordRow'
@@ -44,7 +45,7 @@ const MilkRecordRow = ({ record, onClick }: { record: AnimalMilkRecord; onClick:
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <span className="inline-flex shrink-0 items-center rounded-full bg-cyan-100 px-2 py-0.5 text-xs font-semibold text-cyan-900">
-            🥛 Leche
+            <EmojiIcon emoji="🥛" /> Leche
           </span>
           <span className="text-sm text-gray-600">{milkingSessionLabels[record.session]}</span>
         </div>
@@ -184,7 +185,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       {pendingReminders.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-gray-500 flex items-center gap-1.5">
-            🔔 Recordatorios pendientes ({pendingReminders.length})
+            <EmojiIcon emoji="🔔" /> Recordatorios pendientes ({pendingReminders.length})
           </h4>
           {pendingReminders.map((reminder) => {
             const isCompletedForThisAnimal = reminder.completionByAnimal?.[animal.animalNumber]
@@ -207,7 +208,9 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm">{getTypeIcon(reminder.type)}</span>
+                      <span className="text-sm">
+                        <EmojiIcon emoji={getTypeIcon(reminder.type)} />
+                      </span>
                       <span
                         className={`text-sm font-medium ${isCompletedForThisAnimal ? 'line-through text-gray-400' : 'text-gray-900'}`}
                       >
@@ -234,7 +237,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
                       className="flex-shrink-0 px-2.5 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors"
                       title={allNumbers.length > 1 ? 'Marcar este animal como hecho' : 'Completar'}
                     >
-                      ✓ Hecho
+                      <EmojiIcon emoji="✓" /> Hecho
                     </button>
                   ) : (
                     <button
@@ -270,7 +273,9 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                <span>{ft.icon}</span>
+                <span>
+                  <EmojiIcon emoji={ft.icon} />
+                </span>
                 {ft.label}
                 <span className={`ml-0.5 ${isActive ? 'text-blue-200' : 'text-gray-400'}`}>
                   {count}
@@ -284,7 +289,9 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       {/* Registros */}
       {filteredRecords.length === 0 && pendingReminders.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          <div className="text-4xl mb-2">📋</div>
+          <div className="text-4xl mb-2">
+            <EmojiIcon emoji="📋" />
+          </div>
           <p>{typeFilter ? 'No hay registros de este tipo' : 'No hay registros aun'}</p>
         </div>
       ) : filteredRecords.length === 0 ? (
@@ -324,7 +331,9 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
                 key={r.id}
                 className="flex items-center gap-2 px-3 py-1.5 rounded bg-gray-50 text-gray-400"
               >
-                <span className="text-green-400">✓</span>
+                <span className="text-green-400">
+                  <EmojiIcon emoji="✓" />
+                </span>
                 <span className="line-through text-xs">{r.title}</span>
                 <span className="text-[10px] ml-auto">{formatDate(r.dueDate)}</span>
               </div>

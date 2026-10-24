@@ -1,5 +1,6 @@
 'use client'
 
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 export default function AdminActivities() {
   return (
     <div className="space-y-6">
@@ -10,7 +11,8 @@ export default function AdminActivities() {
 
       <div className="bg-white rounded-lg shadow p-6">
         <p className="text-gray-500 text-center py-8">
-          📝 Sección en desarrollo - Próximamente podrás ver el log completo de actividades
+          <EmojiIcon emoji="📝" /> Sección en desarrollo - Próximamente podrás ver el log completo
+          de actividades
         </p>
       </div>
     </div>

@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Controller, useWatch } from 'react-hook-form'
 import { useSelector } from 'react-redux'
 import { z } from 'zod'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import ModalAnimalListReader from '@/components/ModalAnimalListReader'
 import type { RootState } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -14,7 +15,7 @@ import { ANIMAL_LIST_READER_ENABLED } from '@/lib/animal-list-feature'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { breedingWarnings } from '@/lib/breeding-warnings'
 import { estimateOffspringInbreeding } from '@/lib/inbreeding'
-import { Animal } from '@/types/animals'
+import { Animal, animal_icon } from '@/types/animals'
 import { BreedingRecord, generateBreedingId } from '@/types/breedings'
 import ButtonClose from './buttons/ButtonClose'
 import { DatePickerButtons } from './buttons/date-picker-buttons'
@@ -470,10 +471,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
         {selectedMale ? (
           <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
             <span className="mr-1">
-              {selectedMale.type === 'oveja' && '🐑'}
-              {selectedMale.type === 'cabra' && '🐐'}
-              {selectedMale.type === 'vaca' && '🐄'}
-              {selectedMale.type === 'cerdo' && '🐷'}
+              <EmojiIcon emoji={animal_icon[selectedMale.type]} />
             </span>
             {selectedMale.type.charAt(0).toUpperCase() +
               selectedMale.type.slice(1).replace('_', ' ')}
@@ -565,7 +563,9 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                     title="Leer lista de aretes con imágenes"
                     className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border border-green-300 bg-green-50 px-2 text-lg text-green-700 transition hover:border-green-500 hover:bg-green-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2"
                   >
-                    <span aria-hidden="true">✨</span>
+                    <span aria-hidden="true">
+                      <EmojiIcon emoji="✨" />
+                    </span>
                   </button>
                 )
               }
@@ -587,7 +587,9 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
               <div className="space-y-3">
                 {femalesInOtherBreeding.length > 0 ? (
                   <div className="mb-3 p-2 rounded bg-orange-100 border border-orange-300 text-orange-900 text-sm flex items-center gap-2">
-                    <span className="text-xl">⚠️</span>
+                    <span className="text-xl">
+                      <EmojiIcon emoji="⚠️" />
+                    </span>
                     <span>
                       Las siguientes hembras ya pertenecen a otro empadre:
                       {femalesInOtherBreeding.map((animal) => (
@@ -695,7 +697,7 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                           {info.actualBirthDate ? (
                             <div className="mt-3 space-y-2">
                               <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-medium">
-                                🍼 Parto registrado
+                                <EmojiIcon emoji="🍼" /> Parto registrado
                               </span>
                               {info.offspring && info.offspring.length > 0 ? (
                                 <div className="flex items-center flex-wrap gap-1 text-xs text-gray-600">

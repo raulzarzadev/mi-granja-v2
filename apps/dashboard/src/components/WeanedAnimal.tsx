@@ -3,6 +3,7 @@
 import { format, parseISO, toDate } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useRef, useState } from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { useAnimalCRUD, WeanNextStage } from '@/hooks/useAnimalCRUD'
 import { useRecordMovements } from '@/hooks/useRecordMovements'
 import { getWeaningDueDate, getWeaningStatus, isCalf } from '@/lib/animal-utils'
@@ -229,7 +230,7 @@ const ModalWeanAnimal = ({ animal, targetWeanDate, onClose }: ModalWeanAnimalPro
               disabled={isLoading}
               className="min-h-11"
             >
-              🍖 A Engorda
+              <EmojiIcon emoji="🍖" /> A Engorda
             </Button>
             <Button
               onClick={(e) => {
@@ -241,7 +242,7 @@ const ModalWeanAnimal = ({ animal, targetWeanDate, onClose }: ModalWeanAnimalPro
               disabled={isLoading}
               className="min-h-11"
             >
-              ❤️ A Reproducción
+              <EmojiIcon emoji="❤️" /> A Reproducción
             </Button>
           </div>
         </form>

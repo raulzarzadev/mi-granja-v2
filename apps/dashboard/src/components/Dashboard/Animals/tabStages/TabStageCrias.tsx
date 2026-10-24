@@ -4,6 +4,7 @@ import { useState } from 'react'
 import AnimalPrintListModal from '@/components/AnimalPrintListModal'
 import Button from '@/components/buttons/Button'
 import DataTable, { type ColumnDef } from '@/components/DataTable'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import type { Animal } from '@/types/animals'
 import { animal_stage_config } from '@/types/animals'
@@ -52,10 +53,10 @@ export default function TabStageCrias({ allCrias, columns, openBulkWean, onChang
         renderBulkActions={(ids) => (
           <>
             <Button size="xs" color="warning" onClick={() => openBulkWean('engorda', ids)}>
-              {animal_stage_config.engorda.icon} Engorda ({ids.size})
+              <EmojiIcon emoji={animal_stage_config.engorda.icon} /> Engorda ({ids.size})
             </Button>
             <Button size="xs" color="error" onClick={() => openBulkWean('reproductor', ids)}>
-              {animal_stage_config.reproductor.icon} Reproductor ({ids.size})
+              <EmojiIcon emoji={animal_stage_config.reproductor.icon} /> Reproductor ({ids.size})
             </Button>
             {onChangeStage && (
               <Button
@@ -65,7 +66,7 @@ export default function TabStageCrias({ allCrias, columns, openBulkWean, onChang
                   onChangeStage(allCrias.filter((r) => ids.has(r.animal.id)).map((r) => r.animal))
                 }
               >
-                ⇄ Cambiar etapa ({ids.size})
+                <EmojiIcon emoji="⇄" /> Cambiar etapa ({ids.size})
               </Button>
             )}
           </>
@@ -82,7 +83,7 @@ export default function TabStageCrias({ allCrias, columns, openBulkWean, onChang
                 color="primary"
                 onClick={() => onChangeStage([row.animal])}
               >
-                ⇄ Cambiar etapa
+                <EmojiIcon emoji="⇄" /> Cambiar etapa
               </Button>
             )}
           </>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Button from '@/components/buttons/Button'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import DateTimeInput from '@/components/inputs/DateTimeInput'
 import { Modal } from '@/components/Modal'
 import ModalSaleForm from '@/components/ModalSaleForm'
@@ -122,7 +123,7 @@ export default function ModalAnimalDischarge({
                     : 'border-gray-200 bg-white text-gray-700 hover:border-red-300 hover:bg-red-50'
                 }`}
               >
-                💀 Muerte
+                <EmojiIcon emoji="💀" /> Muerte
               </button>
               <button
                 type="button"
@@ -137,7 +138,7 @@ export default function ModalAnimalDischarge({
                     : 'border-gray-200 bg-white text-gray-700 hover:border-green-300 hover:bg-green-50'
                 }`}
               >
-                💲 Venta
+                <EmojiIcon emoji="💲" /> Venta
               </button>
             </div>
           </fieldset>

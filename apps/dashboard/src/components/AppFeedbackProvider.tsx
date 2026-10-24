@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
+import { IconLabel } from '@/components/Icon/emoji-icons'
 
 type FeedbackKind = 'success' | 'error' | 'info'
 
@@ -76,7 +77,9 @@ export function AppFeedbackProvider({ children }: { children: React.ReactNode })
             }`}
           >
             <span className="mt-0.5 text-base" aria-hidden="true">
-              {toast.kind === 'error' ? '!' : toast.kind === 'success' ? '✓' : 'i'}
+              <IconLabel
+                label={toast.kind === 'error' ? '!' : toast.kind === 'success' ? '✓' : 'i'}
+              />
             </span>
             <span className="min-w-0 flex-1 leading-5">{toast.message}</span>
             <button

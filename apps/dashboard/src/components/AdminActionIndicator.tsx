@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import {
   AdminActionMetadata,
   formatAdminActionMessage,
@@ -40,7 +41,9 @@ const AdminActionIndicator: React.FC<AdminActionIndicatorProps> = ({ data, class
   return (
     <div className={`bg-blue-50 border border-blue-200 rounded-md p-2 text-xs ${className}`}>
       <div className="flex items-center space-x-1">
-        <span className="text-blue-600">🛡️</span>
+        <span className="text-blue-600">
+          <EmojiIcon emoji="🛡️" />
+        </span>
         <span className="text-blue-800 font-medium">{message}</span>
       </div>
       {adminInfo.impersonationReason && (

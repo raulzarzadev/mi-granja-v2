@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from 'react'
 import AnimalTag from '@/components/AnimalTag'
 import Button from '@/components/buttons/Button'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
+import InputIconSelect from '@/components/inputs/InputIconSelect'
 import { Modal } from '@/components/Modal'
 import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
@@ -610,7 +611,11 @@ export default function FarmMapEditor({
                 className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-default disabled:text-gray-400"
               >
                 Sin área
-                {currentAreaId === UNASSIGNED_AREA_ID ? <span aria-hidden>✓</span> : null}
+                {currentAreaId === UNASSIGNED_AREA_ID ? (
+                  <span aria-hidden>
+                    <EmojiIcon emoji="✓" />
+                  </span>
+                ) : null}
               </button>
               {activeAreas.map((area) => (
                 <button
@@ -625,9 +630,16 @@ export default function FarmMapEditor({
                   className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-default disabled:text-gray-400"
                 >
                   <span className="truncate">
-                    <span aria-hidden="true">{areaTypeIcons[area.type]}</span> {area.name}
+                    <span aria-hidden="true">
+                      <EmojiIcon emoji={areaTypeIcons[area.type]} />
+                    </span>{' '}
+                    {area.name}
                   </span>
-                  {currentAreaId === area.id ? <span aria-hidden>✓</span> : null}
+                  {currentAreaId === area.id ? (
+                    <span aria-hidden>
+                      <EmojiIcon emoji="✓" />
+                    </span>
+                  ) : null}
                 </button>
               ))}
             </div>
@@ -675,11 +687,11 @@ export default function FarmMapEditor({
         } ${isSaving ? 'opacity-50' : ''}`}
       >
         <span aria-hidden="true" className="text-xs">
-          {animal_icon[animal.type]}
+          <EmojiIcon emoji={animal_icon[animal.type]} />
         </span>
         {stageCfg ? (
           <span aria-hidden="true" className="text-xs" title={stageCfg.label}>
-            {stageCfg.icon}
+            <EmojiIcon emoji={stageCfg.icon} />
           </span>
         ) : null}
         <span
@@ -823,303 +835,311 @@ export default function FarmMapEditor({
           </div>
         </section>
       ) : (
-      <section className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900">
-              {isCreating
-                ? 'Creando área'
-                : selectedArea
-                  ? `Editando ${selectedArea.name}`
-                  : 'Lienzo de áreas'}
-            </p>
-            <p className="text-xs text-gray-500">
-              {tool === 'rect'
-                ? 'Arrastra sobre el lienzo para dibujar el cuadro.'
-                : tool === 'polygon'
-                  ? 'Haz click para agregar puntos. Guarda cuando tengas al menos tres.'
+        <section className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900">
+                {isCreating
+                  ? 'Creando área'
                   : selectedArea
-                    ? 'Arrastra el área completa o mueve sus puntos.'
-                    : 'Selecciona un área para editarla o crea una nueva.'}
-            </p>
-          </div>
+                    ? `Editando ${selectedArea.name}`
+                    : 'Lienzo de áreas'}
+              </p>
+              <p className="text-xs text-gray-500">
+                {tool === 'rect'
+                  ? 'Arrastra sobre el lienzo para dibujar el cuadro.'
+                  : tool === 'polygon'
+                    ? 'Haz click para agregar puntos. Guarda cuando tengas al menos tres.'
+                    : selectedArea
+                      ? 'Arrastra el área completa o mueve sus puntos.'
+                      : 'Selecciona un área para editarla o crea una nueva.'}
+              </p>
+            </div>
 
-          <div
-            className="flex flex-wrap items-center gap-2"
-            role="toolbar"
-            aria-label="Acciones de área"
-          >
-            <button
-              type="button"
-              onClick={() => setIsUnassignedOpen(true)}
-              aria-label={`Abrir ${unassignedAnimals.length} animales pendientes de asignar`}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
+            <div
+              className="flex flex-wrap items-center gap-2"
+              role="toolbar"
+              aria-label="Acciones de área"
             >
-              <span>Pendientes</span>
-              <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-amber-200 px-1.5 py-0.5 text-xs font-bold text-amber-950">
-                {unassignedAnimals.length}
-              </span>
-            </button>
+              <button
+                type="button"
+                onClick={() => setIsUnassignedOpen(true)}
+                aria-label={`Abrir ${unassignedAnimals.length} animales pendientes de asignar`}
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
+              >
+                <span>Pendientes</span>
+                <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-amber-200 px-1.5 py-0.5 text-xs font-bold text-amber-950">
+                  {unassignedAnimals.length}
+                </span>
+              </button>
 
-            {!isCreating ? (
-              <Button size="sm" color="success" onClick={beginCreatePolygon}>
-                Crear área
-              </Button>
-            ) : null}
+              {!isCreating ? (
+                <Button size="sm" color="success" onClick={beginCreatePolygon}>
+                  Crear área
+                </Button>
+              ) : null}
 
-            {isCreating ? (
-              <>
-                <div
-                  className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1"
-                  role="group"
-                  aria-label="Forma del área"
-                >
-                  <button
-                    type="button"
-                    onClick={() => changeCreateTool('rect')}
-                    className={`min-h-9 rounded-md px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${
-                      tool === 'rect'
-                        ? 'bg-white text-green-800 shadow-sm ring-1 ring-green-500'
-                        : 'text-gray-600 hover:bg-white'
-                    }`}
+              {isCreating ? (
+                <>
+                  <div
+                    className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1"
+                    role="group"
+                    aria-label="Forma del área"
                   >
-                    Cuadrado
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => changeCreateTool('polygon')}
-                    className={`min-h-9 rounded-md px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${
-                      tool === 'polygon'
-                        ? 'bg-white text-green-800 shadow-sm ring-1 ring-green-500'
-                        : 'text-gray-600 hover:bg-white'
-                    }`}
+                    <button
+                      type="button"
+                      onClick={() => changeCreateTool('rect')}
+                      className={`min-h-9 rounded-md px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${
+                        tool === 'rect'
+                          ? 'bg-white text-green-800 shadow-sm ring-1 ring-green-500'
+                          : 'text-gray-600 hover:bg-white'
+                      }`}
+                    >
+                      Cuadrado
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => changeCreateTool('polygon')}
+                      className={`min-h-9 rounded-md px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${
+                        tool === 'polygon'
+                          ? 'bg-white text-green-800 shadow-sm ring-1 ring-green-500'
+                          : 'text-gray-600 hover:bg-white'
+                      }`}
+                    >
+                      Polígono
+                    </button>
+                  </div>
+                  <Button
+                    size="sm"
+                    color="success"
+                    disabled={isSavingArea || tool !== 'polygon' || polygonPoints.length < 3}
+                    onClick={finishPolygon}
                   >
-                    Polígono
-                  </button>
-                </div>
-                <Button
-                  size="sm"
-                  color="success"
-                  disabled={isSavingArea || tool !== 'polygon' || polygonPoints.length < 3}
-                  onClick={finishPolygon}
-                >
-                  Guardar dibujo
-                </Button>
-                <Button size="sm" color="neutral" variant="outline" onClick={cancelCurrentAction}>
-                  Cancelar
-                </Button>
-              </>
-            ) : null}
-
-            {selectedArea && !isCreating ? (
-              <>
-                <Button
-                  size="sm"
-                  color="neutral"
-                  variant="outline"
-                  onClick={openSelectedAreaEditor}
-                >
-                  Editar
-                </Button>
-                <Button
-                  size="sm"
-                  color={canSaveDirtyArea ? 'success' : 'neutral'}
-                  variant={canSaveDirtyArea ? 'filled' : 'outline'}
-                  disabled={isSavingArea || !canSaveDirtyArea}
-                  onClick={handleSaveSelected}
-                >
-                  {saveSelectedLabel}
-                </Button>
-                {canSaveDirtyArea ? (
-                  <Button size="sm" color="neutral" variant="outline" onClick={cancelCurrentAction}>
-                    Descartar
+                    Guardar dibujo
                   </Button>
-                ) : null}
-                <Button
-                  size="sm"
-                  color="error"
-                  variant="outline"
-                  disabled={selectedAreaHasAnimals || isSavingArea}
-                  onClick={handleDeleteSelected}
-                >
-                  Eliminar
-                </Button>
-              </>
-            ) : null}
-          </div>
-        </div>
+                  <Button size="sm" color="neutral" variant="outline" onClick={cancelCurrentAction}>
+                    Cancelar
+                  </Button>
+                </>
+              ) : null}
 
-        {error ? (
-          <p className="mx-4 mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </p>
-        ) : null}
-
-        <div className="relative bg-stone-50">
-          <svg
-            ref={svgRef}
-            role="img"
-            aria-label="Lienzo de áreas de la granja"
-            viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
-            className="block h-[520px] w-full touch-none select-none"
-            style={isCreating ? { cursor: PENCIL_CURSOR } : undefined}
-            onPointerDown={handleCanvasPointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            onDoubleClick={() => {
-              if (tool === 'polygon') finishPolygon()
-            }}
-          >
-            <defs>
-              <pattern id="farm-grid" width="32" height="32" patternUnits="userSpaceOnUse">
-                <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#d6d3d1" strokeWidth="1" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#farm-grid)" />
-
-            {displayedAreas.map(({ area, layout }) => {
-              const points = pointsToSvg(layout.points)
-              const bounds = getBounds(layout.points)
-              const labelX = bounds.minX * VIEWBOX_WIDTH + 12
-              const labelY = bounds.minY * VIEWBOX_HEIGHT + 12
-              const boxWidth = Math.max(160, Math.min(260, bounds.width * VIEWBOX_WIDTH - 24))
-              const boxHeight = Math.max(104, Math.min(170, bounds.height * VIEWBOX_HEIGHT - 24))
-              const group = animalsByArea.get(area.id) ?? []
-              const isSelected = selectedAreaId === area.id
-              const capacityLabel = area.capacity
-                ? `${group.length}/${area.capacity}`
-                : `${group.length}`
-
-              return (
-                <g
-                  key={area.id}
-                  onPointerDown={(event) => handleAreaPointerDown(event, area.id, layout)}
-                  onDragOver={(event) => {
-                    event.preventDefault()
-                    setDropTargetId(area.id)
-                  }}
-                  onDragLeave={() => setDropTargetId(null)}
-                  onDrop={(event) => handleDropAnimal(event, area.id)}
-                  className="cursor-move"
-                >
-                  <polygon
-                    points={points}
-                    fill={layout.color || '#16a34a'}
-                    fillOpacity={dropTargetId === area.id ? 0.3 : 0.16}
-                    stroke={isSelected ? '#111827' : layout.color || '#16a34a'}
-                    strokeWidth={isSelected ? 4 : 2}
-                    strokeLinejoin="round"
-                  />
-                  <foreignObject
-                    x={labelX}
-                    y={labelY}
-                    width={boxWidth}
-                    height={boxHeight}
-                    className="pointer-events-auto"
+              {selectedArea && !isCreating ? (
+                <>
+                  <Button
+                    size="sm"
+                    color="neutral"
+                    variant="outline"
+                    onClick={openSelectedAreaEditor}
                   >
-                    <div className="h-full overflow-hidden rounded-md border border-white/70 bg-white/90 p-2 shadow-sm backdrop-blur">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-bold text-gray-900">
-                            <span aria-hidden="true">{areaTypeIcons[area.type]}</span> {area.name}
-                          </p>
-                          <p className="truncate text-[11px] font-medium text-gray-500">
-                            {areaTypeLabels[area.type]}
-                          </p>
-                        </div>
-                        <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-700">
-                          {capacityLabel}
-                        </span>
-                      </div>
-                      {area.description ? (
-                        <p className="mt-1 line-clamp-2 text-[11px] text-gray-500">
-                          {area.description}
-                        </p>
-                      ) : null}
-                      <div className="mt-2 flex max-h-20 flex-wrap gap-1 overflow-hidden">
-                        {group.slice(0, 12).map((animal) => renderAnimalAvatar(animal))}
-                        {group.length > 12 ? (
-                          <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-gray-100 px-1 text-[11px] font-semibold text-gray-600">
-                            +{group.length - 12}
+                    Editar
+                  </Button>
+                  <Button
+                    size="sm"
+                    color={canSaveDirtyArea ? 'success' : 'neutral'}
+                    variant={canSaveDirtyArea ? 'filled' : 'outline'}
+                    disabled={isSavingArea || !canSaveDirtyArea}
+                    onClick={handleSaveSelected}
+                  >
+                    {saveSelectedLabel}
+                  </Button>
+                  {canSaveDirtyArea ? (
+                    <Button
+                      size="sm"
+                      color="neutral"
+                      variant="outline"
+                      onClick={cancelCurrentAction}
+                    >
+                      Descartar
+                    </Button>
+                  ) : null}
+                  <Button
+                    size="sm"
+                    color="error"
+                    variant="outline"
+                    disabled={selectedAreaHasAnimals || isSavingArea}
+                    onClick={handleDeleteSelected}
+                  >
+                    Eliminar
+                  </Button>
+                </>
+              ) : null}
+            </div>
+          </div>
+
+          {error ? (
+            <p className="mx-4 mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </p>
+          ) : null}
+
+          <div className="relative bg-stone-50">
+            <svg
+              ref={svgRef}
+              role="img"
+              aria-label="Lienzo de áreas de la granja"
+              viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+              className="block h-[520px] w-full touch-none select-none"
+              style={isCreating ? { cursor: PENCIL_CURSOR } : undefined}
+              onPointerDown={handleCanvasPointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              onDoubleClick={() => {
+                if (tool === 'polygon') finishPolygon()
+              }}
+            >
+              <defs>
+                <pattern id="farm-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                  <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#d6d3d1" strokeWidth="1" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#farm-grid)" />
+
+              {displayedAreas.map(({ area, layout }) => {
+                const points = pointsToSvg(layout.points)
+                const bounds = getBounds(layout.points)
+                const labelX = bounds.minX * VIEWBOX_WIDTH + 12
+                const labelY = bounds.minY * VIEWBOX_HEIGHT + 12
+                const boxWidth = Math.max(160, Math.min(260, bounds.width * VIEWBOX_WIDTH - 24))
+                const boxHeight = Math.max(104, Math.min(170, bounds.height * VIEWBOX_HEIGHT - 24))
+                const group = animalsByArea.get(area.id) ?? []
+                const isSelected = selectedAreaId === area.id
+                const capacityLabel = area.capacity
+                  ? `${group.length}/${area.capacity}`
+                  : `${group.length}`
+
+                return (
+                  <g
+                    key={area.id}
+                    onPointerDown={(event) => handleAreaPointerDown(event, area.id, layout)}
+                    onDragOver={(event) => {
+                      event.preventDefault()
+                      setDropTargetId(area.id)
+                    }}
+                    onDragLeave={() => setDropTargetId(null)}
+                    onDrop={(event) => handleDropAnimal(event, area.id)}
+                    className="cursor-move"
+                  >
+                    <polygon
+                      points={points}
+                      fill={layout.color || '#16a34a'}
+                      fillOpacity={dropTargetId === area.id ? 0.3 : 0.16}
+                      stroke={isSelected ? '#111827' : layout.color || '#16a34a'}
+                      strokeWidth={isSelected ? 4 : 2}
+                      strokeLinejoin="round"
+                    />
+                    <foreignObject
+                      x={labelX}
+                      y={labelY}
+                      width={boxWidth}
+                      height={boxHeight}
+                      className="pointer-events-auto"
+                    >
+                      <div className="h-full overflow-hidden rounded-md border border-white/70 bg-white/90 p-2 shadow-sm backdrop-blur">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-gray-900">
+                              <span aria-hidden="true">
+                                <EmojiIcon emoji={areaTypeIcons[area.type]} />
+                              </span>{' '}
+                              {area.name}
+                            </p>
+                            <p className="truncate text-[11px] font-medium text-gray-500">
+                              {areaTypeLabels[area.type]}
+                            </p>
+                          </div>
+                          <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-700">
+                            {capacityLabel}
                           </span>
+                        </div>
+                        {area.description ? (
+                          <p className="mt-1 line-clamp-2 text-[11px] text-gray-500">
+                            {area.description}
+                          </p>
                         ) : null}
+                        <div className="mt-2 flex max-h-20 flex-wrap gap-1 overflow-hidden">
+                          {group.slice(0, 12).map((animal) => renderAnimalAvatar(animal))}
+                          {group.length > 12 ? (
+                            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-gray-100 px-1 text-[11px] font-semibold text-gray-600">
+                              +{group.length - 12}
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
-                    </div>
-                  </foreignObject>
+                    </foreignObject>
 
-                  {isSelected
-                    ? layout.points.map((point, index) => {
-                        const svgPoint = pointToSvg(point)
-                        return (
-                          <circle
-                            key={`${area.id}-${index}`}
-                            cx={svgPoint.x}
-                            cy={svgPoint.y}
-                            r={8}
-                            fill="#ffffff"
-                            stroke="#111827"
-                            strokeWidth={3}
-                            className="cursor-grab"
-                            onPointerDown={(event) =>
-                              handleVertexPointerDown(event, area.id, index)
-                            }
-                          />
-                        )
-                      })
-                    : null}
-                </g>
-              )
-            })}
+                    {isSelected
+                      ? layout.points.map((point, index) => {
+                          const svgPoint = pointToSvg(point)
+                          return (
+                            <circle
+                              key={`${area.id}-${index}`}
+                              cx={svgPoint.x}
+                              cy={svgPoint.y}
+                              r={8}
+                              fill="#ffffff"
+                              stroke="#111827"
+                              strokeWidth={3}
+                              className="cursor-grab"
+                              onPointerDown={(event) =>
+                                handleVertexPointerDown(event, area.id, index)
+                              }
+                            />
+                          )
+                        })
+                      : null}
+                  </g>
+                )
+              })}
 
-            {draftLayout ? (
-              <polygon
-                points={pointsToSvg(draftLayout.points)}
-                fill={draftLayout.color}
-                fillOpacity={0.18}
-                stroke={draftLayout.color}
-                strokeDasharray="10 8"
-                strokeWidth={3}
-              />
-            ) : null}
-
-            {polygonPoints.length > 0 ? (
-              <g>
-                <polyline
-                  points={pointsToSvg(polygonPoints)}
-                  fill="none"
-                  stroke="#16a34a"
+              {draftLayout ? (
+                <polygon
+                  points={pointsToSvg(draftLayout.points)}
+                  fill={draftLayout.color}
+                  fillOpacity={0.18}
+                  stroke={draftLayout.color}
                   strokeDasharray="10 8"
                   strokeWidth={3}
                 />
-                {polygonPoints.map((point, index) => {
-                  const svgPoint = pointToSvg(point)
-                  return (
-                    <circle
-                      key={`${point.x}-${point.y}-${index}`}
-                      cx={svgPoint.x}
-                      cy={svgPoint.y}
-                      r={6}
-                      fill="#16a34a"
-                    />
-                  )
-                })}
-              </g>
-            ) : null}
-          </svg>
+              ) : null}
 
-          {activeAreas.length === 0 && !pendingLayout ? (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
-              <div className="max-w-sm rounded-lg border border-dashed border-gray-300 bg-white/95 px-4 py-5 text-center shadow-sm">
-                <p className="text-sm font-semibold text-gray-900">Dibuja tu primera área</p>
-                <p className="mt-1 text-sm text-gray-500">
-                  Usa Crear área. Cuadrado es el modo inicial; también puedes cambiar a polígono.
-                </p>
+              {polygonPoints.length > 0 ? (
+                <g>
+                  <polyline
+                    points={pointsToSvg(polygonPoints)}
+                    fill="none"
+                    stroke="#16a34a"
+                    strokeDasharray="10 8"
+                    strokeWidth={3}
+                  />
+                  {polygonPoints.map((point, index) => {
+                    const svgPoint = pointToSvg(point)
+                    return (
+                      <circle
+                        key={`${point.x}-${point.y}-${index}`}
+                        cx={svgPoint.x}
+                        cy={svgPoint.y}
+                        r={6}
+                        fill="#16a34a"
+                      />
+                    )
+                  })}
+                </g>
+              ) : null}
+            </svg>
+
+            {activeAreas.length === 0 && !pendingLayout ? (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
+                <div className="max-w-sm rounded-lg border border-dashed border-gray-300 bg-white/95 px-4 py-5 text-center shadow-sm">
+                  <p className="text-sm font-semibold text-gray-900">Dibuja tu primera área</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Usa Crear área. Cuadrado es el modo inicial; también puedes cambiar a polígono.
+                  </p>
+                </div>
               </div>
-            </div>
-          ) : null}
-        </div>
-      </section>
+            ) : null}
+          </div>
+        </section>
       )}
 
       <Modal
@@ -1213,20 +1233,16 @@ export default function FarmMapEditor({
             >
               Tipo *
             </label>
-            <select
+            <InputIconSelect
               id="mapped-area-type"
               value={areaForm.type}
-              onChange={(event) =>
-                setAreaForm((prev) => ({ ...prev, type: event.target.value as FarmArea['type'] }))
-              }
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
-            >
-              {FARM_AREA_TYPES.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.icon} {type.label}
-                </option>
-              ))}
-            </select>
+              onChange={(type) => setAreaForm((prev) => ({ ...prev, type }))}
+              options={FARM_AREA_TYPES.map((type) => ({
+                value: type.value,
+                label: type.label,
+                icon: type.icon,
+              }))}
+            />
           </div>
           <div>
             <label
@@ -1322,23 +1338,16 @@ export default function FarmMapEditor({
               >
                 Tipo
               </label>
-              <select
+              <InputIconSelect
                 id="edit-area-type"
                 value={areaEditForm.type}
-                onChange={(event) =>
-                  setAreaEditForm((prev) => ({
-                    ...prev,
-                    type: event.target.value as FarmArea['type'],
-                  }))
-                }
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
-              >
-                {FARM_AREA_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.icon} {type.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(type) => setAreaEditForm((prev) => ({ ...prev, type }))}
+                options={FARM_AREA_TYPES.map((type) => ({
+                  value: type.value,
+                  label: type.label,
+                  icon: type.icon,
+                }))}
+              />
             </div>
           </div>
 

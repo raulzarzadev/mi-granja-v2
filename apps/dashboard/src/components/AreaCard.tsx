@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
 import { FARM_AREA_TYPES, FarmArea } from '@/types/farm'
 
@@ -32,7 +33,9 @@ const AreaCard: React.FC<AreaCardProps> = ({ area }) => {
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{areaType?.icon || '📍'}</span>
+          <span className="text-2xl">
+            <EmojiIcon emoji={areaType?.icon || '📍'} />
+          </span>
           <div>
             <h4 className="text-lg font-semibold text-gray-900">{area.name}</h4>
             <p className="text-sm text-gray-500">{areaType?.label || area.type}</p>
@@ -58,14 +61,16 @@ const AreaCard: React.FC<AreaCardProps> = ({ area }) => {
       <div className="flex items-center justify-between text-sm text-gray-500">
         <div className="flex items-center gap-4">
           {area.capacity && (
-            <span className="flex items-center gap-1">📊 Capacidad: {area.capacity}</span>
+            <span className="flex items-center gap-1">
+              <EmojiIcon emoji="📊" /> Capacidad: {area.capacity}
+            </span>
           )}
         </div>
 
         <div className="flex items-center gap-2">
           {area.notes && (
             <span title={area.notes} className="cursor-help">
-              📝
+              <EmojiIcon emoji="📝" />
             </span>
           )}
         </div>
@@ -74,7 +79,7 @@ const AreaCard: React.FC<AreaCardProps> = ({ area }) => {
       {area.notes && (
         <div className="mt-3 pt-3 border-t border-gray-100">
           <p className="text-xs text-gray-500 line-clamp-2" title={area.notes}>
-            📝 {area.notes}
+            <EmojiIcon emoji="📝" /> {area.notes}
           </p>
         </div>
       )}

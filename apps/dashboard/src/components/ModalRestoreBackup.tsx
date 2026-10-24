@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useCallback, useRef, useState } from 'react'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { BackupProgress, RestoreResult, useBackup } from '@/hooks/useBackup'
 import { BACKUP_SCHEMA_JSON } from '@/lib/backup-format'
 import { BackupFile, BackupMeta, ValidationResult } from '@/lib/backup-serialization'
@@ -118,7 +119,9 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
                 htmlFor="backup-file-input"
                 className="cursor-pointer inline-flex flex-col items-center gap-2"
               >
-                <span className="text-4xl">📁</span>
+                <span className="text-4xl">
+                  <EmojiIcon emoji="📁" />
+                </span>
                 <span className="text-sm font-medium text-blue-600 hover:text-blue-700">
                   Seleccionar archivo .json
                 </span>
@@ -145,7 +148,7 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
                     }}
                     className="flex-shrink-0 ml-2 px-2 py-1 text-xs text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
                   >
-                    {copied ? '✓ Copiado' : 'Copiar'}
+                    <IconLabel label={copied ? '✓ Copiado' : 'Copiar'} />
                   </button>
                 </div>
                 <pre className="bg-gray-50 border border-gray-200 text-[11px] leading-relaxed p-3 rounded-lg overflow-auto max-h-72 text-gray-700">
@@ -233,7 +236,9 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
                   className="sr-only"
                 />
                 <div className="flex items-start gap-3">
-                  <span className="text-2xl mt-0.5">🔀</span>
+                  <span className="text-2xl mt-0.5">
+                    <EmojiIcon emoji="🔀" />
+                  </span>
                   <div>
                     <p className="font-medium text-gray-900">Combinar</p>
                     <p className="text-sm text-gray-600 mt-1">
@@ -260,7 +265,9 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
                   className="sr-only"
                 />
                 <div className="flex items-start gap-3">
-                  <span className="text-2xl mt-0.5">🔄</span>
+                  <span className="text-2xl mt-0.5">
+                    <EmojiIcon emoji="🔄" />
+                  </span>
                   <div>
                     <p className="font-medium text-gray-900">Reemplazar</p>
                     <p className="text-sm text-gray-600 mt-1">
@@ -320,7 +327,7 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
           <div className="space-y-4">
             <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
               <p className="text-sm font-semibold text-amber-900 mb-1">
-                ⚠️ Revisa cuidadosamente antes de continuar
+                <EmojiIcon emoji="⚠️" /> Revisa cuidadosamente antes de continuar
               </p>
               <p className="text-xs text-amber-800">
                 Esta funcionalidad está en prueba. Verifica que la información sea correcta.
@@ -399,12 +406,16 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
           <div className="space-y-4">
             {result.success ? (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                <span className="text-4xl block mb-2">✅</span>
+                <span className="text-4xl block mb-2">
+                  <EmojiIcon emoji="✅" />
+                </span>
                 <p className="text-lg font-medium text-green-800">Restauración completada</p>
               </div>
             ) : (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-                <span className="text-4xl block mb-2">⚠️</span>
+                <span className="text-4xl block mb-2">
+                  <EmojiIcon emoji="⚠️" />
+                </span>
                 <p className="text-lg font-medium text-yellow-800">
                   Restauración completada con errores
                 </p>
@@ -478,7 +489,7 @@ function StepIndicator({ currentStep }: { currentStep: Step }) {
                   : 'text-gray-400'
             }`}
           >
-            {i < currentIdx ? '✓' : ''} {STEP_LABELS[s]}
+            <IconLabel label={i < currentIdx ? '✓' : ''} /> {STEP_LABELS[s]}
           </span>
           {i < STEPS.length - 1 && <span className="text-gray-300">›</span>}
         </React.Fragment>

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { normalizeAnimalSearch } from '@/lib/animal-search'
 import {
   Animal,
@@ -479,7 +480,8 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
           <div>
             <h3 className="font-medium text-gray-900">{animals.length} animales por registrar</h3>
             <p className="text-sm text-gray-500">
-              {animal_icon[defaults.type]} {defaults.type} | {defaults.stage} | {defaults.gender}
+              <EmojiIcon emoji={animal_icon[defaults.type]} /> {defaults.type} | {defaults.stage} |{' '}
+              {defaults.gender}
               {defaults.breed ? ` | ${defaults.breed}` : ''}
             </p>
           </div>
@@ -770,7 +772,9 @@ const BulkAnimalForm: React.FC<BulkAnimalFormProps> = ({
             disabled={!!submitProgress || animals.length === 0 || !isPaidUser}
             title={!isPaidUser ? 'Disponible solo en plan Pro' : undefined}
           >
-            {!isPaidUser ? '🔒 Solo plan Pro' : `Registrar ${animals.length} animales`}
+            <IconLabel
+              label={!isPaidUser ? '🔒 Solo plan Pro' : `Registrar ${animals.length} animales`}
+            />
           </button>
         </div>
       )}

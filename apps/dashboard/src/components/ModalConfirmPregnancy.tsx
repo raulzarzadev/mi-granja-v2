@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
+import { IconLabel } from '@/components/Icon/emoji-icons'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { formatDate, toLocalDateStart } from '@/lib/dates'
 import { type Animal, animals_types_labels } from '@/types/animals'
@@ -216,9 +217,13 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
         {unconfirmedFemales.length === 0 ? (
           <div className="text-center py-8">
             <div className="text-gray-500 mb-2">
-              {hasBreedingFemales
-                ? '✓ Todas las hembras ya tienen gestación confirmada'
-                : 'No hay hembras en empadre para confirmar.'}
+              <IconLabel
+                label={
+                  hasBreedingFemales
+                    ? '✓ Todas las hembras ya tienen gestación confirmada'
+                    : 'No hay hembras en empadre para confirmar.'
+                }
+              />
             </div>
             <button
               type="button"

@@ -79,7 +79,7 @@ const FarmSection: React.FC<FarmSectionProps> = ({ onFarmCreated }) => {
     return (
       <div className="mx-auto max-w-lg px-4 py-12 text-center">
         <span className="text-5xl" aria-hidden="true">
-          🚜
+          <EmojiIcon emoji="🚜" />
         </span>
         <h2 className="mt-4 text-2xl font-bold text-gray-900">¡Bienvenido a Mi Granja!</h2>
         <p className="mt-2 text-gray-600">
@@ -192,64 +192,71 @@ const FarmSection: React.FC<FarmSectionProps> = ({ onFarmCreated }) => {
 
   const farmTabs = [
     {
-      label: '📊 Resumen',
+      label: '📊 Estadísticas',
       content: (
-        <div className="space-y-4">
-          {currentFarm?.description && (
-            <p className="text-gray-600 text-sm">{currentFarm.description}</p>
-          )}
-          {currentFarm?.location?.city && (
-            <p className="text-sm text-gray-500">
-              📍 {currentFarm.location.city}
-              {currentFarm.location.state && `, ${currentFarm.location.state}`}
-            </p>
-          )}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg shadow p-4 flex items-center gap-3">
-              <span className="text-2xl"><EmojiIcon emoji="⛳" /></span>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Áreas</p>
-                <p className="text-xl font-bold text-gray-900">{areaStats.total}</p>
+        <div className="space-y-8">
+          <div className="space-y-4">
+            {currentFarm?.description && (
+              <p className="text-gray-600 text-sm">{currentFarm.description}</p>
+            )}
+            {currentFarm?.location?.city && (
+              <p className="text-sm text-gray-500">
+                <EmojiIcon emoji="📍" /> {currentFarm.location.city}
+                {currentFarm.location.state && `, ${currentFarm.location.state}`}
+              </p>
+            )}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="bg-white rounded-lg shadow p-4 flex items-center gap-3">
+                <span className="text-2xl">
+                  <EmojiIcon emoji="⛳" />
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Áreas</p>
+                  <p className="text-xl font-bold text-gray-900">{areaStats.total}</p>
+                </div>
               </div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-4 flex items-center gap-3">
-              <span className="text-2xl">👥</span>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Equipo</p>
-                <p className="text-xl font-bold text-gray-900">
-                  {collaboratorStats.total}
-                  {collaboratorStats.pending > 0 && (
-                    <span className="text-sm font-normal text-orange-600 ml-1">
-                      +{collaboratorStats.pending}
-                    </span>
-                  )}
-                </p>
+              <div className="bg-white rounded-lg shadow p-4 flex items-center gap-3">
+                <span className="text-2xl">
+                  <EmojiIcon emoji="👥" />
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Equipo</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {collaboratorStats.total}
+                    {collaboratorStats.pending > 0 && (
+                      <span className="text-sm font-normal text-orange-600 ml-1">
+                        +{collaboratorStats.pending}
+                      </span>
+                    )}
+                  </p>
+                </div>
               </div>
-            </div>
-            {Object.entries(areaStats.byType)
-              .slice(0, 2)
-              .map(([type, count]) => {
-                const typeInfo = FARM_AREA_TYPES.find((t) => t.value === type)
-                return (
-                  <div
-                    key={type}
-                    className="bg-white rounded-lg shadow p-4 flex items-center gap-3"
-                  >
-                    <span className="text-2xl">{typeInfo?.icon || '📍'}</span>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">{typeInfo?.label || type}</p>
-                      <p className="text-xl font-bold text-gray-900">{count}</p>
+              {Object.entries(areaStats.byType)
+                .slice(0, 2)
+                .map(([type, count]) => {
+                  const typeInfo = FARM_AREA_TYPES.find((t) => t.value === type)
+                  return (
+                    <div
+                      key={type}
+                      className="bg-white rounded-lg shadow p-4 flex items-center gap-3"
+                    >
+                      <span className="text-2xl">
+                        <EmojiIcon emoji={typeInfo?.icon || '📍'} />
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">
+                          {typeInfo?.label || type}
+                        </p>
+                        <p className="text-xl font-bold text-gray-900">{count}</p>
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+            </div>
           </div>
+          <StatisticsTab />
         </div>
       ),
-    },
-    {
-      label: '📊 Estadísticas',
-      content: <StatisticsTab />,
     },
     {
       label: '💲 Ventas',
@@ -275,7 +282,9 @@ const FarmSection: React.FC<FarmSectionProps> = ({ onFarmCreated }) => {
             </div>
           ) : collaborators.length === 0 && invitations.length === 0 ? (
             <div className="text-center py-6">
-              <span className="text-3xl mb-2 block">👥</span>
+              <span className="text-3xl mb-2 block">
+                <EmojiIcon emoji="👥" />
+              </span>
               <p className="text-gray-600 text-sm">
                 Invita colaboradores para gestionar la granja juntos
               </p>

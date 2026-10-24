@@ -1,5 +1,6 @@
 import Button from '@/components/buttons/Button'
 import DataTable, { type ColumnDef } from '@/components/DataTable'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import type { Animal } from '@/types/animals'
 
@@ -37,7 +38,7 @@ const SimpleStageTab: React.FC<Props> = ({
             if (selected.length === 0) return null
             return (
               <Button size="xs" color="primary" onClick={() => onChangeStage(selected)}>
-                ⇄ Cambiar etapa ({selected.length})
+                <EmojiIcon emoji="⇄" /> Cambiar etapa ({selected.length})
               </Button>
             )
           }
@@ -56,7 +57,7 @@ const SimpleStageTab: React.FC<Props> = ({
               onClick={() => onChangeStage([row])}
               title="Cambiar etapa"
             >
-              ⇄ Cambiar etapa
+              <EmojiIcon emoji="⇄" /> Cambiar etapa
             </Button>
           )
         : undefined

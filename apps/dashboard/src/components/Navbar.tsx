@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import BrandLogo from '@/components/BrandLogo'
 import HelpMenu from '@/components/HelpMenu'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { RootState } from '@/features/store'
 import { useAuth } from '@/hooks/useAuth'
 import { isUserAdmin } from '@/lib/userUtils'
@@ -86,14 +87,16 @@ const Navbar: React.FC = () => {
             {/* Badge de impersonación (desktop) */}
             {impersonatingUser && originalUser && (
               <div className="hidden md:flex items-center gap-2 bg-yellow-500/90 text-black px-2 py-1 rounded text-[11px] font-medium shadow-sm">
-                <span>🎭 {impersonatingUser.farmName || impersonatingUser.email}</span>
+                <span>
+                  <EmojiIcon emoji="🎭" /> {impersonatingUser.farmName || impersonatingUser.email}
+                </span>
                 <span className="opacity-70">(Admin: {originalUser.email})</span>
                 <button
                   onClick={stopImpersonation}
                   className="ml-1 text-xs font-bold hover:text-red-700"
                   aria-label="Volver a mi cuenta"
                 >
-                  ✕
+                  <EmojiIcon emoji="✕" />
                 </button>
               </div>
             )}
@@ -107,13 +110,15 @@ const Navbar: React.FC = () => {
             {/* Impersonación (mobile) */}
             {impersonatingUser && originalUser && (
               <div className="md:hidden flex items-center gap-1 bg-yellow-500 text-black px-2 py-1 rounded text-[10px] font-medium">
-                <span>🎭 {impersonatingUser.farmName || impersonatingUser.email}</span>
+                <span>
+                  <EmojiIcon emoji="🎭" /> {impersonatingUser.farmName || impersonatingUser.email}
+                </span>
                 <button
                   onClick={stopImpersonation}
                   className="ml-1 text-[10px] font-bold hover:text-red-700"
                   aria-label="Volver a mi cuenta"
                 >
-                  ✕
+                  <EmojiIcon emoji="✕" />
                 </button>
               </div>
             )}
@@ -135,7 +140,9 @@ const Navbar: React.FC = () => {
                 className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1 rounded-md border border-white/20 bg-white/10 px-2 py-1.5 text-xs font-medium transition-colors hover:bg-white/20 min-[360px]:px-3"
                 aria-label="Suplantar usuario"
               >
-                <span aria-hidden="true">🎭</span>
+                <span aria-hidden="true">
+                  <EmojiIcon emoji="🎭" />
+                </span>
                 <span className="hidden min-[360px]:inline">Suplantar</span>
               </button>
             )}
@@ -195,7 +202,7 @@ const Navbar: React.FC = () => {
                         )}
                         {impersonatingUser && originalUser && (
                           <p className="mt-1 text-xs font-medium text-yellow-700 bg-yellow-100 rounded px-1 py-0.5">
-                            🎭 Impersonando
+                            <EmojiIcon emoji="🎭" /> Impersonando
                           </p>
                         )}
                       </div>
@@ -209,7 +216,7 @@ const Navbar: React.FC = () => {
                             window.location.href = '/?dashboard-main=perfil'
                           }}
                         >
-                          👤 Mi Perfil
+                          <EmojiIcon emoji="👤" /> Mi Perfil
                         </button>
                         <Link
                           href="/"
@@ -217,7 +224,7 @@ const Navbar: React.FC = () => {
                           role="menuitem"
                           onClick={() => setMenuOpen(false)}
                         >
-                          🏠 Dashboard
+                          <EmojiIcon emoji="🏠" /> Dashboard
                         </Link>
                         <button
                           type="button"
@@ -228,7 +235,7 @@ const Navbar: React.FC = () => {
                             setMenuOpen(false)
                           }}
                         >
-                          📘 Primeros pasos
+                          <EmojiIcon emoji="📘" /> Primeros pasos
                         </button>
                         <a
                           href={WHATSAPP_COMMUNITY_URL}
@@ -238,7 +245,7 @@ const Navbar: React.FC = () => {
                           role="menuitem"
                           onClick={() => setMenuOpen(false)}
                         >
-                          💬 Comunidad WhatsApp
+                          <EmojiIcon emoji="💬" /> Comunidad WhatsApp
                         </a>
                         {isUserAdmin(user) && (
                           <>
@@ -248,7 +255,7 @@ const Navbar: React.FC = () => {
                               role="menuitem"
                               onClick={() => setMenuOpen(false)}
                             >
-                              👑 Admin Panel
+                              <EmojiIcon emoji="👑" /> Admin Panel
                             </Link>
                             <Link
                               href="/ui-showcase"
@@ -256,7 +263,7 @@ const Navbar: React.FC = () => {
                               role="menuitem"
                               onClick={() => setMenuOpen(false)}
                             >
-                              🎨 UI Showcase
+                              <EmojiIcon emoji="🎨" /> UI Showcase
                             </Link>
                           </>
                         )}
@@ -269,7 +276,7 @@ const Navbar: React.FC = () => {
                             className="w-full text-left px-4 py-2 text-sm text-yellow-800 hover:bg-yellow-50"
                             role="menuitem"
                           >
-                            ✕ Salir de impersonación
+                            <EmojiIcon emoji="✕" /> Salir de impersonación
                           </button>
                         )}
                       </div>
@@ -282,7 +289,7 @@ const Navbar: React.FC = () => {
                           className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50"
                           role="menuitem"
                         >
-                          🚪 Cerrar sesión
+                          <EmojiIcon emoji="🚪" /> Cerrar sesión
                         </button>
                       </div>
                     </div>

@@ -1,10 +1,4 @@
-import {
-  FaCheckCircle,
-  FaExclamationTriangle,
-  FaInfoCircle,
-  FaQuestionCircle,
-  FaTimesCircle,
-} from 'react-icons/fa'
+import { PiCheckCircle, PiInfo, PiQuestion, PiWarning, PiXCircle } from 'react-icons/pi'
 
 type Variant = 'info' | 'warning' | 'success' | 'error' | 'help'
 
@@ -22,11 +16,11 @@ const variantStyles: Record<Variant, string> = {
 }
 
 const variantIcons: Record<Variant, React.ElementType> = {
-  info: FaInfoCircle,
-  warning: FaExclamationTriangle,
-  success: FaCheckCircle,
-  error: FaTimesCircle,
-  help: FaQuestionCircle,
+  info: PiInfo,
+  warning: PiWarning,
+  success: PiCheckCircle,
+  error: PiXCircle,
+  help: PiQuestion,
 }
 
 export default function InfoNote({ children, variant = 'info' }: InfoNoteProps) {

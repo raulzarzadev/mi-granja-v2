@@ -77,6 +77,17 @@ Always reuse existing buttons/components. Ensure every interactive element has:
 - `disabled` state
 - `loading` state
 
+## Icons — Phosphor + iconos propios
+
+Una sola familia visual: **Phosphor** (`react-icons/pi`, peso regular) más iconos propios dibujados en su mismo estilo en `apps/dashboard/src/components/Icon/farm-icons.tsx` (oveja, cabra, cerdo, gallina, hombre, mujer, gestante, biberón, biberón tachado, filete). No uses otras familias de react-icons ni emojis en la UI.
+
+- Datos que traen emoji (configs en `@mi-granja/shared`, labels de tabs): renderiza con `<EmojiIcon emoji={...} />` o `<IconLabel label="🐄 Animales" />` de `components/Icon/emoji-icons.tsx`. `Tabs` ya convierte el emoji inicial de cada label.
+- Emoji nuevo en datos → agrégalo a `EMOJI_ICON_GROUPS` (el test `emoji-icons.test.tsx` falla si una config de dominio queda sin icono).
+- Acciones comunes: `<Icon icon="add" />`.
+- Selects con iconos: usa `InputIconSelect` (`components/inputs/InputIconSelect.tsx`), no `<select>` nativo — los `<option>` no admiten SVG.
+- Emails, push y textos planos siguen usando emojis.
+- Catálogo con nombres e imports: `/ui-showcase#iconos`.
+
 ## API error details
 
 **Never** expose error details to the client. API routes return generic messages; log details server-side only.

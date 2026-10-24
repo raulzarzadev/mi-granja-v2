@@ -4,6 +4,7 @@ import { useState } from 'react'
 import BreedingCard from '@/components/BreedingCard'
 import BreedingTable from '@/components/BreedingTable'
 import Button from '@/components/buttons/Button'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import ModalOnboarding from '@/components/onboarding/ModalOnboarding'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
 import type { Animal } from '@/types/animals'
@@ -95,7 +96,7 @@ export default function TabStageEmpadre({
             </svg>
           </button>
           <div className="font-semibold mb-2">
-            ⚠️ {duplicateEmpadreFemales.length} hembra
+            <EmojiIcon emoji="⚠️" /> {duplicateEmpadreFemales.length} hembra
             {duplicateEmpadreFemales.length !== 1 ? 's' : ''} en múltiples empadres activos
           </div>
           <div className="text-xs text-amber-800 mb-2">

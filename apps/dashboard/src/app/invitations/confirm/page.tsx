@@ -13,6 +13,7 @@ import {
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import BrandLogo from '@/components/BrandLogo'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import { toDate } from '@/lib/dates'
@@ -403,7 +404,9 @@ export default function InvitationConfirmPage() {
         <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
           <div className="bg-white rounded-lg shadow p-8 max-w-md w-full text-center">
             <div className="mb-4">
-              <span className="text-5xl">✉️</span>
+              <span className="text-5xl">
+                <EmojiIcon emoji="✉️" />
+              </span>
             </div>
             <h1 className="text-xl font-semibold mb-4">Confirmación de invitación</h1>
             <div className="space-y-3">

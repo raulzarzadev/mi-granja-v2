@@ -3,6 +3,7 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { type FormEvent, useMemo, useState } from 'react'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { toDate } from '@/lib/dates'
 import { type Animal, isMilkRecord, type MilkingSession } from '@/types/animals'
@@ -148,7 +149,7 @@ export default function ModalMilkRecord({ animal }: { animal: Animal }) {
           setIsOpen(true)
         }}
       >
-        🥛 Leche
+        <EmojiIcon emoji="🥛" /> Leche
       </Button>
 
       <Modal
@@ -225,7 +226,10 @@ export default function ModalMilkRecord({ animal }: { animal: Animal }) {
                         : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
                     }`}
                   >
-                    <span aria-hidden="true">{option.icon}</span> {option.label}
+                    <span aria-hidden="true">
+                      <EmojiIcon emoji={option.icon} />
+                    </span>{' '}
+                    <IconLabel label={option.label} />
                   </button>
                 )
               })}

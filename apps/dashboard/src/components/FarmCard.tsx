@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { formatDate, toDate } from '@/lib/dates'
 import { Farm } from '@/types/farm'
 
@@ -16,12 +17,14 @@ const FarmCard: React.FC<FarmCardProps> = ({ farm }) => {
     <div className="bg-white rounded-lg border p-4 hover:shadow-md transition-all">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">🚜</span>
+          <span className="text-2xl">
+            <EmojiIcon emoji="🚜" />
+          </span>
           <div>
             <h4 className="text-lg font-semibold text-gray-900">{farm.name}</h4>
             {farm.location?.city && (
               <p className="text-sm text-gray-500">
-                📍 {farm.location.city}
+                <EmojiIcon emoji="📍" /> {farm.location.city}
                 {farm.location.state && `, ${farm.location.state}`}
               </p>
             )}

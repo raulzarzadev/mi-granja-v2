@@ -1,4 +1,5 @@
 import type { ColumnDef } from '@/components/DataTable'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { Icon } from '@/components/Icon/icon'
 import { animalAge, formatWeight } from '@/lib/animal-utils'
 import {
@@ -123,7 +124,9 @@ export const buildAllAnimalColumns = (): ColumnDef<Animal>[] => {
         <span
           className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}
         >
-          <span>{cfg.icon}</span>
+          <span>
+            <EmojiIcon emoji={cfg.icon} />
+          </span>
           {cfg.label}
         </span>
       )

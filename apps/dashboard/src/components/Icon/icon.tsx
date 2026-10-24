@@ -1,41 +1,27 @@
-import type { IconType } from 'react-icons'
 import {
-  FaBell,
-  FaCalendarAlt,
-  FaCalendarCheck,
-  FaCalendarDay,
-  FaCheckCircle,
-  FaCog,
-  FaCommentDots,
-  FaEdit,
-  FaEllipsisV,
-  FaEye,
-  FaFemale,
-  FaHome,
-  FaMale,
-  FaPlus,
-  FaQuestionCircle,
-  FaSearch,
-  FaSignOutAlt,
-  FaStickyNote,
-  FaTrash,
-  FaUser,
-} from 'react-icons/fa'
-import { IoMdCloseCircleOutline } from 'react-icons/io'
-import { IoBedSharp } from 'react-icons/io5'
-import { LuBaby } from 'react-icons/lu'
-import { MdOutlinePregnantWoman } from 'react-icons/md'
-import { TbBabyBottle } from 'react-icons/tb'
-
-const BabyBottleOffIcon: IconType = ({ className }) => (
-  <span aria-hidden="true" className={`relative inline-flex ${className ?? ''}`}>
-    <TbBabyBottle aria-hidden="true" className="absolute inset-0 h-full w-full" />
-    <span
-      aria-hidden="true"
-      className="absolute left-1/2 top-1/2 h-0.5 w-[125%] -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-full bg-current"
-    />
-  </span>
-)
+  PiBaby,
+  PiBed,
+  PiBell,
+  PiCalendar,
+  PiCalendarCheck,
+  PiCalendarDot,
+  PiChatCircleDots,
+  PiCheckCircle,
+  PiDotsThreeVertical,
+  PiEye,
+  PiGear,
+  PiHouse,
+  PiMagnifyingGlass,
+  PiNote,
+  PiPencilSimple,
+  PiPlus,
+  PiQuestion,
+  PiSignOut,
+  PiTrash,
+  PiUser,
+  PiXCircle,
+} from 'react-icons/pi'
+import { BabyBottle, BabyBottleOff, Man, Pregnant, Woman } from './farm-icons'
 
 export interface IconProps {
   icon: IconName
@@ -44,32 +30,32 @@ export interface IconProps {
 }
 
 export const icons = {
-  male: FaMale,
-  female: FaFemale,
-  bed: IoBedSharp,
-  add: FaPlus,
-  edit: FaEdit,
-  delete: FaTrash,
-  view: FaEye,
-  search: FaSearch,
-  settings: FaCog,
-  home: FaHome,
-  profile: FaUser,
-  notifications: FaBell,
-  help: FaQuestionCircle,
-  logout: FaSignOutAlt,
-  baby: LuBaby,
-  pregnant: MdOutlinePregnantWoman,
-  calendarCheck: FaCalendarCheck,
-  calendarDay: FaCalendarDay,
-  calendar: FaCalendarAlt,
-  more: FaEllipsisV,
-  close: IoMdCloseCircleOutline,
-  check_circle: FaCheckCircle,
-  babyBottle: TbBabyBottle,
-  babyBottleOff: BabyBottleOffIcon,
-  notes: FaStickyNote,
-  comments: FaCommentDots,
+  male: Man,
+  female: Woman,
+  bed: PiBed,
+  add: PiPlus,
+  edit: PiPencilSimple,
+  delete: PiTrash,
+  view: PiEye,
+  search: PiMagnifyingGlass,
+  settings: PiGear,
+  home: PiHouse,
+  profile: PiUser,
+  notifications: PiBell,
+  help: PiQuestion,
+  logout: PiSignOut,
+  baby: PiBaby,
+  pregnant: Pregnant,
+  calendarCheck: PiCalendarCheck,
+  calendarDay: PiCalendarDot,
+  calendar: PiCalendar,
+  more: PiDotsThreeVertical,
+  close: PiXCircle,
+  check_circle: PiCheckCircle,
+  babyBottle: BabyBottle,
+  babyBottleOff: BabyBottleOff,
+  notes: PiNote,
+  comments: PiChatCircleDots,
 } as const
 export type IconName = keyof typeof icons
 // https://react-icons.github.io/react-icons/

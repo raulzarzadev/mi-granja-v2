@@ -1,4 +1,5 @@
 import React from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 
 const developmentStages = [
   {
@@ -82,7 +83,7 @@ const StageGuidePage: React.FC = () => {
             <React.Fragment key={stage.name}>
               <article className={`rounded-2xl border p-3.5 ${stage.tone}`}>
                 <p className="text-xl" aria-hidden="true">
-                  {stage.icon}
+                  <EmojiIcon emoji={stage.icon} />
                 </p>
                 <h5 className="mt-1 font-bold">{stage.name}</h5>
                 <p className="mt-1 text-sm leading-5 opacity-80">{stage.detail}</p>
@@ -111,7 +112,10 @@ const StageGuidePage: React.FC = () => {
             {destinations.map((stage) => (
               <article key={stage.name} className={`rounded-2xl border p-3 ${stage.tone}`}>
                 <h5 className="font-bold">
-                  <span aria-hidden="true">{stage.icon}</span> {stage.name}
+                  <span aria-hidden="true">
+                    <EmojiIcon emoji={stage.icon} />
+                  </span>{' '}
+                  {stage.name}
                 </h5>
                 <p className="mt-1 text-xs leading-5 opacity-80">{stage.detail}</p>
               </article>
@@ -146,7 +150,7 @@ const StageGuidePage: React.FC = () => {
             >
               <div className="flex items-center gap-2">
                 <span aria-hidden="true" className="text-xl">
-                  {condition.icon}
+                  <EmojiIcon emoji={condition.icon} />
                 </span>
                 <h5 className="font-bold">{condition.name}</h5>
               </div>

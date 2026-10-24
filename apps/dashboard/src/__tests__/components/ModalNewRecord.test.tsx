@@ -101,7 +101,7 @@ it('muerte: revisar, confirmar, éxito y deshacer; no reaparece el borrador al c
   fireEvent.click(screen.getByRole('button', { name: 'Registrar muerte' }))
   expect(mockDeath).not.toHaveBeenCalled()
   fireEvent.click(screen.getByRole('button', { name: 'Confirmar muerte' }))
-  await screen.findByText('✓ Muerte registrada')
+  await screen.findByText('Muerte registrada')
   expect(mockDeath).toHaveBeenCalledWith(
     expect.any(String),
     ['h'],
@@ -111,7 +111,7 @@ it('muerte: revisar, confirmar, éxito y deshacer; no reaparece el borrador al c
   )
   expect(JSON.parse(localStorage.getItem(storageKey)!)).toEqual([])
   fireEvent.click(screen.getByRole('button', { name: /Deshacer/ }))
-  await screen.findByText('✓ Movimiento deshecho')
+  await screen.findByText('Movimiento deshecho')
   fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
   expect(screen.getByRole('button', { name: 'Nuevo Registro' })).toBeTruthy()
 })
@@ -205,7 +205,7 @@ it('ofrece Sanidad y registra una vacuna con seguimiento', async () => {
     target: { value: 'Dosis inicial' },
   })
   fireEvent.click(screen.getByRole('button', { name: 'Registrar sanidad' }))
-  await screen.findByText('✓ Vacuna clostridial')
+  await screen.findByText('Vacuna clostridial')
   expect(mockHealth).toHaveBeenCalledWith(
     expect.any(String),
     ['h'],

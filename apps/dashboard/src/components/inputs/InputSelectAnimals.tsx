@@ -4,6 +4,7 @@ import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import AnimalBadges from '@/components/AnimalBadges'
 import ButtonClose from '@/components/buttons/ButtonClose'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { animalMatchesSearch } from '@/lib/animal-search'
 import { animalAge } from '@/lib/animal-utils'
 import { Animal } from '@/types/animals'
@@ -370,8 +371,14 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
-              <span>{option.label}</span>
-              {sortOption === option.value && <span aria-hidden="true">✓</span>}
+              <span>
+                <IconLabel label={option.label} />
+              </span>
+              {sortOption === option.value && (
+                <span aria-hidden="true">
+                  <EmojiIcon emoji="✓" />
+                </span>
+              )}
             </button>
           ))}
         </div>

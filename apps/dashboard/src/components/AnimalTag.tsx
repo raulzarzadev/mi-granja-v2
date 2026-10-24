@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { animalAge, computeAnimalStage } from '@/lib/animal-utils'
 import {
   Animal,
@@ -91,17 +92,17 @@ const AnimalTag: React.FC<AnimalTagProps> = ({
       <span className="inline-flex items-center gap-2">
         {isHeader && (
           <span className="text-2xl" title={animal.type}>
-            {speciesIcon}
+            <EmojiIcon emoji={speciesIcon} />
           </span>
         )}
         {!isHeader && showSpecies && (
           <span className={size === 'md' ? 'text-base' : 'text-sm'} title={animal.type}>
-            {speciesIcon}
+            <EmojiIcon emoji={speciesIcon} />
           </span>
         )}
         {!isHeader && showStage && stageCfg ? (
           <span title={stageCfg.label} className={size === 'md' ? 'text-base' : 'text-sm'}>
-            {stageCfg.icon}
+            <EmojiIcon emoji={stageCfg.icon} />
           </span>
         ) : null}
         {!isHeader ? (
@@ -127,7 +128,7 @@ const AnimalTag: React.FC<AnimalTagProps> = ({
         )}
         {!isHeader && (
           <span title={statusLabel} className="sr-only">
-            {statusEmoji}
+            <EmojiIcon emoji={statusEmoji} />
           </span>
         )}
         {age && age !== 'No registrado' && (
@@ -147,14 +148,16 @@ const AnimalTag: React.FC<AnimalTagProps> = ({
             <span
               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${stageCfg.color}`}
             >
-              <span>{stageCfg.icon}</span>
+              <span>
+                <EmojiIcon emoji={stageCfg.icon} />
+              </span>
               <span>{stageCfg.label}</span>
             </span>
           )}
           <span
             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}
           >
-            <span>{statusEmoji}</span>
+            <EmojiIcon emoji={statusEmoji} />
             <span>{statusLabel}</span>
           </span>
         </span>

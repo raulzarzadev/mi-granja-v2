@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { Modal } from '@/components/Modal'
 import { auth } from '@/lib/firebase'
 import type { Animal } from '@/types/animals'
@@ -427,7 +428,7 @@ export default function ModalAnimalListReader({
               className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus-within:ring-2 focus-within:ring-green-500 focus-within:ring-offset-2"
             >
               <span aria-hidden="true" className="mr-2 text-base">
-                ＋
+                <EmojiIcon emoji="＋" />
               </span>
               Seleccionar imágenes
               <input
@@ -497,11 +498,15 @@ export default function ModalAnimalListReader({
               disabled={images.length === 0 || isAnalyzing}
               className="min-h-11 w-full rounded-lg bg-green-600 px-4 text-sm font-semibold text-white transition hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-300"
             >
-              {isAnalyzing
-                ? `Analizando imagen ${currentImage} de ${images.length}…`
-                : completedImages > 0
-                  ? 'Continuar con las imágenes pendientes'
-                  : '✨ Analizar lista'}
+              <IconLabel
+                label={
+                  isAnalyzing
+                    ? `Analizando imagen ${currentImage} de ${images.length}…`
+                    : completedImages > 0
+                      ? 'Continuar con las imágenes pendientes'
+                      : '✨ Analizar lista'
+                }
+              />
             </button>
           )}
 

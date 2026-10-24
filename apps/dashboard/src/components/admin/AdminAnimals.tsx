@@ -3,6 +3,7 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import React from 'react'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAdminAnimals } from '@/hooks/admin/useAdminAnimals'
 import { computeAnimalStage, formatWeight } from '@/lib/animal-utils'
@@ -132,14 +133,16 @@ export default function AdminAnimals() {
               <tr key={animal.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <span className="text-2xl mr-3">{animal_icon[animal.type]}</span>
+                    <span className="text-2xl mr-3">
+                      <EmojiIcon emoji={animal_icon[animal.type]} />
+                    </span>
                     <div>
                       <div className="text-sm font-medium text-gray-900">
                         #{animal.animalNumber}
                       </div>
                       <div className="text-sm text-gray-500 flex items-center">
                         <span className={`font-bold ${gender_colors[animal.gender]}`}>
-                          {gender_icon[animal.gender]}
+                          <EmojiIcon emoji={gender_icon[animal.gender]} />
                         </span>{' '}
                         {animal.gender}
                       </div>
