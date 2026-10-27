@@ -1,5 +1,5 @@
+import { ANALYTICS_EVENTS } from '@mi-granja/shared'
 import { NextRequest, NextResponse } from 'next/server'
-import { ANIMAL_LIST_READER_ENABLED } from '@/lib/animal-list-feature'
 import { AiProviderChainError, callAiAnimalListProvider } from '@/lib/ai/openrouter'
 import {
   consumeDailyAiUse,
@@ -8,7 +8,10 @@ import {
   hasPermission,
   requireAiAuth,
   resolveFarmPermissions,
+  totalAiTokens,
 } from '@/lib/ai/server'
+import { captureServerEvent } from '@/lib/analytics/posthog-server'
+import { ANIMAL_LIST_READER_ENABLED } from '@/lib/animal-list-feature'
 
 const MAX_IMAGES = 6
 const MAX_IMAGE_DATA_LENGTH = 7_000_000
@@ -16,13 +19,20 @@ const IMAGE_DATA_URL = /^data:image\/(?:jpeg|jpg|png|webp|gif);base64,[A-Za-z0-9
 
 export const maxDuration = 150
 
+const QUERY_TYPE = 'animal_list'
+
 export async function POST(request: NextRequest) {
   if (!ANIMAL_LIST_READER_ENABLED) {
-    return NextResponse.json({ error: 'El lector de imágenes está desactivado temporalmente.' }, { status: 503 })
+    return NextResponse.json(
+      { error: 'El lector de imágenes está desactivado temporalmente.' },
+      { status: 503 },
+    )
   }
+  let userId: string | null = null
   try {
     const auth = await requireAiAuth(request)
     if (auth instanceof NextResponse) return auth
+    userId = auth.uid
 
     const body = await request.json()
     const farmId = String(body.farmId || '').trim()
@@ -60,13 +70,31 @@ export async function POST(request: NextRequest) {
 
     const currentUsage = await getDailyAiUsage(auth.uid)
     if (!currentUsage.isUnlimited && currentUsage.remaining <= 0) {
+      await captureServerEvent(auth.uid, ANALYTICS_EVENTS.ai_limit_reached, {
+        query_type: QUERY_TYPE,
+        farm_id: farmId,
+      })
       return NextResponse.json(
         { error: 'Ya usaste tus 3 consultas de IA hoy', usage: currentUsage },
         { status: 429 },
       )
     }
 
+    await captureServerEvent(auth.uid, ANALYTICS_EVENTS.ai_query_sent, {
+      query_type: QUERY_TYPE,
+      farm_id: farmId,
+      image_count: images.length,
+    })
+    const startedAt = Date.now()
     const ai = await callAiAnimalListProvider({ images })
+    await captureServerEvent(auth.uid, ANALYTICS_EVENTS.ai_response_received, {
+      query_type: QUERY_TYPE,
+      farm_id: farmId,
+      latency_ms: Date.now() - startedAt,
+      tokens_used: totalAiTokens(ai.usage),
+      model: ai.model,
+      provider: ai.provider,
+    })
     const usage = await consumeDailyAiUse(auth.uid, ai.usage, {
       provider: ai.provider,
       model: ai.model,
@@ -82,6 +110,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ...ai.parsed, usage })
   } catch (error) {
     console.error('AI animal list error:', error)
+    if (userId) {
+      await captureServerEvent(userId, ANALYTICS_EVENTS.ai_query_failed, { query_type: QUERY_TYPE })
+    }
     if (error instanceof AiProviderChainError) {
       const details = error.attempts
         .map((attempt) => `${attempt.provider}: ${attempt.error || 'falló'}`)

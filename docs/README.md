@@ -31,6 +31,7 @@ Spanish-language farm management app (multi-tenant). Next.js App Router + Fireba
 - [features/emails.md](./features/emails.md) — Brevo email service
 - [features/reminders.md](./features/reminders.md) — Recordatorios + notificaciones (FCM push, email digest, escalado overdue)
 - [features/backups.md](./features/backups.md) — Backup export/import sync rules
+- [features/analytics.md](./features/analytics.md) — PostHog: event catalog, client vs server tracking, dashboard sync
 - [features/dates.md](./features/dates.md) — Date handling conventions
 
 ### Agents (Claude sub-agents)

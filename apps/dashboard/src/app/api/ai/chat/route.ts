@@ -1,3 +1,4 @@
+import { ANALYTICS_EVENTS } from '@mi-granja/shared'
 import { NextRequest, NextResponse } from 'next/server'
 import { buildAiContext } from '@/lib/ai/actions'
 import { callAiProvider } from '@/lib/ai/openrouter'
@@ -8,12 +9,18 @@ import {
   hasPermission,
   requireAiAuth,
   resolveFarmPermissions,
+  totalAiTokens,
 } from '@/lib/ai/server'
+import { captureServerEvent } from '@/lib/analytics/posthog-server'
+
+const QUERY_TYPE = 'chat'
 
 export async function POST(request: NextRequest) {
+  let userId: string | null = null
   try {
     const auth = await requireAiAuth(request)
     if (auth instanceof NextResponse) return auth
+    userId = auth.uid
 
     const body = await request.json()
     const message = String(body.message || '').trim()
@@ -45,6 +52,10 @@ export async function POST(request: NextRequest) {
 
     const currentUsage = await getDailyAiUsage(auth.uid)
     if (!currentUsage.isUnlimited && currentUsage.remaining <= 0) {
+      await captureServerEvent(auth.uid, ANALYTICS_EVENTS.ai_limit_reached, {
+        query_type: QUERY_TYPE,
+        farm_id: farmId,
+      })
       return NextResponse.json(
         { error: 'Ya usaste tus 3 consultas de IA hoy', usage: currentUsage },
         { status: 429 },
@@ -55,7 +66,22 @@ export async function POST(request: NextRequest) {
       reminders: hasPermission(access.permissions, 'reminders', 'read'),
       breeding: hasPermission(access.permissions, 'breeding', 'read'),
     })
+    await captureServerEvent(auth.uid, ANALYTICS_EVENTS.ai_query_sent, {
+      query_type: QUERY_TYPE,
+      farm_id: farmId,
+      history_length: history.length,
+    })
+    const startedAt = Date.now()
     const ai = await callAiProvider({ message, farmName: access.farmName, context, history })
+    await captureServerEvent(auth.uid, ANALYTICS_EVENTS.ai_response_received, {
+      query_type: QUERY_TYPE,
+      farm_id: farmId,
+      latency_ms: Date.now() - startedAt,
+      tokens_used: totalAiTokens(ai.usage),
+      model: ai.model,
+      provider: ai.provider,
+      response_kind: ai.parsed.kind,
+    })
 
     const usage = await consumeDailyAiUse(auth.uid, ai.usage, {
       provider: ai.provider,
@@ -74,6 +100,9 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('AI chat error:', error)
+    if (userId) {
+      await captureServerEvent(userId, ANALYTICS_EVENTS.ai_query_failed, { query_type: QUERY_TYPE })
+    }
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Error procesando IA',

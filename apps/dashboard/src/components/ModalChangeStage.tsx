@@ -9,6 +9,7 @@ import AnimalSelector from '@/components/inputs/AnimalSelector'
 import DateTimeInput from '@/components/inputs/DateTimeInput'
 import { Modal } from '@/components/Modal'
 import type { RootState } from '@/features/store'
+import { trackAnimalStageChanged } from '@/lib/analytics/track'
 import {
   applyChangeStage,
   type ChangeStagePayload,
@@ -145,6 +146,7 @@ const ModalChangeStage: React.FC<Props> = ({
         { farmerId: user.id, farmId: currentFarm.id, allAnimals },
         { onProgress: (current, total) => setProgress({ current, total }) },
       )
+      trackAnimalStageChanged({ target: payload.target, animal_count: animals.length })
       onApplied?.()
       onClose()
     } catch (err) {

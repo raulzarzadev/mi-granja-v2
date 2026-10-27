@@ -57,7 +57,15 @@ export const trackReminderCreated = (props: {
   animal_count: number
 }) => track(ANALYTICS_EVENTS.reminder_created, props)
 
+export const trackReminderCompleted = (props: { scope: 'reminder' | 'animal' }) =>
+  track(ANALYTICS_EVENTS.reminder_completed, props)
+
 export const trackInvitationSent = () => track(ANALYTICS_EVENTS.invitation_sent)
+
+export const trackInvitationAccepted = () => track(ANALYTICS_EVENTS.invitation_accepted)
+
+export const trackPushNotificationsEnabled = () =>
+  track(ANALYTICS_EVENTS.push_notifications_enabled)
 
 export const trackCheckoutStarted = (tierId: string) =>
   track(ANALYTICS_EVENTS.checkout_started, { tier_id: tierId })
@@ -76,6 +84,20 @@ export const trackAnimalDeleted = (props?: { species?: string }) =>
 export const trackAnimalViewed = (props: { species?: string }) =>
   track(ANALYTICS_EVENTS.animal_viewed, props)
 
+export const trackAnimalStageChanged = (props: { target: string; animal_count: number }) =>
+  track(ANALYTICS_EVENTS.animal_stage_changed, props)
+
+export const trackAnimalsBulkUpdated = (props: {
+  fields_changed: string[]
+  animal_count: number
+}) => track(ANALYTICS_EVENTS.animals_bulk_updated, props)
+
+export const trackSaleCompleted = (props: { animal_count: number; price_type?: string }) =>
+  track(ANALYTICS_EVENTS.sale_completed, props)
+
+export const trackSaleReverted = (props: { animal_count: number }) =>
+  track(ANALYTICS_EVENTS.sale_reverted, props)
+
 export const trackReproductionEventCreated = (props: { type: string; species?: string }) =>
   track(ANALYTICS_EVENTS.reproduction_event_created, props)
 
@@ -85,22 +107,24 @@ export const trackReproductionEventUpdated = (props: { type?: string }) =>
 export const trackGestationTracked = (props?: { species?: string }) =>
   track(ANALYTICS_EVENTS.gestation_tracked, props)
 
-export const trackReportGenerated = (props: { report_type: string; format: string }) =>
-  track(ANALYTICS_EVENTS.report_generated, props)
+export const trackBirthReverted = () => track(ANALYTICS_EVENTS.birth_reverted)
 
 export const trackExportRequested = (props: { data_type: string }) =>
   track(ANALYTICS_EVENTS.export_requested, props)
 
-export const trackAiQuerySent = (props: { query_type: string; model?: string }) =>
-  track(ANALYTICS_EVENTS.ai_query_sent, props)
-
-export const trackAiResponseReceived = (props: { latency_ms: number; tokens_used?: number }) =>
-  track(ANALYTICS_EVENTS.ai_response_received, props)
+export const trackBackupRestored = (props: {
+  mode: 'merge' | 'replace'
+  success: boolean
+  error_count: number
+}) => track(ANALYTICS_EVENTS.backup_restored, props)
 
 export const trackOnboardingStepCompleted = (props: { step_name: string; step_number: number }) =>
   track(ANALYTICS_EVENTS.onboarding_step_completed, props)
 
-export const trackOnboardingCompleted = () => track(ANALYTICS_EVENTS.onboarding_completed)
+export const trackOnboardingCompleted = (props: { action: 'show_guide' | 'start' | 'dismiss' }) =>
+  track(ANALYTICS_EVENTS.onboarding_completed, props)
 
-export const trackPageViewed = (page_name: string) =>
-  track(ANALYTICS_EVENTS.page_viewed, { page_name })
+export const trackOnboardingCardDismissed = () => track(ANALYTICS_EVENTS.onboarding_card_dismissed)
+
+export const trackGuideOpened = (props: { source: string }) =>
+  track(ANALYTICS_EVENTS.guide_opened, props)

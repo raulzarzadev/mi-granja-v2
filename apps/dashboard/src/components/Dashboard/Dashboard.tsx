@@ -11,6 +11,7 @@ import Tabs from '@/components/Tabs'
 import { RootState } from '@/features/store'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useReminders } from '@/hooks/useReminders'
+import { trackOnboardingCompleted, trackOnboardingStepCompleted } from '@/lib/analytics/track'
 import FarmSwitcherBar from '../FarmSwitcherBar'
 import ModalOnboarding from '../onboarding/ModalOnboarding'
 import ModalWelcomeFarm from '../onboarding/ModalWelcomeFarm'
@@ -76,7 +77,12 @@ const Dashboard: React.FC = () => {
 
         {/* Si no hay granjas, priorizar creacion/seleccion */}
         {farms.length === 0 ? (
-          <FarmSection onFarmCreated={(farm) => setWelcomeFarmName(farm.name)} />
+          <FarmSection
+            onFarmCreated={(farm) => {
+              trackOnboardingStepCompleted({ step_name: 'first_farm_created', step_number: 1 })
+              setWelcomeFarmName(farm.name)
+            }}
+          />
         ) : (
           <Tabs
             tabs={tabs}
@@ -96,11 +102,19 @@ const Dashboard: React.FC = () => {
           />
         )}
 
-        <ModalOnboarding isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
+        <ModalOnboarding
+          isOpen={showOnboarding}
+          onClose={() => setShowOnboarding(false)}
+          source="dashboard"
+        />
         <ModalWelcomeFarm
           farmName={welcomeFarmName}
-          onClose={() => setWelcomeFarmName(null)}
+          onClose={() => {
+            trackOnboardingCompleted({ action: 'start' })
+            setWelcomeFarmName(null)
+          }}
           onShowGuide={() => {
+            trackOnboardingCompleted({ action: 'show_guide' })
             setWelcomeFarmName(null)
             setShowOnboarding(true)
           }}

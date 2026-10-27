@@ -1,8 +1,10 @@
+import { ANALYTICS_EVENTS } from '@mi-granja/shared'
 import { Timestamp } from 'firebase-admin/firestore'
 import { NextRequest, NextResponse } from 'next/server'
 import { executeAiAction } from '@/lib/ai/actions'
 import { forbidden, requireAiAuth, resolveFarmPermissions } from '@/lib/ai/server'
 import { aiActionSchema } from '@/lib/ai/types'
+import { captureServerEvent } from '@/lib/analytics/posthog-server'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 
 export async function POST(request: NextRequest) {
@@ -64,6 +66,10 @@ export async function POST(request: NextRequest) {
       },
       { merge: true },
     )
+    await captureServerEvent(auth.uid, ANALYTICS_EVENTS.ai_action_confirmed, {
+      action_type: action.type,
+      farm_id: farmId,
+    })
 
     return NextResponse.json({ ok: true, result })
   } catch (error) {

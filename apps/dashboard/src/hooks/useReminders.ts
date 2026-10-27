@@ -13,7 +13,7 @@ import {
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
-import { trackReminderCreated } from '@/lib/analytics/track'
+import { trackReminderCompleted, trackReminderCreated } from '@/lib/analytics/track'
 import { toDate, toLocalDateStart } from '@/lib/dates'
 import { db } from '@/lib/firebase'
 import { Reminder } from '@/types'
@@ -238,6 +238,7 @@ export const useReminders = () => {
     }
 
     await updateReminder(id, { completed, completionByAnimal })
+    if (completed && !reminder.completed) trackReminderCompleted({ scope: 'reminder' })
   }
 
   // Marcar completado para un animal específico
@@ -260,6 +261,7 @@ export const useReminders = () => {
       completionByAnimal,
       completed: allCompleted,
     })
+    if (allCompleted && !reminder.completed) trackReminderCompleted({ scope: 'animal' })
   }
 
   // Eliminar recordatorio

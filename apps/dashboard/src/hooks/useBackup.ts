@@ -17,7 +17,7 @@ import {
 import { useCallback, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
-import { trackExportRequested } from '@/lib/analytics/track'
+import { trackBackupRestored, trackExportRequested } from '@/lib/analytics/track'
 import {
   BACKUP_TYPE_DESCRIPTIONS,
   BackupFile,
@@ -485,9 +485,11 @@ export function useBackup() {
         counts.sales = saleWrites.length
         counts.farmInvitations = invitationWrites.length
         setProgress({ phase: 'restore', percent: 100, message: 'Restauración completada' })
+        trackBackupRestored({ mode, success: true, error_count: 0 })
         return { success: true, counts, errors: [] }
       } catch (error) {
         console.error('Error restaurando respaldo:', error)
+        trackBackupRestored({ mode, success: false, error_count: 1 })
         return {
           success: false,
           counts,

@@ -21,6 +21,11 @@ describe('analytics configuration', () => {
       checkout_started: 'checkout_started',
       subscription_activated: 'subscription_activated',
       subscription_ended: 'subscription_ended',
+      signup_completed: 'signup_completed',
+      onboarding_completed: 'onboarding_completed',
+      ai_query_sent: 'ai_query_sent',
+      animal_stage_changed: 'animal_stage_changed',
+      backup_restored: 'backup_restored',
     })
   })
 })

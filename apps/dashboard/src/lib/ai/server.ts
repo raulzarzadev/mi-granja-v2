@@ -36,6 +36,10 @@ function usageNumber(usage: unknown, keys: string[]): number {
   return 0
 }
 
+export function totalAiTokens(usage: unknown): number {
+  return usageNumber(usage, ['total_tokens', 'totalTokens'])
+}
+
 export async function consumeDailyAiUse(
   userId: string,
   providerUsage?: unknown,

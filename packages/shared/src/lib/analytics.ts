@@ -36,7 +36,10 @@ export const ANALYTICS_EVENTS = {
   new_record_failed: 'new_record_failed',
   new_record_undone: 'new_record_undone',
   reminder_created: 'reminder_created',
+  reminder_completed: 'reminder_completed',
   invitation_sent: 'invitation_sent',
+  invitation_accepted: 'invitation_accepted',
+  push_notifications_enabled: 'push_notifications_enabled',
 
   // Billing
   checkout_started: 'checkout_started',
@@ -50,23 +53,34 @@ export const ANALYTICS_EVENTS = {
   animal_updated: 'animal_updated',
   animal_deleted: 'animal_deleted',
   animal_viewed: 'animal_viewed',
+  animal_stage_changed: 'animal_stage_changed',
+  animals_bulk_updated: 'animals_bulk_updated',
+  sale_completed: 'sale_completed',
+  sale_reverted: 'sale_reverted',
 
   // Reproduction
   reproduction_event_created: 'reproduction_event_created',
   reproduction_event_updated: 'reproduction_event_updated',
   gestation_tracked: 'gestation_tracked',
+  birth_reverted: 'birth_reverted',
 
   // Reports / data
   report_generated: 'report_generated',
   export_requested: 'export_requested',
+  backup_restored: 'backup_restored',
 
   // AI
   ai_query_sent: 'ai_query_sent',
   ai_response_received: 'ai_response_received',
+  ai_query_failed: 'ai_query_failed',
+  ai_limit_reached: 'ai_limit_reached',
+  ai_action_confirmed: 'ai_action_confirmed',
 
   // Onboarding
   onboarding_step_completed: 'onboarding_step_completed',
   onboarding_completed: 'onboarding_completed',
+  onboarding_card_dismissed: 'onboarding_card_dismissed',
+  guide_opened: 'guide_opened',
 } as const
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EVENTS]
 

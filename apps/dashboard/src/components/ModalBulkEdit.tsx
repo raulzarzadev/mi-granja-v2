@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import Button from '@/components/buttons/Button'
 import { Modal } from '@/components/Modal'
+import { trackAnimalsBulkUpdated } from '@/lib/analytics/track'
 import {
   Animal,
   AnimalGender,
@@ -84,6 +85,7 @@ export default function ModalBulkEdit({
         await onSave(slice, updates)
         setProgress({ current: Math.min(i + CHUNK, ids.length), total: ids.length })
       }
+      trackAnimalsBulkUpdated({ fields_changed: Object.keys(updates), animal_count: ids.length })
       onClose()
       setFields({
         type: { enabled: false, value: '' },

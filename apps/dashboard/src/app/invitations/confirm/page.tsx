@@ -16,6 +16,7 @@ import BrandLogo from '@/components/BrandLogo'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
+import { trackInvitationAccepted } from '@/lib/analytics/track'
 import { toDate } from '@/lib/dates'
 import { db } from '@/lib/firebase'
 import type { FarmInvitation } from '@/types/farm'
@@ -155,6 +156,7 @@ function InvitationConfirmInner() {
         console.warn('No se pudo actualizar arrays de farm tras aceptar:', e)
       }
 
+      trackInvitationAccepted()
       setStatus('done')
       setTimeout(() => {
         try {

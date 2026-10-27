@@ -1,4 +1,6 @@
+import { ANALYTICS_EVENTS } from '@mi-granja/shared'
 import { NextRequest, NextResponse } from 'next/server'
+import { captureServerEvent } from '@/lib/analytics/posthog-server'
 import { getAdminAuth, getAdminFirestore } from '@/lib/firebase-admin'
 import { assignUserRoles } from '@/lib/userUtils'
 import { User } from '@/types'
@@ -50,6 +52,7 @@ export async function POST(req: NextRequest) {
       }
 
       await userRef.set(userData)
+      await captureServerEvent(uid, ANALYTICS_EVENTS.signup_completed, { method: 'google' })
 
       return NextResponse.json({
         ok: true,

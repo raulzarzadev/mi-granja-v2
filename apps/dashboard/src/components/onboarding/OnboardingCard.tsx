@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
+import { trackOnboardingCardDismissed } from '@/lib/analytics/track'
 import OnboardingSteps from './OnboardingSteps'
 
 const STORAGE_KEY = 'onboarding:dismissed:v1'
@@ -18,6 +19,7 @@ const OnboardingCard: React.FC = () => {
 
   const handleDismiss = () => {
     localStorage.setItem(STORAGE_KEY, '1')
+    trackOnboardingCardDismissed()
     setDismissed(true)
   }
 

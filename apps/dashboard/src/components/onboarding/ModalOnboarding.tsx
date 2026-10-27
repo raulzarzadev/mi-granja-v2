@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
+import { trackGuideOpened } from '@/lib/analytics/track'
 import { Modal } from '../Modal'
 import OnboardingSteps from './OnboardingSteps'
 import StageGuidePage from './StageGuidePage'
@@ -9,6 +10,8 @@ import StageGuidePage from './StageGuidePage'
 interface ModalOnboardingProps {
   isOpen: boolean
   onClose: () => void
+  /** Dónde se abrió la guía (para analítica) */
+  source: string
 }
 
 type OnboardingPage = 'pasos' | 'etapas'
@@ -28,8 +31,12 @@ const TABS: { key: OnboardingPage; label: string; description: string; icon: str
   },
 ]
 
-const ModalOnboarding: React.FC<ModalOnboardingProps> = ({ isOpen, onClose }) => {
+const ModalOnboarding: React.FC<ModalOnboardingProps> = ({ isOpen, onClose, source }) => {
   const [page, setPage] = useState<OnboardingPage>('pasos')
+
+  useEffect(() => {
+    if (isOpen) trackGuideOpened({ source })
+  }, [isOpen])
 
   return (
     <Modal

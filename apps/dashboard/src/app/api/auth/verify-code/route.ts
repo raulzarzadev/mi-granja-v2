@@ -1,5 +1,7 @@
+import { ANALYTICS_EVENTS } from '@mi-granja/shared'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { captureServerEvent } from '@/lib/analytics/posthog-server'
 import { getAdminAuth, getAdminFirestore } from '@/lib/firebase-admin'
 import { assignUserRoles } from '@/lib/userUtils'
 import { User } from '@/types'
@@ -81,6 +83,7 @@ export async function POST(req: NextRequest) {
         roles: userWithRoles.roles,
         createdAt: new Date(),
       })
+      await captureServerEvent(uid, ANALYTICS_EVENTS.signup_completed, { method: 'email' })
     }
 
     // Create custom token for client-side sign-in

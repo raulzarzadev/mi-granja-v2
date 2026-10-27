@@ -1,10 +1,11 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { Modal } from '@/components/Modal'
 import { RootState } from '@/features/store'
 import { useModal } from '@/hooks/useModal'
+import { trackAnimalViewed } from '@/lib/analytics/track'
 import { Animal } from '@/types/animals'
 import AnimalDetailView from './AnimalDetailView'
 
@@ -32,6 +33,11 @@ const ModalAnimalDetails: React.FC<ModalAnimalDetailsProps> = ({
   const freshAnimal =
     useSelector((state: RootState) => state.animals.animals.find((a) => a.id === animal.id)) ??
     animal
+
+  useEffect(() => {
+    if (isOpen) trackAnimalViewed({ species: animal.type })
+  }, [isOpen, animal.id])
+
   return (
     <>
       {!isControlled &&

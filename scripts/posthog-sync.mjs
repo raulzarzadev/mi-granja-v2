@@ -126,6 +126,24 @@ function funnelQuery({ series, from, windowDays }) {
   }
 }
 
+function retentionQuery({ targetEvent, returningEvent, period = 'Week', intervals = 8 }) {
+  return {
+    kind: 'InsightVizNode',
+    source: {
+      kind: 'RetentionQuery',
+      retentionFilter: {
+        period,
+        totalIntervals: intervals,
+        retentionType: 'retention_first_time',
+        targetEntity: { id: targetEvent, name: targetEvent, type: 'events' },
+        returningEntity: { id: returningEvent, name: returningEvent, type: 'events' },
+      },
+      properties: [],
+      filterTestAccounts: true,
+    },
+  }
+}
+
 const pageViewsQuery = trendsQuery({
   series: [event('$pageview', 'Páginas vistas', 'total', [eventProperty('$host', PANEL_HOST)])],
   interval: 'day',
@@ -146,6 +164,117 @@ const desiredInsights = [
       ],
       from: '-90d',
       windowDays: 14,
+    }),
+  },
+  {
+    name: 'Adquisición: landing → primer registro',
+    description: 'Embudo completo desde el CTA de la landing hasta el primer registro en el panel.',
+    query: funnelQuery({
+      series: [
+        event('signup_started', 'Clic en registro (landing)'),
+        event('signup_completed', 'Creó cuenta'),
+        event('farm_created', 'Creó una granja'),
+        event('animal_created', 'Registró un animal'),
+        event('record_created', 'Creó un registro'),
+      ],
+      from: '-90d',
+      windowDays: 14,
+    }),
+  },
+  {
+    name: 'Altas de cuenta – panel',
+    description: 'Cuentas nuevas por semana, separadas por método (email o Google).',
+    query: trendsQuery({
+      series: [event('signup_completed', 'Cuentas nuevas')],
+      interval: 'week',
+      from: '-180d',
+      display: 'ActionsBar',
+      breakdown: 'method',
+    }),
+  },
+  {
+    name: 'Retención semanal – panel',
+    description: 'Usuarios nuevos que vuelven a usar el panel en las semanas siguientes al alta.',
+    query: retentionQuery({ targetEvent: 'signup_completed', returningEvent: '$pageview' }),
+  },
+  {
+    name: 'Onboarding – panel',
+    description: 'Primera granja creada, decisión en la bienvenida y uso de la guía.',
+    query: trendsQuery({
+      series: [
+        event('onboarding_step_completed', 'Primera granja'),
+        event('onboarding_completed', 'Cerró bienvenida'),
+        event('guide_opened', 'Abrió la guía'),
+        event('onboarding_card_dismissed', 'Descartó tarjeta'),
+      ],
+      interval: 'week',
+      from: '-90d',
+    }),
+  },
+  {
+    name: 'Asistente IA – panel',
+    description: 'Consultas, respuestas, fallos, límite diario y acciones confirmadas de la IA.',
+    query: trendsQuery({
+      series: [
+        event('ai_query_sent', 'Consultas'),
+        event('ai_response_received', 'Respuestas'),
+        event('ai_query_failed', 'Fallos'),
+        event('ai_limit_reached', 'Límite diario'),
+        event('ai_action_confirmed', 'Acciones confirmadas'),
+      ],
+      interval: 'week',
+      from: '-90d',
+    }),
+  },
+  {
+    name: 'Latencia IA – panel',
+    description: 'Latencia promedio (ms) de las respuestas de IA por tipo de consulta.',
+    query: trendsQuery({
+      series: [event('ai_response_received', 'Latencia (ms)', 'avg')],
+      interval: 'week',
+      from: '-90d',
+      breakdown: 'query_type',
+    }),
+  },
+  {
+    name: 'Operaciones de inventario – panel',
+    description: 'Cambios de etapa, ventas, ediciones masivas, partos revertidos y restauraciones.',
+    query: trendsQuery({
+      series: [
+        event('animal_stage_changed', 'Cambios de etapa'),
+        event('sale_completed', 'Ventas completadas'),
+        event('sale_reverted', 'Ventas revertidas'),
+        event('animals_bulk_updated', 'Edición masiva'),
+        event('birth_reverted', 'Partos revertidos'),
+        event('backup_restored', 'Respaldos restaurados'),
+      ],
+      interval: 'week',
+      from: '-90d',
+    }),
+  },
+  {
+    name: 'Cambios de etapa por destino – panel',
+    description: 'Cambios de etapa agrupados por destino (muerto, perdido, descarte, etc.).',
+    query: trendsQuery({
+      series: [event('animal_stage_changed', 'Animales')],
+      interval: 'month',
+      from: '-180d',
+      display: 'ActionsBar',
+      breakdown: 'target',
+    }),
+  },
+  {
+    name: 'Colaboración y notificaciones – panel',
+    description: 'Invitaciones enviadas y aceptadas, push activado y recordatorios completados.',
+    query: trendsQuery({
+      series: [
+        event('invitation_sent', 'Invitaciones enviadas'),
+        event('invitation_accepted', 'Invitaciones aceptadas'),
+        event('push_notifications_enabled', 'Push activado'),
+        event('reminder_completed', 'Recordatorios completados'),
+      ],
+      interval: 'week',
+      from: '-90d',
     }),
   },
   {

@@ -70,7 +70,11 @@ export default function TabStageEmpadre({
 
   return (
     <div>
-      <ModalOnboarding isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
+      <ModalOnboarding
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        source="empadre"
+      />
       {duplicateEmpadreFemales.length > 0 && showDuplicateWarning && (
         <div
           role="alert"

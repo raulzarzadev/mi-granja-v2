@@ -310,7 +310,11 @@ const Navbar: React.FC = () => {
           <UserImpersonationSelector onClose={() => setShowUserSelector(false)} />
         </Modal>
 
-        <ModalOnboarding isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
+        <ModalOnboarding
+          isOpen={showOnboarding}
+          onClose={() => setShowOnboarding(false)}
+          source="navbar"
+        />
       </div>
     </nav>
   )

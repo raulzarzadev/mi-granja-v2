@@ -23,6 +23,7 @@ Mi Granja tracks animals, breeding, reminders, sales, and farm collaborators. Ap
 - [Modals](docs/features/modals.md): Modal system + useModal hook
 - [Emails](docs/features/emails.md): Brevo integration
 - [Backups](docs/features/backups.md): Export/import + sync rule
+- [Analytics](docs/features/analytics.md): PostHog event catalog + client/server tracking
 - [Dates](docs/features/dates.md): DateTimeInput, timezone safety
 
 ## Decisions (ADRs)

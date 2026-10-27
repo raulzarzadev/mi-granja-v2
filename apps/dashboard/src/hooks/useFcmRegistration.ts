@@ -4,6 +4,7 @@ import { arrayUnion, doc, getDoc, serverTimestamp, setDoc } from 'firebase/fires
 import { useCallback, useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import type { RootState } from '@/features/store'
+import { trackPushNotificationsEnabled } from '@/lib/analytics/track'
 import { requestFcmToken, subscribeForegroundMessages } from '@/lib/fcmClient'
 import { db } from '@/lib/firebase'
 
@@ -69,6 +70,7 @@ export function useFcmRegistration() {
       }
       setToken(fcmToken)
       setStatus('granted')
+      trackPushNotificationsEnabled()
       return true
     } catch (err) {
       console.error('useFcmRegistration enable error:', err)

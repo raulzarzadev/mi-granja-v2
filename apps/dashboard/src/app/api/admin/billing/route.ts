@@ -1,4 +1,6 @@
+import { ANALYTICS_EVENTS } from '@mi-granja/shared'
 import { NextRequest, NextResponse } from 'next/server'
+import { captureServerEvent } from '@/lib/analytics/posthog-server'
 import { isAuthError, isAuthenticatedUserAdmin, verifyBillingAuth } from '@/lib/billing-auth'
 import { getBillingTiers } from '@/lib/billing-config'
 import { buildBillingUsage } from '@/lib/billing-usage'
@@ -78,6 +80,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
     }
 
+    const previousTierId = userDoc.data()?.billingTierId ?? 'free'
     const now = new Date().toISOString()
     const planType = planTypeForTier(tierId)
     const status = tierId === 'free' ? 'none' : 'active'
@@ -113,6 +116,15 @@ export async function POST(request: NextRequest) {
       subscriptionStatus: status,
       billingTierId: tierId,
     })
+
+    if (previousTierId !== tierId) {
+      await captureServerEvent(userId, ANALYTICS_EVENTS.subscription_plan_changed, {
+        previous_tier_id: previousTierId,
+        tier_id: tierId,
+        status,
+        source: 'admin',
+      })
+    }
 
     return NextResponse.json({ success: true, tier, status })
   } catch (error) {

@@ -17,6 +17,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { serializeObj } from '@/features/libs/serializeObj'
 import { setSales } from '@/features/sales/salesSlice'
 import { RootState } from '@/features/store'
+import { trackSaleCompleted, trackSaleReverted } from '@/lib/analytics/track'
 import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { toDate, toLocalDateStart } from '@/lib/dates'
 import { db } from '@/lib/firebase'
@@ -227,6 +228,7 @@ export const useSalesCRUD = () => {
       )
 
       await updateSale(id, { status: 'completed' as SaleStatus })
+      trackSaleCompleted({ animal_count: saleAnimals.length, price_type: sale.priceType })
     } catch (error) {
       console.error('Error completing sale:', error)
       throw error
@@ -250,6 +252,7 @@ export const useSalesCRUD = () => {
 
       // Volver la venta a pendiente
       await updateSale(id, { status: 'pending' as SaleStatus })
+      trackSaleReverted({ animal_count: sale.animals.length })
     } catch (error) {
       console.error('Error reverting sale:', error)
       throw error

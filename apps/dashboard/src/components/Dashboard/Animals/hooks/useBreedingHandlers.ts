@@ -3,6 +3,7 @@
 import { useCallback } from 'react'
 import type { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useRecordMovements } from '@/hooks/useRecordMovements'
+import { trackBirthReverted } from '@/lib/analytics/track'
 import { movementEqual } from '@/lib/record-movements'
 import type { Animal } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
@@ -94,6 +95,7 @@ export const useBreedingHandlers = ({
           'Este parto anterior no conserva los datos necesarios para deshacerlo de forma segura.',
         )
       await movements.undo(birth)
+      trackBirthReverted()
     },
     [animals, movements],
   )
