@@ -15,7 +15,6 @@ import { trackOnboardingCompleted, trackOnboardingStepCompleted } from '@/lib/an
 import FarmSwitcherBar from '../FarmSwitcherBar'
 import ModalOnboarding from '../onboarding/ModalOnboarding'
 import ModalWelcomeFarm from '../onboarding/ModalWelcomeFarm'
-import OnboardingCard from '../onboarding/OnboardingCard'
 import RecordsTab from '../RecordsTab'
 import AnimalsSection from './Animals/AnimalsSection'
 import { useAnimalFilters } from './Animals/animals-filters'
@@ -66,8 +65,6 @@ const Dashboard: React.FC = () => {
       <Navbar />
 
       <main className="mx-auto w-full min-w-0 max-w-7xl px-2 py-2 min-[360px]:px-4 sm:px-6 lg:px-8">
-        <OnboardingCard />
-
         {/* Titulo de la granja + filtro global por tipo */}
         {currentFarm && (
           <div className="mb-3">

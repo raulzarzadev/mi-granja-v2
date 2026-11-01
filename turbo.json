@@ -2,7 +2,9 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "env": [
         "RESEND_API_KEY",
         "OPENROUTER_API_KEY",
@@ -14,7 +16,11 @@
         "STRIPE_WEBHOOK_SECRET",
         "STRIPE_PRICE_PRO"
       ],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**"
+      ]
     },
     "dev": {
       "cache": false,
@@ -30,15 +36,25 @@
         "STRIPE_PRICE_INICIAL",
         "STRIPE_PRICE_BASICO",
         "STRIPE_PRICE_PRO",
-        "STRIPE_PRICE_RANCHO"
+        "STRIPE_PRICE_RANCHO",
+        "NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_PORT",
+        "NEXT_PUBLIC_FIREBASE_FIRESTORE_EMULATOR_PORT",
+        "NEXT_PUBLIC_FIREBASE_STORAGE_EMULATOR_PORT",
+        "FIREBASE_AUTH_EMULATOR_HOST",
+        "FIRESTORE_EMULATOR_HOST",
+        "FIREBASE_STORAGE_EMULATOR_HOST"
       ]
     },
     "lint": {},
     "type-check": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     }
   }
 }

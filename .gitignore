@@ -69,3 +69,6 @@ firebase-export-*
 *-debug.log
 
 .claude/settings.local.json
+
+# Per-session emulator configuration
+firebase/.emulators-runtime.*

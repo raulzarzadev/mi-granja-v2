@@ -43,9 +43,9 @@ if (useEmulator) {
   console.log('🔧 Conectando a Firebase Emulators...')
   try {
     const emulatorHost = '127.0.0.1'
-    connectAuthEmulator(auth, `http://${emulatorHost}:9299`, { disableWarnings: false })
-    connectFirestoreEmulator(db, emulatorHost, 8180)
-    connectStorageEmulator(storage, emulatorHost, 9399)
+    connectAuthEmulator(auth, `http://${emulatorHost}:${process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_PORT || 9299}`, { disableWarnings: false })
+    connectFirestoreEmulator(db, emulatorHost, Number(process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_EMULATOR_PORT || 8180))
+    connectStorageEmulator(storage, emulatorHost, Number(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_EMULATOR_PORT || 9399))
     console.log('✅ Firebase Emulators conectados')
   } catch (_e) {
     // Emuladores ya conectados (HMR)

@@ -8,6 +8,16 @@ STRIPE_PID=""
 STRIPE_TAIL_PID=""
 STRIPE_TMP_DIR=""
 CLEANED_UP=0
+EMU_CONFIG=""
+
+# Stop descendants before their parent; never kill unrelated port listeners.
+kill_tree() {
+  local pid="$1" child
+  while read -r child; do
+    [[ -n "$child" ]] && kill_tree "$child"
+  done < <(pgrep -P "$pid" 2>/dev/null || true)
+  kill "$pid" 2>/dev/null || true
+}
 
 STRIPE_ACCOUNT_ID="acct_1T78x8E6AQhnToix"
 STRIPE_PRICE_INICIAL="price_1U35G1E6AQhnToixVGAiFTmY"
@@ -27,21 +37,20 @@ cleanup() {
   echo "Deteniendo app, Stripe y emuladores..."
 
   if [[ -n "$DEV_PID" ]]; then
-    kill "$DEV_PID" 2>/dev/null || true
+    kill_tree "$DEV_PID" 2>/dev/null || true
   fi
   if [[ -n "$STRIPE_TAIL_PID" ]]; then
     kill "$STRIPE_TAIL_PID" 2>/dev/null || true
   fi
   if [[ -n "$STRIPE_PID" ]]; then
-    kill "$STRIPE_PID" 2>/dev/null || true
+    kill_tree "$STRIPE_PID" 2>/dev/null || true
   fi
   if [[ -n "$EMU_PID" ]]; then
-    kill "$EMU_PID" 2>/dev/null || true
+    kill_tree "$EMU_PID" 2>/dev/null || true
   fi
 
   wait "$DEV_PID" "$STRIPE_TAIL_PID" "$STRIPE_PID" "$EMU_PID" 2>/dev/null || true
-  pnpm dev:kill >/dev/null 2>&1 || true
-  pnpm emu:kill >/dev/null 2>&1 || true
+  [[ -n "$EMU_CONFIG" ]] && rm -f "$EMU_CONFIG"
 
   if [[ -n "$STRIPE_TMP_DIR" && -d "$STRIPE_TMP_DIR" ]]; then
     rm -f "$STRIPE_TMP_DIR/listen.log"
@@ -93,9 +102,34 @@ if [[ -z "$STRIPE_TEST_KEY" ]]; then
   exit 1
 fi
 
-echo "Iniciando Firebase Emulators..."
-pnpm emu &
+EMU_CONFIG="$(mktemp "$ROOT_DIR/firebase/.emulators-runtime.XXXXXX")"
+EMU_ENV="$(node scripts/emulator-config.mjs "$EMU_CONFIG")" || exit 1
+eval "$EMU_ENV"
+echo "Iniciando Firebase Emulators (UI: http://127.0.0.1:$EMULATOR_UI_PORT)..."
+(cd firebase && exec pnpm exec firebase emulators:start --config "$EMU_CONFIG" --import=data --export-on-exit=data) &
 EMU_PID=$!
+
+# The hub only reports running emulators once their startup has completed.
+EMU_READY=0
+for _ in $(seq 1 120); do
+  if ! kill -0 "$EMU_PID" 2>/dev/null; then
+    echo "Error: Firebase terminó antes de iniciar."
+    exit 1
+  fi
+  if curl --silent --fail --max-time 2 "http://127.0.0.1:$EMULATOR_HUB_PORT/emulators" | node -e '
+    let data = ""; process.stdin.on("data", chunk => data += chunk);
+    process.stdin.on("end", () => { try {
+      const e = JSON.parse(data); process.exit(e.auth && e.firestore && e.storage ? 0 : 1)
+    } catch { process.exit(1) } })'; then
+    EMU_READY=1
+    break
+  fi
+  sleep 1
+done
+if [[ "$EMU_READY" != 1 ]]; then
+  echo "Error: Firebase no estuvo listo en 120 segundos."
+  exit 1
+fi
 
 echo "Iniciando listener de Stripe sandbox..."
 STRIPE_TMP_DIR="$(mktemp -d)"
@@ -152,3 +186,6 @@ while kill -0 "$EMU_PID" 2>/dev/null && \
   kill -0 "$DEV_PID" 2>/dev/null; do
   sleep 1
 done
+
+echo "Error: uno de los servicios del entorno local se detuvo."
+exit 1
