@@ -49,6 +49,7 @@ const ModalAnimalForm: React.FC<ModalAnimalFormProps> = ({
       closeModal() // Cerrar modal después de crear
     } catch (error) {
       console.error('Error creating animal:', error)
+      throw error
     }
   }
 
@@ -99,6 +100,11 @@ const ModalAnimalForm: React.FC<ModalAnimalFormProps> = ({
             <SimpleAnimalForm
               onSubmit={handleCreateAnimal}
               onCancel={closeModal}
+              onCreateMother={async (data) => {
+                const id = await createAnimal(data)
+                if (!id) throw new Error('No se pudo crear la madre')
+                return { ...data, id } as Animal
+              }}
               isLoading={isLoading}
               initialData={initialData}
               existingAnimals={animals}

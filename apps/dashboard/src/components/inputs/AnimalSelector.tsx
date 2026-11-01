@@ -26,6 +26,8 @@ export interface AnimalSelectorProps {
   fixedIds?: string[]
   /** Filtro adicional sobre los animales disponibles */
   filterFn?: (animal: Animal) => boolean
+  onCreate?: (query: string) => void
+  createLabel?: string
 }
 
 const AnimalSelector: React.FC<AnimalSelectorProps> = ({
@@ -38,6 +40,8 @@ const AnimalSelector: React.FC<AnimalSelectorProps> = ({
   label,
   fixedIds = [],
   filterFn,
+  onCreate,
+  createLabel = 'Crear animal',
 }) => {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
@@ -86,6 +90,9 @@ const AnimalSelector: React.FC<AnimalSelectorProps> = ({
       e.preventDefault()
       if (filtered.length > 0) {
         handleSelect(filtered[0].id)
+      } else if (onCreate) {
+        setIsOpen(false)
+        onCreate(query.trim())
       }
     }
   }
@@ -209,6 +216,28 @@ const AnimalSelector: React.FC<AnimalSelectorProps> = ({
                     </div>
                   </button>
                 ))
+              ) : onCreate ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOpen(false)
+                    onCreate(query.trim())
+                  }}
+                  className="m-2 flex min-h-20 w-[calc(100%-1rem)] items-center gap-3 rounded-xl border border-green-200 bg-white p-3 text-left hover:bg-green-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-dashed border-green-600 text-2xl text-green-700"
+                  >
+                    +
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold text-slate-900">{createLabel}</span>
+                    <span className="block break-words text-sm text-slate-500">
+                      {query.trim() || 'No hay madres disponibles'}
+                    </span>
+                  </span>
+                </button>
               ) : (
                 <div className="p-4 text-center text-sm text-gray-500">
                   {query.trim() ? 'No se encontraron animales' : 'No hay animales disponibles'}
