@@ -13,6 +13,7 @@ interface DatePickerModalProps extends Omit<DatePickerButtonsProps, 'label'> {
   disabled?: boolean
   /** Extra className for the trigger button */
   className?: string
+  triggerVariant?: 'default' | 'chip'
   /** Accessible name when the visible label is rendered by a parent component */
   ariaLabel?: string
   /** Marks the date as required for assistive technology */
@@ -37,6 +38,7 @@ export function DatePickerModal({
   placeholder = 'Seleccionar fecha',
   disabled,
   className,
+  triggerVariant = 'default',
   ariaLabel,
   required = false,
   invalid = false,
@@ -57,11 +59,15 @@ export function DatePickerModal({
           aria-label={ariaLabel ?? label ?? placeholder}
           aria-required={required}
           aria-invalid={invalid}
-          className={`group inline-flex min-h-11 items-center gap-2 rounded-md border bg-white px-3 py-2 text-left text-sm shadow-sm transition-[border-color,box-shadow,background-color] enabled:cursor-pointer enabled:hover:border-green-600 enabled:hover:bg-green-50/40 focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400 ${
-            invalid
-              ? 'border-red-500 focus-visible:ring-red-500'
-              : 'border-gray-400 focus-visible:border-green-600 focus-visible:ring-green-600'
-          }`}
+          className={
+            triggerVariant === 'chip'
+              ? `inline-flex min-h-8 items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-1 ${value ? 'border-slate-300 bg-white text-slate-800 ring-2 ring-slate-400 ring-offset-1' : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'}`
+              : `group inline-flex min-h-11 items-center gap-2 rounded-md border bg-white px-3 py-2 text-left text-sm shadow-sm transition-[border-color,box-shadow,background-color] enabled:cursor-pointer enabled:hover:border-green-600 enabled:hover:bg-green-50/40 focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400 ${
+                  invalid
+                    ? 'border-red-500 focus-visible:ring-red-500'
+                    : 'border-gray-400 focus-visible:border-green-600 focus-visible:ring-green-600'
+                }`
+          }
         >
           <svg
             aria-hidden="true"
@@ -86,7 +92,11 @@ export function DatePickerModal({
           <span
             className={`truncate whitespace-nowrap ${display ? 'text-gray-900' : 'text-gray-600'}`}
           >
-            {display || placeholder}
+            {display
+              ? triggerVariant === 'chip'
+                ? `${ariaLabel ?? placeholder}: ${display}`
+                : display
+              : placeholder}
           </span>
         </button>
       </div>

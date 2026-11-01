@@ -49,6 +49,7 @@ const schema = z
       required_error: 'Selecciona una etapa',
     }),
     gender: z.enum(animals_genders),
+    isBreedingMale: z.boolean(),
     weight: z
       .string()
       .optional()
@@ -114,7 +115,7 @@ const reproOptions: {
   value: ReproductiveState
   label: string
   icon: string
-  field: keyof FormSchema
+  field: 'pregnantAt' | 'birthedAt' | 'weanedMotherAt'
 }[] = [
   { value: 'embarazada', label: 'Gestante', icon: '🤰', field: 'pregnantAt' },
   { value: 'parida', label: 'Parida', icon: '🍼', field: 'birthedAt' },
@@ -228,6 +229,7 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       type: initialData?.type ?? animals_types[0],
       stage: initialData?.stage ?? animals_stages[0],
       gender: initialData?.gender ?? animals_genders[0],
+      isBreedingMale: initialData?.isBreedingMale ?? false,
       weight:
         typeof initialData?.weight === 'number'
           ? (initialData.weight / 1000).toString()
@@ -325,6 +327,10 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
       type: values.type,
       stage: values.stage,
       gender: values.gender,
+      isBreedingMale:
+        values.gender === 'macho' &&
+        ['reproductor', 'juvenil'].includes(values.stage) &&
+        values.isBreedingMale,
       ...(isPostWean ? { isWeaned: true } : {}),
       ...(explicitWeanedAt && !isPostWean ? { weanedAt: explicitWeanedAt } : {}),
       breed: values.breed?.trim() ?? '',
@@ -515,6 +521,17 @@ const AnimalForm: React.FC<AnimalFormProps> = ({
           icon: animal_stage_icons[s],
         }))}
       />
+      {selectedGender === 'macho' && ['reproductor', 'juvenil'].includes(form.watch('stage')) && (
+        <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-900">
+          <input
+            type="checkbox"
+            {...form.register('isBreedingMale')}
+            disabled={isLoading}
+            className="h-5 w-5 accent-green-700"
+          />
+          Marcar como semental
+        </label>
+      )}
 
       {/* Fila 6: Estado reproductivo (solo hembras) */}
       {selectedGender === 'hembra' && (

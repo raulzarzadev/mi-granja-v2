@@ -92,6 +92,8 @@ export interface Animal {
   age?: number | null
   birthDate?: Date
   gender: AnimalGender
+  /** Macho designado como semental por el propietario. */
+  isBreedingMale?: boolean
   motherId?: string
   fatherId?: string
   batch?: string // Lote al que pertenece el animal
@@ -338,10 +340,18 @@ export const record_types = [
 ] as const
 export type RecordType = (typeof record_types)[number]
 
-export const animal_record_event_types = ['monta', 'destete', 'parto', 'muerte', 'venta'] as const
+export const animal_record_event_types = [
+  'alta',
+  'monta',
+  'destete',
+  'parto',
+  'muerte',
+  'venta',
+] as const
 export type AnimalRecordEventType = (typeof animal_record_event_types)[number]
 
 export const record_event_type_labels: Record<AnimalRecordEventType, string> = {
+  alta: 'Alta de animal',
   monta: 'Empadre',
   destete: 'Destete',
   parto: 'Parto',
@@ -350,6 +360,7 @@ export const record_event_type_labels: Record<AnimalRecordEventType, string> = {
 }
 
 export const record_event_type_icons: Record<AnimalRecordEventType, string> = {
+  alta: '🐄',
   monta: '🐐',
   destete: '🍼',
   parto: '🐣',

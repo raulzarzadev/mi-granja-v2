@@ -355,9 +355,7 @@ const ModalBreedingAnimalDetails: React.FC<ModalBreedingAnimalDetailsProps> = ({
                   <>
                     {status === 'empadre' && (
                       <ActionButton
-                        onClick={() =>
-                          handleActionAndClose(() => onConfirmPregnancy?.(record, animal.id))
-                        }
+                        onClick={() => onConfirmPregnancy?.(record, animal.id)}
                         variant="primary"
                         icon="pregnant"
                         label="Confirmar gestación"

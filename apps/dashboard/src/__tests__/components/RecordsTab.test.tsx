@@ -56,18 +56,23 @@ it('permite cargar anteriores cuando no hay registros recientes', () => {
 
 it('muestra solo los tipos y categorías con registros y conserva los conteos laterales', () => {
   render(<RecordsTab />)
-  const chips = within(screen.getByRole('navigation', { name: 'Filtrar registros por tipo' }))
-  expect(chips.getAllByRole('button')).toHaveLength(2)
-  expect(chips.getByRole('button', { name: /Nota/ })).toBeInTheDocument()
-  expect(chips.queryByRole('button', { name: /Parto/ })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Tipo', expanded: false })).not.toBeInTheDocument()
   expect(mockSidebar.mock.lastCall[0]).toMatchObject({ badges: [2, 2], activeIndex: 0 })
   fireEvent.click(screen.getByTitle('Filtros'))
-  fireEvent.click(screen.getByRole('combobox', { name: 'Tipo de registro' }))
-  expect(within(screen.getByRole('listbox')).getAllByRole('option')).toHaveLength(2)
-  expect(screen.queryByRole('option', { name: /Parto/ })).not.toBeInTheDocument()
-  fireEvent.click(screen.getByRole('option', { name: /Tipo: Todos/ }))
-  fireEvent.click(screen.getByRole('combobox', { name: 'Categoría' }))
-  expect(within(screen.getByRole('listbox')).getAllByRole('option')).toHaveLength(2)
+  fireEvent.click(screen.getByRole('button', { name: 'Tipo', expanded: false }))
+  expect(
+    within(screen.getByRole('menu', { name: 'Filtrar por tipo' })).getAllByRole('menuitemradio'),
+  ).toHaveLength(2)
+  expect(screen.queryByRole('menuitemradio', { name: /Parto/ })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('menuitemradio', { name: 'Todos' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Categoría' }))
+  expect(
+    within(screen.getByRole('menu', { name: 'Filtrar por categoría' })).getAllByRole(
+      'menuitemradio',
+    ),
+  ).toHaveLength(2)
+  fireEvent.click(screen.getByTitle('Filtros'))
+  expect(screen.queryByRole('button', { name: 'Tipo', expanded: false })).not.toBeInTheDocument()
 })
 
 it('vuelve a Todos cuando desaparecen los registros del tipo seleccionado', () => {
@@ -78,14 +83,24 @@ it('vuelve a Todos cuando desaparecen los registros del tipo seleccionado', () =
   mockRecords = [record('Reciente', 1)]
   rerender(<RecordsTab />)
   expect(screen.getByText('Reciente')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: /Todos/ })).toHaveAttribute('aria-pressed', 'true')
+  fireEvent.click(screen.getByTitle('Filtros'))
+  fireEvent.click(screen.getByRole('button', { name: 'Tipo', expanded: false }))
+  expect(screen.getByRole('menuitemradio', { name: 'Todos' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  )
 })
 
 it('descarta un tipo de la URL sin registros', () => {
   mockParams.set('type', 'birth')
   render(<RecordsTab />)
   expect(screen.getByText('Reciente')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: /Todos/ })).toHaveAttribute('aria-pressed', 'true')
+  fireEvent.click(screen.getByTitle('Filtros'))
+  fireEvent.click(screen.getByRole('button', { name: 'Tipo', expanded: false }))
+  expect(screen.getByRole('menuitemradio', { name: 'Todos' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  )
 })
 
 it('muestra solo el estado inicial sin registros y enlaza al formulario existente', () => {

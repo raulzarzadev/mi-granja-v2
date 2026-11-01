@@ -30,6 +30,7 @@ import {
   trackRecordCreated,
 } from '@/lib/analytics/track'
 import { animalMatchesSearch } from '@/lib/animal-search'
+import { createAnimalRegistrationRecord } from '@/lib/animal-registration'
 import { computeAnimalStage, isActiveCalf } from '@/lib/animal-utils'
 import { db } from '@/lib/firebase'
 import {
@@ -120,6 +121,10 @@ export const useAnimalCRUD = () => {
       const now = new Date()
       let newAnimal = {
         ...animalData,
+        records: [
+          ...(animalData.records || []),
+          createAnimalRegistrationRecord(animalData, user.id, now),
+        ],
         farmerId: user.id,
         farmId: currentFarm.id,
         createdAt: now,

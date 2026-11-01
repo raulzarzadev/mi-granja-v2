@@ -1,5 +1,6 @@
 'use client'
 
+import { intervalToDuration } from 'date-fns'
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
@@ -9,6 +10,7 @@ import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import InputIconSelect from '@/components/inputs/InputIconSelect'
 import { useZodForm } from '@/hooks/useZodForm'
 import { normalizeAnimalSearch } from '@/lib/animal-search'
+import { registrationStages } from '@/lib/animal-registration-stages'
 import { ANIMAL_BREEDING_CONFIGS } from '@/lib/animalBreedingConfig'
 import { auth, storage } from '@/lib/firebase'
 import {
@@ -28,7 +30,7 @@ import {
 import { Form } from './forms/Form'
 import { TextField } from './forms/TextField'
 import AnimalSelector from './inputs/AnimalSelector'
-import { BirthDateInput } from './inputs/BirthDateInput'
+import { DatePickerButtons } from './buttons/date-picker-buttons'
 
 // "juvenil" es una etapa interna calculada por edad. Para el usuario, la
 // decisión al destetar es el destino productivo: engorda o reproducción.
@@ -40,16 +42,16 @@ const lifecycleOptions = [
   'embarazada',
   'lechera',
 ] as const
-const visibleStageOptions = ['cria', 'reproductor', 'embarazada', 'lechera', 'descarte'] as const
 
 const schema = z
   .object({
-    animalNumber: z.string().trim().min(1, 'El ID del animal es requerido'),
+    animalNumber: z.string().trim(),
     type: z.enum(animals_types),
     status: z.enum(animal_statuses),
     gender: z.enum(animals_genders),
+    isBreedingMale: z.boolean(),
     lifecycle: z.enum(lifecycleOptions),
-    birthDate: z.string().optional(),
+    birthDate: z.string().min(1, 'Selecciona la fecha de nacimiento (puede ser estimada)'),
     weanedAt: z.string().optional(),
     pregnantAt: z.string().optional(),
     pregnantBy: z.string().optional(),
@@ -63,6 +65,16 @@ const schema = z
   })
   .superRefine((data, context) => {
     const today = new Date()
+    if (
+      data.birthDate &&
+      !registrationStages(data.type, data.gender, data.birthDate, today).includes(data.lifecycle)
+    ) {
+      context.addIssue({
+        path: ['lifecycle'],
+        code: z.ZodIssueCode.custom,
+        message: 'Selecciona una etapa compatible con el género y la edad.',
+      })
+    }
     for (const field of ['birthDate', 'weanedAt', 'pregnantAt', 'birthedAt'] as const) {
       const value = data[field]
       if (!value) continue
@@ -129,13 +141,6 @@ const schema = z
         }
       }
     }
-    if (['engorda', 'reproductor'].includes(data.lifecycle) && !data.weanedAt) {
-      context.addIssue({
-        path: ['weanedAt'],
-        code: z.ZodIssueCode.custom,
-        message: 'La fecha de destete es requerida para este destino',
-      })
-    }
     if (data.lifecycle === 'reproductor' && !data.birthDate) {
       context.addIssue({
         path: ['birthDate'],
@@ -182,6 +187,16 @@ export default function SimpleAnimalForm({
   isLoading = false,
   existingAnimals = [],
 }: SimpleAnimalFormProps) {
+  const suggestedAnimalNumber = useMemo(() => {
+    if (initialData?.animalNumber?.trim()) return initialData.animalNumber.trim()
+    const used = new Set(
+      existingAnimals.map((animal) => normalizeAnimalSearch(animal.animalNumber)),
+    )
+    let number = 1
+    while (used.has(normalizeAnimalSearch(`A${number}`))) number += 1
+    return `A${number}`
+  }, [existingAnimals, initialData?.animalNumber])
+
   const initialIsLactating =
     initialData?.lactationStatus === 'active' ||
     (initialData?.lactationStatus === undefined && !!initialData?.birthedAt)
@@ -200,6 +215,7 @@ export default function SimpleAnimalForm({
         ? (initialData?.status as (typeof animal_statuses)[number])
         : 'activo',
       gender: initialData?.gender ?? 'hembra',
+      isBreedingMale: initialData?.isBreedingMale ?? false,
       lifecycle: initialLifecycle,
       birthDate: dateToInput(initialData?.birthDate),
       weanedAt: dateToInput(initialData?.weanedAt),
@@ -223,23 +239,52 @@ export default function SimpleAnimalForm({
 
   const selectedType = form.watch('type')
   const selectedGender = form.watch('gender')
+  const selectedBirthDate = form.watch('birthDate')
+  const approximateAge = useMemo(() => {
+    const birth = inputToDate(selectedBirthDate)
+    const today = new Date()
+    if (!birth || Number.isNaN(birth.getTime()) || birth > today) return null
+    const { years = 0, months = 0, days = 0 } = intervalToDuration({ start: birth, end: today })
+    const parts = []
+    if (years) parts.push(`${years} ${years === 1 ? 'año' : 'años'}`)
+    if (months) parts.push(`${months} ${months === 1 ? 'mes' : 'meses'}`)
+    if (!parts.length) parts.push(`${days} ${days === 1 ? 'día' : 'días'}`)
+    return parts.join(' y ')
+  }, [selectedBirthDate])
+  const availableStages = useMemo(
+    () => registrationStages(selectedType, selectedGender, selectedBirthDate),
+    [selectedType, selectedGender, selectedBirthDate],
+  )
   const selectedLifecycle = form.watch('lifecycle')
   const selectedPregnantBy = form.watch('pregnantBy')
   const selectedMotherId = form.watch('motherId')
   const selectedFatherId = form.watch('fatherId')
   const isBusy = isLoading || isUploading
+  const canBeStud =
+    selectedGender === 'macho' &&
+    selectedLifecycle === 'reproductor' &&
+    (() => {
+      const birth = inputToDate(selectedBirthDate)
+      if (!birth) return false
+      const eligibleAt = new Date(
+        birth.getFullYear(),
+        birth.getMonth() + ANIMAL_BREEDING_CONFIGS[selectedType].minBreedingAge,
+        birth.getDate(),
+      )
+      return new Date() >= eligibleAt
+    })()
+  useEffect(() => {
+    if (!canBeStud) form.setValue('isBreedingMale', false)
+  }, [canBeStud, form])
 
   useEffect(() => {
-    if (
-      selectedGender === 'macho' &&
-      (selectedLifecycle === 'embarazada' || selectedLifecycle === 'lechera')
-    ) {
-      form.setValue('lifecycle', 'reproductor')
+    if (availableStages.length && !availableStages.includes(selectedLifecycle)) {
+      form.setValue('lifecycle', availableStages[0], { shouldValidate: form.formState.isSubmitted })
       form.setValue('pregnantAt', '')
       form.setValue('pregnantBy', '')
       form.setValue('birthedAt', '')
     }
-  }, [form, selectedGender, selectedLifecycle])
+  }, [form, availableStages, selectedLifecycle])
 
   useEffect(() => {
     if (!photoFile) return
@@ -262,7 +307,7 @@ export default function SimpleAnimalForm({
   }
 
   const handleSubmit = async (values: FormSchema) => {
-    const animalNumber = values.animalNumber.trim()
+    const animalNumber = values.animalNumber.trim() || suggestedAnimalNumber
     const duplicate = existingAnimals.some(
       (animal) =>
         animal.id !== initialData?.id &&
@@ -302,6 +347,7 @@ export default function SimpleAnimalForm({
         type: values.type,
         status: values.status,
         gender: values.gender,
+        isBreedingMale: canBeStud && values.isBreedingMale,
         stage,
         breed: initialData?.breed ?? '',
         ...(birthDate ? { birthDate } : {}),
@@ -363,6 +409,42 @@ export default function SimpleAnimalForm({
     }
   }
 
+  const fieldLabels: Record<string, string> = {
+    animalNumber: 'ID del animal',
+    type: 'Especie',
+    status: 'Estado',
+    gender: 'Género',
+    lifecycle: 'Etapa o condición',
+    birthDate: 'Fecha de nacimiento',
+    weanedAt: 'Fecha de destete',
+    pregnantAt: 'Fecha de gestación',
+    pregnantBy: 'Macho',
+    birthedAt: 'Último parto',
+    lactationPurpose: 'Uso de la lactancia',
+    name: 'Nombre',
+    motherId: 'Madre',
+    fatherId: 'Padre',
+    batch: 'Lote',
+    notes: 'Notas',
+  }
+  const goToField = (field: string, source: HTMLElement) => {
+    const container = source.closest('form')
+    const target = container?.querySelector<HTMLElement>(
+      `[data-field="${field}"], [name="${field}"], [id="${field}"]`,
+    )
+    if (!target) return
+    const details = target.closest('details')
+    if (details) details.open = true
+    target.scrollIntoView({
+      block: 'center',
+      behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    })
+    const control = target.matches('input, button, select, textarea')
+      ? target
+      : target.querySelector<HTMLElement>('button, input, select, textarea')
+    control?.focus({ preventScroll: true })
+  }
+
   const errorEntries = Object.entries(form.formState.errors)
 
   return (
@@ -380,14 +462,19 @@ export default function SimpleAnimalForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField
             name="animalNumber"
-            label="ID del animal *"
-            placeholder="Ej. 001"
+            label="ID del animal"
+            placeholder={suggestedAnimalNumber}
+            helperText={`Si lo dejas vacío, se usará ${suggestedAnimalNumber} como ID.`}
             autoFocus
             disabled={isBusy}
             className="min-h-12 rounded-xl text-base"
           />
           <div className="space-y-1.5">
-            <span id="animal-type-label" className="block text-sm font-semibold text-slate-700">
+            <span
+              data-field="type"
+              id="animal-type-label"
+              className="block text-sm font-semibold text-slate-700"
+            >
               Especie *
             </span>
             <Controller
@@ -411,7 +498,298 @@ export default function SimpleAnimalForm({
             />
           </div>
           <div className="space-y-1.5">
-            <span id="animal-status-label" className="block text-sm font-semibold text-slate-700">
+            <span
+              data-field="gender"
+              id="animal-gender-label"
+              className="block text-sm font-semibold text-slate-700"
+            >
+              Género *
+            </span>
+            <div
+              role="radiogroup"
+              aria-labelledby="animal-gender-label"
+              className="grid grid-cols-2 gap-1 rounded-full border border-slate-200 bg-slate-100 p-1"
+            >
+              {animals_genders.map((gender) => (
+                <label key={gender} className="relative min-w-0 cursor-pointer">
+                  <input
+                    type="radio"
+                    value={gender}
+                    {...form.register('gender')}
+                    disabled={isBusy}
+                    className="peer sr-only"
+                  />
+                  <span className="flex min-h-11 items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-slate-600 transition-colors peer-checked:bg-green-700 peer-checked:text-white peer-checked:shadow-sm peer-focus-visible:ring-2 peer-focus-visible:ring-green-700 peer-focus-visible:ring-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 motion-reduce:transition-none">
+                    <EmojiIcon emoji={gender === 'hembra' ? '♀' : '♂'} />
+                    {animals_genders_labels[gender]}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <Controller
+          control={form.control}
+          name="birthDate"
+          render={({ field, fieldState }) => (
+            <div data-field="birthDate" className="space-y-1">
+              <DatePickerButtons
+                label="Fecha de nacimiento (estimada) *"
+                value={field.value}
+                onChange={field.onChange}
+                disabled={isBusy}
+                showToday
+                inline
+                helperText={
+                  approximateAge
+                    ? `Edad aproximada: ${approximateAge}.`
+                    : 'Puedes usar una fecha estimada si no conoces la exacta.'
+                }
+              />
+              {fieldState.error && (
+                <p className="text-xs text-red-600">{fieldState.error.message}</p>
+              )}
+            </div>
+          )}
+        />
+        {availableStages.length === 0 && (
+          <p className="text-sm text-slate-500">
+            Selecciona la fecha de nacimiento para ver las etapas disponibles.
+          </p>
+        )}
+        {availableStages.length > 0 && (
+          <>
+            <div className="space-y-1.5">
+              <span
+                data-field="lifecycle"
+                id="animal-lifecycle-label"
+                className="block text-sm font-semibold text-slate-700"
+              >
+                Etapa o condición *
+              </span>
+              <Controller
+                control={form.control}
+                name="lifecycle"
+                render={({ field, fieldState }) => (
+                  <InputIconSelect
+                    aria-labelledby="animal-lifecycle-label"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    disabled={isBusy}
+                    invalid={!!fieldState.error}
+                    className="min-h-12 rounded-xl border-slate-300"
+                    options={availableStages.map((stage) => ({
+                      value: stage,
+                      label:
+                        stage === 'embarazada'
+                          ? 'Gestante'
+                          : stage === 'lechera'
+                            ? 'Madre / Lechera'
+                            : stage === 'reproductor' &&
+                                selectedBirthDate &&
+                                (() => {
+                                  const birth = inputToDate(selectedBirthDate)!
+                                  const threshold = new Date(
+                                    birth.getFullYear(),
+                                    birth.getMonth() +
+                                      ANIMAL_BREEDING_CONFIGS[selectedType].minBreedingAge,
+                                    birth.getDate(),
+                                  )
+                                  return new Date() < threshold
+                                })()
+                              ? 'Juvenil (para reproducción)'
+                              : animals_stages_labels[stage],
+                      icon:
+                        stage === 'embarazada'
+                          ? '🤰'
+                          : stage === 'lechera'
+                            ? '🍼'
+                            : animal_stage_icons[stage],
+                    }))}
+                  />
+                )}
+              />
+              {form.formState.errors.lifecycle && (
+                <p className="text-xs text-red-600">{form.formState.errors.lifecycle.message}</p>
+              )}
+            </div>
+
+            {canBeStud && (
+              <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-900">
+                <input
+                  type="checkbox"
+                  {...form.register('isBreedingMale')}
+                  disabled={isBusy}
+                  className="h-5 w-5 accent-green-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
+                />
+                Marcar como semental
+              </label>
+            )}
+
+            <div className="space-y-4">
+              {(selectedLifecycle === 'engorda' || selectedLifecycle === 'reproductor') && (
+                <div className="space-y-4">
+                  <div
+                    className={
+                      selectedLifecycle === 'reproductor' ? 'grid gap-4 sm:grid-cols-2' : ''
+                    }
+                  >
+                    <Controller
+                      control={form.control}
+                      name="weanedAt"
+                      render={({ field, fieldState }) => (
+                        <div data-field="weanedAt" className="space-y-1">
+                          <DatePickerButtons
+                            label="Fecha de destete"
+                            helperText="Opcional. Déjala vacía si no conoces la fecha."
+                            value={field.value ?? ''}
+                            onChange={field.onChange}
+                            disabled={isBusy}
+                            showToday
+                            inline
+                          />
+                          <p className="text-xs text-red-600">
+                            {form.formState.isSubmitted ? fieldState.error?.message : undefined}
+                          </p>
+                        </div>
+                      )}
+                    />
+                  </div>
+                  <p className="text-sm leading-6 text-green-900">
+                    {selectedLifecycle === 'engorda'
+                      ? 'Al guardar, el animal quedará en Engorda.'
+                      : 'Si aún no tiene la edad reproductiva de su especie, la app lo mostrará como Juvenil hasta alcanzarla.'}
+                  </p>
+                </div>
+              )}
+              {selectedLifecycle === 'embarazada' && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Controller
+                    control={form.control}
+                    name="pregnantAt"
+                    render={({ field, fieldState }) => (
+                      <div data-field="pregnantAt" className="space-y-1">
+                        <DatePickerButtons
+                          label="Fecha de gestación"
+                          value={field.value ?? ''}
+                          onChange={field.onChange}
+                          disabled={isBusy}
+                          showToday
+                          inline
+                          helperText={!field.value ? 'Opcional' : undefined}
+                        />
+                        <p className="text-xs text-red-600">{fieldState.error?.message}</p>
+                      </div>
+                    )}
+                  />
+                  <AnimalSelector
+                    label="Macho"
+                    animals={existingAnimals}
+                    selectedIds={selectedPregnantBy ? [selectedPregnantBy] : []}
+                    onAdd={(id) => form.setValue('pregnantBy', id)}
+                    onRemove={() => form.setValue('pregnantBy', '')}
+                    mode="single"
+                    placeholder="Buscar macho..."
+                    filterFn={(animal) =>
+                      animal.gender === 'macho' &&
+                      animal.id !== initialData?.id &&
+                      animal.type === selectedType
+                    }
+                  />
+                </div>
+              )}
+              {selectedLifecycle === 'lechera' && (
+                <div className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Controller
+                      control={form.control}
+                      name="birthedAt"
+                      render={({ field, fieldState }) => (
+                        <div data-field="birthedAt" className="space-y-1">
+                          <DatePickerButtons
+                            label="Último parto *"
+                            value={field.value ?? ''}
+                            onChange={field.onChange}
+                            disabled={isBusy}
+                            showToday
+                            inline
+                          />
+                          <p className="text-xs text-red-600">
+                            {form.formState.isSubmitted ? fieldState.error?.message : undefined}
+                          </p>
+                        </div>
+                      )}
+                    />
+                  </div>
+                  <fieldset className="space-y-2">
+                    <legend className="text-sm font-semibold text-slate-700">
+                      Uso de la lactancia
+                    </legend>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(
+                        [
+                          ['offspring', 'Crías'],
+                          ['dairy', 'Leche'],
+                          ['dual', 'Ambos'],
+                        ] as const
+                      ).map(([value, label]) => (
+                        <label
+                          key={value}
+                          className="flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-green-200 bg-white px-2 text-center text-sm font-semibold text-slate-700 has-[:checked]:border-green-700 has-[:checked]:bg-green-100 has-[:checked]:text-green-900"
+                        >
+                          <input
+                            type="radio"
+                            value={value}
+                            {...form.register('lactationPurpose')}
+                            disabled={isBusy}
+                            className="sr-only"
+                          />
+                          {label}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                  <p className="text-sm leading-6 text-green-900">
+                    Lactancia y gestación pueden coexistir. Destetar una cría sólo termina la
+                    lactancia cuando su uso es exclusivamente para crías.
+                  </p>
+                </div>
+              )}
+              {!['cria', 'engorda', 'reproductor', 'embarazada', 'lechera'].includes(
+                selectedLifecycle,
+              ) && (
+                <p className="text-sm leading-6 text-green-900">
+                  Esta etapa no requiere una fecha adicional. Podrás cambiarla después desde la
+                  ficha del animal.
+                </p>
+              )}
+            </div>
+          </>
+        )}
+      </section>
+
+      <details className="group rounded-2xl border border-slate-200 bg-slate-50/70">
+        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-4 py-3 font-bold text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
+          <span>
+            Datos opcionales
+            <span className="ml-2 text-sm font-normal text-slate-500">
+              Nombre, familia, lote, imagen y notas
+            </span>
+          </span>
+          <span aria-hidden="true" className="text-xl text-green-700 group-open:rotate-45">
+            +
+          </span>
+        </summary>
+
+        <div className="space-y-5 border-t border-slate-200 p-4 sm:p-5">
+          <div className="space-y-1.5">
+            <span
+              data-field="status"
+              id="animal-status-label"
+              className="block text-sm font-semibold text-slate-700"
+            >
               Estado *
             </span>
             <Controller
@@ -434,260 +812,6 @@ export default function SimpleAnimalForm({
               )}
             />
           </div>
-          <div className="space-y-1.5">
-            <span id="animal-gender-label" className="block text-sm font-semibold text-slate-700">
-              Género *
-            </span>
-            <Controller
-              control={form.control}
-              name="gender"
-              render={({ field }) => (
-                <InputIconSelect
-                  aria-labelledby="animal-gender-label"
-                  value={field.value}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  disabled={isBusy}
-                  className="min-h-12 rounded-xl border-slate-300"
-                  options={animals_genders.map((gender) => ({
-                    value: gender,
-                    label: animals_genders_labels[gender],
-                    icon: gender === 'hembra' ? '♀' : '♂',
-                  }))}
-                />
-              )}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <span id="animal-lifecycle-label" className="block text-sm font-semibold text-slate-700">
-            Etapa o condición *
-          </span>
-          <Controller
-            control={form.control}
-            name="lifecycle"
-            render={({ field, fieldState }) => (
-              <InputIconSelect
-                aria-labelledby="animal-lifecycle-label"
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                disabled={isBusy}
-                invalid={!!fieldState.error}
-                className="min-h-12 rounded-xl border-slate-300"
-                options={visibleStageOptions
-                  .filter(
-                    (stage) =>
-                      selectedGender === 'hembra' || !['embarazada', 'lechera'].includes(stage),
-                  )
-                  .map((stage) => ({
-                    value: stage,
-                    label:
-                      stage === 'embarazada'
-                        ? 'Gestante'
-                        : stage === 'lechera'
-                          ? 'Madre / Lechera'
-                          : animals_stages_labels[stage],
-                    icon:
-                      stage === 'embarazada'
-                        ? '🤰'
-                        : stage === 'lechera'
-                          ? '🍼'
-                          : animal_stage_icons[stage],
-                  }))}
-              />
-            )}
-          />
-          {form.formState.errors.lifecycle && (
-            <p className="text-xs text-red-600">{form.formState.errors.lifecycle.message}</p>
-          )}
-        </div>
-
-        <div className="rounded-2xl border border-green-200 bg-green-50/70 p-4">
-          {selectedLifecycle === 'cria' && (
-            <Controller
-              control={form.control}
-              name="birthDate"
-              render={({ field, fieldState }) => (
-                <BirthDateInput
-                  label="Fecha de nacimiento"
-                  value={field.value ?? ''}
-                  onChange={field.onChange}
-                  disabled={isBusy}
-                  error={fieldState.error?.message}
-                />
-              )}
-            />
-          )}
-          {(selectedLifecycle === 'engorda' || selectedLifecycle === 'reproductor') && (
-            <div className="space-y-4">
-              <div
-                className={selectedLifecycle === 'reproductor' ? 'grid gap-4 sm:grid-cols-2' : ''}
-              >
-                <Controller
-                  control={form.control}
-                  name="weanedAt"
-                  render={({ field, fieldState }) => (
-                    <BirthDateInput
-                      showAge={false}
-                      label="Fecha de destete"
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                      disabled={isBusy}
-                      required
-                      error={form.formState.isSubmitted ? fieldState.error?.message : undefined}
-                    />
-                  )}
-                />
-                {selectedLifecycle === 'reproductor' && (
-                  <Controller
-                    control={form.control}
-                    name="birthDate"
-                    render={({ field, fieldState }) => (
-                      <BirthDateInput
-                        label="Fecha de nacimiento"
-                        value={field.value ?? ''}
-                        onChange={field.onChange}
-                        disabled={isBusy}
-                        required
-                        error={form.formState.isSubmitted ? fieldState.error?.message : undefined}
-                      />
-                    )}
-                  />
-                )}
-              </div>
-              <p className="text-sm leading-6 text-green-900">
-                {selectedLifecycle === 'engorda'
-                  ? 'Al guardar, el animal quedará en Engorda.'
-                  : 'Si aún no tiene la edad reproductiva de su especie, la app lo mostrará como Juvenil hasta alcanzarla.'}
-              </p>
-            </div>
-          )}
-          {selectedLifecycle === 'embarazada' && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Controller
-                control={form.control}
-                name="pregnantAt"
-                render={({ field, fieldState }) => (
-                  <BirthDateInput
-                    showAge={false}
-                    label="Fecha de gestación"
-                    value={field.value ?? ''}
-                    onChange={field.onChange}
-                    disabled={isBusy}
-                    error={fieldState.error?.message}
-                  />
-                )}
-              />
-              <AnimalSelector
-                label="Macho"
-                animals={existingAnimals}
-                selectedIds={selectedPregnantBy ? [selectedPregnantBy] : []}
-                onAdd={(id) => form.setValue('pregnantBy', id)}
-                onRemove={() => form.setValue('pregnantBy', '')}
-                mode="single"
-                placeholder="Buscar macho..."
-                filterFn={(animal) =>
-                  animal.gender === 'macho' &&
-                  animal.id !== initialData?.id &&
-                  animal.type === selectedType
-                }
-              />
-            </div>
-          )}
-          {selectedLifecycle === 'lechera' && (
-            <div className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Controller
-                  control={form.control}
-                  name="birthDate"
-                  render={({ field, fieldState }) => (
-                    <BirthDateInput
-                      label="Nacimiento de la madre"
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                      disabled={isBusy}
-                      required
-                      error={form.formState.isSubmitted ? fieldState.error?.message : undefined}
-                    />
-                  )}
-                />
-                <Controller
-                  control={form.control}
-                  name="birthedAt"
-                  render={({ field, fieldState }) => (
-                    <BirthDateInput
-                      showAge={false}
-                      label="Último parto"
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                      disabled={isBusy}
-                      required
-                      error={form.formState.isSubmitted ? fieldState.error?.message : undefined}
-                    />
-                  )}
-                />
-              </div>
-              <fieldset className="space-y-2">
-                <legend className="text-sm font-semibold text-slate-700">
-                  Uso de la lactancia
-                </legend>
-                <div className="grid grid-cols-3 gap-2">
-                  {(
-                    [
-                      ['offspring', 'Crías'],
-                      ['dairy', 'Leche'],
-                      ['dual', 'Ambos'],
-                    ] as const
-                  ).map(([value, label]) => (
-                    <label
-                      key={value}
-                      className="flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-green-200 bg-white px-2 text-center text-sm font-semibold text-slate-700 has-[:checked]:border-green-700 has-[:checked]:bg-green-100 has-[:checked]:text-green-900"
-                    >
-                      <input
-                        type="radio"
-                        value={value}
-                        {...form.register('lactationPurpose')}
-                        disabled={isBusy}
-                        className="sr-only"
-                      />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-              <p className="text-sm leading-6 text-green-900">
-                Lactancia y gestación pueden coexistir. Destetar una cría sólo termina la lactancia
-                cuando su uso es exclusivamente para crías.
-              </p>
-            </div>
-          )}
-          {!['cria', 'engorda', 'reproductor', 'embarazada', 'lechera'].includes(
-            selectedLifecycle,
-          ) && (
-            <p className="text-sm leading-6 text-green-900">
-              Esta etapa no requiere una fecha adicional. Podrás cambiarla después desde la ficha
-              del animal.
-            </p>
-          )}
-        </div>
-      </section>
-
-      <details className="group rounded-2xl border border-slate-200 bg-slate-50/70">
-        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-4 py-3 font-bold text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
-          <span>
-            Datos opcionales
-            <span className="ml-2 text-sm font-normal text-slate-500">
-              Nombre, familia, lote, imagen y notas
-            </span>
-          </span>
-          <span aria-hidden="true" className="text-xl text-green-700 group-open:rotate-45">
-            +
-          </span>
-        </summary>
-
-        <div className="space-y-5 border-t border-slate-200 p-4 sm:p-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <TextField
               name="name"
@@ -801,7 +925,26 @@ export default function SimpleAnimalForm({
           role="alert"
           className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
         >
-          {photoError || 'Revisa los campos marcados antes de registrar el animal.'}
+          {photoError && <p>{photoError}</p>}
+          {errorEntries.length > 0 && form.formState.isSubmitted && (
+            <>
+              <p className="font-semibold">Revisa estos campos antes de registrar el animal:</p>
+              <ul className="mt-2 space-y-2">
+                {errorEntries.map(([field, error]) => (
+                  <li key={field}>
+                    <button
+                      type="button"
+                      className="min-h-11 text-left underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+                      onClick={(event) => goToField(field, event.currentTarget)}
+                    >
+                      <strong>{fieldLabels[field] ?? field}:</strong>{' '}
+                      {error?.message ? String(error.message) : 'Revisa el valor ingresado.'}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
       )}
 

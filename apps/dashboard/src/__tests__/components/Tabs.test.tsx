@@ -85,3 +85,33 @@ describe('Tabs sidebarOnDesktop', () => {
     expect(screen.getByRole('button', { name: /Salud/ })).toHaveAttribute('aria-current', 'page')
   })
 })
+
+describe('Tabs bottomOnMobile', () => {
+  it('cambia de sección y restaura la selección al navegar atrás', () => {
+    window.history.replaceState({}, '', '/')
+    render(
+      <Tabs
+        tabsId="dashboard-main"
+        bottomOnMobile
+        sidebarOnDesktop
+        tabs={[
+          { label: '🐄 Animales', content: <p>Inventario de animales</p> },
+          { label: '📆 Recordatorios', badgeCount: 3, content: <p>Lista de recordatorios</p> },
+          { label: '👤 Perfil', content: <p>Datos del perfil</p> },
+        ]}
+      />,
+    )
+    const reminders = screen.getByRole('tab', { name: /Recordatorios/ })
+    expect(reminders).toHaveTextContent('3')
+    fireEvent.click(reminders)
+    expect(reminders).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('Lista de recordatorios')
+    expect(window.location.search).toContain('dashboard-main=recordatorios')
+    act(() => {
+      window.history.replaceState({}, '', '/?dashboard-main=animales')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
+    expect(screen.getByRole('tab', { name: 'Animales' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('Inventario de animales')
+  })
+})

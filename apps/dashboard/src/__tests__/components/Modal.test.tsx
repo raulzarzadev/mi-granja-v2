@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
+import { useState } from 'react'
 import { Modal } from '@/components/Modal'
 
 describe('Modal', () => {
@@ -35,6 +36,34 @@ describe('Modal', () => {
 
     expect(closeChild).toHaveBeenCalledTimes(1)
     expect(closeParent).not.toHaveBeenCalled()
+  })
+
+  it('mantiene el padre al cerrar un diálogo que aparece antes en el DOM', () => {
+    function Stack() {
+      const [confirming, setConfirming] = useState(false)
+      return (
+        <>
+          <Modal
+            isOpen={confirming}
+            title="Confirmar gestación"
+            onClose={() => setConfirming(false)}
+          >
+            Confirmación
+          </Modal>
+          <Modal isOpen title="Empadre" onClose={jest.fn()}>
+            <button onClick={() => setConfirming(true)}>Confirmar</button>
+          </Modal>
+        </>
+      )
+    }
+    render(<Stack />)
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }))
+    const child = screen.getByRole('dialog', { name: 'Confirmar gestación' })
+    const parent = screen.getByRole('dialog', { name: 'Empadre' })
+    expect(Number(child.style.zIndex)).toBeGreaterThan(Number(parent.style.zIndex))
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: 'Confirmar gestación' })).not.toBeInTheDocument()
+    expect(parent).toBeInTheDocument()
   })
 
   it('keeps body scrolling locked while a parent dialog remains open', () => {

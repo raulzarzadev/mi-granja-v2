@@ -1,7 +1,7 @@
 'use client'
 
 import type { FormEvent } from 'react'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import type { RootState } from '@/features/store'
@@ -71,14 +71,8 @@ const ACTIVITY_OPTIONS: Choice<FarmActivityType>[] = [
     description: 'Siembra, cosecha y tareas de campo',
   },
   {
-    value: 'mixed',
-    label: 'Mixta',
-    icon: '🚜',
-    description: 'Animales y cultivos en la misma granja',
-  },
-  {
     value: 'other',
-    label: 'Otro giro',
+    label: 'Otro',
     icon: '🌾',
     description: 'Otra actividad rural o agropecuaria',
   },
@@ -122,11 +116,11 @@ const OTHER_ACTIVITY_OPTIONS: Choice<FarmOtherActivity>[] = [
 const initialFormData = () => ({
   name: '',
   country: 'México',
-  activityType: null as FarmActivityType | null,
+  activities: [] as FarmActivityType[],
+  otherActivity: null as FarmOtherActivity | null,
   productionPurposes: [] as FarmProductionPurpose[],
   animalSpecies: [] as FarmAnimalSpecies[],
   cropTypes: [] as FarmCropType[],
-  otherActivity: null as FarmOtherActivity | null,
 })
 
 function MultiChoiceGrid<T extends string>({
@@ -176,6 +170,7 @@ const ModalCreateFarm = ({
   showTrigger = true,
   onCreated,
 }: ModalCreateFarmProps) => {
+  const formId = useId()
   const modal = useModal()
   const isOpen = open ?? modal.isOpen
   const openModal = modal.openModal
@@ -200,23 +195,28 @@ const ModalCreateFarm = ({
     closeModal()
   }
 
-  const selectActivity = (activityType: FarmActivityType) => {
-    setFormData((current) => ({ ...current, activityType }))
+  const toggleActivity = (activity: FarmActivityType) => {
+    setFormData((current) => ({
+      ...current,
+      activities: current.activities.includes(activity)
+        ? current.activities.filter((value) => value !== activity)
+        : [...current.activities, activity],
+    }))
     setError(null)
-    setStep(3)
   }
 
   const toggleValue = <T extends string>(values: T[], value: T): T[] =>
     values.includes(value) ? values.filter((item) => item !== value) : [...values, value]
 
-  const needsLivestock = formData.activityType === 'livestock' || formData.activityType === 'mixed'
-  const needsCrops = formData.activityType === 'crops' || formData.activityType === 'mixed'
+  const needsLivestock = formData.activities.includes('livestock')
+  const needsCrops = formData.activities.includes('crops')
+  const needsOther = formData.activities.includes('other')
   const detailsComplete = Boolean(
-    formData.activityType &&
+    formData.activities.length > 0 &&
       (!needsLivestock ||
         (formData.productionPurposes.length > 0 && formData.animalSpecies.length > 0)) &&
       (!needsCrops || formData.cropTypes.length > 0) &&
-      (formData.activityType !== 'other' || formData.otherActivity),
+      (!needsOther || formData.otherActivity),
   )
 
   const handleSubmit = async (event: FormEvent) => {
@@ -227,7 +227,16 @@ const ModalCreateFarm = ({
     setError(null)
     try {
       const productionProfile: FarmProductionProfile = {
-        activityType: formData.activityType!,
+        activityType:
+          needsLivestock && needsCrops
+            ? 'mixed'
+            : needsLivestock
+              ? 'livestock'
+              : needsCrops
+                ? 'crops'
+                : 'other',
+        activities: formData.activities,
+        ...(needsOther && formData.otherActivity ? { otherActivity: formData.otherActivity } : {}),
         ...(needsLivestock
           ? {
               productionPurposes: formData.productionPurposes,
@@ -235,9 +244,6 @@ const ModalCreateFarm = ({
             }
           : {}),
         ...(needsCrops ? { cropTypes: formData.cropTypes } : {}),
-        ...(formData.activityType === 'other' && formData.otherActivity
-          ? { otherActivity: formData.otherActivity }
-          : {}),
       }
       const farmData: Omit<
         Farm,
@@ -283,6 +289,82 @@ const ModalCreateFarm = ({
         closeOnOverlayClick={!isLoading}
         closeOnEscape={!isLoading}
         contentClassName="sm:p-5"
+        footer={
+          hasPlaces && !isLoading ? (
+            <div className="flex items-center justify-between gap-3">
+              {step === 1 ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  color="neutral"
+                  size="md"
+                  onClick={handleClose}
+                  disabled={isLoading}
+                  className="min-h-11"
+                >
+                  Cancelar
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  color="neutral"
+                  size="md"
+                  onClick={() => {
+                    setError(null)
+                    setStep(step === 3 ? 2 : 1)
+                  }}
+                  disabled={isLoading}
+                  className="min-h-11"
+                >
+                  Atrás
+                </Button>
+              )}
+
+              {step === 1 && (
+                <Button
+                  type="button"
+                  variant="filled"
+                  color="success"
+                  size="md"
+                  disabled={!formData.name.trim() || !formData.country}
+                  onClick={() => setStep(2)}
+                  className="min-h-11"
+                >
+                  Continuar
+                </Button>
+              )}
+
+              {step === 2 && (
+                <Button
+                  type="button"
+                  variant="filled"
+                  color="success"
+                  size="md"
+                  disabled={formData.activities.length === 0}
+                  onClick={() => setStep(3)}
+                  className="min-h-11"
+                >
+                  Continuar
+                </Button>
+              )}
+
+              {step === 3 && (
+                <Button
+                  type="submit"
+                  form={formId}
+                  variant="filled"
+                  color="success"
+                  size="md"
+                  disabled={isLoading || !detailsComplete}
+                  className="min-h-11"
+                >
+                  {isLoading ? 'Creando…' : 'Crear mi granja'}
+                </Button>
+              )}
+            </div>
+          ) : undefined
+        }
       >
         {!hasPlaces ? (
           <div className="space-y-4 py-4">
@@ -330,7 +412,7 @@ const ModalCreateFarm = ({
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex min-h-full flex-col">
+          <form id={formId} onSubmit={handleSubmit} className="flex min-h-full flex-col">
             <div className="mb-5" aria-label={`Paso ${step} de 3`}>
               <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <span>Paso {step} de 3</span>
@@ -410,22 +492,26 @@ const ModalCreateFarm = ({
                     ¿Qué tipo de granja es?
                   </h3>
                   <p className="mt-1 text-sm leading-5 text-slate-600">
-                    Toca la opción que mejor la describa.
+                    Selecciona una o varias actividades.
                   </p>
                   <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {ACTIVITY_OPTIONS.map((option) => (
                       <button
                         key={option.value}
                         type="button"
-                        aria-pressed={formData.activityType === option.value}
-                        onClick={() => selectActivity(option.value)}
-                        className="min-h-20 rounded-2xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-green-400 hover:bg-green-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
+                        aria-pressed={formData.activities.includes(option.value)}
+                        onClick={() => toggleActivity(option.value)}
+                        className={`relative min-h-20 rounded-xl border p-4 pr-10 text-left transition-colors hover:border-green-400 hover:bg-green-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700 ${
+                          formData.activities.includes(option.value)
+                            ? 'border-green-600 bg-green-50 text-green-900'
+                            : 'border-slate-200 bg-white'
+                        }`}
                       >
                         <span className="flex items-start gap-3">
                           <span className="text-2xl" aria-hidden="true">
                             <EmojiIcon emoji={option.icon} />
                           </span>
-                          <span>
+                          <span className="min-w-0 flex-1">
                             <span className="block font-bold text-slate-900">
                               <IconLabel label={option.label} />
                             </span>
@@ -433,6 +519,14 @@ const ModalCreateFarm = ({
                               {option.description}
                             </span>
                           </span>
+                          {formData.activities.includes(option.value) && (
+                            <span
+                              className="absolute right-2 top-2 text-green-700"
+                              aria-hidden="true"
+                            >
+                              <EmojiIcon emoji="✓" />
+                            </span>
+                          )}
                         </span>
                       </button>
                     ))}
@@ -504,7 +598,7 @@ const ModalCreateFarm = ({
                     </fieldset>
                   )}
 
-                  {formData.activityType === 'other' && (
+                  {needsOther && (
                     <fieldset>
                       <legend className="mb-2 text-sm font-semibold text-slate-800">
                         ¿Cuál es tu actividad?
@@ -545,7 +639,7 @@ const ModalCreateFarm = ({
                     </fieldset>
                   )}
 
-                  {(formData.activityType === 'crops' || formData.activityType === 'other') && (
+                  {needsCrops && !needsLivestock && (
                     <p className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm leading-5 text-sky-900">
                       Hoy puedes usar registros y recordatorios generales. Guardaremos tus
                       respuestas para adaptar las próximas herramientas a tu actividad.
@@ -560,67 +654,6 @@ const ModalCreateFarm = ({
                 {error}
               </p>
             )}
-
-            <div className="sticky bottom-0 mt-6 flex flex-col-reverse gap-2 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] pt-4 sm:flex-row sm:justify-between">
-              {step === 1 ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  color="neutral"
-                  size="md"
-                  onClick={handleClose}
-                  disabled={isLoading}
-                  className="min-h-11"
-                >
-                  Cancelar
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  color="neutral"
-                  size="md"
-                  onClick={() => setStep(step === 3 ? 2 : 1)}
-                  disabled={isLoading}
-                  className="min-h-11"
-                >
-                  Atrás
-                </Button>
-              )}
-
-              {step === 1 && (
-                <Button
-                  type="button"
-                  variant="filled"
-                  color="success"
-                  size="md"
-                  disabled={!formData.name.trim() || !formData.country}
-                  onClick={() => setStep(2)}
-                  className="min-h-11"
-                >
-                  Continuar
-                </Button>
-              )}
-
-              {step === 2 && (
-                <p className="self-center text-center text-xs text-slate-500 sm:text-right">
-                  Selecciona una opción para continuar
-                </p>
-              )}
-
-              {step === 3 && (
-                <Button
-                  type="submit"
-                  variant="filled"
-                  color="success"
-                  size="md"
-                  disabled={isLoading || !detailsComplete}
-                  className="min-h-11"
-                >
-                  {isLoading ? 'Creando…' : 'Crear mi granja'}
-                </Button>
-              )}
-            </div>
           </form>
         )}
       </Modal>

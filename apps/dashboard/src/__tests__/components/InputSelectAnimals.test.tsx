@@ -64,6 +64,36 @@ const renderSelector = () => {
 }
 
 describe('InputSelectAnimals', () => {
+  it('ancla el selector sobre el campo usando su altura real', () => {
+    render(
+      <InputSelectAnimals
+        animals={animals.slice(0, 1)}
+        selectedIds={[]}
+        onAdd={jest.fn()}
+        onRemove={jest.fn()}
+      />,
+    )
+    const input = screen.getByPlaceholderText('Buscar por numero, nombre, tipo o raza...')
+    jest
+      .spyOn(input, 'getBoundingClientRect')
+      .mockReturnValue({
+        top: window.innerHeight - 80,
+        bottom: window.innerHeight - 40,
+        left: 20,
+        right: 300,
+        width: 280,
+        height: 40,
+        x: 20,
+        y: window.innerHeight - 80,
+        toJSON: () => ({}),
+      })
+    fireEvent.focus(input)
+    expect(screen.getByRole('listbox')).toHaveStyle({
+      top: `${window.innerHeight - 84}px`,
+      transform: 'translateY(-100%)',
+    })
+  })
+
   it('ordena por agregación, arete o edad', () => {
     renderSelector()
     const sort = screen.getByRole('button', { name: 'Ordenar por: Arete' })

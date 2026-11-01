@@ -96,9 +96,22 @@ const SUGERENCIAS = [
   '¿Cuántos animales activos tengo?',
 ]
 
-export default function AiAssistant() {
+export default function AiAssistant({
+  open: controlledOpen,
+  onOpenChange,
+  showTrigger = true,
+}: {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  showTrigger?: boolean
+} = {}) {
   const { currentFarm } = useSelector((state: RootState) => state.farm)
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = controlledOpen ?? internalOpen
+  const setOpen = (value: boolean) => {
+    setInternalOpen(value)
+    onOpenChange?.(value)
+  }
   const [message, setMessage] = useState('')
   const [items, setItems] = useState<ChatItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -180,23 +193,25 @@ export default function AiAssistant() {
 
   return (
     <>
-      <Button
-        type="button"
-        onClick={() => setOpen(true)}
-        disabled={!currentFarm}
-        variant="filled"
-        color="success"
-        icon="comments"
-        className="h-11 min-w-[160px] shrink-0 rounded-full border border-emerald-900/10 bg-emerald-600 px-5 text-base font-bold shadow-lg shadow-emerald-900/20 hover:bg-emerald-700"
-        title="Abrir asistente IA"
-      >
-        Asistente IA
-        {usage && (
-          <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold">
-            {usage.isUnlimited ? usage.used : `${usage.remaining}/3`}
-          </span>
-        )}
-      </Button>
+      {showTrigger && (
+        <Button
+          type="button"
+          onClick={() => setOpen(true)}
+          disabled={!currentFarm}
+          variant="filled"
+          color="success"
+          icon="comments"
+          className="h-11 min-w-[160px] shrink-0 rounded-full border border-emerald-900/10 bg-emerald-600 px-5 text-base font-bold shadow-lg shadow-emerald-900/20 hover:bg-emerald-700"
+          title="Abrir asistente IA"
+        >
+          Asistente IA
+          {usage && (
+            <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold">
+              {usage.isUnlimited ? usage.used : `${usage.remaining}/3`}
+            </span>
+          )}
+        </Button>
+      )}
 
       <Modal isOpen={open} onClose={() => setOpen(false)} title="Asistente" size="lg">
         <div className="flex h-[70vh] flex-col gap-3">

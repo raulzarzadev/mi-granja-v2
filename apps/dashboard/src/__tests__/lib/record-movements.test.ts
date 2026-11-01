@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react'
 import { breedingParticipantsEqual, useBreedingCRUD } from '@/hooks/useBreedingCRUD'
+import { useSalesCRUD } from '@/hooks/useSalesCRUD'
 import { useRecordMovements } from '@/hooks/useRecordMovements'
 import { commitMovement, movementEqual, undoMovement } from '@/lib/record-movements'
 import type { BirthRecord } from '@/types'
@@ -19,6 +20,11 @@ jest.mock('react-redux', () => ({
           .filter(([path]) => path.startsWith('animals/'))
           .map(([, value]) => value),
       },
+      sales: {
+        sales: [...mockDocuments.entries()]
+          .filter(([path]) => path.startsWith('sales/'))
+          .map(([path, value]) => ({ ...value, id: path.split('/')[1] })),
+      },
       breeding: {
         breedingRecords: [...mockDocuments.entries()]
           .filter(([path]) => path.startsWith('breedingRecords/'))
@@ -36,6 +42,10 @@ jest.mock('firebase/firestore', () => ({
     }
   },
   doc: (_db: unknown, ...parts: string[]) => parts.join('/'),
+  getDoc: async (path: string) => ({
+    exists: () => mockDocuments.has(path),
+    data: () => mockDocuments.get(path),
+  }),
   runTransaction: async (_db: unknown, work: any) => {
     const pending = new Map(mockDocuments)
     let writing = false
@@ -430,4 +440,44 @@ it('sanidad: aplica un registro masivo, guarda seguimiento y permite deshacerlo'
   expect(mockDocuments.get('recordMovements/health').record.undoneAt).toBeTruthy()
   expect(mockDocuments.get('animals/a').records).toEqual([])
   expect(mockDocuments.get('animals/b').records).toEqual([])
+})
+
+it('completar una venta guarda el historial y revertirla lo marca como deshecho', async () => {
+  animal('a')
+  mockDocuments.set('sales/sale', {
+    farmId: 'f',
+    farmerId: 'u',
+    status: 'pending',
+    date,
+    pricePerKg: 1000,
+    priceType: 'en_pie',
+    buyer: 'Comprador',
+    animals: [{ animalId: 'a', animalNumber: 'a', weight: 20000 }],
+  })
+  const { result, rerender } = renderHook(() => useSalesCRUD())
+  await act(async () => {
+    await result.current.completeSale('sale')
+  })
+  const sold = mockDocuments.get('animals/a')
+  expect(sold.status).toBe('vendido')
+  expect(sold.records).toHaveLength(1)
+  expect(sold.records[0]).toMatchObject({
+    eventType: 'venta',
+    title: 'Venta registrada',
+    date,
+    createdBy: 'u',
+    details: { Total: '$200.00' },
+  })
+  expect(mockDocuments.get('sales/sale').status).toBe('completed')
+  rerender()
+  await act(async () => {
+    await expect(result.current.completeSale('sale')).rejects.toThrow('ya está completada')
+  })
+  expect(mockDocuments.get('animals/a').records).toHaveLength(1)
+  await act(async () => {
+    await result.current.revertSale('sale')
+  })
+  expect(mockDocuments.get('animals/a').status).toBe('activo')
+  expect(mockDocuments.get('animals/a').records[0].undoneAt).toBeTruthy()
+  expect(mockDocuments.get('sales/sale').status).toBe('pending')
 })

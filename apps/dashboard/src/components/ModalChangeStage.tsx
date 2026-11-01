@@ -6,7 +6,7 @@ import AnimalTag from '@/components/AnimalTag'
 import Button from '@/components/buttons/Button'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import AnimalSelector from '@/components/inputs/AnimalSelector'
-import DateTimeInput from '@/components/inputs/DateTimeInput'
+import { DatePickerButtons } from '@/components/buttons/date-picker-buttons'
 import { Modal } from '@/components/Modal'
 import type { RootState } from '@/features/store'
 import { trackAnimalStageChanged } from '@/lib/analytics/track'
@@ -28,6 +28,9 @@ import {
 } from '@/types/animals'
 
 interface Props {
+  initialDate?: string
+  embedded?: boolean
+  onCancel?: () => void
   isOpen: boolean
   onClose: () => void
   /** Animales a los que se aplicará el cambio. len 1 = individual, len > 1 = bulk. */
@@ -45,6 +48,9 @@ interface Props {
 const ModalChangeStage: React.FC<Props> = ({
   isOpen,
   onClose,
+  embedded = false,
+  initialDate,
+  onCancel,
   animals,
   allAnimals,
   onApplied,
@@ -79,7 +85,14 @@ const ModalChangeStage: React.FC<Props> = ({
   useEffect(() => {
     if (!isOpen) return
     setTarget(null)
-    setDate(new Date())
+    setDate(
+      initialDate
+        ? (() => {
+            const [year, month, day] = initialDate.split('-').map(Number)
+            return new Date(year, month - 1, day)
+          })()
+        : new Date(),
+    )
     setMaleId(null)
     setNotes('')
     setError(null)
@@ -94,7 +107,7 @@ const ModalChangeStage: React.FC<Props> = ({
       setMotherCriaWeanIds(new Set())
     }
     setSiblingWeanIds(new Set())
-  }, [isOpen, single, allAnimals])
+  }, [isOpen, single, allAnimals, initialDate])
 
   const requiresMaleParent = target === 'embarazada'
   const allowsNotes = target === 'descarte' || target === 'muerto' || target === 'perdido'
@@ -187,137 +200,121 @@ const ModalChangeStage: React.FC<Props> = ({
   const isCriaSelection =
     !isPregnantSingle && animals.length > 0 && animals.every((a) => a.computedStage === 'cria')
 
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Mover de etapa" size="md">
-      <div className="space-y-4">
-        {/* Header info */}
-        {isIndividual ? (
-          <div className="text-sm text-gray-700">
-            <span className="text-gray-500">Etapa actual:</span>{' '}
-            <span className="font-medium">
-              {currentStageIcon} {currentStageLabel}
-            </span>{' '}
-            <span className="text-gray-500">— Animal:</span>{' '}
-            <span className="font-mono">#{single?.animalNumber}</span>
-          </div>
-        ) : (
-          <div className="text-sm text-gray-700">
-            <span className="font-semibold">{animals.length}</span> animales seleccionados
-          </div>
-        )}
+  const stageButtonClass = (selected: boolean) =>
+    embedded
+      ? `flex min-h-20 min-w-0 flex-col items-center justify-center gap-2 rounded-lg border-2 px-3 py-3 text-center text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 disabled:opacity-50 ${selected ? 'border-green-500 bg-green-50 text-green-800 shadow-sm' : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'}`
+      : `inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer transition-all ${selected ? 'bg-green-600 text-white border-green-700 shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`
 
-        {/* Hembra gestante: solo desconfirmar gestación o registrar parto */}
-        {isPregnantSingle && single ? (
-          <div className="space-y-3">
-            <p className="text-sm text-gray-700">
-              Esta hembra está gestante. Las acciones disponibles son:
-            </p>
-            <div className="flex flex-col gap-2">
-              {onRegisterBirth && (
-                <Button
-                  color="success"
-                  icon="baby"
-                  onClick={() => {
-                    onRegisterBirth(single)
-                    onClose()
-                  }}
-                >
-                  Registrar parto
-                </Button>
-              )}
-              {onUnconfirmPregnancy && (
-                <Button
-                  color="error"
-                  variant="outline"
-                  icon="close"
-                  onClick={() => {
-                    onUnconfirmPregnancy(single)
-                    onClose()
-                  }}
-                >
-                  Desconfirmar gestación
-                </Button>
-              )}
-              {!onRegisterBirth && !onUnconfirmPregnancy && (
-                <p className="text-xs text-gray-500">Acciones no disponibles desde esta vista.</p>
-              )}
-            </div>
+  const content = (
+    <div className="space-y-4">
+      {/* Header info */}
+      {isIndividual ? (
+        <div className="text-sm text-gray-700">
+          <span className="text-gray-500">Etapa actual:</span>{' '}
+          <span className="font-medium">
+            {currentStageIcon} {currentStageLabel}
+          </span>{' '}
+          <span className="text-gray-500">— Animal:</span>{' '}
+          <span className="font-mono">#{single?.animalNumber}</span>
+        </div>
+      ) : (
+        <div className="text-sm text-gray-700">
+          <span className="font-semibold">{animals.length}</span> animales seleccionados
+        </div>
+      )}
+
+      {/* Hembra gestante: solo desconfirmar gestación o registrar parto */}
+      {isPregnantSingle && single ? (
+        <div className="space-y-3">
+          <p className="text-sm text-gray-700">
+            Esta hembra está gestante. Las acciones disponibles son:
+          </p>
+          <div className="flex flex-col gap-2">
+            {onRegisterBirth && (
+              <Button
+                color="success"
+                icon="baby"
+                onClick={() => {
+                  onRegisterBirth(single)
+                  onClose()
+                }}
+              >
+                Registrar parto
+              </Button>
+            )}
+            {onUnconfirmPregnancy && (
+              <Button
+                color="error"
+                variant="outline"
+                icon="close"
+                onClick={() => {
+                  onUnconfirmPregnancy(single)
+                  onClose()
+                }}
+              >
+                Desconfirmar gestación
+              </Button>
+            )}
+            {!onRegisterBirth && !onUnconfirmPregnancy && (
+              <p className="text-xs text-gray-500">Acciones no disponibles desde esta vista.</p>
+            )}
           </div>
-        ) : isCriaSelection ? (
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Destetar a</p>
-              <div className="flex flex-wrap gap-2">
-                {(['engorda', 'reproductor'] as const).map((t) => {
-                  const selected = target === t
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setTarget(t)}
-                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer transition-all ${
-                        selected
-                          ? 'bg-green-600 text-white border-green-700 shadow-sm'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                      }`}
-                      disabled={applying}
-                    >
-                      <span>
-                        <EmojiIcon emoji={TARGET_ICON[t]} />
-                      </span>
-                      <span>Destetar a {TARGET_LABEL[t]}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Otros</p>
-              <div className="flex flex-wrap gap-2">
-                {(['perdido', 'muerto'] as const).map((t) => {
-                  const selected = target === t
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setTarget(t)}
-                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer transition-all ${
-                        selected
-                          ? 'bg-green-600 text-white border-green-700 shadow-sm'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                      }`}
-                      disabled={applying}
-                    >
-                      <span>
-                        <EmojiIcon emoji={TARGET_ICON[t]} />
-                      </span>
-                      <span>{TARGET_LABEL[t]}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
-        ) : (
+        </div>
+      ) : isCriaSelection ? (
+        <div className="space-y-3">
           <div>
-            <p className="text-xs text-gray-500 mb-1">Mover a</p>
-            <div className="flex flex-wrap gap-2">
-              {applicableTargets.map((t) => {
+            <p className="text-xs text-gray-500 mb-1">Destetar a</p>
+            <div
+              className={
+                embedded ? 'grid grid-cols-2 gap-2 sm:grid-cols-3' : 'flex flex-wrap gap-2'
+              }
+            >
+              {(['engorda', 'reproductor'] as const).map((t) => {
                 const selected = target === t
                 return (
                   <button
                     key={t}
                     type="button"
                     onClick={() => setTarget(t)}
-                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer transition-all ${
-                      selected
-                        ? 'bg-green-600 text-white border-green-700 shadow-sm'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    }`}
+                    aria-pressed={selected}
+                    className={stageButtonClass(selected)}
                     disabled={applying}
                   >
                     <span>
-                      <EmojiIcon emoji={TARGET_ICON[t]} />
+                      <EmojiIcon
+                        emoji={TARGET_ICON[t]}
+                        className={embedded ? 'h-6 w-6' : undefined}
+                      />
+                    </span>
+                    <span>Destetar a {TARGET_LABEL[t]}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Otros</p>
+            <div
+              className={
+                embedded ? 'grid grid-cols-2 gap-2 sm:grid-cols-3' : 'flex flex-wrap gap-2'
+              }
+            >
+              {(['perdido', 'muerto'] as const).map((t) => {
+                const selected = target === t
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTarget(t)}
+                    aria-pressed={selected}
+                    className={stageButtonClass(selected)}
+                    disabled={applying}
+                  >
+                    <span>
+                      <EmojiIcon
+                        emoji={TARGET_ICON[t]}
+                        className={embedded ? 'h-6 w-6' : undefined}
+                      />
                     </span>
                     <span>{TARGET_LABEL[t]}</span>
                   </button>
@@ -325,156 +322,231 @@ const ModalChangeStage: React.FC<Props> = ({
               })}
             </div>
           </div>
-        )}
-
-        {/* Preview de etapa final (resuelve el computedStage tras aplicar) */}
-        {!isPregnantSingle && target && animals.length > 0 && (
-          <StagePreview animals={animals} target={target} />
-        )}
-
-        {/* Next step: campos contextuales */}
-        {!isPregnantSingle && target && (
-          <div className="border-t border-gray-200 pt-4 space-y-3">
-            <p className="text-xs font-medium text-gray-500 uppercase">Configuración</p>
-
-            <DateTimeInput value={date} onChange={(d) => setDate(d ?? new Date())} label="Fecha" />
-
-            {requiresMaleParent && (
-              <div>
-                <AnimalSelector
-                  animals={allAnimals}
-                  selectedIds={maleId ? [maleId] : []}
-                  onAdd={(id) => setMaleId(id)}
-                  onRemove={() => setMaleId(null)}
-                  mode="single"
-                  label="Macho padre"
-                  filterFn={(a) => a.gender === 'macho' && (a.status ?? 'activo') === 'activo'}
-                  placeholder="Buscar macho..."
-                />
-              </div>
-            )}
-
-            {allowsNotes && (
-              <div>
-                <label
-                  htmlFor="change-stage-notes"
-                  className="block text-xs font-medium text-gray-500 mb-1"
-                >
-                  {target === 'muerto'
-                    ? 'Causa (opcional)'
-                    : target === 'descarte'
-                      ? 'Motivo (opcional)'
-                      : 'Notas (opcional)'}
-                </label>
-                <input
-                  id="change-stage-notes"
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+        </div>
+      ) : (
+        <div>
+          <p className="text-xs text-gray-500 mb-1">Mover a</p>
+          <div
+            className={embedded ? 'grid grid-cols-2 gap-2 sm:grid-cols-3' : 'flex flex-wrap gap-2'}
+          >
+            {applicableTargets.map((t) => {
+              const selected = target === t
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTarget(t)}
+                  aria-pressed={selected}
+                  className={stageButtonClass(selected)}
                   disabled={applying}
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Bloque cría individual: madre + hermanos */}
-        {!isPregnantSingle && target && single && family?.isCria && family.mother && (
-          <div className="border-t border-gray-200 pt-4 space-y-2">
-            <p className="text-xs font-medium text-gray-500 uppercase">Familia</p>
-            <div className="text-sm">
-              <span className="text-gray-500">Madre:</span>{' '}
-              <AnimalTag animal={family.mother} showModalOnClick />
-            </div>
-            {family.siblings.length > 0 && (
-              <div>
-                <p className="text-xs text-gray-500 mb-1">
-                  Hermanos sin destetar — marca para destetar también:
-                </p>
-                <div className="space-y-1">
-                  {family.siblings.map((s) => (
-                    <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={siblingWeanIds.has(s.id)}
-                        onChange={() => toggleSibling(s.id)}
-                        disabled={applying}
-                      />
-                      <AnimalTag animal={s} showAge />
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Bloque madre lactante: crías a destetar */}
-        {!isPregnantSingle &&
-          target &&
-          single &&
-          family?.isNursingMother &&
-          family.crias.length > 0 && (
-            <div className="border-t border-gray-200 pt-4 space-y-2">
-              <p className="text-xs font-medium text-gray-500 uppercase">Crías lactando</p>
-              <p className="text-sm text-amber-700 bg-amber-50 p-2 rounded">
-                Esta madre tiene {family.crias.length} cría
-                {family.crias.length !== 1 ? 's' : ''} lactando. Para mover la madre, se destetarán
-                primero.
-              </p>
-              <div className="space-y-1">
-                {family.crias.map((c) => (
-                  <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={motherCriaWeanIds.has(c.id)}
-                      onChange={() => toggleMotherCria(c.id)}
-                      disabled={applying}
+                >
+                  <span>
+                    <EmojiIcon
+                      emoji={TARGET_ICON[t]}
+                      className={embedded ? 'h-6 w-6' : undefined}
                     />
-                    <AnimalTag animal={c} showAge />
-                  </label>
-                ))}
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Destetar crías a:</p>
-                <div className="flex gap-2">
-                  {(['engorda', 'reproductor'] as const).map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setMotherCriaTarget(t)}
-                      className={`px-3 py-1 rounded text-sm border ${
-                        motherCriaTarget === t
-                          ? 'bg-green-600 text-white border-green-700'
-                          : 'bg-white text-gray-700 border-gray-300'
-                      }`}
-                      disabled={applying}
-                    >
-                      <EmojiIcon emoji={animal_stage_config[t].icon} />{' '}
-                      {animal_stage_config[t].label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                  </span>
+                  <span>{TARGET_LABEL[t]}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Preview de etapa final (resuelve el computedStage tras aplicar) */}
+      {!isPregnantSingle && target && animals.length > 0 && (
+        <StagePreview animals={animals} target={target} />
+      )}
+
+      {/* Next step: campos contextuales */}
+      {!isPregnantSingle && target && (
+        <div className="pt-4 space-y-3">
+          <p className="text-xs font-medium text-gray-500 uppercase">Configuración</p>
+
+          <DatePickerButtons
+            value={`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`}
+            onChange={(value) => {
+              if (!value) return
+              const [year, month, day] = value.split('-').map(Number)
+              setDate(new Date(year, month - 1, day))
+            }}
+            label="Fecha"
+            showToday
+          />
+
+          {requiresMaleParent && (
+            <div>
+              <AnimalSelector
+                animals={allAnimals}
+                selectedIds={maleId ? [maleId] : []}
+                onAdd={(id) => setMaleId(id)}
+                onRemove={() => setMaleId(null)}
+                mode="single"
+                label="Macho padre"
+                filterFn={(a) => a.gender === 'macho' && (a.status ?? 'activo') === 'activo'}
+                placeholder="Buscar macho..."
+              />
             </div>
           )}
 
-        {/* Bulk warning si hay madres lactantes */}
-        {!isIndividual && target && <BulkFamilyWarning animals={animals} allAnimals={allAnimals} />}
+          {allowsNotes && (
+            <div>
+              <label
+                htmlFor="change-stage-notes"
+                className="block text-xs font-medium text-gray-500 mb-1"
+              >
+                {target === 'muerto'
+                  ? 'Causa (opcional)'
+                  : target === 'descarte'
+                    ? 'Motivo (opcional)'
+                    : 'Notas (opcional)'}
+              </label>
+              <input
+                id="change-stage-notes"
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                disabled={applying}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
-        {error && (
-          <div className="text-sm text-red-700 bg-red-50 border border-red-200 p-2 rounded">
-            {error}
+      {/* Bloque cría individual: madre + hermanos */}
+      {!isPregnantSingle && target && single && family?.isCria && family.mother && (
+        <div className="pt-4 space-y-2">
+          <p className="text-xs font-medium text-gray-500 uppercase">Familia</p>
+          <div className="text-sm">
+            <span className="text-gray-500">Madre:</span>{' '}
+            <AnimalTag animal={family.mother} showModalOnClick />
+          </div>
+          {family.siblings.length > 0 && (
+            <div>
+              <p className="text-xs text-gray-500 mb-1">
+                Hermanos sin destetar — marca para destetar también:
+              </p>
+              <div className="space-y-1">
+                {family.siblings.map((s) => (
+                  <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={siblingWeanIds.has(s.id)}
+                      onChange={() => toggleSibling(s.id)}
+                      disabled={applying}
+                    />
+                    <AnimalTag animal={s} showAge />
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Bloque madre lactante: crías a destetar */}
+      {!isPregnantSingle &&
+        target &&
+        single &&
+        family?.isNursingMother &&
+        family.crias.length > 0 && (
+          <div className="pt-4 space-y-2">
+            <p className="text-xs font-medium text-gray-500 uppercase">Crías lactando</p>
+            <p className="text-sm text-amber-700 bg-amber-50 p-2 rounded">
+              Esta madre tiene {family.crias.length} cría
+              {family.crias.length !== 1 ? 's' : ''} lactando. Para mover la madre, se destetarán
+              primero.
+            </p>
+            <div className="space-y-1">
+              {family.crias.map((c) => (
+                <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={motherCriaWeanIds.has(c.id)}
+                    onChange={() => toggleMotherCria(c.id)}
+                    disabled={applying}
+                  />
+                  <AnimalTag animal={c} showAge />
+                </label>
+              ))}
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Destetar crías a:</p>
+              <div className="flex gap-2">
+                {(['engorda', 'reproductor'] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setMotherCriaTarget(t)}
+                    className={`px-3 py-1 rounded text-sm border ${
+                      motherCriaTarget === t
+                        ? 'bg-green-600 text-white border-green-700'
+                        : 'bg-white text-gray-700 border-gray-300'
+                    }`}
+                    disabled={applying}
+                  >
+                    <EmojiIcon emoji={animal_stage_config[t].icon} /> {animal_stage_config[t].label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-gray-200">
+      {/* Bulk warning si hay madres lactantes */}
+      {!isIndividual && target && <BulkFamilyWarning animals={animals} allAnimals={allAnimals} />}
+
+      {error && (
+        <div className="text-sm text-red-700 bg-red-50 border border-red-200 p-2 rounded">
+          {error}
+        </div>
+      )}
+
+      {embedded ? (
+        <div className="flex items-center gap-3 pt-5 mt-5">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={applying}
+            className="min-h-11 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Atrás
+          </button>
+          <div className="flex-1" />
+          {!isPregnantSingle && (
+            <button
+              type="button"
+              onClick={handleApply}
+              disabled={!canApply}
+              className="min-h-11 rounded-lg bg-green-600 px-6 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {applying ? 'Guardando…' : 'Guardar registro'}
+            </button>
+          )}
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={applying}
+              className="min-h-11 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="flex justify-end gap-2 pt-2 border-gray-200">
           <Button variant="outline" color="neutral" onClick={onClose} disabled={applying}>
-            Cancelar
+            {embedded ? 'Atrás' : 'Cancelar'}
           </Button>
           {!isPregnantSingle && (
-            <Button color="primary" onClick={handleApply} disabled={!canApply}>
+            <Button
+              color={embedded ? 'success' : 'primary'}
+              onClick={handleApply}
+              disabled={!canApply}
+            >
               {applying
                 ? progress
                   ? `Aplicando ${progress.current}/${progress.total}...`
@@ -482,8 +554,26 @@ const ModalChangeStage: React.FC<Props> = ({
                 : 'Aplicar cambios'}
             </Button>
           )}
+          {embedded && onCancel && (
+            <Button variant="outline" color="neutral" onClick={onCancel} disabled={applying}>
+              Cancelar
+            </Button>
+          )}
         </div>
-      </div>
+      )}
+    </div>
+  )
+  if (embedded) return isOpen ? content : null
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Mover de etapa"
+      size="md"
+      closeOnOverlayClick={!applying}
+      closeOnEscape={!applying}
+    >
+      {content}
     </Modal>
   )
 }

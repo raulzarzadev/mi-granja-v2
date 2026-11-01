@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useEffect, useId } from 'react'
+import React, { useEffect, useId, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useFixedViewport } from '@/hooks/useFixedViewport'
 import ButtonClose from './buttons/ButtonClose'
 import { Icon, IconName } from './Icon/icon'
 
@@ -14,6 +15,9 @@ export interface ModalProps {
   title?: string
   /** Contenido del modal */
   children: React.ReactNode
+  /** Acciones persistentes fuera del contenido scrolleable */
+  footer?: React.ReactNode
+  mobileSheet?: boolean
   /** Tamaño del modal */
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
   /** Si se puede cerrar haciendo click fuera */
@@ -53,6 +57,8 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   children,
+  footer,
+  mobileSheet = false,
   size = 'md',
   closeOnOverlayClick = true,
   closeOnEscape = true,
@@ -62,12 +68,15 @@ export const Modal: React.FC<ModalProps> = ({
   iconClassName,
   contentClassName,
 }) => {
+  const viewportStyle = useFixedViewport(isOpen)
+  const [layer, setLayer] = useState(50)
   const modalId = useId()
   const titleId = `${modalId}-title`
 
   useEffect(() => {
     if (!isOpen) return
     openModalStack.push(modalId)
+    setLayer(50 + openModalStack.length * 2)
 
     return () => {
       const index = openModalStack.lastIndexOf(modalId)
@@ -125,6 +134,14 @@ export const Modal: React.FC<ModalProps> = ({
       aria-modal="true"
       aria-labelledby={title ? titleId : undefined}
       style={{
+        ...viewportStyle,
+        zIndex: layer,
+        top: 'var(--fixed-top-inset, 0px)',
+        left: 'var(--fixed-left-inset, 0px)',
+        right: 'auto',
+        bottom: 'auto',
+        width: 'var(--fixed-visible-width, 100%)',
+        height: 'var(--fixed-visible-height, 100dvh)',
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         paddingLeft: 'env(safe-area-inset-left)',
@@ -132,10 +149,12 @@ export const Modal: React.FC<ModalProps> = ({
       }}
     >
       {/* Contenedor centrado para desktop */}
-      <div className="h-full w-full flex items-center justify-center p-0 sm:p-4">
+      <div
+        className={`h-full w-full flex ${mobileSheet ? 'items-end sm:items-center' : 'items-center'} justify-center p-0 sm:p-4`}
+      >
         <div
           className={`
-            bg-white w-full h-full min-w-0 max-w-full rounded-none
+            bg-white w-full ${mobileSheet ? 'h-auto max-h-[calc(100%_-_1rem)] rounded-t-3xl' : 'h-full rounded-none'} min-w-0 max-w-full
             sm:rounded-lg sm:w-full sm:h-auto sm:max-h-[90vh] sm:min-w-96
             shadow-none sm:shadow-xl animate-in zoom-in-95 duration-200 
             flex flex-col ${sizeClasses[size]}
@@ -162,7 +181,7 @@ export const Modal: React.FC<ModalProps> = ({
                 <ButtonClose
                   onClick={onClose}
                   title="cerrar modal"
-                  className="shrink-0 text-gray-800"
+                  className="h-11 w-11 shrink-0 justify-center rounded-full text-gray-800 focus-visible:ring-2 focus-visible:ring-green-700"
                 />
               )}
             </div>
@@ -170,13 +189,18 @@ export const Modal: React.FC<ModalProps> = ({
 
           {/* Contenido scrolleable */}
           <div
-            className={`min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 ${contentClassName || ''}`}
+            className={`min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 ${contentClassName || ''}`}
             style={{
               WebkitOverflowScrolling: 'touch',
             }}
           >
             {children}
           </div>
+          {footer && (
+            <div className="shrink-0 border-t border-gray-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4">
+              {footer}
+            </div>
+          )}
         </div>
       </div>
     </div>,

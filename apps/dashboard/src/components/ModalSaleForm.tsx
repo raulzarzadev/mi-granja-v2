@@ -5,7 +5,7 @@ import { useSelector } from 'react-redux'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { IconLabel } from '@/components/Icon/emoji-icons'
 import AnimalSelector from '@/components/inputs/AnimalSelector'
-import DateTimeInput from '@/components/inputs/DateTimeInput'
+import { DatePickerButtons } from '@/components/buttons/date-picker-buttons'
 import { MoneyInput } from '@/components/inputs/MoneyInput'
 import { WeightInput } from '@/components/inputs/WeightInput'
 import { Modal } from '@/components/Modal'
@@ -36,6 +36,10 @@ export interface SaleCompletionSummary {
 }
 
 interface ModalSaleFormProps {
+  initialDate?: string
+  embedded?: boolean
+  onBack?: () => void
+  onCancel?: () => void
   isOpen: boolean
   onClose: () => void
   sale?: Sale
@@ -50,6 +54,10 @@ interface ModalSaleFormProps {
 const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
   isOpen,
   onClose,
+  embedded = false,
+  initialDate,
+  onBack,
+  onCancel,
   sale,
   initialAnimalId,
   initialAnimalIds,
@@ -122,7 +130,14 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
       setAnimalWeights(weights)
     } else {
       setStatus(initialStatus ?? 'scheduled')
-      setDate(new Date())
+      setDate(
+        initialDate
+          ? (() => {
+              const [year, month, day] = initialDate.split('-').map(Number)
+              return new Date(year, month - 1, day)
+            })()
+          : new Date(),
+      )
       setPricePerKg(null)
       setPriceType('en_pie')
       setBuyer('')
@@ -133,7 +148,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
       setAnimalWeights({})
     }
     setError('')
-  }, [sale, isOpen, initialAnimalId, initialAnimalIds, initialStatus])
+  }, [sale, isOpen, initialAnimalId, initialAnimalIds, initialStatus, initialDate])
 
   const draftValue = useMemo(
     () => ({ status, date, pricePerKg, priceType, buyer, notes, selectedAnimalIds, animalWeights }),
@@ -331,53 +346,61 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
   const isCancelled = sale?.status === 'cancelled'
   const isReadOnly = isCompleted || isCancelled
 
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={() => {
-        if (!commitLock.current) onClose()
-      }}
-      title={isEditing ? 'Editar Venta' : 'Nueva Venta'}
-      size="lg"
-    >
-      <div className="space-y-4">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
-            {error}
-          </div>
-        )}
-
-        {/* Status */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as SaleStatus)}
-            disabled={isReadOnly || Boolean(onCommit)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
-          >
-            {sale_statuses.map((s) => (
-              <option key={s} value={s}>
-                {sale_status_labels[s]}
-              </option>
-            ))}
-          </select>
-          {status === 'completed' && !isReadOnly && (
-            <p className="mt-1.5 text-xs leading-5 text-gray-600">
-              Para completarla se requiere fecha, precio y peso de cada animal. Al guardar, los
-              animales quedarán registrados como vendidos.
-            </p>
-          )}
+  const content = (
+    <div className="space-y-4">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
+          {error}
         </div>
+      )}
 
-        {/* Fecha */}
+      {/* Status */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as SaleStatus)}
+          disabled={isReadOnly || Boolean(onCommit)}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
+        >
+          {sale_statuses.map((s) => (
+            <option key={s} value={s}>
+              {sale_status_labels[s]}
+            </option>
+          ))}
+        </select>
+        {status === 'completed' && !isReadOnly && (
+          <p className="mt-1.5 text-xs leading-5 text-gray-600">
+            Para completarla se requiere fecha, precio y peso de cada animal. Al guardar, los
+            animales quedarán registrados como vendidos.
+          </p>
+        )}
+      </div>
+
+      {/* Fecha */}
+      {!embedded && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de venta</label>
-          <DateTimeInput value={date} onChange={setDate} disabled={isReadOnly} />
+          <DatePickerButtons
+            value={
+              date
+                ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                : ''
+            }
+            onChange={(value) => {
+              if (!value) return
+              const [year, month, day] = value.split('-').map(Number)
+              setDate(new Date(year, month - 1, day))
+            }}
+            disabled={isReadOnly}
+            showToday
+            inline
+          />
         </div>
+      )}
 
-        {/* Comprador */}
-        {/* <div>
+      {/* Comprador */}
+      {/* <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Comprador</label>
           <input
             type="text"
@@ -388,113 +411,113 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
           />
         </div> */}
-        {/* Precio por kg + tipo */}
-        <div>
-          <div className="flex items-end gap-3">
-            <MoneyInput
-              label="Precio por kg"
-              value={pricePerKg}
-              onChange={setPricePerKg}
-              suffix="/kg"
-              disabled={isReadOnly}
-              className="flex-1"
-            />
-            <div className="flex bg-gray-100 rounded-lg p-0.5 mb-px">
-              {sale_price_types.map((pt) => (
-                <button
-                  key={pt}
-                  type="button"
-                  onClick={() => !isReadOnly && setPriceType(pt)}
-                  disabled={isReadOnly}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                    priceType === pt
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  } disabled:opacity-50`}
-                >
-                  {sale_price_type_labels[pt]}
-                </button>
-              ))}
-            </div>
+      {/* Precio por kg + tipo */}
+      <div>
+        <div className="flex items-end gap-3">
+          <MoneyInput
+            label="Precio por kg"
+            value={pricePerKg}
+            onChange={setPricePerKg}
+            suffix="/kg"
+            disabled={isReadOnly}
+            className="flex-1"
+          />
+          <div className="flex bg-gray-100 rounded-lg p-0.5 mb-px">
+            {sale_price_types.map((pt) => (
+              <button
+                key={pt}
+                type="button"
+                onClick={() => !isReadOnly && setPriceType(pt)}
+                disabled={isReadOnly}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                  priceType === pt
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                } disabled:opacity-50`}
+              >
+                {sale_price_type_labels[pt]}
+              </button>
+            ))}
           </div>
         </div>
+      </div>
 
-        {/* Animal selector */}
-        {!isReadOnly && (
-          <AnimalSelector
-            animals={availableAnimals}
-            selectedIds={selectedAnimalIds}
-            onAdd={(id) => setSelectedAnimalIds((prev) => [...prev, id])}
-            onRemove={(id) => {
-              setSelectedAnimalIds((prev) => prev.filter((x) => x !== id))
-              setAnimalWeights((prev) => {
-                const next = { ...prev }
-                delete next[id]
-                return next
-              })
-            }}
-            mode="multi"
-            label="Animales para venta"
-            placeholder="Buscar animales para la venta..."
-          />
-        )}
+      {/* Animal selector */}
+      {!isReadOnly && (
+        <AnimalSelector
+          animals={availableAnimals}
+          selectedIds={selectedAnimalIds}
+          onAdd={(id) => setSelectedAnimalIds((prev) => [...prev, id])}
+          onRemove={(id) => {
+            setSelectedAnimalIds((prev) => prev.filter((x) => x !== id))
+            setAnimalWeights((prev) => {
+              const next = { ...prev }
+              delete next[id]
+              return next
+            })
+          }}
+          mode="multi"
+          label="Animales para venta"
+          placeholder="Buscar animales para la venta..."
+        />
+      )}
 
-        {/* Pesos individuales */}
-        {selectedAnimalIds.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Peso por animal</label>
-            <div className="space-y-1.5">
-              {selectedAnimalIds.map((id) => {
-                const animal = animals.find((a) => a.id === id)
-                return (
-                  <div key={id} className="flex items-center justify-between gap-3">
-                    <span className="text-sm text-gray-700 truncate flex-1">
-                      {animal?.animalNumber || id}
-                      {animal?.name && <span className="text-gray-400 ml-1">{animal.name}</span>}
-                    </span>
-                    <WeightInput
-                      value={animalWeights[id]}
-                      onChange={(g) => setAnimalWeights((prev) => ({ ...prev, [id]: g }))}
-                      disabled={isReadOnly}
-                      size="sm"
-                      className="w-28 shrink-0"
-                    />
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Totales */}
-            {(() => {
-              const totalGrams = selectedAnimalIds.reduce(
-                (sum, id) => sum + (animalWeights[id] || 0),
-                0,
-              )
-              const totalKg = totalGrams / 1000
-              const totalCentavos = Math.round((pricePerKg || 0) * totalKg)
+      {/* Pesos individuales */}
+      {selectedAnimalIds.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Peso por animal</label>
+          <div className="space-y-1.5">
+            {selectedAnimalIds.map((id) => {
+              const animal = animals.find((a) => a.id === id)
               return (
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200">
-                  <span className="text-sm font-medium text-gray-700">Total</span>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="text-gray-600">
-                      {totalKg > 0
-                        ? `${totalKg.toLocaleString('es-MX', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg`
-                        : '— kg'}
-                    </span>
-                    <span className="font-semibold text-gray-900">
-                      {totalCentavos > 0
-                        ? `$${(totalCentavos / 100).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
-                        : '—'}
-                    </span>
-                  </div>
+                <div key={id} className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-gray-700 truncate flex-1">
+                    {animal?.animalNumber || id}
+                    {animal?.name && <span className="text-gray-400 ml-1">{animal.name}</span>}
+                  </span>
+                  <WeightInput
+                    value={animalWeights[id]}
+                    onChange={(g) => setAnimalWeights((prev) => ({ ...prev, [id]: g }))}
+                    disabled={isReadOnly}
+                    size="sm"
+                    className="w-28 shrink-0"
+                  />
                 </div>
               )
-            })()}
+            })}
           </div>
-        )}
 
-        {/* Notas */}
-        {/* <div>
+          {/* Totales */}
+          {(() => {
+            const totalGrams = selectedAnimalIds.reduce(
+              (sum, id) => sum + (animalWeights[id] || 0),
+              0,
+            )
+            const totalKg = totalGrams / 1000
+            const totalCentavos = Math.round((pricePerKg || 0) * totalKg)
+            return (
+              <div className="flex items-center justify-between mt-3 py-3">
+                <span className="text-sm font-medium text-gray-700">Total</span>
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="text-gray-600">
+                    {totalKg > 0
+                      ? `${totalKg.toLocaleString('es-MX', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg`
+                      : '— kg'}
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {totalCentavos > 0
+                      ? `$${(totalCentavos / 100).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+                      : '—'}
+                  </span>
+                </div>
+              </div>
+            )
+          })()}
+        </div>
+      )}
+
+      {/* Notas */}
+      {/* <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
           <textarea
             value={notes}
@@ -506,61 +529,101 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
           />
         </div> */}
 
-        {/* Acciones */}
-        <div className="flex flex-wrap gap-2 pt-2 ">
-          {isCompleted ? (
+      {/* Acciones */}
+      <div
+        className={
+          embedded
+            ? 'mt-5 grid grid-cols-2 items-center gap-3 pt-3 sm:grid-cols-[auto_1fr_auto]'
+            : 'mt-5 flex flex-wrap items-center gap-3 pt-3'
+        }
+      >
+        {embedded && onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            disabled={isCommitting || isSubmitting}
+            className="min-h-11 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Atrás
+          </button>
+        )}
+        {isCompleted ? (
+          <button
+            onClick={handleRevert}
+            disabled={isCommitting || isSubmitting}
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm hover:bg-orange-700 transition-colors disabled:opacity-50"
+          >
+            Revertir Venta
+          </button>
+        ) : (
+          <>
             <button
-              onClick={handleRevert}
-              disabled={isCommitting || isSubmitting}
-              className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm hover:bg-orange-700 transition-colors disabled:opacity-50"
+              onClick={handleSave}
+              disabled={isCommitting || isSubmitting || isReadOnly}
+              className={`min-h-11 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 disabled:opacity-50 ${embedded ? 'order-first col-span-2 sm:order-none sm:col-span-1' : ''}`}
             >
-              Revertir Venta
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={handleSave}
-                disabled={isCommitting || isSubmitting || isReadOnly}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
-              >
-                {status === 'completed'
-                  ? isEditing
+              {status === 'completed'
+                ? isEditing
+                  ? 'Completar venta'
+                  : embedded
                     ? 'Completar venta'
                     : 'Crear y completar venta'
-                  : isEditing
-                    ? 'Guardar Cambios'
-                    : 'Crear Venta'}
+                : isEditing
+                  ? 'Guardar Cambios'
+                  : 'Crear Venta'}
+            </button>
+
+            {isEditing && !isReadOnly && status !== 'completed' && (
+              <button
+                onClick={handleComplete}
+                disabled={isCommitting || isSubmitting}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                <IconLabel
+                  label={
+                    completeProgress
+                      ? `Finalizando ${completeProgress.current}/${completeProgress.total}...`
+                      : '✅ Finalizar Venta'
+                  }
+                />
               </button>
+            )}
 
-              {isEditing && !isReadOnly && status !== 'completed' && (
-                <button
-                  onClick={handleComplete}
-                  disabled={isCommitting || isSubmitting}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
-                >
-                  <IconLabel
-                    label={
-                      completeProgress
-                        ? `Finalizando ${completeProgress.current}/${completeProgress.total}...`
-                        : '✅ Finalizar Venta'
-                    }
-                  />
-                </button>
-              )}
-
-              {isEditing && !isCompleted && (
-                <button
-                  onClick={handleDelete}
-                  disabled={isCommitting || isSubmitting}
-                  className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition-colors disabled:opacity-50"
-                >
-                  Eliminar
-                </button>
-              )}
-            </>
-          )}
-        </div>
+            {isEditing && !isCompleted && (
+              <button
+                onClick={handleDelete}
+                disabled={isCommitting || isSubmitting}
+                className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition-colors disabled:opacity-50"
+              >
+                Eliminar
+              </button>
+            )}
+          </>
+        )}
+        {embedded && onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isCommitting || isSubmitting}
+            className="min-h-11 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+        )}
       </div>
+    </div>
+  )
+  if (embedded) return isOpen ? content : null
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={() => {
+        if (!commitLock.current) onClose()
+      }}
+      title={isEditing ? 'Editar Venta' : 'Nueva Venta'}
+      size="lg"
+    >
+      {content}
     </Modal>
   )
 }

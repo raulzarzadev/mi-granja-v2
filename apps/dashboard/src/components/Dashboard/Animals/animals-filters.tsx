@@ -1,8 +1,6 @@
-import type { ReactNode } from 'react'
+import { QuickFilterMenu } from '@/components/inputs/FilterChip'
 import { useEffect, useRef, useState } from 'react'
-import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
-import ModalAnimalForm from '@/components/ModalAnimalForm'
-import ModalNewRecord from '@/components/ModalNewRecord'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { computeAnimalStage } from '@/lib/animal-utils'
 import {
@@ -208,120 +206,6 @@ export interface AnimalsFiltersProps {
   tabsTotal?: number
 }
 
-const FilterIcon = ({ active }: { active: boolean }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 20 20"
-    fill="currentColor"
-    className={`w-5 h-5 ${active ? 'text-green-600' : 'text-gray-500'}`}
-  >
-    <path
-      fillRule="evenodd"
-      d="M2.628 1.601C5.028 1.206 7.49 1 10 1s4.973.206 7.372.601a.75.75 0 0 1 .628.74v2.288a2.25 2.25 0 0 1-.659 1.59l-4.682 4.683a2.25 2.25 0 0 0-.659 1.59v3.037c0 .684-.31 1.33-.844 1.757l-1.937 1.55A.75.75 0 0 1 8 18.25v-5.757a2.25 2.25 0 0 0-.659-1.591L2.659 6.22A2.25 2.25 0 0 1 2 4.629V2.34a.75.75 0 0 1 .628-.74Z"
-      clipRule="evenodd"
-    />
-  </svg>
-)
-
-type QuickFilterMenuProps = {
-  label: string
-  selectedLabel: ReactNode
-  value: string
-  allLabel: string
-  options: Array<{ value: string; label: string }>
-  open: boolean
-  onToggle: () => void
-  onChange: (value: string) => void
-}
-
-const QuickFilterMenu = ({
-  label,
-  selectedLabel,
-  value,
-  allLabel,
-  options,
-  open,
-  onToggle,
-  onChange,
-}: QuickFilterMenuProps) => (
-  <div className="relative">
-    <button
-      type="button"
-      aria-haspopup="menu"
-      aria-expanded={open}
-      onClick={onToggle}
-      className={`inline-flex min-h-8 items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-1 ${
-        value
-          ? 'border-slate-300 bg-white text-slate-800 ring-2 ring-slate-400 ring-offset-1'
-          : open
-            ? 'border-slate-300 bg-slate-50 text-slate-800'
-            : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
-      }`}
-    >
-      <span>{selectedLabel || label}</span>
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 20 20"
-        fill="currentColor"
-        className={`size-3.5 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}
-      >
-        <path
-          fillRule="evenodd"
-          d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z"
-          clipRule="evenodd"
-        />
-      </svg>
-    </button>
-    {open && (
-      <div
-        role="menu"
-        aria-label={`Filtrar por ${label.toLowerCase()}`}
-        className="absolute left-0 top-full z-30 mt-2 min-w-36 rounded-lg border border-slate-200 bg-white p-1 shadow-lg"
-      >
-        <button
-          type="button"
-          role="menuitemradio"
-          aria-checked={value === ''}
-          onClick={() => onChange('')}
-          className={`flex min-h-9 w-full items-center justify-between rounded-md px-2.5 text-left text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 ${
-            value === ''
-              ? 'bg-slate-100 font-medium text-slate-900'
-              : 'text-slate-600 hover:bg-slate-50'
-          }`}
-        >
-          {allLabel}
-          {value === '' && (
-            <span aria-hidden="true">
-              <EmojiIcon emoji="✓" />
-            </span>
-          )}
-        </button>
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            role="menuitemradio"
-            aria-checked={value === option.value}
-            onClick={() => onChange(option.value)}
-            className={`flex min-h-9 w-full items-center justify-between rounded-md px-2.5 text-left text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 ${
-              value === option.value
-                ? 'bg-slate-100 font-medium text-slate-900'
-                : 'text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            <IconLabel label={option.label} />
-            {value === option.value && (
-              <span aria-hidden="true">
-                <EmojiIcon emoji="✓" />
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-    )}
-  </div>
-)
-
 export const AnimalsFilters = ({
   speciesAnimals,
   filters,
@@ -335,7 +219,9 @@ export const AnimalsFilters = ({
   tabsTotal,
 }: AnimalsFiltersProps) => {
   const [showFilters, setShowFilters] = useState(false)
-  const [openQuickFilter, setOpenQuickFilter] = useState<'type' | 'gender' | 'stage' | null>(null)
+  const [openQuickFilter, setOpenQuickFilter] = useState<
+    'type' | 'gender' | 'stage' | 'status' | 'breedingStatus' | null
+  >(null)
   const speciesCounts = speciesAnimals.reduce<Record<string, number>>((counts, animal) => {
     counts[animal.type] = (counts[animal.type] ?? 0) + 1
     return counts
@@ -384,15 +270,6 @@ export const AnimalsFilters = ({
     return () => document.removeEventListener('pointerdown', handlePointerDown)
   }, [openQuickFilter])
 
-  const hasActiveFilters =
-    filters.status !== 'activo' ||
-    filters.type !== '' ||
-    filters.breed !== '' ||
-    filters.stage !== '' ||
-    filters.gender !== '' ||
-    filters.breedingStatus !== '' ||
-    filters.search !== ''
-
   return (
     <div className="bg-white rounded-lg shadow mb-4">
       {/* Barra principal: búsqueda + filtro + crear */}
@@ -435,242 +312,154 @@ export const AnimalsFilters = ({
             </span>
           </button>
         )}
-
-        {/* Botón filtro */}
         <button
           type="button"
-          onClick={() => setShowFilters(!showFilters)}
-          className={`relative inline-flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 ${
-            showFilters || activeFilterCount > 0
-              ? 'border-green-500 bg-green-50'
-              : 'border-gray-300 hover:bg-gray-50'
-          }`}
+          aria-label="Filtros"
           title="Filtros"
+          aria-expanded={showFilters}
+          onClick={() => {
+            setShowFilters((current) => !current)
+            setOpenQuickFilter(null)
+          }}
+          className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 ${showFilters || activeFilterCount > 0 ? 'border-green-500 bg-green-50 text-green-700' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}`}
         >
-          <FilterIcon active={showFilters || activeFilterCount > 0} />
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+            <path d="M3 4h18v3l-7 7v5l-4 2v-7L3 7V4Z" />
+          </svg>
           {activeFilterCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 bg-green-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-green-700 px-1 text-[10px] font-bold text-white">
               {activeFilterCount}
             </span>
           )}
         </button>
-
-        {/* Botón crear: formulario simple dentro de un modal */}
-        <ModalAnimalForm compact formVariant="simple" />
-        <ModalNewRecord />
       </div>
 
-      {/* Panel de filtros colapsable */}
+      {/* Resumen de resultados + filtros activos */}
       {showFilters && (
-        <div className="px-4 pb-3 pt-1 border-t border-gray-100">
-          <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
-            <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-medium text-gray-500">Estado</label>
-              <select
-                value={filters.status}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, status: e.target.value as AnimalStatus }))
-                }
-                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.status !== 'activo'
-                    ? 'border-green-500 bg-green-50 text-green-800'
-                    : 'border-gray-300'
-                }`}
+        <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between gap-2 flex-wrap">
+          <div ref={quickFiltersRef} className="flex items-center gap-1.5 flex-wrap">
+            <QuickFilterMenu
+              label="Estado"
+              selectedLabel={
+                filters.status !== 'activo' ? animal_status_labels[filters.status] : ''
+              }
+              value={filters.status === 'activo' ? '' : filters.status}
+              allLabel="Activo"
+              options={Object.entries(animal_status_labels)
+                .filter(([value]) => value !== 'activo')
+                .map(([value, label]) => ({ value, label }))}
+              open={openQuickFilter === 'status'}
+              onToggle={() =>
+                setOpenQuickFilter((current) => (current === 'status' ? null : 'status'))
+              }
+              onChange={(value) => {
+                setFilters((prev) => ({ ...prev, status: (value || 'activo') as AnimalStatus }))
+                setOpenQuickFilter(null)
+              }}
+            />
+            <QuickFilterMenu
+              label="Especie"
+              selectedLabel={
+                <span className="inline-flex items-center gap-1">
+                  {filters.type
+                    ? `${formatStatLabel(filters.type)} (${speciesCounts[filters.type] ?? 0})`
+                    : allSpeciesLabel}
+                  {speciesSummaryIndicator}
+                </span>
+              }
+              value={filters.type}
+              allLabel={allSpeciesLabel}
+              options={speciesOptions}
+              open={openQuickFilter === 'type'}
+              onToggle={() => setOpenQuickFilter((current) => (current === 'type' ? null : 'type'))}
+              onChange={(value) => {
+                setFilters((prev) => ({ ...prev, type: value as AnimalType | '' }))
+                setOpenQuickFilter(null)
+              }}
+            />
+            <QuickFilterMenu
+              label="Género"
+              selectedLabel={filters.gender ? formatStatLabel(filters.gender) : ''}
+              value={filters.gender}
+              allLabel="Todos"
+              options={Object.entries(animals_genders_labels).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+              open={openQuickFilter === 'gender'}
+              onToggle={() =>
+                setOpenQuickFilter((current) => (current === 'gender' ? null : 'gender'))
+              }
+              onChange={(value) => {
+                setFilters((prev) => ({ ...prev, gender: value as AnimalGender | '' }))
+                setOpenQuickFilter(null)
+              }}
+            />
+            <QuickFilterMenu
+              label="Etapa"
+              selectedLabel={filters.stage ? formatStatLabel(filters.stage) : ''}
+              value={filters.stage}
+              allLabel="Todas"
+              options={Object.entries(animals_stages_labels).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+              open={openQuickFilter === 'stage'}
+              onToggle={() =>
+                setOpenQuickFilter((current) => (current === 'stage' ? null : 'stage'))
+              }
+              onChange={(value) => {
+                setFilters((prev) => ({ ...prev, stage: value as AnimalStage | '' }))
+                setOpenQuickFilter(null)
+              }}
+            />
+            <QuickFilterMenu
+              label="Reproducción"
+              selectedLabel={filters.breedingStatus ? formatStatLabel(filters.breedingStatus) : ''}
+              value={filters.breedingStatus}
+              allLabel="Todos"
+              options={[
+                { value: 'libre', label: 'Libre' },
+                ...Object.entries(breeding_animal_status_labels).map(([value, label]) => ({
+                  value,
+                  label,
+                })),
+              ]}
+              open={openQuickFilter === 'breedingStatus'}
+              onToggle={() =>
+                setOpenQuickFilter((current) =>
+                  current === 'breedingStatus' ? null : 'breedingStatus',
+                )
+              }
+              onChange={(value) => {
+                setFilters((prev) => ({
+                  ...prev,
+                  breedingStatus: value as AnimalFilters['breedingStatus'],
+                }))
+                setOpenQuickFilter(null)
+              }}
+            />
+            {crossTabDuplicatesCount > 0 && (
+              <button
+                type="button"
+                aria-label={`${crossTabDuplicatesCount} animales aparecen en más de una condición compatible. Ver condiciones`}
+                title={`${crossTabDuplicatesCount} animales aparecen en más de una condición compatible`}
+                onClick={onShowDuplicates}
+                className="inline-flex min-h-8 min-w-8 items-center justify-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
               >
-                {Object.entries(animal_status_labels).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-medium text-gray-500">Especie</label>
-              <select
-                value={filters.type}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, type: e.target.value as AnimalType | '' }))
-                }
-                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.type !== ''
-                    ? 'border-green-500 bg-green-50 text-green-800'
-                    : 'border-gray-300'
-                }`}
-              >
-                <option value="">Todas</option>
-                {availableTypes.map((key) => (
-                  <option key={key} value={key}>
-                    {animals_types_labels[key as AnimalType] || key}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-medium text-gray-500">Etapa</label>
-              <select
-                value={filters.stage}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, stage: e.target.value as AnimalStage | '' }))
-                }
-                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.stage !== ''
-                    ? 'border-green-500 bg-green-50 text-green-800'
-                    : 'border-gray-300'
-                }`}
-              >
-                <option value="">Todas</option>
-                {Object.entries(animals_stages_labels).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-medium text-gray-500">Genero</label>
-              <select
-                value={filters.gender}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, gender: e.target.value as AnimalGender | '' }))
-                }
-                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.gender !== ''
-                    ? 'border-green-500 bg-green-50 text-green-800'
-                    : 'border-gray-300'
-                }`}
-              >
-                <option value="">Todos</option>
-                {Object.entries(animals_genders_labels).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-medium text-gray-500">Reproduccion</label>
-              <select
-                value={filters.breedingStatus}
-                onChange={(e) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    breedingStatus: e.target.value as AnimalBreedingStatus | 'libre' | '',
-                  }))
-                }
-                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.breedingStatus !== ''
-                    ? 'border-green-500 bg-green-50 text-green-800'
-                    : 'border-gray-300'
-                }`}
-              >
-                <option value="">Todos</option>
-                <option value="libre">Libre</option>
-                {Object.entries(breeding_animal_status_labels).map(([key, value]) => (
-                  <option key={key} value={key}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="size-4">
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0ZM9.25 8.25A.75.75 0 0 1 10 7.5h.01a.75.75 0 0 1 .75.75v5a.75.75 0 0 1-1.5 0v-5ZM10 5.25a.875.875 0 1 0 0 1.75.875.875 0 0 0 0-1.75Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="text-xs font-semibold">{crossTabDuplicatesCount}</span>
+              </button>
+            )}
           </div>
         </div>
       )}
-
-      {/* Resumen de resultados + filtros activos */}
-      <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between gap-2 flex-wrap">
-        <div ref={quickFiltersRef} className="flex items-center gap-1.5 flex-wrap">
-          <QuickFilterMenu
-            label="Especie"
-            selectedLabel={
-              <span className="inline-flex items-center gap-1">
-                {filters.type
-                  ? `${formatStatLabel(filters.type)} (${speciesCounts[filters.type] ?? 0})`
-                  : allSpeciesLabel}
-                {speciesSummaryIndicator}
-              </span>
-            }
-            value={filters.type}
-            allLabel={allSpeciesLabel}
-            options={speciesOptions}
-            open={openQuickFilter === 'type'}
-            onToggle={() => setOpenQuickFilter((current) => (current === 'type' ? null : 'type'))}
-            onChange={(value) => {
-              setFilters((prev) => ({ ...prev, type: value as AnimalType | '' }))
-              setOpenQuickFilter(null)
-            }}
-          />
-          <QuickFilterMenu
-            label="Género"
-            selectedLabel={filters.gender ? formatStatLabel(filters.gender) : ''}
-            value={filters.gender}
-            allLabel="Todos"
-            options={Object.entries(animals_genders_labels).map(([value, label]) => ({
-              value,
-              label,
-            }))}
-            open={openQuickFilter === 'gender'}
-            onToggle={() =>
-              setOpenQuickFilter((current) => (current === 'gender' ? null : 'gender'))
-            }
-            onChange={(value) => {
-              setFilters((prev) => ({ ...prev, gender: value as AnimalGender | '' }))
-              setOpenQuickFilter(null)
-            }}
-          />
-          <QuickFilterMenu
-            label="Etapa"
-            selectedLabel={filters.stage ? formatStatLabel(filters.stage) : ''}
-            value={filters.stage}
-            allLabel="Todas"
-            options={Object.entries(animals_stages_labels).map(([value, label]) => ({
-              value,
-              label,
-            }))}
-            open={openQuickFilter === 'stage'}
-            onToggle={() => setOpenQuickFilter((current) => (current === 'stage' ? null : 'stage'))}
-            onChange={(value) => {
-              setFilters((prev) => ({ ...prev, stage: value as AnimalStage | '' }))
-              setOpenQuickFilter(null)
-            }}
-          />
-          {crossTabDuplicatesCount > 0 && (
-            <button
-              type="button"
-              aria-label={`${crossTabDuplicatesCount} animales aparecen en más de una condición compatible. Ver condiciones`}
-              title={`${crossTabDuplicatesCount} animales aparecen en más de una condición compatible`}
-              onClick={onShowDuplicates}
-              className="inline-flex min-h-8 min-w-8 items-center justify-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
-            >
-              <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="size-4">
-                <path
-                  fillRule="evenodd"
-                  d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0ZM9.25 8.25A.75.75 0 0 1 10 7.5h.01a.75.75 0 0 1 .75.75v5a.75.75 0 0 1-1.5 0v-5ZM10 5.25a.875.875 0 1 0 0 1.75.875.875 0 0 0 0-1.75Z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span className="text-xs font-semibold">{crossTabDuplicatesCount}</span>
-            </button>
-          )}
-          {hasActiveFilters && (
-            <>
-              {filters.status !== 'activo' && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  {formatStatLabel(filters.status)}
-                </span>
-              )}
-              {filters.breedingStatus && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                  {formatStatLabel(filters.breedingStatus)}
-                </span>
-              )}
-            </>
-          )}
-        </div>
-      </div>
     </div>
   )
 }

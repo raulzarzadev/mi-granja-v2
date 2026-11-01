@@ -5,6 +5,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   onSnapshot,
   orderBy,
   query,
@@ -21,6 +22,8 @@ import { trackSaleCompleted, trackSaleReverted } from '@/lib/analytics/track'
 import { batchUpdateAnimals } from '@/lib/batchUpdateAnimals'
 import { toDate, toLocalDateStart } from '@/lib/dates'
 import { db } from '@/lib/firebase'
+import { commitMovement, createMovementId, undoMovement } from '@/lib/record-movements'
+import type { AnimalRecord } from '@/types/animals'
 import { isSaleComplete, Sale, SaleStatus } from '@/types/sales'
 
 export const useSalesCRUD = () => {
@@ -205,29 +208,66 @@ export const useSalesCRUD = () => {
       const saleDate = sale.date ? new Date(sale.date) : new Date()
       const saleAnimals = sale.animals || []
 
-      const entryById = new Map(saleAnimals.map((e) => [e.animalId, e]))
-      const ids = saleAnimals.map((e) => e.animalId)
-      await batchUpdateAnimals(
+      if (!user?.id || !currentFarm?.id)
+        throw new Error('Selecciona una granja y un usuario válidos.')
+      const movementId = createMovementId()
+      const ids = saleAnimals.map((entry) => entry.animalId)
+      const totalCentavos = saleAnimals.reduce(
+        (sum, entry) => sum + Math.round((pricePerKg * (entry.weight || 0)) / 1000),
+        0,
+      )
+      await commitMovement(
+        { userId: user.id, farmId: currentFarm.id },
+        movementId,
         ids,
-        ({ id: animalId }) => {
-          const entry = entryById.get(animalId)!
-          const animalPrice = Math.round((pricePerKg * (entry.weight || 0)) / 1000)
+        [`sales/${id}`],
+        (docs) => {
+          const currentSale = docs.get(`sales/${id}`)
+          if (!currentSale || currentSale.status === 'completed')
+            throw new Error('La venta ya está completada o no existe.')
           return {
-            status: 'vendido',
-            statusAt: saleDate,
-            availableToSaleAt: null,
-            soldInfo: {
+            changes: [
+              ...saleAnimals.map((entry) => {
+                const animal = docs.get(`animals/${entry.animalId}`)
+                if ((animal?.status ?? 'activo') !== 'activo')
+                  throw new Error('Solo se pueden vender animales activos.')
+                return {
+                  path: `animals/${entry.animalId}`,
+                  data: {
+                    status: 'vendido',
+                    statusAt: saleDate,
+                    availableToSaleAt: null,
+                    soldInfo: {
+                      date: saleDate,
+                      buyer: sale.buyer ?? '',
+                      weight: entry.weight,
+                      price: Math.round((pricePerKg * (entry.weight || 0)) / 1000),
+                    },
+                  },
+                }
+              }),
+              {
+                path: `sales/${id}`,
+                data: { status: 'completed', completionRecordId: movementId, updatedBy: user.id },
+              },
+            ],
+            record: {
+              type: 'event',
+              category: 'other',
+              eventType: 'venta',
+              title: 'Venta registrada',
               date: saleDate,
-              buyer: sale.buyer,
-              weight: entry.weight,
-              price: animalPrice,
+              description: sale.notes ?? '',
+              details: {
+                Comprador: sale.buyer || 'Sin especificar',
+                'Precio por kg': `$${(pricePerKg / 100).toFixed(2)}`,
+                Total: `$${(totalCentavos / 100).toFixed(2)}`,
+              },
             },
           }
         },
-        { onProgress: opts?.onProgress },
       )
-
-      await updateSale(id, { status: 'completed' as SaleStatus })
+      opts?.onProgress?.(ids.length, ids.length)
       trackSaleCompleted({ animal_count: saleAnimals.length, price_type: sale.priceType })
     } catch (error) {
       console.error('Error completing sale:', error)
@@ -244,6 +284,18 @@ export const useSalesCRUD = () => {
 
     setIsSubmitting(true)
     try {
+      const saleDoc = await getDoc(doc(db, 'sales', id))
+      const recordId = saleDoc.data()?.completionRecordId
+      if (recordId) {
+        if (!user?.id || !currentFarm?.id)
+          throw new Error('Selecciona una granja y un usuario válidos.')
+        const receipt = await getDoc(doc(db, 'recordMovements', recordId))
+        const record = receipt.data()?.record as AnimalRecord | undefined
+        if (!record) throw new Error('No se encontró el registro de la venta.')
+        await undoMovement({ userId: user.id, farmId: currentFarm.id }, record)
+        trackSaleReverted({ animal_count: sale.animals.length })
+        return
+      }
       // Revertir cada animal a activo
       await batchUpdateAnimals(
         sale.animals.map((e) => e.animalId),

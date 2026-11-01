@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 // ── Types ──
 
@@ -24,6 +24,7 @@ export interface DataTableProps<T> {
   sessionStorageKey?: string
   onRowClick?: (row: T) => void
   selectable?: boolean
+  onSelectionChange?: (ids: string[]) => void
   renderBulkActions?: (selectedIds: Set<string>, clearSelection: () => void) => React.ReactNode
   defaultSortKey?: string
   defaultSortDir?: 'asc' | 'desc'
@@ -100,6 +101,7 @@ function DataTable<T>({
   sessionStorageKey,
   onRowClick,
   selectable = true,
+  onSelectionChange,
   renderBulkActions,
   defaultSortKey,
   defaultSortDir = 'asc',
@@ -108,7 +110,6 @@ function DataTable<T>({
   selectionAction,
   selectionModeAction,
   renderCard,
-  viewModeKey,
   pageSize: initialPageSize = 10,
   renderRowDetails,
   onView,
@@ -117,28 +118,16 @@ function DataTable<T>({
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>(defaultSortDir)
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(initialPageSize)
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>(() => {
-    if (!renderCard || typeof window === 'undefined') return 'table'
-    if (viewModeKey) {
-      try {
-        const stored = localStorage.getItem(`mg_pref_${viewModeKey}`) as 'table' | 'cards' | null
-        if (stored) return stored
-      } catch {}
-    }
-    // Auto-select card view on small screens when no persisted preference
-    return window.innerWidth < 640 ? 'cards' : 'table'
-  })
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
 
-  const handleViewMode = (mode: 'table' | 'cards') => {
-    setViewMode(mode)
-    if (viewModeKey) {
-      try {
-        localStorage.setItem(`mg_pref_${viewModeKey}`, mode)
-      } catch {}
-    }
-  }
+  const handleViewMode = (mode: 'table' | 'cards') => setViewMode(mode)
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    onSelectionChange?.(Array.from(selectedIds))
+  }, [selectedIds, onSelectionChange])
+  useEffect(() => () => onSelectionChange?.([]), [onSelectionChange])
+
   const [rowDetails, setRowDetails] = useState<T | null>(null)
   const [lastClickedId, setLastClickedId] = useState<string | null>(() => {
     if (!sessionStorageKey || typeof window === 'undefined') return null
@@ -220,57 +209,59 @@ function DataTable<T>({
       .join(' ')
 
   const paginationControls =
-    pageSize > 0 && sortedData.length > 0 ? (
+    pageSize > 0 && (totalPages > 1 || sortedData.length > initialPageSize) ? (
       <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1 text-sm text-gray-700 sm:w-auto sm:flex-nowrap">
-        <div className="flex min-w-0 items-center gap-1">
-          <button
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            disabled={safePage === 0}
-            aria-label="Página anterior"
-            title="Página anterior"
-            className="inline-flex min-h-10 min-w-10 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 shadow-sm transition-colors hover:border-gray-400 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
-          >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 20 20"
-              fill="none"
-              className="h-5 w-5"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+        {totalPages > 1 && (
+          <div className="flex min-w-0 items-center gap-1">
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={safePage === 0}
+              aria-label="Página anterior"
+              title="Página anterior"
+              className="inline-flex min-h-10 min-w-10 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 shadow-sm transition-colors hover:border-gray-400 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
             >
-              <path d="m12.5 15-5-5 5-5" />
-            </svg>
-          </button>
-          <span
-            className="whitespace-nowrap text-sm font-semibold text-gray-700"
-            aria-live="polite"
-          >
-            {safePage + 1} <span className="font-normal text-gray-500">de</span> {totalPages}
-            <span className="hidden font-normal text-gray-500 min-[360px]:inline"> páginas</span>
-          </span>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            disabled={safePage >= totalPages - 1}
-            aria-label="Página siguiente"
-            title="Página siguiente"
-            className="inline-flex min-h-10 min-w-10 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 shadow-sm transition-colors hover:border-gray-400 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
-          >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 20 20"
-              fill="none"
-              className="h-5 w-5"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                fill="none"
+                className="h-5 w-5"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m12.5 15-5-5 5-5" />
+              </svg>
+            </button>
+            <span
+              className="whitespace-nowrap text-sm font-semibold text-gray-700"
+              aria-live="polite"
             >
-              <path d="m7.5 5 5 5-5 5" />
-            </svg>
-          </button>
-        </div>
+              {safePage + 1} <span className="font-normal text-gray-500">de</span> {totalPages}
+              <span className="hidden font-normal text-gray-500 min-[360px]:inline"> páginas</span>
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={safePage >= totalPages - 1}
+              aria-label="Página siguiente"
+              title="Página siguiente"
+              className="inline-flex min-h-10 min-w-10 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 shadow-sm transition-colors hover:border-gray-400 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                fill="none"
+                className="h-5 w-5"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m7.5 5 5 5-5 5" />
+              </svg>
+            </button>
+          </div>
+        )}
         <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Filas</span>
         <select
           value={pageSize}
@@ -295,9 +286,62 @@ function DataTable<T>({
   return (
     <div className="w-full min-w-0 max-w-full">
       {/* Header bar: toolbar + view toggle */}
-      {(toolbar || renderCard) && (
-        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 px-2 py-2">
-          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+      {(selectable || toolbar || renderCard) && (
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 px-2 py-2">
+          {selectable && (
+            <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
+              {!isSelectionMode ? (
+                <>
+                  <button
+                    onClick={() => setIsSelectionMode(true)}
+                    className="min-h-11 text-blue-600 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-colors cursor-pointer"
+                  >
+                    Seleccionar
+                  </button>
+                  {selectionAction && (
+                    <>
+                      <span className="text-gray-300" aria-hidden="true">
+                        |
+                      </span>
+                      {selectionAction}
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      setSelectedIds(new Set(sortedData.map((r) => rowKey(r))))
+                    }}
+                    className="text-green-600 hover:text-green-800 transition-colors cursor-pointer"
+                  >
+                    Todos ({sortedData.length})
+                  </button>
+                  <span className="text-gray-300">|</span>
+                  <button
+                    onClick={clearSelection}
+                    className="text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  {selectedIds.size > 0 && (
+                    <>
+                      <span className="text-gray-300">|</span>
+                      <span className="text-gray-500">{selectedIds.size} seleccionados</span>
+                      {renderBulkActions?.(selectedIds, clearSelection)}
+                    </>
+                  )}
+                  {selectionModeAction && (
+                    <>
+                      <span className="text-gray-300">|</span>
+                      {selectionModeAction(selectedIds)}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 ml-auto">
             {toolbar}
             {renderCard && (
               <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
@@ -350,64 +394,7 @@ function DataTable<T>({
           </div>
         </div>
       )}
-      {/* Selection toolbar */}
-      {selectable && (
-        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 px-2 py-2 text-sm">
-          <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
-            {!isSelectionMode ? (
-              <>
-                <button
-                  onClick={() => setIsSelectionMode(true)}
-                  className="min-h-11 text-blue-600 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-colors cursor-pointer"
-                >
-                  Seleccionar
-                </button>
-                {selectionAction && (
-                  <>
-                    <span className="text-gray-300" aria-hidden="true">
-                      |
-                    </span>
-                    {selectionAction}
-                  </>
-                )}
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => {
-                    setSelectedIds(new Set(sortedData.map((r) => rowKey(r))))
-                  }}
-                  className="text-green-600 hover:text-green-800 transition-colors cursor-pointer"
-                >
-                  Todos ({sortedData.length})
-                </button>
-                <span className="text-gray-300">|</span>
-                <button
-                  onClick={clearSelection}
-                  className="text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                {selectedIds.size > 0 && (
-                  <>
-                    <span className="text-gray-300">|</span>
-                    <span className="text-gray-500">{selectedIds.size} seleccionados</span>
-                    {renderBulkActions?.(selectedIds, clearSelection)}
-                  </>
-                )}
-                {selectionModeAction && (
-                  <>
-                    <span className="text-gray-300">|</span>
-                    {selectionModeAction(selectedIds)}
-                  </>
-                )}
-              </>
-            )}
-          </div>
-          {paginationControls}
-        </div>
-      )}
-      {!selectable && paginationControls && (
+      {paginationControls && (
         <div className="flex min-w-0 justify-end px-2 py-2">{paginationControls}</div>
       )}
 

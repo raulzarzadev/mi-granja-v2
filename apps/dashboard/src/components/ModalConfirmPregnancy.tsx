@@ -76,6 +76,14 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
       .filter(Boolean) || []
 
   const [selectedFemales, setSelectedFemales] = useState<string[]>([])
+  const willFinishBreeding =
+    selectedFemales.length > 0 &&
+    Boolean(
+      breedingRecord?.femaleBreedingInfo.length &&
+        breedingRecord.femaleBreedingInfo.every(
+          (info) => info.pregnancyConfirmedDate || selectedFemales.includes(info.femaleId),
+        ),
+    )
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [isEditingBreedingDate, setIsEditingBreedingDate] = useState(false)
@@ -308,6 +316,8 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
                           <input
                             type="checkbox"
                             checked={isSelected}
+                            aria-label={`Confirmar gestación de ${animal?.animalNumber}`}
+                            onClick={(event) => event.stopPropagation()}
                             onChange={() => handleFemaleToggle(animal?.id || '')}
                             className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                           />
@@ -348,6 +358,21 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
                     Se calculará automáticamente la fecha de parto esperada para cada hembra
                   </div>
                 </div>
+              </div>
+            )}
+
+            {willFinishBreeding && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"
+              >
+                <p className="font-semibold">Este empadre pasará a Terminado</p>
+                <p className="mt-1">
+                  Al confirmar, todas las hembras tendrán su gestación registrada y el macho{' '}
+                  {male?.animalNumber ? `#${male.animalNumber}` : ''} quedará disponible para otra
+                  monta. Las gestaciones seguirán su seguimiento hasta el parto.
+                </p>
               </div>
             )}
 

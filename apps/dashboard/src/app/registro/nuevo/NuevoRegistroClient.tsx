@@ -1,13 +1,15 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import AnimalBadges from '@/components/AnimalBadges'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { DatePickerButtons } from '@/components/buttons/date-picker-buttons'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
 import PageShell from '@/components/PageShell'
+import ModalSaleForm from '@/components/ModalSaleForm'
+import ModalChangeStage from '@/components/ModalChangeStage'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useReminders } from '@/hooks/useReminders'
 import { buildRecordFromForm, getTodayLocalDateString } from '@/lib/records'
@@ -23,8 +25,8 @@ import {
 import { RecordFormState } from '@/types/records'
 
 const STEPS = [
-  { label: 'Tipo y Fecha', icon: '📋' },
   { label: 'Animales', icon: '🐾' },
+  { label: 'Tipo y Fecha', icon: '📋' },
   { label: 'Detalles', icon: '📝' },
 ] as const
 
@@ -73,6 +75,8 @@ export default function NuevoRegistroClient() {
   const preSelectedAnimalIds = searchParams.get('animalIds')?.split(',').filter(Boolean) || []
 
   const [step, setStep] = useState(0)
+  const [isSaleRecord, setIsSaleRecord] = useState(false)
+  const [isStageRecord, setIsStageRecord] = useState(true)
   const [selectedAnimalIds, setSelectedAnimalIds] = useState<string[]>([])
   const [formData, setFormData] = useState<RecordFormState>(initialFormData)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -90,7 +94,12 @@ export default function NuevoRegistroClient() {
   }, [])
 
   const handleAddAnimal = (animalId: string) => {
-    if (animalId && !selectedAnimalIds.includes(animalId)) {
+    if (
+      animals.some(
+        (animal) => animal.id === animalId && (animal.status ?? 'activo') === 'activo',
+      ) &&
+      !selectedAnimalIds.includes(animalId)
+    ) {
       setSelectedAnimalIds((prev) => [...prev, animalId])
     }
   }
@@ -100,12 +109,29 @@ export default function NuevoRegistroClient() {
     setSelectedAnimalIds((prev) => prev.filter((id) => id !== animalId))
   }
 
+  const availableAnimals = useMemo(
+    () => animals.filter((animal) => (animal.status ?? 'activo') === 'activo'),
+    [animals],
+  )
+  useEffect(() => {
+    const inactiveIds = new Set(
+      animals
+        .filter((animal) => (animal.status ?? 'activo') !== 'activo')
+        .map((animal) => animal.id),
+    )
+    setSelectedAnimalIds((previous) =>
+      previous.some((id) => inactiveIds.has(id))
+        ? previous.filter((id) => !inactiveIds.has(id))
+        : previous,
+    )
+  }, [animals])
   const isBulk = selectedAnimalIds.length > 1
-  const selectedAnimals = animals.filter((a) => selectedAnimalIds.includes(a.id))
+  const selectedAnimals = availableAnimals.filter((a) => selectedAnimalIds.includes(a.id))
 
   const canAdvance = (s: number) => {
-    if (s === 0) return !!formData.date && !!formData.type
-    if (s === 1) return selectedAnimalIds.length > 0
+    if (s === 0)
+      return selectedAnimals.length > 0 && selectedAnimals.length === selectedAnimalIds.length
+    if (s === 1) return !!formData.date && !!formData.type
     return true
   }
 
@@ -118,7 +144,7 @@ export default function NuevoRegistroClient() {
   }
 
   const handleSubmit = async () => {
-    if (selectedAnimalIds.length === 0) {
+    if (selectedAnimals.length === 0 || selectedAnimals.length !== selectedAnimalIds.length) {
       notify('Selecciona al menos un animal', 'info')
       return
     }
@@ -217,7 +243,8 @@ export default function NuevoRegistroClient() {
             <button
               type="button"
               onClick={() => {
-                if (i < step || canAdvance(step)) setStep(i)
+                if (i < step || Array.from({ length: i }, (_, index) => index).every(canAdvance))
+                  setStep(i)
               }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                 i === step
@@ -242,8 +269,8 @@ export default function NuevoRegistroClient() {
         ))}
       </div>
 
-      {/* ─── Step 1: Tipo y Fecha ─── */}
-      {step === 0 && (
+      {/* ─── Step 2: Tipo y Fecha ─── */}
+      {step === 1 && (
         <div className="space-y-5">
           <DatePickerButtons
             value={formData.date}
@@ -254,12 +281,15 @@ export default function NuevoRegistroClient() {
 
           <div>
             <label className="block text-sm font-medium mb-2">Tipo de registro</label>
-            <div className="flex gap-2">
-              {(['weight', 'health', 'note'] as const).map((t) => (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {(['stage', 'sale', 'weight', 'health', 'note'] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => {
+                    setIsStageRecord(t === 'stage')
+                    setIsSaleRecord(t === 'sale')
+                    if (t === 'stage' || t === 'sale') return
                     const newCategory =
                       t === 'note'
                         ? 'general'
@@ -269,21 +299,31 @@ export default function NuevoRegistroClient() {
                     setFormData({ ...formData, type: t, category: newCategory })
                   }}
                   className={`flex-1 flex flex-col items-center gap-1 px-3 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
-                    formData.type === t
+                    (
+                      t === 'stage'
+                        ? isStageRecord
+                        : t === 'sale'
+                          ? isSaleRecord
+                          : !isStageRecord && !isSaleRecord && formData.type === t
+                    )
                       ? 'border-green-500 bg-green-50 text-green-800 shadow-sm'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
                   <span className="text-xl">
-                    <EmojiIcon emoji={record_type_icons[t]} />
+                    <EmojiIcon
+                      emoji={t === 'stage' ? '🌱' : t === 'sale' ? '💰' : record_type_icons[t]}
+                    />
                   </span>
-                  <span>{record_type_labels[t]}</span>
+                  <span>
+                    {t === 'stage' ? 'Etapa' : t === 'sale' ? 'Venta' : record_type_labels[t]}
+                  </span>
                 </button>
               ))}
             </div>
           </div>
 
-          {formData.type !== 'weight' && (
+          {!isStageRecord && !isSaleRecord && formData.type !== 'weight' && (
             <div>
               <label className="block text-sm font-medium mb-2">Categoria</label>
               <div className="flex flex-wrap gap-2">
@@ -310,11 +350,11 @@ export default function NuevoRegistroClient() {
         </div>
       )}
 
-      {/* ─── Step 2: Selector de Animales ─── */}
-      {step === 1 && (
+      {/* ─── Step 1: Selector de Animales ─── */}
+      {step === 0 && (
         <div className="space-y-4">
           <InputSelectAnimals
-            animals={animals}
+            animals={availableAnimals}
             selectedIds={selectedAnimalIds}
             onAdd={handleAddAnimal}
             onRemove={handleRemoveAnimal}
@@ -331,7 +371,7 @@ export default function NuevoRegistroClient() {
       )}
 
       {/* ─── Step 3: Detalles ─── */}
-      {step === 2 && (
+      {step === 2 && !isStageRecord && !isSaleRecord && (
         <div className="space-y-4">
           {/* Peso — un solo animal */}
           {formData.type === 'weight' && selectedAnimalIds.length === 1 && (
@@ -411,7 +451,7 @@ export default function NuevoRegistroClient() {
           )}
 
           {/* Titulo (nota y salud) */}
-          {formData.type !== 'weight' && (
+          {!isStageRecord && !isSaleRecord && formData.type !== 'weight' && (
             <div>
               <label className="block text-sm font-medium mb-1">Titulo *</label>
               <input
@@ -492,7 +532,7 @@ export default function NuevoRegistroClient() {
             <p>
               <EmojiIcon emoji={record_type_icons[formData.type]} />{' '}
               {record_type_labels[formData.type]}
-              {formData.type !== 'weight' && (
+              {!isStageRecord && !isSaleRecord && formData.type !== 'weight' && (
                 <span>
                   {' '}
                   — <EmojiIcon emoji={record_category_icons[formData.category]} />{' '}
@@ -520,8 +560,34 @@ export default function NuevoRegistroClient() {
         </div>
       )}
 
+      <ModalChangeStage
+        initialDate={formData.date}
+        embedded
+        onCancel={() => router.back()}
+        isOpen={step === 2 && isStageRecord}
+        onClose={() => setStep(1)}
+        animals={selectedAnimals}
+        allAnimals={animals}
+        onApplied={() => router.back()}
+      />
+
+      {step === 2 && isSaleRecord && (
+        <ModalSaleForm
+          initialStatus="completed"
+          initialDate={formData.date}
+          embedded
+          isOpen
+          initialAnimalIds={selectedAnimalIds}
+          onBack={() => setStep(1)}
+          onClose={() => router.back()}
+          onCancel={() => router.back()}
+        />
+      )}
+
       {/* Navigation buttons */}
-      <div className="flex gap-3 pt-5 mt-5 border-t">
+      <div
+        className={`gap-3 pt-5 mt-5 ${step === 2 && (isStageRecord || isSaleRecord) ? 'hidden' : 'flex'}`}
+      >
         {step > 0 && (
           <button
             type="button"
@@ -546,7 +612,7 @@ export default function NuevoRegistroClient() {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={isSubmitting || !canAdvance(1)}
+            disabled={isSubmitting || !canAdvance(0) || !canAdvance(1)}
             className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
           >
             {isSubmitting

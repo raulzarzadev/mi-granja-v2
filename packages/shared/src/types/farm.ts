@@ -17,6 +17,7 @@ export type FarmOtherActivity =
   | 'other'
 
 export interface FarmProductionProfile {
+  activities?: FarmActivityType[]
   activityType: FarmActivityType
   productionPurposes?: FarmProductionPurpose[]
   animalSpecies?: FarmAnimalSpecies[]

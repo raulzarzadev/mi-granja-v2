@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import AnimalFamilyTree from '@/components/AnimalFamilyTree'
 import AnimalRecordsSection from '@/components/AnimalRecordsSection'
@@ -43,6 +43,29 @@ interface AnimalDetailViewProps {
 const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp, onDeleted }) => {
   const { animals: allAnimals, remove, assignArea } = useAnimalCRUD()
   const animal = allAnimals.find((a) => a.id === animalProp.id) ?? animalProp
+  const [actionsOpen, setActionsOpen] = useState(false)
+  const actionsRef = useRef<HTMLDivElement>(null)
+  const actionsTriggerRef = useRef<HTMLButtonElement>(null)
+  const actionsId = useId()
+  useEffect(() => {
+    if (!actionsOpen) return
+    const outside = (event: PointerEvent) => {
+      if (!actionsRef.current?.contains(event.target as Node)) setActionsOpen(false)
+    }
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation()
+        setActionsOpen(false)
+        actionsTriggerRef.current?.focus()
+      }
+    }
+    document.addEventListener('pointerdown', outside)
+    document.addEventListener('keydown', escape, true)
+    return () => {
+      document.removeEventListener('pointerdown', outside)
+      document.removeEventListener('keydown', escape, true)
+    }
+  }, [actionsOpen])
   const [changeStageOpen, setChangeStageOpen] = useState(false)
   const [failedBreedingsOpen, setFailedBreedingsOpen] = useState(false)
   const [isUpdatingArea, setIsUpdatingArea] = useState(false)
@@ -189,6 +212,9 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
                   </span>
                 }
               />
+              {animal.gender === 'macho' && animal.isBreedingMale && (
+                <InfoCell label="Función reproductiva" value="Semental" />
+              )}
               <InfoCell label="Edad" value={getAgeLabel()} />
               <InfoCell
                 label="Nacimiento"
@@ -488,48 +514,83 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
     <div className="h-auto w-full bg-white">
       {/* Header */}
       <header className="border-b border-slate-200 bg-slate-50/60 px-4 py-4 sm:px-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 max-w-full [&>span>span]:flex-wrap">
             <AnimalTag animal={animal} variant="header" />
           </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
-            <Button
-              size="sm"
-              variant="outline"
-              color="primary"
-              className="col-span-2 min-h-11 w-full whitespace-nowrap sm:w-auto sm:flex-none"
-              onClick={() => setChangeStageOpen(true)}
+          <div
+            ref={actionsRef}
+            className="relative shrink-0"
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node)) setActionsOpen(false)
+            }}
+          >
+            <button
+              ref={actionsTriggerRef}
+              type="button"
+              aria-label="Acciones del animal"
+              aria-expanded={actionsOpen}
+              aria-controls={actionsOpen ? actionsId : undefined}
+              onClick={() => setActionsOpen((value) => !value)}
+              className="flex h-11 w-11 items-center justify-center rounded-full text-slate-600 hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700"
             >
-              <EmojiIcon emoji="⇄" /> Cambiar etapa
-            </Button>
-            <ModalEditAnimal animal={animal} triggerClassName="w-full sm:w-auto sm:flex-none" />
-            {effectiveStatus === 'activo' ? (
-              <ModalAnimalDischarge animal={animal} triggerClassName="sm:flex-none" />
-            ) : null}
-            <ButtonConfirm
-              openLabel="Eliminar"
-              confirmLabel="Eliminar"
-              confirmText={`¿Eliminar animal ${animal.animalNumber}? Esta acción no se puede deshacer.`}
-              openProps={{
-                size: 'sm',
-                color: 'error',
-                variant: 'ghost',
-                icon: 'delete',
-                className: 'min-h-11 w-full whitespace-nowrap sm:w-auto',
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
+                <circle cx="12" cy="5" r="2" />
+                <circle cx="12" cy="12" r="2" />
+                <circle cx="12" cy="19" r="2" />
+              </svg>
+            </button>
+            <div
+              id={actionsId}
+              role="group"
+              aria-label="Acciones del animal"
+              className={`${actionsOpen ? 'flex' : 'hidden'} absolute right-0 top-full z-30 mt-1 w-56 flex-col gap-1 rounded-xl border border-slate-200 bg-white p-2 shadow-xl [&>button]:!min-h-11 [&>button]:!w-full [&>button]:!justify-start [&>button]:!border-0 [&>button]:!bg-transparent [&>button]:!shadow-none [&>button:hover]:!bg-slate-50`}
+              onClick={(event) => {
+                if (
+                  event.currentTarget.contains(event.target as Node) &&
+                  (event.target as HTMLElement).closest('button')
+                )
+                  setActionsOpen(false)
               }}
-              confirmProps={{ color: 'error' }}
-              onConfirm={async () => {
-                await remove(animal.id)
-                onDeleted?.()
-              }}
-            />
+            >
+              <Button
+                size="sm"
+                variant="outline"
+                color="primary"
+                className="col-span-2 min-h-11 w-full whitespace-nowrap sm:w-auto sm:flex-none"
+                onClick={() => setChangeStageOpen(true)}
+              >
+                <EmojiIcon emoji="⇄" /> Cambiar etapa
+              </Button>
+              <ModalEditAnimal animal={animal} triggerClassName="!text-blue-700" />
+              {effectiveStatus === 'activo' ? (
+                <ModalAnimalDischarge animal={animal} triggerClassName="sm:flex-none" />
+              ) : null}
+              <ButtonConfirm
+                openLabel="Eliminar"
+                confirmLabel="Eliminar"
+                confirmText={`¿Eliminar animal ${animal.animalNumber}? Esta acción no se puede deshacer.`}
+                openProps={{
+                  size: 'sm',
+                  color: 'error',
+                  variant: 'ghost',
+                  icon: 'delete',
+                  className: 'min-h-11 w-full whitespace-nowrap sm:w-auto',
+                }}
+                confirmProps={{ color: 'error' }}
+                onConfirm={async () => {
+                  await remove(animal.id)
+                  onDeleted?.()
+                }}
+              />
+            </div>
           </div>
         </div>
       </header>
 
       {/* Tabs */}
-      <div className="px-4 pt-3 sm:px-5">
+      <div>
         <Tabs tabs={tabs} tabsId={`animal-detail-${animal.id}`} scrollSpy scrollSpyOffset={160} />
       </div>
 

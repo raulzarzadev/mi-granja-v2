@@ -4,6 +4,7 @@ import DataTable, { type ColumnDef } from '@/components/DataTable'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import type { Animal } from '@/types/animals'
+import { useAnimalSelection } from '../../AnimalSelectionContext'
 import FirstAnimalEmptyState from '../FirstAnimalEmptyState'
 
 interface Props {
@@ -24,11 +25,10 @@ const TabAllAnimals: React.FC<Props> = ({
   columns,
   isLoadingAnimals,
   onBulkEdit,
-  onBulkHealth,
-  onBulkSale,
   duplicateNumbersCount,
   onShowDuplicateNumbers,
 }) => {
+  const { setSelectedAnimalIds } = useAnimalSelection()
   if (isLoadingAnimals) {
     return (
       <div className="flex min-h-56 items-center justify-center rounded-2xl border border-slate-200 bg-white">
@@ -71,6 +71,7 @@ const TabAllAnimals: React.FC<Props> = ({
         sessionStorageKey="mg_last_animal_id"
         viewModeKey="animal_view_mode"
         selectable
+        onSelectionChange={setSelectedAnimalIds}
         emptyMessage="No se encontraron animales. Intenta ajustar los filtros."
         renderCard={(row) => (
           <ModalAnimalDetails animal={row} triggerComponent={<AnimalCard animal={row} />} />
@@ -83,20 +84,6 @@ const TabAllAnimals: React.FC<Props> = ({
               onClick={() => onBulkEdit(Array.from(selectedIds), clearSelection)}
             >
               Editar
-            </Button>
-            <Button
-              size="xs"
-              color="success"
-              onClick={() => onBulkHealth(Array.from(selectedIds), clearSelection)}
-            >
-              Aplicar Registro
-            </Button>
-            <Button
-              size="xs"
-              color="warning"
-              onClick={() => onBulkSale(Array.from(selectedIds), clearSelection)}
-            >
-              Crear Venta
             </Button>
           </>
         )}

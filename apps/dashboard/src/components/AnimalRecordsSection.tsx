@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import ModalNewRecord from '@/components/ModalNewRecord'
 import ModalRecordDetail, { RecordDetailRow } from '@/components/ModalRecordDetail'
@@ -15,6 +15,13 @@ import {
   isMilkRecord,
   type MilkingSession,
   RecordType,
+  type AnimalRecordEventType,
+  animal_record_event_types,
+  record_event_type_labels,
+  record_event_type_icons,
+  record_types,
+  record_type_labels,
+  record_type_icons,
 } from '@/types/animals'
 
 interface Props {
@@ -23,7 +30,10 @@ interface Props {
 
 const PAGE_SIZE = 5
 
-type RecordFilter = RecordType | ''
+type RecordFilter = RecordType | `event:${AnimalRecordEventType}` | ''
+
+const recordFilterKey = (record: AnimalRecord): RecordFilter =>
+  record.eventType ? `event:${record.eventType}` : record.type
 
 const milkingSessionLabels: Record<MilkingSession, string> = {
   morning: 'Mañana',
@@ -71,11 +81,16 @@ const MilkRecordRow = ({ record, onClick }: { record: AnimalMilkRecord; onClick:
 
 const filterTypes: Array<{ value: RecordFilter; label: string; icon: string }> = [
   { value: '', label: 'Todos', icon: '📋' },
-  { value: 'weight', label: 'Peso', icon: '⚖️' },
-  { value: 'health', label: 'Salud', icon: '🏥' },
-  { value: 'note', label: 'Nota', icon: '📝' },
-  { value: 'birth', label: 'Parto', icon: '🐣' },
-  { value: 'milk', label: 'Leche', icon: '🥛' },
+  ...record_types.map((value) => ({
+    value,
+    label: record_type_labels[value],
+    icon: record_type_icons[value],
+  })),
+  ...animal_record_event_types.map((eventType) => ({
+    value: `event:${eventType}` as RecordFilter,
+    label: record_event_type_labels[eventType],
+    icon: record_event_type_icons[eventType],
+  })),
 ]
 
 const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
@@ -93,7 +108,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
 
   const filteredRecords = useMemo(() => {
     if (!typeFilter) return allRecords
-    return allRecords.filter((r) => r.type === typeFilter)
+    return allRecords.filter((r) => recordFilterKey(r) === typeFilter)
   }, [allRecords, typeFilter])
 
   const visibleRecords = filteredRecords.slice(0, visibleCount)
@@ -153,10 +168,18 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
   const countByType = useMemo(() => {
     const counts: Record<string, number> = {}
     allRecords.forEach((r) => {
-      counts[r.type] = (counts[r.type] || 0) + 1
+      const key = recordFilterKey(r)
+      counts[key] = (counts[key] || 0) + 1
     })
     return counts
   }, [allRecords])
+
+  useEffect(() => {
+    if (typeFilter && !countByType[typeFilter]) {
+      setTypeFilter('')
+      setVisibleCount(PAGE_SIZE)
+    }
+  }, [typeFilter, countByType])
 
   const handleFilterChange = (t: RecordFilter) => {
     setTypeFilter(t)
@@ -259,30 +282,32 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       {/* Filtros por tipo */}
       {allRecords.length > 0 && (
         <div className="flex gap-1.5 flex-wrap">
-          {filterTypes.map((ft) => {
-            const isActive = typeFilter === ft.value
-            const count = ft.value ? countByType[ft.value] || 0 : allRecords.length
-            return (
-              <button
-                key={ft.value || 'all'}
-                type="button"
-                onClick={() => handleFilterChange(ft.value)}
-                className={`inline-flex min-h-11 items-center gap-1 rounded-full px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
-                  isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                <span>
-                  <EmojiIcon emoji={ft.icon} />
-                </span>
-                {ft.label}
-                <span className={`ml-0.5 ${isActive ? 'text-blue-200' : 'text-gray-400'}`}>
-                  {count}
-                </span>
-              </button>
-            )
-          })}
+          {filterTypes
+            .filter((ft) => !ft.value || (countByType[ft.value] || 0) > 0)
+            .map((ft) => {
+              const isActive = typeFilter === ft.value
+              const count = ft.value ? countByType[ft.value] || 0 : allRecords.length
+              return (
+                <button
+                  key={ft.value || 'all'}
+                  type="button"
+                  onClick={() => handleFilterChange(ft.value)}
+                  className={`inline-flex min-h-11 items-center gap-1 rounded-full px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
+                    isActive
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <span>
+                    <EmojiIcon emoji={ft.icon} />
+                  </span>
+                  {ft.label}
+                  <span className={`ml-0.5 ${isActive ? 'text-blue-200' : 'text-gray-400'}`}>
+                    {count}
+                  </span>
+                </button>
+              )
+            })}
         </div>
       )}
 

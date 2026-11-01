@@ -57,6 +57,25 @@ const breedingRecord: BreedingRecord = {
 }
 
 describe('ModalConfirmPregnancy', () => {
+  it('avisa si la selección termina el empadre y libera al macho', () => {
+    renderWithProviders(
+      <ModalConfirmPregnancy
+        isOpen
+        onClose={jest.fn()}
+        breedingRecord={breedingRecord}
+        animals={animals}
+        onSubmit={jest.fn()}
+        selectedAnimal="female-1"
+      />,
+    )
+    expect(screen.getByRole('status')).toHaveTextContent('Este empadre pasará a Terminado')
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'el macho #M-1 quedará disponible para otra monta',
+    )
+    fireEvent.click(screen.getByRole('checkbox'))
+    expect(screen.queryByText('Este empadre pasará a Terminado')).not.toBeInTheDocument()
+  })
+
   it('allows editing and persisting the breeding start date', async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined)
     renderWithProviders(

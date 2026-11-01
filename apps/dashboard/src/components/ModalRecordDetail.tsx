@@ -337,12 +337,15 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
             </div>
 
             {record.undoneAt && <p className="text-gray-600 sm:col-span-2">Movimiento deshecho</p>}
-            {record.eventType && !record.undoneAt && !isUndoableMovement && (
-              <p className="text-sm text-gray-600 sm:col-span-2">
-                Este registro anterior no conserva el estado previo necesario para deshacerlo de
-                forma segura.
-              </p>
-            )}
+            {record.eventType &&
+              record.eventType !== 'alta' &&
+              !record.undoneAt &&
+              !isUndoableMovement && (
+                <p className="text-sm text-gray-600 sm:col-span-2">
+                  Este registro anterior no conserva el estado previo necesario para deshacerlo de
+                  forma segura.
+                </p>
+              )}
             {Object.entries(record.details ?? {}).map(([label, value]) => (
               <div key={label} className="sm:col-span-2">
                 <span className="font-medium text-gray-600">{label}:</span> {value}

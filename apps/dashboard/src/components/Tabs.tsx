@@ -59,6 +59,9 @@ type TabsProps = {
   scrollSpyOffset?: number
   /** Desde md (768px+) muestra los tabs como menú lateral a la izquierda */
   sidebarOnDesktop?: boolean
+  /** Fija las pestañas principales al borde inferior en móvil. */
+  bottomOnMobile?: boolean
+  sidebarHeader?: ReactNode
 }
 
 /** Genera un slug a partir del label del tab, quitando emojis */
@@ -117,6 +120,8 @@ const Tabs: React.FC<TabsProps> = ({
   scrollSpy = false,
   scrollSpyOffset = 160,
   sidebarOnDesktop = false,
+  bottomOnMobile = false,
+  sidebarHeader,
 }) => {
   // Clases que solo aplican cuando el tab se muestra como menú lateral en escritorio
   const sb = (classes: string) => (sidebarOnDesktop ? classes : '')
@@ -371,9 +376,80 @@ const Tabs: React.FC<TabsProps> = ({
 
   return (
     <div
+      data-bottom-navigation={bottomOnMobile || undefined}
+      style={
+        bottomOnMobile ? ({ '--mobile-tab-count': tabs.length } as React.CSSProperties) : undefined
+      }
       className={`w-full min-w-0 max-w-full overflow-x-clip ${sb('md:flex md:items-start md:gap-4 lg:gap-6 md:overflow-x-visible')}`}
     >
       <style>{`
+        @media (max-width: 767px) {
+          [data-bottom-navigation] {
+            padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+          }
+          [data-bottom-navigation] > .tabs-scrollbar-shell {
+            position: fixed;
+            inset: var(--fixed-bottom-edge, 100dvh) auto auto var(--fixed-left-inset, 0px);
+            transform: translateY(-100%);
+            width: var(--fixed-visible-width, 100%);
+            max-width: 100vw;
+            box-sizing: border-box;
+            z-index: 30;
+            border-top: 1px solid rgb(229 231 235);
+            background: white;
+            padding: 0.375rem max(0.25rem, env(safe-area-inset-right)) env(safe-area-inset-bottom, 0px) max(0.25rem, env(safe-area-inset-left));
+            box-shadow: 0 -4px 16px rgb(0 0 0 / 0.05);
+          }
+          [data-bottom-navigation] > .tabs-scrollbar-shell > [role="tablist"] {
+            display: grid;
+            grid-template-columns: repeat(var(--mobile-tab-count, 5), minmax(0, 1fr));
+            width: 100%;
+            min-width: 0;
+            gap: 0.125rem;
+            overflow: visible;
+            padding: 0;
+          }
+          [data-bottom-navigation] > .tabs-scrollbar-shell > [role="tablist"] > [role="tab"] {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            min-height: 3.75rem;
+            justify-content: center;
+            padding: 0.375rem 0.125rem;
+            border: 0;
+            border-radius: 0.75rem;
+            box-shadow: none;
+            font-size: 10px;
+            background: white;
+            color: rgb(75 85 99);
+            transition-property: background-color, color;
+          }
+          [data-bottom-navigation] > .tabs-scrollbar-shell > [role="tablist"] > [aria-selected="true"] {
+            background: rgb(240 253 244);
+            color: rgb(21 128 61);
+            font-weight: 700;
+          }
+          [data-bottom-navigation] .bottom-tab-label {
+            flex-direction: column;
+            gap: 0.375rem;
+          }
+          [data-bottom-navigation] .bottom-tab-label > svg {
+            width: 1.5rem;
+            height: 1.5rem;
+          }
+          [data-bottom-navigation] .bottom-tab-badge {
+            position: absolute;
+            top: 0;
+            right: 0.125rem;
+            background: rgb(185 28 28);
+            color: white;
+            padding: 0 0.25rem;
+          }
+          [data-bottom-navigation] .bottom-tab-ring,
+          [data-bottom-navigation] > .tabs-scrollbar-shell > .tabs-scrollbar-track {
+            display: none;
+          }
+        }
         .tabs-scrollbar-native-hidden {
           scrollbar-width: none !important;
         }
@@ -384,13 +460,15 @@ const Tabs: React.FC<TabsProps> = ({
           height: 0 !important;
         }
       `}</style>
+      {bottomOnMobile && trailingAction && (
+        <div className="mb-2 flex justify-end md:hidden">{trailingAction}</div>
+      )}
       <div
         className={`tabs-scrollbar-shell max-w-full overflow-x-hidden ${
-          scrollSpy
-            ? 'sticky top-0 z-20 -mx-3 bg-white/95 px-3 pb-2 pt-2 backdrop-blur sm:-mx-4 sm:px-4'
-            : ''
+          scrollSpy ? 'sticky top-0 z-20 bg-white/95 backdrop-blur' : ''
         } ${sb('md:sticky md:top-4 md:w-48 lg:w-56 md:shrink-0 md:overflow-visible md:rounded-2xl md:border md:border-gray-200 md:bg-white md:p-2 md:shadow-sm')}`}
       >
+        {sidebarHeader && <div className="mb-2 hidden md:block">{sidebarHeader}</div>}
         <div
           ref={tabListRef}
           role="tablist"
@@ -421,12 +499,12 @@ const Tabs: React.FC<TabsProps> = ({
                 >
                   <IconLabel
                     label={tab.label}
-                    className="whitespace-nowrap select-none leading-none"
+                    className={`whitespace-nowrap select-none leading-none ${bottomOnMobile ? 'bottom-tab-label' : ''}`}
                     iconClassName={sidebarOnDesktop ? 'h-[18px] w-[18px]' : 'h-4 w-4'}
                   />
                   {typeof tab.badgeCount === 'number' && tab.badgeCount > 0 && (
                     <span
-                      className={`inline-flex items-center justify-center rounded-full px-2 h-5 min-w-5 text-[10px] font-semibold tracking-wide leading-none transition-colors ${
+                      className={`${bottomOnMobile ? 'bottom-tab-badge' : ''} inline-flex items-center justify-center rounded-full px-2 h-5 min-w-5 text-[10px] font-semibold tracking-wide leading-none transition-colors ${
                         isActive
                           ? 'bg-white/20 text-white'
                           : 'bg-gray-200 text-gray-700 group-hover:bg-gray-300'
@@ -437,7 +515,7 @@ const Tabs: React.FC<TabsProps> = ({
                   )}
                   {isActive && (
                     <span
-                      className={`absolute inset-0 rounded-full ring-2 ring-green-500/40 pointer-events-none ${sb('md:hidden')}`}
+                      className={`${bottomOnMobile ? 'bottom-tab-ring' : ''} absolute inset-0 rounded-full ring-2 ring-green-500/40 pointer-events-none ${sb('md:hidden')}`}
                     />
                   )}
                 </button>
@@ -479,7 +557,7 @@ const Tabs: React.FC<TabsProps> = ({
           })}
           {trailingAction && (
             <div
-              className={`flex items-center ml-1 ${sb('md:ml-0 md:mt-1 md:border-t md:border-gray-100 md:px-2 md:pt-2')}`}
+              className={`${bottomOnMobile ? 'hidden md:flex' : 'flex'} items-center ml-1 ${sb('md:ml-0 md:mt-1 md:border-t md:border-gray-100 md:px-2 md:pt-2')}`}
             >
               {trailingAction}
             </div>

@@ -3,10 +3,11 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import FirstRecordEmptyState from '@/components/FirstRecordEmptyState'
 import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
-import InputIconSelect from '@/components/inputs/InputIconSelect'
+import { QuickFilterMenu } from '@/components/inputs/FilterChip'
+import { DatePickerModal } from '@/components/inputs/DatePickerModal'
 import ModalRecordDetail from '@/components/ModalRecordDetail'
 import { useSidebarSubItems } from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -79,6 +80,24 @@ const RecordsTab: React.FC = () => {
     application: '' as '' | 'bulk' | 'single',
   })
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [openChip, setOpenChip] = useState<string | null>(null)
+  const chipsRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!openChip) return
+    const outside = (event: PointerEvent) => {
+      if (!chipsRef.current?.contains(event.target as Node)) setOpenChip(null)
+    }
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpenChip(null)
+    }
+    document.addEventListener('pointerdown', outside)
+    document.addEventListener('keydown', escape)
+    return () => {
+      document.removeEventListener('pointerdown', outside)
+      document.removeEventListener('keydown', escape)
+    }
+  }, [openChip])
+
   const [sortKey, setSortKey] = useState<SortKey>('date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
@@ -131,8 +150,6 @@ const RecordsTab: React.FC = () => {
         prev.search === urlFilters.search
       return same ? prev : urlFilters
     })
-    const anyApplied = Object.values(urlFilters).some((v) => v)
-    setFiltersOpen((open) => (anyApplied ? true : open))
   }, [searchParams])
 
   useEffect(() => {
@@ -480,7 +497,11 @@ const RecordsTab: React.FC = () => {
 
           {/* Filter toggle */}
           <button
-            onClick={() => setFiltersOpen(!filtersOpen)}
+            onClick={() => {
+              setFiltersOpen(!filtersOpen)
+              setOpenChip(null)
+            }}
+            aria-expanded={filtersOpen}
             className={`relative p-2 rounded-lg border transition-colors ${
               filtersOpen || activeFilterCount > 0
                 ? 'border-green-500 bg-green-50'
@@ -506,210 +527,109 @@ const RecordsTab: React.FC = () => {
               </span>
             )}
           </button>
-
-          {/* Create button */}
-          <button
-            onClick={() => router.push('/registro/nuevo')}
-            className="p-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
-            title="Nuevo Registro"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-5 h-5"
-            >
-              <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
-            </svg>
-          </button>
         </div>
 
-        <nav
-          aria-label="Filtrar registros por tipo"
-          className="flex gap-2 overflow-x-auto border-t border-gray-100 px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          <button
-            type="button"
-            onClick={() => setFilters((prev) => ({ ...prev, type: '', category: '' }))}
-            aria-pressed={!filters.type}
-            className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium md:min-h-8 md:px-3 md:text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${
-              !filters.type
-                ? 'bg-green-600 text-white'
-                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <EmojiIcon emoji="📋" /> Todos
-          </button>
-          {availableTypes.map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => setFilters((prev) => ({ ...prev, type, category: '' }))}
-              aria-pressed={filters.type === type}
-              className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium md:min-h-8 md:px-3 md:text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${
-                filters.type === type
-                  ? 'bg-green-600 text-white'
-                  : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <EmojiIcon emoji={record_type_icons[type]} /> {record_type_labels[type]}
-            </button>
-          ))}
-        </nav>
-
-        {/* Collapsible filters */}
         {filtersOpen && (
-          <div className="px-4 pb-3 pt-1 border-t border-gray-100">
+          <div ref={chipsRef} className="flex flex-wrap items-center gap-2 px-4 py-3">
+            <QuickFilterMenu
+              label="Tipo"
+              selectedLabel={filters.type ? record_type_labels[filters.type] : ''}
+              value={filters.type}
+              allLabel="Todos"
+              options={availableTypes.map((value) => ({ value, label: record_type_labels[value] }))}
+              open={openChip === 'type'}
+              onToggle={() => setOpenChip(openChip === 'type' ? null : 'type')}
+              onChange={(value) => {
+                setFilters((prev) => ({
+                  ...prev,
+                  type: value as typeof filters.type,
+                  category: '',
+                }))
+                setOpenChip(null)
+              }}
+            />
+            <QuickFilterMenu
+              label="Categoría"
+              selectedLabel={filters.category ? record_category_labels[filters.category] : ''}
+              value={filters.category}
+              allLabel="Todas"
+              options={availableCategories.map((value) => ({
+                value,
+                label: record_category_labels[value as AnimalRecord['category']],
+              }))}
+              open={openChip === 'category'}
+              onToggle={() => setOpenChip(openChip === 'category' ? null : 'category')}
+              onChange={(value) => {
+                setFilters((prev) => ({ ...prev, category: value as typeof filters.category }))
+                setOpenChip(null)
+              }}
+            />
+            <QuickFilterMenu
+              label="Animal"
+              selectedLabel={filters.animalId ? getAnimalLabel() : ''}
+              value={filters.animalId}
+              allLabel="Todos"
+              options={animals.map((animal) => ({
+                value: animal.id,
+                label: `#${animal.animalNumber || 'Sin número'}`,
+              }))}
+              open={openChip === 'animal'}
+              onToggle={() => setOpenChip(openChip === 'animal' ? null : 'animal')}
+              onChange={(value) => {
+                setFilters((prev) => ({ ...prev, animalId: value }))
+                setOpenChip(null)
+              }}
+            />
+            <QuickFilterMenu
+              label="Aplicación"
+              selectedLabel={
+                filters.application
+                  ? filters.application === 'bulk'
+                    ? 'Masivo'
+                    : 'Individual'
+                  : ''
+              }
+              value={filters.application}
+              allLabel="Todas"
+              options={[
+                { value: 'bulk', label: 'Masivo' },
+                { value: 'single', label: 'Individual' },
+              ]}
+              open={openChip === 'application'}
+              onToggle={() => setOpenChip(openChip === 'application' ? null : 'application')}
+              onChange={(value) => {
+                setFilters((prev) => ({
+                  ...prev,
+                  application: value as typeof filters.application,
+                }))
+                setOpenChip(null)
+              }}
+            />
+            {(['dateFrom', 'dateTo'] as const).map((field) => (
+              <DatePickerModal
+                key={field}
+                triggerVariant="chip"
+                ariaLabel={field === 'dateFrom' ? 'Desde' : 'Hasta'}
+                placeholder={field === 'dateFrom' ? 'Desde' : 'Hasta'}
+                value={filters[field]}
+                onChange={(value) => setFilters((prev) => ({ ...prev, [field]: value }))}
+                inline
+              />
+            ))}
             {hasActiveFilters && (
-              <div className="flex justify-end my-2">
-                <button
-                  onClick={resetFilters}
-                  className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    className="w-3.5 h-3.5"
-                  >
-                    <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                  </svg>
-                  Limpiar filtros
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="min-h-8 rounded-full px-3 text-xs font-medium text-red-700 hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-600"
+              >
+                Limpiar filtros
+              </button>
             )}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-              <InputIconSelect<AnimalRecord['type'] | ''>
-                aria-label="Tipo de registro"
-                value={filters.type}
-                onChange={(type) => setFilters((prev) => ({ ...prev, type, category: '' }))}
-                className={`min-h-9 px-2 py-1.5 text-sm ${
-                  filters.type ? 'border-green-500 bg-green-50 text-green-800' : ''
-                }`}
-                options={[
-                  { value: '', label: 'Tipo: Todos' },
-                  ...availableTypes.map((type) => ({
-                    value: type,
-                    label: record_type_labels[type],
-                    icon: record_type_icons[type],
-                  })),
-                ]}
-              />
-
-              <InputIconSelect<AnimalRecord['category'] | ''>
-                aria-label="Categoría"
-                value={filters.category}
-                onChange={(category) => setFilters((prev) => ({ ...prev, category }))}
-                className={`min-h-9 px-2 py-1.5 text-sm ${
-                  filters.category ? 'border-green-500 bg-green-50 text-green-800' : ''
-                }`}
-                options={[
-                  { value: '', label: 'Categoría: Todas' },
-                  ...availableCategories.map((c) => ({
-                    value: c as AnimalRecord['category'],
-                    label: record_category_labels[c as keyof typeof record_category_labels],
-                    icon: record_category_icons[c as keyof typeof record_category_icons],
-                  })),
-                ]}
-              />
-
-              <select
-                value={filters.animalId}
-                onChange={(e) => setFilters((prev) => ({ ...prev, animalId: e.target.value }))}
-                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.animalId
-                    ? 'border-green-500 bg-green-50 text-green-800'
-                    : 'border-gray-300'
-                }`}
-              >
-                <option value="">Animal: Todos</option>
-                {animals.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    #{a.animalNumber || 'Sin número'}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={filters.application}
-                onChange={(e) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    application: e.target.value as '' | 'bulk' | 'single',
-                  }))
-                }
-                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.application
-                    ? 'border-green-500 bg-green-50 text-green-800'
-                    : 'border-gray-300'
-                }`}
-              >
-                <option value="">Aplicacion: Todas</option>
-                <option value="bulk">Masivo</option>
-                <option value="single">Individual</option>
-              </select>
-
-              <input
-                type="date"
-                value={filters.dateFrom}
-                onChange={(e) => setFilters((prev) => ({ ...prev, dateFrom: e.target.value }))}
-                placeholder="Desde"
-                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.dateFrom
-                    ? 'border-green-500 bg-green-50 text-green-800'
-                    : 'border-gray-300'
-                }`}
-              />
-
-              <input
-                type="date"
-                value={filters.dateTo}
-                onChange={(e) => setFilters((prev) => ({ ...prev, dateTo: e.target.value }))}
-                placeholder="Hasta"
-                className={`px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  filters.dateTo ? 'border-green-500 bg-green-50 text-green-800' : 'border-gray-300'
-                }`}
-              />
-            </div>
           </div>
         )}
 
         {/* Active chips + count */}
         <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
-            {filters.type && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                <EmojiIcon emoji={record_type_icons[filters.type]} />{' '}
-                {record_type_labels[filters.type] || filters.type}
-              </span>
-            )}
-            {filters.category && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                <EmojiIcon emoji={record_category_icons[filters.category]} />{' '}
-                {record_category_labels[filters.category]}
-              </span>
-            )}
-            {filters.animalId && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                {getAnimalLabel()}
-              </span>
-            )}
-            {filters.application && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                {filters.application === 'bulk' ? 'Masivo' : 'Individual'}
-              </span>
-            )}
-            {filters.dateFrom && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                Desde: {filters.dateFrom}
-              </span>
-            )}
-            {filters.dateTo && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                Hasta: {filters.dateTo}
-              </span>
-            )}
-          </div>
           <span className="text-xs text-gray-500 whitespace-nowrap">
             {!customDateRange && <span>Desde {format(historyFrom, 'dd/MM/yyyy')} · </span>}
             <span className="font-semibold text-gray-700">{sortedRows.length}</span> registros

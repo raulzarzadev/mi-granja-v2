@@ -45,6 +45,7 @@ export interface InputSelectAnimalsProps {
 }
 
 type DropdownPosition = {
+  opensAbove: boolean
   top: number
   left: number
   width: number
@@ -200,7 +201,8 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
       const maxHeight = Math.min(preferredHeight, availableSpace)
 
       setDropdownPosition({
-        top: opensAbove ? Math.max(8, rect.top - maxHeight - 4) : rect.bottom + 4,
+        opensAbove,
+        top: opensAbove ? rect.top - 4 : rect.bottom + 4,
         left: rect.left,
         width: rect.width,
         maxHeight,
@@ -522,6 +524,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                     left: dropdownPosition.left,
                     width: dropdownPosition.width,
                     maxHeight: dropdownPosition.maxHeight,
+                    transform: dropdownPosition.opensAbove ? 'translateY(-100%)' : undefined,
                   }}
                   className="z-[100] overflow-y-auto rounded-lg border border-gray-100 bg-white shadow-lg"
                 >
