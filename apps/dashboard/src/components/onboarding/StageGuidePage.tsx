@@ -1,5 +1,14 @@
 import React from 'react'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
+import { ANIMAL_BREEDING_CONFIGS } from '@/lib/animalBreedingConfig'
+import {
+  animal_icon,
+  animal_stage_config,
+  animal_stage_descriptions,
+  animals_stages,
+  animals_types,
+  animals_types_labels,
+} from '@/types/animals'
 
 const developmentStages = [
   {
@@ -64,6 +73,84 @@ const StageGuidePage: React.FC = () => {
           <strong>condición</strong> describe lo que está pasando en su ciclo reproductivo.
         </p>
       </header>
+
+      <section aria-labelledby="default-stages-title">
+        <h4 id="default-stages-title" className="text-lg font-bold text-slate-950">
+          Etapas por defecto de cada especie
+        </h4>
+        <p className="mt-1 text-sm leading-6 text-slate-600">
+          Abre una especie para consultar sus etapas y edades de referencia. Al registrar un animal,
+          la fecha de nacimiento y el género determinan las opciones disponibles.
+        </p>
+        <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          {animals_types.map((type) => {
+            const config = ANIMAL_BREEDING_CONFIGS[type]
+            const ages = {
+              cria:
+                config.weaningDays > 0
+                  ? `Desde el nacimiento hasta ${config.weaningDays} días`
+                  : 'Desde el nacimiento, según su desarrollo',
+              juvenil: `Después del destete y antes de ${config.minBreedingAge} meses`,
+              engorda: 'Destino productivo después del destete',
+              reproductor: `Desde ${config.minBreedingAge} meses`,
+              descarte: 'Sin una edad fija; se asigna según el caso',
+            }
+            return (
+              <details key={type} className="group px-4 py-3 open:bg-green-50/40">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 [&::-webkit-details-marker]:hidden">
+                  <span aria-hidden="true" className="text-xl text-green-800">
+                    <EmojiIcon emoji={animal_icon[type]} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-slate-900">
+                      {animals_types_labels[type]}
+                    </span>
+                    <span className="block text-xs leading-5 text-slate-500">
+                      Reproducción desde {config.minBreedingAge} meses
+                      {config.weaningDays > 0
+                        ? ` · Destete de referencia: ${config.weaningDays} días`
+                        : ''}
+                    </span>
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="text-lg text-green-700 transition-transform group-open:rotate-45 motion-reduce:transition-none"
+                  >
+                    +
+                  </span>
+                </summary>
+                <ul className="mt-3 space-y-3 pb-1">
+                  {animals_stages.map((stage) => (
+                    <li key={stage} className="flex items-start gap-3 text-sm">
+                      <span
+                        aria-hidden="true"
+                        className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${animal_stage_config[stage].color}`}
+                      >
+                        <EmojiIcon emoji={animal_stage_config[stage].icon} />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900">
+                          {animal_stage_config[stage].label}
+                        </p>
+                        <p className="text-xs font-medium leading-5 text-green-800">
+                          {ages[stage]}
+                        </p>
+                        <p className="text-xs leading-5 text-slate-600">
+                          {animal_stage_descriptions[stage].description}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )
+          })}
+        </div>
+        <p className="mt-2 text-xs leading-5 text-slate-500">
+          Estas referencias no registran eventos automáticamente. Gestación, empadre y lactancia se
+          confirman por separado; la fecha exacta de destete puede dejarse vacía si no se conoce.
+        </p>
+      </section>
 
       <section aria-labelledby="development-title">
         <div className="mb-3 flex items-center gap-2">
