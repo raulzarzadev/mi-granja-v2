@@ -138,6 +138,39 @@ const StageGuidePage: React.FC = () => {
                         <p className="text-xs leading-5 text-slate-600">
                           {animal_stage_descriptions[stage].description}
                         </p>
+                        {stage === 'reproductor' && (
+                          <dl className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
+                            <div>
+                              <dt className="inline font-semibold text-slate-800">
+                                {type === 'gallina'
+                                  ? 'Promedio por ciclo: '
+                                  : 'Promedio por parto: '}
+                              </dt>
+                              <dd className="inline">
+                                {config.averageLitterSize.toLocaleString('es-MX')}{' '}
+                                {type === 'gallina' ? 'huevos por hembra' : 'crías por hembra'}
+                                {type === 'otro' ? ' (configuración genérica)' : ' como referencia'}
+                                .
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="inline font-semibold text-slate-800">
+                                Edad y desarrollo:{' '}
+                              </dt>
+                              <dd className="inline">
+                                {animal_stage_descriptions.reproductor.speciesInfo?.[type] ??
+                                  `Desde ${config.minBreedingAge} meses; ajustar según la especie`}
+                                .
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="inline font-semibold text-slate-800">
+                                {type === 'gallina' ? 'Incubación: ' : 'Gestación: '}
+                              </dt>
+                              <dd className="inline">{config.gestationDays} días de referencia.</dd>
+                            </div>
+                          </dl>
+                        )}
                       </div>
                     </li>
                   ))}
