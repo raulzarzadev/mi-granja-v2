@@ -1,7 +1,11 @@
 export function selectRelevance<T extends { numero?: string }>(message: string, animals: T[]) {
   const msg = (message || '').toLowerCase()
   const wantsAnimalList =
-    /\b(lista|listar|listado|cu[aá]l|cu[aá]les|mu[eé]stra|mostrar|dame|ens[eé][ñn]a|todos|todas|qu[eé] animales|machos|hembras|crías|crias)\b/.test(
+    /\b(lista|listar|listado|cu[aá]l|cu[aá]les|mu[eé]stra|mostrar|revisa|revisar|dame|ens[eé][ñn]a|todos|todas|qu[eé] animales|machos|hembras|crías|crias)\b/.test(
+      msg,
+    )
+  const wantsAnimalIdentity =
+    /(?:animal|vaca|oveja|cabra|cerdo|gallina|equino|semental|madre|padre|hembra|macho|cr[ií]a)\b/.test(
       msg,
     )
   const wantsBreeding = /empadre|monta|parto|embaraz|preñ|gestaci|destet|reproduc/.test(msg)
@@ -22,7 +26,7 @@ export function selectRelevance<T extends { numero?: string }>(message: string, 
       ).test(msg),
   )
   return {
-    wantsAnimalList,
+    wantsAnimalList: wantsAnimalList || wantsAnimalIdentity,
     wantsBreeding,
     wantsMilk,
     wantsMovements,

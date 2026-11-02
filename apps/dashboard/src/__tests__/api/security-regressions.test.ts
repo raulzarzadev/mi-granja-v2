@@ -3,7 +3,6 @@ import { NextRequest } from 'next/server'
 import { POST as confirmAction } from '@/app/api/ai/confirm-action/route'
 import { POST as verifyCode } from '@/app/api/auth/verify-code/route'
 import { POST as sendEmail } from '@/app/api/send/route'
-import { executeAiAction } from '@/lib/ai/actions'
 import { requireAiAuth, resolveFarmPermissions } from '@/lib/ai/server'
 import { verifyBillingAuth } from '@/lib/billing-auth'
 import { sendBrevoEmail } from '@/lib/brevo'
@@ -16,7 +15,13 @@ jest.mock('@/lib/billing-auth', () => ({
   isAuthError: () => false,
   isAuthenticatedUserAdmin: (_email: string, roles: string[]) => roles?.includes('admin'),
 }))
-jest.mock('@/lib/ai/actions', () => ({ executeAiAction: jest.fn() }))
+jest.mock('@/lib/ai/proposals', () => ({
+  AiProposalError: class extends Error {},
+  confirmAiProposal: jest.fn(),
+  getAiProposal: jest.fn(),
+  reviseAiProposal: jest.fn(),
+  cancelAiProposal: jest.fn(),
+}))
 jest.mock('@/lib/brevo', () => ({ sendBrevoEmail: jest.fn() }))
 jest.mock('@/lib/ai/server', () => ({
   requireAiAuth: jest.fn(),
@@ -138,25 +143,22 @@ it('rate limits are shared across concurrent requests and survive code consumpti
   expect(await consumeRequestLimit(db as any, 'auth-code:email', options, now + 3600000)).toBe(0)
 })
 
-it('confirms a proposed action once, and returns the saved result on retry', async () => {
-  database({ 'aiActionLogs/action-1': { userId: auth.uid, farmId: 'farm-1', status: 'proposed' } })
-  jest.mocked(executeAiAction).mockResolvedValue({ id: 'animal-1', message: 'Creado' })
-  const body = { farmId: 'farm-1', actionId: 'action-1', action }
-  await Promise.all(Array.from({ length: 5 }, () => confirmAction(request(body))))
-  expect(executeAiAction).toHaveBeenCalledTimes(1)
-  const retry = await confirmAction(request(body))
-  expect(retry.status).toBe(200)
-  expect(await retry.json()).toMatchObject({ result: { id: 'animal-1' } })
-  expect(executeAiAction).toHaveBeenCalledTimes(1)
+it('rejects legacy action payloads instead of executing the retired executor', async () => {
+  const response = await confirmAction(request({ farmId: 'farm-1', actionId: 'action-1', action }))
+  expect(response.status).toBe(410)
 })
 
-it('does not replay a potentially partially applied action after an execution failure', async () => {
-  database({ 'aiActionLogs/action-1': { userId: auth.uid, farmId: 'farm-1', status: 'proposed' } })
-  jest.mocked(executeAiAction).mockRejectedValue(new Error('Write failed'))
-  const body = { farmId: 'farm-1', actionId: 'action-1', action }
-  expect((await confirmAction(request(body))).status).toBe(500)
-  expect((await confirmAction(request(body))).status).toBe(409)
-  expect(executeAiAction).toHaveBeenCalledTimes(1)
+it('does not accept an action substituted into a proposal confirmation', async () => {
+  const response = await confirmAction(
+    request({
+      farmId: 'farm-1',
+      proposalId: 'proposal-1',
+      revision: 1,
+      operation: 'confirm',
+      action,
+    }),
+  )
+  expect(response.status).toBe(400)
 })
 
 it('rejects arbitrary email from a normal account before contacting Brevo', async () => {

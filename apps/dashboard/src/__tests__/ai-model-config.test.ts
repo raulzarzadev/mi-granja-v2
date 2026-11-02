@@ -1,4 +1,5 @@
 import {
+  aiProviderRouting,
   DEFAULT_OPENROUTER_MODEL,
   getEnabledProviderOrder,
   normalizeAiModelConfig,
@@ -48,5 +49,18 @@ describe('AI model configuration', () => {
     const invalid = normalizeAiModelConfig(undefined)
     invalid.providers.kimi.model = 'model<script>'
     expect(validateAiModelConfig(invalid).config).toBeUndefined()
+  })
+})
+
+describe('OpenAI mediante OpenRouter', () => {
+  it('elige OpenAI por defecto y restringe su hosting al proveedor OpenAI', () => {
+    expect(DEFAULT_OPENROUTER_MODEL).toBe('openai/gpt-6-luna-pro')
+    expect(aiProviderRouting('openrouter', DEFAULT_OPENROUTER_MODEL)).toEqual({
+      provider: { only: ['openai'], allow_fallbacks: false },
+    })
+  })
+  it('mantiene independientes las rutas de otros proveedores y modelos', () => {
+    expect(aiProviderRouting('openai', 'gpt-6.1-sol')).toEqual({})
+    expect(aiProviderRouting('openrouter', 'google/gemini-2.5-flash')).toEqual({})
   })
 })

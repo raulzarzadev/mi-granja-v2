@@ -5,6 +5,7 @@ import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { IconLabel } from '@/components/Icon/emoji-icons'
 import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
 import { formatDate, toLocalDateStart } from '@/lib/dates'
+import { preparePregnancyConfirmation } from '@/lib/domain/pregnancy-confirmation'
 import { type Animal, animals_types_labels } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
 import { Modal } from './Modal'
@@ -122,41 +123,15 @@ const ModalConfirmPregnancy: React.FC<ModalConfirmPregnancyProps> = ({
       return
     }
 
-    const originalBreedingDate = breedingRecord.breedingDate
-      ? toLocalDateStart(breedingRecord.breedingDate)
-      : toLocalDateStart(new Date())
-    const hasBreedingDateChanged = originalBreedingDate.getTime() !== confirmationDate.getTime()
-
-    // Actualizar nuevas confirmaciones y mantener consistentes las previas si cambia el empadre.
-    const updatedFemaleBreedingInfo = breedingRecord.femaleBreedingInfo.map((info) => {
-      const isNewConfirmation = selectedFemales.includes(info.femaleId)
-      const shouldSyncExistingConfirmation = Boolean(
-        hasBreedingDateChanged && info.pregnancyConfirmedDate && !info.actualBirthDate,
-      )
-      if (isNewConfirmation || shouldSyncExistingConfirmation) {
-        const animal = animals.find((a) => a.id === info.femaleId)
-        const expectedBirthDate = animal
-          ? calculateExpectedBirthDate(confirmationDate, animal.type)
-          : undefined
-
-        return {
-          ...info,
-          pregnancyConfirmedDate: confirmationDate,
-          expectedBirthDate,
-        }
-      }
-      return info
-    })
-
-    const updatedRecord: BreedingRecord = {
-      ...breedingRecord,
-      breedingDate: confirmationDate,
-      femaleBreedingInfo: updatedFemaleBreedingInfo,
-    }
-
     setSubmitting(true)
     setSubmitError('')
     try {
+      const updatedRecord = preparePregnancyConfirmation(
+        breedingRecord,
+        animals,
+        selectedFemales,
+        confirmationDate,
+      )
       await withTimeout(onSubmit(updatedRecord), CONFIRMATION_WRITE_TIMEOUT_MS)
       setSelectedFemales([])
       onClose()

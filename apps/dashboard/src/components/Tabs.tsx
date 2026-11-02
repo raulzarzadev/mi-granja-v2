@@ -17,6 +17,7 @@ type Tab = {
   label: string
   content: ReactNode
   badgeCount?: number
+  hideOnMobile?: boolean
   description?: string
 }
 
@@ -378,7 +379,11 @@ const Tabs: React.FC<TabsProps> = ({
     <div
       data-bottom-navigation={bottomOnMobile || undefined}
       style={
-        bottomOnMobile ? ({ '--mobile-tab-count': tabs.length } as React.CSSProperties) : undefined
+        bottomOnMobile
+          ? ({
+              '--mobile-tab-count': tabs.filter((tab) => !tab.hideOnMobile).length,
+            } as React.CSSProperties)
+          : undefined
       }
       className={`w-full min-w-0 max-w-full overflow-x-clip ${sb('md:flex md:items-start md:gap-4 lg:gap-6 md:overflow-x-visible')}`}
     >
@@ -408,6 +413,9 @@ const Tabs: React.FC<TabsProps> = ({
             gap: 0.125rem;
             overflow: visible;
             padding: 0;
+          }
+          [data-bottom-navigation] > .tabs-scrollbar-shell > [role="tablist"] > [data-hide-on-mobile] {
+            display: none;
           }
           [data-bottom-navigation] > .tabs-scrollbar-shell > [role="tablist"] > [role="tab"] {
             width: 100%;
@@ -487,6 +495,7 @@ const Tabs: React.FC<TabsProps> = ({
               <React.Fragment key={slugs[index]}>
                 <button
                   role="tab"
+                  data-hide-on-mobile={(bottomOnMobile && tab.hideOnMobile) || undefined}
                   aria-selected={isActive}
                   aria-controls={`tab-panel-${slugs[index]}`}
                   id={`tab-${slugs[index]}`}

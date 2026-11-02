@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { buildAiContext } from '@/lib/ai/actions'
+import { buildAiKnowledge } from '@/lib/ai/knowledge'
 import { AiProviderChainError, callAiProvider } from '@/lib/ai/openrouter'
+import { operationCatalog } from '@/lib/ai/operations'
 import { AI_DAILY_LIMIT } from '@/lib/ai/server'
+import { resolveOperationTimeZone } from '@/lib/ai/time-zone'
 import { isAuthError, isAuthenticatedUserAdmin, verifyBillingAuth } from '@/lib/billing-auth'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 
@@ -54,11 +56,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'La granja seleccionada no existe' }, { status: 404 })
     }
     const farm = farmSnapshot.data()
-    const context = await buildAiContext(farmId, message, {
-      animals: true,
-      reminders: true,
-      breeding: true,
-    })
+    const context = await buildAiKnowledge(
+      farmId,
+      message,
+      { animals: true, reminders: true, breeding: true },
+      {
+        farmName: farm?.name,
+        timeZone: resolveOperationTimeZone(farm?.timeZone, body.timeZone),
+        operations: operationCatalog,
+      },
+    )
 
     const result = await callAiProvider({
       message,

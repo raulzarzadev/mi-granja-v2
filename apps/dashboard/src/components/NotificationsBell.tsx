@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { useReminders } from '@/hooks/useReminders'
 
@@ -35,6 +35,48 @@ const NotificationsBell: React.FC = () => {
   const { getOverdueReminders, getTodayReminders, getBadgeCount } = useReminders()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement | null>(null)
+  const [panelStyle, setPanelStyle] = useState<React.CSSProperties | null>(null)
+
+  useLayoutEffect(() => {
+    if (!open) return
+    const updatePosition = () => {
+      const button = ref.current?.querySelector('button')
+      if (!button) return
+      const viewport = window.visualViewport
+      const leftEdge = viewport?.offsetLeft ?? 0
+      const topEdge = viewport?.offsetTop ?? 0
+      const visibleWidth = viewport?.width ?? window.innerWidth
+      const visibleHeight = viewport?.height ?? window.innerHeight
+      const margin = 12
+      const width = Math.min(320, visibleWidth - margin * 2)
+      const bounds = button.getBoundingClientRect()
+      const left = Math.max(
+        leftEdge + margin,
+        Math.min(bounds.right - width, leftEdge + visibleWidth - width - margin),
+      )
+      const top = Math.max(
+        topEdge + margin,
+        Math.min(bounds.bottom + 8, topEdge + visibleHeight - 120),
+      )
+      setPanelStyle({
+        left,
+        top,
+        width,
+        maxHeight: Math.max(0, topEdge + visibleHeight - top - margin),
+      })
+    }
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    window.visualViewport?.addEventListener('resize', updatePosition)
+    window.visualViewport?.addEventListener('scroll', updatePosition)
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+      window.visualViewport?.removeEventListener('resize', updatePosition)
+      window.visualViewport?.removeEventListener('scroll', updatePosition)
+    }
+  }, [open])
 
   useEffect(() => {
     function handle(e: MouseEvent) {
@@ -79,9 +121,10 @@ const NotificationsBell: React.FC = () => {
         )}
       </button>
 
-      {open && (
+      {open && panelStyle && (
         <div
-          className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] origin-top-right rounded-lg shadow-lg bg-white ring-1 ring-black/5 z-50 overflow-hidden"
+          style={panelStyle}
+          className="fixed origin-top-right rounded-lg shadow-lg bg-white ring-1 ring-black/5 z-50 overflow-y-auto overscroll-contain"
           role="menu"
         >
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">

@@ -120,7 +120,7 @@ export async function resolveFarmPermissions({
   farmId: string
   userId: string
   email: string
-}): Promise<{ farmName: string; permissions: FarmPermission[] } | null> {
+}): Promise<{ farmName: string; timeZone?: string; permissions: FarmPermission[] } | null> {
   const firestore = getAdminFirestore()
   const farmSnap = await firestore.collection('farms').doc(farmId).get()
   if (!farmSnap.exists || farmSnap.data()?.deletedAt) return null
@@ -129,6 +129,7 @@ export async function resolveFarmPermissions({
   if (farm.ownerId === userId) {
     return {
       farmName: farm.name || 'Mi granja',
+      timeZone: typeof farm.timeZone === 'string' ? farm.timeZone : undefined,
       permissions: [
         { module: 'animals', actions: ['create', 'read', 'update', 'delete'] },
         { module: 'breeding', actions: ['create', 'read', 'update', 'delete'] },
@@ -154,6 +155,7 @@ export async function resolveFarmPermissions({
 
   return {
     farmName: farm.name || 'Mi granja',
+    timeZone: typeof farm.timeZone === 'string' ? farm.timeZone : undefined,
     permissions:
       invite.permissions ||
       DEFAULT_PERMISSIONS[invite.role as keyof typeof DEFAULT_PERMISSIONS] ||

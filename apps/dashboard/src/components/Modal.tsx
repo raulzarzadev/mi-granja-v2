@@ -12,7 +12,7 @@ export interface ModalProps {
   /** Función para cerrar el modal */
   onClose: () => void
   /** Título del modal */
-  title?: string
+  title?: React.ReactNode
   /** Contenido del modal */
   children: React.ReactNode
   /** Acciones persistentes fuera del contenido scrolleable */

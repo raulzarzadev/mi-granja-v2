@@ -1,7 +1,6 @@
 import { ANALYTICS_EVENTS } from '@mi-granja/shared'
 import { NextRequest, NextResponse } from 'next/server'
-import { buildAiContext } from '@/lib/ai/actions'
-import { callAiProvider } from '@/lib/ai/openrouter'
+import { runOperationalChat } from '@/lib/ai/chat-service'
 import {
   consumeDailyAiUse,
   forbidden,
@@ -11,6 +10,7 @@ import {
   resolveFarmPermissions,
   totalAiTokens,
 } from '@/lib/ai/server'
+import { resolveOperationTimeZone } from '@/lib/ai/time-zone'
 import { captureServerEvent } from '@/lib/analytics/posthog-server'
 
 const QUERY_TYPE = 'chat'
@@ -22,9 +22,11 @@ export async function POST(request: NextRequest) {
     if (auth instanceof NextResponse) return auth
     userId = auth.uid
 
-    const body = await request.json()
-    const message = String(body.message || '').trim()
-    const farmId = String(body.farmId || '').trim()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object' || Array.isArray(body))
+      return NextResponse.json({ error: 'Solicitud inválida' }, { status: 400 })
+    const message = typeof body.message === 'string' ? body.message.trim() : ''
+    const farmId = typeof body.farmId === 'string' ? body.farmId.trim() : ''
     const history = Array.isArray(body.history)
       ? body.history
           .slice(-30)
@@ -32,11 +34,26 @@ export async function POST(request: NextRequest) {
             const value = item && typeof item === 'object' ? (item as Record<string, unknown>) : {}
             return {
               role: value.role === 'assistant' ? ('assistant' as const) : ('user' as const),
-              text: String(value.text || '').slice(0, 2000),
+              text: typeof value.text === 'string' ? value.text.slice(0, 2000) : '',
+              ...(value.role === 'assistant' &&
+              typeof value.proposalId === 'string' &&
+              /^[a-zA-Z0-9_-]{1,128}$/.test(value.proposalId)
+                ? { proposalId: value.proposalId }
+                : {}),
             }
           })
           .filter((item: { text: string }) => item.text)
       : []
+    if (message.length > 4000)
+      return NextResponse.json(
+        { error: 'El mensaje debe tener como máximo 4,000 caracteres' },
+        { status: 400 },
+      )
+    const conversationId = typeof body.conversationId === 'string' ? body.conversationId : ''
+    if (!/^[a-zA-Z0-9_-]{1,128}$/.test(conversationId))
+      return NextResponse.json({ error: 'Conversación requerida' }, { status: 400 })
+    if (!/^[a-zA-Z0-9_-]{1,128}$/.test(farmId))
+      return NextResponse.json({ error: 'Granja inválida' }, { status: 400 })
     if (!message) return NextResponse.json({ error: 'Mensaje requerido' }, { status: 400 })
     if (!farmId) return NextResponse.json({ error: 'Granja requerida' }, { status: 400 })
 
@@ -61,18 +78,29 @@ export async function POST(request: NextRequest) {
         { status: 429 },
       )
     }
-    const context = await buildAiContext(farmId, message, {
+    const contextAccess = {
       animals: hasPermission(access.permissions, 'animals', 'read'),
       reminders: hasPermission(access.permissions, 'reminders', 'read'),
       breeding: hasPermission(access.permissions, 'breeding', 'read'),
-    })
+    }
+    const timeZone = resolveOperationTimeZone(access.timeZone, body.timeZone)
     await captureServerEvent(auth.uid, ANALYTICS_EVENTS.ai_query_sent, {
       query_type: QUERY_TYPE,
       farm_id: farmId,
       history_length: history.length,
     })
     const startedAt = Date.now()
-    const ai = await callAiProvider({ message, farmName: access.farmName, context, history })
+    const ai = await runOperationalChat({
+      message,
+      farmId,
+      userId: auth.uid,
+      conversationId,
+      farmName: access.farmName,
+      permissions: access.permissions,
+      timeZone,
+      history,
+      access: contextAccess,
+    })
     await captureServerEvent(auth.uid, ANALYTICS_EVENTS.ai_response_received, {
       query_type: QUERY_TYPE,
       farm_id: farmId,
@@ -95,7 +123,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      ...ai.parsed,
+      kind: ai.parsed.kind,
+      message: ai.parsed.message,
+      proposal: ai.proposal,
+      knowledge: ai.knowledge,
       usage,
     })
   } catch (error) {
@@ -105,7 +136,7 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Error procesando IA',
+        error: 'No se pudo procesar tu consulta. Inténtalo de nuevo.',
       },
       { status: 500 },
     )

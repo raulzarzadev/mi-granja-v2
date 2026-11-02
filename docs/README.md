@@ -21,6 +21,10 @@ Spanish-language farm management app (multi-tenant). Next.js App Router + Fireba
 - [roadmap.md](./roadmap.md) — Pending features, done, dropped
 - [seo-plan.md](./seo-plan.md) — SEO strategy and phased roadmap for the landing
 
+### Asistente operativo
+
+- [assistant/README.md](./assistant/README.md) — Estrategia, conocimiento actualizado, catálogo de acciones y mantenimiento de flujos
+
 ### Features
 - [features/auth.md](./features/auth.md) — Auth (email/password + magic link) + impersonation
 - [features/permissions.md](./features/permissions.md) — Roles, modules, `hasPermissions`

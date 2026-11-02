@@ -1,6 +1,6 @@
 export const AI_CONFIG_DOCUMENT = 'settings/ai'
 export const AI_CREDENTIALS_COLLECTION = `${AI_CONFIG_DOCUMENT}/credentials`
-export const DEFAULT_OPENROUTER_MODEL = 'google/gemini-2.5-flash'
+export const DEFAULT_OPENROUTER_MODEL = 'openai/gpt-6-luna-pro'
 
 export const AI_PROVIDERS = ['openai', 'kimi', 'openrouter'] as const
 export type AiProvider = (typeof AI_PROVIDERS)[number]
@@ -160,4 +160,11 @@ export function getEnabledProviderOrder(config: AiModelConfig): AiProvider[] {
     (provider, index, values) =>
       values.indexOf(provider) === index && config.providers[provider].enabled,
   )
+}
+
+/** OpenAI BYOK models must use OpenAI itself, not another hosting provider. */
+export function aiProviderRouting(provider: AiProvider, model: string) {
+  return provider === 'openrouter' && model.startsWith('openai/')
+    ? { provider: { only: ['openai'], allow_fallbacks: false } }
+    : {}
 }

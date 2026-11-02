@@ -33,6 +33,10 @@ Mi Granja — Spanish-language farm management app (multi-tenant). Next.js 16 Ap
 - **Backup sync (CRITICAL)**: modifying types in `packages/shared/src/types/` requires updating `apps/dashboard/src/lib/backup-serialization.ts` AND `apps/dashboard/src/components/ModalRestoreBackup.tsx` — see [docs/features/backups.md](./docs/features/backups.md)
 - API errors: never expose details to client — log server-side, return generic messages
 
+## Asistente operativo y cambios de flujos
+
+Antes de modificar el asistente, formularios de animales/registros/empadres, reglas de dominio, permisos o navegación usada por el chat, leer [docs/assistant/README.md](./docs/assistant/README.md). Actualizar el catálogo de flujos, conocimiento y decisiones de esa carpeta en el mismo cambio cuando les afecte. No mantener una segunda implementación de movimientos exclusivos del asistente. Distinguir estrategia propuesta de funcionalidad habilitada. Ejecutar `pnpm check:assistant-docs`; para revisar una rama completa usar `--base <referencia-git>`. El guard también corre en `pnpm review`.
+
 ## Environment variables
 
 Required in `apps/dashboard/.env.local`:

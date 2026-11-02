@@ -7,17 +7,17 @@ import Navbar from '@/components/Navbar'
 import ProfileSection from '@/components/ProfileSection'
 import Tabs from '@/components/Tabs'
 import { RootState } from '@/features/store'
-import { useFixedViewport } from '@/hooks/useFixedViewport'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import { useFixedViewport } from '@/hooks/useFixedViewport'
 import { trackOnboardingCompleted, trackOnboardingStepCompleted } from '@/lib/analytics/track'
 import FarmSwitcherBar from '../FarmSwitcherBar'
 import ModalOnboarding from '../onboarding/ModalOnboarding'
 import ModalWelcomeFarm from '../onboarding/ModalWelcomeFarm'
 import RecordsTab from '../RecordsTab'
+import { AnimalSelectionProvider } from './AnimalSelectionContext'
 import AnimalsSection from './Animals/AnimalsSection'
 import { initialAnimalFilters, useAnimalFilters } from './Animals/animals-filters'
 import QuickCreateButton from './QuickCreateButton'
-import { AnimalSelectionProvider } from './AnimalSelectionContext'
 
 /**
  * Dashboard principal de la aplicación
@@ -62,6 +62,7 @@ const Dashboard: React.FC = () => {
     },
     {
       label: '👤 Perfil',
+      hideOnMobile: true,
       content: <ProfileSection />,
     },
   ]

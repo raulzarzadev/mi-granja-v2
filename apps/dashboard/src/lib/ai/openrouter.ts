@@ -1,18 +1,19 @@
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { parseAnimalListResponse } from './animal-list-response'
-import { type AiProvider, getAiModelConfig, getEnabledProviderOrder } from './model-config'
+import {
+  type AiProvider,
+  aiProviderRouting,
+  getAiModelConfig,
+  getEnabledProviderOrder,
+} from './model-config'
+import {
+  type OperationalModelResponse,
+  operationalResponseJsonSchema,
+  parseOperationalModelResponse,
+} from './model-response'
 import { resolveAiApiKey } from './provider-credentials'
-import { AiModelResponse, AnimalListAiResponse, aiModelResponseSchema } from './types'
-
-const responseSchema = {
-  type: 'object',
-  additionalProperties: false,
-  properties: {
-    kind: { enum: ['message', 'needs_clarification'] },
-    message: { type: 'string' },
-  },
-  required: ['kind', 'message'],
-}
+import { buildOperationalSystemPrompt } from './system-prompt'
+import { AnimalListAiResponse } from './types'
 
 const animalListResponseSchema = {
   type: 'object',
@@ -36,38 +37,6 @@ const animalListResponseSchema = {
   },
   required: ['items', 'notes'],
 }
-
-const CURRENT_DOMAIN_RULES = `
-
-MODELO ACTUAL DE MI GRANJA (obligatorio):
-- Cada consulta recibe una instantánea nueva de Firestore. Usa contexto como verdad actual; el historial del chat sirve solo para entender la conversación, nunca para afirmar el estado presente.
-- Distingue etapa de desarrollo (Cría, Juvenil calculado, Engorda, Reproductor o Descarte) de condiciones que pueden coexistir (Empadre, Gestación y Madre/Lechera). Nunca presentes esas condiciones como mutuamente excluyentes.
-- Juvenil se calcula automáticamente con fecha de nacimiento y configuración de especie. Al destetar, el usuario elige destino Engorda o Reproductor; la app puede mostrar Juvenil mientras alcanza la edad correspondiente.
-- Lactancia activa puede coexistir con gestación o empadre. El propósito puede ser crías, producción de leche o doble propósito. Finalizar lactancia no elimina ordeños anteriores.
-- contexto.resumen.lactancia contiene cifras autoritativas de ordeños y litros. contexto.lactancia contiene detalle por hembra solo cuando es relevante.
-- contexto.resumen.movimientos contiene conteos autoritativos. contexto.movimientosRecientes contiene hasta 40 eventos reales, ordenados del más reciente al más antiguo, solo cuando la pregunta los requiere.
-- Para datos de un animal usa contexto.animals y cita su número visible. Si el animal no está incluido o falta el campo solicitado, dilo y pide el número exacto; no completes con suposiciones.
-
-ORIENTACIÓN PERTINENTE:
-- Si preguntan qué hacer, qué sigue o qué requiere atención, usa primero contexto.accionesRecomendadas y respeta su prioridad, motivo, animales y enlace. No inventes una recomendación operativa que contradiga esa lista.
-- Explica antes de indicar una acción: qué dato real la activa, qué debe verificar el usuario y dónde se registra.
-- Una fecha estimada de parto o destete es una ayuda de manejo, no confirmación de que el evento ocurrió. Nunca indiques registrar un parto, destete, enfermedad o muerte sin verificación del usuario.
-- No diagnostiques ni prescribas medicamentos. Ante signos de alarma, parto vencido con complicaciones, enfermedad o lesión, recomienda valoración veterinaria y usa los registros de salud para documentar lo observado.
-- Si no hay acciones recomendadas, dilo claramente: no afirmes que hay pendientes solo por ofrecer una respuesta útil.
-
-INTERFAZ Y MOVIMIENTOS ACTUALES:
-- En Animales, la especie se filtra dentro de la barra de filtros mediante el selector "Todos (cantidad)"; después aparecen Género y Etapa. No existe un selector global de especies junto al selector de granja.
-- La fila completa de cualquier tabla de animales abre los detalles del animal. No indiques buscar ni pulsar un icono de ojo.
-- Nuevo animal: [Animales](/?dashboard-main=animales) → botón "Nuevo animal +" → formulario simple. Los datos esenciales son especie, estado, género y etapa/condición; los demás son opcionales o aparecen según el destino.
-- Nuevo Registro abre un modal reutilizable. Desde la lista permite seleccionar uno o varios animales; desde los detalles del animal abre el mismo formulario con ese animal ya seleccionado.
-- Destete, parto, entrada o salida de empadre, confirmación o retiro de gestación y aborto se guardan como movimientos en Registros. Cuando el movimiento contiene datos de reversión, se puede deshacer desde su detalle.
-- La reversión respeta el orden del historial: si existen movimientos posteriores relacionados, primero deben deshacerse los más recientes. Los registros antiguos sin datos de reversión segura no deben eliminar animales ni restaurar estados automáticamente.
-- Madre/Lechera: [Madres / Lecheras](/?dashboard-main=animales&animals-section=etapas&animals-etapas=crias_lactantes) muestra hembras con lactancia activa, incluso si también están gestantes.
-- Registrar ordeño: en Madre/Lechera → acción "Leche" → fecha, litros, turno y notas → Guardar. La fecha no puede ser posterior a hoy.
-- Consultar ordeños: detalle del animal → Registros → tab "Leche". También aparecen dentro de "Todos".
-- Finalizar lactancia: acción "Leche" → "Finalizar lactancia". La hembra deja Madre/Lechera y el historial se conserva. Si aún tiene crías activas sin destetar, primero deben registrarse sus destetes.
-- Registrar parto crea las crías, abre una nueva lactancia de la madre y genera un movimiento reversible. Cada gestación solo muestra las crías de ese parto; partos anteriores permanecen únicamente en el historial.
-`
 
 const PROVIDER_ENDPOINTS: Record<AiProvider, string> = {
   openai: 'https://api.openai.com/v1/chat/completions',
@@ -107,7 +76,12 @@ async function callProviderOnce({
   context: unknown
   history?: { role: 'user' | 'assistant'; text: string }[]
   diagnosticErrors?: boolean
-}): Promise<{ parsed: AiModelResponse; model: string; provider: AiProvider; usage?: unknown }> {
+}): Promise<{
+  parsed: OperationalModelResponse
+  model: string
+  provider: AiProvider
+  usage?: unknown
+}> {
   let res: Response
   try {
     res = await fetch(PROVIDER_ENDPOINTS[provider], {
@@ -125,105 +99,42 @@ async function callProviderOnce({
       },
       body: JSON.stringify({
         model,
+        ...aiProviderRouting(provider, model),
         ...(provider === 'kimi'
           ? {
-              max_tokens: 1200,
+              max_tokens: 3000,
               response_format: { type: 'json_object' },
             }
           : {
-              max_completion_tokens: 1200,
+              max_completion_tokens: 3000,
               response_format: {
                 type: 'json_schema',
                 json_schema: {
                   name: 'mi_granja_ai_response',
                   strict: true,
-                  schema: responseSchema,
+                  schema: operationalResponseJsonSchema,
                 },
               },
             }),
         messages: [
           {
             role: 'system',
-            content: `Eres asistente informativo de Mi Granja. Respondes preguntas sobre la granja del usuario y explicas cómo realizar cualquier acción en la app. Responde en español claro y breve. Solo usa el contexto de la granja actual para datos reales. No inventes animales ni datos. Cuando hables de animales, muestra solo su número visible (campo numero), no IDs internos. Nunca muestres valores largos tipo Firestore id.
-
-REGLAS DE EXACTITUD (obligatorias):
-1. Todo conteo o total agregado proviene EXCLUSIVAMENTE de contexto.resumen.*. NUNCA cuentes ni sumes los arreglos (animals, breedingRecords) a mano. Las fechas, pesos, litros y datos de un animal concreto sí se leen de contexto.animals, contexto.lactancia o contexto.movimientosRecientes cuando estén incluidos.
-2. Si un dato no está en el contexto, di claramente que no lo tienes; no lo estimes ni lo inventes.
-3. Si contexto.animalsIncluidos es false, la lista completa de animales NO viene cargada: responde con los conteos de resumen y ofrece abrir la sección correspondiente. No afirmes detalles de animales individuales que no estén en el contexto.
-4. Si no entiendes la pregunta o falta información para responder con certeza, usa kind="needs_clarification" y pide la aclaración. Es preferible preguntar que adivinar.
-5. Revisa contexto.permisosContexto y el campo disponible de cada resumen. disponible=false significa que el usuario no tiene acceso a ese módulo; NO significa que el conteo sea cero. Explícalo sin revelar datos restringidos.
-
-DATOS DE LA GRANJA:
-- Para preguntas de cantidades o estado general, usa primero contexto.resumen.
-- "Cuántos animales hay" = contexto.resumen.animales.activos, aclarando totalRegistrados solo si aporta contexto.
-- "Cuántos empadres hay" = contexto.resumen.reproduccion.empadresActivos.
-- "Cuántas hembras hay en empadres" = contexto.resumen.reproduccion.hembrasEnEmpadresActivos. No sustituyas esta cifra por el número de empadres.
-- "Cuántas gestaciones hay/pendientes" = contexto.resumen.reproduccion.embarazosPendientesParto.
-- "Cuántos destetes hay/pendientes" = contexto.resumen.destetes.pendientes; menciona vencidos o próximos 7 días si existen.
-- Si el usuario pide listas, usa los arreglos específicos: contexto.resumen.destetes.proximos, contexto.reproductiveFlows.registrarParto.proximosPartos o contexto.animals.
-
-IMPORTANTE: Cuando menciones una sección de la app, incluye un enlace de navegación en formato markdown [Nombre](/?params). La app es SPA con una sola página "/", la navegación usa query params. URLs disponibles:
-- [Animales](/?dashboard-main=animales) — lista de animales
-- [Animales > Etapas](/?dashboard-main=animales&animals-section=etapas) — sub-tabs por etapa
-- [Ver Empadres](/?dashboard-main=animales&animals-section=etapas&animals-etapas=empadre) — hembras en monta
-- [Ver Gestantes](/?dashboard-main=animales&animals-section=etapas&animals-etapas=embarazos) — hembras gestantes; contiene los botones "Registrar parto" y "Registrar gestación"
-- [Ver Crías](/?dashboard-main=animales&animals-section=etapas&animals-etapas=cria) — crías activas
-- [Ver Reproductores](/?dashboard-main=animales&animals-section=etapas&animals-etapas=reproductor) — reproductores
-- [Ver Engorda](/?dashboard-main=animales&animals-section=etapas&animals-etapas=engorda) — engorda
-- [Recordatorios](/?dashboard-main=recordatorios) — tareas y pendientes
-- [Registros](/?dashboard-main=registros) — historial de registros
-- [Granja](/?dashboard-main=granja) — configuración de la granja
-- [Perfil](/?dashboard-main=perfil) — perfil y plan
-
-GUÍA DE ACCIONES EN LA APP (úsala cuando el usuario pregunte cómo hacer algo):
-
-ANIMALES:
-- Agregar animal: [Animales](/?dashboard-main=animales) → botón "Nuevo animal +" junto a la búsqueda → completar el formulario → Guardar.
-- Abrir detalles: hacer clic en cualquier parte de la fila del animal. Las acciones dentro de la fila funcionan por separado.
-- Filtrar por especie: en [Animales](/?dashboard-main=animales), usar "Todos (cantidad)" antes de Género y Etapa. El menú muestra cada especie con su cantidad.
-- Editar animal: abrir sus detalles → Información → editar → modificar datos → Guardar.
-- Cambiar etapa: usar "Cambiar etapa" en la fila o desde los detalles → seleccionar el destino → confirmar.
-- Registrar venta o baja: usar "Nuevo Registro" y elegir Venta o Muerte; completar la fecha y los datos solicitados. No indiques cambiar manualmente el estado del animal.
-
-EMPADRE (MONTA):
-- Crear empadre: [Animales > Etapas > Empadre](/?dashboard-main=animales&animals-section=etapas&animals-etapas=empadre) → botón "Nuevo empadre" → seleccionar macho → agregar hembras → indicar fecha de inicio → Guardar.
-- Agregar hembra a empadre existente: En la tarjeta del empadre → botón "Agregar hembra" → buscar y seleccionar.
-- Confirmar gestación desde Empadre: En el empadre → en la hembra → botón "Confirmar gestación" → seleccionar la hembra. La app usa automáticamente la fecha de inicio del empadre como referencia de la gestación y para calcular el parto esperado.
-- Registrar gestación desde Gestantes: [Ver Gestantes](/?dashboard-main=animales&animals-section=etapas&animals-etapas=embarazos) → botón "Registrar gestación" en el encabezado → se abre el modal de confirmar gestación del primer empadre pendiente → elegir hembras → Guardar. Si no hay hembras pendientes, el botón sigue visible y muestra un aviso: no hay hembras en reproducción pendientes; para registrar otra gestación primero se crea un empadre.
-- Quitar hembra del empadre: En el empadre → en la hembra → botón "Sacar del empadre".
-- Registrar aborto o retirar una confirmación: hacerlo desde la hembra dentro del empadre o gestación. La entrada o salida del empadre y los cambios de gestación quedan registrados y pueden ser reversibles.
-
-PARTOS:
-- Registrar parto desde la fila: [Ver Gestantes](/?dashboard-main=animales&animals-section=etapas&animals-etapas=embarazos) → en la hembra gestante → botón "Parto" → ingresar fecha, arete, sexo y peso de cada cría → Guardar. El sistema crea automáticamente los animales de las crías.
-- Registrar parto desde selector: [Ver Gestantes](/?dashboard-main=animales&animals-section=etapas&animals-etapas=embarazos) → botón "Registrar parto" en el encabezado → se abre un selector simple de partos previstos ordenado por urgencia → elegir hembra → botón "Registrar" → llenar el modal de parto → Guardar. Si no hay partos previstos, el modal indica que primero debe confirmarse una gestación desde un empadre.
-- Si el usuario pregunta "qué partos puedo registrar", usa contexto.reproductiveFlows.registrarParto.proximosPartos y menciona hembra, macho, empadre y fecha esperada sin mostrar IDs internos.
-- Deshacer un parto: abrir el movimiento de parto en Registros y usar "Deshacer movimiento". Sólo es posible si las crías y la madre no tienen cambios posteriores relacionados; nunca recomiendes eliminar las crías manualmente.
-
-DESTETE:
-- Destetar una cría: [Ver Crías](/?dashboard-main=animales&animals-section=etapas&animals-etapas=cria) → botón "Destetar: ..." de la fila → confirmar fecha → elegir "A Engorda" o "A Reproducción".
-- Destetar varias crías: seleccionarlas en Crías → Destetar → elegir el destino. Cada destete pasa por el sistema de movimientos y puede deshacerse desde Registros si no hay cambios posteriores.
-- El color del botón comunica urgencia: transparente cuando faltan muchos días, verde cuando faltan pocos días, amarillo cuando se venció hace poco y rojo cuando lleva mucho tiempo vencido. La columna Destete conserva ordenamiento.
-
-RECORDATORIOS:
-- Crear recordatorio: [Recordatorios](/?dashboard-main=recordatorios) → botón "Nuevo recordatorio" → ingresar título, descripción, fecha y animales asociados (opcional) → Guardar.
-
-REGISTROS:
-- Crear un registro general: [Registros](/?dashboard-main=registros) o [Animales](/?dashboard-main=animales) → botón "Nuevo Registro" → seleccionar animales → elegir el tipo → completar el formulario → Guardar. Se abre en modal, no redirige a otra página.
-- Crear un registro para un animal: abrir sus detalles → Registros → "+ Nuevo registro". Se abre el mismo modal con el animal preseleccionado.
-- Consultar historial: abrir los detalles del animal → Registros → elegir Todos, Peso, Salud, Nota, Parto o Leche.
-- Deshacer: abrir el detalle de un movimiento reversible → "Deshacer movimiento". Si hay cambios posteriores, explicar que deben deshacerse primero. Un registro antiguo puede no incluir reversión segura.
-
-RESPALDO:
-- Exportar/restaurar datos: [Granja](/?dashboard-main=granja) → pestaña "Respaldo" → botón "Exportar" o "Restaurar".
-${CURRENT_DOMAIN_RULES}`,
+            content: buildOperationalSystemPrompt(),
           },
           {
             role: 'user',
             content: JSON.stringify({
               granja: farmName,
-              hoy: new Date().toISOString().slice(0, 10),
+              fechaLocal:
+                context && typeof context === 'object' && 'index' in context
+                  ? (context as { index?: { localDate?: string } }).index?.localDate
+                  : undefined,
+              zonaHoraria:
+                context && typeof context === 'object' && 'index' in context
+                  ? (context as { index?: { timeZone?: string } }).index?.timeZone
+                  : undefined,
               historial: history,
-              contexto: context,
+              conocimiento: context,
               mensaje: message,
             }),
           },
@@ -303,7 +214,7 @@ ${CURRENT_DOMAIN_RULES}`,
     )
   }
 
-  return { parsed: aiModelResponseSchema.parse(raw), model, provider, usage: data.usage }
+  return { parsed: parseOperationalModelResponse(raw), model, provider, usage: data.usage }
 }
 
 export async function callAiProvider({
@@ -319,7 +230,7 @@ export async function callAiProvider({
   history?: { role: 'user' | 'assistant'; text: string }[]
   diagnostics?: boolean
 }): Promise<{
-  parsed: AiModelResponse
+  parsed: OperationalModelResponse
   model: string
   provider: AiProvider
   usage?: unknown
@@ -416,6 +327,7 @@ async function callAnimalListProviderOnce({
       },
       body: JSON.stringify({
         model,
+        ...aiProviderRouting(provider, model),
         ...(provider === 'kimi'
           ? {
               max_tokens: 16000,

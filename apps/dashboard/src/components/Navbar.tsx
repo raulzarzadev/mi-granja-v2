@@ -1,6 +1,5 @@
 'use client'
 
-import { WHATSAPP_COMMUNITY_URL } from '@mi-granja/shared'
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -226,27 +225,6 @@ const Navbar: React.FC = () => {
                         >
                           <EmojiIcon emoji="🏠" /> Dashboard
                         </Link>
-                        <button
-                          type="button"
-                          className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 cursor-pointer"
-                          role="menuitem"
-                          onClick={() => {
-                            setShowOnboarding(true)
-                            setMenuOpen(false)
-                          }}
-                        >
-                          <EmojiIcon emoji="📘" /> Primeros pasos
-                        </button>
-                        <a
-                          href={WHATSAPP_COMMUNITY_URL}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700"
-                          role="menuitem"
-                          onClick={() => setMenuOpen(false)}
-                        >
-                          <EmojiIcon emoji="💬" /> Comunidad WhatsApp
-                        </a>
                         {isUserAdmin(user) && (
                           <>
                             <Link

@@ -32,6 +32,10 @@ it('muestra especies con cuentas y permite seleccionar y volver a Todos', () => 
     )
   }
   render(<Example />)
+  expect(
+    screen.queryByRole('button', { name: 'Todos (3) Todos los animales visibles' }),
+  ).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
   const trigger = screen.getByRole('button', { name: 'Todos (3) Todos los animales visibles' })
   expect(
     trigger.compareDocumentPosition(screen.getByRole('button', { name: 'Género' })) &

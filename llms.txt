@@ -13,6 +13,8 @@ Mi Granja tracks animals, breeding, reminders, sales, and farm collaborators. Ap
 - [Glossary](docs/GLOSSARY.md): Spanish ganadero vocabulary
 - [Roadmap](docs/roadmap.md): Pending, done, dropped
 
+- [Asistente operativo](docs/assistant/README.md): Estrategia, fuentes actuales de la granja y acciones que reutilizan los flujos existentes
+
 ## Features
 
 - [Auth](docs/features/auth.md): Email/password + magic link + admin impersonation

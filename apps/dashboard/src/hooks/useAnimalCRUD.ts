@@ -1,7 +1,6 @@
 'use client'
 
 import {
-  addDoc,
   collection,
   deleteDoc,
   doc,
@@ -10,6 +9,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  runTransaction,
   setDoc,
   updateDoc,
   where,
@@ -29,9 +29,13 @@ import {
   trackAnimalUpdated,
   trackRecordCreated,
 } from '@/lib/analytics/track'
-import { animalMatchesSearch } from '@/lib/animal-search'
-import { createAnimalRegistrationRecord } from '@/lib/animal-registration'
+import { animalMatchesSearch, normalizeAnimalSearch } from '@/lib/animal-search'
 import { computeAnimalStage, isActiveCalf } from '@/lib/animal-utils'
+import {
+  animalNumberReservationKey,
+  buildRegisteredAnimal,
+  validateAnimalRegistration,
+} from '@/lib/domain/animal-registration-service'
 import { db } from '@/lib/firebase'
 import {
   Animal,
@@ -119,46 +123,40 @@ export const useAnimalCRUD = () => {
     setIsLoading(true)
     try {
       const now = new Date()
-      let newAnimal = {
-        ...animalData,
-        records: [
-          ...(animalData.records || []),
-          createAnimalRegistrationRecord(animalData, user.id, now),
-        ],
-        farmerId: user.id,
-        farmId: currentFarm.id,
-        createdAt: now,
-        updatedAt: now,
-      }
-
-      // El historial unificado es la fuente de verdad del peso.
-      const initialWeight =
-        typeof newAnimal.weight === 'number' && newAnimal.weight > 0 ? newAnimal.weight : null
-      const hasInitialWeightRecord = newAnimal.records?.some((record) => record.type === 'weight')
-      if (initialWeight && !hasInitialWeightRecord) {
-        const weightKg = (initialWeight / 1000).toFixed(1)
-        const weightRecord: AnimalRecord = {
-          id: crypto.randomUUID(),
-          type: 'weight',
-          category: 'general',
-          title: `${weightKg} kg`,
-          weightGrams: initialWeight,
-          date: now,
-          createdAt: now,
-          createdBy: user.id,
+      validateAnimalRegistration(animalData, animals, now)
+      const newAnimal = wrapWithAdminMetadata(
+        buildRegisteredAnimal(animalData, { userId: user.id, farmId: currentFarm.id }, now),
+        'Creación de animal',
+      )
+      const animalRef = doc(collection(db, 'animals'))
+      const reservationRef = doc(
+        db,
+        'animalNumberReservations',
+        animalNumberReservationKey(currentFarm.id, newAnimal.animalNumber),
+      )
+      await runTransaction(db, async (tx) => {
+        const reservation = await tx.get(reservationRef)
+        if (reservation.exists()) {
+          const reservedId = reservation.data().animalId
+          if (typeof reservedId !== 'string' || reservedId.includes('/'))
+            throw new Error('El ID del animal no está disponible.')
+          const reservedAnimal = await tx.get(doc(db, 'animals', reservedId))
+          if (
+            reservedAnimal.exists() &&
+            normalizeAnimalSearch(reservedAnimal.data().animalNumber || '') ===
+              normalizeAnimalSearch(newAnimal.animalNumber)
+          )
+            throw new Error(`Ya existe un animal con el ID “${newAnimal.animalNumber}”.`)
         }
-        newAnimal = {
-          ...newAnimal,
-          records: [...(newAnimal.records || []), weightRecord],
-        }
-      }
-
-      // Añadir metadata de admin si se está haciendo impersonación
-      newAnimal = wrapWithAdminMetadata(newAnimal, 'Creación de animal')
-
-      const docRef = await addDoc(collection(db, 'animals'), newAnimal)
+        tx.set(animalRef, newAnimal)
+        tx.set(reservationRef, {
+          farmId: currentFarm.id,
+          animalId: animalRef.id,
+          animalNumber: newAnimal.animalNumber,
+        })
+      })
       trackAnimalCreated({ species: newAnimal.type, breed: newAnimal.breed })
-      return docRef.id
+      return animalRef.id
     } catch (error) {
       console.error('Error creating animal:', error, { animalData })
       const errorMessage = error instanceof Error ? error.message : 'Error al crear el animal'

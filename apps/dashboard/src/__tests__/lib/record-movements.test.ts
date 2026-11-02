@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { breedingParticipantsEqual, useBreedingCRUD } from '@/hooks/useBreedingCRUD'
-import { useSalesCRUD } from '@/hooks/useSalesCRUD'
 import { useRecordMovements } from '@/hooks/useRecordMovements'
+import { useSalesCRUD } from '@/hooks/useSalesCRUD'
 import { commitMovement, movementEqual, undoMovement } from '@/lib/record-movements'
 import type { BirthRecord } from '@/types'
 import type { Animal } from '@/types/animals'
@@ -298,8 +298,8 @@ it('venta: guarda venta, estado e historial juntos; elimina la venta al deshacer
 })
 
 it('empadre: un solo empadre al reintentar, con reversión de la gestación', async () => {
-  animal('m', { gender: 'macho' })
-  animal('h')
+  animal('m', { gender: 'macho', birthDate: new Date('2022-01-01T12:00:00') })
+  animal('h', { birthDate: new Date('2022-01-01T12:00:00') })
   const movement = api()
   const data = {
     maleId: 'm',
@@ -318,7 +318,7 @@ it('empadre: un solo empadre al reintentar, con reversión de la gestación', as
 })
 
 it('parto: crea crías en gramos, limpia gestación y permite restaurar el conjunto', async () => {
-  animal('h', { pregnantAt: date, pregnantBy: 'm' })
+  animal('h', { birthDate: new Date('2022-01-01T12:00:00'), pregnantAt: date, pregnantBy: 'm' })
   const movement = api()
   const form = {
     animalId: 'h',

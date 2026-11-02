@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "flowVersion": 1,
+  "knowledgeVersion": 1,
+  "operations": [
+    "confirm_pregnancy",
+    "finish_breeding",
+    "create_animal",
+    "create_breeding",
+    "register_birth",
+    "register_weaning",
+    "register_weight",
+    "register_milk",
+    "register_health",
+    "create_sale"
+  ],
+  "sources": [
+    "apps/dashboard/src/lib/ai/operations.ts",
+    "apps/dashboard/src/lib/ai/proposals.ts",
+    "apps/dashboard/src/lib/ai/knowledge.ts",
+    "apps/dashboard/src/lib/domain/record-movement-service.ts",
+    "apps/dashboard/src/lib/domain/animal-registration-service.ts",
+    "apps/dashboard/src/components/assistant/ProposalCard.tsx",
+    "apps/dashboard/src/lib/ai/actions.ts",
+    "apps/dashboard/src/lib/ai/system-prompt.ts",
+    "apps/dashboard/src/lib/ai/model-response.ts",
+    "apps/dashboard/src/lib/ai/chat-service.ts",
+    "apps/dashboard/src/lib/ai/time-zone.ts",
+    "apps/dashboard/src/lib/ai/knowledge-records.ts",
+    "apps/dashboard/src/lib/ai/knowledge-dates.ts",
+    "apps/dashboard/src/lib/domain/pregnancy-confirmation.ts",
+    "apps/dashboard/src/lib/domain/farm-calendar.ts",
+    "apps/dashboard/src/lib/domain/breeding-update-service.ts",
+    "apps/dashboard/src/app/api/ai/chat/route.ts",
+    "apps/dashboard/src/app/api/ai/confirm-action/route.ts",
+    "apps/dashboard/src/components/assistant/OperationFields.tsx",
+    "apps/dashboard/src/hooks/useAiConversations.ts",
+    "apps/dashboard/src/hooks/useBreedingCRUD.ts",
+    "apps/dashboard/src/components/ModalConfirmPregnancy.tsx"
+  ]
+}
