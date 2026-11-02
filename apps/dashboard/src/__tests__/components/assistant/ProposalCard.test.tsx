@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import ProposalCard from '@/components/assistant/ProposalCard'
 import { ProposalRequestError, requestProposal } from '@/lib/ai/proposal-client'
 import type { AiProposalView } from '@/lib/ai/proposal-types'
@@ -88,6 +88,12 @@ it('comprueba el estado al abrir y registra solo tras confirmación explícita, 
   )
   const { onChange, onNavigate } = setup()
   fireEvent.click(await screen.findByRole('button', { name: 'Revisar acción' }))
+  const dialog = screen.getByRole('dialog', { name: 'Confirmar acción' })
+  expect(within(dialog).getByRole('heading', { name: 'Registrar peso' })).toBeInTheDocument()
+  expect(
+    within(dialog).getByText('Guardarás un nuevo pesaje y se actualizará el peso del animal.'),
+  ).toBeInTheDocument()
+  expect(within(dialog).getByText('A7')).toBeInTheDocument()
   expect(mockedRequest.mock.calls.every(([input]) => input.operation === 'get')).toBe(true)
   fireEvent.click(screen.getByRole('button', { name: 'Confirmar y registrar' }))
   fireEvent.click(screen.getByRole('button', { name: 'Registrando…' }))

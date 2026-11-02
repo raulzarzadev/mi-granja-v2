@@ -6,8 +6,16 @@ import ProposalCard from '@/components/assistant/ProposalCard'
 import Button from '@/components/buttons/Button'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { Modal } from '@/components/Modal'
+import ModalAnimalDetails from '@/components/ModalAnimalDetails'
+import ModalBreedingDetails from '@/components/ModalBreedingDetails'
 import { RootState } from '@/features/store'
 import { useAiConversations } from '@/hooks/useAiConversations'
+import {
+  type AnimalMentionIndex,
+  animalMentionParts,
+  buildAnimalMentionIndex,
+  exactAnimalMention,
+} from '@/lib/ai/animal-mentions'
 import { browserTimeZone } from '@/lib/ai/proposal-client'
 import { parseProposalView } from '@/lib/ai/proposal-view'
 import { auth } from '@/lib/firebase'
@@ -63,7 +71,54 @@ function messageLink(href: string): { kind: 'internal' | 'external'; href: strin
 }
 
 /** Renders plain text with [label](url) markdown links. Internal links use pushState + popstate so Tabs sync correctly. */
-function MessageText({ text, onNavigate }: { text: string; onNavigate: (href: string) => void }) {
+function MessageText({
+  text,
+  onNavigate,
+  animalIndex,
+  onOpenAnimal,
+  breedingIndex,
+  onOpenBreeding,
+}: {
+  text: string
+  onNavigate: (href: string) => void
+  animalIndex: AnimalMentionIndex
+  breedingIndex: AnimalMentionIndex
+  onOpenBreeding: (id: string) => void
+  onOpenAnimal: (id: string) => void
+}) {
+  const animalButton = (label: string, animal: { id: string; number: string }, key: string) => (
+    <button
+      key={key}
+      type="button"
+      aria-label={`Ver animal ${animal.number}`}
+      onClick={() => onOpenAnimal(animal.id)}
+      className="rounded px-0.5 font-semibold underline decoration-current underline-offset-2 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+    >
+      {label}
+    </button>
+  )
+  const breedingButton = (label: string, record: { id: string; number: string }, key: string) => (
+    <button
+      key={key}
+      type="button"
+      aria-label={`Ver empadre ${record.number}`}
+      onClick={() => onOpenBreeding(record.id)}
+      className="cursor-pointer rounded px-0.5 font-semibold underline underline-offset-2 hover:opacity-80 focus-visible:ring-2 focus-visible:ring-current"
+    >
+      {label}
+    </button>
+  )
+  const plainText = (value: string, prefix: string) =>
+    animalMentionParts(value, breedingIndex).flatMap((part, index) =>
+      part.animal
+        ? [breedingButton(part.text, part.animal, `${prefix}-breeding-${index}`)]
+        : animalMentionParts(part.text, animalIndex).map((item, j) =>
+            item.animal
+              ? animalButton(item.text, item.animal, `${prefix}-${index}-${j}`)
+              : item.text,
+          ),
+    )
+
   const parts = text.split(/\[([^\]]+)\]\(([^)]+)\)/g)
   const nodes: React.ReactNode[] = []
   for (let i = 0; i < parts.length; i++) {
@@ -72,12 +127,27 @@ function MessageText({ text, onNavigate }: { text: string; onNavigate: (href: st
       nodes.push(
         ...parts[i]
           .split('\n')
-          .flatMap((line, j) => [j > 0 ? <br key={`br-${i}-${j}`} /> : null, line]),
+          .flatMap((line, j) => [
+            j > 0 ? <br key={`br-${i}-${j}`} /> : null,
+            ...plainText(line, `${i}-${j}`),
+          ]),
       )
     } else if (i % 3 === 1) {
       const label = parts[i]
       const href = parts[i + 1]
       const link = messageLink(href)
+      const breeding = exactAnimalMention(label.replace(/^empadre\s*#?\s*/i, ''), breedingIndex)
+      if (breeding) {
+        nodes.push(breedingButton(label, breeding, `breeding-link-${i}`))
+        i++
+        continue
+      }
+      const animal = exactAnimalMention(label, animalIndex)
+      if (animal) {
+        nodes.push(animalButton(label, animal, `animal-link-${i}`))
+        i++
+        continue
+      }
       nodes.push(
         link?.kind === 'internal' ? (
           <button
@@ -149,6 +219,33 @@ function ScopedAiAssistant({
     setInternalOpen(value)
     onOpenChange?.(value)
   }
+  const animals = useSelector((state: RootState) => state.animals.animals)
+  const animalIndex = useMemo(
+    () => buildAnimalMentionIndex(animals, currentFarm?.id),
+    [animals, currentFarm?.id],
+  )
+  const breedingRecords = useSelector((state: RootState) => state.breeding.breedingRecords)
+  const breedingIndex = useMemo(() => {
+    const index = buildAnimalMentionIndex(
+      breedingRecords.map((record) => ({
+        id: record.id,
+        animalNumber: record.breedingId || '',
+        farmId: record.farmId,
+      })),
+      currentFarm?.id,
+    )
+    // Una referencia compartida por un animal y un empadre no identifica una ficha única.
+    for (const alias of animalIndex.keys()) index.delete(alias)
+    return index
+  }, [breedingRecords, currentFarm?.id, animalIndex])
+  const [selectedBreedingId, setSelectedBreedingId] = useState<string | null>(null)
+  const selectedBreeding = breedingRecords.find(
+    (record) => record.id === selectedBreedingId && record.farmId === currentFarm?.id,
+  )
+  const [selectedAnimalId, setSelectedAnimalId] = useState<string | null>(null)
+  const selectedAnimal = animals.find(
+    (animal) => animal.id === selectedAnimalId && animal.farmId === currentFarm?.id,
+  )
   const [message, setMessage] = useState('')
   const userId = useSelector((state: RootState) => state.auth.user?.id)
   const {
@@ -427,7 +524,14 @@ function ScopedAiAssistant({
                     >
                       <span className="sr-only">{item.role === 'user' ? 'Tú' : 'Asistente'}: </span>
                       <div className="whitespace-pre-wrap">
-                        <MessageText text={item.text} onNavigate={navigate} />
+                        <MessageText
+                          text={item.text}
+                          onNavigate={navigate}
+                          animalIndex={animalIndex}
+                          breedingIndex={breedingIndex}
+                          onOpenBreeding={setSelectedBreedingId}
+                          onOpenAnimal={setSelectedAnimalId}
+                        />
                       </div>
                       {item.role === 'assistant' &&
                         item.proposal &&
@@ -503,6 +607,21 @@ function ScopedAiAssistant({
           )}
         </div>
       </Modal>
+      {open && selectedBreeding && (
+        <ModalBreedingDetails
+          record={selectedBreeding}
+          animals={animals.filter((animal) => animal.farmId === currentFarm?.id)}
+          onClose={() => setSelectedBreedingId(null)}
+          onOpenAnimal={setSelectedAnimalId}
+        />
+      )}
+      {open && selectedAnimal && (
+        <ModalAnimalDetails
+          animal={selectedAnimal}
+          isOpen
+          onClose={() => setSelectedAnimalId(null)}
+        />
+      )}
     </>
   )
 }

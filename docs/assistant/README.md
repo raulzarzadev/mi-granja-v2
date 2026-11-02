@@ -141,3 +141,11 @@ La restricción de no consumir capacidad compartida se configura en el panel BYO
 No confundir crear una credencial en OpenRouter con comprobar su funcionamiento. La prueba local del 2026-11-01 con `openai/gpt-6-luna-pro` devolvió HTTP 200 y proveedor `OpenAI`, con respuesta recibida. El modelo anterior Sol estaba excluido por el filtro BYOK del usuario. Los metadatos consultados no devolvieron `is_byok`; la verificación no confirma saldo ni vinculación de créditos Pro.
 
 Compatibilidad del proveedor: el esquema estricto normaliza límites numéricos exclusivos a valores numéricos JSON Schema. La validación Zod conserva los límites de dominio. Probar una solicitud con el esquema completo, además de un saludo sin esquema, antes de dar por verificada una conexión nueva.
+
+Los identificadores y nombres únicos de animales mencionados en el chat abren su modal de detalles sobre la conversación. Solo se enlazan coincidencias exactas e inequívocas de la granja actual. El cierre de la ficha conserva el chat abierto.
+
+Los códigos únicos de empadre mencionados en el chat abren una ficha compacta sobre la conversación, con fecha, estado, macho y hembras agrupadas mediante los helpers actuales de empadres. Los animales de la ficha abren sus detalles conservando ambos contextos. Se resuelven solo registros de la granja actual; las referencias ambiguas entre animales y empadres no se enlazan como empadres. No ejecuta movimientos.
+
+La ficha de empadre del chat permite confirmar gestación de hembras pendientes, sacar participantes y registrar parto de gestantes. Reutiliza `ModalConfirmPregnancy`, `ModalBirthForm`, `useBreedingHandlers` y los movimientos compartidos. Respeta permisos; sacar requiere confirmación explícita y advierte si eliminará todo el empadre. Confirmar gestación o parto conserva la ficha y el chat; eliminar el empadre cierra su ficha.
+
+En la ficha del empadre, el botón (+) junto a Hembras abre un selector múltiple de hembras disponibles de la especie del macho. Excluye participantes actuales, animales inactivos, gestantes, paridas y ocupadas en otros empadres activos. Agrega mediante `updateBreedingRecord`, preserva la información de las hembras existentes y mantiene la ficha abierta. Solo aparece con permiso de actualización y en empadres en curso.

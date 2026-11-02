@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { Modal } from '@/components/Modal'
 import type { RootState } from '@/features/store'
-import { operationActionSchema } from '@/lib/ai/operations'
+import { type OperationAction, operationActionSchema } from '@/lib/ai/operations'
 import { ProposalRequestError, requestProposal } from '@/lib/ai/proposal-client'
 import type { AiProposalView } from '@/lib/ai/proposal-types'
 import {
@@ -83,6 +83,23 @@ const enumLabels: Record<string, string> = {
   nutrition: 'Nutrición',
   other: 'Otro',
 }
+const actionDescriptions: Record<OperationAction['type'], string> = {
+  create_animal: 'Darás de alta un animal nuevo y se guardará su registro de ingreso a la granja.',
+  create_breeding: 'Crearás un empadre con el macho y las hembras seleccionados.',
+  confirm_pregnancy:
+    'Confirmarás la gestación de las hembras seleccionadas y se calcularán sus fechas esperadas de parto.',
+  finish_breeding:
+    'Terminarás el empadre seleccionado y el macho quedará disponible para otra monta.',
+  register_birth:
+    'Registrarás el parto, se crearán las crías y se actualizarán la madre y su gestación.',
+  register_weaning: 'Registrarás el destete de los animales seleccionados y su destino productivo.',
+  register_weight: 'Guardarás un nuevo pesaje y se actualizará el peso del animal.',
+  register_milk: 'Guardarás el ordeño con la cantidad, fecha y turno indicados.',
+  register_health: 'Guardarás la atención de salud para los animales seleccionados.',
+  create_sale:
+    'Registrarás una venta completada y los animales seleccionados quedarán como vendidos.',
+}
+
 const safeInternalHref = (value?: string) =>
   value?.startsWith('/') && !value.startsWith('//') ? value : undefined
 
@@ -375,7 +392,7 @@ export default function ProposalCard({
       <Modal
         isOpen={reviewOpen}
         onClose={close}
-        title={editing ? 'Editar propuesta' : proposal.title}
+        title="Confirmar acción"
         size="lg"
         mobileSheet
         closeOnOverlayClick={!busy}
@@ -416,10 +433,22 @@ export default function ProposalCard({
         }
       >
         <div className="space-y-5">
+          <section
+            aria-label="Acción que vas a realizar"
+            className="rounded-2xl border border-green-200 bg-green-50 p-4"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide text-green-800">
+              Acción que vas a realizar
+            </p>
+            <h3 className="mt-1 text-xl font-bold text-green-950">{proposal.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-green-900">
+              {actionDescriptions[proposal.action.type]}
+            </p>
+          </section>
           <p className="text-sm leading-6 text-slate-600">
             {editing
               ? 'Ajusta los datos. Antes de registrar verás la propuesta revisada.'
-              : 'Revisa los datos y los cambios que se registrarán en tu granja.'}
+              : 'Comprueba los animales, las fechas y los datos antes de confirmar.'}
           </p>
           {editing ? (
             <form

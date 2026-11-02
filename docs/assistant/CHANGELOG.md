@@ -55,3 +55,27 @@ Verificación posterior: la petición real a OpenRouter con GPT‑6.1 Terra, pro
 ## 2026-11-01 — Cambio a Luna
 
 A petición del propietario, el modelo por defecto pasa a `openai/gpt-6-luna-pro` (GPT-6 Luna Pro), la variante Luna autorizada en su filtro BYOK mostrado. Se conserva OpenRouter → OpenAI y el esquema operativo estricto corregido.
+
+## 2026-11-01 — Confirmación explícita en el cuerpo del modal
+
+El modal se titula «Confirmar acción» y destaca en su contenido la operación concreta, una explicación específica y los datos/efectos a revisar. Se conserva la confirmación única y la validación de revisión existente.
+
+## 2026-11-01 — Fichas de animales desde menciones
+
+El chat convierte los IDs y nombres únicos de animales de la granja actual en referencias pulsables. Abren `ModalAnimalDetails` encima del chat sin navegar ni borrar la conversación; las referencias ambiguas, ajenas o inexistentes permanecen como texto. Se evita enlazar coincidencias parciales, fechas y cantidades con unidades.
+
+## 2026-11-01 — Consultar empadres desde el chat
+
+Los códigos de empadre inequívocos abren un modal compacto sin cerrar la conversación. Reutiliza el modal compartido y la agrupación reproductiva actual, permite consultar sus animales y lee el registro actualizado de Redux dentro de la granja activa.
+
+## 2026-11-01 — Acciones en la ficha de empadre del chat
+
+Añade confirmar gestación, sacar del empadre y registrar parto según estado y permisos, con los formularios y servicios existentes. Conserva el contexto al terminar los submodales y confirma explícitamente la salida de participantes.
+
+## 2026-11-01 — Agregar hembras desde la ficha
+
+Botón (+) junto al contador de hembras, con selector canónico, disponibilidad, guardado compartido y error recuperable.
+
+La acción de sacar un participante se presenta como icono X con nombre accesible y confirmación explícita posterior.
+
+La ficha de empadre incluye un botón de edición junto al estado, visible con permiso de actualización. Abre `ModalEditBreeding` con el registro actual y guarda mediante `updateBreedingRecord`, conservando la ficha y la conversación.

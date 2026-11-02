@@ -1,21 +1,119 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import AiAssistant from '@/components/AiAssistant'
+import ModalBreedingDetails from '@/components/ModalBreedingDetails'
 import type { AiProposalView } from '@/lib/ai/proposal-types'
+import type { Animal } from '@/types/animals'
+import type { BreedingRecord } from '@/types/breedings'
 
 const mockState = {
   farm: { currentFarm: { id: 'farm-1', name: 'San Petter' } },
   auth: { user: { id: 'user-1' } },
-  animals: { animals: [] },
-  breeding: { breedingRecords: [] },
+  animals: { animals: [] as Animal[] },
+  breeding: { breedingRecords: [] as BreedingRecord[] },
 }
+const mockUpdateBreeding = jest.fn().mockResolvedValue(undefined)
+const mockRemoveBreeding = jest.fn().mockResolvedValue(undefined)
+const mockBirth = jest.fn().mockResolvedValue(undefined)
+jest.mock('@/hooks/useBreedingCRUD', () => ({
+  useBreedingCRUD: () => ({
+    breedingRecords: mockState.breeding.breedingRecords,
+    updateBreedingRecord: mockUpdateBreeding,
+    deleteBreedingRecord: jest.fn(),
+  }),
+}))
+jest.mock('@/hooks/useRecordMovements', () => ({
+  useRecordMovements: () => ({ birth: mockBirth }),
+}))
+jest.mock('@/hooks/useFarmPermissions', () => ({ useFarmPermissions: () => ({ has: () => true }) }))
+jest.mock('@/components/Dashboard/Animals/hooks/useBreedingHandlers', () => ({
+  useBreedingHandlers: () => ({ handleRemoveFromBreeding: mockRemoveBreeding }),
+}))
+jest.mock('@/components/ModalConfirmPregnancy', () => ({
+  __esModule: true,
+  default: ({ onSubmit, onClose, breedingRecord }: any) => (
+    <div>
+      <p>Formulario gestación</p>
+      <button
+        onClick={async () => {
+          await onSubmit({
+            ...breedingRecord,
+            femaleBreedingInfo: breedingRecord.femaleBreedingInfo.map((info: any) => ({
+              ...info,
+              pregnancyConfirmedDate: new Date(),
+            })),
+          })
+          onClose()
+        }}
+      >
+        Guardar gestación
+      </button>
+    </div>
+  ),
+}))
+jest.mock('@/components/ModalBirthForm', () => ({
+  __esModule: true,
+  default: ({ onSubmit, onClose }: any) => (
+    <div>
+      <p>Formulario parto</p>
+      <button
+        onClick={async () => {
+          await onSubmit({ animalId: 'female' })
+          onClose()
+        }}
+      >
+        Guardar parto
+      </button>
+    </div>
+  ),
+}))
+jest.mock('@/components/inputs/AnimalSelector', () => ({
+  __esModule: true,
+  default: ({ animals, selectedIds, onAdd }: any) => (
+    <div>
+      {animals.map((animal: Animal) => (
+        <button key={animal.id} onClick={() => onAdd(animal.id)}>
+          {animal.animalNumber}
+        </button>
+      ))}
+      <p>{selectedIds.length} elegidas</p>
+    </div>
+  ),
+}))
+jest.mock('@/components/ModalEditBreeding', () => ({
+  __esModule: true,
+  default: ({ record, onSubmit, onClose }: any) => (
+    <div>
+      <p>Formulario editar empadre</p>
+      <button
+        onClick={async () => {
+          await onSubmit(record.id, { notes: 'Editado' })
+          onClose()
+        }}
+      >
+        Guardar empadre editado
+      </button>
+    </div>
+  ),
+}))
 jest.mock('react-redux', () => ({
   useSelector: (select: (state: unknown) => unknown) => select(mockState),
+}))
+jest.mock('@/components/ModalAnimalDetails', () => ({
+  __esModule: true,
+  default: ({ animal, onClose }: { animal: Animal; onClose: () => void }) => (
+    <div role="dialog" aria-label="Detalles del animal">
+      <p>Ficha de {animal.animalNumber}</p>
+      <button onClick={onClose}>Cerrar ficha</button>
+    </div>
+  ),
 }))
 jest.mock('@/lib/firebase', () => ({ auth: { currentUser: { getIdToken: async () => 'token' } } }))
 
 beforeEach(() => {
   jest.clearAllMocks()
   localStorage.clear()
+  mockState.animals.animals = []
+  mockState.breeding.breedingRecords = []
   HTMLElement.prototype.scrollIntoView = jest.fn()
 })
 
@@ -172,4 +270,211 @@ it('impide navegar fuera del origen incluso si un comprobante devuelve una ruta 
   expect(navigate).not.toHaveBeenCalled()
   expect(onOpenChange).not.toHaveBeenCalled()
   navigate.mockRestore()
+})
+
+it('abre la ficha de un animal mencionado y vuelve al chat conservando la conversación', async () => {
+  mockState.animals.animals = [
+    { id: 'animal-9', farmId: 'farm-1', animalNumber: 'A9', name: 'Luna' } as Animal,
+  ]
+  jest.mocked(fetch).mockResolvedValue({
+    ok: true,
+    json: async () => ({ kind: 'message', message: 'Revisa A9. Luna tiene un pendiente.' }),
+  } as Response)
+  render(<AiAssistant open showTrigger={false} />)
+  fireEvent.change(screen.getByRole('textbox', { name: 'Mensaje para el asistente' }), {
+    target: { value: 'Revisar animal' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar mensaje' }))
+  const mentions = await screen.findAllByRole('button', { name: 'Ver animal A9' })
+  expect(mentions).toHaveLength(2)
+  fireEvent.click(mentions[0])
+  expect(screen.getByRole('dialog', { name: 'Detalles del animal' })).toHaveTextContent(
+    'Ficha de A9',
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Cerrar ficha' }))
+  expect(screen.queryByRole('dialog', { name: 'Detalles del animal' })).not.toBeInTheDocument()
+  expect(screen.getByRole('textbox', { name: 'Mensaje para el asistente' })).toBeInTheDocument()
+  expect(screen.getAllByRole('button', { name: 'Ver animal A9' })).toHaveLength(2)
+})
+
+it('abre el empadre mencionado sobre el chat y permite consultar su macho', async () => {
+  mockState.animals.animals = [{ id: 'male', farmId: 'farm-1', animalNumber: 'A6' } as Animal]
+  mockState.breeding.breedingRecords = [
+    {
+      id: 'breeding-1',
+      farmId: 'farm-1',
+      farmerId: 'user-1',
+      breedingId: '26440',
+      maleId: 'male',
+      breedingDate: null,
+      femaleBreedingInfo: [],
+      status: 'finished',
+    },
+  ]
+  jest.mocked(fetch).mockResolvedValue({
+    ok: true,
+    json: async () => ({ kind: 'message', message: 'Revisa el empadre 26440.' }),
+  } as Response)
+  render(<AiAssistant open showTrigger={false} />)
+  fireEvent.change(screen.getByRole('textbox', { name: 'Mensaje para el asistente' }), {
+    target: { value: 'Revisar montas' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar mensaje' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver empadre 26440' }))
+  expect(screen.getByText('Empadre 26440')).toBeInTheDocument()
+  expect(screen.getByText('Terminado')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Ver animal A6' }))
+  expect(screen.getByRole('dialog', { name: 'Detalles del animal' })).toHaveTextContent(
+    'Ficha de A6',
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Cerrar ficha' }))
+  expect(screen.getByText('Empadre 26440')).toBeInTheDocument()
+  expect(screen.getByRole('textbox', { name: 'Mensaje para el asistente' })).toBeInTheDocument()
+})
+
+it('confirma gestación sin cerrar la ficha y exige confirmación para sacar una hembra', async () => {
+  const animals = [{ id: 'female', animalNumber: 'A11' } as Animal]
+  const record: BreedingRecord = {
+    id: 'b',
+    farmerId: 'u',
+    breedingId: '26441',
+    maleId: 'male',
+    breedingDate: null,
+    femaleBreedingInfo: [{ femaleId: 'female' }],
+    status: 'active',
+  }
+  const close = jest.fn()
+  render(
+    <ModalBreedingDetails
+      record={record}
+      animals={animals}
+      onClose={close}
+      onOpenAnimal={jest.fn()}
+    />,
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar gestación' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar gestación' }))
+  await waitFor(() =>
+    expect(mockUpdateBreeding).toHaveBeenCalledWith(
+      'b',
+      expect.objectContaining({ status: 'finished' }),
+    ),
+  )
+  expect(close).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Sacar a A11 del empadre' }))
+  expect(mockRemoveBreeding).not.toHaveBeenCalled()
+  expect(screen.getByText(/Se eliminará este empadre completo/)).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+  expect(mockRemoveBreeding).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Sacar a A11 del empadre' }))
+  fireEvent.click(screen.getAllByRole('button', { name: 'Sacar del empadre' }).at(-1)!)
+  await waitFor(() => expect(mockRemoveBreeding).toHaveBeenCalledWith(record, 'female'))
+})
+
+it('registra el parto con el movimiento compartido conservando la ficha', async () => {
+  const animals = [
+    {
+      id: 'female',
+      animalNumber: 'A9',
+      gender: 'hembra',
+      pregnantAt: new Date(),
+      pregnantBreedingRecordId: 'b',
+    } as Animal,
+  ]
+  const record: BreedingRecord = {
+    id: 'b',
+    farmerId: 'u',
+    breedingId: '26441',
+    maleId: 'male',
+    breedingDate: null,
+    femaleBreedingInfo: [{ femaleId: 'female', pregnancyConfirmedDate: new Date() }],
+    status: 'finished',
+  }
+  const close = jest.fn()
+  render(
+    <ModalBreedingDetails
+      record={record}
+      animals={animals}
+      onClose={close}
+      onOpenAnimal={jest.fn()}
+    />,
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Registrar parto' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar parto' }))
+  await waitFor(() =>
+    expect(mockBirth).toHaveBeenCalledWith(expect.any(String), { animalId: 'female' }, record),
+  )
+  expect(close).not.toHaveBeenCalled()
+})
+
+it('agrega solo hembras disponibles y conserva los datos existentes del empadre', async () => {
+  const existing = { femaleId: 'existing', outcomeNotes: 'Conservar historial' }
+  const record: BreedingRecord = {
+    id: 'b',
+    farmerId: 'u',
+    breedingId: '26441',
+    maleId: 'male',
+    breedingDate: null,
+    femaleBreedingInfo: [existing],
+    status: 'active',
+  }
+  mockState.breeding.breedingRecords = [
+    record,
+    { ...record, id: 'other', femaleBreedingInfo: [{ femaleId: 'busy' }] },
+  ]
+  const animals = [
+    { id: 'male', animalNumber: 'M1', gender: 'macho', type: 'vaca' },
+    ...['available', 'busy', 'pregnant', 'sold', 'other-species', 'existing'].map((id) => ({
+      id,
+      animalNumber: id,
+      gender: 'hembra',
+      type: id === 'other-species' ? 'oveja' : 'vaca',
+      status: id === 'sold' ? 'vendido' : 'activo',
+      ...(id === 'pregnant' ? { pregnantAt: new Date() } : {}),
+    })),
+  ] as Animal[]
+  const close = jest.fn()
+  render(
+    <ModalBreedingDetails
+      record={record}
+      animals={animals}
+      onClose={close}
+      onOpenAnimal={jest.fn()}
+    />,
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Agregar hembras al empadre' }))
+  expect(screen.queryByRole('button', { name: 'busy' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'pregnant' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'sold' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'other-species' })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'available' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Agregar hembras' }))
+  await waitFor(() =>
+    expect(mockUpdateBreeding).toHaveBeenCalledWith('b', {
+      femaleBreedingInfo: [existing, { femaleId: 'available' }],
+    }),
+  )
+  expect(close).not.toHaveBeenCalled()
+})
+
+it('abre editar junto al estado y conserva la ficha al guardar', async () => {
+  const record: BreedingRecord = {
+    id: 'b',
+    farmerId: 'u',
+    breedingId: '26441',
+    maleId: 'male',
+    breedingDate: null,
+    femaleBreedingInfo: [],
+    status: 'active',
+  }
+  const close = jest.fn()
+  render(
+    <ModalBreedingDetails record={record} animals={[]} onClose={close} onOpenAnimal={jest.fn()} />,
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Editar empadre' }))
+  expect(screen.getByText('Formulario editar empadre')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar empadre editado' }))
+  await waitFor(() => expect(mockUpdateBreeding).toHaveBeenCalledWith('b', { notes: 'Editado' }))
+  expect(close).not.toHaveBeenCalled()
+  expect(screen.getByText('Empadre 26441')).toBeInTheDocument()
 })

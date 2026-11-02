@@ -103,3 +103,13 @@ Contrato de flujo: `OPERATION_VERSION = 1`. El inventario verificable vive en [m
 No se habilita ejecución libre de una acción recibida del cliente: el servidor trabaja con el borrador persistido, su revisión y su versión. No hay fallback al ejecutor antiguo; las solicitudes antiguas por `actionId` reciben 410. Crear recordatorios, eliminar animales y deshacer movimientos desde el chat no forman parte de estas diez operaciones.
 
 La confirmación de gestación recibe `context.timeZone`; el cálculo compartido de parto esperado se apoya en `lib/domain/farm-calendar.ts`. Al cambiar zona o reglas de fechas, revisar `time-zone.ts`, `knowledge-dates.ts`, el servicio de gestación, las pruebas y esta documentación.
+
+La revisión utiliza el título de modal «Confirmar acción». Dentro del cuerpo destaca el nombre de la operación y su explicación específica, seguidos de animales, fechas, datos y efectos calculados por el servidor. El usuario debe poder reconocer qué se hará sin depender del título del modal.
+
+Los códigos únicos de empadre mencionados en el chat abren una ficha compacta sobre la conversación, con fecha, estado, macho y hembras agrupadas mediante los helpers actuales de empadres. Los animales de la ficha abren sus detalles conservando ambos contextos. Se resuelven solo registros de la granja actual; las referencias ambiguas entre animales y empadres no se enlazan como empadres. No ejecuta movimientos.
+
+La ficha de empadre del chat permite confirmar gestación de hembras pendientes, sacar participantes y registrar parto de gestantes. Reutiliza `ModalConfirmPregnancy`, `ModalBirthForm`, `useBreedingHandlers` y los movimientos compartidos. Respeta permisos; sacar requiere confirmación explícita y advierte si eliminará todo el empadre. Confirmar gestación o parto conserva la ficha y el chat; eliminar el empadre cierra su ficha.
+
+En la ficha del empadre, el botón (+) junto a Hembras abre un selector múltiple de hembras disponibles de la especie del macho. Excluye participantes actuales, animales inactivos, gestantes, paridas y ocupadas en otros empadres activos. Agrega mediante `updateBreedingRecord`, preserva la información de las hembras existentes y mantiene la ficha abierta. Solo aparece con permiso de actualización y en empadres en curso.
+
+La ficha de empadre incluye un botón de edición junto al estado, visible con permiso de actualización. Abre `ModalEditBreeding` con el registro actual y guarda mediante `updateBreedingRecord`, conservando la ficha y la conversación.
