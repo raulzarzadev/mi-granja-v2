@@ -129,3 +129,9 @@ Guardado de planes: mensajes de éxito/error trasladados al pie persistente junt
 Al aumentar el máximo de un plan, el formulario eleva los máximos siguientes que quedarían por debajo del nuevo mínimo, manteniendo rangos válidos antes de guardar. Normaliza ceros iniciales al salir del campo.
 
 Planes archivados: no avanzan el contador de rangos activos en el formulario ni en la carga/validación del servidor. Sus límites históricos se conservan, los rangos activos se recalculan al reactivar y el mínimo archivado se persiste en configuración.
+
+La página /plan utiliza una tabla comparativa de planes activos con precio, rango de animales y límites de IA cargados desde la política de Admin. La API autenticada /api/billing/ai-benefits expone solo consultas diarias, tier y créditos visibles; excluye presupuesto/proporción internos. El regalo se presenta como posterior al pago y no acumulable. Se conservan los flujos de selección y Stripe existentes.
+
+Multiplicadores de IA: Pro es la base; Rancho recibe 4× y Empresarial hasta 20×, configurables en Admin → IA. Con la base USD 5 visible/USD 1 interno, son USD 20/USD 4 para Rancho y hasta USD 100/USD 20 para Empresarial. La política limita los multiplicadores a 20. Los regalos se multiplican al acreditar el siguiente ciclo pagado y los saldos anteriores conservan sus condiciones; Empresarial requiere la facturación mensual de Stripe correspondiente al acuerdo. La comparativa muestra los importes visibles y «hasta» para Empresarial.
+
+Decisión de alcance: mantener los créditos incluidos por plan. La compra de créditos adicionales se implementará después; no hay recargas ni cobro por excedentes habilitados en esta entrega.

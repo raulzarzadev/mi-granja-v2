@@ -1,5 +1,5 @@
 import { getAdminFirestore } from '@/lib/firebase-admin'
-import { getAiBillingPolicy } from './billing-policy'
+import { creditMultiplierForTier, getAiBillingPolicy } from './billing-policy'
 
 export const AI_MONTHLY_INTERNAL_USD = 1
 export const AI_CREDIT_MULTIPLIER = 5
@@ -14,7 +14,8 @@ export async function grantPaidAiCredits(input: {
   periodEnd: number
 }) {
   const policy = await getAiBillingPolicy()
-  if (input.tierId !== policy.paidTierId) return
+  const multiplier = creditMultiplierForTier(input.tierId, policy)
+  if (!multiplier) return
   const db = getAdminFirestore()
   const wallet = db.doc(`aiCreditWallets/${input.userId}`)
   const grant = wallet.collection('grants').doc(`${input.subscriptionId}_${input.periodStart}`)
@@ -24,15 +25,15 @@ export async function grantPaidAiCredits(input: {
     const previous = current.data()
     tx.set(grant, {
       ...input,
-      internalUsd: policy.monthlyInternalUsd,
-      creditUsd: policy.monthlyCreditUsd,
+      internalUsd: policy.monthlyInternalUsd * multiplier,
+      creditUsd: policy.monthlyCreditUsd * multiplier,
     })
     if (previous && Number(previous.periodStart) >= input.periodStart) return
     // Mantener una consulta en curso del ciclo anterior identificada hasta contabilizarla.
     tx.set(wallet, {
       ...input,
-      internalAllowanceUsd: policy.monthlyInternalUsd,
-      creditAllowanceUsd: policy.monthlyCreditUsd,
+      internalAllowanceUsd: policy.monthlyInternalUsd * multiplier,
+      creditAllowanceUsd: policy.monthlyCreditUsd * multiplier,
       internalSpentUsd: 0,
       needsReconciliation: false,
       inFlight: previous?.inFlight ?? null,

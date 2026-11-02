@@ -1,7 +1,7 @@
 import { ANALYTICS_EVENTS } from '@mi-granja/shared'
 import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
-import { getAiBillingPolicy } from '@/lib/ai/billing-policy'
+import { creditMultiplierForTier, getAiBillingPolicy } from '@/lib/ai/billing-policy'
 import { grantPaidAiCredits } from '@/lib/ai/credits'
 import { captureServerEvent } from '@/lib/analytics/posthog-server'
 import { getBillingTiers } from '@/lib/billing-config'
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
             objectId(item.pricing?.price_details?.price ?? null),
             tiers,
           )
-          return tier?.id === policy.paidTierId && item.amount > 0
+          return !!tier && creditMultiplierForTier(tier.id, policy) > 0 && item.amount > 0
         })
         const recurring = subscription.items.data.find(
           (item) => item.price.id === objectId(line?.pricing?.price_details?.price ?? null),
@@ -121,7 +121,10 @@ export async function POST(request: NextRequest) {
         if (line && userId && recurring?.interval === 'month' && recurring.interval_count === 1) {
           await grantPaidAiCredits({
             userId,
-            tierId: policy.paidTierId,
+            tierId: getTierByStripePriceId(
+              objectId(line.pricing?.price_details?.price ?? null),
+              tiers,
+            )!.id,
             subscriptionId,
             invoiceId: invoice.id,
             periodStart: line.period.start,

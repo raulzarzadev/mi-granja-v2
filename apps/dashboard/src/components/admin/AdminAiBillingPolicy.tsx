@@ -34,7 +34,12 @@ export default function AdminAiBillingPolicy() {
     void request()
   }, [])
   const number = (
-    key: 'freeDailyQueries' | 'monthlyCreditUsd' | 'monthlyInternalUsd',
+    key:
+      | 'freeDailyQueries'
+      | 'monthlyCreditUsd'
+      | 'monthlyInternalUsd'
+      | 'ranchoMultiplier'
+      | 'empresarialMultiplier',
     label: string,
   ) => (
     <label className="space-y-1 text-sm font-medium text-gray-700">
@@ -43,6 +48,7 @@ export default function AdminAiBillingPolicy() {
         type="number"
         min={key === 'freeDailyQueries' ? 0 : 0.01}
         step={key === 'freeDailyQueries' ? 1 : 0.01}
+        max={key.includes('Multiplier') ? 20 : undefined}
         required
         disabled={busy}
         value={policy?.[key] ?? ''}
@@ -91,6 +97,8 @@ export default function AdminAiBillingPolicy() {
             </div>
             {number('monthlyCreditUsd', 'Créditos mensuales visibles (USD)')}
             {number('monthlyInternalUsd', 'Presupuesto interno mensual (USD)')}
+            {number('ranchoMultiplier', 'Multiplicador de IA en Rancho')}
+            {number('empresarialMultiplier', 'Multiplicador de IA Empresarial (hasta 20×)')}
           </div>
           <button
             type="submit"

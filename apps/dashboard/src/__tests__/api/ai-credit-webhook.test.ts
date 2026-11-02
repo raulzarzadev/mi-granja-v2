@@ -7,6 +7,8 @@ import { getStripe } from '@/lib/stripe'
 jest.mock('@/lib/ai/credits', () => ({ grantPaidAiCredits: jest.fn() }))
 jest.mock('@/lib/ai/billing-policy', () => ({
   getAiBillingPolicy: async () => ({ paidTierId: 'pro' }),
+  creditMultiplierForTier: (id: string) =>
+    id === 'pro' ? 1 : id === 'rancho' ? 4 : id === 'empresarial' ? 20 : 0,
 }))
 jest.mock('@/lib/billing-config', () => ({ getBillingTiers: async () => [] }))
 jest.mock('@/lib/analytics/posthog-server', () => ({ captureServerEvent: jest.fn() }))

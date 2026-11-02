@@ -135,3 +135,13 @@ it('renueva con el nuevo ciclo pagado y un webhook antiguo no reinicia el saldo'
   await grantPaidAiCredits(payment)
   expect((await getDailyAiUsage('u')).creditBalanceUsd).toBeCloseTo(4.5)
 })
+
+it.each([
+  ['rancho', 20, 4],
+  ['empresarial', 100, 20],
+])('multiplica el regalo de %s sin cambiar la proporción de consumo', async (tierId, creditUsd, internalUsd) => {
+  data.set('subscriptions/u', { tierId, status: 'active', stripeSubscriptionId: 'sub' })
+  await grantPaidAiCredits({ ...payment, tierId: String(tierId) })
+  expect((await getDailyAiUsage('u')).creditBalanceUsd).toBe(creditUsd)
+  expect(data.get('aiCreditWallets/u').internalAllowanceUsd).toBe(internalUsd)
+})

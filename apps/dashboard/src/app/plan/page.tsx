@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
-import { PlanTierCards } from '@/components/billing/PlanTierCards'
+import { PlanTierComparison } from '@/components/billing/PlanTierComparison'
 import PageShell from '@/components/PageShell'
 import { useBilling } from '@/hooks/useBilling'
 import { getTierById, PAID_STATUSES, type PlanTierId } from '@/types/billing'
@@ -168,10 +168,8 @@ export default function PlanPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-lg font-semibold text-gray-900">
-            Planes por cantidad de animales
-          </h2>
-          <PlanTierCards
+          <h2 className="mb-3 text-lg font-semibold text-gray-900">Compara los planes</h2>
+          <PlanTierComparison
             currentTierId={currentTierId}
             requiredTierId={usage?.requiredTierId}
             tiers={usage?.tiers}
