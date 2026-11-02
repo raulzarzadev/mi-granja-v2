@@ -336,10 +336,21 @@ export default function ProposalCard({
     <>
       <article
         aria-label={proposal.title}
-        className={`mt-3 min-w-0 rounded-xl ${compact ? 'p-2' : 'p-3'} ring-1 ${succeeded ? 'bg-green-50 ring-green-200' : 'bg-slate-50 ring-slate-200'}`}
+        className={`mt-2 min-w-0 rounded-xl ${compact ? 'p-2' : 'p-2.5'} ring-1 ${succeeded ? 'bg-green-50 ring-green-200' : 'bg-slate-50 ring-slate-200'}`}
       >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-sm font-bold text-slate-900">{proposal.title}</h4>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h4 className="pt-1 text-sm font-bold text-slate-900">{proposal.title}</h4>
+            <p className={`mt-1 whitespace-normal text-sm leading-5 text-slate-600`}>
+              {succeeded ? proposal.receipt!.message : proposal.summary}
+            </p>
+            {succeeded && (
+              <p className="mt-1 text-xs text-slate-500">
+                {new Date(proposal.receipt!.completedAt).toLocaleString('es-MX')}
+              </p>
+            )}
+          </div>
+
           <div className="flex flex-col items-end gap-1">
             {canReview ? (
               <button
@@ -351,7 +362,7 @@ export default function ProposalCard({
                   setEditing(false)
                   setReviewOpen(true)
                 }}
-                className="inline-flex min-h-9 cursor-pointer items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-800 hover:bg-green-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 disabled:opacity-50"
+                className="inline-flex min-h-9 cursor-pointer items-center gap-1 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 active:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:opacity-50"
               >
                 {proposal.status === 'ready' && (
                   <PiHourglass aria-hidden="true" className="h-3.5 w-3.5" />
@@ -377,31 +388,25 @@ export default function ProposalCard({
             )}
           </div>
         </div>
-        <p className="mt-2 whitespace-normal text-sm leading-6 text-slate-600">
-          {succeeded ? proposal.receipt!.message : proposal.summary}
-        </p>
-        {succeeded && (
-          <p className="mt-1 text-xs text-slate-500">
-            {new Date(proposal.receipt!.completedAt).toLocaleString('es-MX')}
-          </p>
-        )}
         {!reviewOpen && error && (
           <p role="alert" className="mt-2 text-xs leading-5 text-amber-800">
             {error}
           </p>
         )}
-        <div className="mt-2 flex flex-wrap gap-2">
-          {!succeeded && (!compact || !!error) && (
-            <button
-              type="button"
-              disabled={!!busy}
-              onClick={() => execute('get')}
-              className="min-h-11 rounded-lg px-2 text-xs font-semibold text-slate-600 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 disabled:opacity-50"
-            >
-              {busy === 'get' ? 'Comprobando…' : 'Actualizar estado'}
-            </button>
-          )}
-        </div>
+        {!succeeded && (!compact || !!error) && (
+          <div className="mt-1 flex flex-wrap gap-2">
+            {!succeeded && (!compact || !!error) && (
+              <button
+                type="button"
+                disabled={!!busy}
+                onClick={() => execute('get')}
+                className="min-h-11 rounded-lg px-2 text-xs font-semibold text-slate-600 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 disabled:opacity-50"
+              >
+                {busy === 'get' ? 'Comprobando…' : 'Actualizar estado'}
+              </button>
+            )}
+          </div>
+        )}
         {verified && proposal.status === 'expired' && (
           <p className="mt-2 text-xs text-slate-500">
             Pide al asistente que prepare una nueva propuesta con los datos actuales.

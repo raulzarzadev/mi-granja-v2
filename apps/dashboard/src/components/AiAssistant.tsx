@@ -267,11 +267,11 @@ function ScopedAiAssistant({
   const [isLoading, setIsLoading] = useState(false)
   const [pendingConversationId, setPendingConversationId] = useState<string | null>(null)
   const [usage, setUsage] = useState<AiUsageView | null>(null)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const messagesRef = useRef<HTMLDivElement>(null)
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    messagesRef.current?.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [items])
 
   const navigate = (href: string) => {
@@ -449,31 +449,33 @@ function ScopedAiAssistant({
         className="sm:!h-[90dvh] sm:!max-w-3xl"
         contentClassName="flex flex-col !overflow-hidden !p-0"
       >
-        <div className="flex min-h-0 flex-1 flex-col gap-2 p-3 sm:p-4">
-          <div className="flex shrink-0 items-center justify-between gap-2">
-            {usage && (
-              <p className="ml-auto shrink-0 text-xs text-slate-500">
-                {usage.isUnlimited ? `${usage.used} hoy` : `${usage.remaining} disponibles`}
-              </p>
-            )}
-            {showHistory && (
-              <button
-                type="button"
-                disabled={!ready}
-                onClick={() => {
-                  createConversation()
-                  setMessage('')
-                  setShowHistory(false)
-                }}
-                className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-2.5 text-xs font-semibold text-green-800 transition-colors hover:bg-green-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 disabled:opacity-50"
-              >
-                <span aria-hidden="true" className="text-base font-normal">
-                  +
-                </span>{' '}
-                Nueva
-              </button>
-            )}
-          </div>
+        <div className="flex min-h-0 flex-1 flex-col gap-1.5 p-2 sm:p-3">
+          {(usage || showHistory) && (
+            <div className="flex shrink-0 items-center justify-between gap-2">
+              {usage && (
+                <p className="ml-auto shrink-0 text-xs text-slate-500">
+                  {usage.isUnlimited ? `${usage.used} hoy` : `${usage.remaining} disponibles`}
+                </p>
+              )}
+              {showHistory && (
+                <button
+                  type="button"
+                  disabled={!ready}
+                  onClick={() => {
+                    createConversation()
+                    setMessage('')
+                    setShowHistory(false)
+                  }}
+                  className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-2.5 text-xs font-semibold text-green-800 transition-colors hover:bg-green-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 disabled:opacity-50"
+                >
+                  <span aria-hidden="true" className="text-base font-normal">
+                    +
+                  </span>{' '}
+                  Nueva
+                </button>
+              )}
+            </div>
+          )}
           {storageError && (
             <p role="alert" className="text-xs text-amber-800">
               {storageError}
@@ -536,10 +538,11 @@ function ScopedAiAssistant({
           ) : (
             <>
               <div
+                ref={messagesRef}
                 role="log"
                 aria-label="Mensajes de la conversación"
                 aria-live="polite"
-                className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain rounded-2xl bg-slate-50/80 p-2 sm:p-3"
+                className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain rounded-2xl bg-slate-50/80 p-2"
               >
                 {!items.length && (
                   <div className="flex min-h-full flex-col justify-center py-5">
@@ -579,7 +582,7 @@ function ScopedAiAssistant({
                     className={`flex ${item.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`${item.role === 'assistant' ? 'w-full max-w-full' : 'w-fit max-w-[92%]'} break-words rounded-2xl px-4 py-3 text-sm leading-6 ${item.role === 'user' ? 'rounded-tr-md bg-green-700 text-white' : 'rounded-tl-md bg-white text-slate-800 shadow-sm ring-1 ring-slate-200/60'}`}
+                      className={`${item.role === 'assistant' ? 'w-full max-w-full' : 'w-fit max-w-[92%]'} break-words rounded-2xl px-3 py-2 text-sm leading-6 ${item.role === 'user' ? 'rounded-tr-md bg-green-700 text-white' : 'rounded-tl-md bg-white text-slate-800 shadow-sm ring-1 ring-slate-200/60'}`}
                     >
                       <span className="sr-only">{item.role === 'user' ? 'Tú' : 'Asistente'}: </span>
                       <div className="whitespace-pre-wrap">
@@ -631,7 +634,6 @@ function ScopedAiAssistant({
                     Consultando tu granja…
                   </div>
                 )}
-                <div ref={bottomRef} />
               </div>
               {activeId && recoveryNeeded && (
                 <button

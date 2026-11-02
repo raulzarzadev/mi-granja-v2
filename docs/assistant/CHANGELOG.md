@@ -105,3 +105,7 @@ Se sustituye la revisión conjunta de lotes por revisión individual visible y c
 El estado «Por revisar» pasa a ser el botón que abre la revisión; eliminado el acceso duplicado «Revisar acción». Los estados terminados permanecen como etiquetas.
 
 Al cerrar la edición de una propuesta se vuelve a su revisión, descartando cambios sin guardar; solo el cierre desde la revisión cierra «Confirmar acción».
+
+En escritorio, Asistente IA tiene un acceso independiente debajo de Crear nuevo en el lateral; se retira del menú desplegable de creación de escritorio. En móvil conserva el acceso desde el (+).
+
+Compactado el chat: menos separación entre mensajes, padding reducido y tarjetas con resumen/fecha junto al estado y acceso al registro, evitando huecos verticales.

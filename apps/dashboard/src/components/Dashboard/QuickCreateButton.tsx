@@ -174,17 +174,19 @@ export default function QuickCreateButton({
               <EmojiIcon emoji="🐐" className="h-6 w-6" />
               <span className={labelClass}>Nuevo empadre</span>
             </Link>
-            <button
-              type="button"
-              className={`${actionClass} bottom-0 right-48`}
-              onClick={() => {
-                setExpanded(false)
-                setAssistantOpen(true)
-              }}
-            >
-              <EmojiIcon emoji="✨" className="h-6 w-6" />
-              <span className={labelClass}>Asistente IA</span>
-            </button>
+            {placement === 'floating' && (
+              <button
+                type="button"
+                className={`${actionClass} bottom-0 right-48`}
+                onClick={() => {
+                  setExpanded(false)
+                  setAssistantOpen(true)
+                }}
+              >
+                <EmojiIcon emoji="✨" className="h-6 w-6" />
+                <span className={labelClass}>Asistente IA</span>
+              </button>
+            )}
           </div>
         )}
         <button
@@ -235,6 +237,19 @@ export default function QuickCreateButton({
           )}
         </button>
       </div>
+      {placement === 'sidebar' && (
+        <button
+          type="button"
+          onClick={() => {
+            setExpanded(false)
+            setAssistantOpen(true)
+          }}
+          className="mt-2 flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-800 transition-colors hover:bg-green-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2"
+        >
+          <EmojiIcon emoji="✨" className="h-5 w-5" />
+          <span>Asistente IA</span>
+        </button>
+      )}
       <AiAssistant
         open={assistantOpen}
         showTrigger={false}
