@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { PiCheck, PiHourglass } from 'react-icons/pi'
 import { useSelector } from 'react-redux'
 import { Modal } from '@/components/Modal'
 import type { RootState } from '@/features/store'
@@ -103,7 +104,7 @@ const actionDescriptions: Record<OperationAction['type'], string> = {
 const safeInternalHref = (value?: string) =>
   value?.startsWith('/') && !value.startsWith('//') ? value : undefined
 
-function ActionSummary({ proposal }: { proposal: AiProposalView }) {
+export function ActionSummary({ proposal }: { proposal: AiProposalView }) {
   const animals = useSelector((state: RootState) => state.animals.animals)
   const display = (key: string, value: unknown): string => {
     if (typeof value === 'string') {
@@ -183,12 +184,14 @@ function ActionSummary({ proposal }: { proposal: AiProposalView }) {
 
 export default function ProposalCard({
   initialProposal,
+  compact = false,
   farmId,
   conversationId,
   onChange,
   onNavigate,
 }: {
   initialProposal: AiProposalView
+  compact?: boolean
   farmId: string
   conversationId: string
   onChange: (proposal: AiProposalView) => void
@@ -310,8 +313,10 @@ export default function ProposalCard({
 
   const close = () => {
     if (!pending.current) {
-      setReviewOpen(false)
-      setEditing(false)
+      if (editing) {
+        setDraft({ ...proposal.action, payload: { ...proposal.action.payload } })
+        setEditing(false)
+      } else setReviewOpen(false)
       setError('')
     }
   }
@@ -320,20 +325,57 @@ export default function ProposalCard({
     verified && belongsHere && (proposal.status === 'ready' || proposal.status === 'conflict')
   const receiptHref = safeInternalHref(proposal.receipt?.href)
   const expired = Date.parse(proposal.expiresAt) <= Date.now()
+  const isMassAction = Object.entries(proposal.action.payload).some(
+    ([key, value]) =>
+      ['animalRefs', 'femaleRefs', 'offspring'].includes(key) &&
+      Array.isArray(value) &&
+      value.length > 1,
+  )
 
   return (
     <>
       <article
         aria-label={proposal.title}
-        className={`mt-3 min-w-0 rounded-xl p-3 ring-1 ${succeeded ? 'bg-green-50 ring-green-200' : 'bg-slate-50 ring-slate-200'}`}
+        className={`mt-3 min-w-0 rounded-xl ${compact ? 'p-2' : 'p-3'} ring-1 ${succeeded ? 'bg-green-50 ring-green-200' : 'bg-slate-50 ring-slate-200'}`}
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-sm font-bold text-slate-900">{proposal.title}</h4>
-          <span
-            className={`rounded-full px-2 py-1 text-[11px] font-semibold ${succeeded ? 'bg-green-100 text-green-900' : 'bg-white text-slate-600'}`}
-          >
-            {verified ? statusLabels[proposal.status] : 'Por comprobar'}
-          </span>
+          <div className="flex flex-col items-end gap-1">
+            {canReview ? (
+              <button
+                type="button"
+                disabled={!!busy}
+                title="Revisar acción"
+                onClick={() => {
+                  setDraft({ ...proposal.action, payload: { ...proposal.action.payload } })
+                  setEditing(false)
+                  setReviewOpen(true)
+                }}
+                className="inline-flex min-h-9 cursor-pointer items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-800 hover:bg-green-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 disabled:opacity-50"
+              >
+                {proposal.status === 'ready' && (
+                  <PiHourglass aria-hidden="true" className="h-3.5 w-3.5" />
+                )}
+                {statusLabels[proposal.status]}
+              </button>
+            ) : (
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold ${succeeded ? 'bg-green-100 text-green-900' : 'bg-white text-slate-600'}`}
+              >
+                {succeeded && <PiCheck aria-hidden="true" className="h-3.5 w-3.5" />}
+                {verified ? statusLabels[proposal.status] : 'Por comprobar'}
+              </span>
+            )}
+            {succeeded && receiptHref && (
+              <button
+                type="button"
+                onClick={() => onNavigate(receiptHref)}
+                className="min-h-9 cursor-pointer rounded-lg px-2 text-xs font-medium text-green-800 underline underline-offset-2 hover:bg-green-100 focus-visible:ring-2 focus-visible:ring-green-700"
+              >
+                Ver registro
+              </button>
+            )}
+          </div>
         </div>
         <p className="mt-2 whitespace-normal text-sm leading-6 text-slate-600">
           {succeeded ? proposal.receipt!.message : proposal.summary}
@@ -349,30 +391,7 @@ export default function ProposalCard({
           </p>
         )}
         <div className="mt-2 flex flex-wrap gap-2">
-          {canReview && (
-            <button
-              type="button"
-              disabled={!!busy}
-              onClick={() => {
-                setDraft({ ...proposal.action, payload: { ...proposal.action.payload } })
-                setEditing(false)
-                setReviewOpen(true)
-              }}
-              className="min-h-11 rounded-lg bg-green-700 px-3 text-xs font-semibold text-white hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 disabled:opacity-50"
-            >
-              Revisar acción
-            </button>
-          )}
-          {succeeded && receiptHref && (
-            <button
-              type="button"
-              onClick={() => onNavigate(receiptHref)}
-              className="min-h-11 rounded-lg px-3 text-xs font-semibold text-green-800 underline underline-offset-2"
-            >
-              Ver registro
-            </button>
-          )}
-          {!succeeded && (
+          {!succeeded && (!compact || !!error) && (
             <button
               type="button"
               disabled={!!busy}
@@ -406,7 +425,7 @@ export default function ProposalCard({
               disabled={!!busy}
               className="min-h-12 flex-1 rounded-xl border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             >
-              Volver al chat
+              {editing ? 'Volver a revisión' : 'Volver al chat'}
             </button>
             {editing ? (
               <button
@@ -450,6 +469,12 @@ export default function ProposalCard({
               ? 'Ajusta los datos. Antes de registrar verás la propuesta revisada.'
               : 'Comprueba los animales, las fechas y los datos antes de confirmar.'}
           </p>
+          {isMassAction && (
+            <p role="note" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950">
+              Este movimiento en masa afecta a varios animales. Confirma con cuidado: revisa cada
+              animal, fecha, cantidad e importe antes de registrar.
+            </p>
+          )}
           {editing ? (
             <form
               id={formId}

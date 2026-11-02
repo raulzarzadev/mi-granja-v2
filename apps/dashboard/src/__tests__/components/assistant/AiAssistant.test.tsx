@@ -169,7 +169,7 @@ it('conecta consulta, propuesta, revisión y comprobante sin reejecutar al reabr
   const input = screen.getByLabelText('Mensaje para el asistente')
   fireEvent.change(input, { target: { value: 'Registra 20 kg para A7 hoy' } })
   fireEvent.submit(input.closest('form')!)
-  fireEvent.click(await screen.findByRole('button', { name: 'Revisar acción' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Por revisar' }))
   expect(confirmations).toBe(0)
   const chatCall = jest.mocked(fetch).mock.calls.find(([url]) => url === '/api/ai/chat')
   expect(JSON.parse(String(chatCall?.[1]?.body))).toEqual(
@@ -186,6 +186,8 @@ it('conecta consulta, propuesta, revisión y comprobante sin reejecutar al reabr
   render(<AiAssistant open showTrigger={false} />)
   await screen.findByRole('button', { name: 'Ver registro' })
   expect(confirmations).toBe(1)
+  expect(screen.queryByRole('button', { name: /Nueva/ })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Conversaciones' }))
   fireEvent.click(screen.getByRole('button', { name: /Nueva/ }))
   expect(screen.queryByText('Peso registrado')).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: /Conversaciones/ }))
@@ -477,4 +479,70 @@ it('abre editar junto al estado y conserva la ficha al guardar', async () => {
   await waitFor(() => expect(mockUpdateBreeding).toHaveBeenCalledWith('b', { notes: 'Editado' }))
   expect(close).not.toHaveBeenCalled()
   expect(screen.getByText('Empadre 26441')).toBeInTheDocument()
+})
+
+it('muestra las revisiones del lote devuelto por la API y las conserva al reabrir', async () => {
+  let proposals: AiProposalView[] = []
+  jest.mocked(fetch).mockImplementation(async (url, options) => {
+    const body = JSON.parse(String(options?.body))
+    if (url === '/api/ai/chat') {
+      proposals = ['A5', 'A6', 'A7'].map((id) => ({
+        id,
+        farmId: 'farm-1',
+        conversationId: body.conversationId,
+        revision: 1,
+        status: 'ready',
+        title: 'Alta de animal',
+        summary: `Animal: ${id}`,
+        effects: ['Se creará el animal'],
+        expiresAt: '2099-01-01T00:00:00Z',
+        action: {
+          type: 'create_animal',
+          summary: `Alta ${id}`,
+          payload: {
+            animalNumber: id,
+            type: 'oveja',
+            gender: 'hembra',
+            stage: 'reproductor',
+            birthDate: '2023-11-01',
+          },
+        },
+      }))
+      return {
+        ok: true,
+        json: async () => ({
+          kind: 'proposed_actions',
+          message: 'Preparé 3 movimientos para revisar',
+          proposals,
+        }),
+      } as Response
+    }
+    return {
+      ok: true,
+      json: async () => ({ proposal: proposals.find((value) => value.id === body.proposalId) }),
+    } as Response
+  })
+  const first = render(<AiAssistant open showTrigger={false} />)
+  fireEvent.change(screen.getByRole('textbox', { name: 'Mensaje para el asistente' }), {
+    target: { value: 'Da de alta las tres' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar mensaje' }))
+  expect(await screen.findAllByRole('button', { name: 'Por revisar' })).toHaveLength(3)
+  expect(screen.getByText('Lote de 3 movimientos')).toBeInTheDocument()
+  first.unmount()
+  render(<AiAssistant open showTrigger={false} />)
+  expect(await screen.findAllByRole('button', { name: 'Por revisar' })).toHaveLength(3)
+})
+it('no afirma que preparó el lote si faltan las propuestas en la respuesta', async () => {
+  jest.mocked(fetch).mockResolvedValue({
+    ok: true,
+    json: async () => ({ kind: 'proposed_actions', message: 'Preparé tres movimientos' }),
+  } as Response)
+  render(<AiAssistant open showTrigger={false} />)
+  fireEvent.change(screen.getByRole('textbox', { name: 'Mensaje para el asistente' }), {
+    target: { value: 'Crear tres' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar mensaje' }))
+  expect(await screen.findByText(/No se pudo mostrar la revisión completa/)).toBeInTheDocument()
+  expect(screen.queryByText('Preparé tres movimientos')).not.toBeInTheDocument()
 })

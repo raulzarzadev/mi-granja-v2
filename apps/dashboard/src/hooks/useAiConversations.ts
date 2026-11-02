@@ -4,7 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AiProposalView } from '@/lib/ai/proposal-types'
 import { parseProposalView } from '@/lib/ai/proposal-view'
 
-export type ChatItem = { role: 'user' | 'assistant'; text: string; proposal?: AiProposalView }
+export type ChatItem = {
+  role: 'user' | 'assistant'
+  text: string
+  proposal?: AiProposalView
+  proposals?: AiProposalView[]
+}
 export type AiConversation = { id: string; title: string; updatedAt: number; items: ChatItem[] }
 const validItems = (value: unknown, farmId?: string, conversationId?: string): ChatItem[] =>
   Array.isArray(value)
@@ -17,9 +22,20 @@ const validItems = (value: unknown, farmId?: string, conversationId?: string): C
         )
         .map((item) => {
           const proposal = item.role === 'assistant' ? parseProposalView(item.proposal) : undefined
+          const proposals =
+            item.role === 'assistant' && Array.isArray(item.proposals)
+              ? item.proposals
+                  .slice(0, 10)
+                  .map(parseProposalView)
+                  .filter(
+                    (value): value is AiProposalView =>
+                      !!value && value.farmId === farmId && value.conversationId === conversationId,
+                  )
+              : []
           return {
             role: item.role,
             text: item.text,
+            ...(proposals.length ? { proposals } : {}),
             ...(proposal && proposal.farmId === farmId && proposal.conversationId === conversationId
               ? { proposal }
               : {}),
@@ -177,7 +193,16 @@ export function useAiConversations(userId?: string, farmId?: string) {
             ? {
                 ...conversation,
                 items: conversation.items.map((item) =>
-                  item.proposal?.id === proposal.id ? { ...item, proposal } : item,
+                  item.proposal?.id === proposal.id
+                    ? { ...item, proposal }
+                    : item.proposals?.some((value) => value.id === proposal.id)
+                      ? {
+                          ...item,
+                          proposals: item.proposals.map((value) =>
+                            value.id === proposal.id ? proposal : value,
+                          ),
+                        }
+                      : item,
                 ),
               }
             : conversation,

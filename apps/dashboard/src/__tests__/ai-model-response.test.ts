@@ -105,3 +105,45 @@ it('retains positive numeric constraints in the provider schema and domain valid
     }),
   ).toThrow()
 })
+
+it('acepta lotes completos de 2 a 10 acciones y rechaza lotes inválidos', () => {
+  const action = {
+    type: 'register_weight',
+    summary: 'Pesar A1',
+    payload: { animalRef: 'A1', date: '2026-11-01', weightKg: 20 },
+  }
+  expect(
+    parseOperationalModelResponse({
+      kind: 'proposed_actions',
+      message: 'Revisar',
+      actions: [action, { ...action, payload: { ...action.payload, animalRef: 'A2' } }],
+      action: null,
+      documentRequest: null,
+    }).kind,
+  ).toBe('proposed_actions')
+  for (const actions of [[action], Array(11).fill(action), [action, { type: 'delete_animal' }]])
+    expect(() =>
+      parseOperationalModelResponse({ kind: 'proposed_actions', message: 'Revisar', actions }),
+    ).toThrow()
+})
+
+it('conserva todos los datos de varias altas en una sola respuesta', () => {
+  const actions = ['A10', 'A11', 'A12'].map((animalNumber) => ({
+    type: 'create_animal',
+    summary: `Alta ${animalNumber}`,
+    payload: {
+      animalNumber,
+      type: 'vaca',
+      gender: 'hembra',
+      stage: 'engorda',
+      birthDate: '2024-01-01',
+    },
+  }))
+  const parsed = parseOperationalModelResponse({
+    kind: 'proposed_actions',
+    message: 'Revisa las tres altas',
+    actions,
+  })
+  expect(parsed.kind).toBe('proposed_actions')
+  if (parsed.kind === 'proposed_actions') expect(parsed.actions).toEqual(actions)
+})

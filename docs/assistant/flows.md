@@ -113,3 +113,28 @@ La ficha de empadre del chat permite confirmar gestación de hembras pendientes,
 En la ficha del empadre, el botón (+) junto a Hembras abre un selector múltiple de hembras disponibles de la especie del macho. Excluye participantes actuales, animales inactivos, gestantes, paridas y ocupadas en otros empadres activos. Agrega mediante `updateBreedingRecord`, preserva la información de las hembras existentes y mantiene la ficha abierta. Solo aparece con permiso de actualización y en empadres en curso.
 
 La ficha de empadre incluye un botón de edición junto al estado, visible con permiso de actualización. Abre `ModalEditBreeding` con el registro actual y guarda mediante `updateBreedingRecord`, conservando la ficha y la conversación.
+
+El botón flotante (+) incorpora una media luna azul con acceso directo al asistente IA mediante su icono. El botón central conserva las acciones de creación y el comportamiento para animales seleccionados.
+
+El acceso de IA se superpone abajo a la izquierda del (+), en un círculo menor con una media luna de separación entre ambos botones.
+
+Comparación temporal en UI del botón flotante: selector 1 (integrado, IA en menú), 2 (dos círculos con acceso directo IA) y 3 (cápsula con IA y creación). Pendiente elegir diseño definitivo; sustituye la media luna anterior.
+
+Diseño definitivo elegido: opción 1, un botón (+) verde con estrellas blancas integradas. El asistente se abre desde el menú de creación. Se retira el selector temporal de la app; las tres propuestas permanecen en UI Showcase como referencia visual.
+
+Alta simple de animales: Especie aparece primero, con la opción actual al inicio del desplegable. Recuerda localmente por usuario la última especie elegida para nuevas altas; los datos iniciales explícitos (edición y madre/parto) conservan prioridad. No altera el contrato de alta del asistente.
+
+## Revisión y ejecución de lotes del asistente
+
+- Respuesta `proposed_actions`: 2–10 acciones completas del catálogo, con propuestas independientes. Altas, pesos y ordeños múltiples se expresan como varias acciones; puede mezclar tipos con datos suficientes.
+- Preparar no ejecuta. Si falla la preparación de un elemento, devuelve aclaración sin presentar un lote incompleto. Rechaza acciones exactamente repetidas en el mismo lote.
+- Revisión completa muestra número de movimientos, campos, animales y efectos; advertencia de riesgo y aceptación explícita del usuario antes de habilitar confirmar.
+- Ejecutar secuencialmente mediante `requestProposal`: get, revise con la misma acción, comparar datos y efectos revisados, confirm con la nueva revisión. Sin escrituras alternativas. Detener ante error o cambio; no ejecutar los siguientes ni revertir éxitos automáticamente.
+- Mostrar comprobante por éxito y contador persistido en historial local. Reintentar requiere nueva revisión, consulta el servidor y omite lo ya confirmado. Las propuestas individuales conservan edición/cancelación y resolución de conflictos.
+- El historial transmite los IDs de las propuestas del lote; el servidor consulta hasta 30 IDs recientes del chat y solo toma como éxito lo acreditado por comprobantes de la misma conversación y granja.
+
+Recuperación de revisiones: el chat ofrece «Recuperar propuestas», una lectura autenticada de hasta 100 borradores por usuario/granja/conversación, filtrada por permisos. Permite mostrar borradores persistidos que falten en el historial local sin volver a crearlos ni ejecutarlos. Si la API anuncia un lote sin sus propuestas completas, el chat muestra un error recuperable en lugar de afirmar que preparó la revisión. En altas repetidas del mismo ID visible se presenta el borrador más reciente; nunca se combinan datos entre borradores. La confirmación se realiza aquí mismo, con las tarjetas del chat.
+
+La recuperación de propuestas se muestra solo ante un error de carga de revisión, no como acción habitual. El modal del asistente prioriza el área de conversación: altura disponible, cabecera compacta con uso diario, sin título de conversación repetido ni fila permanente de recuperación.
+
+Decisión vigente de UI para lotes: se retira la revisión y confirmación conjunta descrita en el primer diseño. Cada movimiento muestra directamente `ProposalCard` compacto con «Por revisar»; cada uno requiere su propia confirmación en el flujo individual existente. No hay botón de revisión global ni desplegable que oculte el acceso individual.

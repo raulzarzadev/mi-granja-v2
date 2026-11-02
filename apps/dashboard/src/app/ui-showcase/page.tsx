@@ -31,6 +31,7 @@ import {
   ExampleModalReminderForm,
   ExampleSimpleModal,
 } from '@/components/examples/ModalExamples'
+import QuickCreateDesigns from '@/components/examples/QuickCreateDesigns'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 
 /**
@@ -53,484 +54,535 @@ export default function UIShowcasePage() {
         </div>
 
         {/* Grid de componentes */}
-        <div className="space-y-12">
-          {/* Seccion: Iconos */}
-          <section id="iconos">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
-              <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
-                Iconos
-              </span>
-              Phosphor + iconos propios
-            </h2>
-            <p className="text-sm text-gray-600 mb-6">
-              Usa{' '}
-              <code>
-                &lt;EmojiIcon emoji="
-                <EmojiIcon emoji="🐄" />" /&gt;
-              </code>{' '}
-              para datos que traen emoji (configs de dominio),{' '}
-              <code>&lt;Icon icon="add" /&gt;</code> para acciones comunes, o importa directo desde{' '}
-              <code>react-icons/pi</code> y <code>@/components/Icon/farm-icons</code>.
-            </p>
-            <div className="mb-8 rounded-xl border border-gray-200 bg-white p-5">
-              <h3 className="mb-1 text-lg font-semibold text-gray-900">InputIconSelect</h3>
-              <p className="mb-4 text-sm text-gray-600">
-                Select con icono en el valor y en cada opción. Úsalo en lugar de{' '}
-                <code>&lt;select&gt;</code> cuando las opciones lleven icono:{' '}
-                <code>@/components/inputs/InputIconSelect</code>.
-              </p>
-              <InputIconSelectExample />
+        <div className="space-y-4">
+          <details
+            id="boton-crear-ia"
+            className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5"
+          >
+            <summary className="cursor-pointer rounded-lg text-green-800 focus-visible:outline-2 focus-visible:outline-green-600">
+              <h2 className="inline-flex items-center gap-3 text-lg font-semibold text-gray-900">
+                <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
+                  Nuevo
+                </span>
+                Botón (+) e IA · 3 diseños
+              </h2>
+            </summary>
+            <div className="mt-5">
+              <QuickCreateDesigns />
             </div>
-            <IconShowcase />
-          </section>
+          </details>
+          {/* Seccion: Iconos */}
+          <details id="iconos" className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
+            <summary className="cursor-pointer rounded-lg text-green-800 focus-visible:outline-2 focus-visible:outline-green-600">
+              <h2 className="text-lg font-semibold text-gray-900  inline-flex flex-wrap items-center gap-y-2">
+                <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
+                  Iconos
+                </span>
+                Phosphor + iconos propios
+              </h2>
+            </summary>
+            <div className="mt-5">
+              <p className="text-sm text-gray-600 mb-6">
+                Usa{' '}
+                <code>
+                  &lt;EmojiIcon emoji="
+                  <EmojiIcon emoji="🐄" />" /&gt;
+                </code>{' '}
+                para datos que traen emoji (configs de dominio),{' '}
+                <code>&lt;Icon icon="add" /&gt;</code> para acciones comunes, o importa directo
+                desde <code>react-icons/pi</code> y <code>@/components/Icon/farm-icons</code>.
+              </p>
+              <div className="mb-8 rounded-xl border border-gray-200 bg-white p-5">
+                <h3 className="mb-1 text-lg font-semibold text-gray-900">InputIconSelect</h3>
+                <p className="mb-4 text-sm text-gray-600">
+                  Select con icono en el valor y en cada opción. Úsalo en lugar de{' '}
+                  <code>&lt;select&gt;</code> cuando las opciones lleven icono:{' '}
+                  <code>@/components/inputs/InputIconSelect</code>.
+                </p>
+                <InputIconSelectExample />
+              </div>
+              <IconShowcase />
+            </div>
+          </details>
 
           {/* Seccion: DatePickerButtons */}
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
-              <span className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
-                Fechas
-              </span>
-              DatePickerButtons
-            </h2>
-            <p className="text-sm text-gray-600 mb-6">
-              Selector de fecha basado en botones con popovers para dia, mes, ano y hora. Soporta
-              atajos rapidos como "Hoy" y selector de hora con valores predefinidos.
-            </p>
+          <details className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
+            <summary className="cursor-pointer rounded-lg text-green-800 focus-visible:outline-2 focus-visible:outline-green-600">
+              <h2 className="text-lg font-semibold text-gray-900  inline-flex flex-wrap items-center gap-y-2">
+                <span className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
+                  Fechas
+                </span>
+                DatePickerButtons
+              </h2>
+            </summary>
+            <div className="mt-5">
+              <p className="text-sm text-gray-600 mb-6">
+                Selector de fecha basado en botones con popovers para dia, mes, ano y hora. Soporta
+                atajos rapidos como "Hoy" y selector de hora con valores predefinidos.
+              </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-1">Basico</h3>
-                <p className="text-xs text-gray-500 mb-4">Selector de fecha con label</p>
-                <ExampleDatePickerBasic />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-1">Basico</h3>
+                  <p className="text-xs text-gray-500 mb-4">Selector de fecha con label</p>
+                  <ExampleDatePickerBasic />
+                </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-1">Con boton Hoy</h3>
-                <p className="text-xs text-gray-500 mb-4">showToday habilitado</p>
-                <ExampleDatePickerWithToday />
-              </div>
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-1">Con boton Hoy</h3>
+                  <p className="text-xs text-gray-500 mb-4">showToday habilitado</p>
+                  <ExampleDatePickerWithToday />
+                </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-1">Con hora</h3>
-                <p className="text-xs text-gray-500 mb-4">showTime habilitado</p>
-                <ExampleDatePickerWithTime />
-              </div>
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-1">Con hora</h3>
+                  <p className="text-xs text-gray-500 mb-4">showTime habilitado</p>
+                  <ExampleDatePickerWithTime />
+                </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-1">Deshabilitado</h3>
-                <p className="text-xs text-gray-500 mb-4">disabled con valor</p>
-                <ExampleDatePickerDisabled />
-              </div>
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-1">Deshabilitado</h3>
+                  <p className="text-xs text-gray-500 mb-4">disabled con valor</p>
+                  <ExampleDatePickerDisabled />
+                </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-1">En Modal</h3>
-                <p className="text-xs text-gray-500 mb-4">DatePicker dentro de un Modal</p>
-                <ExampleDatePickerInModal />
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-1">En Modal</h3>
+                  <p className="text-xs text-gray-500 mb-4">DatePicker dentro de un Modal</p>
+                  <ExampleDatePickerInModal />
+                </div>
               </div>
             </div>
-          </section>
+          </details>
 
           {/* Seccion: Modal por tamano */}
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
-              <span className="bg-indigo-100 text-indigo-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
-                Tamanos
-              </span>
-              Modal por Tamano
-            </h2>
-            <p className="text-sm text-gray-600 mb-6">
-              El componente Modal soporta distintos tamanos: sm, md, lg, xl y full. Cada uno ajusta
-              el ancho maximo del contenedor.
-            </p>
+          <details className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
+            <summary className="cursor-pointer rounded-lg text-green-800 focus-visible:outline-2 focus-visible:outline-green-600">
+              <h2 className="text-lg font-semibold text-gray-900  inline-flex flex-wrap items-center gap-y-2">
+                <span className="bg-indigo-100 text-indigo-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
+                  Tamanos
+                </span>
+                Modal por Tamano
+              </h2>
+            </summary>
+            <div className="mt-5">
+              <p className="text-sm text-gray-600 mb-6">
+                El componente Modal soporta distintos tamanos: sm, md, lg, xl y full. Cada uno
+                ajusta el ancho maximo del contenedor.
+              </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-2">Pequeno (sm)</h3>
-                <p className="text-sm text-gray-600 mb-4">Confirmaciones y mensajes cortos</p>
-                <ExampleModalSm />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-2">Pequeno (sm)</h3>
+                  <p className="text-sm text-gray-600 mb-4">Confirmaciones y mensajes cortos</p>
+                  <ExampleModalSm />
+                </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-2">Mediano (md)</h3>
-                <p className="text-sm text-gray-600 mb-4">Tamano por defecto</p>
-                <ExampleModalMd />
-              </div>
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-2">Mediano (md)</h3>
+                  <p className="text-sm text-gray-600 mb-4">Tamano por defecto</p>
+                  <ExampleModalMd />
+                </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-2">Grande (lg)</h3>
-                <p className="text-sm text-gray-600 mb-4">Formularios complejos</p>
-                <ExampleModalLg />
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-2">Grande (lg)</h3>
+                  <p className="text-sm text-gray-600 mb-4">Formularios complejos</p>
+                  <ExampleModalLg />
+                </div>
               </div>
             </div>
-          </section>
+          </details>
 
           {/* Sección: Modales Básicos */}
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
-              <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
-                Básicos
-              </span>
-              Modales Fundamentales
-            </h2>
+          <details className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
+            <summary className="cursor-pointer rounded-lg text-green-800 focus-visible:outline-2 focus-visible:outline-green-600">
+              <h2 className="text-lg font-semibold text-gray-900  inline-flex flex-wrap items-center gap-y-2">
+                <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
+                  Básicos
+                </span>
+                Modales Fundamentales
+              </h2>
+            </summary>
+            <div className="mt-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Modal Simple */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-2">Modal Simple</h3>
+                  <p className="text-sm text-gray-600 mb-4">Modal básico con título y contenido</p>
+                  <ExampleSimpleModal />
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Modal Simple */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-2">Modal Simple</h3>
-                <p className="text-sm text-gray-600 mb-4">Modal básico con título y contenido</p>
-                <ExampleSimpleModal />
-              </div>
+                {/* Modal de Confirmación */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-2">Modal de Confirmación</h3>
+                  <p className="text-sm text-gray-600 mb-4">Para acciones destructivas</p>
+                  <ExampleConfirmModal />
+                </div>
 
-              {/* Modal de Confirmación */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-2">Modal de Confirmación</h3>
-                <p className="text-sm text-gray-600 mb-4">Para acciones destructivas</p>
-                <ExampleConfirmModal />
-              </div>
+                {/* Modal de Formulario */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-2">Modal con Formulario</h3>
+                  <p className="text-sm text-gray-600 mb-4">Formulario completo en modal</p>
+                  <ExampleFormModal />
+                </div>
 
-              {/* Modal de Formulario */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-2">Modal con Formulario</h3>
-                <p className="text-sm text-gray-600 mb-4">Formulario completo en modal</p>
-                <ExampleFormModal />
-              </div>
-
-              {/* Modal Pantalla Completa */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-2">Modal Completo</h3>
-                <p className="text-sm text-gray-600 mb-4">Ocupa toda la pantalla</p>
-                <ExampleFullModal />
+                {/* Modal Pantalla Completa */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-2">Modal Completo</h3>
+                  <p className="text-sm text-gray-600 mb-4">Ocupa toda la pantalla</p>
+                  <ExampleFullModal />
+                </div>
               </div>
             </div>
-          </section>
+          </details>
 
           {/* Seccion: InputSelectAnimals */}
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
-              <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
-                Inputs
-              </span>
-              InputSelectAnimals
-            </h2>
-            <p className="text-sm text-gray-600 mb-6">
-              Componente unificado para buscar y seleccionar animales. Soporta modo single/multi,
-              chips con badges, busqueda por numero/nombre/tipo/raza, navegacion por teclado,
-              filtros personalizados, IDs fijos y boton Omitir.
-            </p>
+          <details className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
+            <summary className="cursor-pointer rounded-lg text-green-800 focus-visible:outline-2 focus-visible:outline-green-600">
+              <h2 className="text-lg font-semibold text-gray-900  inline-flex flex-wrap items-center gap-y-2">
+                <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
+                  Inputs
+                </span>
+                InputSelectAnimals
+              </h2>
+            </summary>
+            <div className="mt-5">
+              <p className="text-sm text-gray-600 mb-6">
+                Componente unificado para buscar y seleccionar animales. Soporta modo single/multi,
+                chips con badges, busqueda por numero/nombre/tipo/raza, navegacion por teclado,
+                filtros personalizados, IDs fijos y boton Omitir.
+              </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Multi seleccion */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-1">Multi seleccion</h3>
-                <p className="text-xs text-gray-500 mb-4">Selecciona varios animales con chips</p>
-                <ExampleMultiSelect />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Multi seleccion */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-1">Multi seleccion</h3>
+                  <p className="text-xs text-gray-500 mb-4">Selecciona varios animales con chips</p>
+                  <ExampleMultiSelect />
+                </div>
 
-              {/* Single seleccion */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-1">Single seleccion</h3>
-                <p className="text-xs text-gray-500 mb-4">Solo permite un animal a la vez</p>
-                <ExampleSingleSelect />
-              </div>
+                {/* Single seleccion */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-1">Single seleccion</h3>
+                  <p className="text-xs text-gray-500 mb-4">Solo permite un animal a la vez</p>
+                  <ExampleSingleSelect />
+                </div>
 
-              {/* IDs fijos */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-1">IDs fijos</h3>
-                <p className="text-xs text-gray-500 mb-4">
-                  Animal #001 no se puede quitar (pre-seleccionado fijo)
-                </p>
-                <ExampleFixedIds />
-              </div>
+                {/* IDs fijos */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-1">IDs fijos</h3>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Animal #001 no se puede quitar (pre-seleccionado fijo)
+                  </p>
+                  <ExampleFixedIds />
+                </div>
 
-              {/* Filtro por genero */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-1">Con filtro</h3>
-                <p className="text-xs text-gray-500 mb-4">Solo muestra hembras (filterFn)</p>
-                <ExampleFiltered />
-              </div>
+                {/* Filtro por genero */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-1">Con filtro</h3>
+                  <p className="text-xs text-gray-500 mb-4">Solo muestra hembras (filterFn)</p>
+                  <ExampleFiltered />
+                </div>
 
-              {/* Con Omitir (estilo breeding) */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-1">Con Omitir + labels secundarios</h3>
-                <p className="text-xs text-gray-500 mb-4">
-                  Muestra seleccionados en el dropdown con boton Omitir y datos de empadre
-                </p>
-                <ExampleWithOmit />
-              </div>
+                {/* Con Omitir (estilo breeding) */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    Con Omitir + labels secundarios
+                  </h3>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Muestra seleccionados en el dropdown con boton Omitir y datos de empadre
+                  </p>
+                  <ExampleWithOmit />
+                </div>
 
-              {/* Muchos seleccionados */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-1">Muchos seleccionados</h3>
-                <p className="text-xs text-gray-500 mb-4">
-                  Max 2 filas de chips, luego "+N mas" con boton "ver"
-                </p>
-                <ExampleManySelected />
-              </div>
+                {/* Muchos seleccionados */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-1">Muchos seleccionados</h3>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Max 2 filas de chips, luego "+N mas" con boton "ver"
+                  </p>
+                  <ExampleManySelected />
+                </div>
 
-              {/* Deshabilitado */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-1">Deshabilitado</h3>
-                <p className="text-xs text-gray-500 mb-4">
-                  Input deshabilitado, chips visibles pero no interactivos
-                </p>
-                <ExampleDisabled />
+                {/* Deshabilitado */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-1">Deshabilitado</h3>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Input deshabilitado, chips visibles pero no interactivos
+                  </p>
+                  <ExampleDisabled />
+                </div>
               </div>
             </div>
-          </section>
+          </details>
 
           <EmailTestComponent />
 
           {/* Sección: Modales de Negocio */}
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
-              <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
-                Negocio
-              </span>
-              Modales Específicos de la Granja
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Modal de Breeding */}
-              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex items-center mb-4">
-                  <span className="text-2xl mr-3">
-                    <EmojiIcon emoji="🐄" />
-                    <EmojiIcon emoji="💕" />
-                  </span>
-                  <div>
-                    <h3 className="font-medium text-gray-900">Modal de Empadre/Reproducción</h3>
-                    <p className="text-sm text-gray-600">
-                      Registra empadres entre animales reproductores
-                    </p>
+          <details className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
+            <summary className="cursor-pointer rounded-lg text-green-800 focus-visible:outline-2 focus-visible:outline-green-600">
+              <h2 className="text-lg font-semibold text-gray-900  inline-flex flex-wrap items-center gap-y-2">
+                <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
+                  Negocio
+                </span>
+                Modales Específicos de la Granja
+              </h2>
+            </summary>
+            <div className="mt-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Modal de Breeding */}
+                <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+                  <div className="flex items-center mb-4">
+                    <span className="text-2xl mr-3">
+                      <EmojiIcon emoji="🐄" />
+                      <EmojiIcon emoji="💕" />
+                    </span>
+                    <div>
+                      <h3 className="font-medium text-gray-900">Modal de Empadre/Reproducción</h3>
+                      <p className="text-sm text-gray-600">
+                        Registra empadres entre animales reproductores
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="bg-gray-50 p-4 rounded-md mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Características:</h4>
-                  <ul className="text-xs text-gray-600 space-y-1">
-                    <li>• Selección de hembra y macho</li>
-                    <li>• Fecha de empadre y parto esperado</li>
-                    <li>• Confirmación de gestación</li>
-                    <li>• Notas adicionales</li>
-                  </ul>
-                </div>
-
-                <ExampleModalBreedingForm />
-              </div>
-
-              {/* Modal de Animal */}
-              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex items-center mb-4">
-                  <span className="text-2xl mr-3">
-                    <EmojiIcon emoji="🐄" />
-                    <EmojiIcon emoji="📝" />
-                  </span>
-                  <div>
-                    <h3 className="font-medium text-gray-900">Modal de Animales</h3>
-                    <p className="text-sm text-gray-600">
-                      Registra y edita información de animales
-                    </p>
+                  <div className="bg-gray-50 p-4 rounded-md mb-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Características:</h4>
+                    <ul className="text-xs text-gray-600 space-y-1">
+                      <li>• Selección de hembra y macho</li>
+                      <li>• Fecha de empadre y parto esperado</li>
+                      <li>• Confirmación de gestación</li>
+                      <li>• Notas adicionales</li>
+                    </ul>
                   </div>
+
+                  <ExampleModalBreedingForm />
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-md mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Características:</h4>
-                  <ul className="text-xs text-gray-600 space-y-1">
-                    <li>• ID único del animal</li>
-                    <li>• Tipo y etapa de vida</li>
-                    <li>• Información física (peso, edad)</li>
-                    <li>• Modo crear/editar</li>
-                  </ul>
-                </div>
+                {/* Modal de Animal */}
+                <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+                  <div className="flex items-center mb-4">
+                    <span className="text-2xl mr-3">
+                      <EmojiIcon emoji="🐄" />
+                      <EmojiIcon emoji="📝" />
+                    </span>
+                    <div>
+                      <h3 className="font-medium text-gray-900">Modal de Animales</h3>
+                      <p className="text-sm text-gray-600">
+                        Registra y edita información de animales
+                      </p>
+                    </div>
+                  </div>
 
-                <ExampleModalAnimalForm />
+                  <div className="bg-gray-50 p-4 rounded-md mb-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Características:</h4>
+                    <ul className="text-xs text-gray-600 space-y-1">
+                      <li>• ID único del animal</li>
+                      <li>• Tipo y etapa de vida</li>
+                      <li>• Información física (peso, edad)</li>
+                      <li>• Modo crear/editar</li>
+                    </ul>
+                  </div>
+
+                  <ExampleModalAnimalForm />
+                </div>
               </div>
             </div>
-          </section>
+          </details>
 
           {/* Sección: Recordatorios */}
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
-              <span className="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
-                Recordatorios
-              </span>
-              Modales de Gestión de Tareas
-            </h2>
+          <details className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
+            <summary className="cursor-pointer rounded-lg text-green-800 focus-visible:outline-2 focus-visible:outline-green-600">
+              <h2 className="text-lg font-semibold text-gray-900  inline-flex flex-wrap items-center gap-y-2">
+                <span className="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
+                  Recordatorios
+                </span>
+                Modales de Gestión de Tareas
+              </h2>
+            </summary>
+            <div className="mt-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Modal de Recordatorio */}
+                <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+                  <div className="flex items-center mb-4">
+                    <span className="text-2xl mr-3">
+                      ⏰<EmojiIcon emoji="📝" />
+                    </span>
+                    <div>
+                      <h3 className="font-medium text-gray-900">Modal de Recordatorios</h3>
+                      <p className="text-sm text-gray-600">
+                        Crea y gestiona recordatorios para la granja
+                      </p>
+                    </div>
+                  </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Modal de Recordatorio */}
-              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex items-center mb-4">
-                  <span className="text-2xl mr-3">
-                    ⏰<EmojiIcon emoji="📝" />
-                  </span>
-                  <div>
-                    <h3 className="font-medium text-gray-900">Modal de Recordatorios</h3>
-                    <p className="text-sm text-gray-600">
-                      Crea y gestiona recordatorios para la granja
-                    </p>
+                  <div className="bg-gray-50 p-4 rounded-md mb-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Características:</h4>
+                    <ul className="text-xs text-gray-600 space-y-1">
+                      <li>• Recordatorios por animal o generales</li>
+                      <li>• Tipos: médico, reproducción, alimentación, etc.</li>
+                      <li>• Niveles de prioridad</li>
+                      <li>• Estado completado/pendiente</li>
+                      <li>• Fechas programadas</li>
+                    </ul>
+                  </div>
+
+                  <ExampleModalReminderForm />
+                </div>
+              </div>
+
+              {/* Añadir un grid para 3 columnas */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
+                {/* Placeholder para futuros modales */}
+                <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 opacity-50">
+                  <div className="flex items-center mb-4">
+                    <span className="text-2xl mr-3">
+                      <EmojiIcon emoji="📊" />
+                    </span>
+                    <div>
+                      <h3 className="font-medium text-gray-900">Modal de Reportes</h3>
+                      <p className="text-sm text-gray-600">Próximamente...</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-md mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Características:</h4>
-                  <ul className="text-xs text-gray-600 space-y-1">
-                    <li>• Recordatorios por animal o generales</li>
-                    <li>• Tipos: médico, reproducción, alimentación, etc.</li>
-                    <li>• Niveles de prioridad</li>
-                    <li>• Estado completado/pendiente</li>
-                    <li>• Fechas programadas</li>
-                  </ul>
+                <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 opacity-50">
+                  <div className="flex items-center mb-4">
+                    <span className="text-2xl mr-3">
+                      <EmojiIcon emoji="⚖️" />
+                    </span>
+                    <div>
+                      <h3 className="font-medium text-gray-900">Modal de Peso</h3>
+                      <p className="text-sm text-gray-600">Próximamente...</p>
+                    </div>
+                  </div>
                 </div>
 
-                <ExampleModalReminderForm />
+                <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 opacity-50">
+                  <div className="flex items-center mb-4">
+                    <span className="text-2xl mr-3">
+                      <EmojiIcon emoji="🥛" />
+                    </span>
+                    <div>
+                      <h3 className="font-medium text-gray-900">Modal de Producción</h3>
+                      <p className="text-sm text-gray-600">Próximamente...</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Añadir un grid para 3 columnas */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
-              {/* Placeholder para futuros modales */}
-              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 opacity-50">
-                <div className="flex items-center mb-4">
-                  <span className="text-2xl mr-3">
-                    <EmojiIcon emoji="📊" />
-                  </span>
-                  <div>
-                    <h3 className="font-medium text-gray-900">Modal de Reportes</h3>
-                    <p className="text-sm text-gray-600">Próximamente...</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 opacity-50">
-                <div className="flex items-center mb-4">
-                  <span className="text-2xl mr-3">
-                    <EmojiIcon emoji="⚖️" />
-                  </span>
-                  <div>
-                    <h3 className="font-medium text-gray-900">Modal de Peso</h3>
-                    <p className="text-sm text-gray-600">Próximamente...</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 opacity-50">
-                <div className="flex items-center mb-4">
-                  <span className="text-2xl mr-3">
-                    <EmojiIcon emoji="🥛" />
-                  </span>
-                  <div>
-                    <h3 className="font-medium text-gray-900">Modal de Producción</h3>
-                    <p className="text-sm text-gray-600">Próximamente...</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
+          </details>
 
           {/* Sección: Información Técnica */}
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
-              <span className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
-                Técnico
-              </span>
-              Información del Sistema
-            </h2>
-
-            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Arquitectura */}
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-4 flex items-center">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-                    Arquitectura de Modales
-                  </h3>
-                  <div className="space-y-3 text-sm text-gray-600">
-                    <div className="bg-blue-50 p-3 rounded-md">
-                      <strong className="text-blue-800">Modal Base:</strong> Componente reutilizable
-                      con animaciones y accesibilidad
-                    </div>
-                    <div className="bg-green-50 p-3 rounded-md">
-                      <strong className="text-green-800">useModal Hook:</strong> Estado y funciones
-                      para controlar modales
-                    </div>
-                    <div className="bg-purple-50 p-3 rounded-md">
-                      <strong className="text-purple-800">Form Wrappers:</strong> Combinan modal +
-                      formulario + trigger
+          <details className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
+            <summary className="cursor-pointer rounded-lg text-green-800 focus-visible:outline-2 focus-visible:outline-green-600">
+              <h2 className="text-lg font-semibold text-gray-900  inline-flex flex-wrap items-center gap-y-2">
+                <span className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full mr-3">
+                  Técnico
+                </span>
+                Información del Sistema
+              </h2>
+            </summary>
+            <div className="mt-5">
+              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Arquitectura */}
+                  <div>
+                    <h3 className="font-medium text-gray-900 mb-4 flex items-center">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                      Arquitectura de Modales
+                    </h3>
+                    <div className="space-y-3 text-sm text-gray-600">
+                      <div className="bg-blue-50 p-3 rounded-md">
+                        <strong className="text-blue-800">Modal Base:</strong> Componente
+                        reutilizable con animaciones y accesibilidad
+                      </div>
+                      <div className="bg-green-50 p-3 rounded-md">
+                        <strong className="text-green-800">useModal Hook:</strong> Estado y
+                        funciones para controlar modales
+                      </div>
+                      <div className="bg-purple-50 p-3 rounded-md">
+                        <strong className="text-purple-800">Form Wrappers:</strong> Combinan modal +
+                        formulario + trigger
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Características */}
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-4 flex items-center">
-                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                    Características Principales
-                  </h3>
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <div className="flex items-center">
-                      <span className="text-green-500 mr-2">
-                        <EmojiIcon emoji="✓" />
-                      </span>
-                      Cierre con Escape o click fuera
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-green-500 mr-2">
-                        <EmojiIcon emoji="✓" />
-                      </span>
-                      Animaciones suaves de entrada/salida
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-green-500 mr-2">
-                        <EmojiIcon emoji="✓" />
-                      </span>
-                      Tamaños configurables (sm, md, lg, xl, full)
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-green-500 mr-2">
-                        <EmojiIcon emoji="✓" />
-                      </span>
-                      Scroll interno automático
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-green-500 mr-2">
-                        <EmojiIcon emoji="✓" />
-                      </span>
-                      Accesibilidad (ARIA, focus management)
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-green-500 mr-2">
-                        <EmojiIcon emoji="✓" />
-                      </span>
-                      Botones trigger personalizables
+                  {/* Características */}
+                  <div>
+                    <h3 className="font-medium text-gray-900 mb-4 flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                      Características Principales
+                    </h3>
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <div className="flex items-center">
+                        <span className="text-green-500 mr-2">
+                          <EmojiIcon emoji="✓" />
+                        </span>
+                        Cierre con Escape o click fuera
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-green-500 mr-2">
+                          <EmojiIcon emoji="✓" />
+                        </span>
+                        Animaciones suaves de entrada/salida
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-green-500 mr-2">
+                          <EmojiIcon emoji="✓" />
+                        </span>
+                        Tamaños configurables (sm, md, lg, xl, full)
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-green-500 mr-2">
+                          <EmojiIcon emoji="✓" />
+                        </span>
+                        Scroll interno automático
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-green-500 mr-2">
+                          <EmojiIcon emoji="✓" />
+                        </span>
+                        Accesibilidad (ARIA, focus management)
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-green-500 mr-2">
+                          <EmojiIcon emoji="✓" />
+                        </span>
+                        Botones trigger personalizables
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </section>
+          </details>
 
           {/* Footer */}
-          <section className="text-center py-8">
-            <div className="bg-gradient-to-r from-blue-50 to-green-50 p-8 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                <EmojiIcon emoji="🚀" /> Sistema de Modales Completo
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Todos los modales están construidos con el mismo patrón base, garantizando
-                consistencia y mantenibilidad en toda la aplicación.
-              </p>
-              <div className="flex justify-center items-center space-x-4 text-sm text-gray-500">
-                <span>React 18</span>
-                <span>•</span>
-                <span>TypeScript</span>
-                <span>•</span>
-                <span>Tailwind CSS</span>
-                <span>•</span>
-                <span>Next.js 15</span>
+          <details className="rounded-xl border border-gray-200 bg-white p-4">
+            <summary className="cursor-pointer font-semibold text-gray-900">
+              Acerca del sistema de componentes
+            </summary>
+            <div className="mt-4 text-center">
+              <div className="bg-gradient-to-r from-blue-50 to-green-50 p-8 rounded-lg">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <EmojiIcon emoji="🚀" /> Sistema de Modales Completo
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Todos los modales están construidos con el mismo patrón base, garantizando
+                  consistencia y mantenibilidad en toda la aplicación.
+                </p>
+                <div className="flex justify-center items-center space-x-4 text-sm text-gray-500">
+                  <span>React 18</span>
+                  <span>•</span>
+                  <span>TypeScript</span>
+                  <span>•</span>
+                  <span>Tailwind CSS</span>
+                  <span>•</span>
+                  <span>Next.js 15</span>
+                </div>
               </div>
             </div>
-          </section>
+          </details>
         </div>
       </div>
     </div>

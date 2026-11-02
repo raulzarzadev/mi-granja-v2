@@ -791,3 +791,25 @@ export async function confirmAiProposal(
     )
   return result
 }
+
+/** Recupera borradores del mismo usuario/granja/chat; nunca ejecuta movimientos. */
+export async function listConversationProposals(params: Scope & { conversationId: string }) {
+  const snapshot = await getAdminFirestore()
+    .collection(COLLECTION)
+    .where('farmId', '==', params.farmId)
+    .where('userId', '==', params.userId)
+    .where('conversationId', '==', params.conversationId)
+    .limit(100)
+    .get()
+  return snapshot.docs
+    .flatMap((doc) => {
+      const proposal = doc.data() as StoredProposal
+      try {
+        checkStored(proposal, params)
+      } catch {
+        return []
+      }
+      return ['ready', 'conflict'].includes(proposal.status) ? [view(proposal)] : []
+    })
+    .sort((a, b) => b.expiresAt.localeCompare(a.expiresAt))
+}

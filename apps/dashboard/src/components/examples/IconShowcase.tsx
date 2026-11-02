@@ -33,18 +33,18 @@ const IconCard = ({ entry }: { entry: Entry }) => {
   )
 }
 
-const Grid = ({ title, entries }: { title: string; entries: Entry[] }) =>
+const Grid = ({ title, entries, expand }: { title: string; entries: Entry[]; expand: boolean }) =>
   entries.length === 0 ? null : (
-    <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-gray-700">
+    <details open={expand || undefined} className="rounded-lg border border-gray-200 p-3">
+      <summary className="min-h-11 cursor-pointer content-center text-sm font-semibold text-gray-700">
         {title} <span className="font-normal text-gray-400">({entries.length})</span>
-      </h3>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      </summary>
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {entries.map((entry) => (
           <IconCard key={entry.key} entry={entry} />
         ))}
       </div>
-    </div>
+    </details>
   )
 
 /**
@@ -115,7 +115,12 @@ export default function IconShowcase() {
         />
       </label>
       {filtered.map((section) => (
-        <Grid key={section.title} title={section.title} entries={section.entries} />
+        <Grid
+          key={`${section.title}-${Boolean(q)}`}
+          title={section.title}
+          entries={section.entries}
+          expand={Boolean(q)}
+        />
       ))}
     </div>
   )

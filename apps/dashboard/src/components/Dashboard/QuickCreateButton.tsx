@@ -2,11 +2,11 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useAnimalSelection } from './AnimalSelectionContext'
 import { useEffect, useId, useRef, useState } from 'react'
-import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import AiAssistant from '@/components/AiAssistant'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import ModalAnimalForm from '@/components/ModalAnimalForm'
+import { useAnimalSelection } from './AnimalSelectionContext'
 
 export default function QuickCreateButton({
   placement = 'floating',
@@ -211,9 +211,14 @@ export default function QuickCreateButton({
           className={
             placement === 'sidebar'
               ? 'flex min-h-11 w-full items-center gap-2 rounded-xl bg-green-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2'
-              : 'relative flex h-14 w-14 items-center justify-center rounded-full bg-green-700 text-white shadow-lg transition-colors hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-4'
+              : `relative flex h-14 w-14 items-center justify-center rounded-full bg-green-700 text-white shadow-lg transition-colors hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-4`
           }
         >
+          {placement === 'floating' && !expanded && (
+            <span aria-hidden="true" className="absolute right-1.5 top-1.5">
+              <EmojiIcon emoji="✨" className="h-3.5 w-3.5" />
+            </span>
+          )}
           <svg
             aria-hidden="true"
             viewBox="0 0 24 24"

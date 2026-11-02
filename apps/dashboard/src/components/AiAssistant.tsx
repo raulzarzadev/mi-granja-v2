@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
+import BatchProposalCard from '@/components/assistant/BatchProposalCard'
 import ProposalCard from '@/components/assistant/ProposalCard'
 import Button from '@/components/buttons/Button'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
@@ -16,7 +17,9 @@ import {
   buildAnimalMentionIndex,
   exactAnimalMention,
 } from '@/lib/ai/animal-mentions'
-import { browserTimeZone } from '@/lib/ai/proposal-client'
+import { browserTimeZone, recoverConversationProposals } from '@/lib/ai/proposal-client'
+import { uniqueProposalGroup } from '@/lib/ai/proposal-group'
+import type { AiProposalView } from '@/lib/ai/proposal-types'
 import { parseProposalView } from '@/lib/ai/proposal-view'
 import { auth } from '@/lib/firebase'
 
@@ -284,12 +287,57 @@ function ScopedAiAssistant({
     return Boolean(ready && currentFarm?.id && message.trim() && !isLoading)
   }, [ready, currentFarm?.id, isLoading, message])
 
+  const [recovering, setRecovering] = useState(false)
+  const [recoveryNeeded, setRecoveryNeeded] = useState(false)
+  const recover = async () => {
+    if (!activeId || !currentFarm?.id || recovering) return
+    setRecovering(true)
+    try {
+      const existing = new Set(
+        items.flatMap((item) => [
+          ...(item.proposal ? [item.proposal.id] : []),
+          ...(item.proposals?.map((value) => value.id) ?? []),
+        ]),
+      )
+      const recovered = await recoverConversationProposals(currentFarm.id, activeId)
+      setRecoveryNeeded(false)
+      const unique = new Map<string, AiProposalView>()
+      for (const value of recovered) {
+        if (existing.has(value.id)) continue
+        const key = JSON.stringify([value.action.type, value.action.payload])
+        if (!unique.has(key)) unique.set(key, value)
+      }
+      const proposals = uniqueProposalGroup([...unique.values()])
+      if (!proposals.length)
+        append(activeId, {
+          role: 'assistant',
+          text: 'No encontré propuestas pendientes que falten en este chat.',
+        })
+      for (let i = 0; i < proposals.length; i += 10) {
+        const group = proposals.slice(i, i + 10)
+        append(activeId, {
+          role: 'assistant',
+          text: 'Recuperé estas propuestas del servidor. Revisa aquí los datos antes de confirmar. No se ha ejecutado ningún movimiento.',
+          ...(group.length === 1 ? { proposal: group[0] } : { proposals: group }),
+        })
+      }
+    } catch {
+      append(activeId, {
+        role: 'assistant',
+        text: 'No se pudieron recuperar las propuestas. Intenta nuevamente.',
+      })
+    } finally {
+      setRecovering(false)
+    }
+  }
+
   const sendSuggestion = (text: string) => {
     setMessage('')
     sendText(text)
   }
 
   const send = () => {
+    setShowHistory(false)
     if (!currentFarm?.id || !message.trim()) return
     sendText(message.trim())
     setMessage('')
@@ -307,6 +355,9 @@ function ScopedAiAssistant({
         role: item.role,
         text: item.text,
         ...(item.role === 'assistant' && item.proposal ? { proposalId: item.proposal.id } : {}),
+        ...(item.role === 'assistant' && item.proposals
+          ? { proposalIds: item.proposals.map((value) => value.id) }
+          : {}),
       }))
       const data = await aiFetch({
         farmId: currentFarm.id,
@@ -316,6 +367,28 @@ function ScopedAiAssistant({
         history,
       })
       if (data.usage) setUsage(data.usage)
+      const proposals = Array.isArray(data.proposals)
+        ? data.proposals
+            .slice(0, 10)
+            .map(parseProposalView)
+            .filter(
+              (value: AiProposalView | undefined): value is AiProposalView =>
+                !!value &&
+                value.farmId === currentFarm.id &&
+                value.conversationId === conversationId,
+            )
+        : []
+      if (
+        data.kind === 'proposed_actions' &&
+        (!Array.isArray(data.proposals) ||
+          proposals.length < 2 ||
+          proposals.length !== data.proposals.length)
+      ) {
+        setRecoveryNeeded(true)
+        throw new Error(
+          'No se pudo mostrar la revisión completa del lote. Usa «Recuperar propuestas» aquí en el chat; todavía no se ha ejecutado ningún movimiento.',
+        )
+      }
       const proposal = parseProposalView(data.proposal)
       const scopedProposal =
         proposal?.farmId === currentFarm.id && proposal.conversationId === conversationId
@@ -325,6 +398,7 @@ function ScopedAiAssistant({
         role: 'assistant',
         text: data.message,
         ...(scopedProposal ? { proposal: scopedProposal } : {}),
+        ...(proposals.length ? { proposals } : {}),
       })
     } catch (error) {
       append(conversationId, {
@@ -372,43 +446,33 @@ function ScopedAiAssistant({
           </span>
         }
         size="lg"
+        className="sm:!h-[90dvh] sm:!max-w-3xl"
+        contentClassName="flex flex-col !overflow-hidden !p-0"
       >
-        <div className="flex h-[min(72dvh,640px)] min-h-0 flex-col gap-3">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 p-3 sm:p-4">
           <div className="flex shrink-0 items-center justify-between gap-2">
-            <button
-              type="button"
-              disabled={!ready}
-              onClick={() => setShowHistory((value) => !value)}
-              aria-expanded={showHistory}
-              className={`flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 disabled:opacity-50 ${showHistory ? 'bg-green-50 text-green-900' : 'text-slate-600 hover:bg-slate-100'}`}
-            >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                className="h-5 w-5"
+            {usage && (
+              <p className="ml-auto shrink-0 text-xs text-slate-500">
+                {usage.isUnlimited ? `${usage.used} hoy` : `${usage.remaining} disponibles`}
+              </p>
+            )}
+            {showHistory && (
+              <button
+                type="button"
+                disabled={!ready}
+                onClick={() => {
+                  createConversation()
+                  setMessage('')
+                  setShowHistory(false)
+                }}
+                className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-2.5 text-xs font-semibold text-green-800 transition-colors hover:bg-green-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 disabled:opacity-50"
               >
-                <path d="M4 6h16M4 12h12M4 18h8" />
-              </svg>
-              Conversaciones <span className="text-xs text-slate-500">{conversations.length}</span>
-            </button>
-            <button
-              type="button"
-              disabled={!ready}
-              onClick={() => {
-                createConversation()
-                setMessage('')
-                setShowHistory(false)
-              }}
-              className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-2.5 text-xs font-semibold text-green-800 transition-colors hover:bg-green-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 disabled:opacity-50"
-            >
-              <span aria-hidden="true" className="text-base font-normal">
-                +
-              </span>{' '}
-              Nueva
-            </button>
+                <span aria-hidden="true" className="text-base font-normal">
+                  +
+                </span>{' '}
+                Nueva
+              </button>
+            )}
           </div>
           {storageError && (
             <p role="alert" className="text-xs text-amber-800">
@@ -471,16 +535,11 @@ function ScopedAiAssistant({
             </section>
           ) : (
             <>
-              {!!items.length && (
-                <p className="shrink-0 truncate px-1 text-xs font-medium text-slate-500">
-                  {conversations.find((conversation) => conversation.id === activeId)?.title}
-                </p>
-              )}
               <div
                 role="log"
                 aria-label="Mensajes de la conversación"
                 aria-live="polite"
-                className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain rounded-2xl bg-slate-50/80 p-3 sm:p-4"
+                className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain rounded-2xl bg-slate-50/80 p-2 sm:p-3"
               >
                 {!items.length && (
                   <div className="flex min-h-full flex-col justify-center py-5">
@@ -520,7 +579,7 @@ function ScopedAiAssistant({
                     className={`flex ${item.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`w-fit max-w-[92%] break-words rounded-2xl px-4 py-3 text-sm leading-6 ${item.role === 'user' ? 'rounded-tr-md bg-green-700 text-white' : 'rounded-tl-md bg-white text-slate-800 shadow-sm ring-1 ring-slate-200/60'}`}
+                      className={`${item.role === 'assistant' ? 'w-full max-w-full' : 'w-fit max-w-[92%]'} break-words rounded-2xl px-4 py-3 text-sm leading-6 ${item.role === 'user' ? 'rounded-tr-md bg-green-700 text-white' : 'rounded-tl-md bg-white text-slate-800 shadow-sm ring-1 ring-slate-200/60'}`}
                     >
                       <span className="sr-only">{item.role === 'user' ? 'Tú' : 'Asistente'}: </span>
                       <div className="whitespace-pre-wrap">
@@ -533,6 +592,18 @@ function ScopedAiAssistant({
                           onOpenAnimal={setSelectedAnimalId}
                         />
                       </div>
+                      {item.role === 'assistant' &&
+                      item.proposals?.length &&
+                      activeId &&
+                      currentFarm?.id ? (
+                        <BatchProposalCard
+                          proposals={item.proposals}
+                          farmId={currentFarm.id}
+                          conversationId={activeId}
+                          onChange={(proposal) => updateProposal(activeId, proposal)}
+                          onNavigate={navigate}
+                        />
+                      ) : null}
                       {item.role === 'assistant' &&
                         item.proposal &&
                         activeId &&
@@ -562,49 +633,72 @@ function ScopedAiAssistant({
                 )}
                 <div ref={bottomRef} />
               </div>
-              <form
-                className="flex shrink-0 items-center gap-2 rounded-2xl bg-white p-1.5 ring-1 ring-slate-300 focus-within:ring-2 focus-within:ring-green-700"
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  send()
-                }}
-              >
-                <input
-                  aria-label="Mensaje para el asistente"
-                  value={message}
-                  onChange={(event) => setMessage(event.target.value)}
-                  placeholder="Pregúntame sobre tu granja…"
-                  className="min-h-11 min-w-0 flex-1 bg-transparent px-2 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none sm:text-sm"
-                />
+              {activeId && recoveryNeeded && (
                 <button
-                  type="submit"
-                  disabled={!canSend}
-                  aria-label="Enviar mensaje"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-700 text-white transition-colors hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                  type="button"
+                  onClick={() => void recover()}
+                  disabled={recovering || isLoading}
+                  className="min-h-11 self-start rounded-lg px-2 text-xs font-medium text-green-700 hover:bg-green-50 disabled:opacity-50"
                 >
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-5 w-5"
-                  >
-                    <path d="M12 19V5m-6 6 6-6 6 6" />
-                  </svg>
+                  {recovering ? 'Recuperando…' : 'Recuperar propuestas'}
                 </button>
-              </form>
+              )}
             </>
           )}
-          {usage && (
-            <p className="shrink-0 text-center text-xs text-slate-500">
-              {usage.isUnlimited
-                ? `${usage.used} consultas hoy`
-                : `${usage.remaining} consultas restantes hoy`}
-            </p>
-          )}
+          <form
+            className="flex shrink-0 items-center gap-2 rounded-2xl bg-white p-1.5 ring-1 ring-slate-300 focus-within:ring-2 focus-within:ring-green-700"
+            onSubmit={(event) => {
+              event.preventDefault()
+              send()
+            }}
+          >
+            <button
+              type="button"
+              disabled={!ready}
+              onClick={() => setShowHistory((value) => !value)}
+              aria-expanded={showHistory}
+              aria-label="Conversaciones"
+              title="Conversaciones"
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 disabled:opacity-50 ${showHistory ? 'bg-green-50 text-green-900' : 'text-slate-600 hover:bg-slate-100'}`}
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                className="h-5 w-5"
+              >
+                <path d="M4 6h16M4 12h12M4 18h8" />
+              </svg>
+            </button>
+            <input
+              aria-label="Mensaje para el asistente"
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              placeholder="Pregúntame sobre tu granja…"
+              className="min-h-11 min-w-0 flex-1 bg-transparent px-2 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none sm:text-sm"
+            />
+            <button
+              type="submit"
+              disabled={!canSend}
+              aria-label="Enviar mensaje"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-700 text-white transition-colors hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+              >
+                <path d="M12 19V5m-6 6 6-6 6 6" />
+              </svg>
+            </button>
+          </form>
         </div>
       </Modal>
       {open && selectedBreeding && (

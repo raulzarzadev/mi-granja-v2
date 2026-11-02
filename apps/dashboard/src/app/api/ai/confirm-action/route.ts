@@ -5,6 +5,7 @@ import {
   cancelAiProposal,
   confirmAiProposal,
   getAiProposal,
+  listConversationProposals,
   reviseAiProposal,
 } from '@/lib/ai/proposals'
 import { forbidden, requireAiAuth, resolveFarmPermissions } from '@/lib/ai/server'
@@ -32,6 +33,27 @@ export async function POST(request: NextRequest) {
         { status: 410 },
       )
     const farmId = typeof body.farmId === 'string' ? body.farmId.trim() : ''
+    if (body.operation === 'list') {
+      const conversationId =
+        typeof body.conversationId === 'string' ? body.conversationId.trim() : ''
+      if (
+        !farmId ||
+        farmId.includes('/') ||
+        !conversationId ||
+        conversationId.length > 200 ||
+        body.action !== undefined
+      )
+        return NextResponse.json({ error: 'Conversación inválida.' }, { status: 400 })
+      const access = await resolveFarmPermissions({ farmId, userId: auth.uid, email: auth.email })
+      if (!access) return forbidden()
+      const proposals = await listConversationProposals({
+        farmId,
+        userId: auth.uid,
+        permissions: access.permissions,
+        conversationId,
+      })
+      return NextResponse.json({ proposals })
+    }
     const proposalId = typeof body.proposalId === 'string' ? body.proposalId.trim() : ''
     const operation = body.operation
     if (

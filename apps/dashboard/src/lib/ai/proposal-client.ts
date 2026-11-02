@@ -57,3 +57,25 @@ export async function requestProposal(
   }
   return proposal
 }
+
+export async function recoverConversationProposals(
+  farmId: string,
+  conversationId: string,
+): Promise<AiProposalView[]> {
+  const token = await auth.currentUser?.getIdToken()
+  if (!token) throw new Error('Inicia sesión para recuperar las propuestas.')
+  const response = await fetch('/api/ai/confirm-action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ farmId, conversationId, operation: 'list' }),
+  })
+  const data = await response.json()
+  if (!response.ok || !Array.isArray(data.proposals))
+    throw new Error('No se pudieron recuperar las propuestas. Intenta nuevamente.')
+  return data.proposals
+    .map(parseProposalView)
+    .filter(
+      (proposal: AiProposalView | undefined): proposal is AiProposalView =>
+        !!proposal && proposal.farmId === farmId && proposal.conversationId === conversationId,
+    )
+}

@@ -11,7 +11,12 @@ import {
 } from './proposals'
 import { dateInTimeZone } from './time-zone'
 
-type History = { role: 'user' | 'assistant'; text: string; proposalId?: string }[]
+type History = {
+  role: 'user' | 'assistant'
+  text: string
+  proposalId?: string
+  proposalIds?: string[]
+}[]
 const topicPath = {
   animals: 'animales/catalogo.json',
   breedings: 'reproduccion/empadres.json',
@@ -41,10 +46,13 @@ export async function runOperationalChat(params: {
   const proposalIds = [
     ...new Set(
       params.history
-        .filter((item) => item.role === 'assistant' && item.proposalId)
-        .map((item) => item.proposalId!),
+        .filter((item) => item.role === 'assistant')
+        .flatMap((item) => [
+          ...(item.proposalId ? [item.proposalId] : []),
+          ...(item.proposalIds ?? []),
+        ]),
     ),
-  ].slice(-10)
+  ].slice(-30)
   const verified = await Promise.allSettled(
     proposalIds.map((proposalId) =>
       getAiProposal({
@@ -129,6 +137,7 @@ export async function runOperationalChat(params: {
               : 'Necesito precisar la consulta. Indica el número de animal o el empadre que quieres revisar.',
           },
           proposal: undefined,
+          proposals: undefined,
           knowledge: { generatedAt: bundle.generatedAt, timeZone: params.timeZone },
         }
       }
@@ -140,8 +149,46 @@ export async function runOperationalChat(params: {
       loaded[requestKey] = bundle.documents[path]
       continue
     }
+    let proposals: AiProposalView[] | undefined
     let proposal: AiProposalView | undefined
     let parsed = result.parsed
+    if (parsed.kind === 'proposed_actions') {
+      try {
+        const prepared: AiProposalView[] = []
+        const seenActions = new Set<string>()
+        for (const action of parsed.actions) {
+          const fingerprint = JSON.stringify({ type: action.type, payload: action.payload })
+          if (seenActions.has(fingerprint))
+            throw new AiProposalError(
+              'El lote contiene movimientos repetidos. Aclara cuáles necesitas.',
+              400,
+            )
+          seenActions.add(fingerprint)
+          prepared.push(
+            await createAiProposal({
+              action,
+              userId: params.userId,
+              farmId: params.farmId,
+              permissions: params.permissions,
+              conversationId: params.conversationId,
+              timeZone: params.timeZone,
+            }),
+          )
+        }
+        proposals = prepared
+        parsed = {
+          ...parsed,
+          message: `Preparé ${prepared.length} movimientos para revisar. Los movimientos en masa pueden ser peligrosos si los datos son incorrectos: afectan muchos datos de tu granja. Revisa con cuidado cada animal, fecha e importe antes de confirmar. Todavía no se ha guardado ningún movimiento.`,
+        }
+      } catch (error) {
+        if (error instanceof AiProposalError && error.status < 500)
+          parsed = {
+            kind: 'needs_clarification',
+            message: `No se pudo preparar el lote completo: ${error.message} No se ha ejecutado ningún movimiento.`,
+          }
+        else throw error
+      }
+    }
     if (parsed.kind === 'proposed_action') {
       try {
         proposal = await createAiProposal({
@@ -169,6 +216,7 @@ export async function runOperationalChat(params: {
       ...result,
       parsed,
       proposal,
+      proposals,
       usage,
       knowledge: { generatedAt: bundle.generatedAt, timeZone: params.timeZone },
     }

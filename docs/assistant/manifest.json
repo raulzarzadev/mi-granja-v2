@@ -36,6 +36,7 @@
     "apps/dashboard/src/components/assistant/OperationFields.tsx",
     "apps/dashboard/src/hooks/useAiConversations.ts",
     "apps/dashboard/src/hooks/useBreedingCRUD.ts",
-    "apps/dashboard/src/components/ModalConfirmPregnancy.tsx"
+    "apps/dashboard/src/components/ModalConfirmPregnancy.tsx",
+    "apps/dashboard/src/components/assistant/BatchProposalCard.tsx"
   ]
 }

@@ -149,3 +149,25 @@ Los códigos únicos de empadre mencionados en el chat abren una ficha compacta 
 La ficha de empadre del chat permite confirmar gestación de hembras pendientes, sacar participantes y registrar parto de gestantes. Reutiliza `ModalConfirmPregnancy`, `ModalBirthForm`, `useBreedingHandlers` y los movimientos compartidos. Respeta permisos; sacar requiere confirmación explícita y advierte si eliminará todo el empadre. Confirmar gestación o parto conserva la ficha y el chat; eliminar el empadre cierra su ficha.
 
 En la ficha del empadre, el botón (+) junto a Hembras abre un selector múltiple de hembras disponibles de la especie del macho. Excluye participantes actuales, animales inactivos, gestantes, paridas y ocupadas en otros empadres activos. Agrega mediante `updateBreedingRecord`, preserva la información de las hembras existentes y mantiene la ficha abierta. Solo aparece con permiso de actualización y en empadres en curso.
+
+Acceso móvil: el icono de IA sobre la media luna del botón flotante (+) abre directamente la conversación del asistente.
+
+El acceso de IA se superpone abajo a la izquierda del (+), en un círculo menor con una media luna de separación entre ambos botones.
+
+Comparación temporal en UI del botón flotante: selector 1 (integrado, IA en menú), 2 (dos círculos con acceso directo IA) y 3 (cápsula con IA y creación). Pendiente elegir diseño definitivo; sustituye la media luna anterior.
+
+Diseño definitivo elegido: opción 1, un botón (+) verde con estrellas blancas integradas. El asistente se abre desde el menú de creación. Se retira el selector temporal de la app; las tres propuestas permanecen en UI Showcase como referencia visual.
+
+## Propuestas por lote
+
+El asistente puede preparar entre 2 y 10 operaciones completas en una respuesta (`proposed_actions`, `actions`). Permite altas múltiples y acciones distintas sobre animales distintos, conservando los contratos individuales. Una sola operación con varias referencias (destete, salud, venta o gestación) sigue siendo una propuesta individual con aviso de movimiento masivo.
+
+`BatchProposalCard` muestra cada acción con un botón discreto «Por revisar» siempre visible. No ofrece «Revisar lote completo» ni confirmación conjunta. La advertencia explica el riesgo de datos incorrectos; cada movimiento se revisa y confirma en su propio modal con los datos y efectos del servidor. Recibir el mensaje no ejecuta movimientos. Los borradores se persisten individualmente; el agrupamiento del chat es local.
+
+Cada propuesta conserva su validación de estado, transacción, comprobante e idempotencia. Los conflictos requieren revisar y actualizar esa propuesta antes de confirmar. Los éxitos se muestran individualmente y no se vuelven a ejecutar al reabrir el chat.
+
+Si no se puede preparar una acción, no se ofrece un lote parcial ni se ejecutan movimientos. Los borradores preparados previamente pueden permanecer sin ejecutar hasta caducar. Las acciones dependientes de documentos aún no creados requieren varios pasos; no se promete resolver dependencias dentro de un lote. El límite de diez requiere dividir explícitamente solicitudes mayores, sin seleccionar silenciosamente un subconjunto.
+
+Recuperación de revisiones: el chat ofrece «Recuperar propuestas», una lectura autenticada de hasta 100 borradores por usuario/granja/conversación, filtrada por permisos. Permite mostrar borradores persistidos que falten en el historial local sin volver a crearlos ni ejecutarlos. Si la API anuncia un lote sin sus propuestas completas, el chat muestra un error recuperable en lugar de afirmar que preparó la revisión. En altas repetidas del mismo ID visible se presenta el borrador más reciente; nunca se combinan datos entre borradores. La confirmación se realiza aquí mismo, con las tarjetas del chat.
+
+La recuperación de propuestas se muestra solo ante un error de carga de revisión, no como acción habitual. El modal del asistente prioriza el área de conversación: altura disponible, cabecera compacta con uso diario, sin título de conversación repetido ni fila permanente de recuperación.

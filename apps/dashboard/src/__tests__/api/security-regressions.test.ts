@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 import { POST as confirmAction } from '@/app/api/ai/confirm-action/route'
 import { POST as verifyCode } from '@/app/api/auth/verify-code/route'
 import { POST as sendEmail } from '@/app/api/send/route'
+import { listConversationProposals } from '@/lib/ai/proposals'
 import { requireAiAuth, resolveFarmPermissions } from '@/lib/ai/server'
 import { verifyBillingAuth } from '@/lib/billing-auth'
 import { sendBrevoEmail } from '@/lib/brevo'
@@ -21,6 +22,7 @@ jest.mock('@/lib/ai/proposals', () => ({
   getAiProposal: jest.fn(),
   reviseAiProposal: jest.fn(),
   cancelAiProposal: jest.fn(),
+  listConversationProposals: jest.fn(),
 }))
 jest.mock('@/lib/brevo', () => ({ sendBrevoEmail: jest.fn() }))
 jest.mock('@/lib/ai/server', () => ({
@@ -249,4 +251,31 @@ it('rejects expired invitations even for a farm administrator', async () => {
     409,
   )
   expect(sendBrevoEmail).not.toHaveBeenCalled()
+})
+
+it('recupera propuestas solo con identidad verificada y acceso a la granja', async () => {
+  jest.mocked(requireAiAuth).mockResolvedValue({ uid: 'verified-user', email: 'user@example.com' })
+  jest.mocked(resolveFarmPermissions).mockResolvedValue({
+    farmName: 'Granja',
+    permissions: [{ module: 'animals', actions: ['read', 'create'] }],
+  })
+  jest.mocked(listConversationProposals).mockResolvedValue([])
+  const request = () =>
+    new NextRequest('http://localhost/api/ai/confirm-action', {
+      method: 'POST',
+      body: JSON.stringify({
+        operation: 'list',
+        farmId: 'farm',
+        conversationId: 'chat',
+        userId: 'attacker',
+      }),
+    })
+  expect((await confirmAction(request())).status).toBe(200)
+  expect(listConversationProposals).toHaveBeenCalledWith(
+    expect.objectContaining({ userId: 'verified-user', farmId: 'farm', conversationId: 'chat' }),
+  )
+  jest.mocked(listConversationProposals).mockClear()
+  jest.mocked(resolveFarmPermissions).mockResolvedValue(null)
+  expect((await confirmAction(request())).status).toBe(403)
+  expect(listConversationProposals).not.toHaveBeenCalled()
 })

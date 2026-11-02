@@ -135,3 +135,41 @@ it('uses only server verified receipts belonging to this conversation', async ()
     accionesDeLaConversacion: [],
   })
 })
+
+it('prepara todas las propuestas del lote sin ejecutar y advierte antes de confirmar', async () => {
+  const actions = ['A1', 'A2'].map((animalRef) => ({
+    type: 'register_weight',
+    summary: 'Pesar',
+    payload: { animalRef, date: '2026-11-01', weightKg: 20 },
+  }))
+  jest
+    .mocked(callAiProvider)
+    .mockResolvedValue(result({ kind: 'proposed_actions', message: 'Guardados', actions }))
+  jest
+    .mocked(createAiProposal)
+    .mockResolvedValueOnce({ id: 'p1' } as any)
+    .mockResolvedValueOnce({ id: 'p2' } as any)
+  const response = await runOperationalChat(params)
+  expect(createAiProposal).toHaveBeenCalledTimes(2)
+  expect(response.proposals).toHaveLength(2)
+  expect(response.parsed.message).toContain('Revisa con cuidado')
+  expect(response.parsed.message).toContain('Todavía no se ha guardado')
+})
+it('no ofrece un lote incompleto si una acción no se puede preparar', async () => {
+  const actions = ['A1', 'A2'].map((animalRef) => ({
+    type: 'register_weight',
+    summary: 'Pesar',
+    payload: { animalRef, date: '2026-11-01', weightKg: 20 },
+  }))
+  jest
+    .mocked(callAiProvider)
+    .mockResolvedValue(result({ kind: 'proposed_actions', message: 'Revisar', actions }))
+  jest
+    .mocked(createAiProposal)
+    .mockResolvedValueOnce({ id: 'p1' } as any)
+    .mockRejectedValueOnce(new AiProposalError('Animal no disponible'))
+  const response = await runOperationalChat(params)
+  expect(response.proposals).toBeUndefined()
+  expect(response.parsed.kind).toBe('needs_clarification')
+  expect(response.parsed.message).toContain('No se ha ejecutado ningún movimiento')
+})

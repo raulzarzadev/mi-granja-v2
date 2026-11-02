@@ -101,3 +101,5 @@ Fuentes de implementación: `apps/dashboard/src/lib/ai/actions.ts` (`buildAiCont
 `knowledge-records.ts` combina registros embebidos, registros centrales y comprobantes. El comprobante determina si un evento fue deshecho. Un mismo movimiento masivo se cuenta una vez y conserva la lista de animales afectados. Las gestaciones pendientes provienen de hembras activas con gestación actual; una confirmación histórica del empadre no recrea un embarazo retirado.
 
 La confirmación de gestación pasa la zona efectiva al servicio compartido mediante `context.timeZone`; `lib/domain/farm-calendar.ts` suma días de calendario para calcular partos esperados. El adaptador manual y el del asistente usan la misma función de dominio. Cambiar este cálculo exige revisar conocimiento y flujos, no solo el texto del modelo.
+
+Los mensajes pueden referenciar hasta diez IDs de propuesta por lote (`proposalIds`). El contexto verifica hasta 30 propuestas recientes con el mismo usuario, granja y conversación; incluye sus comprobantes para evitar repetir movimientos. El texto del chat y la agrupación local no demuestran ejecución.

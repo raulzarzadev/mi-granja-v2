@@ -134,3 +134,51 @@ it('descarta tarjetas de acciones atribuidas a mensajes del usuario', () => {
   const { result } = renderHook(() => useAiConversations('user', 'farm'))
   expect(result.current.conversations[0].items[0].proposal).toBeUndefined()
 })
+
+it('conserva los lotes y actualiza un comprobante individual sin perder los demás', () => {
+  const hook = renderHook(() => useAiConversations('user', 'farm'))
+  let chat = ''
+  act(() => {
+    chat = hook.result.current.createConversation()
+  })
+  const make = (id: string): import('@/lib/ai/proposal-types').AiProposalView => ({
+    id,
+    farmId: 'farm',
+    conversationId: chat,
+    revision: 1,
+    status: 'ready',
+    title: 'Pesar',
+    summary: id,
+    effects: [],
+    expiresAt: '2099-01-01T00:00:00Z',
+    action: {
+      type: 'register_weight',
+      summary: id,
+      payload: { animalRef: id, date: '2026-11-01', weightKg: 20 },
+    },
+  })
+  const first = make('A1'),
+    second = make('A2')
+  act(() =>
+    hook.result.current.append(chat, {
+      role: 'assistant',
+      text: 'Revisar lote',
+      proposals: [first, second],
+    }),
+  )
+  const saved = {
+    ...first,
+    status: 'succeeded' as const,
+    receipt: {
+      commandId: first.id,
+      recordId: first.id,
+      message: 'Guardado',
+      href: '/',
+      completedAt: '2026-11-01T00:00:00Z',
+    },
+  }
+  act(() => hook.result.current.updateProposal(chat, saved))
+  hook.unmount()
+  const reopened = renderHook(() => useAiConversations('user', 'farm'))
+  expect(reopened.result.current.conversations[0].items[0].proposals).toEqual([saved, second])
+})

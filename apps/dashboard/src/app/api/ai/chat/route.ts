@@ -35,6 +35,16 @@ export async function POST(request: NextRequest) {
             return {
               role: value.role === 'assistant' ? ('assistant' as const) : ('user' as const),
               text: typeof value.text === 'string' ? value.text.slice(0, 2000) : '',
+              ...(value.role === 'assistant' && Array.isArray(value.proposalIds)
+                ? {
+                    proposalIds: value.proposalIds
+                      .filter(
+                        (id): id is string =>
+                          typeof id === 'string' && /^[a-zA-Z0-9_-]{1,128}$/.test(id),
+                      )
+                      .slice(0, 10),
+                  }
+                : {}),
               ...(value.role === 'assistant' &&
               typeof value.proposalId === 'string' &&
               /^[a-zA-Z0-9_-]{1,128}$/.test(value.proposalId)
@@ -126,6 +136,7 @@ export async function POST(request: NextRequest) {
       kind: ai.parsed.kind,
       message: ai.parsed.message,
       proposal: ai.proposal,
+      proposals: ai.proposals,
       knowledge: ai.knowledge,
       usage,
     })

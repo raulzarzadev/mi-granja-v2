@@ -87,7 +87,7 @@ it('comprueba el estado al abrir y registra solo tras confirmación explícita, 
       : proposal,
   )
   const { onChange, onNavigate } = setup()
-  fireEvent.click(await screen.findByRole('button', { name: 'Revisar acción' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Por revisar' }))
   const dialog = screen.getByRole('dialog', { name: 'Confirmar acción' })
   expect(within(dialog).getByRole('heading', { name: 'Registrar peso' })).toBeInTheDocument()
   expect(
@@ -126,7 +126,7 @@ it('una edición se valida y se revisa antes de confirmar su nueva revisión', a
     input.operation === 'revise' ? revised : proposal,
   )
   setup()
-  fireEvent.click(await screen.findByRole('button', { name: 'Revisar acción' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Por revisar' }))
   fireEvent.click(screen.getByRole('button', { name: 'Editar datos' }))
   fireEvent.change(screen.getByLabelText('Peso en kg'), { target: { value: '20' } })
   fireEvent.click(screen.getByRole('button', { name: 'Revisar cambios' }))
@@ -144,7 +144,7 @@ it('no confía en un éxito guardado localmente cuando no puede verificarlo', as
   await screen.findByRole('alert')
   expect(screen.getByText('Por comprobar')).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Ver registro' })).not.toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Revisar acción' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Por revisar' })).not.toBeInTheDocument()
   expect(mockedRequest.mock.calls.some(([input]) => input.operation === 'confirm')).toBe(false)
 })
 
@@ -156,7 +156,7 @@ it('un error de red durante la confirmación se reconcilia leyendo el comprobant
     return reads > 1 ? { ...proposal, status: 'succeeded', receipt } : proposal
   })
   setup()
-  fireEvent.click(await screen.findByRole('button', { name: 'Revisar acción' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Por revisar' }))
   fireEvent.click(screen.getByRole('button', { name: 'Confirmar y registrar' }))
   await screen.findByText('Peso registrado')
   expect(mockedRequest.mock.calls.filter(([input]) => input.operation === 'confirm')).toHaveLength(
@@ -172,7 +172,7 @@ it('bloquea una confirmación en conflicto hasta revisar una nueva propuesta', a
     return proposal
   })
   setup()
-  fireEvent.click(await screen.findByRole('button', { name: 'Revisar acción' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Por revisar' }))
   fireEvent.click(screen.getByRole('button', { name: 'Confirmar y registrar' }))
   await waitFor(() =>
     expect(screen.getByRole('button', { name: 'Confirmar y registrar' })).toBeDisabled(),
@@ -189,7 +189,7 @@ it('no ofrece ejecutar una propuesta vencida', async () => {
   })
   setup()
   await screen.findByText('Vencida')
-  expect(screen.queryByRole('button', { name: 'Revisar acción' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Por revisar' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Confirmar y registrar' })).not.toBeInTheDocument()
   expect(mockedRequest.mock.calls.every(([input]) => input.operation === 'get')).toBe(true)
 })
@@ -199,10 +199,23 @@ it('cancelar una propuesta no registra el movimiento y conserva su estado en el 
     input.operation === 'cancel' ? { ...proposal, status: 'cancelled' } : proposal,
   )
   const { onChange } = setup()
-  fireEvent.click(await screen.findByRole('button', { name: 'Revisar acción' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Por revisar' }))
   fireEvent.click(screen.getByRole('button', { name: 'Cancelar propuesta' }))
   await screen.findByText('Cancelada')
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(mockedRequest.mock.calls.some(([input]) => input.operation === 'confirm')).toBe(false)
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'cancelled' }))
+})
+
+it('cerrar la edición conserva la revisión abierta y no guarda cambios', async () => {
+  mockedRequest.mockResolvedValue(proposal)
+  setup()
+  fireEvent.click(await screen.findByRole('button', { name: 'Por revisar' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Editar datos' }))
+  fireEvent.click(screen.getByRole('button', { name: 'close icon' }))
+  expect(screen.getByRole('dialog', { name: 'Confirmar acción' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Editar datos' })).toBeInTheDocument()
+  expect(mockedRequest.mock.calls.every(([input]) => input.operation === 'get')).toBe(true)
+  fireEvent.click(screen.getByRole('button', { name: 'close icon' }))
+  expect(screen.queryByRole('dialog', { name: 'Confirmar acción' })).not.toBeInTheDocument()
 })

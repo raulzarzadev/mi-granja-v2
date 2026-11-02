@@ -79,3 +79,29 @@ Botón (+) junto al contador de hembras, con selector canónico, disponibilidad,
 La acción de sacar un participante se presenta como icono X con nombre accesible y confirmación explícita posterior.
 
 La ficha de empadre incluye un botón de edición junto al estado, visible con permiso de actualización. Abre `ModalEditBreeding` con el registro actual y guarda mediante `updateBreedingRecord`, conservando la ficha y la conversación.
+
+El botón flotante (+) incorpora una media luna azul con acceso directo al asistente IA mediante su icono. El botón central conserva las acciones de creación y el comportamiento para animales seleccionados.
+
+El acceso de IA se superpone abajo a la izquierda del (+), en un círculo menor con una media luna de separación entre ambos botones.
+
+Comparación temporal en UI del botón flotante: selector 1 (integrado, IA en menú), 2 (dos círculos con acceso directo IA) y 3 (cápsula con IA y creación). Pendiente elegir diseño definitivo; sustituye la media luna anterior.
+
+Diseño definitivo elegido: opción 1, un botón (+) verde con estrellas blancas integradas. El asistente se abre desde el menú de creación. Se retira el selector temporal de la app; las tres propuestas permanecen en UI Showcase como referencia visual.
+
+Alta simple de animales: Especie aparece primero, con la opción actual al inicio del desplegable. Recuerda localmente por usuario la última especie elegida para nuevas altas; los datos iniciales explícitos (edición y madre/parto) conservan prioridad. No altera el contrato de alta del asistente.
+
+## 2026-11-01 — Propuestas múltiples con revisión explícita
+
+Contrato del proveedor ampliado con `proposed_actions` (2–10 acciones), preparación completa y tarjetas agrupadas con revisión de todos los campos y advertencia de riesgo. Confirmación secuencial sobre propuestas individuales, revalidación antes de cada paso y parada ante error/cambio. Informa éxitos parciales y conserva IDs/comprobantes para omitir guardados al reintentar. No cambia el contrato de cada operación ni promete atomicidad conjunta; se mantienen servicios y ejecutor actuales. Pruebas cubren contrato, preparación, bloqueo de confirmación sin aceptación, parada, reintentos y cambios de revisión.
+
+Recuperación de revisiones: el chat ofrece «Recuperar propuestas», una lectura autenticada de hasta 100 borradores por usuario/granja/conversación, filtrada por permisos. Permite mostrar borradores persistidos que falten en el historial local sin volver a crearlos ni ejecutarlos. Si la API anuncia un lote sin sus propuestas completas, el chat muestra un error recuperable en lugar de afirmar que preparó la revisión. En altas repetidas del mismo ID visible se presenta el borrador más reciente; nunca se combinan datos entre borradores. La confirmación se realiza aquí mismo, con las tarjetas del chat.
+
+La recuperación de propuestas se muestra solo ante un error de carga de revisión, no como acción habitual. El modal del asistente prioriza el área de conversación: altura disponible, cabecera compacta con uso diario, sin título de conversación repetido ni fila permanente de recuperación.
+
+El acceso a conversaciones queda como botón de solo icono a la izquierda del campo de mensaje, disponible también al consultar el historial.
+
+Se sustituye la revisión conjunta de lotes por revisión individual visible y compacta. Retirados el botón global, su ejecutor secuencial cliente y el desplegable por acción; se conservan las propuestas múltiples y los comprobantes individuales.
+
+El estado «Por revisar» pasa a ser el botón que abre la revisión; eliminado el acceso duplicado «Revisar acción». Los estados terminados permanecen como etiquetas.
+
+Al cerrar la edición de una propuesta se vuelve a su revisión, descartando cambios sin guardar; solo el cierre desde la revisión cierra «Confirmar acción».

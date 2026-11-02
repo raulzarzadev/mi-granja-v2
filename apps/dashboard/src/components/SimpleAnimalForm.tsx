@@ -6,12 +6,12 @@ import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 import { Controller } from 'react-hook-form'
 import { z } from 'zod'
-import { Modal } from '@/components/Modal'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import InputIconSelect from '@/components/inputs/InputIconSelect'
+import { Modal } from '@/components/Modal'
 import { useZodForm } from '@/hooks/useZodForm'
-import { normalizeAnimalSearch } from '@/lib/animal-search'
 import { registrationStages } from '@/lib/animal-registration-stages'
+import { normalizeAnimalSearch } from '@/lib/animal-search'
 import { ANIMAL_BREEDING_CONFIGS } from '@/lib/animalBreedingConfig'
 import { auth, storage } from '@/lib/firebase'
 import {
@@ -28,10 +28,10 @@ import {
   animals_types,
   animals_types_labels,
 } from '@/types/animals'
+import { DatePickerButtons } from './buttons/date-picker-buttons'
 import { Form } from './forms/Form'
 import { TextField } from './forms/TextField'
 import AnimalSelector from './inputs/AnimalSelector'
-import { DatePickerButtons } from './buttons/date-picker-buttons'
 
 // "juvenil" es una etapa interna calculada por edad. Para el usuario, la
 // decisión al destetar es el destino productivo: engorda o reproducción.
@@ -248,6 +248,19 @@ export default function SimpleAnimalForm({
     [initialData, initialLifecycle],
   )
   const form = useZodForm({ schema, defaultValues, mode: 'onBlur' })
+  const speciesPreferenceKey = `mi-granja:last-animal-species:${auth.currentUser?.uid ?? 'local'}`
+  useEffect(() => {
+    if (initialData?.type) return
+    try {
+      const saved = localStorage.getItem(speciesPreferenceKey)
+      if (saved && animals_types.includes(saved as Animal['type'])) {
+        form.setValue('type', saved as Animal['type'])
+      }
+    } catch {
+      /* El formulario funciona aunque el almacenamiento no esté disponible. */
+    }
+  }, [speciesPreferenceKey])
+
   const [creatingMother, setCreatingMother] = useState(false)
   const [motherSearch, setMotherSearch] = useState('')
   const [createdMothers, setCreatedMothers] = useState<Animal[]>([])
@@ -574,16 +587,7 @@ export default function SimpleAnimalForm({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <TextField
-              name="animalNumber"
-              label="ID del animal"
-              placeholder={suggestedAnimalNumber}
-              helperText={`Si lo dejas vacío, se usará ${suggestedAnimalNumber} como ID.`}
-              autoFocus
-              disabled={isBusy}
-              className="min-h-12 rounded-xl text-base"
-            />
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 sm:col-span-2">
               <span
                 data-field="type"
                 id="animal-type-label"
@@ -598,11 +602,21 @@ export default function SimpleAnimalForm({
                   <InputIconSelect
                     aria-labelledby="animal-type-label"
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(value) => {
+                      field.onChange(value)
+                      try {
+                        localStorage.setItem(speciesPreferenceKey, value)
+                      } catch {
+                        /* Preferencia opcional. */
+                      }
+                    }}
                     onBlur={field.onBlur}
                     disabled={isBusy}
                     className="min-h-12 rounded-xl border-slate-300"
-                    options={animals_types.map((type) => ({
+                    options={[
+                      field.value,
+                      ...animals_types.filter((type) => type !== field.value),
+                    ].map((type) => ({
                       value: type,
                       label: animals_types_labels[type],
                       icon: animal_icon[type],
@@ -611,6 +625,15 @@ export default function SimpleAnimalForm({
                 )}
               />
             </div>
+            <TextField
+              name="animalNumber"
+              label="ID del animal"
+              placeholder={suggestedAnimalNumber}
+              helperText={`Si lo dejas vacío, se usará ${suggestedAnimalNumber} como ID.`}
+              autoFocus
+              disabled={isBusy}
+              className="min-h-12 rounded-xl text-base"
+            />
             <div className="space-y-1.5">
               <span
                 data-field="gender"

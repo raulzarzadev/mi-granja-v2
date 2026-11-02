@@ -11,9 +11,16 @@ export const knowledgeRequestSchema = z.object({
 })
 
 const wireSchema = z.object({
-  kind: z.enum(['message', 'needs_clarification', 'proposed_action', 'read_document']),
+  kind: z.enum([
+    'message',
+    'needs_clarification',
+    'proposed_action',
+    'proposed_actions',
+    'read_document',
+  ]),
   message: z.string().min(1),
   action: operationActionSchema.nullable(),
+  actions: z.array(operationActionSchema).min(2).max(10).nullable(),
   documentRequest: knowledgeRequestSchema.nullable(),
 })
 
@@ -41,6 +48,11 @@ export const operationalResponseJsonSchema = zodToJsonSchema(wireSchema, {
 })
 
 const responseSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('proposed_actions'),
+    message: z.string().trim().min(1),
+    actions: z.array(operationActionSchema).min(2).max(10),
+  }),
   z.object({
     kind: z.literal('read_document'),
     message: z.string().trim().min(1),
