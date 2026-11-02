@@ -1,14 +1,16 @@
+import { randomUUID } from 'node:crypto'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { NextRequest, NextResponse } from 'next/server'
 import { AuthenticatedUser, isAuthError, verifyBillingAuth } from '@/lib/billing-auth'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { DEFAULT_PERMISSIONS } from '@/types/collaborators'
 import { FarmPermission } from '@/types/farm'
+import { getAiBillingPolicy } from './billing-policy'
+import { AI_MONTHLY_INTERNAL_USD, actualProviderCostUsd } from './credits'
 import type { AiProvider } from './model-config'
 import { AiUsageResult } from './types'
 
 export const AI_DAILY_LIMIT = 3
-const isDev = process.env.NODE_ENV === 'development'
 
 export async function requireAiAuth(
   request: NextRequest,
@@ -40,37 +42,173 @@ export function totalAiTokens(usage: unknown): number {
   return usageNumber(usage, ['total_tokens', 'totalTokens'])
 }
 
+export class AiQuotaError extends Error {
+  constructor(
+    message: string,
+    public usage?: AiUsageResult,
+  ) {
+    super(message)
+  }
+}
+
+function creditEligible(subscription: any, wallet: any) {
+  return (
+    subscription?.tierId === wallet?.tierId &&
+    subscription?.status === 'active' &&
+    wallet &&
+    subscription.stripeSubscriptionId === wallet.subscriptionId &&
+    Number(wallet.periodEnd) * 1000 > Date.now() &&
+    Number(wallet.periodStart) * 1000 <= Date.now()
+  )
+}
+function usageView(
+  daily: any,
+  subscription: any,
+  wallet: any,
+  dailyLimit = AI_DAILY_LIMIT,
+): AiUsageResult {
+  const used = Math.max(0, Number(daily?.count) || 0)
+  if (creditEligible(subscription, wallet)) {
+    const balance =
+      (Math.max(
+        0,
+        (Number(wallet.internalAllowanceUsd) || AI_MONTHLY_INTERNAL_USD) -
+          (Number(wallet.internalSpentUsd) || 0),
+      ) *
+        (Number(wallet.creditAllowanceUsd) || 5)) /
+      (Number(wallet.internalAllowanceUsd) || 1)
+    return {
+      mode: 'credits',
+      limit: Number(wallet.creditAllowanceUsd) || 5,
+      used: (Number(wallet.creditAllowanceUsd) || 5) - balance,
+      remaining: wallet.needsReconciliation ? 0 : balance,
+      creditBalanceUsd: balance,
+      allowed: balance > 0 && !wallet.needsReconciliation,
+      totalTokens: Number(daily?.totalTokens) || 0,
+    }
+  }
+  return {
+    mode: 'daily',
+    limit: dailyLimit,
+    used,
+    remaining: Math.max(0, dailyLimit - used),
+    allowed: used < dailyLimit,
+    totalTokens: Number(daily?.totalTokens) || 0,
+    totalCost: Number(daily?.totalCost) || 0,
+  }
+}
+export function aiQuotaMessage(usage?: AiUsageResult) {
+  return usage?.mode === 'credits'
+    ? 'Tus créditos de IA no están disponibles o se agotaron. Se renuevan con el próximo pago mensual del plan con créditos.'
+    : `Ya usaste tus ${usage?.limit ?? AI_DAILY_LIMIT} consultas de IA hoy.`
+}
+
+/** Reserva antes de llamar al proveedor: cuota gratis atómica y una consulta pagada a la vez. */
+export async function reserveAiUse(userId: string): Promise<string> {
+  const policy = await getAiBillingPolicy()
+  const db = getAdminFirestore(),
+    id = randomUUID()
+  const day = dateKey(),
+    dailyRef = db.doc(`aiUsage/${userId}_${day}`),
+    walletRef = db.doc(`aiCreditWallets/${userId}`)
+  await db.runTransaction(async (tx) => {
+    const [daily, sub, wallet] = await Promise.all([
+      tx.get(dailyRef),
+      tx.get(db.doc(`subscriptions/${userId}`)),
+      tx.get(walletRef),
+    ])
+    const usage = usageView(daily.data(), sub.data(), wallet.data(), policy.freeDailyQueries)
+    if (!usage.allowed) throw new AiQuotaError(aiQuotaMessage(usage), usage)
+    const paid = usage.mode === 'credits'
+    if (paid && wallet.data()?.inFlight)
+      throw new AiQuotaError('Hay una consulta de IA en curso. Espera a que termine.', usage)
+    if (
+      !paid &&
+      (Number(daily.data()?.count) || 0) + (Number(daily.data()?.reserved) || 0) >=
+        policy.freeDailyQueries
+    )
+      throw new AiQuotaError(aiQuotaMessage(usage), usage)
+    tx.set(db.doc(`aiUsageReservations/${id}`), {
+      userId,
+      day,
+      mode: paid ? 'credits' : 'daily',
+      periodStart: paid ? wallet.data()?.periodStart : null,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    })
+    if (paid) tx.update(walletRef, { inFlight: id })
+    else
+      tx.set(dailyRef, { userId, dateKey: day, reserved: FieldValue.increment(1) }, { merge: true })
+  })
+  return id
+}
+
+export async function releaseAiUse(userId: string, id: string) {
+  const db = getAdminFirestore(),
+    ref = db.doc(`aiUsageReservations/${id}`),
+    wallet = db.doc(`aiCreditWallets/${userId}`)
+  await db.runTransaction(async (tx) => {
+    const [snap, walletSnap] = await Promise.all([tx.get(ref), tx.get(wallet)])
+    const data = snap.data()
+    if (!data || data.userId !== userId || data.status !== 'pending') return
+    tx.update(ref, { status: 'failed' })
+    if (data.mode === 'daily')
+      tx.set(
+        db.doc(`aiUsage/${userId}_${data.day}`),
+        { reserved: FieldValue.increment(-1) },
+        { merge: true },
+      )
+    else if (walletSnap.data()?.inFlight === id)
+      tx.update(wallet, { inFlight: null, needsReconciliation: true })
+  })
+}
+
 export async function consumeDailyAiUse(
   userId: string,
   providerUsage?: unknown,
   providerMetadata?: { provider: AiProvider; model: string },
+  reservationId?: string,
 ): Promise<AiUsageResult> {
-  const firestore = getAdminFirestore()
-  const key = `${userId}_${dateKey()}`
-  const ref = firestore.collection('aiUsage').doc(key)
-  const tokens = usageNumber(providerUsage, ['total_tokens', 'totalTokens'])
-  const cost = usageNumber(providerUsage, ['cost', 'total_cost', 'totalCost'])
-
-  return firestore.runTransaction(async (tx) => {
-    const snap = await tx.get(ref)
-    const current = snap.exists ? Number(snap.data()?.count || 0) : 0
-    if (!isDev && current >= AI_DAILY_LIMIT) {
-      return { limit: AI_DAILY_LIMIT, used: current, remaining: 0, allowed: false }
+  if (!reservationId) throw new Error('Reserva de IA requerida.')
+  const policy = await getAiBillingPolicy()
+  const db = getAdminFirestore(),
+    reservationRef = db.doc(`aiUsageReservations/${reservationId}`),
+    walletRef = db.doc(`aiCreditWallets/${userId}`)
+  const tokens = usageNumber(providerUsage, ['total_tokens', 'totalTokens']),
+    actualCost = actualProviderCostUsd(providerUsage)
+  return db.runTransaction(async (tx) => {
+    const [reservation, sub, wallet] = await Promise.all([
+      tx.get(reservationRef),
+      tx.get(db.doc(`subscriptions/${userId}`)),
+      tx.get(walletRef),
+    ])
+    const r = reservation.data()
+    if (!r || r.userId !== userId) throw new Error('Reserva de IA inválida.')
+    const ref = db.doc(`aiUsage/${userId}_${r.day}`),
+      snap = await tx.get(ref),
+      daily = snap.data() ?? {}
+    if (r.status === 'completed')
+      return usageView(daily, sub.data(), wallet.data(), policy.freeDailyQueries)
+    if (r.status !== 'pending') throw new Error('La reserva no está pendiente.')
+    const next = {
+      ...daily,
+      count: (Number(daily.count) || 0) + 1,
+      totalTokens: (Number(daily.totalTokens) || 0) + tokens,
+      totalCost: (Number(daily.totalCost) || 0) + (actualCost ?? 0),
     }
-    const next = current + 1
     tx.set(
       ref,
       {
         userId,
-        dateKey: dateKey(),
-        count: next,
-        ...(tokens > 0 ? { totalTokens: FieldValue.increment(tokens) } : {}),
-        ...(cost > 0 ? { totalCost: FieldValue.increment(cost) } : {}),
+        dateKey: r.day,
+        count: next.count,
+        totalTokens: next.totalTokens,
+        totalCost: next.totalCost,
+        ...(r.mode === 'daily' ? { reserved: FieldValue.increment(-1) } : {}),
+        ...(actualCost === undefined ? { unreportedCostQueries: FieldValue.increment(1) } : {}),
         ...(providerMetadata
           ? {
-              providerCounts: {
-                [providerMetadata.provider]: FieldValue.increment(1),
-              },
+              providerCounts: { [providerMetadata.provider]: FieldValue.increment(1) },
               modelCounts: {
                 [`${providerMetadata.provider}:${providerMetadata.model}`]: FieldValue.increment(1),
               },
@@ -82,34 +220,42 @@ export async function consumeDailyAiUse(
       },
       { merge: true },
     )
-    const previousTokens = Number(snap.data()?.totalTokens || 0)
-    const previousCost = Number(snap.data()?.totalCost || 0)
-    return {
-      limit: isDev ? Number.MAX_SAFE_INTEGER : AI_DAILY_LIMIT,
-      used: next,
-      remaining: isDev ? Number.MAX_SAFE_INTEGER : AI_DAILY_LIMIT - next,
-      allowed: true,
-      totalTokens: previousTokens + tokens,
-      totalCost: previousCost + cost,
-      isUnlimited: isDev,
+    let nextWallet = wallet.data()
+    if (r.mode === 'credits' && nextWallet?.inFlight === reservationId) {
+      // Si cambió de ciclo, el gasto sigue en el ciclo al que se autorizó.
+      const sameCycle = r.periodStart === nextWallet.periodStart
+      const spent = (Number(nextWallet.internalSpentUsd) || 0) + (sameCycle ? (actualCost ?? 0) : 0)
+      nextWallet = {
+        ...nextWallet,
+        inFlight: null,
+        internalSpentUsd: spent,
+        needsReconciliation: actualCost === undefined,
+      }
+      tx.update(walletRef, {
+        inFlight: null,
+        internalSpentUsd: spent,
+        needsReconciliation: actualCost === undefined,
+      })
     }
+    tx.update(reservationRef, {
+      status: 'completed',
+      ...(actualCost === undefined ? {} : { actualCostUsd: actualCost }),
+      totalTokens: tokens,
+      completedAt: new Date().toISOString(),
+    })
+    return { ...usageView(next, sub.data(), nextWallet, policy.freeDailyQueries), allowed: true }
   })
 }
 
 export async function getDailyAiUsage(userId: string): Promise<AiUsageResult> {
-  const firestore = getAdminFirestore()
-  const snap = await firestore.collection('aiUsage').doc(`${userId}_${dateKey()}`).get()
-  const used = snap.exists ? Number(snap.data()?.count || 0) : 0
-  const totalTokens = snap.exists ? Number(snap.data()?.totalTokens || 0) : 0
-  const totalCost = snap.exists ? Number(snap.data()?.totalCost || 0) : 0
-  return {
-    limit: isDev ? Number.MAX_SAFE_INTEGER : AI_DAILY_LIMIT,
-    used,
-    remaining: isDev ? Number.MAX_SAFE_INTEGER : Math.max(AI_DAILY_LIMIT - used, 0),
-    totalTokens,
-    totalCost,
-    isUnlimited: isDev,
-  }
+  const policy = await getAiBillingPolicy()
+  const db = getAdminFirestore()
+  const [daily, sub, wallet] = await Promise.all([
+    db.doc(`aiUsage/${userId}_${dateKey()}`).get(),
+    db.doc(`subscriptions/${userId}`).get(),
+    db.doc(`aiCreditWallets/${userId}`).get(),
+  ])
+  return usageView(daily.data(), sub.data(), wallet.data(), policy.freeDailyQueries)
 }
 
 export async function resolveFarmPermissions({

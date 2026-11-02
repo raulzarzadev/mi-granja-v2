@@ -152,7 +152,7 @@ it('prepara todas las propuestas del lote sin ejecutar y advierte antes de confi
   const response = await runOperationalChat(params)
   expect(createAiProposal).toHaveBeenCalledTimes(2)
   expect(response.proposals).toHaveLength(2)
-  expect(response.parsed.message).toContain('Revisa con cuidado')
+  expect(response.parsed.message).not.toContain('peligrosos')
   expect(response.parsed.message).toContain('Todavía no se ha guardado')
 })
 it('no ofrece un lote incompleto si una acción no se puede preparar', async () => {

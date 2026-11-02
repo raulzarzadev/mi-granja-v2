@@ -5,6 +5,7 @@ export const BILLING_CONFIG_DOCUMENT = 'settings/billing'
 interface StoredPlanTier {
   id?: unknown
   label?: unknown
+  minAnimals?: unknown
   maxAnimals?: unknown
   priceUsd?: unknown
   stripePriceId?: unknown
@@ -40,25 +41,34 @@ export function mergeBillingTiers(value: unknown): PlanTier[] {
         : typeof stored?.priceUsd === 'number' || stored?.priceUsd === null
           ? stored.priceUsd
           : defaultTier.priceUsd
+    const isVisible =
+      typeof stored?.isVisible === 'boolean' ? stored.isVisible : defaultTier.isVisible
+    const rangeStart = isVisible
+      ? minAnimals
+      : typeof stored?.minAnimals === 'number' &&
+          Number.isInteger(stored.minAnimals) &&
+          stored.minAnimals >= 0
+        ? stored.minAnimals
+        : defaultTier.minAnimals
     const tier: PlanTier = {
       ...defaultTier,
       label:
         typeof stored?.label === 'string' && stored.label.trim()
           ? stored.label.trim()
           : defaultTier.label,
-      minAnimals,
+      minAnimals: rangeStart,
       maxAnimals,
       priceUsd,
-      isVisible: typeof stored?.isVisible === 'boolean' ? stored.isVisible : defaultTier.isVisible,
+      isVisible,
       stripePriceId:
         typeof stored?.stripePriceId === 'string' && stored.stripePriceId.trim()
           ? stored.stripePriceId.trim()
           : defaultTier.stripePriceEnv
             ? (process.env[defaultTier.stripePriceEnv] ?? null)
             : null,
-      description: tierDescription(minAnimals, maxAnimals),
+      description: tierDescription(rangeStart, maxAnimals),
     }
-    if (maxAnimals !== null) minAnimals = maxAnimals + 1
+    if (isVisible && maxAnimals !== null) minAnimals = maxAnimals + 1
     return tier
   })
 }
@@ -89,9 +99,20 @@ export function validateBillingTiers(
       return { error: `El nombre de ${defaultTier.label} debe tener entre 1 y 40 caracteres` }
     }
 
+    const isVisible = typeof input.isVisible === 'boolean' ? input.isVisible : defaultTier.isVisible
+    const rangeStart = isVisible
+      ? minAnimals
+      : typeof input.minAnimals === 'number' &&
+          Number.isInteger(input.minAnimals) &&
+          input.minAnimals >= 0
+        ? input.minAnimals
+        : defaultTier.minAnimals
     const isLast = index === PLAN_TIERS.length - 1
     const maxAnimals = isLast ? null : Number(input.maxAnimals)
-    if (maxAnimals !== null && (!Number.isInteger(maxAnimals) || maxAnimals < minAnimals)) {
+    if (
+      maxAnimals !== null &&
+      (!Number.isInteger(maxAnimals) || maxAnimals < (isVisible ? minAnimals : 0))
+    ) {
       return {
         error: `El limite de ${label} debe ser un entero mayor o igual a ${minAnimals}`,
       }
@@ -118,14 +139,14 @@ export function validateBillingTiers(
     tiers.push({
       ...defaultTier,
       label,
-      minAnimals,
+      minAnimals: rangeStart,
       maxAnimals,
       priceUsd,
-      isVisible: typeof input.isVisible === 'boolean' ? input.isVisible : defaultTier.isVisible,
+      isVisible,
       stripePriceId,
-      description: tierDescription(minAnimals, maxAnimals),
+      description: tierDescription(rangeStart, maxAnimals),
     })
-    if (maxAnimals !== null) minAnimals = maxAnimals + 1
+    if (isVisible && maxAnimals !== null) minAnimals = maxAnimals + 1
   }
 
   return { tiers }
@@ -137,9 +158,10 @@ export async function getBillingTiers(firestore: FirebaseFirestore.Firestore): P
 }
 
 export function serializeBillingTiers(tiers: PlanTier[]) {
-  return tiers.map(({ id, label, maxAnimals, priceUsd, stripePriceId, isVisible }) => ({
+  return tiers.map(({ id, label, minAnimals, maxAnimals, priceUsd, stripePriceId, isVisible }) => ({
     id,
     label,
+    minAnimals,
     maxAnimals,
     priceUsd,
     stripePriceId: stripePriceId ?? null,

@@ -8,6 +8,7 @@ import type { RootState } from '@/features/store'
 import { type OperationAction, operationActionSchema } from '@/lib/ai/operations'
 import { ProposalRequestError, requestProposal } from '@/lib/ai/proposal-client'
 import type { AiProposalView } from '@/lib/ai/proposal-types'
+import { animalDeathReasonLabels } from '@/lib/animal-discharge'
 import {
   animals_genders_labels,
   animals_stages_labels,
@@ -23,6 +24,7 @@ const statusLabels: Record<AiProposalView['status'], string> = {
   conflict: 'Datos cambiaron',
 }
 const fieldLabels: Record<string, string> = {
+  reason: 'Motivo de la muerte',
   animalNumber: 'ID',
   name: 'Nombre',
   type: 'Especie',
@@ -78,13 +80,15 @@ const enumLabels: Record<string, string> = {
   vaccine: 'Vacuna',
   treatment: 'Tratamiento',
   surgery: 'Cirugía',
-  injury: 'Lesión',
   illness: 'Enfermedad',
   reproductive: 'Reproductiva',
   nutrition: 'Nutrición',
   other: 'Otro',
+  ...animalDeathReasonLabels,
 }
 const actionDescriptions: Record<OperationAction['type'], string> = {
+  register_death:
+    'Registrarás la muerte de los animales seleccionados. Pasarán a Muerto y conservarán su ficha e historial. Revisa cuidadosamente cada animal, la fecha y el motivo antes de confirmar.',
   create_animal: 'Darás de alta un animal nuevo y se guardará su registro de ingreso a la granja.',
   create_breeding: 'Crearás un empadre con el macho y las hembras seleccionados.',
   confirm_pregnancy:
@@ -117,9 +121,16 @@ export function ActionSummary({ proposal }: { proposal: AiProposalView }) {
         )
       if (/Date$|^date$/.test(key) && /^\d{4}-\d{2}-\d{2}$/.test(value))
         return value.split('-').reverse().join('/')
-      return ['type', 'gender', 'stage', 'destination', 'session', 'category', 'status'].includes(
-        key,
-      )
+      return [
+        'type',
+        'gender',
+        'stage',
+        'destination',
+        'session',
+        'category',
+        'status',
+        'reason',
+      ].includes(key)
         ? enumLabels[value] || value
         : value
     }

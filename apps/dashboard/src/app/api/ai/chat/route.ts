@@ -2,11 +2,15 @@ import { ANALYTICS_EVENTS } from '@mi-granja/shared'
 import { NextRequest, NextResponse } from 'next/server'
 import { runOperationalChat } from '@/lib/ai/chat-service'
 import {
+  AiQuotaError,
+  aiQuotaMessage,
   consumeDailyAiUse,
   forbidden,
   getDailyAiUsage,
   hasPermission,
+  releaseAiUse,
   requireAiAuth,
+  reserveAiUse,
   resolveFarmPermissions,
   totalAiTokens,
 } from '@/lib/ai/server'
@@ -17,6 +21,7 @@ const QUERY_TYPE = 'chat'
 
 export async function POST(request: NextRequest) {
   let userId: string | null = null
+  let reservationId: string | undefined
   try {
     const auth = await requireAiAuth(request)
     if (auth instanceof NextResponse) return auth
@@ -84,7 +89,7 @@ export async function POST(request: NextRequest) {
         farm_id: farmId,
       })
       return NextResponse.json(
-        { error: 'Ya usaste tus 3 consultas de IA hoy', usage: currentUsage },
+        { error: aiQuotaMessage(currentUsage), usage: currentUsage },
         { status: 429 },
       )
     }
@@ -99,6 +104,7 @@ export async function POST(request: NextRequest) {
       farm_id: farmId,
       history_length: history.length,
     })
+    reservationId = await reserveAiUse(auth.uid)
     const startedAt = Date.now()
     const ai = await runOperationalChat({
       message,
@@ -121,15 +127,17 @@ export async function POST(request: NextRequest) {
       response_kind: ai.parsed.kind,
     })
 
-    const usage = await consumeDailyAiUse(auth.uid, ai.usage, {
-      provider: ai.provider,
-      model: ai.model,
-    })
+    const usage = await consumeDailyAiUse(
+      auth.uid,
+      ai.usage,
+      {
+        provider: ai.provider,
+        model: ai.model,
+      },
+      reservationId,
+    )
     if (usage.allowed === false) {
-      return NextResponse.json(
-        { error: 'Ya usaste tus 3 consultas de IA hoy', usage },
-        { status: 429 },
-      )
+      return NextResponse.json({ error: aiQuotaMessage(usage), usage }, { status: 429 })
     }
 
     return NextResponse.json({
@@ -141,6 +149,9 @@ export async function POST(request: NextRequest) {
       usage,
     })
   } catch (error) {
+    if (reservationId && userId) await releaseAiUse(userId, reservationId).catch(() => {})
+    if (error instanceof AiQuotaError)
+      return NextResponse.json({ error: error.message, usage: error.usage }, { status: 429 })
     console.error('AI chat error:', error)
     if (userId) {
       await captureServerEvent(userId, ANALYTICS_EVENTS.ai_query_failed, { query_type: QUERY_TYPE })

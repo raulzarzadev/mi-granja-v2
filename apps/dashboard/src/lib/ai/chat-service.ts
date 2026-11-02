@@ -1,5 +1,6 @@
 import type { FarmPermission } from '@/types/farm'
 import type { AiContextAccess } from './actions'
+import { actualProviderCostUsd } from './credits'
 import { type AiKnowledgeBundle, buildAiKnowledge } from './knowledge'
 import { callAiProvider } from './openrouter'
 import type { AiProposalView } from './proposal-types'
@@ -103,6 +104,7 @@ export async function runOperationalChat(params: {
   const seen = new Set<string>()
   let usedTokens = 0
   let totalCost = 0
+  let completeCost = true
   for (let step = 0; step < 4; step++) {
     const result = await callAiProvider({
       message: params.message,
@@ -119,8 +121,10 @@ export async function runOperationalChat(params: {
         ? (result.usage as Record<string, unknown>)
         : {}
     usedTokens += Number(rawUsage.total_tokens ?? rawUsage.totalTokens ?? 0) || 0
-    totalCost += Number(rawUsage.cost ?? rawUsage.total_cost ?? rawUsage.totalCost ?? 0) || 0
-    const usage = { total_tokens: usedTokens, cost: totalCost }
+    const actualCost = actualProviderCostUsd(rawUsage)
+    if (actualCost === undefined) completeCost = false
+    else totalCost += actualCost
+    const usage = { total_tokens: usedTokens, ...(completeCost ? { cost: totalCost } : {}) }
     if (result.parsed.kind === 'read_document') {
       const request = result.parsed.documentRequest
       const path = topicPath[request.topic]
@@ -178,7 +182,7 @@ export async function runOperationalChat(params: {
         proposals = prepared
         parsed = {
           ...parsed,
-          message: `Preparé ${prepared.length} movimientos para revisar. Los movimientos en masa pueden ser peligrosos si los datos son incorrectos: afectan muchos datos de tu granja. Revisa con cuidado cada animal, fecha e importe antes de confirmar. Todavía no se ha guardado ningún movimiento.`,
+          message: `Preparé ${prepared.length} movimientos para revisar. Todavía no se ha guardado ningún movimiento.`,
         }
       } catch (error) {
         if (error instanceof AiProposalError && error.status < 500)

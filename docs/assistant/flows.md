@@ -97,6 +97,7 @@ Contrato de flujo: `OPERATION_VERSION = 1`. El inventario verificable vive en [m
 | `register_birth` | Registrar parto | Madre, fecha/hora y lista de crías |
 | `register_weight` | Registrar peso | Animal, fecha, kg y notas |
 | `register_milk` | Registrar leche | Animal, fecha, litros, turno y notas |
+| `register_death` | Registrar muerte de 1–50 animales activos | Animales, fecha efectiva, motivo obligatorio y notas opcionales |
 | `register_health` | Registrar atención de salud | Animales, fecha, categoría, descripción y campos opcionales |
 | `create_sale` | Crear venta completada | Animales, fecha, precio por kg, pesos y comprador |
 
@@ -140,3 +141,17 @@ La recuperación de propuestas se muestra solo ante un error de carga de revisi�
 Decisión vigente de UI para lotes: se retira la revisión y confirmación conjunta descrita en el primer diseño. Cada movimiento muestra directamente `ProposalCard` compacto con «Por revisar»; cada uno requiere su propia confirmación en el flujo individual existente. No hay botón de revisión global ni desplegable que oculte el acceso individual.
 
 En escritorio, Asistente IA tiene un acceso independiente debajo de Crear nuevo en el lateral; se retira del menú desplegable de creación de escritorio. En móvil conserva el acceso desde el (+).
+
+## Registrar muerte — habilitado, versión 2
+
+- Entrada: `animalRefs` (1–50 referencias exactas), `date` (YYYY-MM-DD, zona de granja), `reason` del catálogo `animalDeathReasonLabels`, notas opcionales. Preguntar si falta fecha/motivo; no inventar causas. Una fecha/motivo comunes por acción; diferencias generan propuestas distintas.
+- Flujo manual: `ModalAnimalDischarge` / muerte en `ModalNewRecord`; mismo servicio `createRecordMovementService.death`.
+- Revisión: `OperationFields` con selector múltiple, fecha y motivo; `ProposalCard` identifica la muerte, lista animales y advierte del cambio a Muerto y conservación de historial. Para varios animales conserva la advertencia masiva.
+- Permisos: `animals:read` y `animals:update`; referencias limitadas a la granja actual. Solo animales activos y fecha no futura. Revalidación dentro de transacción; el grupo completo se rechaza ante un miembro inválido, sin éxitos parciales en esa acción.
+- Efectos: `status=muerto`, `statusAt`, `statusNotes`, `deathInfo` y movimiento `eventType=muerte` con motivo/notas. Historial y comprobante persistidos, reintentos idempotentes. No se eliminan fichas ni se cierran empadres/gestaciones implícitamente. El asistente aún no habilita deshacer este movimiento.
+
+## Admisión y consumo de IA
+
+Chat y lectura de aretes comparten la cuota por usuario. Cada petición debe reservar antes de llamar al modelo y liquidar con el mismo ID, o marcar su error. Gratis: tres consultas diarias iniciales, editables por administrador, también en desarrollo. Plan con regalo: balance del ciclo pagado y sus límites vigentes; créditos agotados no habilitan llamadas ilimitadas ni otras tres gratis durante ese ciclo. Se reanudan con el siguiente pago mensual acreditado.
+
+Los grants de `aiCreditWallets/{uid}/grants` son idempotentes por suscripción/periodo; `aiUsageReservations` conserva estado y costo de cada solicitud. El webhook no habilita escrituras del asistente: las propuestas siguen requiriendo confirmación independiente. Leer/confirmar una propuesta persistida no consume una consulta nueva al modelo. El panel Admin → IA cambia la política futura; no abona por pulsar Guardar ni por cambiar el plan de un usuario manualmente.

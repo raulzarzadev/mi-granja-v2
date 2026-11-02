@@ -16,6 +16,10 @@ jest.mock('@/lib/ai/server', () => ({
   resolveFarmPermissions: jest.fn(),
   getDailyAiUsage: jest.fn(),
   consumeDailyAiUse: jest.fn(),
+  reserveAiUse: jest.fn().mockResolvedValue('reservation'),
+  releaseAiUse: jest.fn().mockResolvedValue(undefined),
+  aiQuotaMessage: () => 'Cuota agotada',
+  AiQuotaError: class extends Error {},
   totalAiTokens: () => 0,
   hasPermission: (permissions: any[], module: string, action: string) =>
     permissions.some((p) => p.module === module && p.actions.includes(action)),

@@ -36,16 +36,18 @@ interface AiUsageStatsResponse {
   }>
 }
 
-const PERIODS = [7, 30, 90] as const
+const PERIODS = [1, 7, 30, 90] as const
 const number = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 1 })
 const money = new Intl.NumberFormat('es-MX', {
   style: 'currency',
   currency: 'USD',
-  maximumFractionDigits: 4,
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 6,
 })
 
 export default function AiUsageStats() {
   const [days, setDays] = useState(30)
+  const [search, setSearch] = useState('')
   const [data, setData] = useState<AiUsageStatsResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -87,6 +89,20 @@ export default function AiUsageStats() {
     [data?.daily],
   )
 
+  const visibleUsers = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase('es-MX')
+    return (data?.users ?? [])
+      .filter(
+        (user) => !query || `${user.name} ${user.email}`.toLocaleLowerCase('es-MX').includes(query),
+      )
+      .sort(
+        (a, b) =>
+          b.reportedCost - a.reportedCost || b.totalTokens - a.totalTokens || b.queries - a.queries,
+      )
+  }, [data?.users, search])
+  const reportedUsd = (cost: number) =>
+    cost > 0 ? `${money.format(cost)} USD` : 'Sin costo reportado'
+
   return (
     <section
       aria-labelledby="ai-usage-title"
@@ -95,11 +111,11 @@ export default function AiUsageStats() {
       <div className="flex flex-col gap-3 border-b border-gray-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 id="ai-usage-title" className="text-lg font-bold text-gray-900">
-            Uso del asistente
+            Consumo de IA por cliente
           </h2>
           <p className="mt-1 text-sm text-gray-600">
-            Consultas exitosas realizadas por los usuarios. Los datos de proveedor y modelo se
-            registran desde esta actualización.
+            Tokens y costo en USD reportados por el proveedor para las consultas exitosas del
+            periodo.
           </p>
         </div>
         <div
@@ -116,7 +132,7 @@ export default function AiUsageStats() {
                 days === period ? 'bg-emerald-600 text-white' : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
-              {period} días
+              {period === 1 ? 'Hoy' : `${period} días`}
             </button>
           ))}
         </div>
@@ -150,7 +166,7 @@ export default function AiUsageStats() {
               value={number.format(data.totals.queriesPerUser)}
             />
             <Metric label="Tokens" value={number.format(data.totals.totalTokens)} />
-            <Metric label="Costo reportado" value={money.format(data.totals.reportedCost)} />
+            <Metric label="Costo reportado (USD)" value={reportedUsd(data.totals.reportedCost)} />
           </dl>
 
           <div className="grid gap-6 border-b border-gray-200 py-5 lg:grid-cols-[minmax(0,2fr)_minmax(15rem,1fr)]">
@@ -214,10 +230,30 @@ export default function AiUsageStats() {
           </div>
 
           <div className="pt-5">
-            <h3 className="text-sm font-bold text-gray-900">Uso por usuario</h3>
+            <h3 className="text-sm font-bold text-gray-900">Consumo por cliente</h3>
             <p className="mt-1 text-xs text-gray-500">
-              Ordenado por número de consultas en el periodo.
+              Ordenado por costo reportado y tokens consumidos. Los costos pueden ser parciales si
+              el proveedor no los informa; no equivalen necesariamente al cobro final de
+              OpenAI/BYOK.
             </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <input
+                type="search"
+                aria-label="Buscar cliente por nombre o correo"
+                placeholder="Buscar cliente por nombre o correo…"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="min-h-11 min-w-0 flex-1 rounded-lg border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+              />
+              <button
+                type="button"
+                onClick={() => void loadStatistics()}
+                disabled={isLoading}
+                className="min-h-11 rounded-lg px-3 text-sm font-medium text-green-700 hover:bg-green-50 disabled:opacity-50"
+              >
+                Actualizar
+              </button>
+            </div>
             <div className="mt-3 overflow-x-auto rounded-lg border border-gray-200">
               <table className="w-full min-w-[720px] border-collapse text-left text-sm">
                 <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-600">
@@ -232,7 +268,7 @@ export default function AiUsageStats() {
                       Tokens
                     </th>
                     <th scope="col" className="px-3 py-2.5 text-right font-semibold">
-                      Costo reportado
+                      Costo (USD)
                     </th>
                     <th scope="col" className="px-3 py-2.5 font-semibold">
                       Último uso
@@ -240,7 +276,14 @@ export default function AiUsageStats() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {data.users.map((user) => (
+                  {!visibleUsers.length && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-5 text-center text-gray-500">
+                        No hay clientes que coincidan con la búsqueda.
+                      </td>
+                    </tr>
+                  )}
+                  {visibleUsers.map((user) => (
                     <tr key={user.userId} className="hover:bg-gray-50">
                       <td className="px-3 py-2.5">
                         <p className="font-semibold text-gray-900">{user.name}</p>
@@ -255,7 +298,7 @@ export default function AiUsageStats() {
                         {number.format(user.totalTokens)}
                       </td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-gray-600">
-                        {money.format(user.reportedCost)}
+                        {reportedUsd(user.reportedCost)}
                       </td>
                       <td className="whitespace-nowrap px-3 py-2.5 text-gray-600">
                         {formatDate(user.lastUsedAt)}

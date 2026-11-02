@@ -147,3 +147,26 @@ it('conserva todos los datos de varias altas en una sola respuesta', () => {
   expect(parsed.kind).toBe('proposed_actions')
   if (parsed.kind === 'proposed_actions') expect(parsed.actions).toEqual(actions)
 })
+
+it('admite muerte de varios animales y exige motivo, fecha y un máximo de 50', () => {
+  const action = {
+    type: 'register_death',
+    summary: 'Registrar muerte',
+    payload: { animalRefs: ['A5', 'A6'], date: '2026-11-01', reason: 'disease' },
+  }
+  expect(
+    parseOperationalModelResponse({ kind: 'proposed_action', message: 'Revisar', action }),
+  ).toMatchObject({ action })
+  for (const payload of [
+    { ...action.payload, reason: undefined },
+    { ...action.payload, date: undefined },
+    { ...action.payload, animalRefs: Array.from({ length: 51 }, (_, i) => `A${i}`) },
+  ])
+    expect(() =>
+      parseOperationalModelResponse({
+        kind: 'proposed_action',
+        message: 'Revisar',
+        action: { ...action, payload },
+      }),
+    ).toThrow()
+})

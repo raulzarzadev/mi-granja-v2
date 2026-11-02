@@ -72,6 +72,8 @@ export const animalListAiResponseSchema = z.object({
 export type AnimalListAiResponse = z.infer<typeof animalListAiResponseSchema>
 
 export interface AiUsageResult {
+  mode?: 'daily' | 'credits'
+  creditBalanceUsd?: number
   limit: number
   used: number
   remaining: number

@@ -24,6 +24,9 @@ import { parseProposalView } from '@/lib/ai/proposal-view'
 import { auth } from '@/lib/firebase'
 
 interface AiUsageView {
+  limit?: number
+  mode?: 'daily' | 'credits'
+  creditBalanceUsd?: number
   used: number
   remaining: number
   totalTokens?: number
@@ -48,7 +51,7 @@ async function aiFetch(body: unknown) {
       typeof data.error === 'string'
         ? data.error
         : data.message || 'No pude procesar tu mensaje. Intenta con más datos.'
-    throw new Error(message || `Error ${res.status}`)
+    throw Object.assign(new Error(message || `Error ${res.status}`), { usage: data.usage })
   }
   return data
 }
@@ -401,6 +404,8 @@ function ScopedAiAssistant({
         ...(proposals.length ? { proposals } : {}),
       })
     } catch (error) {
+      if (error && typeof error === 'object' && 'usage' in error && error.usage)
+        setUsage(error.usage as AiUsageView)
       append(conversationId, {
         role: 'assistant',
         text: error instanceof Error ? error.message : 'No pude procesar tu mensaje',
@@ -428,7 +433,11 @@ function ScopedAiAssistant({
           Asistente IA
           {usage && (
             <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold">
-              {usage.isUnlimited ? usage.used : `${usage.remaining}/3`}
+              {usage.isUnlimited
+                ? usage.used
+                : usage.mode === 'credits'
+                  ? `$${(usage.creditBalanceUsd ?? 0).toFixed(2)} IA`
+                  : `${usage.remaining}/${usage.limit ?? 3}`}
             </span>
           )}
         </Button>
@@ -454,7 +463,11 @@ function ScopedAiAssistant({
             <div className="flex shrink-0 items-center justify-between gap-2">
               {usage && (
                 <p className="ml-auto shrink-0 text-xs text-slate-500">
-                  {usage.isUnlimited ? `${usage.used} hoy` : `${usage.remaining} disponibles`}
+                  {usage.mode === 'credits'
+                    ? `Créditos IA: USD ${(usage.creditBalanceUsd ?? 0).toFixed(2)}`
+                    : usage.isUnlimited
+                      ? `${usage.used} hoy`
+                      : `${usage.remaining} consultas disponibles hoy`}
                 </p>
               )}
               {showHistory && (
@@ -587,7 +600,14 @@ function ScopedAiAssistant({
                       <span className="sr-only">{item.role === 'user' ? 'Tú' : 'Asistente'}: </span>
                       <div className="whitespace-pre-wrap">
                         <MessageText
-                          text={item.text}
+                          text={
+                            item.proposals?.length
+                              ? item.text.replace(
+                                  / Los movimientos en masa pueden ser peligrosos si los datos son incorrectos: afectan muchos datos de tu granja\. Revisa con cuidado cada animal, fecha e importe antes de confirmar\./g,
+                                  '',
+                                )
+                              : item.text
+                          }
                           onNavigate={navigate}
                           animalIndex={animalIndex}
                           breedingIndex={breedingIndex}

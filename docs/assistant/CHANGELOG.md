@@ -109,3 +109,23 @@ Al cerrar la edición de una propuesta se vuelve a su revisión, descartando cam
 En escritorio, Asistente IA tiene un acceso independiente debajo de Crear nuevo en el lateral; se retira del menú desplegable de creación de escritorio. En móvil conserva el acceso desde el (+).
 
 Compactado el chat: menos separación entre mensajes, padding reducido y tarjetas con resumen/fecha junto al estado y acceso al registro, evitando huecos verticales.
+
+La advertencia de riesgo de lotes se muestra una sola vez dentro de su tarjeta. El mensaje previo solo indica cuántos movimientos se prepararon y que aún no se guardaron. También se compacta la frase duplicada del historial existente al mostrarla.
+
+## 2026-11-02 — Registrar muerte individual o masiva
+
+Agrega `register_death` (1–50 animales, fecha, motivo y notas), revisión editable y efectos explícitos. Reutiliza el movimiento de muerte manual y transacción del ejecutor actual; valida actividad, permisos, fechas y referencias. No cierra gestaciones/empadres automáticamente. Catálogo/manifest suben a versión de flujo 2, invalidando borradores antiguos para nueva revisión y conservando históricos. Pruebas de equivalencia con servicio manual, actividad, fecha/motivo e idempotencia.
+
+## 2026-11-02 — Consumo por cliente en USD
+
+Mejora el panel existente de IA con costo USD explícito (hasta seis decimales), filtro Hoy, búsqueda de clientes, actualización y orden por costo/tokens. Identifica importes no reportados y aclara el alcance de consultas exitosas y costos BYOK. Reutiliza el endpoint y sus permisos de administrador.
+
+## 2026-11-02 — Política de IA configurable y regalo tras pago
+
+Configura desde Admin las consultas diarias y el tier/importes del regalo. Defaults: 3/día gratis, Pro, USD 5 visibles / USD 1 interno por ciclo mensual pagado. Abono exclusivo por invoice.paid positivo, mensual y del tier configurado; idempotencia por ciclo y no acumulación. Reservas antes del proveedor, sin bypass de desarrollo, y contabilización BYOK con costo upstream. Saldo visible separado del presupuesto interno. Proveedores sin costo o errores inciertos bloquean crédito para conciliación. El cierre del presupuesto es posterior al costo real de cada respuesta, no un tope duro de tokens/factura. Pruebas de cuotas concurrentes, idempotencia, costo no informado, configuración y eventos de pago.
+
+Guardado de planes: mensajes de éxito/error trasladados al pie persistente junto a Guardar; mantiene valores ante rechazo de Stripe/validación, añade bloqueo de envíos duplicados y tiempo máximo de espera. Pruebas cubren feedback visible, preservación de cambios y confirmación del servidor.
+
+Al aumentar el máximo de un plan, el formulario eleva los máximos siguientes que quedarían por debajo del nuevo mínimo, manteniendo rangos válidos antes de guardar. Normaliza ceros iniciales al salir del campo.
+
+Planes archivados: no avanzan el contador de rangos activos en el formulario ni en la carga/validación del servidor. Sus límites históricos se conservan, los rangos activos se recalculan al reactivar y el mínimo archivado se persiste en configuración.

@@ -9,7 +9,7 @@ import {
 import { isAuthError, isAuthenticatedUserAdmin, verifyBillingAuth } from '@/lib/billing-auth'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 
-const ALLOWED_PERIODS = new Set([7, 30, 90])
+const ALLOWED_PERIODS = new Set([1, 7, 30, 90])
 
 async function loadUserProfiles(
   firestore: FirebaseFirestore.Firestore,

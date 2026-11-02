@@ -7,6 +7,7 @@ import AnimalSelector from '@/components/inputs/AnimalSelector'
 import InputIconSelect from '@/components/inputs/InputIconSelect'
 import type { RootState } from '@/features/store'
 import type { OperationAction } from '@/lib/ai/operations'
+import { animalDeathReasonLabels } from '@/lib/animal-discharge'
 import {
   animals_genders_labels,
   animals_stages_labels,
@@ -26,6 +27,7 @@ type Props = {
 }
 // A new executable operation must deliberately add a review editor too.
 const supportedEditors: Record<OperationAction['type'], true> = {
+  register_death: true,
   create_animal: true,
   create_breeding: true,
   confirm_pregnancy: true,
@@ -284,6 +286,13 @@ export default function OperationFields({ draft, onChange, disabled, farmId }: P
         <>
           {refs('animalRefs', 'Crías', true)}
           {select('destination', 'Destino', { engorda: 'Engorda', reproductor: 'Reproducción' })}
+          {common}
+        </>
+      )}
+      {draft.type === 'register_death' && (
+        <>
+          {refs('animalRefs', 'Animales que murieron', true)}
+          {select('reason', 'Motivo de la muerte', animalDeathReasonLabels)}
           {common}
         </>
       )}

@@ -49,3 +49,27 @@ describe('billing config', () => {
     expect(result.error).toMatch(/price_/i)
   })
 })
+
+it('ignora planes archivados al validar y cargar rangos de planes activos', () => {
+  const input = PLAN_TIERS.map((tier) => ({
+    ...tier,
+    isVisible: !['inicial', 'basico'].includes(tier.id),
+  }))
+  input[0].maxAnimals = 99
+  const result = validateBillingTiers(input)
+  expect(result.error).toBeUndefined()
+  expect(result.tiers?.find((tier) => tier.id === 'pro')).toMatchObject({
+    minAnimals: 100,
+    maxAnimals: 500,
+  })
+  expect(result.tiers?.find((tier) => tier.id === 'inicial')).toMatchObject({
+    minAnimals: 11,
+    maxAnimals: 50,
+    isVisible: false,
+  })
+  const loaded = mergeBillingTiers(result.tiers)
+  expect(loaded.find((tier) => tier.id === 'pro')).toMatchObject({
+    minAnimals: 100,
+    maxAnimals: 500,
+  })
+})

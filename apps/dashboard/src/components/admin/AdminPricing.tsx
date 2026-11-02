@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { auth } from '@/lib/firebase'
 import { PLAN_TIERS, type PlanTier, type PlanTierId } from '@/types/billing'
 
@@ -11,7 +11,9 @@ interface AdminPricingProps {
 function recalculateRanges(tiers: PlanTier[]): PlanTier[] {
   let minAnimals = 0
   return tiers.map((tier, index) => {
-    const maxAnimals = index === tiers.length - 1 ? null : tier.maxAnimals
+    if (!tier.isVisible) return tier
+    const maxAnimals =
+      index === tiers.length - 1 ? null : Math.max(minAnimals, Number(tier.maxAnimals) || 0)
     const description =
       maxAnimals === null
         ? `Mas de ${minAnimals - 1} animales — precio a convenir`
@@ -29,6 +31,7 @@ export default function AdminPricing({ onTiersChange }: AdminPricingProps) {
   const [savedTiers, setSavedTiers] = useState<PlanTier[]>(PLAN_TIERS)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const saveLock = useRef(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -69,6 +72,8 @@ export default function AdminPricing({ onTiersChange }: AdminPricingProps) {
   }
 
   async function handleSave() {
+    if (saveLock.current) return
+    saveLock.current = true
     setIsSaving(true)
     setError(null)
     setSuccess(null)
@@ -76,6 +81,7 @@ export default function AdminPricing({ onTiersChange }: AdminPricingProps) {
       const token = await auth.currentUser?.getIdToken()
       if (!token) throw new Error('La sesion de administrador no esta disponible')
       const response = await fetch('/api/admin/billing-config', {
+        signal: AbortSignal.timeout(20000),
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -83,17 +89,28 @@ export default function AdminPricing({ onTiersChange }: AdminPricingProps) {
         },
         body: JSON.stringify({ tiers }),
       })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'No se pudo guardar la configuracion')
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok)
+        throw new Error(data.error || 'No se pudo guardar la configuración. Intenta nuevamente.')
+      if (!Array.isArray(data.tiers))
+        throw new Error(
+          'El servidor no confirmó los planes guardados. Revisa la conexión e intenta nuevamente.',
+        )
       setTiers(data.tiers)
       setSavedTiers(data.tiers)
       onTiersChange?.(data.tiers)
       setSuccess('Planes, precios y limites actualizados correctamente.')
     } catch (saveError) {
       setError(
-        saveError instanceof Error ? saveError.message : 'No se pudo guardar la configuracion',
+        saveError instanceof Error &&
+          (saveError.name === 'TimeoutError' || saveError.name === 'AbortError')
+          ? 'El guardado tardó demasiado. Tus cambios siguen aquí; revisa tu conexión e inténtalo de nuevo.'
+          : saveError instanceof Error
+            ? saveError.message
+            : 'No se pudo guardar la configuración.',
       )
     } finally {
+      saveLock.current = false
       setIsSaving(false)
     }
   }
@@ -131,21 +148,6 @@ export default function AdminPricing({ onTiersChange }: AdminPricingProps) {
         </p>
       </div>
 
-      {error && (
-        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-          <p className="text-sm font-semibold text-red-800">No se pudieron guardar los cambios</p>
-          <p className="mt-0.5 text-sm text-red-700">{error}</p>
-        </div>
-      )}
-      {success && (
-        <p
-          role="status"
-          className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
-        >
-          {success}
-        </p>
-      )}
-
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {tiers.map((tier, index) => {
           const isFree = tier.id === 'free'
@@ -179,7 +181,11 @@ export default function AdminPricing({ onTiersChange }: AdminPricingProps) {
                 </label>
               </div>
 
-              <p className="mb-4 text-xs text-gray-500">Desde {tier.minAnimals} animales</p>
+              <p className="mb-4 text-xs text-gray-500">
+                {tier.isVisible
+                  ? `Desde ${tier.minAnimals} animales`
+                  : 'Archivado · no ocupa un rango de animales'}
+              </p>
 
               <div className="space-y-4">
                 <div>
@@ -211,8 +217,12 @@ export default function AdminPricing({ onTiersChange }: AdminPricingProps) {
                       type="number"
                       min={tier.minAnimals}
                       step="1"
-                      disabled={isLast}
+                      disabled={isLast || !tier.isVisible}
                       value={tier.maxAnimals ?? ''}
+                      onBlur={(event) => {
+                        event.currentTarget.value =
+                          tier.maxAnimals === null ? '' : String(tier.maxAnimals)
+                      }}
                       placeholder={isLast ? 'Sin límite' : undefined}
                       onChange={(event) =>
                         updateTier(tier.id, { maxAnimals: Number(event.target.value) })
@@ -277,27 +287,44 @@ export default function AdminPricing({ onTiersChange }: AdminPricingProps) {
         })}
       </div>
 
-      <div className="sticky bottom-3 flex flex-col-reverse gap-2 rounded-xl border border-gray-200 bg-white/95 p-3 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-end">
-        <button
-          type="button"
-          disabled={isSaving}
-          onClick={() => {
-            setTiers(savedTiers)
-            setError(null)
-            setSuccess(null)
-          }}
-          className="min-h-11 rounded-lg border border-gray-300 px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 disabled:opacity-60"
-        >
-          Descartar cambios
-        </button>
-        <button
-          type="button"
-          disabled={isSaving}
-          onClick={handleSave}
-          className="min-h-11 rounded-lg bg-green-700 px-5 text-sm font-semibold text-white hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
-        >
-          {isSaving ? 'Guardando…' : 'Guardar planes y precios'}
-        </button>
+      <div className="sticky bottom-3 space-y-3 rounded-xl border border-gray-200 bg-white/95 p-3 shadow-lg backdrop-blur">
+        {error && (
+          <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+            <p className="text-sm font-semibold text-red-800">No se pudieron guardar los cambios</p>
+            <p className="mt-0.5 text-sm text-red-700">{error}</p>
+          </div>
+        )}
+        {success && (
+          <p
+            role="status"
+            className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
+          >
+            {success}
+          </p>
+        )}
+
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
+          <button
+            type="button"
+            disabled={isSaving}
+            onClick={() => {
+              setTiers(savedTiers)
+              setError(null)
+              setSuccess(null)
+            }}
+            className="min-h-11 rounded-lg border border-gray-300 px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 disabled:opacity-60"
+          >
+            Descartar cambios
+          </button>
+          <button
+            type="button"
+            disabled={isSaving}
+            onClick={handleSave}
+            className="min-h-11 rounded-lg bg-green-700 px-5 text-sm font-semibold text-white hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
+          >
+            {isSaving ? 'Guardando…' : 'Guardar planes y precios'}
+          </button>
+        </div>
       </div>
     </section>
   )

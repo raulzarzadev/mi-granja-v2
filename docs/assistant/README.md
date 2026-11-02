@@ -30,10 +30,10 @@ Esta carpeta es la entrada única para el diseño del asistente. Los tipos, vali
 | Conocimiento | `buildAiKnowledge` publica documentos por tema, instante, fuentes, permisos, cobertura y cursores; vuelve a leer Firestore en cada consulta | Lee las fuentes completas antes de paginar la respuesta; `read_document` permite hasta cuatro pasos de recuperación controlada; no hay búsqueda vectorial ni archivos arbitrarios |
 | Historial real | Integra `animals.records`, `animalRecords` y comprobantes `recordMovements`, deduplica por ID e interpreta reversiones | Una fuente que falle hace fallar la consulta; no se presenta como resultado vacío |
 | Fechas | Días de negocio calculados con zona efectiva: configuración de granja, zona válida del navegador o fallback UTC | Revisar con usuarios la zona de cada granja y probar cambios de día; UTC es un fallback explícito |
-| Catálogo | Diez operaciones versionadas en `lib/ai/operations.ts`; catálogo visible filtrado por permisos | Cada nueva acción exige esquema, servicio, documentación y pruebas; no puede agregarse solo al prompt |
+| Catálogo | Once operaciones versionadas en `lib/ai/operations.ts`; catálogo visible filtrado por permisos | Cada nueva acción exige esquema, servicio, documentación y pruebas; no puede agregarse solo al prompt |
 | Propuestas | `aiActionProposals` en servidor, usuario/granja/conversación, revisión, caducidad de 15 minutos y huella de estado | Las conversaciones locales no son la autoridad del estado de la propuesta |
 | Revisión | Tarjetas `ProposalCard` y editor tipado `OperationFields` en el modal compartido; resumen y efectos obtenidos del servidor | Esta entrega no monta todos los formularios originales dentro del chat. Reutiliza los servicios de dominio que también consume la UI; la equivalencia debe comprobarse por acción |
-| Ejecución | Revalida permisos, revisión, versión, datos actuales y comprobante dentro de la transacción; aplica servicios compartidos | Confirmar en emulador los casos de concurrencia, conectividad, reversión y permisos de las diez operaciones |
+| Ejecución | Revalida permisos, revisión, versión, datos actuales y comprobante dentro de la transacción; aplica servicios compartidos | Confirmar en emulador los casos de concurrencia, conectividad, reversión y permisos de las once operaciones |
 | Retiro del sistema anterior | `executeAiAction` y escrituras directas antiguas retirados; `confirm-action` recibe operaciones sobre propuestas nuevas | Las solicitudes antiguas reciben HTTP 410. `aiActionLogs` es histórico, no una fuente para ejecutar comandos |
 | Mantenimiento | `manifest.json`, `pnpm check:assistant-docs`, pruebas del guard y paso en `pnpm review` | Para revisar una rama completa usar `pnpm check:assistant-docs --base <referencia>`; no hay una integración alojada de CI nueva |
 
@@ -96,7 +96,7 @@ El cliente confirma el borrador del servidor. No debe enviar una acción arbitra
 | 5. Empadres | Revisar montas, preparar nuevas montas y confirmar gestaciones mediante flujos actuales | Compatibilidad y disponibilidad se revalidan; terminar un empadre y liberar al macho se explica en la revisión |
 | 6. Resto de movimientos | Partos, leche, peso, salud y ventas, uno a uno | Cada acción supera pruebas de equivalencia y trazabilidad antes de habilitarse |
 
-Las fases 1 a 6 tienen implementación inicial en código: el catálogo incluye altas, destetes, empadres, gestaciones, partos, peso, leche, salud y venta. La tabla anterior define el orden de validación y los criterios de salida, no afirma que todos los escenarios operativos estén ya comprobados en producción.
+Las fases 1 a 6 tienen implementación inicial en código: el catálogo incluye altas, destetes, empadres, gestaciones, partos, peso, leche, salud, venta y muerte. La tabla anterior define el orden de validación y los criterios de salida, no afirma que todos los escenarios operativos estén ya comprobados en producción.
 
 En el alta por asistente, esta versión cubre «Nuevo». «Parto» y crear una madre son operaciones relacionadas: habilitarlas tras definir qué constituye un parto real y la atomicidad de los documentos involucrados. No confundir vincular una madre con registrar un parto, ni prometer que cancelar la cría elimina una madre ya creada.
 
@@ -173,3 +173,23 @@ Recuperación de revisiones: el chat ofrece «Recuperar propuestas», una lectur
 La recuperación de propuestas se muestra solo ante un error de carga de revisión, no como acción habitual. El modal del asistente prioriza el área de conversación: altura disponible, cabecera compacta con uso diario, sin título de conversación repetido ni fila permanente de recuperación.
 
 En escritorio, Asistente IA tiene un acceso independiente debajo de Crear nuevo en el lateral; se retira del menú desplegable de creación de escritorio. En móvil conserva el acceso desde el (+).
+
+## Registrar muerte (flujo versión 2)
+
+`register_death` registra la muerte de 1 a 50 animales activos de la granja actual con fecha efectiva, motivo obligatorio (`birth_defect`, `disease`, `injury`, `attack`) y notas opcionales. Usa el mismo `createRecordMovementService.death` del flujo manual; requiere lectura y actualización de animales. El asistente pregunta por fecha/motivo si faltan y no infiere diagnósticos.
+
+La propuesta permite revisar y editar los animales, fecha y motivo antes de confirmar. La transacción aplica todos los animales de esa acción o ninguno, conserva historial y crea el movimiento de muerte y su comprobante idempotente. No elimina fichas, no cierra empadres ni retira gestaciones automáticamente. Un animal inexistente, ambiguo, vendido, muerto o inactivo y una fecha futura impiden preparar/confirmar el movimiento; se revalida al ejecutar. Si distintas muertes tienen fechas/motivos diferentes, se preparan acciones separadas.
+
+El catálogo sube a `OPERATION_VERSION=2`: las propuestas de versión 1 requieren preparar una nueva revisión; los comprobantes históricos permanecen guardados.
+
+## Cuotas y créditos configurables
+
+Admin → IA → Créditos de IA por plan administra `settings/aiBilling` mediante una API exclusiva de administrador. Valores iniciales: 3 consultas diarias, plan Pro, regalo mensual de USD 5 en créditos y presupuesto interno de USD 1. Los demás planes sin regalo elegible conservan la cuota diaria. La configuración del precio del plan permanece en Admin → Precios; la política de IA identifica el tier, sin fijar un precio en código.
+
+El regalo solo se acredita con `invoice.paid` de Stripe, factura positiva de creación/renovación mensual, línea correspondiente al tier configurado y periodo mensual. Suscripción de prueba, asignación manual, checkout sin pago, factura de importe cero o prorrateo no abonan. Se guarda un grant por suscripción/ciclo para evitar duplicados. Un ciclo nuevo sustituye el saldo anterior (sin acumulación); un webhook antiguo no reinicia el gasto. Los cambios de política aplican a futuros regalos y la cuota diaria vigente, no a saldos ya otorgados.
+
+`reserveAiUse` reserva la cuota gratuita antes de llamar al proveedor y permite solo una consulta pagada en curso por usuario, compartida entre chat y lectura de aretes. Se eliminó el bypass ilimitado de desarrollo. `consumeDailyAiUse` contabiliza una reserva una sola vez, guarda tokens/costo y actualiza créditos con la proporción guardada en el regalo. El cliente ve créditos; los importes internos no se incluyen en la respuesta del modo créditos.
+
+El costo BYOK combina lo reportado por OpenRouter con `cost_details.upstream_inference_cost` según [Usage Accounting](https://openrouter.ai/docs/cookbook/administration/usage-accounting). No considerar la tarifa cero de OpenRouter como inferencia gratuita. Si falta costo de una consulta pagada, o falla tras iniciar la llamada sin poder conciliarlo, el saldo queda bloqueado para revisión interna; no se permite gasto indefinido. No se reconstruyen cargos históricos sin metadatos.
+
+Límite técnico: el costo final se conoce al terminar la respuesta. Se bloquean nuevas consultas al agotar el presupuesto, pero una consulta en curso puede sobrepasar el saldo restante; se registra su costo completo. Esta entrega no implementa un tope duro de factura del proveedor ni una reserva basada en precios máximos de tokens. Las llamadas que el proveedor facture y falle antes de devolver metadatos requieren conciliación. Un proceso interrumpido puede dejar una reserva pendiente que requiere revisión; no se libera automáticamente sin comprobar el cargo.

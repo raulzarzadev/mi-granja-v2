@@ -1,6 +1,8 @@
 import { ANALYTICS_EVENTS } from '@mi-granja/shared'
 import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
+import { getAiBillingPolicy } from '@/lib/ai/billing-policy'
+import { grantPaidAiCredits } from '@/lib/ai/credits'
 import { captureServerEvent } from '@/lib/analytics/posthog-server'
 import { getBillingTiers } from '@/lib/billing-config'
 import { getAdminFirestore } from '@/lib/firebase-admin'
@@ -93,6 +95,42 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    if (event.type === 'invoice.paid') {
+      const invoice = event.data.object
+      const subscriptionId = objectId(invoice.parent?.subscription_details?.subscription ?? null)
+      if (
+        subscriptionId &&
+        invoice.status === 'paid' &&
+        invoice.amount_paid > 0 &&
+        ['subscription_create', 'subscription_cycle'].includes(invoice.billing_reason ?? '')
+      ) {
+        const subscription = await getStripe().subscriptions.retrieve(subscriptionId)
+        const tiers = await getBillingTiers(getAdminFirestore())
+        const policy = await getAiBillingPolicy()
+        const line = invoice.lines.data.find((item) => {
+          const tier = getTierByStripePriceId(
+            objectId(item.pricing?.price_details?.price ?? null),
+            tiers,
+          )
+          return tier?.id === policy.paidTierId && item.amount > 0
+        })
+        const recurring = subscription.items.data.find(
+          (item) => item.price.id === objectId(line?.pricing?.price_details?.price ?? null),
+        )?.price.recurring
+        const userId = subscription.metadata.userId
+        if (line && userId && recurring?.interval === 'month' && recurring.interval_count === 1) {
+          await grantPaidAiCredits({
+            userId,
+            tierId: policy.paidTierId,
+            subscriptionId,
+            invoiceId: invoice.id,
+            periodStart: line.period.start,
+            periodEnd: line.period.end,
+          })
+        }
+      }
+    }
+
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object
       const subscriptionId = objectId(session.subscription)

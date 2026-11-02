@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { auth } from '@/lib/firebase'
+import AdminAiBillingPolicy from './AdminAiBillingPolicy'
 import AiModelTester from './AiModelTester'
 import AiUsageStats from './AiUsageStats'
 
@@ -374,6 +375,7 @@ export default function AdminAiConfig({ farms }: { farms: Array<{ id: string; na
         </div>
       </section>
 
+      <AdminAiBillingPolicy />
       <AiModelTester farms={farms} />
 
       <AiUsageStats />

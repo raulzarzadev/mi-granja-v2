@@ -341,6 +341,15 @@ async function buildOperationPlan(
       )
       break
     }
+    case 'register_death':
+      await service.death(
+        id,
+        resolveMany(state, action.payload.animalRefs),
+        date(action.payload.date),
+        action.payload.reason,
+        action.payload.notes || '',
+      )
+      break
     case 'register_health':
       await service.health(id, resolveMany(state, action.payload.animalRefs), {
         ...action.payload,
@@ -492,6 +501,10 @@ function describe(action: OperationAction, execution: ExecutionPlan, state: Farm
       )
     }
   }
+  if (action.type === 'register_death')
+    labels.push(
+      'Los animales seleccionados pasarán a Muerto y dejarán de aparecer como activos. Se conservará su historial; este movimiento no elimina sus fichas ni cierra automáticamente empadres o gestaciones.',
+    )
   if (execution.registration)
     labels.push(
       `Animal: ${execution.registration.animalNumber}`,

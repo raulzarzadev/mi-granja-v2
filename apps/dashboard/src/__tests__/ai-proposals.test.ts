@@ -642,3 +642,125 @@ it('produce los mismos cambios y registro al destetar desde el servicio manual y
     expect.objectContaining(manualPlan!.record),
   )
 })
+
+it('registra varias muertes con el mismo plan del flujo manual, sin escribir antes de confirmar', async () => {
+  const initial = Object.fromEntries(
+    ['one', 'two'].map((id, i) => [
+      `animals/${id}`,
+      {
+        farmId: 'farm',
+        animalNumber: `A${i + 1}`,
+        gender: 'hembra',
+        type: 'oveja',
+        stage: 'reproductor',
+        status: 'activo',
+        records: [],
+      },
+    ]),
+  )
+  const store = database(initial)
+  let manualPlan: MovementPlan | undefined
+  const transport: MovementTransport = {
+    commitMovement: async (_context, _id, _ids, _extra, build) => {
+      manualPlan = build(new Map(Object.entries(initial)))
+      return manualPlan.record as never
+    },
+    commitCentralRecord: async () => {
+      throw new Error('unexpected')
+    },
+    undoMovement: async () => {
+      throw new Error('unexpected')
+    },
+  }
+  const manual = createRecordMovementService(
+    Object.entries(initial).map(([path, data]) => ({
+      ...data,
+      id: path.split('/')[1],
+    })) as Animal[],
+    { userId: 'user', farmId: 'farm', timeZone: 'UTC' },
+    transport,
+  )
+  const prepared = await createAiProposal({
+    ...scope,
+    conversationId: 'chat',
+    timeZone: 'UTC',
+    action: {
+      type: 'register_death',
+      summary: 'Registrar muerte de A1 y A2',
+      payload: {
+        animalRefs: ['A1', 'A2'],
+        date: '2026-11-01',
+        reason: 'attack',
+        notes: 'Ataque reportado',
+      },
+    },
+  })
+  expect(store.get('animals/one').status).toBe('activo')
+  expect(store.get('animals/two').status).toBe('activo')
+  expect(prepared.effects.join(' ')).toContain('pasarán a Muerto')
+  await manual.death(
+    prepared.id,
+    ['one', 'two'],
+    new Date('2026-11-01T00:00:00Z'),
+    'attack',
+    'Ataque reportado',
+  )
+  const saved = await confirmAiProposal({ ...scope, proposalId: prepared.id, revision: 1 })
+  expect(saved.status).toBe('succeeded')
+  for (const change of manualPlan!.changes)
+    expect(store.get(change.path)).toEqual(expect.objectContaining(change.data))
+  expect(store.get(`recordMovements/${prepared.id}`).record).toEqual(
+    expect.objectContaining(manualPlan!.record),
+  )
+  await confirmAiProposal({ ...scope, proposalId: prepared.id, revision: 1 })
+  expect([...store.keys()].filter((path) => path.startsWith('recordMovements/'))).toHaveLength(1)
+})
+it.each([
+  'muerto',
+  'vendido',
+  'perdido',
+])('rechaza la muerte del grupo completo si contiene un animal %s', async (status) => {
+  const store = database({
+    'animals/one': { farmId: 'farm', animalNumber: 'A1', status: 'activo' },
+    'animals/two': { farmId: 'farm', animalNumber: 'A2', status },
+  })
+  await expect(
+    createAiProposal({
+      ...scope,
+      conversationId: 'chat',
+      action: {
+        type: 'register_death',
+        summary: 'Muerte',
+        payload: { animalRefs: ['A1', 'A2'], date: '2026-11-01', reason: 'disease' },
+      },
+    }),
+  ).rejects.toThrow('activos')
+  expect(store.get('animals/one').status).toBe('activo')
+  expect([...store.keys()].filter((path) => path.startsWith('recordMovements/'))).toHaveLength(0)
+})
+it('rechaza una fecha futura o un motivo de muerte inválido', async () => {
+  database({ 'animals/one': { farmId: 'farm', animalNumber: 'A1', status: 'activo' } })
+  const base = { animalRefs: ['A1'], date: '2026-11-01', reason: 'disease' }
+  await expect(
+    createAiProposal({
+      ...scope,
+      conversationId: 'chat',
+      action: {
+        type: 'register_death',
+        summary: 'Muerte',
+        payload: { ...base, date: '2026-11-03' },
+      },
+    }),
+  ).rejects.toThrow('futuro')
+  await expect(
+    createAiProposal({
+      ...scope,
+      conversationId: 'chat',
+      action: {
+        type: 'register_death',
+        summary: 'Muerte',
+        payload: { ...base, reason: 'inventado' },
+      },
+    }),
+  ).rejects.toThrow()
+})
