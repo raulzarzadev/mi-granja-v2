@@ -15,6 +15,12 @@ Serializes Firestore data (animals, breedings, reminders, sales, etc.) to JSON. 
 
 Modal: `ModalRestoreBackup`. Shows the JSON guide generated with `JSON.stringify` from `src/lib/backup-format.ts` in "Ver formato requerido del archivo".
 
+La zona de carga admite selección o arrastrar y soltar un único archivo JSON
+(máximo 50 MB), con realce al arrastrar y estado de procesamiento. Ambos métodos
+usan el mismo validador; soltar un archivo solo abre la revisión, nunca restaura
+por sí mismo. Se bloquean cargas simultáneas y se permite reintentar el mismo
+archivo después de un error.
+
 ## CRITICAL sync rule
 
 When modifying types in `packages/shared/src/types/` (adding/removing/renaming fields on `Animal`, `BreedingRecord`, `Reminder`, `Sale`, etc.):

@@ -151,3 +151,7 @@ El asistente abre en un panel izquierdo de 380–420 px; el dashboard ocupa el e
 ## 2026-11-12 — Negritas en el chat
 
 Las respuestas interpretan **negritas** como strong, conservando menciones y enlaces seguros. El HTML recibido del modelo sigue siendo texto, sin ejecutarse.
+
+## 2026-11-12 — Carga de respaldos por arrastre
+
+La zona de carga admite un único JSON por selección o arrastre, hasta 50 MB, con realce y estado de procesamiento. Usa el validador existente, bloquea cargas simultáneas, permite reintento y solo abre la revisión; no restaura automáticamente.

@@ -25,10 +25,18 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
   const [finalConfirmed, setFinalConfirmed] = useState(false)
   const [result, setResult] = useState<RestoreResult | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [isParsing, setIsParsing] = useState(false)
+  const parsingRef = useRef(false)
+  const parseVersion = useRef(0)
   const [copied, setCopied] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const reset = useCallback(() => {
+    parseVersion.current += 1
+    parsingRef.current = false
+    setIsParsing(false)
+    setIsDragging(false)
     setStep('upload')
     setValidation(null)
     setBackupData(null)
@@ -50,13 +58,13 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
     onClose()
   }
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
+  const processFile = async (file: File) => {
+    if (parsingRef.current) return
     setFileError(null)
+    setValidation(null)
+    setBackupData(null)
 
-    if (!file.name.endsWith('.json')) {
+    if (!file.name.toLowerCase().endsWith('.json')) {
       setFileError('Solo se aceptan archivos .json')
       return
     }
@@ -66,8 +74,12 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
       return
     }
 
+    parsingRef.current = true
+    setIsParsing(true)
+    const version = ++parseVersion.current
     try {
       const result = await parseBackupFile(file)
+      if (version !== parseVersion.current) return
       setValidation(result)
 
       if (result.valid && result.data) {
@@ -75,8 +87,32 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
         setStep('preview')
       }
     } catch {
-      setFileError('Error al procesar el archivo')
+      if (version === parseVersion.current) setFileError('Error al procesar el archivo')
+    } finally {
+      if (version === parseVersion.current) {
+        parsingRef.current = false
+        setIsParsing(false)
+      }
     }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (file) void processFile(file)
+  }
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    if (parsingRef.current) return
+    if (e.dataTransfer.files.length !== 1) {
+      setFileError('Arrastra un solo archivo de respaldo .json')
+      setValidation(null)
+      return
+    }
+    void processFile(e.dataTransfer.files[0])
   }
 
   const handleRestore = async () => {
@@ -106,12 +142,26 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
               Selecciona un archivo de respaldo (.json) previamente exportado desde Mi Granja.
             </p>
 
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+            <div
+              aria-label="Subir respaldo"
+              aria-busy={isParsing}
+              onDragOver={(e) => {
+                e.preventDefault()
+                e.dataTransfer.dropEffect = isParsing ? 'none' : 'copy'
+                if (!isParsing) setIsDragging(true)
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setIsDragging(false)
+              }}
+              onDrop={handleDrop}
+              className={`rounded-lg border-2 border-dashed p-8 text-center transition-colors ${isDragging ? 'border-green-600 bg-green-50' : 'border-gray-300'} ${isParsing ? 'opacity-60' : ''}`}
+            >
               <input
                 ref={fileInputRef}
                 type="file"
                 accept=".json"
                 onChange={handleFileSelect}
+                disabled={isParsing}
                 className="hidden"
                 id="backup-file-input"
               />
@@ -123,9 +173,15 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
                   <EmojiIcon emoji="📁" />
                 </span>
                 <span className="text-sm font-medium text-blue-600 hover:text-blue-700">
-                  Seleccionar archivo .json
+                  {isParsing
+                    ? 'Procesando respaldo…'
+                    : isDragging
+                      ? 'Suelta el archivo aquí'
+                      : 'Seleccionar archivo .json'}
                 </span>
-                <span className="text-xs text-gray-500">Máximo 50MB</span>
+                <span className="text-xs text-gray-500">
+                  O arrastra y suelta aquí · Máximo 50MB
+                </span>
               </label>
             </div>
 
