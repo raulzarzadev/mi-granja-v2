@@ -147,3 +147,7 @@ La página /plan muestra créditos incluidos, usados, disponibles y próxima ren
 ## 2026-11-12 — Asistente lateral y presentación adaptable
 
 El asistente abre en un panel izquierdo de 380–420 px; el dashboard ocupa el espacio restante a su derecha. Tiene cierre, Escape y ajuste al teclado. El historial sigue alternándose desde el icono junto al input. Cabecera, navegación y selector de granja responden al ancho disponible mediante container queries. La barra compacta muestra saldo con detalles desplegables a todo el ancho, sin duplicar avisos ni cerrarse al actualizar el consumo.
+
+## 2026-11-12 — Negritas en el chat
+
+Las respuestas interpretan **negritas** como strong, conservando menciones y enlaces seguros. El HTML recibido del modelo sigue siendo texto, sin ejecutarse.

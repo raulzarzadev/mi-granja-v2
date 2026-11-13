@@ -93,6 +93,32 @@ function MessageText({
   onOpenBreeding: (id: string) => void
   onOpenAnimal: (id: string) => void
 }) {
+  const emphasis = text.split(/\*\*([^\n]+?)\*\*/g)
+  if (emphasis.length > 1) {
+    return (
+      <>
+        {emphasis.map((part, index) => {
+          const content = (
+            <MessageText
+              key={index}
+              text={part}
+              onNavigate={onNavigate}
+              animalIndex={animalIndex}
+              onOpenAnimal={onOpenAnimal}
+              breedingIndex={breedingIndex}
+              onOpenBreeding={onOpenBreeding}
+            />
+          )
+          return index % 2 === 1 ? (
+            <strong key={index}>{content}</strong>
+          ) : (
+            <span key={index}>{content}</span>
+          )
+        })}
+      </>
+    )
+  }
+
   const animalButton = (label: string, animal: { id: string; number: string }, key: string) => (
     <button
       key={key}

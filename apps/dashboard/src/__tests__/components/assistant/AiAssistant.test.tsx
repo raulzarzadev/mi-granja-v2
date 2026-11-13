@@ -550,3 +550,26 @@ it('no afirma que preparó el lote si faltan las propuestas en la respuesta', as
   ).toBeInTheDocument()
   expect(screen.queryByText('Preparé tres movimientos')).not.toBeInTheDocument()
 })
+
+it('renderiza negritas Markdown y conserva texto HTML como texto seguro', async () => {
+  jest.mocked(fetch).mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      kind: 'message',
+      message: 'Hay **362 animales activos** y **1,251 registrados**. <img src=x onerror=alert(1)>',
+      usage: { used: 1, remaining: 2, limit: 3 },
+    }),
+  } as Response)
+  render(<AiAssistant open showTrigger={false} />)
+  fireEvent.change(screen.getByRole('textbox', { name: 'Mensaje para el asistente' }), {
+    target: { value: 'Cuántos animales hay' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar mensaje' }))
+  const bold = await within(screen.getByRole('log')).findByText('362 animales activos')
+  expect(bold.closest('strong')).not.toBeNull()
+  expect(
+    within(screen.getByRole('log')).getByText('1,251 registrados').closest('strong'),
+  ).not.toBeNull()
+  expect(screen.getByRole('log').querySelector('img')).toBeNull()
+  expect(screen.getByRole('log')).not.toHaveTextContent('**')
+})
