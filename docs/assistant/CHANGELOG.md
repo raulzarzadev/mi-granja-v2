@@ -163,3 +163,7 @@ Los hijos se ordenan de mayor a menor edad, con edades desconocidas al final. Lo
 ## 2026-11-12 — Animales de venta ordenados
 
 Selector, animales elegidos, pesos individuales y partidas guardadas usan orden numérico natural por arete (2 antes de 10). Cada peso permanece asociado al ID correcto.
+
+## 2026-11-12 — Búsqueda tolerante de aretes
+
+Las variantes 317A, 317a, 317 A y 317-A encuentran el mismo arete, también entre animales inactivos cargados. Las consultas con números buscan número/nombre o un ID completo; no coinciden con fechas, cantidades o referencias internas en notas. Las búsquedas textuales de raza/especie/notas se conservan. Los resultados asíncronos antiguos se filtran con la consulta vigente.

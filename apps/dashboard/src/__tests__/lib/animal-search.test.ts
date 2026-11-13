@@ -29,3 +29,32 @@ describe('animal search', () => {
     expect(valuesMatchSearch(['EMPADRE-05-D'], 'empadre05d')).toBe(true)
   })
 })
+
+it.each([
+  '317A',
+  '317a',
+  '317-a',
+  '317 A',
+  '317',
+])('encuentra 317-A con %s incluso si está vendido', (query) => {
+  expect(
+    animalIdentityMatchesSearch(
+      { ...animal, animalNumber: '317-A', status: 'vendido' } as Animal,
+      query,
+    ),
+  ).toBe(true)
+})
+
+it('no confunde el arete 160 con 160 días escritos en las notas o un ID interno', () => {
+  const other = {
+    ...animal,
+    id: 'internal160xyz',
+    animalNumber: '01-D',
+    notes: 'Gestación mayor de 160 días',
+  }
+  expect(animalMatchesSearch(other, '160')).toBe(false)
+  expect(animalIdentityMatchesSearch(other, '160')).toBe(false)
+  expect(animalMatchesSearch({ ...other, animalNumber: '160-A' }, '160')).toBe(true)
+  expect(animalMatchesSearch(other, 'gestacion')).toBe(true)
+  expect(animalMatchesSearch(other, other.id)).toBe(true)
+})

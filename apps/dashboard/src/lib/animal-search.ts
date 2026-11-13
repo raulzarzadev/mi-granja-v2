@@ -22,11 +22,15 @@ export const valuesMatchSearch = (values: readonly unknown[], query: string): bo
 }
 
 export const animalMatchesSearch = (animal: SearchableAnimal, query: string): boolean => {
-  return valuesMatchSearch(
-    [animal.animalNumber, animal.id, animal.name, animal.type, animal.breed, animal.notes],
-    query,
-  )
+  const normalized = normalizeAnimalSearch(query)
+  if (!normalized) return true
+  if (animal.id === query.trim()) return true
+  if (valuesMatchSearch([animal.animalNumber, animal.name], query)) return true
+  // Un número suele ser un arete: no debe coincidir con fechas, importes ni
+  // referencias de migración dentro de notas o con fragmentos de IDs opacos.
+  if (/\d/.test(normalized)) return false
+  return valuesMatchSearch([animal.type, animal.breed, animal.notes], query)
 }
 
 export const animalIdentityMatchesSearch = (animal: IdentifiableAnimal, query: string): boolean =>
-  valuesMatchSearch([animal.id, animal.animalNumber, animal.name], query)
+  animal.id === query.trim() || valuesMatchSearch([animal.animalNumber, animal.name], query)

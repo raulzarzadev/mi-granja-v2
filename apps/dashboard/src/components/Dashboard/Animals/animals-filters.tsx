@@ -1,7 +1,8 @@
-import { QuickFilterMenu } from '@/components/inputs/FilterChip'
 import { useEffect, useRef, useState } from 'react'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
+import { QuickFilterMenu } from '@/components/inputs/FilterChip'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { animalIdentityMatchesSearch } from '@/lib/animal-search'
 import { computeAnimalStage } from '@/lib/animal-utils'
 import {
   Animal,
@@ -135,7 +136,9 @@ export const useAnimalFilters = (externalState?: {
     // Prepend resultados exactos de Firestore que no estan ya en la lista
     if (searchResults.length > 0) {
       const existingIds = new Set(result.map((a) => a.id))
-      const extraAnimals = searchResults.filter((a) => !existingIds.has(a.id))
+      const extraAnimals = searchResults.filter(
+        (a) => !existingIds.has(a.id) && animalIdentityMatchesSearch(a, filters.search),
+      )
       if (extraAnimals.length > 0) {
         result = [...extraAnimals, ...result]
       }

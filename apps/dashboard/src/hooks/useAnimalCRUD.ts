@@ -29,7 +29,11 @@ import {
   trackAnimalUpdated,
   trackRecordCreated,
 } from '@/lib/analytics/track'
-import { animalMatchesSearch, normalizeAnimalSearch } from '@/lib/animal-search'
+import {
+  animalIdentityMatchesSearch,
+  animalMatchesSearch,
+  normalizeAnimalSearch,
+} from '@/lib/animal-search'
 import { computeAnimalStage, isActiveCalf } from '@/lib/animal-utils'
 import {
   animalNumberReservationKey,
@@ -722,15 +726,20 @@ export const useAnimalCRUD = () => {
       if (!currentFarm?.id || !term.trim()) return []
 
       const trimmed = term.trim()
-      const results: Animal[] = []
-      const seenIds = new Set<string>()
+      // La lista completa de la granja permite localizar también bajas con
+      // variantes del arete; Firestore solo admite igualdad literal en estas consultas.
+      const results: Animal[] = animals.filter(
+        (animal) =>
+          animal.farmId === currentFarm.id && animalIdentityMatchesSearch(animal, trimmed),
+      )
+      const seenIds = new Set(results.map((animal) => animal.id))
 
       // 1. Buscar por doc ID directo
       try {
         const docSnap = await getDoc(doc(db, 'animals', trimmed))
         if (docSnap.exists()) {
           const data = docSnap.data()
-          if (data.farmId === currentFarm.id) {
+          if (data.farmId === currentFarm.id && !seenIds.has(docSnap.id)) {
             const animal = serializeObj({ id: docSnap.id, ...data } as Animal)
             results.push(animal)
             seenIds.add(animal.id)
@@ -778,7 +787,7 @@ export const useAnimalCRUD = () => {
 
       return results
     },
-    [currentFarm?.id],
+    [currentFarm?.id, animals],
   )
 
   // Agregar entrada de peso al historial del animal
