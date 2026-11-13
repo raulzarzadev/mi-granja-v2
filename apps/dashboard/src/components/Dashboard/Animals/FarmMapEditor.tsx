@@ -1,41 +1,38 @@
 'use client'
 
 import type { DragEvent, FormEvent, PointerEvent } from 'react'
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { PiCaretRight, PiCheck, PiMapTrifold, PiMinus, PiPlus, PiTable } from 'react-icons/pi'
 import AnimalTag from '@/components/AnimalTag'
 import Button from '@/components/buttons/Button'
+import ButtonConfirm from '@/components/buttons/ButtonConfirm'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
+import AreaSizeInput from '@/components/inputs/AreaSizeInput'
+import AutoGrowTextarea from '@/components/inputs/AutoGrowTextarea'
 import InputIconSelect from '@/components/inputs/InputIconSelect'
 import { Modal } from '@/components/Modal'
 import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { animalMatchesSearch } from '@/lib/animal-search'
-import { computeAnimalStage } from '@/lib/animal-utils'
-import { type Animal, animal_icon, animal_stage_config } from '@/types/animals'
+import type { Animal } from '@/types/animals'
 import { FARM_AREA_TYPES, type FarmArea } from '@/types/farm'
+import FarmAreasTable from './FarmAreasTable'
+import FarmMapToolbar from './FarmMapToolbar'
 
 type Point = { x: number; y: number }
 type AreaLayout = NonNullable<FarmArea['layout']>
-type Tool = 'select' | 'rect' | 'polygon'
+type Tool = 'select' | 'polygon'
 
-const VIEWBOX_WIDTH = 1000
-const VIEWBOX_HEIGHT = 620
+const VIEWBOX_WIDTH = 2000
+const VIEWBOX_HEIGHT = 1240
 const UNASSIGNED_AREA_ID = '__unassigned__'
 
 const AREA_COLORS = ['#16a34a', '#0f766e', '#d97706', '#2563eb', '#9333ea', '#dc2626']
+const AREA_COLOR_LABELS = ['Verde', 'Turquesa', 'Naranja', 'Azul', 'Morado', 'Rojo']
 
 // Cursor lápiz para el modo dibujo (crosshair como fallback). Hotspot en la punta.
 const PENCIL_CURSOR =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23111827' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z'/%3E%3C/svg%3E\") 2 22, crosshair"
-
-const areaTypeLabels: Record<FarmArea['type'], string> = {
-  pasture: 'Pastizal',
-  barn: 'Establo',
-  feeding: 'Alimentación',
-  storage: 'Almacén',
-  medical: 'Área médica',
-  other: 'Otro',
-}
 
 const areaTypeIcons: Record<FarmArea['type'], string> = {
   pasture: '🌿',
@@ -49,24 +46,46 @@ const areaTypeIcons: Record<FarmArea['type'], string> = {
 function ColorSwatches({ value, onChange }: { value: string; onChange: (color: string) => void }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {AREA_COLORS.map((color) => {
+      {AREA_COLORS.map((color, index) => {
         const selected = value.toLowerCase() === color.toLowerCase()
         return (
           <button
             key={color}
             type="button"
-            aria-label={`Color ${color}`}
+            aria-label={`Color ${AREA_COLOR_LABELS[index]}`}
             aria-pressed={selected}
             onClick={() => onChange(color)}
-            style={{ backgroundColor: color }}
-            className={`h-7 w-7 cursor-pointer rounded-full transition ${
-              selected
-                ? 'ring-2 ring-gray-900 ring-offset-2'
-                : 'ring-1 ring-black/10 hover:ring-gray-400'
+            className={`flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 ${
+              selected ? 'bg-gray-100' : 'hover:bg-gray-50'
             }`}
-          />
+          >
+            <span
+              style={{ backgroundColor: color }}
+              className="flex h-7 w-7 items-center justify-center rounded-full ring-1 ring-black/10"
+            >
+              {selected ? <PiCheck aria-hidden="true" size={18} className="text-white" /> : null}
+            </span>
+          </button>
         )
       })}
+      <label
+        className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-green-600"
+        title="Elegir otro color"
+      >
+        <PiPlus aria-hidden="true" size={18} />
+        <span
+          aria-hidden="true"
+          className="absolute bottom-1 right-1 h-3 w-3 rounded-full border border-gray-300"
+          style={{ backgroundColor: value }}
+        />
+        <input
+          type="color"
+          aria-label="Elegir otro color"
+          value={/^#[0-9a-f]{6}$/i.test(value) ? value : '#16a34a'}
+          onChange={(event) => onChange(event.target.value)}
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+        />
+      </label>
     </div>
   )
 }
@@ -77,7 +96,12 @@ interface FarmMapEditorProps {
   selectedAnimalId: string
   savingIds: Set<string>
   onSelectAnimal: (animalId: string) => void
-  onMoveAnimal: (animalId: string, areaId: string) => Promise<void>
+  onMoveAnimal: (
+    animalId: string,
+    areaId: string,
+    waitForPersistence?: boolean,
+    expectedFromAreaId?: string | null,
+  ) => Promise<void>
 }
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
@@ -190,45 +214,169 @@ export default function FarmMapEditor({
   onSelectAnimal,
   onMoveAnimal,
 }: FarmMapEditorProps) {
+  const viewportRef = useRef<HTMLDivElement | null>(null)
+  const [viewMode, setViewMode] = useState<'map' | 'table'>('map')
+  const mapPosition = useRef<{ left: number; top: number } | null>(null)
+  const changeView = (next: 'map' | 'table') => {
+    if (viewMode === 'map' && viewportRef.current)
+      mapPosition.current = {
+        left: viewportRef.current.scrollLeft,
+        top: viewportRef.current.scrollTop,
+      }
+    setViewMode(next)
+  }
+  useLayoutEffect(() => {
+    if (viewMode === 'map' && mapPosition.current && viewportRef.current) {
+      viewportRef.current.scrollLeft = mapPosition.current.left
+      viewportRef.current.scrollTop = mapPosition.current.top
+    }
+  }, [viewMode])
+  const [zoom, setZoom] = useState(100)
+  const zoomAnchor = useRef<{ x: number; y: number } | null>(null)
+  const changeZoom = (nextZoom: number) => {
+    const next = Math.max(50, Math.min(200, nextZoom))
+    const viewport = viewportRef.current
+    if (next === zoom || !viewport) return
+    zoomAnchor.current = {
+      x: (viewport.scrollLeft + viewport.clientWidth / 2) / viewport.scrollWidth,
+      y: (viewport.scrollTop + viewport.clientHeight / 2) / viewport.scrollHeight,
+    }
+    setZoom(next)
+  }
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current
+    const anchor = zoomAnchor.current
+    if (!viewport || !anchor) return
+    viewport.scrollTo({
+      left: anchor.x * viewport.scrollWidth - viewport.clientWidth / 2,
+      top: anchor.y * viewport.scrollHeight - viewport.clientHeight / 2,
+      behavior: 'instant',
+    })
+    zoomAnchor.current = null
+  }, [zoom])
+  const centerCanvasOnOpen = useCallback((viewport: HTMLDivElement | null) => {
+    viewportRef.current = viewport
+    if (!viewport) return
+    viewport.scrollLeft = (viewport.scrollWidth - viewport.clientWidth) / 2
+    viewport.scrollTop = (viewport.scrollHeight - viewport.clientHeight) / 2
+  }, [])
   const svgRef = useRef<SVGSVGElement | null>(null)
+  const [canvasScale, setCanvasScale] = useState(1)
+  const canvasObserver = useRef<ResizeObserver | null>(null)
+  const attachCanvas = useCallback((canvas: SVGSVGElement | null) => {
+    canvasObserver.current?.disconnect()
+    svgRef.current = canvas
+    if (!canvas) return
+    const measure = () =>
+      setCanvasScale(Math.max(0.05, canvas.getBoundingClientRect().width / VIEWBOX_WIDTH))
+    measure()
+    canvasObserver.current = new ResizeObserver(measure)
+    canvasObserver.current.observe(canvas)
+  }, [])
+  const startAnimalDrag = (event: DragEvent<HTMLElement>, animalId: string) => {
+    event.stopPropagation()
+    event.dataTransfer.setData('text/plain', animalId)
+    event.dataTransfer.effectAllowed = 'move'
+    const bounds = event.currentTarget.getBoundingClientRect()
+    event.dataTransfer.setDragImage(
+      event.currentTarget,
+      event.clientX - bounds.left,
+      event.clientY - bounds.top,
+    )
+  }
+  const panDrag = useRef<{
+    pointerId: number
+    x: number
+    y: number
+    left: number
+    top: number
+  } | null>(null)
+  const [isPanning, setIsPanning] = useState(false)
+  const [handTool, setHandTool] = useState(false)
+  const [spacePressed, setSpacePressed] = useState(false)
+  useEffect(() => {
+    const keyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return
+      if (
+        event.code !== 'Space' ||
+        (event.target instanceof Element &&
+          event.target.closest('input, textarea, select, button, [contenteditable="true"]'))
+      )
+        return
+      if (!(event.target instanceof Node) || !viewportRef.current?.contains(event.target)) return
+      event.preventDefault()
+      setSpacePressed(true)
+    }
+    const keyUp = (event: KeyboardEvent) => {
+      if (event.code === 'Space') setSpacePressed(false)
+    }
+    const reset = () => {
+      setSpacePressed(false)
+      panDrag.current = null
+      setIsPanning(false)
+    }
+    window.addEventListener('keydown', keyDown)
+    window.addEventListener('keyup', keyUp)
+    window.addEventListener('blur', reset)
+    return () => {
+      window.removeEventListener('keydown', keyDown)
+      window.removeEventListener('keyup', keyUp)
+      window.removeEventListener('blur', reset)
+    }
+  }, [])
   const { currentFarm } = useFarmCRUD()
   const { createArea, updateArea, deleteArea } = useFarmAreasCRUD()
   const [tool, setTool] = useState<Tool>('select')
   const [selectedAreaId, setSelectedAreaId] = useState('')
+  const [expandedAreaDetails, setExpandedAreaDetails] = useState<Set<string>>(new Set())
+  const [frontAreaId, setFrontAreaId] = useState('')
+  const [emptyAreaError, setEmptyAreaError] = useState<string | null>(null)
+  const [deleteAreaOpen, setDeleteAreaOpen] = useState(false)
+  const [moveAnimalTarget, setMoveAnimalTarget] = useState<Animal | null>(null)
   const [localLayouts, setLocalLayouts] = useState<Map<string, AreaLayout>>(new Map())
   const [dirtyAreaIds, setDirtyAreaIds] = useState<Set<string>>(new Set())
-  const [drawingRectStart, setDrawingRectStart] = useState<Point | null>(null)
-  const [draftLayout, setDraftLayout] = useState<AreaLayout | null>(null)
   const [polygonPoints, setPolygonPoints] = useState<Point[]>([])
   const [moveDrag, setMoveDrag] = useState<{
     areaId: string
     start: Point
     originalPoints: Point[]
+    clientX: number
+    clientY: number
   } | null>(null)
   const [vertexDrag, setVertexDrag] = useState<{ areaId: string; pointIndex: number } | null>(null)
   const [pendingLayout, setPendingLayout] = useState<AreaLayout | null>(null)
   const [isAreaEditorOpen, setIsAreaEditorOpen] = useState(false)
+  const [areaEditId, setAreaEditId] = useState('')
   const [isUnassignedOpen, setIsUnassignedOpen] = useState(false)
   const [unassignedSearch, setUnassignedSearch] = useState('')
   const [dropTargetId, setDropTargetId] = useState<string | null>(null)
-  const [menuAnimalId, setMenuAnimalId] = useState<string | null>(null)
   const [isSavingArea, setIsSavingArea] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [areaForm, setAreaForm] = useState({
     name: '',
     type: 'pasture' as FarmArea['type'],
-    capacity: '',
+    areaM2: '',
     description: '',
     color: AREA_COLORS[0],
   })
   const [areaEditForm, setAreaEditForm] = useState({
     name: '',
     type: 'pasture' as FarmArea['type'],
-    capacity: '',
+    areaM2: '',
     description: '',
     color: AREA_COLORS[0],
   })
   const [assignAnimalSearch, setAssignAnimalSearch] = useState('')
+
+  useEffect(() => {
+    if (!dirtyAreaIds.size && !polygonPoints.length && !pendingLayout) return
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', beforeUnload)
+    return () => window.removeEventListener('beforeunload', beforeUnload)
+  }, [dirtyAreaIds.size, polygonPoints.length, pendingLayout])
 
   const activeAreas = useMemo(() => areas.filter((area) => area.isActive), [areas])
 
@@ -272,11 +420,16 @@ export default function FarmMapEditor({
   }
 
   const openCreateModal = (layout: AreaLayout) => {
+    const lastAreaNumber = (currentFarm?.areas ?? areas).reduce((last, area) => {
+      const match =
+        area.name.trim().match(/^\u00e1?rea\s+(\d+)$/i) || area.name.trim().match(/^area\s+(\d+)$/i)
+      return match ? Math.max(last, Number(match[1])) : last
+    }, 0)
     setPendingLayout(layout)
     setAreaForm({
-      name: '',
+      name: `Área ${lastAreaNumber + 1}`,
       type: 'pasture',
-      capacity: '',
+      areaM2: '',
       description: '',
       color: layout.color || AREA_COLORS[0],
     })
@@ -294,9 +447,15 @@ export default function FarmMapEditor({
     setTool('select')
   }
 
+  const returnToDrawing = () => {
+    if (isSavingArea) return
+    if (pendingLayout) setPolygonPoints(pendingLayout.points)
+    setPendingLayout(null)
+    setTool('polygon')
+    setError(null)
+  }
+
   const cancelCurrentAction = () => {
-    setDrawingRectStart(null)
-    setDraftLayout(null)
     setPolygonPoints([])
     setMoveDrag(null)
     setVertexDrag(null)
@@ -313,36 +472,57 @@ export default function FarmMapEditor({
         return next
       })
     }
+    setSelectedAreaId('')
   }
 
   const beginCreatePolygon = () => {
     cancelCurrentAction()
     setSelectedAreaId('')
     setError(null)
-    setTool('rect')
+    setTool('polygon')
+    setHandTool(false)
   }
 
-  const changeCreateTool = (nextTool: Extract<Tool, 'rect' | 'polygon'>) => {
-    setDrawingRectStart(null)
-    setDraftLayout(null)
-    setPolygonPoints([])
-    setTool(nextTool)
+  const beginPan = (event: PointerEvent<SVGSVGElement>) => {
+    const viewport = viewportRef.current
+    if (!viewport || panDrag.current) return
+    event.preventDefault()
+    viewport.focus({ preventScroll: true })
+    event.currentTarget.setPointerCapture(event.pointerId)
+    panDrag.current = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      left: viewport.scrollLeft,
+      top: viewport.scrollTop,
+    }
+    setIsPanning(true)
   }
 
   const handleCanvasPointerDown = (event: PointerEvent<SVGSVGElement>) => {
+    if (event.button !== 0) return
+    if (tool === 'select') {
+      beginPan(event)
+      if (!dirtyAreaIds.has(selectedAreaId)) setSelectedAreaId('')
+      return
+    }
+    viewportRef.current?.focus({ preventScroll: true })
     const point = getCanvasPoint(event)
     if (!point) return
 
-    if (tool === 'rect') {
-      event.currentTarget.setPointerCapture(event.pointerId)
-      setDrawingRectStart(point)
-      setDraftLayout(
-        rectLayoutFromPoints(point, point, AREA_COLORS[activeAreas.length % AREA_COLORS.length]),
-      )
-      return
-    }
-
     if (tool === 'polygon') {
+      if (polygonPoints.length > 0) {
+        const matrix = svgRef.current?.getScreenCTM()
+        const first = pointToSvg(polygonPoints[0])
+        if (matrix) {
+          const screenX = matrix.a * first.x + matrix.c * first.y + matrix.e
+          const screenY = matrix.b * first.x + matrix.d * first.y + matrix.f
+          if (Math.hypot(event.clientX - screenX, event.clientY - screenY) <= 22) {
+            finishPolygon()
+            return
+          }
+        }
+      }
       setPolygonPoints((prev) => [...prev, point])
       return
     }
@@ -355,14 +535,24 @@ export default function FarmMapEditor({
     areaId: string,
     layout: AreaLayout,
   ) => {
-    if (tool !== 'select') return
+    if (tool !== 'select' || isSavingArea) return
     event.stopPropagation()
+    if (areaId !== selectedAreaId) {
+      void selectAreaForEditing(areaId)
+      return
+    }
     const point = getCanvasPoint(event)
     if (!point) return
 
     setSelectedAreaId(areaId)
     svgRef.current?.setPointerCapture(event.pointerId)
-    setMoveDrag({ areaId, start: point, originalPoints: layout.points })
+    setMoveDrag({
+      areaId,
+      start: point,
+      originalPoints: layout.points,
+      clientX: event.clientX,
+      clientY: event.clientY,
+    })
   }
 
   const handleVertexPointerDown = (
@@ -370,6 +560,7 @@ export default function FarmMapEditor({
     areaId: string,
     pointIndex: number,
   ) => {
+    if (tool !== 'select' || isSavingArea) return
     event.stopPropagation()
     svgRef.current?.setPointerCapture(event.pointerId)
     setSelectedAreaId(areaId)
@@ -377,21 +568,22 @@ export default function FarmMapEditor({
   }
 
   const handlePointerMove = (event: PointerEvent<SVGSVGElement>) => {
+    const pan = panDrag.current
+    if (pan && viewportRef.current) {
+      if (pan.pointerId !== event.pointerId) return
+      event.preventDefault()
+      viewportRef.current.scrollTo({
+        left: pan.left - (event.clientX - pan.x),
+        top: pan.top - (event.clientY - pan.y),
+        behavior: 'instant',
+      })
+      return
+    }
     const point = getCanvasPoint(event)
     if (!point) return
 
-    if (drawingRectStart) {
-      setDraftLayout(
-        rectLayoutFromPoints(
-          drawingRectStart,
-          point,
-          AREA_COLORS[activeAreas.length % AREA_COLORS.length],
-        ),
-      )
-      return
-    }
-
     if (moveDrag) {
+      if (Math.hypot(event.clientX - moveDrag.clientX, event.clientY - moveDrag.clientY) < 4) return
       const deltaX = point.x - moveDrag.start.x
       const deltaY = point.y - moveDrag.start.y
       const bounds = getBounds(moveDrag.originalPoints)
@@ -424,26 +616,22 @@ export default function FarmMapEditor({
   }
 
   const handlePointerUp = () => {
-    if (drawingRectStart && draftLayout) {
-      const bounds = getBounds(draftLayout.points)
-      if (bounds.width > 0.015 && bounds.height > 0.015) {
-        openCreateModal(draftLayout)
-        setTool('select')
-      }
-    }
-
-    setDrawingRectStart(null)
-    setDraftLayout(null)
+    panDrag.current = null
+    setIsPanning(false)
     setMoveDrag(null)
     setVertexDrag(null)
   }
 
-  const handleDropAnimal = async (event: DragEvent<Element>, areaId: string) => {
+  const handleDropAnimal = (event: DragEvent<Element>, areaId: string) => {
     event.preventDefault()
+    event.stopPropagation()
     setDropTargetId(null)
     const animalId = event.dataTransfer.getData('text/plain')
     if (animalId) {
-      await onMoveAnimal(animalId, areaId)
+      void onMoveAnimal(animalId, areaId, false).catch(() => {
+        setError('No se pudo mover el animal. Intenta de nuevo.')
+      })
+      if (areaId !== UNASSIGNED_AREA_ID) void selectAreaForEditing(areaId)
     }
   }
 
@@ -457,7 +645,7 @@ export default function FarmMapEditor({
       const createdArea = await createArea(currentFarm.id, {
         name: areaForm.name.trim(),
         type: areaForm.type,
-        capacity: areaForm.capacity ? Number(areaForm.capacity) : null,
+        areaM2: areaForm.areaM2 ? Number(areaForm.areaM2) : null,
         description: areaForm.description.trim(),
         isActive: true,
         notes: '',
@@ -475,7 +663,11 @@ export default function FarmMapEditor({
 
   const handleSaveSelected = async () => {
     const layout = selectedAreaId ? localLayouts.get(selectedAreaId) : null
-    if (!selectedAreaId || !layout) return
+    if (!selectedAreaId || isSavingArea) return false
+    if (!dirtyAreaIds.has(selectedAreaId) || !layout) {
+      setSelectedAreaId('')
+      return true
+    }
 
     setIsSavingArea(true)
     setError(null)
@@ -491,12 +683,27 @@ export default function FarmMapEditor({
         next.delete(selectedAreaId)
         return next
       })
+      setSelectedAreaId('')
+      return true
     } catch (err) {
       console.error('Error saving area layout:', err)
       setError('No se pudo guardar el lienzo del área. Intenta de nuevo.')
+      return false
     } finally {
       setIsSavingArea(false)
     }
+  }
+
+  const selectAreaForEditing = async (areaId: string) => {
+    if (isSavingArea) return false
+    if (areaId !== selectedAreaId && dirtyAreaIds.has(selectedAreaId)) {
+      if (!(await handleSaveSelected())) return false
+    }
+    if (activeAreas.some((area) => area.id === areaId)) {
+      setSelectedAreaId(areaId)
+      return true
+    }
+    return false
   }
 
   const handleDeleteSelected = async () => {
@@ -512,6 +719,7 @@ export default function FarmMapEditor({
     try {
       await deleteArea(selectedAreaId)
       setSelectedAreaId('')
+      setDeleteAreaOpen(false)
     } catch (err) {
       console.error('Error deleting area:', err)
       setError('No se pudo eliminar el área. Intenta de nuevo.')
@@ -520,212 +728,67 @@ export default function FarmMapEditor({
     }
   }
 
+  const openAnimalMove = (animal: Animal) => {
+    if (savingIds.has(animal.id)) return
+    onSelectAnimal(animal.id)
+    setMoveAnimalTarget(animal)
+  }
+  const moveAnimalFromDialog = (areaId: string) => {
+    if (!moveAnimalTarget) return
+    const animal = moveAnimalTarget
+    setMoveAnimalTarget(null)
+    void onMoveAnimal(animal.id, areaId, false).catch(() => {
+      setError('No se pudo mover el animal. Intenta de nuevo.')
+    })
+    if (areaId !== UNASSIGNED_AREA_ID && !isAreaEditorOpen) void selectAreaForEditing(areaId)
+  }
+
   const renderAnimalChip = (animal: Animal, compact = false) => {
     const isSaving = savingIds.has(animal.id)
-    const isMenuOpen = menuAnimalId === animal.id
-    const currentAreaId = animal.currentAreaId ?? UNASSIGNED_AREA_ID
-
-    const handleReassign = async (areaId: string) => {
-      setMenuAnimalId(null)
-      if (areaId === currentAreaId) return
-      await onMoveAnimal(animal.id, areaId)
-    }
-
-    const kebab = (
+    return (
       <button
+        key={animal.id}
         type="button"
-        aria-label={`Reasignar área de ${animal.animalNumber}`}
-        aria-haspopup="menu"
-        aria-expanded={isMenuOpen}
+        draggable={!isSaving}
         disabled={isSaving}
+        aria-label={`Mover animal ${animal.animalNumber}`}
+        title={`Mover animal ${animal.animalNumber}`}
+        onPointerDown={(event) => event.stopPropagation()}
         onClick={(event) => {
           event.stopPropagation()
-          setMenuAnimalId(isMenuOpen ? null : animal.id)
+          openAnimalMove(animal)
         }}
-        className="-mr-1 ml-0.5 flex h-5 w-4 shrink-0 cursor-pointer items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed"
+        onDragStart={(event) => startAnimalDrag(event, animal.id)}
+        className="inline-flex min-h-11 max-w-full shrink-0 cursor-grab items-center rounded-xl p-0.5 text-left active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 disabled:cursor-wait disabled:opacity-50"
       >
-        ⋮
+        <AnimalTag
+          animal={animal}
+          active={selectedAnimalId === animal.id}
+          size="md"
+          showAge={!compact}
+        />
       </button>
     )
-
-    return (
-      <div key={animal.id} className="relative inline-flex max-w-full items-center">
-        <div
-          role="button"
-          tabIndex={0}
-          draggable
-          onClick={(event) => {
-            event.stopPropagation()
-            onSelectAnimal(animal.id)
-          }}
-          onKeyDown={(event) => {
-            if (event.key !== 'Enter' && event.key !== ' ') return
-            event.preventDefault()
-            event.stopPropagation()
-            onSelectAnimal(animal.id)
-          }}
-          onDragStart={(event) => {
-            event.dataTransfer.setData('text/plain', animal.id)
-            event.dataTransfer.effectAllowed = 'move'
-          }}
-          className={`inline-flex max-w-full items-center rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1 ${
-            compact ? 'overflow-hidden' : ''
-          } ${isSaving ? 'opacity-50' : ''}`}
-          title={`Animal ${animal.animalNumber}`}
-        >
-          <AnimalTag
-            animal={animal}
-            active={selectedAnimalId === animal.id}
-            showAge
-            trailing={compact ? undefined : kebab}
-          />
-        </div>
-
-        {!compact && isMenuOpen ? (
-          <>
-            <button
-              type="button"
-              aria-hidden
-              tabIndex={-1}
-              className="fixed inset-0 z-10 cursor-default"
-              onClick={(event) => {
-                event.stopPropagation()
-                setMenuAnimalId(null)
-              }}
-            />
-            <div
-              role="menu"
-              className="absolute right-0 top-full z-20 mt-1 max-h-60 w-48 overflow-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg"
-            >
-              <p className="px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-                Mover a área
-              </p>
-              <button
-                type="button"
-                role="menuitem"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  handleReassign(UNASSIGNED_AREA_ID)
-                }}
-                disabled={currentAreaId === UNASSIGNED_AREA_ID}
-                className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-default disabled:text-gray-400"
-              >
-                Sin área
-                {currentAreaId === UNASSIGNED_AREA_ID ? (
-                  <span aria-hidden>
-                    <EmojiIcon emoji="✓" />
-                  </span>
-                ) : null}
-              </button>
-              {activeAreas.map((area) => (
-                <button
-                  key={area.id}
-                  type="button"
-                  role="menuitem"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    handleReassign(area.id)
-                  }}
-                  disabled={currentAreaId === area.id}
-                  className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-default disabled:text-gray-400"
-                >
-                  <span className="truncate">
-                    <span aria-hidden="true">
-                      <EmojiIcon emoji={areaTypeIcons[area.type]} />
-                    </span>{' '}
-                    {area.name}
-                  </span>
-                  {currentAreaId === area.id ? (
-                    <span aria-hidden>
-                      <EmojiIcon emoji="✓" />
-                    </span>
-                  ) : null}
-                </button>
-              ))}
-            </div>
-          </>
-        ) : null}
-      </div>
-    )
   }
-
-  // Mini-avatar para mostrar muchos animales dentro de un área del lienzo sin ocupar espacio.
-  const renderAnimalAvatar = (animal: Animal) => {
-    const isMale = animal.gender === 'macho'
-    const isSaving = savingIds.has(animal.id)
-    const stageCfg = animal_stage_config[animal.computedStage ?? computeAnimalStage(animal)]
-    const title = `#${animal.animalNumber}${stageCfg ? ` · ${stageCfg.label}` : ''} · ${
-      isMale ? 'Macho' : 'Hembra'
-    }`
-
-    return (
-      <div
-        key={animal.id}
-        role="button"
-        tabIndex={0}
-        draggable
-        title={title}
-        aria-label={title}
-        onClick={(event) => {
-          event.stopPropagation()
-          onSelectAnimal(animal.id)
-        }}
-        onKeyDown={(event) => {
-          if (event.key !== 'Enter' && event.key !== ' ') return
-          event.preventDefault()
-          event.stopPropagation()
-          onSelectAnimal(animal.id)
-        }}
-        onDragStart={(event) => {
-          event.dataTransfer.setData('text/plain', animal.id)
-          event.dataTransfer.effectAllowed = 'move'
-        }}
-        className={`relative inline-flex h-6 max-w-full cursor-grab items-center gap-0.5 rounded-md border bg-white py-0.5 pl-1 pr-1.5 leading-none shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 ${
-          selectedAnimalId === animal.id
-            ? 'border-green-500 ring-1 ring-green-500'
-            : 'border-gray-200'
-        } ${isSaving ? 'opacity-50' : ''}`}
-      >
-        <span aria-hidden="true" className="text-xs">
-          <EmojiIcon emoji={animal_icon[animal.type]} />
-        </span>
-        {stageCfg ? (
-          <span aria-hidden="true" className="text-xs" title={stageCfg.label}>
-            <EmojiIcon emoji={stageCfg.icon} />
-          </span>
-        ) : null}
-        <span
-          aria-hidden="true"
-          className={`h-2 w-2 shrink-0 rounded-full ${isMale ? 'bg-blue-500' : 'bg-pink-500'}`}
-        />
-        <span className="truncate text-[11px] font-semibold text-gray-800">
-          {animal.animalNumber}
-        </span>
-      </div>
-    )
-  }
+  const renderAnimalAvatar = (animal: Animal) => renderAnimalChip(animal, true)
 
   const selectedArea = activeAreas.find((area) => area.id === selectedAreaId)
-  const selectedDisplayedArea = displayedAreas.find((item) => item.area.id === selectedAreaId)
+  const editedArea = activeAreas.find((area) => area.id === areaEditId)
   const selectedAreaHasAnimals = selectedAreaId
     ? (animalsByArea.get(selectedAreaId) ?? []).length > 0
     : false
   const canSaveDirtyArea = selectedAreaId ? dirtyAreaIds.has(selectedAreaId) : false
-  const isCreating = tool === 'rect' || tool === 'polygon'
-  const saveSelectedLabel = isSavingArea
-    ? 'Guardando...'
-    : canSaveDirtyArea
-      ? 'Guardar cambios'
-      : 'Guardado'
+  const isCreating = tool === 'polygon'
 
-  const openSelectedAreaEditor = () => {
-    if (!selectedArea) return
+  const openAreaEditor = (area: FarmArea) => {
+    setAreaEditId(area.id)
     setAreaEditForm({
-      name: selectedArea.name,
-      type: selectedArea.type,
-      capacity: selectedArea.capacity ? String(selectedArea.capacity) : '',
-      description: selectedArea.description || '',
-      color: selectedDisplayedArea?.layout.color || AREA_COLORS[0],
+      name: area.name,
+      type: area.type,
+      areaM2: area.areaM2 != null ? String(area.areaM2) : '',
+      description: area.description || '',
+      color:
+        displayedAreas.find((item) => item.area.id === area.id)?.layout.color || AREA_COLORS[0],
     })
     setError(null)
     setAssignAnimalSearch('')
@@ -736,27 +799,39 @@ export default function FarmMapEditor({
   const emptySelectedArea = async () => {
     if (!selectedArea) return
     const group = animalsByArea.get(selectedArea.id) ?? []
-    setError(null)
-    for (const animal of group) {
-      await onMoveAnimal(animal.id, UNASSIGNED_AREA_ID)
+    setEmptyAreaError(null)
+    try {
+      for (const animal of group) {
+        await onMoveAnimal(animal.id, UNASSIGNED_AREA_ID, true, selectedArea.id)
+      }
+    } catch (error) {
+      setEmptyAreaError(
+        'No se pudo completar. Los animales ya movidos permanecen en pendientes; vuelve a confirmar para sacar los restantes.',
+      )
+      throw error
     }
   }
 
   const handleSaveAreaDetails = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!selectedArea || !areaEditForm.name.trim()) return
+    if (!editedArea || isSavingArea || !areaEditForm.name.trim()) return
 
     setIsSavingArea(true)
     setError(null)
     try {
-      await updateArea(selectedArea.id, {
+      await updateArea(editedArea.id, {
         name: areaEditForm.name.trim(),
         type: areaEditForm.type,
-        capacity: areaEditForm.capacity ? Number(areaEditForm.capacity) : null,
+        areaM2: areaEditForm.areaM2 ? Number(areaEditForm.areaM2) : null,
         description: areaEditForm.description.trim(),
-        ...(selectedDisplayedArea?.layout
-          ? { layout: { ...selectedDisplayedArea.layout, color: areaEditForm.color } }
+        ...(editedArea.layout
+          ? { layout: { ...editedArea.layout, color: areaEditForm.color } }
           : {}),
+      })
+      setLocalLayouts((previous) => {
+        const draft = previous.get(editedArea.id)
+        if (!draft) return previous
+        return new Map(previous).set(editedArea.id, { ...draft, color: areaEditForm.color })
       })
       setIsAreaEditorOpen(false)
     } catch (err) {
@@ -835,312 +910,543 @@ export default function FarmMapEditor({
           </div>
         </section>
       ) : (
-        <section className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-          <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-900">
-                {isCreating
-                  ? 'Creando área'
-                  : selectedArea
-                    ? `Editando ${selectedArea.name}`
-                    : 'Lienzo de áreas'}
-              </p>
-              <p className="text-xs text-gray-500">
-                {tool === 'rect'
-                  ? 'Arrastra sobre el lienzo para dibujar el cuadro.'
-                  : tool === 'polygon'
-                    ? 'Haz click para agregar puntos. Guarda cuando tengas al menos tres.'
-                    : selectedArea
-                      ? 'Arrastra el área completa o mueve sus puntos.'
-                      : 'Selecciona un área para editarla o crea una nueva.'}
+        <div className="space-y-3">
+          <header className="flex flex-wrap items-center justify-between gap-3 px-1">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-semibold text-gray-900">
+                Áreas de {currentFarm?.name || 'tu granja'}
+              </h2>
+              <p className="mt-1 text-sm text-gray-600" aria-live="polite">
+                {viewMode === 'table'
+                  ? 'Consulta tus áreas y despliega cada fila para ver sus animales.'
+                  : handTool || spacePressed
+                    ? 'Arrastra en cualquier dirección, también en diagonal.'
+                    : tool === 'polygon'
+                      ? polygonPoints.length >= 3
+                        ? 'Pulsa el primer punto para cerrar el polígono.'
+                        : 'Marca los puntos del contorno. Necesitas al menos tres.'
+                      : selectedArea
+                        ? `Editando ${selectedArea.name}. Arrastra el contorno o mueve sus puntos.`
+                        : 'Selecciona un área para editarla o crea una nueva.'}
               </p>
             </div>
-
             <div
-              className="flex flex-wrap items-center gap-2"
-              role="toolbar"
-              aria-label="Acciones de área"
+              role="group"
+              aria-label="Controles de vista de áreas"
+              className="flex min-w-0 max-w-full items-center gap-2 overflow-x-auto py-1"
             >
-              <button
-                type="button"
-                onClick={() => setIsUnassignedOpen(true)}
-                aria-label={`Abrir ${unassignedAnimals.length} animales pendientes de asignar`}
-                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
+              <div
+                role="group"
+                aria-label="Vista de áreas"
+                className="flex shrink-0 items-center rounded-lg border border-gray-200 bg-white p-0.5"
               >
-                <span>Pendientes</span>
-                <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-amber-200 px-1.5 py-0.5 text-xs font-bold text-amber-950">
-                  {unassignedAnimals.length}
-                </span>
-              </button>
-
-              {!isCreating ? (
-                <Button size="sm" color="success" onClick={beginCreatePolygon}>
+                {(
+                  [
+                    { value: 'map', label: 'Mapa', icon: PiMapTrifold },
+                    { value: 'table', label: 'Tabla', icon: PiTable },
+                  ] as const
+                ).map(({ value, label, icon: ViewIcon }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={viewMode === value}
+                    onClick={() => changeView(value)}
+                    className={`flex h-9 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-green-600 ${viewMode === value ? 'bg-green-50 text-green-800' : 'text-gray-500 hover:bg-gray-100'}`}
+                  >
+                    <ViewIcon aria-hidden="true" size={16} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {viewMode === 'map' ? (
+                <div
+                  role="group"
+                  aria-label="Zoom del lienzo"
+                  className="flex shrink-0 items-center rounded-lg border border-gray-200 bg-white p-0.5"
+                >
+                  <button
+                    type="button"
+                    aria-label="Alejar lienzo"
+                    title="Alejar"
+                    disabled={zoom <= 50}
+                    onClick={() => changeZoom(zoom - 25)}
+                    className="flex h-9 w-8 cursor-pointer items-center justify-center rounded-md text-gray-600 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-green-600 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <PiMinus aria-hidden="true" size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Zoom ${zoom} por ciento. Restablecer a 100 por ciento`}
+                    title="Restablecer zoom"
+                    onClick={() => changeZoom(100)}
+                    className="h-9 min-w-12 cursor-pointer rounded-md px-1 text-sm font-medium tabular-nums text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-green-600"
+                  >
+                    {zoom}%
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Acercar lienzo"
+                    title="Acercar"
+                    disabled={zoom >= 200}
+                    onClick={() => changeZoom(zoom + 25)}
+                    className="flex h-9 w-8 cursor-pointer items-center justify-center rounded-md text-gray-600 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-green-600 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <PiPlus aria-hidden="true" size={16} />
+                  </button>
+                </div>
+              ) : null}
+              {!isCreating && !isAreaEditorOpen && (!selectedArea || viewMode === 'table') ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  color="success"
+                  className="h-10 shrink-0 rounded-lg px-3"
+                  disabled={isSavingArea}
+                  onClick={async () => {
+                    if (dirtyAreaIds.has(selectedAreaId) && !(await handleSaveSelected())) return
+                    changeView('map')
+                    beginCreatePolygon()
+                  }}
+                >
+                  <PiPlus aria-hidden="true" size={16} />
                   Crear área
                 </Button>
               ) : null}
-
-              {isCreating ? (
-                <>
-                  <div
-                    className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1"
-                    role="group"
-                    aria-label="Forma del área"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => changeCreateTool('rect')}
-                      className={`min-h-9 rounded-md px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${
-                        tool === 'rect'
-                          ? 'bg-white text-green-800 shadow-sm ring-1 ring-green-500'
-                          : 'text-gray-600 hover:bg-white'
-                      }`}
-                    >
-                      Cuadrado
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => changeCreateTool('polygon')}
-                      className={`min-h-9 rounded-md px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${
-                        tool === 'polygon'
-                          ? 'bg-white text-green-800 shadow-sm ring-1 ring-green-500'
-                          : 'text-gray-600 hover:bg-white'
-                      }`}
-                    >
-                      Polígono
-                    </button>
-                  </div>
-                  <Button
-                    size="sm"
-                    color="success"
-                    disabled={isSavingArea || tool !== 'polygon' || polygonPoints.length < 3}
-                    onClick={finishPolygon}
-                  >
-                    Guardar dibujo
-                  </Button>
-                  <Button size="sm" color="neutral" variant="outline" onClick={cancelCurrentAction}>
-                    Cancelar
-                  </Button>
-                </>
-              ) : null}
-
-              {selectedArea && !isCreating ? (
-                <>
-                  <Button
-                    size="sm"
-                    color="neutral"
-                    variant="outline"
-                    onClick={openSelectedAreaEditor}
-                  >
-                    Editar
-                  </Button>
-                  <Button
-                    size="sm"
-                    color={canSaveDirtyArea ? 'success' : 'neutral'}
-                    variant={canSaveDirtyArea ? 'filled' : 'outline'}
-                    disabled={isSavingArea || !canSaveDirtyArea}
-                    onClick={handleSaveSelected}
-                  >
-                    {saveSelectedLabel}
-                  </Button>
-                  {canSaveDirtyArea ? (
-                    <Button
-                      size="sm"
-                      color="neutral"
-                      variant="outline"
-                      onClick={cancelCurrentAction}
-                    >
-                      Descartar
-                    </Button>
-                  ) : null}
-                  <Button
-                    size="sm"
-                    color="error"
-                    variant="outline"
-                    disabled={selectedAreaHasAnimals || isSavingArea}
-                    onClick={handleDeleteSelected}
-                  >
-                    Eliminar
-                  </Button>
-                </>
-              ) : null}
             </div>
-          </div>
+          </header>
+          <section
+            hidden={viewMode !== 'map'}
+            className="relative overflow-hidden rounded-lg border border-gray-200 bg-white"
+          >
+            <div className="absolute left-1/2 top-3 z-20 w-max max-w-[calc(100%_-_1.5rem)] -translate-x-1/2 rounded-2xl border border-gray-200 bg-white p-1.5 shadow-md shadow-gray-900/5">
+              <FarmMapToolbar
+                mode={isCreating ? 'draw' : selectedArea ? 'edit' : 'browse'}
+                hand={handTool}
+                pendingCount={unassignedAnimals.length}
+                pointCount={polygonPoints.length}
+                dirty={canSaveDirtyArea}
+                busy={isSavingArea}
+                hasAnimals={selectedAreaHasAnimals}
+                areaName={selectedArea?.name}
+                onHand={() => setHandTool((current) => !current)}
+                onPending={() => setIsUnassignedOpen(true)}
+                onUndoPoint={() => setPolygonPoints((points) => points.slice(0, -1))}
+                onFinish={finishPolygon}
+                onCancel={cancelCurrentAction}
+                onEdit={() => {
+                  if (selectedArea) openAreaEditor(selectedArea)
+                }}
+                onDone={() => {
+                  void handleSaveSelected()
+                }}
+                onDelete={() => {
+                  setError(null)
+                  setDeleteAreaOpen(true)
+                }}
+              />
+            </div>
 
-          {error ? (
-            <p className="mx-4 mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
-          ) : null}
+            {error && !pendingLayout && !isAreaEditorOpen && !deleteAreaOpen ? (
+              <p
+                role="alert"
+                className="absolute bottom-3 left-3 right-3 z-20 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 shadow-sm"
+              >
+                {error}
+              </p>
+            ) : null}
 
-          <div className="relative bg-stone-50">
-            <svg
-              ref={svgRef}
-              role="img"
-              aria-label="Lienzo de áreas de la granja"
-              viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
-              className="block h-[520px] w-full touch-none select-none"
-              style={isCreating ? { cursor: PENCIL_CURSOR } : undefined}
-              onPointerDown={handleCanvasPointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={handlePointerUp}
-              onDoubleClick={() => {
-                if (tool === 'polygon') finishPolygon()
-              }}
+            <div
+              ref={centerCanvasOnOpen}
+              tabIndex={0}
+              role="region"
+              aria-label="Lienzo de áreas. Arrastra para desplazarte o usa las flechas del teclado."
+              className="max-h-[70dvh] touch-none overflow-auto overscroll-contain scroll-auto bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-green-600"
             >
-              <defs>
-                <pattern id="farm-grid" width="32" height="32" patternUnits="userSpaceOnUse">
-                  <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#d6d3d1" strokeWidth="1" />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#farm-grid)" />
+              <div className="relative" style={{ width: `${zoom * 2}%` }}>
+                <svg
+                  ref={attachCanvas}
+                  role="group"
+                  aria-label="Contornos de las áreas de la granja"
+                  viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+                  className="block aspect-[1000/620] w-full touch-none select-none"
+                  style={{
+                    cursor: isPanning
+                      ? 'grabbing'
+                      : handTool || spacePressed || !isCreating
+                        ? 'grab'
+                        : PENCIL_CURSOR,
+                  }}
+                  onPointerDownCapture={(event) => {
+                    if ((event.button === 0 && (handTool || spacePressed)) || event.button === 1) {
+                      if (
+                        event.target instanceof Element &&
+                        event.target.closest('button, input, a')
+                      )
+                        return
+                      event.stopPropagation()
+                      beginPan(event)
+                    }
+                  }}
+                  onPointerDown={handleCanvasPointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerUp}
+                  onLostPointerCapture={handlePointerUp}
+                >
+                  <defs>
+                    <pattern id="farm-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#d6d3d1" strokeWidth="1" />
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#farm-grid)" />
 
-              {displayedAreas.map(({ area, layout }) => {
-                const points = pointsToSvg(layout.points)
-                const bounds = getBounds(layout.points)
-                const labelX = bounds.minX * VIEWBOX_WIDTH + 12
-                const labelY = bounds.minY * VIEWBOX_HEIGHT + 12
-                const boxWidth = Math.max(160, Math.min(260, bounds.width * VIEWBOX_WIDTH - 24))
-                const boxHeight = Math.max(104, Math.min(170, bounds.height * VIEWBOX_HEIGHT - 24))
-                const group = animalsByArea.get(area.id) ?? []
-                const isSelected = selectedAreaId === area.id
-                const capacityLabel = area.capacity
-                  ? `${group.length}/${area.capacity}`
-                  : `${group.length}`
+                  {displayedAreas.map(({ area, layout }) => {
+                    const points = pointsToSvg(layout.points)
+                    const isSelected = selectedAreaId === area.id
 
-                return (
-                  <g
-                    key={area.id}
-                    onPointerDown={(event) => handleAreaPointerDown(event, area.id, layout)}
-                    onDragOver={(event) => {
-                      event.preventDefault()
-                      setDropTargetId(area.id)
-                    }}
-                    onDragLeave={() => setDropTargetId(null)}
-                    onDrop={(event) => handleDropAnimal(event, area.id)}
-                    className="cursor-move"
-                  >
-                    <polygon
-                      points={points}
-                      fill={layout.color || '#16a34a'}
-                      fillOpacity={dropTargetId === area.id ? 0.3 : 0.16}
-                      stroke={isSelected ? '#111827' : layout.color || '#16a34a'}
-                      strokeWidth={isSelected ? 4 : 2}
-                      strokeLinejoin="round"
-                    />
-                    <foreignObject
-                      x={labelX}
-                      y={labelY}
-                      width={boxWidth}
-                      height={boxHeight}
-                      className="pointer-events-auto"
-                    >
-                      <div className="h-full overflow-hidden rounded-md border border-white/70 bg-white/90 p-2 shadow-sm backdrop-blur">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-bold text-gray-900">
-                              <span aria-hidden="true">
+                    return (
+                      <g
+                        key={area.id}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Editar contorno de ${area.name}`}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            void selectAreaForEditing(area.id)
+                          }
+                        }}
+                        onPointerDown={(event) => handleAreaPointerDown(event, area.id, layout)}
+                        onDragOver={(event) => {
+                          event.preventDefault()
+                          setDropTargetId(area.id)
+                        }}
+                        onDragLeave={() => setDropTargetId(null)}
+                        onDrop={(event) => handleDropAnimal(event, area.id)}
+                        className={
+                          handTool || spacePressed || isPanning ? 'cursor-inherit' : 'cursor-move'
+                        }
+                      >
+                        <polygon
+                          points={points}
+                          fill={layout.color || '#16a34a'}
+                          fillOpacity={dropTargetId === area.id ? 0.3 : 0.16}
+                          stroke={isSelected ? '#111827' : layout.color || '#16a34a'}
+                          strokeWidth={isSelected ? 4 : 2}
+                          strokeLinejoin="round"
+                        />
+
+                        {isSelected
+                          ? layout.points.map((point, index) => {
+                              const svgPoint = pointToSvg(point)
+                              return (
+                                <g key={`${area.id}-${index}`}>
+                                  <circle
+                                    cx={svgPoint.x}
+                                    cy={svgPoint.y}
+                                    r={22 / canvasScale}
+                                    fill="transparent"
+                                    className="cursor-grab"
+                                    onPointerDown={(event) =>
+                                      handleVertexPointerDown(event, area.id, index)
+                                    }
+                                  />
+                                  <circle
+                                    cx={svgPoint.x}
+                                    cy={svgPoint.y}
+                                    r={6 / canvasScale}
+                                    fill="white"
+                                    stroke="#166534"
+                                    strokeWidth={2 / canvasScale}
+                                    className="pointer-events-none"
+                                  />
+                                </g>
+                              )
+                            })
+                          : null}
+                      </g>
+                    )
+                  })}
+
+                  {polygonPoints.length > 0 ? (
+                    <g>
+                      <polyline
+                        points={pointsToSvg(polygonPoints)}
+                        fill="none"
+                        stroke="#16a34a"
+                        strokeDasharray="10 8"
+                        strokeWidth={3}
+                      />
+                      {polygonPoints.map((point, index) => {
+                        const svgPoint = pointToSvg(point)
+                        return (
+                          <circle
+                            key={`${point.x}-${point.y}-${index}`}
+                            cx={svgPoint.x}
+                            cy={svgPoint.y}
+                            r={(index === 0 ? 8 : 4) / canvasScale}
+                            fill={index === 0 ? '#ffffff' : '#16a34a'}
+                            stroke="#16a34a"
+                            strokeWidth={index === 0 ? 3 : 0}
+                            role={index === 0 && polygonPoints.length >= 3 ? 'button' : undefined}
+                            tabIndex={index === 0 && polygonPoints.length >= 3 ? 0 : undefined}
+                            aria-label={
+                              index === 0 ? 'Cerrar polígono en el primer punto' : undefined
+                            }
+                            className={
+                              index === 0 && polygonPoints.length >= 3
+                                ? 'cursor-pointer'
+                                : undefined
+                            }
+                            onKeyDown={(event) => {
+                              if (index === 0 && (event.key === 'Enter' || event.key === ' ')) {
+                                event.preventDefault()
+                                finishPolygon()
+                              }
+                            }}
+                          />
+                        )
+                      })}
+                    </g>
+                  ) : null}
+                </svg>
+
+                <div className="pointer-events-none absolute inset-0">
+                  {displayedAreas.map(({ area, layout }) => {
+                    const bounds = getBounds(layout.points)
+                    const group = animalsByArea.get(area.id) ?? []
+                    const detailsExpanded = expandedAreaDetails.has(area.id)
+                    const labelScale = detailsExpanded
+                      ? 1
+                      : Math.max(0.65, Math.min(0.85, zoom / 100))
+                    return (
+                      <div
+                        key={area.id}
+                        className={
+                          isCreating || handTool || spacePressed
+                            ? 'pointer-events-none absolute'
+                            : 'pointer-events-auto absolute'
+                        }
+                        style={{
+                          left: `calc(${bounds.minX * 100}% + 12px)`,
+                          top: `calc(${bounds.minY * 100}% + 12px)`,
+                          width: detailsExpanded ? '224px' : '180px',
+                          maxWidth: 'calc(100% - 24px)',
+                          transform: `scale(${labelScale})`,
+                          transformOrigin: 'top left',
+                          zIndex: detailsExpanded ? (frontAreaId === area.id ? 12 : 10) : 1,
+                        }}
+                        onDragOver={(event) => {
+                          event.preventDefault()
+                          setDropTargetId(area.id)
+                        }}
+                        onDragLeave={() => setDropTargetId(null)}
+                        onDrop={(event) => handleDropAnimal(event, area.id)}
+                      >
+                        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                          <button
+                            type="button"
+                            aria-expanded={detailsExpanded}
+                            aria-label={`${detailsExpanded ? 'Ocultar' : 'Mostrar'} detalles de ${area.name}`}
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onClick={() => {
+                              setFrontAreaId(area.id)
+                              setExpandedAreaDetails((previous) => {
+                                const next = new Set(previous)
+                                if (next.has(area.id)) next.delete(area.id)
+                                else next.add(area.id)
+                                return next
+                              })
+                            }}
+                            className="flex min-h-11 w-full cursor-pointer items-center gap-1.5 px-2 text-left text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-green-600"
+                          >
+                            <PiCaretRight
+                              aria-hidden="true"
+                              className={`shrink-0 transition-transform ${detailsExpanded ? 'rotate-90' : ''}`}
+                            />
+                            <span className="min-w-0 flex-1 py-1">
+                              <span className="flex items-center gap-1 truncate text-sm font-bold leading-5">
                                 <EmojiIcon emoji={areaTypeIcons[area.type]} />
-                              </span>{' '}
-                              {area.name}
-                            </p>
-                            <p className="truncate text-[11px] font-medium text-gray-500">
-                              {areaTypeLabels[area.type]}
-                            </p>
-                          </div>
-                          <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-700">
-                            {capacityLabel}
-                          </span>
-                        </div>
-                        {area.description ? (
-                          <p className="mt-1 line-clamp-2 text-[11px] text-gray-500">
-                            {area.description}
-                          </p>
-                        ) : null}
-                        <div className="mt-2 flex max-h-20 flex-wrap gap-1 overflow-hidden">
-                          {group.slice(0, 12).map((animal) => renderAnimalAvatar(animal))}
-                          {group.length > 12 ? (
-                            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-gray-100 px-1 text-[11px] font-semibold text-gray-600">
-                              +{group.length - 12}
+                                <span className="truncate">{area.name}</span>
+                              </span>
                             </span>
+                            <span
+                              aria-label={`${group.length} ${group.length === 1 ? 'animal' : 'animales'}`}
+                              className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-gray-700"
+                            >
+                              {group.length}
+                            </span>
+                          </button>
+                          {detailsExpanded ? (
+                            <div className="px-2 pb-2">
+                              <p className="pb-1 text-xs font-normal tabular-nums text-gray-500">
+                                {area.areaM2 != null
+                                  ? `${area.areaM2.toLocaleString('es')} m²`
+                                  : '— m²'}
+                              </p>
+                              {area.description ? (
+                                <p className="mt-1 line-clamp-1 text-xs text-gray-500">
+                                  {area.description}
+                                </p>
+                              ) : null}
+                              <div className="mt-2 grid max-h-56 grid-cols-1 justify-items-start gap-1.5 overflow-auto overscroll-contain py-1 pr-1">
+                                {group.map((animal) => renderAnimalAvatar(animal))}
+                              </div>
+                            </div>
                           ) : null}
                         </div>
                       </div>
-                    </foreignObject>
-
-                    {isSelected
-                      ? layout.points.map((point, index) => {
-                          const svgPoint = pointToSvg(point)
-                          return (
-                            <circle
-                              key={`${area.id}-${index}`}
-                              cx={svgPoint.x}
-                              cy={svgPoint.y}
-                              r={8}
-                              fill="#ffffff"
-                              stroke="#111827"
-                              strokeWidth={3}
-                              className="cursor-grab"
-                              onPointerDown={(event) =>
-                                handleVertexPointerDown(event, area.id, index)
-                              }
-                            />
-                          )
-                        })
-                      : null}
-                  </g>
-                )
-              })}
-
-              {draftLayout ? (
-                <polygon
-                  points={pointsToSvg(draftLayout.points)}
-                  fill={draftLayout.color}
-                  fillOpacity={0.18}
-                  stroke={draftLayout.color}
-                  strokeDasharray="10 8"
-                  strokeWidth={3}
-                />
-              ) : null}
-
-              {polygonPoints.length > 0 ? (
-                <g>
-                  <polyline
-                    points={pointsToSvg(polygonPoints)}
-                    fill="none"
-                    stroke="#16a34a"
-                    strokeDasharray="10 8"
-                    strokeWidth={3}
-                  />
-                  {polygonPoints.map((point, index) => {
-                    const svgPoint = pointToSvg(point)
-                    return (
-                      <circle
-                        key={`${point.x}-${point.y}-${index}`}
-                        cx={svgPoint.x}
-                        cy={svgPoint.y}
-                        r={6}
-                        fill="#16a34a"
-                      />
                     )
                   })}
-                </g>
-              ) : null}
-            </svg>
-
-            {activeAreas.length === 0 && !pendingLayout ? (
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
-                <div className="max-w-sm rounded-lg border border-dashed border-gray-300 bg-white/95 px-4 py-5 text-center shadow-sm">
-                  <p className="text-sm font-semibold text-gray-900">Dibuja tu primera área</p>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Usa Crear área. Cuadrado es el modo inicial; también puedes cambiar a polígono.
-                  </p>
                 </div>
+
+                {activeAreas.length === 0 && !pendingLayout && polygonPoints.length === 0 ? (
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
+                    <div className="max-w-sm rounded-lg border border-dashed border-gray-300 bg-white/95 px-4 py-5 text-center shadow-sm">
+                      <p className="text-sm font-semibold text-gray-900">Dibuja tu primera área</p>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Marca los puntos del contorno y pulsa el primero para cerrar el polígono.
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
               </div>
+            </div>
+          </section>
+          <div hidden={viewMode !== 'table'} className="space-y-3">
+            {error && !isAreaEditorOpen ? (
+              <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+                {error}
+              </p>
             ) : null}
+            <FarmAreasTable
+              areas={activeAreas}
+              animalsByArea={animalsByArea}
+              renderAnimal={(animal) => renderAnimalChip(animal, true)}
+              busy={isSavingArea}
+              onEdit={(area) => {
+                void (async () => {
+                  if (await selectAreaForEditing(area.id)) openAreaEditor(area)
+                })()
+              }}
+              onMap={(areaId) => {
+                changeView('map')
+                if (areaId === UNASSIGNED_AREA_ID) {
+                  setIsUnassignedOpen(true)
+                  return
+                }
+                void (async () => {
+                  if (!(await selectAreaForEditing(areaId))) return
+                  requestAnimationFrame(() => {
+                    const viewport = viewportRef.current
+                    const canvas = svgRef.current
+                    const displayedArea = displayedAreas.find((item) => item.area.id === areaId)
+                    if (!viewport || !canvas || !displayedArea) return
+                    const bounds = getBounds(displayedArea.layout.points)
+                    const canvasSize = canvas.getBoundingClientRect()
+                    viewport.scrollTo({
+                      left:
+                        ((bounds.minX + bounds.maxX) / 2) * canvasSize.width -
+                        viewport.clientWidth / 2,
+                      top:
+                        ((bounds.minY + bounds.maxY) / 2) * canvasSize.height -
+                        viewport.clientHeight / 2,
+                      behavior: 'instant',
+                    })
+                    viewport.focus({ preventScroll: true })
+                  })
+                })()
+              }}
+            />
           </div>
-        </section>
+        </div>
       )}
+
+      <Modal
+        isOpen={deleteAreaOpen}
+        onClose={() => {
+          if (!isSavingArea) setDeleteAreaOpen(false)
+        }}
+        title="Eliminar área"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-base text-gray-700">
+            ¿Eliminar «{selectedArea?.name}»? Se borrará su dibujo y sus datos. Esta acción no se
+            puede deshacer.
+          </p>
+          {error ? (
+            <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </p>
+          ) : null}
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              color="neutral"
+              className="min-h-11 rounded-xl"
+              disabled={isSavingArea}
+              onClick={() => setDeleteAreaOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              color="error"
+              className="min-h-11 rounded-xl"
+              disabled={isSavingArea || selectedAreaHasAnimals}
+              onClick={handleDeleteSelected}
+            >
+              {isSavingArea ? 'Eliminando…' : 'Eliminar área'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={Boolean(moveAnimalTarget)}
+        onClose={() => setMoveAnimalTarget(null)}
+        title={moveAnimalTarget ? `Mover ${moveAnimalTarget.animalNumber}` : 'Mover animal'}
+        size="md"
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-gray-600">Selecciona el área de destino.</p>
+          <div className="max-h-[45dvh] space-y-1 overflow-y-auto">
+            {[{ id: UNASSIGNED_AREA_ID, name: 'Pendientes de asignar' }, ...activeAreas].map(
+              (area) => (
+                <Button
+                  key={area.id}
+                  type="button"
+                  variant="ghost"
+                  color="neutral"
+                  className="min-h-11 w-full justify-start rounded-xl text-left"
+                  disabled={(moveAnimalTarget?.currentAreaId ?? UNASSIGNED_AREA_ID) === area.id}
+                  onClick={() => {
+                    void moveAnimalFromDialog(area.id)
+                  }}
+                >
+                  {area.name}
+                  {(moveAnimalTarget?.currentAreaId ?? UNASSIGNED_AREA_ID) === area.id ? (
+                    <span className="ml-auto text-xs text-gray-500">Actual</span>
+                  ) : null}
+                </Button>
+              ),
+            )}
+          </div>
+          <div className="flex justify-end border-t border-gray-100 pt-3">
+            <Button
+              type="button"
+              color="neutral"
+              variant="ghost"
+              className="min-h-11 rounded-xl"
+              onClick={() => setMoveAnimalTarget(null)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         isOpen={isUnassignedOpen}
@@ -1180,8 +1486,8 @@ export default function FarmMapEditor({
               className="min-h-11 w-full rounded-md border border-gray-300 px-3 text-base text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
             />
             <p className="mt-2 text-xs text-gray-500">
-              {visibleUnassignedAnimals.length} de {unassignedAnimals.length} animales sin área. Usa
-              el menú ⋮ para asignarlos.
+              {visibleUnassignedAnimals.length} de {unassignedAnimals.length} animales sin área.
+              Pulsa una ficha para elegir su destino.
             </p>
           </div>
 
@@ -1204,11 +1510,16 @@ export default function FarmMapEditor({
 
       <Modal
         isOpen={Boolean(pendingLayout)}
-        onClose={() => setPendingLayout(null)}
+        onClose={returnToDrawing}
         title="Guardar área dibujada"
         size="md"
       >
         <form onSubmit={handleCreateArea} className="space-y-4">
+          {error ? (
+            <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </p>
+          ) : null}
           <div>
             <label
               htmlFor="mapped-area-name"
@@ -1246,47 +1557,35 @@ export default function FarmMapEditor({
           </div>
           <div>
             <label
-              htmlFor="mapped-area-capacity"
-              className="mb-2 block text-sm font-medium text-gray-700"
-            >
-              Capacidad
-            </label>
-            <input
-              id="mapped-area-capacity"
-              type="number"
-              min="1"
-              value={areaForm.capacity}
-              onChange={(event) =>
-                setAreaForm((prev) => ({ ...prev, capacity: event.target.value }))
-              }
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-base text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Número máximo de animales"
-            />
-          </div>
-          <div>
-            <label
               htmlFor="mapped-area-description"
               className="mb-2 block text-sm font-medium text-gray-700"
             >
               Descripción
             </label>
-            <textarea
+            <AutoGrowTextarea
               id="mapped-area-description"
-              rows={3}
               value={areaForm.description}
               onChange={(event) =>
                 setAreaForm((prev) => ({ ...prev, description: event.target.value }))
               }
-              className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-base text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
               placeholder="Notas visibles dentro del lienzo"
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-base text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
-          <div>
-            <span className="mb-2 block text-sm font-medium text-gray-700">Color</span>
-            <ColorSwatches
-              value={areaForm.color}
-              onChange={(color) => setAreaForm((prev) => ({ ...prev, color }))}
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-3">
+            <AreaSizeInput
+              id="mapped-area-size"
+              value={areaForm.areaM2}
+              disabled={isSavingArea}
+              onChange={(value) => setAreaForm((prev) => ({ ...prev, areaM2: value }))}
             />
+            <div>
+              <span className="mb-2 block text-sm font-medium text-gray-700">Color</span>
+              <ColorSwatches
+                value={areaForm.color}
+                onChange={(color) => setAreaForm((prev) => ({ ...prev, color }))}
+              />
+            </div>
           </div>
           <div className="flex justify-end gap-3 border-t border-gray-200 pt-4">
             <Button
@@ -1294,7 +1593,7 @@ export default function FarmMapEditor({
               color="neutral"
               variant="outline"
               disabled={isSavingArea}
-              onClick={() => setPendingLayout(null)}
+              onClick={returnToDrawing}
             >
               Cancelar
             </Button>
@@ -1306,19 +1605,26 @@ export default function FarmMapEditor({
       </Modal>
 
       <Modal
-        isOpen={isAreaEditorOpen && Boolean(selectedArea)}
-        onClose={() => setIsAreaEditorOpen(false)}
-        title={selectedArea ? `Editar ${selectedArea.name}` : 'Editar área'}
+        isOpen={isAreaEditorOpen && Boolean(editedArea)}
+        onClose={() => {
+          if (!isSavingArea) setIsAreaEditorOpen(false)
+        }}
+        title={editedArea ? `Editar ${editedArea.name}` : 'Editar área'}
         size="lg"
       >
         <form onSubmit={handleSaveAreaDetails} className="space-y-4">
+          {error ? (
+            <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </p>
+          ) : null}
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label
                 htmlFor="edit-area-name"
                 className="mb-2 block text-sm font-medium text-gray-700"
               >
-                Título del corral *
+                Nombre del área *
               </label>
               <input
                 id="edit-area-name"
@@ -1351,105 +1657,41 @@ export default function FarmMapEditor({
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-[180px_1fr]">
-            <div>
-              <label
-                htmlFor="edit-area-capacity"
-                className="mb-2 block text-sm font-medium text-gray-700"
-              >
-                Capacidad
-              </label>
-              <input
-                id="edit-area-capacity"
-                type="number"
-                min="1"
-                value={areaEditForm.capacity}
-                onChange={(event) =>
-                  setAreaEditForm((prev) => ({ ...prev, capacity: event.target.value }))
-                }
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-base text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="edit-area-description"
-                className="mb-2 block text-sm font-medium text-gray-700"
-              >
-                Descripción
-              </label>
-              <input
-                id="edit-area-description"
-                type="text"
-                value={areaEditForm.description}
-                onChange={(event) =>
-                  setAreaEditForm((prev) => ({ ...prev, description: event.target.value }))
-                }
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-base text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-          </div>
-
           <div>
-            <span className="mb-2 block text-sm font-medium text-gray-700">Color</span>
-            <ColorSwatches
-              value={areaEditForm.color}
-              onChange={(color) => setAreaEditForm((prev) => ({ ...prev, color }))}
-            />
-          </div>
-
-          <section className="border-t border-gray-200 pt-4">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-gray-900">Animales en el corral</h3>
-              <div className="flex items-center gap-2">
-                {selectedAreaAnimals.length > 0 ? (
-                  <Button
-                    type="button"
-                    size="xs"
-                    color="neutral"
-                    variant="outline"
-                    onClick={emptySelectedArea}
-                  >
-                    Sacar todos a pendientes
-                  </Button>
-                ) : null}
-                <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700">
-                  {selectedAreaAnimals.length}
-                </span>
-              </div>
-            </div>
-            <div className="max-h-56 space-y-2 overflow-y-auto rounded-md border border-gray-200 bg-gray-50 p-2">
-              {selectedAreaAnimals.length === 0 ? (
-                <p className="px-2 py-4 text-center text-sm text-gray-500">
-                  No hay animales asignados.
-                </p>
-              ) : (
-                selectedAreaAnimals.map((animal) => (
-                  <div
-                    key={animal.id}
-                    className="flex min-h-11 items-center justify-between gap-2 rounded-md border border-gray-200 bg-white px-2 py-1"
-                  >
-                    {renderAnimalChip(animal, true)}
-                    <Button
-                      type="button"
-                      size="xs"
-                      color="neutral"
-                      variant="outline"
-                      disabled={savingIds.has(animal.id)}
-                      onClick={() => onMoveAnimal(animal.id, UNASSIGNED_AREA_ID)}
-                    >
-                      Quitar
-                    </Button>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-
-          <section>
             <label
-              htmlFor="assign-area-animal"
+              htmlFor="edit-area-description"
               className="mb-2 block text-sm font-medium text-gray-700"
             >
+              Descripción
+            </label>
+            <AutoGrowTextarea
+              id="edit-area-description"
+              value={areaEditForm.description}
+              onChange={(event) =>
+                setAreaEditForm((prev) => ({ ...prev, description: event.target.value }))
+              }
+              placeholder="Notas visibles dentro del lienzo"
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-base text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-3">
+            <AreaSizeInput
+              id="edit-area-size"
+              value={areaEditForm.areaM2}
+              disabled={isSavingArea}
+              onChange={(value) => setAreaEditForm((prev) => ({ ...prev, areaM2: value }))}
+            />
+            <div>
+              <span className="mb-2 block text-sm font-medium text-gray-700">Color</span>
+              <ColorSwatches
+                value={areaEditForm.color}
+                onChange={(color) => setAreaEditForm((prev) => ({ ...prev, color }))}
+              />
+            </div>
+          </div>
+
+          <section>
+            <label htmlFor="assign-area-animal" className="sr-only">
               Asignar animal a esta área
             </label>
             <input
@@ -1458,7 +1700,7 @@ export default function FarmMapEditor({
               value={assignAnimalSearch}
               onChange={(event) => setAssignAnimalSearch(event.target.value)}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-base text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Buscar por número, nombre, raza o notas..."
+              placeholder="Buscar animales para asignar..."
             />
             {assignAnimalSearch.trim() ? (
               <div className="mt-2 max-h-48 space-y-2 overflow-y-auto rounded-md border border-gray-200 bg-gray-50 p-2">
@@ -1475,23 +1717,100 @@ export default function FarmMapEditor({
                       {renderAnimalChip(animal, true)}
                       <Button
                         type="button"
-                        size="xs"
+                        size="sm"
+                        className="min-h-11 rounded-xl"
                         color="success"
                         variant="outline"
                         disabled={savingIds.has(animal.id) || !selectedArea}
-                        onClick={() => {
+                        onClick={async () => {
                           if (!selectedArea) return
-                          onMoveAnimal(animal.id, selectedArea.id)
-                          setAssignAnimalSearch('')
+                          try {
+                            await onMoveAnimal(animal.id, selectedArea.id, false)
+                            setAssignAnimalSearch('')
+                          } catch {
+                            setError('No se pudo asignar el animal. Intenta de nuevo.')
+                          }
                         }}
                       >
-                        Asignar
+                        {savingIds.has(animal.id) ? 'Moviendo…' : 'Asignar'}
                       </Button>
                     </div>
                   ))
                 )}
               </div>
             ) : null}
+          </section>
+
+          <section
+            className={
+              selectedAreaAnimals.length > 0 ? 'border-t border-gray-200 pt-4' : 'contents'
+            }
+          >
+            <div
+              className={
+                selectedAreaAnimals.length > 0
+                  ? 'mb-2 flex items-center justify-between gap-2'
+                  : 'hidden'
+              }
+            >
+              <h3 className="text-sm font-semibold text-gray-900">Animales en el corral</h3>
+              <div className="flex items-center gap-2">
+                <ButtonConfirm
+                  key={selectedArea?.id}
+                  openLabel="Sacar a todos"
+                  confirmLabel="Sí, sacar a todos"
+                  confirmText={`¿Sacar a los ${selectedAreaAnimals.length} animales de «${selectedArea?.name}»? Quedarán en pendientes de asignar. Sus fichas y registros se conservan.`}
+                  openProps={{
+                    type: 'button',
+                    size: 'sm',
+                    color: 'neutral',
+                    variant: 'ghost',
+                    className: 'min-h-11 rounded-xl',
+                  }}
+                  confirmProps={{ type: 'button', color: 'error' }}
+                  onConfirm={emptySelectedArea}
+                >
+                  {emptyAreaError ? (
+                    <p role="alert" className="text-sm text-red-700">
+                      {emptyAreaError}
+                    </p>
+                  ) : null}
+                </ButtonConfirm>
+                <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700">
+                  {selectedAreaAnimals.length}
+                </span>
+              </div>
+            </div>
+            <div
+              hidden={selectedAreaAnimals.length === 0}
+              className="max-h-56 space-y-2 overflow-y-auto rounded-md border border-gray-200 bg-gray-50 p-2"
+            >
+              {selectedAreaAnimals.map((animal) => (
+                <div
+                  key={animal.id}
+                  className="flex min-h-11 items-center justify-between gap-2 rounded-md border border-gray-200 bg-white px-2 py-1"
+                >
+                  {renderAnimalChip(animal, true)}
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="min-h-11 rounded-xl"
+                    color="neutral"
+                    variant="outline"
+                    disabled={savingIds.has(animal.id)}
+                    onClick={async () => {
+                      try {
+                        await onMoveAnimal(animal.id, UNASSIGNED_AREA_ID, false)
+                      } catch {
+                        setError('No se pudo sacar el animal. Intenta de nuevo.')
+                      }
+                    }}
+                  >
+                    {savingIds.has(animal.id) ? 'Moviendo…' : 'Quitar'}
+                  </Button>
+                </div>
+              ))}
+            </div>
           </section>
 
           <div className="flex justify-end gap-3 border-t border-gray-200 pt-4">
