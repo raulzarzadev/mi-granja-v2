@@ -4,10 +4,30 @@
 `firestore.rules` file is only for local emulators. Predeploy hooks reject
 attempts to deploy that emulator configuration.
 
-`firebase.json` configures **Storage only**. It deliberately does not deploy
-Firestore rules: the live Firestore rules have not been retrieved or audited.
-Export/review those rules before adding them to this deployment configuration;
-do not substitute the permissive emulator file.
+`firebase.json` deploys Storage, Firestore indexes and the separate
+`firestore.production.rules`. Never substitute the permissive emulator file.
+
+Production audit (2026-11-12): the retrieved Firestore rules allowed anonymous
+reads/writes to all documents. The production rules now require authentication,
+preserving existing signed-in client behavior as immediate containment. **This
+is not tenant isolation**: signed-in clients still have broad access. Farm/module
+authorization and protection of server-owned collections require a separate,
+tested migration before this policy can be considered fully hardened.
+
+The previous Storage release contained rules for the wrong service
+(`cloud.firestore`). The tested Storage rules in this repository replace it.
+The index manifest incorporates all 16 existing production composite indexes;
+do not remove remote indexes accidentally when adding new ones.
+
+Deploy explicitly from the repository root:
+
+```sh
+pnpm test:security
+pnpm exec firebase deploy --config firebase/firebase.json --project mi-granja-app --only storage,firestore:rules,firestore:indexes --non-interactive
+```
+
+App releases are separate Vercel deployments. Firebase deployment does not
+publish the dashboard or landing.
 
 Storage rules isolate new animal photos by uploader UID. Existing animal photos
 use the animal's farm and its owner/member IDs for access. Download URLs already

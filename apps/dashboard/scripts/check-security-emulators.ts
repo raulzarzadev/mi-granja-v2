@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict'
 import { deleteApp, initializeApp } from 'firebase/app'
 import {
+  collection,
+  connectFirestoreEmulator,
+  doc,
+  getFirestore as getClientFirestore,
+  getDoc,
+  getDocs,
+  setDoc,
+} from 'firebase/firestore'
+import {
   connectStorageEmulator,
   deleteObject,
   getBytes,
@@ -43,6 +52,23 @@ async function main() {
   try {
     await db.doc('farms/farm-a').set({ ownerId: 'owner-a', collaboratorsIds: ['viewer-a'] })
     await db.doc('animals/animal-a').set({ farmId: 'farm-a' })
+    const anonymousApp = initializeApp({ projectId, apiKey: 'demo' }, 'anonymous-firestore')
+    const signedApp = initializeApp({ projectId, apiKey: 'demo' }, 'signed-firestore')
+    clients.push(anonymousApp, signedApp)
+    const anonymousDb = getClientFirestore(anonymousApp)
+    const signedDb = getClientFirestore(signedApp)
+    const [firestoreHost, firestorePort] = process.env.FIRESTORE_EMULATOR_HOST!.split(':')
+    connectFirestoreEmulator(anonymousDb, firestoreHost, Number(firestorePort))
+    connectFirestoreEmulator(signedDb, firestoreHost, Number(firestorePort), {
+      mockUserToken: { sub: 'owner-a', user_id: 'owner-a' },
+    })
+    const deniedFirestore = (operation: Promise<unknown>) =>
+      assert.rejects(operation, (error: any) => error.code === 'permission-denied')
+    await deniedFirestore(getDoc(doc(anonymousDb, 'animals/animal-a')))
+    await deniedFirestore(getDocs(collection(anonymousDb, 'animals')))
+    await deniedFirestore(setDoc(doc(anonymousDb, 'animals/anonymous-write'), { farmId: 'farm-a' }))
+    assert.equal((await getDoc(doc(signedDb, 'animals/animal-a'))).exists(), true)
+    await setDoc(doc(signedDb, 'animals/signed-write'), { farmId: 'farm-a' })
     const owner = storageFor('owner-a')
     const other = storageFor('owner-b')
     const viewer = storageFor('viewer-a')
@@ -74,7 +100,7 @@ async function main() {
     )
     assert.equal(results.filter((retryAfter) => retryAfter === 0).length, 1)
     console.log(
-      'PASS: Storage isolation, authorized reads, immutable uploads, MIME restrictions and real concurrent Firestore transactions',
+      'PASS: Firestore anonymous access blocked, signed-in compatibility, Storage isolation, immutable uploads, MIME restrictions and concurrent transactions',
     )
   } finally {
     await Promise.all(clients.map((app) => deleteApp(app)))

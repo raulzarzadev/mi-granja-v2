@@ -7,6 +7,18 @@ last_updated: 2026-11-12
 
 # Historial de decisiones
 
+## 2026-11-12 — Contención de reglas de producción y despliegue de imágenes
+
+La auditoría recuperó reglas de Firestore abiertas sin autenticación y una release
+de Storage con el servicio incorrecto. Se separan las reglas de producción de las
+permisivas del emulador: producción requiere sesión, preservando por ahora el
+acceso de clientes autenticados. Esto no constituye aislamiento por granja; sigue
+pendiente una migración de autorización y protección de colecciones de servidor.
+Storage usa las reglas probadas de fotos por UID/granja. Se conservan los 16
+índices compuestos existentes. Las pruebas aisladas comprueban denegación de
+lectura/escritura anónima y compatibilidad del acceso autenticado. No cambian
+contratos de operaciones ni ejecución por Admin SDK.
+
 ## 2026-11-01 — Plan inicial
 
 - Centralizar la estrategia en `docs/assistant/`, enlazada desde los índices e instrucciones del repositorio.

@@ -15,6 +15,12 @@ Estado: **documentos por tema implementados en `lib/ai/knowledge.ts`, con recupe
 
 **Datos de la granja:** documentos lógicos JSON generados al consultar Firestore, bajo la identidad y permisos actuales. No guardar copias manuales en Git ni exportar archivos de todas las granjas a una carpeta accesible por el modelo. Firestore conserva la fuente de verdad; estos archivos son vistas legibles y organizadas por tema.
 
+Seguridad de infraestructura (2026-11-12): las reglas de producción de Firestore
+exigen sesión como contención del acceso anónimo previo. Todavía no aíslan
+clientes autenticados por granja ni protegen colecciones exclusivas del servidor;
+las validaciones del asistente en servidor no sustituyen esa migración pendiente.
+El SDK Admin usado por el asistente no depende de las reglas del SDK cliente.
+
 No hace falta una base vectorial para saber cuántas crías hay o qué monta está activa. Son consultas estructuradas a datos actuales. Considerar búsqueda semántica posteriormente para guías extensas; nunca usar un índice semántico como autoridad para saldos, estados o permisos.
 
 ## Índice lógico implementado
