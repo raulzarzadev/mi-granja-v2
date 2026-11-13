@@ -50,7 +50,7 @@ export default function QuickCreateButton({
   return (
     <>
       <style>{`
-        @media (max-width: 767px) {
+        @container dashboard (max-width: 767px) {
           .quick-create-floating {
             top: calc(var(--fixed-bottom-edge, 100dvh) - 9rem - env(safe-area-inset-bottom, 0px));
             bottom: auto;
@@ -130,7 +130,7 @@ export default function QuickCreateButton({
         className={
           placement === 'sidebar'
             ? 'quick-create-sidebar flex w-full flex-col-reverse gap-2'
-            : 'quick-create-floating fixed z-40 h-14 w-14 md:hidden'
+            : 'quick-create-floating fixed z-40 h-14 w-14 @[768px]/dashboard:hidden'
         }
         onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget as Node)) setExpanded(false)

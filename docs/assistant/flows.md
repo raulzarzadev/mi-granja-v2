@@ -159,3 +159,15 @@ Los grants de `aiCreditWallets/{uid}/grants` son idempotentes por suscripción/p
 La página /plan utiliza una tabla comparativa de planes activos con precio, rango de animales y límites de IA cargados desde la política de Admin. La API autenticada /api/billing/ai-benefits expone solo consultas diarias, tier y créditos visibles; excluye presupuesto/proporción internos. El regalo se presenta como posterior al pago y no acumulable. Se conservan los flujos de selección y Stripe existentes.
 
 Multiplicadores de IA: Pro es la base; Rancho recibe 4× y Empresarial hasta 20×, configurables en Admin → IA. Con la base USD 5 visible/USD 1 interno, son USD 20/USD 4 para Rancho y hasta USD 100/USD 20 para Empresarial. La política limita los multiplicadores a 20. Los regalos se multiplican al acreditar el siguiente ciclo pagado y los saldos anteriores conservan sus condiciones; Empresarial requiere la facturación mensual de Stripe correspondiente al acuerdo. La comparativa muestra los importes visibles y «hasta» para Empresarial.
+
+## Panel de conversaciones
+
+El asistente se abre en un panel compacto a la izquierda: 380 px en escritorio y 420 px desde 1280 px. El dashboard reserva su ancho y recupera todo el espacio al cerrarlo. En móvil conserva el ancho disponible y el ajuste al teclado. El
+historial se abre desde el icono junto al input y sustituye temporalmente los
+mensajes, también en escritorio; no hay una segunda barra lateral dentro del
+panel. «Nueva» aparece al abrir el historial. Seleccionar una conversación
+restaura sus mensajes y propuestas sin ejecutar movimientos.
+
+La presentación del dashboard usa su ancho disponible para alternar navegación
+lateral e inferior; abrir el asistente puede activar la vista compacta aunque la
+ventana siga teniendo ancho de escritorio.

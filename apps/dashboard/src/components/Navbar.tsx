@@ -52,7 +52,7 @@ const Navbar: React.FC = () => {
   if (user === undefined || isLoading) {
     return (
       <nav className="bg-green-600 text-white shadow-lg animate-pulse">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 @[640px]/navbar:px-6 @[1024px]/navbar:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <div className="flex-shrink-0">
@@ -72,11 +72,11 @@ const Navbar: React.FC = () => {
   }
 
   return (
-    <nav className="bg-gradient-to-r from-green-700 via-green-600 to-green-700 text-white shadow-lg relative z-50">
-      <div className="mx-auto w-full min-w-0 max-w-7xl px-2 min-[360px]:px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 min-w-0 items-center justify-between gap-1 min-[360px]:gap-2">
+    <nav className="bg-gradient-to-r from-green-700 via-green-600 to-green-700 text-white shadow-lg relative z-50 @container/navbar">
+      <div className="mx-auto w-full min-w-0 max-w-7xl px-2 @[360px]/navbar:px-4 @[640px]/navbar:px-6 @[1024px]/navbar:px-8">
+        <div className="flex h-16 min-w-0 items-center justify-between gap-1 @[360px]/navbar:gap-2">
           {/* Logo */}
-          <div className="hidden min-w-0 items-center min-[360px]:flex min-[360px]:space-x-2 sm:space-x-4">
+          <div className="hidden min-w-0 items-center @[360px]/navbar:flex @[360px]/navbar:space-x-2 @[640px]/navbar:space-x-4">
             <div className="flex-shrink-0">
               <Link href="/" aria-label="Inicio">
                 <BrandLogo variant="blanco" height={70} width={70} />
@@ -85,7 +85,7 @@ const Navbar: React.FC = () => {
 
             {/* Badge de impersonación (desktop) */}
             {impersonatingUser && originalUser && (
-              <div className="hidden md:flex items-center gap-2 bg-yellow-500/90 text-black px-2 py-1 rounded text-[11px] font-medium shadow-sm">
+              <div className="hidden @[768px]/navbar:flex items-center gap-2 bg-yellow-500/90 text-black px-2 py-1 rounded text-[11px] font-medium shadow-sm">
                 <span>
                   <EmojiIcon emoji="🎭" /> {impersonatingUser.farmName || impersonatingUser.email}
                 </span>
@@ -103,12 +103,12 @@ const Navbar: React.FC = () => {
 
           {/* Lado derecho */}
           <div
-            className="ml-auto flex min-w-0 items-center gap-1 min-[360px]:gap-2 sm:gap-3"
+            className="ml-auto flex min-w-0 items-center gap-1 @[360px]/navbar:gap-2 @[640px]/navbar:gap-3"
             ref={menuRef}
           >
             {/* Impersonación (mobile) */}
             {impersonatingUser && originalUser && (
-              <div className="md:hidden flex items-center gap-1 bg-yellow-500 text-black px-2 py-1 rounded text-[10px] font-medium">
+              <div className="@[768px]/navbar:hidden flex items-center gap-1 bg-yellow-500 text-black px-2 py-1 rounded text-[10px] font-medium">
                 <span>
                   <EmojiIcon emoji="🎭" /> {impersonatingUser.farmName || impersonatingUser.email}
                 </span>
@@ -136,20 +136,20 @@ const Navbar: React.FC = () => {
             {user && isUserAdmin(user) && !impersonatingUser && (
               <button
                 onClick={() => setShowUserSelector(true)}
-                className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1 rounded-md border border-white/20 bg-white/10 px-2 py-1.5 text-xs font-medium transition-colors hover:bg-white/20 min-[360px]:px-3"
+                className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1 rounded-md border border-white/20 bg-white/10 px-2 py-1.5 text-xs font-medium transition-colors hover:bg-white/20 @[360px]/navbar:px-3"
                 aria-label="Suplantar usuario"
               >
                 <span aria-hidden="true">
                   <EmojiIcon emoji="🎭" />
                 </span>
-                <span className="hidden min-[360px]:inline">Suplantar</span>
+                <span className="hidden @[360px]/navbar:inline">Suplantar</span>
               </button>
             )}
 
             {/* Si hay usuario mostrar avatar y menú */}
             {user && (
               <div
-                className="flex min-w-0 items-center gap-1 min-[360px]:gap-2 sm:gap-3"
+                className="flex min-w-0 items-center gap-1 @[360px]/navbar:gap-2 @[640px]/navbar:gap-3"
                 ref={menuRef}
               >
                 <HelpMenu onShowGuide={() => setShowOnboarding(true)} />
@@ -168,7 +168,7 @@ const Navbar: React.FC = () => {
                         user.email?.charAt(0)?.toUpperCase() ||
                         'U'}
                     </div>
-                    <div className="hidden sm:flex flex-col items-start leading-tight text-left">
+                    <div className="hidden @[640px]/navbar:flex flex-col items-start leading-tight text-left">
                       <span className="text-xs opacity-70">
                         {isUserAdmin(user) ? 'Admin' : 'Usuario'}
                       </span>

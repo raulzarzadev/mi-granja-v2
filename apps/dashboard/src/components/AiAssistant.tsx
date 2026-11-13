@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
+import AssistantPanel from '@/components/assistant/AssistantPanel'
 import BatchProposalCard from '@/components/assistant/BatchProposalCard'
 import ProposalCard from '@/components/assistant/ProposalCard'
+import { AiPlanUsage } from '@/components/billing/AiPlanUsage'
 import Button from '@/components/buttons/Button'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
-import { Modal } from '@/components/Modal'
 import ModalAnimalDetails from '@/components/ModalAnimalDetails'
 import ModalBreedingDetails from '@/components/ModalBreedingDetails'
 import { RootState } from '@/features/store'
@@ -443,7 +444,7 @@ function ScopedAiAssistant({
         </Button>
       )}
 
-      <Modal
+      <AssistantPanel
         isOpen={open}
         onClose={() => setOpen(false)}
         title={
@@ -454,22 +455,10 @@ function ScopedAiAssistant({
             </span>
           </span>
         }
-        size="lg"
-        className="sm:!h-[90dvh] sm:!max-w-3xl"
-        contentClassName="flex flex-col !overflow-hidden !p-0"
       >
         <div className="flex min-h-0 flex-1 flex-col gap-1.5 p-2 sm:p-3">
-          {(usage || showHistory) && (
+          {showHistory && (
             <div className="flex shrink-0 items-center justify-between gap-2">
-              {usage && (
-                <p className="ml-auto shrink-0 text-xs text-slate-500">
-                  {usage.mode === 'credits'
-                    ? `Créditos IA: USD ${(usage.creditBalanceUsd ?? 0).toFixed(2)}`
-                    : usage.isUnlimited
-                      ? `${usage.used} hoy`
-                      : `${usage.remaining} consultas disponibles hoy`}
-                </p>
-              )}
               {showHistory && (
                 <button
                   type="button"
@@ -558,20 +547,20 @@ function ScopedAiAssistant({
                 className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain rounded-2xl bg-slate-50/80 p-2"
               >
                 {!items.length && (
-                  <div className="flex min-h-full flex-col justify-center py-5">
+                  <div className="flex min-h-full flex-col justify-center py-3">
                     <span
                       aria-hidden="true"
-                      className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-green-100 text-2xl text-green-800"
+                      className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-green-100 text-2xl text-green-800"
                     >
                       <EmojiIcon emoji="✨" />
                     </span>
-                    <h3 className="text-xl font-bold tracking-tight text-slate-900">
+                    <h3 className="text-lg font-bold tracking-tight text-slate-900">
                       ¿Cómo va tu granja hoy?
                     </h3>
                     <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">
                       Revisa tus animales, consulta pendientes o encuentra tu próximo paso.
                     </p>
-                    <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                    <div className="mt-4 grid gap-2">
                       {SUGERENCIAS.slice(0, 6).map((s) => (
                         <button
                           key={s}
@@ -667,6 +656,8 @@ function ScopedAiAssistant({
               )}
             </>
           )}
+          {/* Única vista de consumo en el chat: barra, «Ver detalles» y aviso de agotado. */}
+          <AiPlanUsage compact refreshKey={`${usage?.used ?? ''}-${usage?.remaining ?? ''}`} />
           <form
             className="flex shrink-0 items-center gap-2 rounded-2xl bg-white p-1.5 ring-1 ring-slate-300 focus-within:ring-2 focus-within:ring-green-700"
             onSubmit={(event) => {
@@ -722,7 +713,7 @@ function ScopedAiAssistant({
             </button>
           </form>
         </div>
-      </Modal>
+      </AssistantPanel>
       {open && selectedBreeding && (
         <ModalBreedingDetails
           record={selectedBreeding}

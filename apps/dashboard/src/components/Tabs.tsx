@@ -385,10 +385,10 @@ const Tabs: React.FC<TabsProps> = ({
             } as React.CSSProperties)
           : undefined
       }
-      className={`w-full min-w-0 max-w-full overflow-x-clip ${sb('md:flex md:items-start md:gap-4 lg:gap-6 md:overflow-x-visible')}`}
+      className={`w-full min-w-0 max-w-full overflow-x-clip ${sb('@[768px]/dashboard:flex @[768px]/dashboard:items-start @[768px]/dashboard:gap-4 @[1024px]/dashboard:gap-6 @[768px]/dashboard:overflow-x-visible')}`}
     >
       <style>{`
-        @media (max-width: 767px) {
+        @container dashboard (max-width: 767px) {
           [data-bottom-navigation] {
             padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
           }
@@ -469,19 +469,21 @@ const Tabs: React.FC<TabsProps> = ({
         }
       `}</style>
       {bottomOnMobile && trailingAction && (
-        <div className="mb-2 flex justify-end md:hidden">{trailingAction}</div>
+        <div className="mb-2 flex justify-end @[768px]/dashboard:hidden">{trailingAction}</div>
       )}
       <div
         className={`tabs-scrollbar-shell max-w-full overflow-x-hidden ${
           scrollSpy ? 'sticky top-0 z-20 bg-white/95 backdrop-blur' : ''
-        } ${sb('md:sticky md:top-4 md:w-48 lg:w-56 md:shrink-0 md:overflow-visible md:rounded-2xl md:border md:border-gray-200 md:bg-white md:p-2 md:shadow-sm')}`}
+        } ${sb('@[768px]/dashboard:sticky @[768px]/dashboard:top-4 @[768px]/dashboard:w-48 @[1024px]/dashboard:w-56 @[768px]/dashboard:shrink-0 @[768px]/dashboard:overflow-visible @[768px]/dashboard:rounded-2xl @[768px]/dashboard:border @[768px]/dashboard:border-gray-200 @[768px]/dashboard:bg-white @[768px]/dashboard:p-2 @[768px]/dashboard:shadow-sm')}`}
       >
-        {sidebarHeader && <div className="mb-2 hidden md:block">{sidebarHeader}</div>}
+        {sidebarHeader && (
+          <div className="mb-2 hidden @[768px]/dashboard:block">{sidebarHeader}</div>
+        )}
         <div
           ref={tabListRef}
           role="tablist"
           aria-label="Secciones"
-          className={`flex gap-2 overflow-x-auto pb-1 pt-1 ${sidebarOnDesktop ? 'md:flex-col md:gap-1 md:overflow-visible md:p-0' : 'md:gap-1.5 md:py-0.5'} ${
+          className={`flex gap-2 overflow-x-auto pb-1 pt-1 ${sidebarOnDesktop ? '@[768px]/dashboard:flex-col @[768px]/dashboard:gap-1 @[768px]/dashboard:overflow-visible @[768px]/dashboard:p-0' : '@[768px]/dashboard:gap-1.5 @[768px]/dashboard:py-0.5'} ${
             hideScrollbar
               ? '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
               : 'tabs-scrollbar'
@@ -503,8 +505,8 @@ const Tabs: React.FC<TabsProps> = ({
                   className={`group relative flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium outline-none transition-all cursor-pointer ${
                     isActive
                       ? 'bg-green-600 text-white border-green-600 shadow-sm'
-                      : `bg-white/70 text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300 hover:shadow-sm ${sb('md:border-transparent md:bg-transparent md:hover:shadow-none')}`
-                  } ${sidebarOnDesktop ? 'md:w-full md:rounded-xl md:justify-between' : 'md:min-h-8 md:gap-1.5 md:px-3 md:py-1 md:text-xs'} focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1`}
+                      : `bg-white/70 text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300 hover:shadow-sm ${sb('@[768px]/dashboard:border-transparent @[768px]/dashboard:bg-transparent @[768px]/dashboard:hover:shadow-none')}`
+                  } ${sidebarOnDesktop ? '@[768px]/dashboard:w-full @[768px]/dashboard:rounded-xl @[768px]/dashboard:justify-between' : '@[768px]/dashboard:min-h-8 @[768px]/dashboard:gap-1.5 @[768px]/dashboard:px-3 @[768px]/dashboard:py-1 @[768px]/dashboard:text-xs'} focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1`}
                 >
                   <IconLabel
                     label={tab.label}
@@ -524,12 +526,12 @@ const Tabs: React.FC<TabsProps> = ({
                   )}
                   {isActive && (
                     <span
-                      className={`${bottomOnMobile ? 'bottom-tab-ring' : ''} absolute inset-0 rounded-full ring-2 ring-green-500/40 pointer-events-none ${sb('md:hidden')}`}
+                      className={`${bottomOnMobile ? 'bottom-tab-ring' : ''} absolute inset-0 rounded-full ring-2 ring-green-500/40 pointer-events-none ${sb('@[768px]/dashboard:hidden')}`}
                     />
                   )}
                 </button>
                 {showSubTabs && (
-                  <div className="hidden md:flex flex-col gap-0.5 border-l-2 border-green-100 ml-5 pl-2 my-1">
+                  <div className="hidden @[768px]/dashboard:flex flex-col gap-0.5 border-l-2 border-green-100 ml-5 pl-2 my-1">
                     {subTabs.labels.map((label, subIndex) => {
                       const isSubActive = subIndex === (subTabs.activeIndex ?? activeSubTab)
                       const badge = subTabs.badges[subIndex]
@@ -566,7 +568,7 @@ const Tabs: React.FC<TabsProps> = ({
           })}
           {trailingAction && (
             <div
-              className={`${bottomOnMobile ? 'hidden md:flex' : 'flex'} items-center ml-1 ${sb('md:ml-0 md:mt-1 md:border-t md:border-gray-100 md:px-2 md:pt-2')}`}
+              className={`${bottomOnMobile ? 'hidden @[768px]/dashboard:flex' : 'flex'} items-center ml-1 ${sb('@[768px]/dashboard:ml-0 @[768px]/dashboard:mt-1 @[768px]/dashboard:border-t @[768px]/dashboard:border-gray-100 @[768px]/dashboard:px-2 @[768px]/dashboard:pt-2')}`}
             >
               {trailingAction}
             </div>
@@ -574,7 +576,7 @@ const Tabs: React.FC<TabsProps> = ({
         </div>
         {!hideScrollbar && scrollbar.visible && (
           <div
-            className={`tabs-scrollbar-track ${sb('md:hidden')}`}
+            className={`tabs-scrollbar-track ${sb('@[768px]/dashboard:hidden')}`}
             aria-hidden="true"
             style={{
               width: '100%',
@@ -599,7 +601,7 @@ const Tabs: React.FC<TabsProps> = ({
         )}
       </div>
       <SubTabsContext.Provider value={sidebarOnDesktop ? registerSubTabs : null}>
-        <div className={`min-w-0 ${sb('md:flex-1')}`}>
+        <div className={`min-w-0 ${sb('@[768px]/dashboard:flex-1')}`}>
           {tabs[activeTab]?.description && (
             <p className="mt-1 px-2 text-xs leading-4 text-gray-500">
               {tabs[activeTab].description}

@@ -80,11 +80,11 @@ const FarmSwitcherBar = ({
   if (allFarms.length === 0) return null
 
   return (
-    <div className="w-full">
+    <div className="@container/farm w-full">
       <div className="mb-2 flex flex-col gap-2">
-        <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[minmax(240px,1fr)_auto_minmax(180px,1fr)]">
+        <div className="grid grid-cols-1 items-center gap-3 @[768px]/farm:grid-cols-[minmax(240px,1fr)_auto_minmax(180px,1fr)]">
           {/* Farm switcher dropdown */}
-          <div className="flex min-w-0 items-center gap-2 md:justify-self-start">
+          <div className="flex min-w-0 items-center gap-2 @[768px]/farm:justify-self-start">
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen((p) => !p)}
@@ -241,11 +241,11 @@ const FarmSwitcherBar = ({
           </div>
 
           {trailingAction && (
-            <div className="flex shrink-0 justify-start md:justify-center md:justify-self-center">
+            <div className="flex shrink-0 justify-start @[768px]/farm:justify-center @[768px]/farm:justify-self-center">
               {trailingAction}
             </div>
           )}
-          {children && <div className="min-w-0 md:justify-self-end">{children}</div>}
+          {children && <div className="min-w-0 @[768px]/farm:justify-self-end">{children}</div>}
         </div>
         {/* Nueva granja */}
         {/*   TODO agregar este boton mas arriba */}

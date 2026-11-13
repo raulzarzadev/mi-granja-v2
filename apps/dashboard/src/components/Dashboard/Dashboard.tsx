@@ -69,7 +69,11 @@ const Dashboard: React.FC = () => {
 
   return (
     <AnimalSelectionProvider key={currentFarm?.id ?? 'no-farm'}>
-      <div style={fixedViewportStyle} className="min-h-screen w-full min-w-0 max-w-full bg-gray-50">
+      <div
+        data-dashboard-shell
+        style={fixedViewportStyle}
+        className="@container/dashboard min-h-screen w-full min-w-0 max-w-full bg-gray-50"
+      >
         <Navbar />
 
         <main className="mx-auto w-full min-w-0 max-w-7xl px-2 py-2 min-[360px]:px-4 sm:px-6 lg:px-8">

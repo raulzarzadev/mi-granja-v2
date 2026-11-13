@@ -9,6 +9,15 @@ last_updated: 2026-11-01
 
 Estado: **implementación de la primera versión operativa en el código; requiere las comprobaciones de integración indicadas abajo antes de publicar**. El asistente prepara propuestas persistidas y el usuario las revisa y confirma. El historial de conversaciones continúa guardado localmente por usuario y granja; no hay sincronización de chats entre dispositivos.
 
+## Presentación del chat
+
+El asistente se abre en un panel pegado al lado izquierdo de la pantalla. En escritorio ocupa 380 px (420 px desde 1280 px) y el dashboard reserva ese espacio, ajustando el contenido a su derecha sin superposición. El
+historial se abre desde el icono junto al input y sustituye temporalmente los
+mensajes, también en escritorio; no hay una segunda barra lateral dentro del
+panel. «Nueva» aparece al abrir el historial. Seleccionar una conversación
+restaura sus mensajes y propuestas sin ejecutar movimientos.
+
+
 ## Objetivo
 
 Que el usuario pueda consultar su granja y preparar movimientos hablando con el asistente: altas, pendientes de destete, revisión de montas y, progresivamente, los demás registros. Debe recibir el mismo resultado y conservar el mismo historial que al usar los flujos normales.

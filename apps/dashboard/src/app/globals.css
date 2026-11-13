@@ -117,3 +117,33 @@ button {
   width: 0;
   height: 0;
 }
+
+/* El asistente comparte el espacio con la página en escritorio. */
+@media (min-width: 768px) {
+  html[data-assistant-open] [data-dashboard-shell] {
+    margin-left: 380px;
+    width: calc(100% - 380px);
+    max-width: calc(100% - 380px);
+  }
+}
+@media (min-width: 1280px) {
+  html[data-assistant-open] [data-dashboard-shell] {
+    margin-left: 420px;
+    width: calc(100% - 420px);
+    max-width: calc(100% - 420px);
+  }
+}
+
+/* La navegación inferior respeta el espacio del asistente en ventanas estrechas. */
+@media (min-width: 768px) {
+  html[data-assistant-open] [data-dashboard-shell] { --assistant-layout-width: 380px; }
+  @container dashboard (max-width: 767px) {
+    html[data-assistant-open] [data-dashboard-shell] [data-bottom-navigation] > .tabs-scrollbar-shell {
+      left: calc(var(--fixed-left-inset, 0px) + var(--assistant-layout-width));
+      width: calc(var(--fixed-visible-width, 100vw) - var(--assistant-layout-width));
+    }
+  }
+}
+@media (min-width: 1280px) {
+  html[data-assistant-open] [data-dashboard-shell] { --assistant-layout-width: 420px; }
+}

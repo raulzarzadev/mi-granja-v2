@@ -1,9 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import AiAssistant from '@/components/AiAssistant'
 import ModalBreedingDetails from '@/components/ModalBreedingDetails'
 import type { AiProposalView } from '@/lib/ai/proposal-types'
 import type { Animal } from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
+
+jest.mock('@/components/billing/AiPlanUsage', () => ({ AiPlanUsage: () => null }))
 
 const mockState = {
   farm: { currentFarm: { id: 'farm-1', name: 'San Petter' } },
@@ -543,6 +545,8 @@ it('no afirma que preparó el lote si faltan las propuestas en la respuesta', as
     target: { value: 'Crear tres' },
   })
   fireEvent.click(screen.getByRole('button', { name: 'Enviar mensaje' }))
-  expect(await screen.findByText(/No se pudo mostrar la revisión completa/)).toBeInTheDocument()
+  expect(
+    await within(screen.getByRole('log')).findByText(/No se pudo mostrar la revisión completa/),
+  ).toBeInTheDocument()
   expect(screen.queryByText('Preparé tres movimientos')).not.toBeInTheDocument()
 })

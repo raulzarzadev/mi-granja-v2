@@ -143,3 +143,7 @@ La portada comprueba la sesión del panel mediante un puente de origen validado 
 ## 2026-11-12 — Consumo y renovación de IA
 
 La página /plan muestra créditos incluidos, usados, disponibles y próxima renovación (o consultas diarias). El endpoint autenticado /api/billing/ai-usage respeta la suplantación administrativa y excluye costos internos. Gratis reinicia a medianoche de Mazatlán; créditos se reponen tras el próximo pago mensual confirmado y una renovación cancelada no promete nuevos abonos. El listener de pnpm dev:emu incluye invoice.paid. Volver desde /plan navega directamente al panel, sin regresar a Stripe.
+
+## 2026-11-12 — Asistente lateral y presentación adaptable
+
+El asistente abre en un panel izquierdo de 380–420 px; el dashboard ocupa el espacio restante a su derecha. Tiene cierre, Escape y ajuste al teclado. El historial sigue alternándose desde el icono junto al input. Cabecera, navegación y selector de granja responden al ancho disponible mediante container queries. La barra compacta muestra saldo con detalles desplegables a todo el ancho, sin duplicar avisos ni cerrarse al actualizar el consumo.
