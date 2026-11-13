@@ -64,3 +64,26 @@ El precio visible y el cobro de Stripe se vinculan mediante `stripePriceId`. Al 
 El admin también puede asignar un `tierId` manualmente a un usuario para soporte. Esta asignación puede ser sobrescrita por un webhook posterior de Stripe. El antiguo campo `places` ya no forma parte del contrato de billing.
 
 Véase [ADR-006](../decisions/006-stripe-animal-tiers.md).
+
+## Pagos y créditos en desarrollo
+
+`pnpm dev:emu` inicia Stripe CLI con `invoice.paid` además de los eventos de
+checkout y suscripción. La suscripción activa por sí sola no abona créditos:
+el webhook de factura mensual pagada concede el saldo de forma idempotente.
+Si faltó ese evento, verificar la factura en Stripe antes de reconciliar el ciclo;
+no simular otro cobro ni asignar créditos por cambiar manualmente el plan.
+
+En `/plan`, «Volver al panel» navega directamente a `/` mediante reemplazo
+de ruta. No usa el historial del navegador, que puede apuntar a Stripe después
+del checkout o del portal de facturación.
+
+La sección «Asistente IA» en `/plan` muestra lo disponible con una barra y el
+desglose Incluido / Usado / Disponible, la fecha de renovación o reinicio y qué
+significan los créditos (incluidos en el plan, no un cargo). En el panel del
+asistente el mismo componente se reduce a una barra con «Ver detalles». Usa la misma fuente de cuota que el chat, con
+actualización manual y estado de carga/error. El endpoint `/api/billing/ai-usage`
+proyecta solo consultas o créditos visibles, con caché deshabilitada.
+
+El consumo incluye fecha/hora en America/Mazatlan: próxima medianoche para
+consultas gratis o fin del periodo de la cartera para créditos. El nuevo abono
+requiere pago confirmado; una renovación cancelada muestra solo fin de ciclo.

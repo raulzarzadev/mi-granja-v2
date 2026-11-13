@@ -136,7 +136,7 @@ STRIPE_TMP_DIR="$(mktemp -d)"
 STRIPE_LOG="$STRIPE_TMP_DIR/listen.log"
 stripe listen \
   --skip-verify \
-  --events checkout.session.completed,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted \
+  --events invoice.paid,checkout.session.completed,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted \
   --forward-to http://dashboard.localhost:1355/api/billing/webhook \
   >"$STRIPE_LOG" 2>&1 &
 STRIPE_PID=$!

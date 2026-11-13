@@ -139,3 +139,7 @@ Decisión de alcance: mantener los créditos incluidos por plan. La compra de cr
 ## 2026-11-12 — Sesión y emuladores
 
 La portada comprueba la sesión del panel mediante un puente de origen validado y muestra un esqueleto mientras espera. La inicialización compartida limita a 15 segundos la espera de Firebase/perfil, muestra un error recuperable y descarta lecturas antiguas tras logout. En desarrollo Firestore y Storage usan proxies del mismo origen para evitar errores de conexión en Safari; producción conserva sus conexiones. El resto del panel mantiene protección contra iframes.
+
+## 2026-11-12 — Consumo y renovación de IA
+
+La página /plan muestra créditos incluidos, usados, disponibles y próxima renovación (o consultas diarias). El endpoint autenticado /api/billing/ai-usage respeta la suplantación administrativa y excluye costos internos. Gratis reinicia a medianoche de Mazatlán; créditos se reponen tras el próximo pago mensual confirmado y una renovación cancelada no promete nuevos abonos. El listener de pnpm dev:emu incluye invoice.paid. Volver desde /plan navega directamente al panel, sin regresar a Stripe.

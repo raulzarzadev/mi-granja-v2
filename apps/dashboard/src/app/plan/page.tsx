@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
+import { AiPlanUsage } from '@/components/billing/AiPlanUsage'
 import { PlanTierComparison } from '@/components/billing/PlanTierComparison'
 import PageShell from '@/components/PageShell'
 import { useBilling } from '@/hooks/useBilling'
@@ -100,7 +101,7 @@ export default function PlanPage() {
   }
 
   return (
-    <PageShell title="Plan y facturación">
+    <PageShell title="Plan y facturación" backHref="/">
       <div className="mx-auto max-w-5xl space-y-6">
         <section className="rounded-xl border border-gray-200 bg-white p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -166,6 +167,8 @@ export default function PlanPage() {
             </p>
           )}
         </section>
+
+        <AiPlanUsage />
 
         <section>
           <h2 className="mb-3 text-lg font-semibold text-gray-900">Compara los planes</h2>

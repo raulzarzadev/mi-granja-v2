@@ -145,3 +145,17 @@ it.each([
   expect((await getDailyAiUsage('u')).creditBalanceUsd).toBe(creditUsd)
   expect(data.get('aiCreditWallets/u').internalAllowanceUsd).toBe(internalUsd)
 })
+
+it('informa el próximo reinicio diario a medianoche de Mazatlán', async () => {
+  const usage = await getDailyAiUsage('u')
+  expect(usage.mode).toBe('daily')
+  expect(usage.resetsAt).toBe('2026-11-03T07:00:00.000Z')
+})
+
+it('informa fin del ciclo acreditado y distingue renovación cancelada', async () => {
+  await activate()
+  data.set('subscriptions/u', { ...data.get('subscriptions/u'), cancelAtPeriodEnd: true })
+  const usage = await getDailyAiUsage('u')
+  expect(usage.resetsAt).toBe(new Date(payment.periodEnd * 1000).toISOString())
+  expect(usage.renewalCancelled).toBe(true)
+})

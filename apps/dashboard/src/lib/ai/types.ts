@@ -72,6 +72,8 @@ export const animalListAiResponseSchema = z.object({
 export type AnimalListAiResponse = z.infer<typeof animalListAiResponseSchema>
 
 export interface AiUsageResult {
+  resetsAt?: string
+  renewalCancelled?: boolean
   mode?: 'daily' | 'credits'
   creditBalanceUsd?: number
   limit: number

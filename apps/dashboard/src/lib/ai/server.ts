@@ -255,7 +255,18 @@ export async function getDailyAiUsage(userId: string): Promise<AiUsageResult> {
     db.doc(`subscriptions/${userId}`).get(),
     db.doc(`aiCreditWallets/${userId}`).get(),
   ])
-  return usageView(daily.data(), sub.data(), wallet.data(), policy.freeDailyQueries)
+  const usage = usageView(daily.data(), sub.data(), wallet.data(), policy.freeDailyQueries)
+  if (usage.mode === 'credits') {
+    return {
+      ...usage,
+      resetsAt: new Date(Number(wallet.data()?.periodEnd) * 1000).toISOString(),
+      renewalCancelled: sub.data()?.cancelAtPeriodEnd === true,
+    }
+  }
+  // La cuota usa America/Mazatlan (UTC−7, sin horario de verano).
+  const nextReset = new Date(`${dateKey()}T07:00:00.000Z`)
+  nextReset.setUTCDate(nextReset.getUTCDate() + 1)
+  return { ...usage, resetsAt: nextReset.toISOString() }
 }
 
 export async function resolveFarmPermissions({

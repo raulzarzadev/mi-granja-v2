@@ -13,7 +13,8 @@ import { RootState } from '@/features/store'
 const PageShell: React.FC<{
   title: string
   children: React.ReactNode
-}> = ({ title, children }) => {
+  backHref?: string
+}> = ({ title, children, backHref }) => {
   const router = useRouter()
   const { user } = useSelector((state: RootState) => state.auth)
 
@@ -31,15 +32,15 @@ const PageShell: React.FC<{
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="@container/page min-h-screen min-w-0 bg-gray-50">
       <Navbar />
-      <div className="max-w-2xl mx-auto px-4 py-4">
+      <div className="w-full min-w-0 max-w-5xl mx-auto px-3 py-4 @[640px]/page:px-4">
         <div className="flex items-center gap-3 mb-4">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => (backHref ? router.replace(backHref) : router.back())}
             className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-gray-600"
-            title="Volver"
+            title={backHref === '/' ? 'Volver al panel' : 'Volver'}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
