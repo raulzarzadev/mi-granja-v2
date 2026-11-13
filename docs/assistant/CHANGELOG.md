@@ -167,3 +167,7 @@ Selector, animales elegidos, pesos individuales y partidas guardadas usan orden 
 ## 2026-11-12 — Búsqueda tolerante de aretes
 
 Las variantes 317A, 317a, 317 A y 317-A encuentran el mismo arete, también entre animales inactivos cargados. Las consultas con números buscan número/nombre o un ID completo; no coinciden con fechas, cantidades o referencias internas en notas. Las búsquedas textuales de raza/especie/notas se conservan. Los resultados asíncronos antiguos se filtran con la consulta vigente.
+
+## 2026-11-12 — Fotos de animales comprimidas
+
+La ficha permite hasta 12 fotos y selección de portada; el alta optimiza la foto principal. El cliente convierte a WebP/JPEG con orientación/proporción conservadas, sin agrandar fotos pequeñas: originales hasta 50 MiB, lado mayor hasta 1920 px y objetivo hasta 450 KiB. HEIC/HEIF y TIFF usan conversores bajo demanda; se conserva una imagen fija y se muestran errores recuperables. imageUrl/imageUrls se guardan mediante el CRUD existente con permisos normales y los respaldos conservan URLs, no archivos binarios. No se agregan herramientas de fotos al asistente. Validación conjunta: 398 pruebas del dashboard, TypeScript y guard de documentación.

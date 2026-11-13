@@ -1,7 +1,6 @@
 'use client'
 
 import { intervalToDuration, subDays, subMonths } from 'date-fns'
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 import { Controller } from 'react-hook-form'
@@ -10,10 +9,11 @@ import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import InputIconSelect from '@/components/inputs/InputIconSelect'
 import { Modal } from '@/components/Modal'
 import { useZodForm } from '@/hooks/useZodForm'
+import { compressAnimalPhoto, uploadAnimalPhoto } from '@/lib/animal-photo'
 import { registrationStages } from '@/lib/animal-registration-stages'
 import { normalizeAnimalSearch } from '@/lib/animal-search'
 import { ANIMAL_BREEDING_CONFIGS } from '@/lib/animalBreedingConfig'
-import { auth, storage } from '@/lib/firebase'
+import { auth } from '@/lib/firebase'
 import {
   type Animal,
   type AnimalStage,
@@ -276,6 +276,7 @@ export default function SimpleAnimalForm({
   const registrationMode = form.watch('registrationMode')
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState(initialData?.imageUrl ?? '')
+  const [isCompressingPhoto, setIsCompressingPhoto] = useState(false)
   const [photoError, setPhotoError] = useState('')
   const [isUploading, setIsUploading] = useState(false)
 
@@ -316,7 +317,7 @@ export default function SimpleAnimalForm({
   const selectedPregnantBy = form.watch('pregnantBy')
   const selectedMotherId = form.watch('motherId')
   const selectedFatherId = form.watch('fatherId')
-  const isBusy = isLoading || isUploading
+  const isBusy = isLoading || isUploading || isCompressingPhoto
   const canBeStud =
     selectedGender === 'macho' &&
     selectedLifecycle === 'reproductor' &&
@@ -352,15 +353,7 @@ export default function SimpleAnimalForm({
 
   const uploadPhoto = async (): Promise<string | undefined> => {
     if (!photoFile) return initialData?.imageUrl
-    const ownerId = auth.currentUser?.uid
-    if (!ownerId) throw new Error('Debes iniciar sesión para subir una imagen')
-    const extension = photoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
-    const photoRef = ref(
-      storage,
-      `users/${ownerId}/animal-photos/${crypto.randomUUID()}.${extension}`,
-    )
-    await uploadBytes(photoRef, photoFile, { contentType: photoFile.type })
-    return getDownloadURL(photoRef)
+    return uploadAnimalPhoto(photoFile)
   }
 
   const handleSubmit = async (values: FormSchema) => {
@@ -1024,24 +1017,33 @@ export default function SimpleAnimalForm({
                   <input
                     id="animal-photo"
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="image/*,.heic,.heif,.tif,.tiff"
                     disabled={isBusy}
-                    onChange={(event) => {
+                    onChange={async (event) => {
                       const file = event.target.files?.[0]
+                      event.target.value = ''
                       setPhotoError('')
                       if (!file) return
-                      if (file.size > 5 * 1024 * 1024) {
-                        setPhotoError('La imagen debe pesar menos de 5 MB')
-                        event.target.value = ''
-                        return
+                      setIsCompressingPhoto(true)
+                      try {
+                        setPhotoFile(await compressAnimalPhoto(file))
+                      } catch (cause) {
+                        setPhotoError(
+                          cause instanceof Error ? cause.message : 'No se pudo preparar la foto.',
+                        )
+                      } finally {
+                        setIsCompressingPhoto(false)
                       }
-                      setPhotoFile(file)
                     }}
                     aria-describedby="animal-photo-help"
                     className="block min-h-11 w-full cursor-pointer rounded-xl border border-slate-300 bg-white text-sm text-slate-600 file:mr-3 file:min-h-11 file:border-0 file:bg-green-100 file:px-4 file:font-semibold file:text-green-800 hover:file:bg-green-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600"
                   />
                   <p id="animal-photo-help" className="mt-1.5 text-xs text-slate-500">
-                    JPG, PNG o WebP. Máximo 5 MB.
+                    {isCompressingPhoto
+                      ? 'Optimizando foto…'
+                      : photoFile
+                        ? `Foto lista · ${Math.ceil(photoFile.size / 1024)} KB`
+                        : 'Fotos de móvil y otros formatos. Se optimizan automáticamente (original hasta 50 MB).'}
                   </p>
                 </div>
               </div>

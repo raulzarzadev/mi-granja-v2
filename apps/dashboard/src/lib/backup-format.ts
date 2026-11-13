@@ -68,6 +68,7 @@ export const BACKUP_FORMAT = {
       createdAt: 'ISO 8601',
       updatedAt: 'ISO 8601',
       imageUrl: 'string (URL de la foto principal, opcional)',
+      imageUrls: '[string] (galería de fotos optimizadas, opcional)',
     },
     breedingRecord: {
       id: 'string',

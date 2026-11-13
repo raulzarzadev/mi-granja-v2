@@ -3,6 +3,7 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import AnimalFamilyTree from '@/components/AnimalFamilyTree'
+import AnimalPhotos from '@/components/AnimalPhotos'
 import AnimalRecordsSection from '@/components/AnimalRecordsSection'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import Tabs from '@/components/Tabs'
@@ -517,6 +518,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 max-w-full [&>span>span]:flex-wrap">
             <AnimalTag animal={animal} variant="header" />
+            <AnimalPhotos animal={animal} />
           </div>
 
           <div

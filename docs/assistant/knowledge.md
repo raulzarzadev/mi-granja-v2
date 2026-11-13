@@ -109,3 +109,8 @@ Los mensajes pueden referenciar hasta diez IDs de propuesta por lote (`proposalI
 Administración → IA muestra consumo por cliente desde `aiUsage`: consultas exitosas, tokens y costo reportado en USD para hoy/7/30/90 días, con búsqueda por nombre/correo y orden por costo/tokens. No estima tarifas ni reconstruye costos históricos ausentes. «Sin costo reportado» no significa uso gratuito; BYOK puede facturarse por separado. No expone esta información a usuarios sin permisos de administrador.
 
 Cuotas: `settings/aiBilling` es la política privada de administrador; `subscriptions/{uid}` acredita tier/estado; `aiCreditWallets/{uid}` guarda ciclo pagado, presupuesto interno, créditos y gasto; su subcolección `grants` conserva facturas/ciclos; `aiUsageReservations/{id}` controla admisión y liquidación idempotente. `aiUsage` sigue siendo la fuente de estadísticas diarias, ahora con costo real reportado de BYOK y conteo de consultas sin costo informado. No enviar presupuesto interno al modelo ni al cliente como saldo visible.
+
+Fotos de animales: `Animal.imageUrl` es portada y `imageUrls` la galería. La UI
+comprime antes de subir a Storage; el respaldo conserva enlaces. Estos campos
+no demuestran eventos de salud ni parentescos y el asistente no analiza ni carga
+fotos mediante sus acciones actuales.

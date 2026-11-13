@@ -175,3 +175,8 @@ ventana siga teniendo ancho de escritorio.
 En el formulario de venta, el selector y los pesos individuales se ordenan por
 número de arete con comparación numérica natural (2 antes de 10). Los pesos
 permanecen asociados al ID del animal, independientemente del orden visible.
+
+Fotos: alta con foto principal y edición de galería desde la ficha del animal.
+La compresión y conversión son del cliente; los archivos se suben a Storage y
+los enlaces se guardan mediante el CRUD normal, con permiso de actualización.
+El chat no tiene herramienta para adjuntar ni cargar fotos del animal.

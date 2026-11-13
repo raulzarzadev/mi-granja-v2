@@ -110,6 +110,8 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
       "Historial único en records[]. Un pesaje usa type='weight' y weightGrams. Un ordeño usa type='milk', amountMl y session.",
     movements:
       'Los movimientos incluyen eventType, details, undoData.documents (estado anterior y posterior), movementFarmId y undoneAt/undoneBy. recordMovements contiene recibos de idempotencia; el historial y la reversión también quedan en records[].',
+    photos:
+      'imageUrl es la portada; imageUrls conserva la galería como URLs de Storage. El JSON no incluye los archivos binarios.',
     weightSummary:
       'animal.weight es un resumen en gramos del pesaje más reciente; records[] es la fuente de verdad.',
     discharge:

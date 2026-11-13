@@ -180,3 +180,23 @@ describe('import format and domain validation', () => {
     expect(result.errors.join(' ')).toContain(field)
   })
 })
+
+it('conserva portada y galería de fotos al normalizar y preparar restauración', () => {
+  const backup = baseBackup()
+  const animal = {
+    ...backup.animals[0],
+    imageUrl: 'https://photos/main.webp',
+    imageUrls: ['https://photos/main.webp', 'https://photos/other.webp'],
+  }
+  const normalized = normalizeBackupFile({ ...backup, animals: [animal] })
+  const restored = prepareAnimalForRestore(
+    normalized.animals[0],
+    new Map(),
+    new Map(),
+    new Map(),
+    'target',
+    'owner',
+  )
+  expect(restored.imageUrl).toBe(animal.imageUrl)
+  expect(restored.imageUrls).toEqual(animal.imageUrls)
+})

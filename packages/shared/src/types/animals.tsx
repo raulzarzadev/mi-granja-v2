@@ -84,6 +84,7 @@ export interface Animal {
   animalNumber: string // ID único del animal (asignado por el granjero)
   name?: string // Nombre opcional del animal
   imageUrl?: string // Foto principal opcional almacenada en Firebase Storage
+  imageUrls?: string[] // Galería de fotos optimizadas; imageUrl identifica la portada
   type: AnimalType
   breed?: string // Raza del animal
   stage: AnimalStage

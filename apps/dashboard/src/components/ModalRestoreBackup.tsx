@@ -134,6 +134,15 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
     >
       <div className="space-y-6">
         <StepIndicator currentStep={step} />
+        {step === 'preview' &&
+          backupData?.animals.some(
+            (animal) => Array.isArray(animal.imageUrls) && animal.imageUrls.length > 0,
+          ) && (
+            <p className="text-xs text-slate-500">
+              Las fotos se restauran mediante sus enlaces originales. El respaldo no incluye los
+              archivos de imagen.
+            </p>
+          )}
 
         {/* Paso 1: Subir archivo */}
         {step === 'upload' && (

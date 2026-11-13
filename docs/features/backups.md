@@ -44,3 +44,8 @@ Backup/restore is a **Pro feature** — gate pending implementation. See [featur
 ## Related
 
 - [conventions.md](../conventions.md#backup-sync-rule-critical)
+
+Las galerías de animales se exportan y restauran mediante `imageUrls`;
+`imageUrl` conserva la portada. Se guardan referencias a Storage, no copias
+binarias de los archivos. Quitar una foto de la galería no elimina el objeto
+que puede seguir referenciado en un respaldo anterior.
