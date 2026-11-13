@@ -52,7 +52,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
     const outside = (event: PointerEvent) => {
       if (!actionsRef.current?.contains(event.target as Node)) setActionsOpen(false)
     }
-    const escape = (event: KeyboardEvent) => {
+    const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.stopPropagation()
         setActionsOpen(false)
@@ -60,10 +60,10 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
       }
     }
     document.addEventListener('pointerdown', outside)
-    document.addEventListener('keydown', escape, true)
+    document.addEventListener('keydown', handleEscape, true)
     return () => {
       document.removeEventListener('pointerdown', outside)
-      document.removeEventListener('keydown', escape, true)
+      document.removeEventListener('keydown', handleEscape, true)
     }
   }, [actionsOpen])
   const [changeStageOpen, setChangeStageOpen] = useState(false)
@@ -502,7 +502,7 @@ const AnimalDetailView: React.FC<AnimalDetailViewProps> = ({ animal: animalProp,
     },
     {
       label: '🧬 Genética',
-      content: <AnimalFamilyTree animal={animal} allAnimals={allAnimals} />,
+      content: <AnimalFamilyTree animal={animal} allAnimals={allAnimals} breedings={breedings} />,
     },
     {
       label: '📋 Registros',

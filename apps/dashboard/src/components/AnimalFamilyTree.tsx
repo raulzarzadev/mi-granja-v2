@@ -4,16 +4,19 @@ import React, { useMemo, useState } from 'react'
 import AnimalBadges from '@/components/AnimalBadges'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { Modal } from '@/components/Modal'
+import { toSafeDate } from '@/lib/dateUtils'
 import { Animal } from '@/types/animals'
+import type { BreedingRecord } from '@/types/breedings'
 
 interface Props {
   animal: Animal
   allAnimals: Animal[]
+  breedings?: BreedingRecord[]
 }
 
 const MAX_SIBLINGS_MODAL = 200
 
-const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
+const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals, breedings = [] }) => {
   const findAnimal = (id?: string): Animal | null => {
     if (!id) return null
     return allAnimals.find((a) => a.id === id || a.animalNumber === id) || null
@@ -44,6 +47,78 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
       ) {
         children.push(a)
       }
+    }
+
+    // Nacimientos más antiguos primero; edad aproximada como alternativa.
+    const now = Date.now()
+    const birthOrder = (child: Animal) => {
+      if (child.birthDate) {
+        const timestamp = toSafeDate(child.birthDate).getTime()
+        if (Number.isFinite(timestamp)) return timestamp
+      }
+      if (typeof child.age === 'number' && child.age >= 0)
+        return now - child.age * 30.4375 * 86400000
+      return Number.POSITIVE_INFINITY
+    }
+    children.sort((a, b) => {
+      const first = birthOrder(a)
+      const second = birthOrder(b)
+      return (
+        (first === second ? 0 : first - second) ||
+        a.animalNumber.localeCompare(b.animalNumber, 'es', { numeric: true, sensitivity: 'base' })
+      )
+    })
+
+    // Un grupo por parto documentado; sin evidencia cada hijo queda separado.
+    const childIds = new Set(children.map((child) => child.id))
+    const familyKeys = new Map<string, string>()
+    for (const breeding of breedings) {
+      for (const info of breeding.femaleBreedingInfo ?? []) {
+        if (!info.actualBirthDate || !info.offspring?.length) continue
+        const groupKey = `${info.femaleId}-${toSafeDate(info.actualBirthDate).getTime()}`
+        for (const id of info.offspring) {
+          if (childIds.has(id)) familyKeys.set(id, groupKey)
+        }
+      }
+    }
+    // Respaldos antiguos: el parto puede existir en records aunque no tenga empadre.
+    for (const child of children) {
+      const birthRecord = child.records?.find(
+        (record) =>
+          !record.undoneAt &&
+          record.details?.legacyEventType === 'BIRTH' &&
+          record.details?.legacyEventId,
+      )
+      if (birthRecord) familyKeys.set(child.id, `birth-${birthRecord.details!.legacyEventId}`)
+    }
+    // Partos de la versión actual sin empadre: el comprobante de la madre
+    // identifica exactamente los documentos de crías creados en ese movimiento.
+    for (const mother of allAnimals) {
+      for (const record of mother.records ?? []) {
+        if (record.eventType !== 'parto' || record.undoneAt) continue
+        for (const entry of record.undoData?.documents ?? []) {
+          if (entry.before !== null || !entry.path.startsWith('animals/')) continue
+          const childId = entry.path.slice('animals/'.length)
+          const child = children.find((candidate) => candidate.id === childId)
+          if (child && (child.motherId === mother.id || child.motherId === mother.animalNumber)) {
+            familyKeys.set(child.id, `parto-${mother.id}-${record.id}`)
+          }
+        }
+      }
+    }
+    const grouped = new Map<string, Animal[]>()
+    for (const child of children) {
+      const groupKey = familyKeys.get(child.id) ?? child.id
+      const group = grouped.get(groupKey) ?? []
+      group.push(child)
+      grouped.set(groupKey, group)
+    }
+    const childGroups: Animal[][] = []
+    let visibleChildren = 0
+    for (const group of grouped.values()) {
+      if (visibleChildren >= 20) break
+      childGroups.push(group)
+      visibleChildren += group.length
     }
 
     // Hermanos
@@ -82,11 +157,13 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
       paternalGM,
       paternalGF,
       children,
+      childGroups,
+      visibleChildren,
       fullCount,
       maternalCount,
       paternalCount,
     }
-  }, [animal.id, animal.motherId, animal.fatherId, animal.animalNumber, allAnimals])
+  }, [animal.id, animal.motherId, animal.fatherId, animal.animalNumber, allAnimals, breedings])
 
   // Siblings for modal
   const modalSiblings = useMemo(() => {
@@ -318,22 +395,38 @@ const AnimalFamilyTree: React.FC<Props> = ({ animal, allAnimals }) => {
 
           {/* Lista de hijos */}
           <div className="flex flex-wrap justify-center gap-1.5">
-            {tree.children.slice(0, 20).map((child) => (
-              <AnimalBadges
-                key={child.id}
-                animal={child}
-                ageFormat="rounded"
-                variant="tag"
-                compact
-                showSpecies={false}
-                showState={false}
-                showStateLabel={false}
-              />
+            {tree.childGroups.map((group, index) => (
+              <React.Fragment key={group[0].id}>
+                {index > 0 && (
+                  <span
+                    aria-hidden="true"
+                    className="mx-1 h-5 w-0.5 shrink-0 self-center rounded-full bg-slate-400"
+                  />
+                )}
+                <span
+                  className="inline-flex max-w-full flex-wrap items-center justify-center gap-1.5"
+                  role={group.length > 1 ? 'group' : undefined}
+                  aria-label={group.length > 1 ? 'Hermanos del mismo parto registrado' : undefined}
+                >
+                  {group.map((child) => (
+                    <AnimalBadges
+                      key={child.id}
+                      animal={child}
+                      ageFormat="rounded"
+                      variant="tag"
+                      compact
+                      showSpecies={false}
+                      showState={false}
+                      showStateLabel={false}
+                    />
+                  ))}
+                </span>
+              </React.Fragment>
             ))}
           </div>
-          {tree.children.length > 20 && (
+          {tree.children.length > tree.visibleChildren && (
             <p className="text-[10px] text-gray-400 text-center mt-1">
-              +{tree.children.length - 20} hijos mas
+              +{tree.children.length - tree.visibleChildren} hijos mas
             </p>
           )}
         </div>

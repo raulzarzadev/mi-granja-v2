@@ -155,3 +155,7 @@ Las respuestas interpretan **negritas** como strong, conservando menciones y enl
 ## 2026-11-12 — Carga de respaldos por arrastre
 
 La zona de carga admite un único JSON por selección o arrastre, hasta 50 MB, con realce y estado de procesamiento. Usa el validador existente, bloquea cargas simultáneas, permite reintento y solo abre la revisión; no restaura automáticamente.
+
+## 2026-11-12 — Genealogía por edad y parto
+
+Los hijos se ordenan de mayor a menor edad, con edades desconocidas al final. Los chips se agrupan por parto documentado y se separan con una línea discreta. Se reconocen offspring de empadres, eventos de nacimiento importados y documentos creados en movimientos actuales de la madre, incluso sin empadre. No se infiere una camada solo por la misma edad y se ignoran partos deshechos.
