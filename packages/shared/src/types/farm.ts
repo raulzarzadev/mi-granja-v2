@@ -83,6 +83,9 @@ export interface FarmArea {
   name: string
   description?: string
   type: 'pasture' | 'barn' | 'feeding' | 'storage' | 'medical' | 'other'
+  /** Superficie indicada por el usuario en metros cuadrados. */
+  areaM2?: number | null
+  /** Capacidad histórica en animales; no convertir a superficie. */
   capacity?: number | null
   layout?: {
     kind: 'rect' | 'polygon'

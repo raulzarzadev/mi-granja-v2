@@ -60,9 +60,9 @@ const AreaCard: React.FC<AreaCardProps> = ({ area }) => {
 
       <div className="flex items-center justify-between text-sm text-gray-500">
         <div className="flex items-center gap-4">
-          {area.capacity && (
+          {area.areaM2 != null && (
             <span className="flex items-center gap-1">
-              <EmojiIcon emoji="📊" /> Capacidad: {area.capacity}
+              <EmojiIcon emoji="📊" /> {area.areaM2.toLocaleString('es')} m²
             </span>
           )}
         </div>

@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
+import AreaSizeInput from '@/components/inputs/AreaSizeInput'
+import AutoGrowTextarea from '@/components/inputs/AutoGrowTextarea'
 import InputIconSelect from '@/components/inputs/InputIconSelect'
 import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
@@ -21,7 +23,7 @@ const ModalCreateArea: React.FC = () => {
     name: '',
     type: 'other' as const,
     description: '',
-    capacity: '',
+    areaM2: '',
     notes: '',
   })
 
@@ -42,7 +44,7 @@ const ModalCreateArea: React.FC = () => {
         name: formData.name.trim(),
         type: formData.type,
         description: formData.description.trim() || '',
-        capacity: formData.capacity ? parseInt(formData.capacity, 10) : null,
+        areaM2: formData.areaM2 ? Number(formData.areaM2) : null,
         isActive: true,
         notes: formData.notes.trim() || '',
       })
@@ -52,7 +54,7 @@ const ModalCreateArea: React.FC = () => {
         name: '',
         type: 'other',
         description: '',
-        capacity: '',
+        areaM2: '',
         notes: '',
       })
 
@@ -126,9 +128,8 @@ const ModalCreateArea: React.FC = () => {
             >
               Descripción (Opcional)
             </label>
-            <textarea
+            <AutoGrowTextarea
               id="areaDescription"
-              rows={3}
               value={formData.description}
               onChange={(e) => handleChange('description', e.target.value)}
               placeholder="Describe el área y su propósito..."
@@ -136,24 +137,12 @@ const ModalCreateArea: React.FC = () => {
             />
           </div>
 
-          {/* Capacidad */}
-          <div>
-            <label htmlFor="areaCapacity" className="block text-sm font-medium text-gray-700 mb-2">
-              Capacidad (Opcional)
-            </label>
-            <input
-              id="areaCapacity"
-              type="number"
-              min="1"
-              value={formData.capacity}
-              onChange={(e) => handleChange('capacity', e.target.value)}
-              placeholder="Número máximo de animales"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Especifica cuántos animales pueden alojarse en esta área
-            </p>
-          </div>
+          <AreaSizeInput
+            id="area-size"
+            value={formData.areaM2}
+            disabled={isLoading}
+            onChange={(value) => handleChange('areaM2', value)}
+          />
 
           {/* Notas */}
           <div>

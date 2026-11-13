@@ -95,6 +95,7 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     weight: 'Todos los pesos se almacenan en gramos.',
     money: 'Los importes monetarios se almacenan en centavos.',
     dates: 'Las fechas se exportan como ISO 8601.',
+    area: 'areas[].areaM2 indica metros cuadrados; capacity conserva capacidad histórica en animales.',
   },
   farm: {
     fields:

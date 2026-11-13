@@ -201,8 +201,9 @@ const ModalRestoreBackup: React.FC<Props> = ({ isOpen, onClose }) => {
               <div className="px-4 pb-3 pt-1">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs text-gray-500">
-                    El archivo debe ser .json con esta estructura. Las fechas en formato ISO 8601
-                    (ej: 2026-03-04T12:00:00.000Z).
+                    Las áreas usan areaM2 para metros cuadrados; capacity es capacidad histórica en
+                    animales. El archivo debe ser .json con esta estructura. Las fechas en formato
+                    ISO 8601 (ej: 2026-03-04T12:00:00.000Z).
                   </p>
                   <button
                     type="button"

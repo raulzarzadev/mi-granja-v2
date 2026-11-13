@@ -50,6 +50,18 @@ function baseBackup() {
 }
 
 describe('backup serialization v2', () => {
+  it('preserves square metres independently of legacy animal capacity', () => {
+    const backup = baseBackup() as any
+    backup.farm.areas = [
+      { id: 'area-1', name: 'Área 1', areaM2: 125.5, capacity: 20 },
+      { id: 'area-2', name: 'Área 2', capacity: 10 },
+    ]
+    const result = validateBackupFile(backup, 'farm-target')
+    expect(result.valid).toBe(true)
+    expect((result.data?.farm as any).areas).toEqual(backup.farm.areas)
+    expect((result.data?.farm as any).areas[1]).not.toHaveProperty('areaM2')
+  })
+
   it('validates a current backup and recalculates record counts', () => {
     const result = validateBackupFile(baseBackup(), 'farm-target')
 

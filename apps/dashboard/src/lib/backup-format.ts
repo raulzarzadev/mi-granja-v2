@@ -123,7 +123,7 @@ export const BACKUP_FORMAT = {
       ownerId: 'string',
       location: '{ address?, city?, state?, country?, coordinates?: { lat, lng } } (opcional)',
       areas:
-        "[{ id, name, description?, type, capacity?, layout?: { kind: 'rect'|'polygon', coordinateSystem: 'normalized', points: [{x,y}], color? }, isActive, notes?, createdAt, updatedAt }] (opcional)",
+        "[{ id, name, description?, type, areaM2? (superficie en m²), capacity? (histórico en animales), layout?: { kind: 'rect'|'polygon', coordinateSystem: 'normalized', points: [{x,y}], color? }, isActive, notes?, createdAt, updatedAt }] (opcional)",
       createdAt: 'ISO 8601',
       updatedAt: 'ISO 8601',
     },
