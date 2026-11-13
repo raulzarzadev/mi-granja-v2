@@ -3,9 +3,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
+import { DatePickerButtons } from '@/components/buttons/date-picker-buttons'
 import { IconLabel } from '@/components/Icon/emoji-icons'
 import AnimalSelector from '@/components/inputs/AnimalSelector'
-import { DatePickerButtons } from '@/components/buttons/date-picker-buttons'
 import { MoneyInput } from '@/components/inputs/MoneyInput'
 import { WeightInput } from '@/components/inputs/WeightInput'
 import { Modal } from '@/components/Modal'
@@ -104,13 +104,20 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
 
   const availableAnimals = useMemo(
     () =>
-      animals.filter((a) => {
-        const animalStatus = a.status ?? 'activo'
-        if (animalStatus !== 'activo') return false
-        if (currentSaleAnimalIds.has(a.id)) return true
-        if (animalsInActiveSales.has(a.id)) return false
-        return true
-      }),
+      animals
+        .filter((a) => {
+          const animalStatus = a.status ?? 'activo'
+          if (animalStatus !== 'activo') return false
+          if (currentSaleAnimalIds.has(a.id)) return true
+          if (animalsInActiveSales.has(a.id)) return false
+          return true
+        })
+        .sort((a, b) =>
+          a.animalNumber.localeCompare(b.animalNumber, 'es', {
+            numeric: true,
+            sensitivity: 'base',
+          }),
+        ),
     [animals, animalsInActiveSales, currentSaleAnimalIds],
   )
 
@@ -164,8 +171,18 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
     if (Array.isArray(draft.selectedAnimalIds)) setSelectedAnimalIds(draft.selectedAnimalIds)
     setAnimalWeights(draft.animalWeights ?? {})
   })
+  const sortedSelectedAnimalIds = useMemo(() => {
+    const numbers = new Map(animals.map((animal) => [animal.id, animal.animalNumber]))
+    return [...selectedAnimalIds].sort((a, b) =>
+      (numbers.get(a) || a).localeCompare(numbers.get(b) || b, 'es', {
+        numeric: true,
+        sensitivity: 'base',
+      }),
+    )
+  }, [animals, selectedAnimalIds])
+
   const buildAnimalsEntries = (): SaleAnimalEntry[] => {
-    return selectedAnimalIds.map((id) => {
+    return sortedSelectedAnimalIds.map((id) => {
       const animal = animals.find((a) => a.id === id)
       return {
         animalId: id,
@@ -446,7 +463,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
       {!isReadOnly && (
         <AnimalSelector
           animals={availableAnimals}
-          selectedIds={selectedAnimalIds}
+          selectedIds={sortedSelectedAnimalIds}
           onAdd={(id) => setSelectedAnimalIds((prev) => [...prev, id])}
           onRemove={(id) => {
             setSelectedAnimalIds((prev) => prev.filter((x) => x !== id))
@@ -467,7 +484,7 @@ const ModalSaleForm: React.FC<ModalSaleFormProps> = ({
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Peso por animal</label>
           <div className="space-y-1.5">
-            {selectedAnimalIds.map((id) => {
+            {sortedSelectedAnimalIds.map((id) => {
               const animal = animals.find((a) => a.id === id)
               return (
                 <div key={id} className="flex items-center justify-between gap-3">

@@ -171,3 +171,7 @@ restaura sus mensajes y propuestas sin ejecutar movimientos.
 La presentación del dashboard usa su ancho disponible para alternar navegación
 lateral e inferior; abrir el asistente puede activar la vista compacta aunque la
 ventana siga teniendo ancho de escritorio.
+
+En el formulario de venta, el selector y los pesos individuales se ordenan por
+número de arete con comparación numérica natural (2 antes de 10). Los pesos
+permanecen asociados al ID del animal, independientemente del orden visible.
