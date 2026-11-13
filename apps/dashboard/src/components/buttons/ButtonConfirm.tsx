@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useModal } from '@/hooks/useModal'
 import { Modal } from '../Modal'
 import Button, { ButtonProps } from './Button'
@@ -26,35 +26,44 @@ export default function ButtonConfirm({
     title: 'Confirmación',
   })
   const [isLoading, setIsLoading] = useState(false)
+  const confirming = useRef(false)
 
   const handleConfirm = async (): Promise<void> => {
+    if (confirming.current) return
     if (!onConfirm) {
       modal.onClose()
       return
     }
-    const result = onConfirm()
-    if (result instanceof Promise) {
-      setIsLoading(true)
-      try {
-        await result
-        modal.onClose()
-      } catch (error) {
-        console.error(error)
-      } finally {
-        setIsLoading(false)
-      }
-    } else {
+    confirming.current = true
+    setIsLoading(true)
+    try {
+      await onConfirm()
       modal.onClose()
+    } catch (error) {
+      console.error(error)
+    } finally {
+      confirming.current = false
+      setIsLoading(false)
     }
   }
 
   return (
     <>
-      <Button {...openProps} onClick={modal.toggleModal} disabled={isLoading}>
+      <Button
+        {...openProps}
+        onClick={modal.toggleModal}
+        disabled={isLoading || openProps?.disabled}
+      >
         {openLabel}
         <span className="sr-only">Abrir modal de confirmación</span>
       </Button>
-      <Modal {...modal} size="xl">
+      <Modal
+        {...modal}
+        onClose={() => {
+          if (!confirming.current) modal.onClose()
+        }}
+        size="xl"
+      >
         <div className="space-y-4">
           <p className="text-sm text-gray-700">{confirmText}</p>
           <div>{children}</div>
@@ -62,7 +71,11 @@ export default function ButtonConfirm({
             <Button variant="outline" color="neutral" onClick={modal.onClose} disabled={isLoading}>
               {closeLabel}
             </Button>
-            <Button onClick={handleConfirm} disabled={isLoading} {...confirmProps}>
+            <Button
+              {...confirmProps}
+              onClick={handleConfirm}
+              disabled={isLoading || confirmProps?.disabled}
+            >
               {confirmLabel}
             </Button>
           </div>
