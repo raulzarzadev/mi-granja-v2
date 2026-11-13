@@ -2,7 +2,7 @@
 title: Decisiones del asistente operativo
 description: Registro de cambios de estrategia y su estado de implementación.
 audience: llm+human
-last_updated: 2026-11-01
+last_updated: 2026-11-12
 ---
 
 # Historial de decisiones
@@ -135,3 +135,7 @@ La página /plan utiliza una tabla comparativa de planes activos con precio, ran
 Multiplicadores de IA: Pro es la base; Rancho recibe 4× y Empresarial hasta 20×, configurables en Admin → IA. Con la base USD 5 visible/USD 1 interno, son USD 20/USD 4 para Rancho y hasta USD 100/USD 20 para Empresarial. La política limita los multiplicadores a 20. Los regalos se multiplican al acreditar el siguiente ciclo pagado y los saldos anteriores conservan sus condiciones; Empresarial requiere la facturación mensual de Stripe correspondiente al acuerdo. La comparativa muestra los importes visibles y «hasta» para Empresarial.
 
 Decisión de alcance: mantener los créditos incluidos por plan. La compra de créditos adicionales se implementará después; no hay recargas ni cobro por excedentes habilitados en esta entrega.
+
+## 2026-11-12 — Sesión y emuladores
+
+La portada comprueba la sesión del panel mediante un puente de origen validado y muestra un esqueleto mientras espera. La inicialización compartida limita a 15 segundos la espera de Firebase/perfil, muestra un error recuperable y descarta lecturas antiguas tras logout. En desarrollo Firestore y Storage usan proxies del mismo origen para evitar errores de conexión en Safari; producción conserva sus conexiones. El resto del panel mantiene protección contra iframes.

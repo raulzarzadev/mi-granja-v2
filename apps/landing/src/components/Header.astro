@@ -1,5 +1,5 @@
 ---
-import { DASHBOARD_AUTH_URL } from '../lib/urls'
+import { DASHBOARD_AUTH_URL, DASHBOARD_URL } from '../lib/urls'
 
 const navLinks = [
   { label: 'Funcionalidades', href: '/#funcionalidades' },
@@ -31,9 +31,14 @@ const navLinks = [
         ))}
       </nav>
 
-      <div class="flex items-center gap-3">
+      <div data-auth-header data-dashboard-url={DASHBOARD_URL} class="flex items-center gap-3" aria-busy="true">
+        <div data-auth-loading role="status" aria-label="Comprobando sesión" class="flex items-center gap-3 motion-safe:animate-pulse">
+          <span class="h-4 w-20 rounded bg-gray-200" aria-hidden="true"></span>
+          <span class="h-9 w-36 rounded-lg bg-gray-200" aria-hidden="true"></span>
+        </div>
+        <a data-auth-member hidden href={DASHBOARD_URL} class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors">Ir a mi granja</a>
         <a
-          href={DASHBOARD_AUTH_URL}
+          data-auth-guest hidden href={DASHBOARD_AUTH_URL}
           class="text-sm font-medium text-gray-600 hover:text-green-700 transition-colors"
           data-ph-event="cta_click"
           data-ph-location="header_login"
@@ -42,7 +47,7 @@ const navLinks = [
           Iniciar Sesión
         </a>
         <a
-          href={DASHBOARD_AUTH_URL}
+          data-auth-guest hidden href={DASHBOARD_AUTH_URL}
           class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors"
           data-ph-event="cta_click"
           data-ph-location="header_signup"
@@ -54,3 +59,33 @@ const navLinks = [
     </div>
   </div>
 </header>
+
+<style>
+  [data-auth-header] [hidden] { display: none !important; }
+</style>
+<script>
+  const header = document.querySelector<HTMLElement>('[data-auth-header]')
+  if (header?.dataset.dashboardUrl) {
+    const dashboard = new URL(header.dataset.dashboardUrl)
+    const frame = document.createElement('iframe')
+    frame.hidden = true
+    frame.title = 'Comprobación de sesión'
+    const finish = (signedIn: boolean) => {
+      header.querySelector<HTMLElement>('[data-auth-loading]')!.hidden = true
+      header.querySelector<HTMLElement>('[data-auth-member]')!.hidden = !signedIn
+      header.querySelectorAll<HTMLElement>('[data-auth-guest]').forEach((link) => { link.hidden = signedIn })
+      header.setAttribute('aria-busy', 'false')
+    }
+    const timeout = window.setTimeout(() => { finish(false); frame.remove() }, 10000)
+    window.addEventListener('message', (event) => {
+      if (event.origin !== dashboard.origin || event.source !== frame.contentWindow ||
+          event.data?.type !== 'migranja:session' || typeof event.data.signedIn !== 'boolean') return
+      window.clearTimeout(timeout)
+      finish(event.data.signedIn)
+    })
+    frame.src = new URL(`/auth/session-status?origin=${encodeURIComponent(location.origin)}`, dashboard).href
+    document.body.append(frame)
+    window.addEventListener('pageshow', (event) => { if (event.persisted) location.reload() })
+  }
+</script>
+<noscript><style>[data-auth-header] [data-auth-loading] { display: none !important; } [data-auth-header] [data-auth-guest] { display: inline-block !important; }</style></noscript>

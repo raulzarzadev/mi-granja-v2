@@ -197,3 +197,10 @@ Límite técnico: el costo final se conoce al terminar la respuesta. Se bloquean
 La página /plan utiliza una tabla comparativa de planes activos con precio, rango de animales y límites de IA cargados desde la política de Admin. La API autenticada /api/billing/ai-benefits expone solo consultas diarias, tier y créditos visibles; excluye presupuesto/proporción internos. El regalo se presenta como posterior al pago y no acumulable. Se conservan los flujos de selección y Stripe existentes.
 
 Multiplicadores de IA: Pro es la base; Rancho recibe 4× y Empresarial hasta 20×, configurables en Admin → IA. Con la base USD 5 visible/USD 1 interno, son USD 20/USD 4 para Rancho y hasta USD 100/USD 20 para Empresarial. La política limita los multiplicadores a 20. Los regalos se multiplican al acreditar el siguiente ciclo pagado y los saldos anteriores conservan sus condiciones; Empresarial requiere la facturación mensual de Stripe correspondiente al acuerdo. La comparativa muestra los importes visibles y «hasta» para Empresarial.
+
+## Inicialización de sesión
+
+El panel y las páginas de planes comparten la restauración de Firebase y perfil,
+con tiempo máximo de espera y reintento visible. La portada solo consulta un
+booleano de sesión; no recibe datos de granja ni credenciales. Véase
+[autenticación](../features/auth.md).

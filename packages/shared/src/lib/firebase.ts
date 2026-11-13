@@ -43,9 +43,26 @@ if (useEmulator) {
   console.log('🔧 Conectando a Firebase Emulators...')
   try {
     const emulatorHost = '127.0.0.1'
-    connectAuthEmulator(auth, `http://${emulatorHost}:${process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_PORT || 9299}`, { disableWarnings: true })
-    connectFirestoreEmulator(db, emulatorHost, Number(process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_EMULATOR_PORT || 8180))
-    connectStorageEmulator(storage, emulatorHost, Number(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_EMULATOR_PORT || 9399))
+    connectAuthEmulator(
+      auth,
+      `http://${emulatorHost}:${process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_PORT || 9299}`,
+      { disableWarnings: true },
+    )
+    // Usar el proxy de Next en el cliente evita CORS/acceso local en Safari.
+    // Los procesos sin navegador siguen conectando directamente al emulador.
+    const firestoreHost = typeof window !== 'undefined' ? window.location.hostname : emulatorHost
+    const firestorePort =
+      typeof window !== 'undefined'
+        ? Number(window.location.port || 80)
+        : Number(process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_EMULATOR_PORT || 8180)
+    connectFirestoreEmulator(db, firestoreHost, firestorePort)
+    connectStorageEmulator(
+      storage,
+      firestoreHost,
+      typeof window !== 'undefined'
+        ? firestorePort
+        : Number(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_EMULATOR_PORT || 9399),
+    )
     console.log('✅ Firebase Emulators conectados')
   } catch (_e) {
     // Emuladores ya conectados (HMR)

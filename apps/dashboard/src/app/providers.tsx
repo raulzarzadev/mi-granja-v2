@@ -1,55 +1,29 @@
 'use client'
 
-import { onAuthStateChanged } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+import { usePathname } from 'next/navigation'
 import React, { useEffect } from 'react'
-import { Provider, useDispatch, useSelector } from 'react-redux'
+import { Provider, useSelector } from 'react-redux'
 import { AppFeedbackProvider } from '@/components/AppFeedbackProvider'
 import { PostHogProvider } from '@/components/PostHogProvider'
-import { setUser } from '@/features/auth/authSlice'
-import { serializeObj } from '@/features/libs/serializeObj'
 import { RootState, store } from '@/features/store'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useAnimalRecords } from '@/hooks/useAnimalRecords'
+import { useAuthInitialization } from '@/hooks/useAuthInitialization'
 import { useBilling } from '@/hooks/useBilling'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
 import { useSalesCRUD } from '@/hooks/useSalesCRUD'
-import { auth, db } from '@/lib/firebase'
-import { User } from '@/types'
 
 interface ProvidersProps {
   children: React.ReactNode
 }
 
 const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
-  const dispatch = useDispatch()
+  const authError = useAuthInitialization()
 
   //* ==================================== AUTH INITIALIZER
   const user = useSelector((state: RootState) => state.auth.user)
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          const userFound = await getDoc(doc(db, 'users', firebaseUser.uid))
-          const userData = userFound.exists() ? (userFound.data() as User) : ({} as User)
-          const serializedUser = serializeObj({
-            ...userData,
-            id: firebaseUser.uid,
-            email: userData?.email || firebaseUser.email || '',
-          })
-          dispatch(setUser(serializedUser))
-        } catch (error) {
-          console.error('Error loading user data:', error)
-        }
-      } else {
-        dispatch(setUser(null))
-      }
-    })
-    return unsubscribe
-  }, [dispatch])
 
   //* ==================================== FARM INITIALIZER
   const { loadUserFarms } = useFarmCRUD()
@@ -107,6 +81,26 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
     }
   }, [currentFarm?.id])
 
+  if (authError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
+        <div
+          role="alert"
+          className="w-full max-w-sm space-y-4 rounded-xl border border-slate-200 bg-white p-6 text-center"
+        >
+          <h1 className="text-lg font-semibold text-slate-900">No pudimos cargar tu sesión</h1>
+          <p className="text-sm text-slate-600">{authError}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="min-h-11 cursor-pointer rounded-lg bg-green-700 px-4 py-2 font-medium text-white hover:bg-green-800 focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    )
+  }
   return (
     <>
       <PostHogProvider />
@@ -116,6 +110,9 @@ const AuthInitializer: React.FC<ProvidersProps> = ({ children }) => {
 }
 
 export const Providers: React.FC<ProvidersProps> = ({ children }) => {
+  const pathname = usePathname()
+  // La portada solo consulta si existe sesión; no carga datos privados de la granja.
+  if (pathname === '/auth/session-status') return <>{children}</>
   return (
     <Provider store={store}>
       <AppFeedbackProvider>
