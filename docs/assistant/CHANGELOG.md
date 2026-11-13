@@ -183,3 +183,100 @@ Las variantes 317A, 317a, 317 A y 317-A encuentran el mismo arete, también entr
 ## 2026-11-12 — Fotos de animales comprimidas
 
 La ficha permite hasta 12 fotos y selección de portada; el alta optimiza la foto principal. El cliente convierte a WebP/JPEG con orientación/proporción conservadas, sin agrandar fotos pequeñas: originales hasta 50 MiB, lado mayor hasta 1920 px y objetivo hasta 450 KiB. HEIC/HEIF y TIFF usan conversores bajo demanda; se conserva una imagen fija y se muestran errores recuperables. imageUrl/imageUrls se guardan mediante el CRUD existente con permisos normales y los respaldos conservan URLs, no archivos binarios. No se agregan herramientas de fotos al asistente. Validación conjunta: 398 pruebas del dashboard, TypeScript y guard de documentación.
+
+## 2026-11-12 — Dibujo de áreas con herramientas flotantes
+
+El editor manual crea solo polígonos y abre los datos del área al cerrar sobre
+el primer vértice, tras marcar al menos tres puntos. Se retira Cuadrado y el cierre
+por doble clic; se permite deshacer el último punto. La barra flota sobre el
+lienzo ampliado y centrado, conservando la compatibilidad de áreas existentes.
+No se añade una operación de creación de áreas al catálogo del asistente.
+
+El formulario del editor propone nombres Área 1, Área 2… según la numeración
+existente de la granja; conserva la edición manual antes de guardar.
+
+El campo Capacidad se sustituye en formularios de áreas por Metros cuadrados,
+con contador −/+ y entrada decimal. Se agrega `FarmArea.areaM2`, se actualizan
+las tarjetas y el formato/documentación de respaldos, y se conservan los valores
+históricos de capacity sin reinterpretarlos. La superficie es manual, no
+calculada desde el polígono. Prueba de respaldo para independencia de unidades.
+
+Los detalles de cada área del lienzo se colapsan inicialmente y se abren desde
+el nombre con una flecha, dejando libre el dibujo.
+
+Formularios compactos de áreas: descripción autoexpandible a todo el ancho,
+superficie y color en una fila, buscador antes de animales asignados y sin bloque
+vacío cuando no hay animales. Se conserva la etiqueta accesible del buscador.
+
+Contador de m² con repetición por pulsación mantenida y parpadeo del signo activo;
+se limpian los temporizadores al soltar, cancelar, perder foco o desmontar. Se
+comprueban clic simple, repetición sin salto extra al soltar, mínimo cero y limpieza.
+
+Sacar a todos requiere confirmación explícita con cantidad, nombre del área y
+destino. Reutiliza onMoveAnimal/assignArea; propaga fallos al diálogo para no
+cerrarlo como éxito si faltan movimientos. ButtonConfirm bloquea doble envío y
+cierre mientras espera la operación.
+
+El lienzo permite arrastrar el fondo, usar Mano, Espacio + arrastrar o el botón
+central del ratón para desplazar la vista. La captura del puntero termina al
+soltar/cancelar/perder foco y evita mover figuras o añadir puntos al navegar.
+
+Se combinan las acciones de edición del contorno: Listo guarda y termina; el menú
+⋯ contiene Descartar cambios. Sin cambios, Listo permite salir sin escrituras.
+La edición permanece abierta si el guardado falla.
+
+El arrastre de animales usa una copia visual del chip como drag image, fuera del
+SVG y del recorte de las listas, conservando su escala, número e iconos. La copia
+se retira tras generar la imagen o terminar el arrastre; no modifica los animales.
+
+
+## 2026-11-13 — Simplificación del editor de áreas y revisión con Claude
+
+Revisión UX de solo lectura por Claude aplicada a barra flotante, fichas HTML
+fuera del SVG, objetivos táctiles, foco y alternativa a arrastrar. El título y
+la indicación quedan fuera del lienzo, con el nombre real de la granja. El zoom
+50–200 % conserva el centro y el tamaño de las fichas; el contador es solo una
+burbuja numérica y los m² aparecen en pequeño únicamente al abrir.
+
+Se confirma la eliminación, se propagan errores de asignación y se selecciona
+el área destino solo tras mover correctamente. Se fija la identidad del formulario
+de datos para impedir escrituras sobre otro área al mover un animal; guardar
+color/datos usa la geometría persistida sin confirmar el contorno local. Volver
+desde guardar dibujo conserva puntos. La recarga avisa si hay cambios pendientes.
+Pruebas de interacción cubren destino, fallo, confirmación de borrado, identidad
+del formulario, zoom centrado y superficie solo expandida. No cambia el catálogo
+de operaciones del asistente.
+
+Los controles de zoom quedan arriba a la derecha del encabezado, fuera del
+lienzo, sin cruzarse con las herramientas flotantes.
+
+Las etiquetas cerradas quedan compactas (65–85 % según zoom); únicamente se
+amplían al pulsarlas y vuelven a su tamaño pequeño al cerrar.
+
+Se añade selector nativo de color personalizado a crear/editar áreas junto a la
+paleta, con etiqueta accesible y vista del color actual.
+
+
+## 2026-11-13 — Tabla de áreas y movimientos optimistas revisados con Claude
+
+Selector Mapa/Tabla compacto junto al zoom y Crear área; en tabla se oculta el
+zoom. Las dos vistas conservan su estado y comparten asignaciones/conteos. La
+tabla permite expandir animales, editar los datos y centrar un área en el mapa.
+
+Movimientos normales se reflejan al encolar, cierran el selector y permiten
+continuar. useOptimisticAreaMoves serializa por animal con versiones, rollback al
+último ACK y avisos recuperables con Reintentar; varios animales avanzan de forma
+independiente. Sacar a todos mantiene espera real, confirmación y propagación de
+error; su diálogo no se desmonta al quedar temporalmente vacío por el overlay.
+assignArea sigue siendo el servicio de escritura y añade force contra snapshots
+obsoletos, además de rechazar sin usuario. Subagentes implementaron UI/colas y
+Claude revisó diseño y riesgos. Se prueban carreras, rollback/retry, cambio de
+granja, modo estricto, selector inmediato y preservación de ambas vistas.
+
+La revisión final de Claude añade guardia de origen esperado al vaciar un área
+y libera overlays ante actualizaciones remotas o animales que salen de la fuente,
+para no revertir intenciones nuevas ni ocultar cambios de otros dispositivos.
+
+Se corrigen solapamientos de fichas del mapa: panel abierto por encima de las
+etiquetas cerradas y prioridad a la última abierta. Lista en filas sin compresión,
+scroll propio y todos los animales accesibles, incluido el decimotercero.

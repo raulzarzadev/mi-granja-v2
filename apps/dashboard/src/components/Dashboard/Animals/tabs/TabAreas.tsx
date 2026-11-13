@@ -1,8 +1,13 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { PiX } from 'react-icons/pi'
+import { useAppFeedback } from '@/components/AppFeedbackProvider'
+import Button from '@/components/buttons/Button'
 import FarmMapEditor, { UNASSIGNED_AREA_ID } from '@/components/Dashboard/Animals/FarmMapEditor'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useFarmCRUD } from '@/hooks/useFarmCRUD'
+import { useOptimisticAreaMoves } from '@/hooks/useOptimisticAreaMoves'
 import type { Animal } from '@/types/animals'
 import type { FarmArea } from '@/types/farm'
 
@@ -14,8 +19,16 @@ interface TabAreasProps {
 export default function TabAreas({ animals, areas }: TabAreasProps) {
   const { assignArea } = useAnimalCRUD()
   const [selectedAnimalId, setSelectedAnimalId] = useState('')
-  const [savingIds, setSavingIds] = useState<Set<string>>(new Set())
-  const [error, setError] = useState<string | null>(null)
+  const { currentFarm } = useFarmCRUD()
+  const { notify } = useAppFeedback()
+  const { visibleAnimals, moveAnimal, failures, retry, dismissFailure, savingIds } =
+    useOptimisticAreaMoves({
+      scopeId: currentFarm?.id ?? '',
+      animals,
+      persistArea: assignArea,
+      onFailure: (failure) =>
+        notify(`No se pudo mover ${failure.animalNumber}. Puedes reintentarlo.`, 'error'),
+    })
 
   const activeAreas = useMemo(() => areas.filter((area) => area.isActive), [areas])
   const activeAreaIds = useMemo(() => new Set(activeAreas.map((area) => area.id)), [activeAreas])
@@ -27,7 +40,7 @@ export default function TabAreas({ animals, areas }: TabAreasProps) {
       groups.set(area.id, [])
     })
 
-    animals.forEach((animal) => {
+    visibleAnimals.forEach((animal) => {
       const areaId =
         animal.currentAreaId && activeAreaIds.has(animal.currentAreaId)
           ? animal.currentAreaId
@@ -40,41 +53,50 @@ export default function TabAreas({ animals, areas }: TabAreasProps) {
     })
 
     return groups
-  }, [activeAreaIds, activeAreas, animals])
-
-  const setAnimalSaving = (animalId: string, isSaving: boolean) => {
-    setSavingIds((prev) => {
-      const next = new Set(prev)
-      if (isSaving) next.add(animalId)
-      else next.delete(animalId)
-      return next
-    })
-  }
-
-  const moveAnimal = async (animalId: string, areaId: string) => {
-    const nextAreaId = areaId === UNASSIGNED_AREA_ID ? null : areaId
-    const animal = animals.find((item) => item.id === animalId)
-    if (!animal) return
-    if ((animal.currentAreaId ?? null) === nextAreaId) return
-
-    setError(null)
-    setAnimalSaving(animalId, true)
-    try {
-      await assignArea(animalId, nextAreaId)
-    } catch (err) {
-      console.error('Error moving animal to area:', err)
-      setError('No se pudo mover el animal. Intenta de nuevo.')
-    } finally {
-      setAnimalSaving(animalId, false)
-    }
-  }
+  }, [activeAreaIds, activeAreas, visibleAnimals])
 
   return (
     <div>
-      {error ? (
-        <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
+      {failures.length ? (
+        <div className="mb-3 space-y-2">
+          {failures.map((failure) => (
+            <div
+              key={failure.animalId}
+              role="alert"
+              className="flex flex-wrap items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2"
+            >
+              <p className="min-w-0 flex-1 text-sm text-red-800">
+                No se pudo mover <strong>{failure.animalNumber}</strong> a{' '}
+                {failure.areaId
+                  ? (areas.find((area) => area.id === failure.areaId)?.name ?? 'su área de destino')
+                  : 'pendientes'}
+                . Revisa su ubicación y vuelve a intentarlo.
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                color="error"
+                variant="ghost"
+                className="min-h-11 rounded-lg"
+                onClick={() => {
+                  void retry(failure).catch(() =>
+                    notify('El animal ya no está disponible. Actualiza la vista.', 'error'),
+                  )
+                }}
+              >
+                Reintentar
+              </Button>
+              <button
+                type="button"
+                aria-label={`Cerrar aviso de ${failure.animalNumber}`}
+                className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+                onClick={() => dismissFailure(failure.animalId)}
+              >
+                <PiX aria-hidden="true" size={18} />
+              </button>
+            </div>
+          ))}
+        </div>
       ) : null}
       <FarmMapEditor
         areas={activeAreas}

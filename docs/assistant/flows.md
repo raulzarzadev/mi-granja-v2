@@ -180,3 +180,98 @@ Fotos: alta con foto principal y edición de galería desde la ficha del animal.
 La compresión y conversión son del cliente; los archivos se suben a Storage y
 los enlaces se guardan mediante el CRUD normal, con permiso de actualización.
 El chat no tiene herramienta para adjuntar ni cargar fotos del animal.
+
+## Editor visual de áreas
+
+El encabezado «Áreas de {nombre de granja}» y la indicación están fuera del borde
+del lienzo. `FarmMapToolbar` flota con una sola acción principal según el estado:
+Terminar dibujo o Listo; Crear área aparece en la fila del encabezado. Mover permite navegar sin editar figuras.
+Durante edición no aparecen Pendientes ni Crear área; ⋯ contiene Descartar
+cambios y Eliminar área. Eliminar requiere confirmación y un área vacía.
+
+La creación dibuja únicamente polígonos: al menos tres puntos y cierre sobre el
+primero, o Terminar. El cierre abre el formulario sin persistir automáticamente.
+Volver desde ese formulario conserva los puntos y no permite cerrar mientras se
+guarda. Las áreas rectangulares existentes siguen siendo compatibles. El nombre
+propone Área N, siguiente al mayor número existente (incluidas áreas inactivas).
+
+El lienzo ampliado se centra al abrir y comienza al 100 %. Zoom −/porcentaje/+
+aparece arriba a la derecha junto al encabezado, fuera del lienzo. Mapa/Tabla,
+zoom y Crear área comparten una fila compacta; en tabla se oculta el zoom. Permite 50–200 %, conserva el centro de la vista y no cambia datos persistidos.
+Las fichas HTML están fuera del SVG. Cerradas usan una escala compacta de
+65–85 % según el zoom; solo pulsarlas las abre a tamaño completo. Cerradas muestran icono, nombre y una burbuja solo numérica; al
+abrir aparece la superficie en texto pequeño (p. ej. 120 m² o — m²), descripción
+y animales, sin repetir nombre/conteo ni mostrar el tipo como Pastizal. No hay
+un botón Editar dentro de cada ficha: se selecciona el contorno y se usa Datos.
+
+El primer toque en un contorno lo selecciona; arrastrar el contorno ya seleccionado
+lo mueve (umbral de 4 px). Los animales no disparan el arrastre de la figura.
+Arrastrar el fondo o usar Mover, Espacio con foco en el lienzo o el botón central
+permite desplazar ambos ejes, incluida la diagonal. Los puntos editables mantienen
+una zona táctil equivalente a 44 px independientemente del zoom.
+
+Listo guarda cambios y termina la selección; sin cambios, solo termina. Descartar
+restaura el contorno persistido. Cambiar de área con cambios guarda primero y no
+abandona la edición si falla. Se avisa antes de recargar/cerrar la página con
+cambios o dibujos pendientes; el aviso no intercepta cambios de pestaña internos.
+
+Pulsar un animal abre un selector de destino como alternativa a arrastrarlo.
+Al elegir o soltar un movimiento normal se encola, se refleja inmediatamente en
+ambas vistas y se selecciona el destino. El selector cierra sin esperar el servidor
+y Pendientes permanece abierto para continuar. Durante Editar datos se mantiene
+el área del formulario. El formulario conserva su ID independiente
+de la selección, y Guardar datos no persiste geometría sin confirmar. Errores se
+muestran dentro del diálogo; no se afirma éxito si onMoveAnimal/assignArea falla.
+El arrastre HTML usa la propia ficha HTML como imagen, sin clon temporal ni SVG.
+
+Descripción ocupa una fila completa con textarea inicialmente de una línea que
+crece al escribir. Metros cuadrados y color comparten fila. La superficie manual
+se guarda en FarmArea.areaM2, sin calcularla desde el polígono ni reinterpretar
+capacity (capacidad histórica en animales). Los respaldos preservan ambos campos.
+El contador −/+ admite decimales, repite cada 80 ms después de 400 ms de pulsación
+mantenida, nunca baja de cero y parpadea mientras repite, respetando movimiento
+reducido. Los temporizadores se limpian al soltar/cancelar/perder foco/desmontar.
+
+En edición, el buscador de asignación está antes de la lista de animales, sin
+bloque vacío si no hay asignados. Asignar/Quitar también encolan movimientos
+optimistas; la persistencia y los errores se gestionan en TabAreas. «Sacar a todos» usa ButtonConfirm, muestra cantidad/área y
+destino pendientes, bloquea doble envío y cierre mientras espera. Los movimientos
+ya confirmados permanecen si falla alguno; el reintento procesa los restantes.
+
+El chat no incorpora una nueva herramienta de creación/edición de áreas: se
+mantienen los servicios de dominio y permisos existentes.
+
+Los colores del formulario conservan los predefinidos y añaden un input color
+nativo «Elegir otro color» para cualquier valor hexadecimal. Se guarda mediante
+el mismo layout.color al crear o actualizar el área.
+
+
+### Vista de tabla y movimientos optimistas
+
+Mapa y tabla comparten animalsByArea y permanecen montados al alternar para
+conservar zoom, desplazamiento, dibujos y filas desplegadas. La tabla resume
+nombre, conteo y superficie, con animales desplegables, Datos y Ver en mapa; esta
+última acción centra el contorno. Los controles de vista/zoom son compactos,
+accesibles por nombre y foco y se mantienen en una fila con scroll si hace falta.
+
+`useOptimisticAreaMoves` mantiene un overlay local por animal y una cola serial
+independiente para cada animal. `moveAnimal(id, destino, false)` encola y resuelve
+sin esperar el ACK: no deshabilita las fichas ni afirma que quedó guardado. Si el
+servidor rechaza la intención vigente, restaura el último destino confirmado y
+muestra aviso/banda persistente con Reintentar. Fallos antiguos no pisan una
+intención posterior. El overlay confirmado se retira al coincidir la fuente viva o llegar un destino
+remoto ajeno. Los casos ambiguos entre un snapshot retrasado y un regreso remoto
+al origen conservan el overlay como máximo dos segundos después del ACK; una
+petición todavía pendiente nunca caduca por ese plazo.
+
+`moveAnimal(id, destino, true, origenEsperado)` espera la persistencia y lanza
+errores; es el modo de Sacar a todos, después de confirmar. Un animal que ya
+cambió de área se omite para no pisar una intención posterior. La confirmación se mantiene montada aunque
+el overlay vacíe la lista antes del ACK. El servicio único sigue siendo assignArea;
+la cola usa force solo para evitar no-ops con snapshots antiguos (A→B→A), y el
+servicio rechaza si no hay usuario. Un cambio de granja/desmontaje aísla las
+peticiones antiguas de la nueva UI. No se añade un ejecutor alternativo al chat.
+
+Las fichas abiertas se sitúan por encima de las etiquetas cerradas; la última
+abierta tiene prioridad. La lista usa filas sin compresión y scroll contenido,
+muestra todos los animales y no sustituye los que pasan de doce por un «+N».

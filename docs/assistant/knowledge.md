@@ -120,3 +120,14 @@ Fotos de animales: `Animal.imageUrl` es portada y `imageUrls` la galería. La UI
 comprime antes de subir a Storage; el respaldo conserva enlaces. Estos campos
 no demuestran eventos de salud ni parentescos y el asistente no analiza ni carga
 fotos mediante sus acciones actuales.
+
+Las áreas pueden incluir `areaM2`, superficie manual en metros cuadrados.
+`capacity` es un dato histórico de cantidad de animales y no debe interpretarse
+como superficie. El contorno normalizado del lienzo no representa una escala
+geográfica ni permite deducir metros cuadrados.
+
+
+La asignación manual de áreas usa un overlay optimista y colas por animal en el
+cliente: una ficha movida aún puede estar pendiente de confirmación del servidor.
+Los borradores/comprobantes del asistente siguen basándose en Firestore y no en
+ese overlay. Sacar a todos espera persistencia real y conserva su confirmación.
