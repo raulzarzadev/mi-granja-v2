@@ -7,7 +7,7 @@ last_updated: 2026-11-01
 
 # Asistente operativo de Mi Granja
 
-Estado: **implementación de la primera versión operativa en el código; requiere las comprobaciones de integración indicadas abajo antes de publicar**. El asistente prepara propuestas persistidas y el usuario las revisa y confirma. El historial de conversaciones continúa guardado localmente por usuario y granja; no hay sincronización de chats entre dispositivos.
+Estado: **implementación de la primera versión operativa en el código; requiere las comprobaciones de integración indicadas abajo antes de publicar**. El asistente prepara propuestas persistidas y el usuario las revisa y confirma. El historial navegable de conversaciones continúa guardado localmente por usuario y granja; no hay sincronización de chats entre dispositivos. Desde la activación del registro administrativo, las nuevas preguntas y respuestas también se guardan en servidor para soporte (véase «Historial administrativo»).
 
 ## Presentación del chat
 
@@ -213,3 +213,12 @@ El panel y las páginas de planes comparten la restauración de Firebase y perfi
 con tiempo máximo de espera y reintento visible. La portada solo consulta un
 booleano de sesión; no recibe datos de granja ni credenciales. Véase
 [autenticación](../features/auth.md).
+
+
+## Historial administrativo
+
+Admin → Usuarios → Uso de IA y Admin → IA → Consumo por cliente → Ver historial abren el mismo modal. La API `GET /api/admin/ai-history?userId=…&cursor=…` exige sesión y rol administrativo, devuelve 25 consultas por página, más recientes primero, sin caché. No depende del periodo de la tabla de consumo.
+
+Cada solicitud de chat válida, autorizada y con cuota reservada persiste únicamente la pregunta actual en `aiChatHistory/{userId}/queries/{reservationId}`, con granja, conversación y fecha del servidor. Después registra respuesta, modelo, proveedor y tokens. No copia el historial recibido del navegador ni guarda credenciales, contexto de la granja o errores internos. Una consulta fallida conserva la pregunta con estado fallido; una interrupción puede dejarla pendiente. Fallar al guardar la pregunta impide llamar al proveedor; fallar al guardar la respuesta se registra en servidor y conserva la pregunta pendiente sin impedir entregar la respuesta al usuario.
+
+La colección está excluida de las reglas generales de acceso de clientes, en producción y emuladores. Solo la API administrativa permite leerla; las escrituras usan Admin SDK. Desplegar las reglas antes de activar el registro en producción. No se importan conversaciones locales anteriores ni se reconstruyen preguntas desde estadísticas. Esta vista es de lectura y no ejecuta propuestas, no sincroniza el chat del usuario ni registra consultas de lectura de aretes.

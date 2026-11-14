@@ -1,6 +1,7 @@
 /** @jest-environment node */
 import { NextRequest } from 'next/server'
 import { POST } from '@/app/api/ai/chat/route'
+import { finishChatHistory, startChatHistory } from '@/lib/ai/chat-history'
 import { runOperationalChat } from '@/lib/ai/chat-service'
 import {
   consumeDailyAiUse,
@@ -9,6 +10,10 @@ import {
   resolveFarmPermissions,
 } from '@/lib/ai/server'
 
+jest.mock('@/lib/ai/chat-history', () => ({
+  startChatHistory: jest.fn().mockResolvedValue(undefined),
+  finishChatHistory: jest.fn().mockResolvedValue(undefined),
+}))
 jest.mock('@/lib/ai/chat-service', () => ({ runOperationalChat: jest.fn() }))
 jest.mock('@/lib/analytics/posthog-server', () => ({ captureServerEvent: jest.fn() }))
 jest.mock('@/lib/ai/server', () => ({
@@ -108,4 +113,45 @@ it('does not expose provider or database errors', async () => {
   expect(response.status).toBe(500)
   expect(JSON.stringify(await response.json())).not.toContain('private')
   log.mockRestore()
+})
+
+it('records only the authenticated user and current question, then the actual answer', async () => {
+  const response = await POST(
+    request({
+      farmId: 'farm',
+      message: 'Hola',
+      conversationId: 'chat',
+      userId: 'other',
+      history: [{ role: 'user', text: 'old' }],
+    }),
+  )
+  expect(response.status).toBe(200)
+  expect(startChatHistory).toHaveBeenCalledWith({
+    userId: 'user',
+    reservationId: 'reservation',
+    farmId: 'farm',
+    farmName: 'Granja',
+    conversationId: 'chat',
+    question: 'Hola',
+  })
+  expect(finishChatHistory).toHaveBeenCalledWith('user', 'reservation', {
+    answer: 'Consulta',
+    provider: 'openai',
+    model: 'test',
+    tokens: 0,
+  })
+})
+it('does not call the provider if the question cannot be persisted', async () => {
+  jest.mocked(startChatHistory).mockRejectedValueOnce(new Error('storage unavailable'))
+  expect(
+    (await POST(request({ farmId: 'farm', message: 'Hola', conversationId: 'chat' }))).status,
+  ).toBe(500)
+  expect(runOperationalChat).not.toHaveBeenCalled()
+})
+it('marks failed provider calls without persisting internal error messages', async () => {
+  jest.mocked(runOperationalChat).mockRejectedValueOnce(new Error('private provider error'))
+  const response = await POST(request({ farmId: 'farm', message: 'Hola', conversationId: 'chat' }))
+  expect(response.status).toBe(500)
+  expect(finishChatHistory).toHaveBeenCalledWith('user', 'reservation', null)
+  expect(JSON.stringify(await response.json())).not.toContain('private provider error')
 })

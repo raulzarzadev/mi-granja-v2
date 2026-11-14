@@ -11,6 +11,7 @@ import { auth } from '@/lib/firebase'
 import { animal_icon, animals_types_labels } from '@/types/animals'
 import { PLAN_TIERS, type PlanTierId } from '@/types/billing'
 import AdminUserActions from './AdminUserActions'
+import AiUserHistory from './AiUserHistory'
 
 interface UserPlanData {
   tierId: PlanTierId
@@ -25,6 +26,7 @@ interface UserPlanData {
 export default function AdminUsers() {
   const { notify } = useAppFeedback()
   const { users, isLoading, error, refreshUsers } = useAdminUsers()
+  const [aiUser, setAiUser] = useState<AdminUser | null>(null)
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null)
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null)
   const [planUser, setPlanUser] = useState<AdminUser | null>(null)
@@ -229,6 +231,16 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          setAiUser(user)
+                        }}
+                        className="min-h-11 cursor-pointer rounded-lg px-3 text-green-700 hover:bg-green-50"
+                      >
+                        Uso de IA
+                      </button>
+                      <button
                         onClick={(e) => {
                           e.stopPropagation()
                           setSelectedUser(user)
@@ -357,6 +369,14 @@ export default function AdminUsers() {
         </table>
       </div>
 
+      {aiUser && (
+        <AiUserHistory
+          key={aiUser.id}
+          userId={aiUser.id}
+          name={aiUser.email}
+          onClose={() => setAiUser(null)}
+        />
+      )}
       {/* Modal de acciones de usuario */}
       {selectedUser && (
         <AdminUserActions user={selectedUser} onClose={() => setSelectedUser(null)} />

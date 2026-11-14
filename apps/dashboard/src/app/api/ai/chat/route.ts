@@ -1,5 +1,6 @@
 import { ANALYTICS_EVENTS } from '@mi-granja/shared'
 import { NextRequest, NextResponse } from 'next/server'
+import { finishChatHistory, startChatHistory } from '@/lib/ai/chat-history'
 import { runOperationalChat } from '@/lib/ai/chat-service'
 import {
   AiQuotaError,
@@ -105,6 +106,14 @@ export async function POST(request: NextRequest) {
       history_length: history.length,
     })
     reservationId = await reserveAiUse(auth.uid)
+    await startChatHistory({
+      userId: auth.uid,
+      reservationId,
+      farmId,
+      farmName: access.farmName,
+      conversationId,
+      question: message,
+    })
     const startedAt = Date.now()
     const ai = await runOperationalChat({
       message,
@@ -136,6 +145,12 @@ export async function POST(request: NextRequest) {
       },
       reservationId,
     )
+    await finishChatHistory(auth.uid, reservationId, {
+      answer: ai.parsed.message,
+      provider: ai.provider,
+      model: ai.model,
+      tokens: totalAiTokens(ai.usage),
+    }).catch((error) => console.error('No se pudo completar el historial de IA:', error))
     if (usage.allowed === false) {
       return NextResponse.json({ error: aiQuotaMessage(usage), usage }, { status: 429 })
     }
@@ -149,7 +164,10 @@ export async function POST(request: NextRequest) {
       usage,
     })
   } catch (error) {
-    if (reservationId && userId) await releaseAiUse(userId, reservationId).catch(() => {})
+    if (reservationId && userId) {
+      await finishChatHistory(userId, reservationId, null).catch(() => {})
+      await releaseAiUse(userId, reservationId).catch(() => {})
+    }
     if (error instanceof AiQuotaError)
       return NextResponse.json({ error: error.message, usage: error.usage }, { status: 429 })
     console.error('AI chat error:', error)

@@ -131,3 +131,8 @@ La asignación manual de áreas usa un overlay optimista y colas por animal en e
 cliente: una ficha movida aún puede estar pendiente de confirmación del servidor.
 Los borradores/comprobantes del asistente siguen basándose en Firestore y no en
 ese overlay. Sacar a todos espera persistencia real y conserva su confirmación.
+
+
+### Consultas administrativas de IA
+
+`aiChatHistory/{userId}/queries` conserva nuevas preguntas y respuestas para soporte administrativo. No es fuente de conocimiento del modelo, autoridad de propuestas ni fuente de movimientos. Se accede solo mediante `/api/admin/ai-history`, tras validar administrador; reglas de Firestore excluyen acceso directo de clientes. Ver [historial administrativo](README.md#historial-administrativo).

@@ -280,3 +280,10 @@ para no revertir intenciones nuevas ni ocultar cambios de otros dispositivos.
 Se corrigen solapamientos de fichas del mapa: panel abierto por encima de las
 etiquetas cerradas y prioridad a la última abierta. Lista en filas sin compresión,
 scroll propio y todos los animales accesibles, incluido el decimotercero.
+
+
+## 2026-11-14 — Historial administrativo de consultas
+
+- Nuevas preguntas/respuestas de chat persistidas por usuario, granja y conversación, con estados pendiente/completado/fallido y sin duplicar el historial enviado por el cliente.
+- «Uso de IA» en Admin → Usuarios y «Ver historial» en consumo comparten un modal paginado con fecha, granja y modelo. Lectura exclusiva de administradores y sin recuperación retroactiva.
+- Se excluye `aiChatHistory` de las reglas generales de clientes; desplegar reglas antes de activar el registro. No cambia la ejecución de propuestas ni el historial local del usuario.

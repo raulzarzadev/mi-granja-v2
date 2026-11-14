@@ -69,6 +69,12 @@ async function main() {
     await deniedFirestore(setDoc(doc(anonymousDb, 'animals/anonymous-write'), { farmId: 'farm-a' }))
     assert.equal((await getDoc(doc(signedDb, 'animals/animal-a'))).exists(), true)
     await setDoc(doc(signedDb, 'animals/signed-write'), { farmId: 'farm-a' })
+    const historyPath = 'aiChatHistory/owner-a/queries/request-a'
+    await db.doc(historyPath).set({ question: 'Pregunta privada' })
+    await deniedFirestore(getDoc(doc(signedDb, historyPath)))
+    await deniedFirestore(getDocs(collection(signedDb, 'aiChatHistory/owner-a/queries')))
+    await deniedFirestore(setDoc(doc(signedDb, historyPath), { question: 'Manipulada' }))
+    await deniedFirestore(getDoc(doc(anonymousDb, historyPath)))
     const owner = storageFor('owner-a')
     const other = storageFor('owner-b')
     const viewer = storageFor('viewer-a')

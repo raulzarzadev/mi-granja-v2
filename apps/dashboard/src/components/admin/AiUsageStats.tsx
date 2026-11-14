@@ -12,6 +12,7 @@ import {
 } from 'recharts'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { auth } from '@/lib/firebase'
+import AiUserHistory from './AiUserHistory'
 
 interface AiUsageStatsResponse {
   days: number
@@ -46,6 +47,7 @@ const money = new Intl.NumberFormat('es-MX', {
 })
 
 export default function AiUsageStats() {
+  const [historyUser, setHistoryUser] = useState<{ userId: string; name: string } | null>(null)
   const [days, setDays] = useState(30)
   const [search, setSearch] = useState('')
   const [data, setData] = useState<AiUsageStatsResponse | null>(null)
@@ -273,12 +275,15 @@ export default function AiUsageStats() {
                     <th scope="col" className="px-3 py-2.5 font-semibold">
                       Último uso
                     </th>
+                    <th scope="col" className="px-3 py-2.5 font-semibold">
+                      Historial
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {!visibleUsers.length && (
                     <tr>
-                      <td colSpan={5} className="px-3 py-5 text-center text-gray-500">
+                      <td colSpan={6} className="px-3 py-5 text-center text-gray-500">
                         No hay clientes que coincidan con la búsqueda.
                       </td>
                     </tr>
@@ -303,6 +308,16 @@ export default function AiUsageStats() {
                       <td className="whitespace-nowrap px-3 py-2.5 text-gray-600">
                         {formatDate(user.lastUsedAt)}
                       </td>
+                      <td className="px-3 py-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setHistoryUser(user)}
+                          aria-label={`Ver historial de ${user.name}`}
+                          className="min-h-11 cursor-pointer whitespace-nowrap rounded-lg px-3 text-green-700 hover:bg-green-50"
+                        >
+                          Ver historial
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -317,6 +332,14 @@ export default function AiUsageStats() {
             Las nuevas conversaciones aparecerán aquí automáticamente.
           </p>
         </div>
+      )}
+      {historyUser && (
+        <AiUserHistory
+          key={historyUser.userId}
+          userId={historyUser.userId}
+          name={historyUser.name}
+          onClose={() => setHistoryUser(null)}
+        />
       )}
     </section>
   )
