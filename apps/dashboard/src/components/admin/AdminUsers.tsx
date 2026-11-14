@@ -2,106 +2,21 @@
 
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import React, { useCallback, useState } from 'react'
-import { useAppFeedback } from '@/components/AppFeedbackProvider'
+import React, { useState } from 'react'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { type AdminUser, useAdminUsers } from '@/hooks/admin/useAdminUsers'
-import { auth } from '@/lib/firebase'
 import { animal_icon, animals_types_labels } from '@/types/animals'
-import { PLAN_TIERS, type PlanTierId } from '@/types/billing'
 import AdminUserActions from './AdminUserActions'
+import AdminUserPlanModal from './AdminUserPlanModal'
 import AiUserHistory from './AiUserHistory'
 
-interface UserPlanData {
-  tierId: PlanTierId
-  planType: string
-  animalCount: number
-  requiredTierId: PlanTierId
-  animalLimit: number | null
-  actualFarmCount: number
-  actualCollaboratorCount: number
-}
-
 export default function AdminUsers() {
-  const { notify } = useAppFeedback()
   const { users, isLoading, error, refreshUsers } = useAdminUsers()
   const [aiUser, setAiUser] = useState<AdminUser | null>(null)
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null)
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null)
   const [planUser, setPlanUser] = useState<AdminUser | null>(null)
-  const [planData, setPlanData] = useState<UserPlanData | null>(null)
-  const [tierInput, setTierInput] = useState<PlanTierId>('free')
-  const [isSavingPlan, setIsSavingPlan] = useState(false)
-  const [isLoadingPlan, setIsLoadingPlan] = useState(false)
-
-  const loadPlanData = useCallback(async (userId: string) => {
-    setIsLoadingPlan(true)
-    try {
-      const token = await auth.currentUser?.getIdToken()
-      if (!token) return
-
-      const res = await fetch(`/api/admin/billing?userId=${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-
-      if (res.ok) {
-        const data: UserPlanData = await res.json()
-        setPlanData(data)
-        setTierInput(data.tierId)
-      }
-    } catch (err) {
-      console.error('Error cargando plan:', err)
-    } finally {
-      setIsLoadingPlan(false)
-    }
-  }, [])
-
-  const openPlanModal = useCallback(
-    (user: AdminUser) => {
-      setPlanUser(user)
-      setPlanData(null)
-      setTierInput('free')
-      loadPlanData(user.id)
-    },
-    [loadPlanData],
-  )
-
-  const handleSavePlan = async () => {
-    if (!planUser) return
-    setIsSavingPlan(true)
-    try {
-      const token = await auth.currentUser?.getIdToken()
-      if (!token) return
-
-      const res = await fetch('/api/admin/billing', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          userId: planUser.id,
-          tierId: tierInput,
-        }),
-      })
-
-      if (res.ok) {
-        setPlanUser(null)
-        await refreshUsers()
-        notify('Plan actualizado correctamente', 'success')
-      } else {
-        const data = await res.json()
-        notify(data.error || 'Error al guardar')
-      }
-    } catch (err) {
-      console.error('Error guardando plan:', err)
-      notify('Error al guardar el plan')
-    } finally {
-      setIsSavingPlan(false)
-    }
-  }
-
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
@@ -252,7 +167,7 @@ export default function AdminUsers() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          openPlanModal(user)
+                          setPlanUser(user)
                         }}
                         className="text-green-600 hover:text-green-900"
                       >
@@ -382,94 +297,14 @@ export default function AdminUsers() {
         <AdminUserActions user={selectedUser} onClose={() => setSelectedUser(null)} />
       )}
 
-      {/* Modal de gestion de plan */}
       {planUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Gestionar Plan</h3>
-            <p className="text-sm text-gray-500 mb-4">{planUser.email}</p>
-
-            {isLoadingPlan ? (
-              <div className="flex justify-center py-8">
-                <LoadingSpinner />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Uso actual */}
-                {planData && (
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                    <p className="text-sm font-medium text-gray-700">Uso actual</p>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Granjas:</span>
-                        <span className="font-medium text-gray-900">
-                          {planData.actualFarmCount}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Colaboradores:</span>
-                        <span className="font-medium text-gray-900">
-                          {planData.actualCollaboratorCount}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
-                      <span className="text-gray-500">Animales activos:</span>
-                      <span className="font-bold text-gray-900">{planData.animalCount}</span>
-                    </div>
-                    <p className="text-xs text-gray-400">
-                      Tier requerido por inventario: {planData.requiredTierId}.
-                    </p>
-                  </div>
-                )}
-
-                {/* Asignar tier */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tier asignado
-                  </label>
-                  <select
-                    value={tierInput}
-                    onChange={(e) => setTierInput(e.target.value as PlanTierId)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  >
-                    {PLAN_TIERS.map((tier) => (
-                      <option key={tier.id} value={tier.id}>
-                        {tier.label} — {tier.description}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    La asignación manual es para soporte; Stripe seguirá sincronizando suscripciones
-                    pagadas.
-                  </p>
-                </div>
-
-                {/* Preview */}
-                <div className="rounded-md bg-green-50 p-3">
-                  <p className="text-sm font-medium capitalize text-green-800">{tierInput}</p>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setPlanUser(null)}
-                className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
-                disabled={isSavingPlan}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSavePlan}
-                disabled={isSavingPlan || isLoadingPlan}
-                className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-              >
-                {isSavingPlan ? 'Guardando...' : 'Guardar'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <AdminUserPlanModal
+          key={planUser.id}
+          userId={planUser.id}
+          email={planUser.email}
+          onClose={() => setPlanUser(null)}
+          onSaved={refreshUsers}
+        />
       )}
     </div>
   )

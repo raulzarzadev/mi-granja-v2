@@ -61,7 +61,9 @@ El tab **Precios** del panel administrativo permite editar los planes. Los lími
 
 El precio visible y el cobro de Stripe se vinculan mediante `stripePriceId`. Al cambiar un importe debe registrarse el Price ID correspondiente; si no existe una configuración persistida, se usan las variables `STRIPE_PRICE_*` como fallback.
 
-El admin también puede asignar un `tierId` manualmente a un usuario para soporte. Esta asignación puede ser sobrescrita por un webhook posterior de Stripe. El antiguo campo `places` ya no forma parte del contrato de billing.
+Admin → Usuarios → Gestionar plan carga la configuración vigente desde `/api/admin/billing-config` al abrir el modal. Muestra nombres, rangos y precios USD/mes configurados, incluidos planes ocultos etiquetados para soporte. No permite guardar si falla la carga y ofrece reintento; los errores al guardar conservan la selección. Granjas y colaboradores se muestran solo como información, sin cargos adicionales.
+
+El admin también puede asignar un `tierId` manualmente a un usuario para soporte. Esta acción no crea un checkout ni genera cobros en Stripe. Esta asignación puede ser sobrescrita por un webhook posterior de Stripe. El antiguo campo `places` ya no forma parte del contrato de billing.
 
 Véase [ADR-006](../decisions/006-stripe-animal-tiers.md).
 
