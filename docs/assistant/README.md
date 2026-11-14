@@ -169,7 +169,7 @@ Diseño definitivo elegido: opción 1, un botón (+) verde con estrellas blancas
 
 ## Propuestas por lote
 
-El asistente puede preparar entre 2 y 10 operaciones completas en una respuesta (`proposed_actions`, `actions`). Permite altas múltiples y acciones distintas sobre animales distintos, conservando los contratos individuales. Una sola operación con varias referencias (destete, salud, venta o gestación) sigue siendo una propuesta individual con aviso de movimiento masivo.
+El asistente puede preparar entre 2 y 10 operaciones completas en una respuesta (`proposed_actions`, `actions`). Permite altas múltiples y acciones distintas sobre animales distintos, conservando los contratos individuales. Una sola operación con varias referencias (destete, salud, venta o gestación) sigue siendo una propuesta individual con aviso de movimiento masivo. Salud también admite un grupo de animales activos resuelto en servidor (`animalGroup`), ver [flows.md](flows.md#salud-por-grupo-de-animales--habilitado-versión-3).
 
 `BatchProposalCard` muestra cada acción con un botón discreto «Por revisar» siempre visible. No ofrece «Revisar lote completo» ni confirmación conjunta. La advertencia explica el riesgo de datos incorrectos; cada movimiento se revisa y confirma en su propio modal con los datos y efectos del servidor. Recibir el mensaje no ejecuta movimientos. Los borradores se persisten individualmente; el agrupamiento del chat es local.
 

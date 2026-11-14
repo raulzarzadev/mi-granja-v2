@@ -12,19 +12,36 @@ import {
   buildRegisteredAnimal,
   validateAnimalRegistration,
 } from '@/lib/domain/animal-registration-service'
+import {
+  buildFarmArea,
+  farm_area_type_labels,
+  normalizeAreaName,
+} from '@/lib/domain/farm-area-service'
 import { farmDateKey, parseFarmDate } from '@/lib/domain/farm-calendar'
 import {
   createRecordMovementService,
   type MovementTransport,
 } from '@/lib/domain/record-movement-service'
+import {
+  buildReminderDocument,
+  reminder_priority_labels,
+  reminder_type_labels,
+} from '@/lib/domain/reminder-service'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import type { MovementPlan } from '@/lib/record-movements'
 import type { BirthRecord } from '@/types'
-import type { Animal, AnimalRecord } from '@/types/animals'
+import {
+  type Animal,
+  type AnimalRecord,
+  animals_genders_labels,
+  animals_types_labels,
+} from '@/types/animals'
 import type { BreedingRecord } from '@/types/breedings'
 import { generateBreedingId } from '@/types/breedings'
-import type { FarmPermission } from '@/types/farm'
+import type { FarmArea, FarmPermission } from '@/types/farm'
 import {
+  type AnimalGroup,
+  MAX_GROUP_ANIMALS,
   OPERATION_VERSION,
   type OperationAction,
   operationActionSchema,
@@ -110,6 +127,17 @@ function dates(value: unknown): any {
 function checkPermissions(scope: Scope, action: Pick<OperationAction, 'type'>) {
   const allowed = (module: FarmPermission['module'], permission: 'create' | 'update' | 'read') =>
     hasPermission(scope.permissions, module, permission)
+  // Recordatorios y áreas no son movimientos de animales: tienen su propio módulo.
+  if (action.type === 'create_reminder') {
+    if (!allowed('reminders', 'create'))
+      throw new AiProposalError('No tienes permisos para crear recordatorios.', 403)
+    return
+  }
+  if (action.type === 'create_area') {
+    if (!allowed('areas', 'create'))
+      throw new AiProposalError('No tienes permisos para crear áreas.', 403)
+    return
+  }
   if (
     !allowed('animals', 'read') ||
     !allowed('animals', action.type === 'create_animal' ? 'create' : 'update')
@@ -162,6 +190,7 @@ async function readState(
   farmId: string,
   tx?: Transaction,
   includeBreeding = true,
+  includeFarm = false,
 ): Promise<FarmState> {
   const queries = (includeBreeding ? ['animals', 'breedingRecords'] : ['animals']).map((name) =>
     db.collection(name).where('farmId', '==', farmId),
@@ -174,6 +203,11 @@ async function readState(
       return { ...dates(doc.data()), id: doc.id }
     }),
   )
+  if (includeFarm) {
+    const farmRef = db.collection('farms').doc(farmId)
+    const farm = await (tx ? tx.get(farmRef) : farmRef.get())
+    raw.set(`farms/${farmId}`, farm.exists ? (farm.data() ?? null) : null)
+  }
   const fingerprint = createHash('sha256')
     .update(
       JSON.stringify(
@@ -190,6 +224,7 @@ async function readState(
     raw,
   }
 }
+const readsFarm = (action: OperationAction) => action.type === 'create_area'
 const readsBreeding = (action: OperationAction) =>
   ['create_breeding', 'register_birth', 'confirm_pregnancy', 'finish_breeding'].includes(
     action.type,
@@ -220,11 +255,39 @@ function resolveAnimal(state: FarmState, ref: string): Animal {
 function resolveMany(state: FarmState, refs: string[]) {
   return [...new Set(refs.map((ref) => resolveAnimal(state, ref).id))]
 }
+/** Activos de la granja que cumplen el grupo; la lista sale de la base, no del modelo. */
+function resolveGroup(state: FarmState, group: AnimalGroup) {
+  const ids = state.animals
+    .filter(
+      (animal) =>
+        (animal.status ?? 'activo') === 'activo' &&
+        (!group.type || animal.type === group.type) &&
+        (!group.gender || animal.gender === group.gender),
+    )
+    .map((animal) => animal.id)
+  if (!ids.length) throw new AiProposalError('No hay animales activos que coincidan con ese grupo.')
+  if (ids.length > MAX_GROUP_ANIMALS)
+    throw new AiProposalError(
+      `El grupo tiene más de ${MAX_GROUP_ANIMALS} animales. Divide el registro por especie o sexo.`,
+    )
+  return ids
+}
+function groupLabel(group: AnimalGroup) {
+  const filters = [
+    group.type && animals_types_labels[group.type],
+    group.gender && animals_genders_labels[group.gender],
+  ].filter(Boolean)
+  return filters.length ? filters.join(', ') : 'todos'
+}
 type ExecutionPlan = {
   ids: string[]
   plan?: MovementPlan
   central?: Omit<AnimalRecord, 'id' | 'createdAt' | 'createdBy'>
   registration?: ReturnType<typeof buildRegisteredAnimal>
+  /** Documento nuevo que no es un movimiento de animales (p. ej. recordatorio). */
+  document?: { path: string; data: Record<string, unknown>; href: string }
+  /** Área nueva que se agrega al arreglo `areas` de la granja. */
+  area?: FarmArea
 }
 async function buildOperationPlan(
   scope: Scope,
@@ -289,6 +352,68 @@ async function buildOperationPlan(
         ),
       }
     }
+    case 'create_reminder': {
+      const p = action.payload
+      const refs = p.animalRefs ?? []
+      if (refs.length && !hasPermission(scope.permissions, 'animals', 'read'))
+        throw new AiProposalError('No tienes permisos para vincular animales al recordatorio.', 403)
+      if (p.dueDate < farmDateKey(new Date(), timeZone))
+        throw new AiProposalError('La fecha del recordatorio no puede ser anterior a hoy.')
+      const ids = resolveMany(state, refs)
+      let dueDate: Date
+      try {
+        // Mediodía de la granja: la UI muestra el día local del instante guardado.
+        dueDate = parseFarmDate(p.dueDate, timeZone, '12:00')
+      } catch {
+        throw new AiProposalError('La fecha del recordatorio no es válida.')
+      }
+      return {
+        ids,
+        document: {
+          path: `reminders/${id}`,
+          href: `/recordatorio/${id}`,
+          data: buildReminderDocument(
+            {
+              title: p.title,
+              description: p.description,
+              dueDate,
+              priority: p.priority,
+              type: p.reminderType,
+              animalNumbers: ids.map(
+                (animalId) => state.animals.find((animal) => animal.id === animalId)!.animalNumber,
+              ),
+            },
+            { userId: scope.userId, farmId: scope.farmId },
+            new Date(),
+          ),
+        },
+      }
+    }
+    case 'create_area': {
+      const p = action.payload
+      const farm = state.raw.get(`farms/${scope.farmId}`)
+      if (!farm) throw new AiProposalError('No encontré la granja.', 404)
+      const area = buildFarmArea(
+        {
+          name: p.name,
+          type: p.areaType,
+          description: p.description || '',
+          areaM2: p.areaM2 ?? null,
+          isActive: true,
+          notes: '',
+        },
+        scope.farmId,
+        new Date(),
+        `area_${id}`,
+      )
+      if (
+        ((farm.areas ?? []) as FarmArea[]).some(
+          (existing) => normalizeAreaName(existing.name ?? '') === normalizeAreaName(area.name),
+        )
+      )
+        throw new AiProposalError(`Ya existe un área llamada “${area.name}”.`)
+      return { ids: [], area }
+    }
     case 'confirm_pregnancy':
     case 'finish_breeding': {
       const ref = action.payload.breedingRef.trim().toLocaleLowerCase()
@@ -350,13 +475,23 @@ async function buildOperationPlan(
         action.payload.notes || '',
       )
       break
-    case 'register_health':
-      await service.health(id, resolveMany(state, action.payload.animalRefs), {
-        ...action.payload,
-        description: action.payload.description || action.payload.notes,
-        date: date(action.payload.date),
-      })
+    case 'register_health': {
+      const { animalRefs, animalGroup, ...input } = action.payload
+      if (animalGroup && animalRefs?.length)
+        throw new AiProposalError('Indica animales específicos o un grupo, no ambos.')
+      if (!animalGroup && !animalRefs?.length)
+        throw new AiProposalError('Indica los animales o el grupo de animales de esta atención.')
+      await service.health(
+        id,
+        animalGroup ? resolveGroup(state, animalGroup) : resolveMany(state, animalRefs!),
+        {
+          ...input,
+          description: input.description || input.notes,
+          date: date(input.date),
+        },
+      )
       break
+    }
     case 'create_breeding': {
       const p = action.payload
       const male = resolveAnimal(state, p.maleRef)
@@ -469,10 +604,43 @@ function describe(action: OperationAction, execution: ExecutionPlan, state: Farm
   const title = operationCatalog.find((item) => item.type === action.type)!.title
   const details = execution.plan?.record.details ?? execution.central?.details ?? {}
   const labels = Object.entries(details).map(([key, value]) => `${key}: ${String(value)}`)
-  if (!execution.registration)
+  const numbers = execution.ids
+    .map((id) => state.animals.find((animal) => animal.id === id)?.animalNumber || 'No disponible')
+    .join(', ')
+  if (execution.document || execution.area) {
+    const labels =
+      action.type === 'create_reminder'
+        ? [
+            `Recordatorio: ${String(execution.document!.data.title)}`,
+            `Fecha: ${action.payload.dueDate.split('-').reverse().join('/')}`,
+            `Prioridad: ${reminder_priority_labels[action.payload.priority ?? 'medium']}`,
+            `Tipo: ${reminder_type_labels[action.payload.reminderType ?? 'other']}`,
+            ...(execution.ids.length ? [`Animales: ${numbers}`] : []),
+          ]
+        : [
+            `Área: ${execution.area!.name}`,
+            `Tipo: ${farm_area_type_labels[execution.area!.type]}`,
+            ...(execution.area!.areaM2 ? [`Superficie: ${execution.area!.areaM2} m²`] : []),
+          ]
+    return {
+      title,
+      summary: labels.join(' · '),
+      effects: [
+        execution.document
+          ? 'Se creará el recordatorio. No registra ningún movimiento ni cambia los animales.'
+          : 'Se agregará el área a la granja, activa y sin animales asignados.',
+        ...labels,
+      ],
+    }
+  }
+  const group = action.type === 'register_health' ? action.payload.animalGroup : undefined
+  // Un grupo se resume por conteo; la lista completa queda en los efectos para revisarla.
+  const included = group ? [`Animales incluidos: ${numbers}`] : []
+  if (group)
     labels.unshift(
-      `Animales: ${execution.ids.map((id) => state.animals.find((animal) => animal.id === id)?.animalNumber || 'No disponible').join(', ')}`,
+      `Animales: ${execution.ids.length} ${execution.ids.length === 1 ? 'animal activo' : 'animales activos'} (${groupLabel(group)})`,
     )
+  else if (!execution.registration) labels.unshift(`Animales: ${numbers}`)
   if (
     execution.plan?.changes.some(
       (change) => change.path.startsWith('breedingRecords/') && change.data.status === 'finished',
@@ -519,6 +687,7 @@ function describe(action: OperationAction, execution: ExecutionPlan, state: Farm
         ? 'Se creará el animal y su registro de alta.'
         : 'Se guardará el movimiento y se actualizarán los animales relacionados.',
       ...labels,
+      ...included,
     ],
   }
 }
@@ -552,6 +721,7 @@ export async function createAiProposal(
     params.farmId,
     undefined,
     readsBreeding(action) && hasPermission(params.permissions, 'breeding', 'read'),
+    readsFarm(action),
   )
   const timeZone = params.timeZone || 'UTC'
   const execution = await planOperation(params, action, state, ref.id, timeZone)
@@ -601,6 +771,7 @@ export async function reviseAiProposal(
       params.farmId,
       tx,
       readsBreeding(action) && hasPermission(params.permissions, 'breeding', 'read'),
+      readsFarm(action),
     )
     const execution = await planOperation(params, action, state, ref.id, proposal!.timeZone)
     const revised = {
@@ -651,6 +822,7 @@ export async function confirmAiProposal(
       params.farmId,
       tx,
       readsBreeding(proposal!.action) && hasPermission(params.permissions, 'breeding', 'read'),
+      readsFarm(proposal!.action),
     )
     if (state.fingerprint !== proposal!.fingerprint) {
       tx.update(ref, { status: 'conflict' })
@@ -695,8 +867,17 @@ export async function confirmAiProposal(
         throw new AiProposalError('Un documento del movimiento ya existe.', 409)
       state.raw.set(created[i].path, null)
     }
-    let record: AnimalRecord
-    if (execution.registration) {
+    let record: AnimalRecord | undefined
+    if (execution.document) {
+      // ID estable de la propuesta: un reintento no puede crear un segundo documento.
+      tx.create(db.doc(execution.document.path), clean(execution.document.data))
+    } else if (execution.area) {
+      const farmPath = `farms/${params.farmId}`
+      tx.update(db.doc(farmPath), {
+        areas: [...(state.raw.get(farmPath)?.areas ?? []), clean(execution.area)],
+        updatedAt: now,
+      })
+    } else if (execution.registration) {
       tx.create(db.collection('animals').doc(ref.id), clean(execution.registration))
       record = execution.registration.records.find((record) => record.id === ref.id)!
     } else if (execution.central) {
@@ -709,7 +890,7 @@ export async function confirmAiProposal(
         appliedToAnimals: execution.ids,
         isBulkApplication: execution.ids.length > 1,
       })
-      const { appliedToAnimals: _ids, ...stored } = record
+      const { appliedToAnimals: _ids, ...stored } = record as AnimalRecord
       tx.create(
         db.collection('animalRecords').doc(ref.id),
         clean({ ...stored, farmId: params.farmId, animals: execution.ids }),
@@ -777,20 +958,26 @@ export async function confirmAiProposal(
           animalNumber: change.data.animalNumber,
         },
       )
-    tx.create(
-      receiptRef,
-      clean({
-        farmId: params.farmId,
-        farmerId: params.userId,
-        ...(execution.central ? { storage: 'animalRecords' } : {}),
-        record,
-      }),
-    )
+    // Solo los movimientos de animales dejan comprobante en recordMovements.
+    if (record)
+      tx.create(
+        receiptRef,
+        clean({
+          farmId: params.farmId,
+          farmerId: params.userId,
+          ...(execution.central ? { storage: 'animalRecords' } : {}),
+          record,
+        }),
+      )
     const receipt: AiActionReceipt = {
       commandId: ref.id,
-      recordId: record.id,
+      recordId: ref.id,
       message: `${proposal!.title}: guardado.`,
-      href: '/?dashboard-main=registros',
+      href:
+        execution.document?.href ??
+        (execution.area
+          ? '/?dashboard-main=animales&animals-section=areas'
+          : '/?dashboard-main=registros'),
       completedAt: now.toISOString(),
     }
     const confirmed = { ...proposal!, status: 'succeeded' as const, receipt }

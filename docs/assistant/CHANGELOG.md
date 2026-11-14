@@ -2,10 +2,34 @@
 title: Decisiones del asistente operativo
 description: Registro de cambios de estrategia y su estado de implementación.
 audience: llm+human
-last_updated: 2026-11-12
+last_updated: 2026-11-14
 ---
 
 # Historial de decisiones
+
+## 2026-11-14 — Recordatorios y áreas desde el asistente
+
+Se habilitan `create_reminder` y `create_area` en el catálogo (versión 3). Ambos
+usan servicios de dominio compartidos con el flujo manual (`reminder-service`,
+`farm-area-service`); no existe implementación exclusiva del asistente.
+Ninguno escribe en animales ni genera movimiento de registros.
+
+## 2026-11-13 — Salud por grupo de animales (flujo versión 3)
+
+Una vacunación general de 362 animales no cabía en `register_health`: el esquema
+exigía enumerar referencias con tope de 50, lo que obligaba a partir un evento
+en varios registros y a que el modelo escribiera cientos de IDs (costo, lentitud
+y riesgo de omisiones). Se añade `animalGroup` (activos, filtro opcional por
+especie y sexo): el modelo describe el grupo y el servidor resuelve la lista.
+Se guarda igual que el flujo manual, un solo `animalRecords` con los IDs.
+
+- `OPERATION_VERSION` sube a 3; las propuestas de versión 2 requieren prepararse de nuevo.
+- Solo `register_health` admite grupo, porque es el único movimiento central que
+  no escribe en cada animal. Los demás conservan referencias explícitas.
+- Pendiente: filtros por etapa o área; no se habilitan hasta definir una fuente
+  única de etapa compartida con el conocimiento que lee el modelo.
+- No verificado con modelo real: la interpretación de «todos»/«las hembras» se
+  cubre con el esquema y el prompt, no con pruebas de conversación.
 
 ## 2026-11-12 — Contención de reglas de producción y despliegue de imágenes
 

@@ -33,6 +33,7 @@ import {
 import { serializeObj } from '@/features/libs/serializeObj'
 import { AppDispatch, RootState } from '@/features/store'
 import { trackFarmCreated } from '@/lib/analytics/track'
+import { buildFarmArea } from '@/lib/domain/farm-area-service'
 import { auth, db } from '@/lib/firebase'
 import { FarmCollaborator } from '@/types/collaborators'
 import { Farm, FarmArea } from '@/types/farm'
@@ -390,13 +391,7 @@ export const useFarmCRUD = () => {
     farmId: string,
     areaData: Omit<FarmArea, 'id' | 'farmId' | 'createdAt' | 'updatedAt'>,
   ) => {
-    const newArea: FarmArea = {
-      id: `area_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      farmId,
-      ...areaData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
+    const newArea = buildFarmArea(areaData, farmId, new Date())
 
     try {
       const farmRef = doc(db, 'farms', farmId)

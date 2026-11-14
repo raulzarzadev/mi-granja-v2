@@ -85,7 +85,7 @@ Todo cambio en un flujo de esta página debe revisar su `ActionDefinition`, docu
 
 ## Operaciones habilitadas en el catálogo inicial
 
-Contrato de flujo: `OPERATION_VERSION = 1`. El inventario verificable vive en [manifest.json](manifest.json).
+Contrato de flujo: `OPERATION_VERSION = 3`. El inventario verificable vive en [manifest.json](manifest.json).
 
 | Identificador | Acción | Revisión del asistente |
 | --- | --- | --- |
@@ -98,10 +98,12 @@ Contrato de flujo: `OPERATION_VERSION = 1`. El inventario verificable vive en [m
 | `register_weight` | Registrar peso | Animal, fecha, kg y notas |
 | `register_milk` | Registrar leche | Animal, fecha, litros, turno y notas |
 | `register_death` | Registrar muerte de 1–50 animales activos | Animales, fecha efectiva, motivo obligatorio y notas opcionales |
-| `register_health` | Registrar atención de salud | Animales, fecha, categoría, descripción y campos opcionales |
+| `register_health` | Registrar atención de salud | Animales (`animalRefs`, hasta 50) **o** grupo de activos (`animalGroup` por especie/sexo), fecha, categoría, descripción y campos opcionales |
 | `create_sale` | Crear venta completada | Animales, fecha, precio por kg, pesos y comprador |
+| `create_reminder` | Crear recordatorio | Título, fecha (hoy o futura), prioridad, tipo, animales opcionales y descripción |
+| `create_area` | Crear área de la granja | Nombre único, tipo de área, superficie (m²) opcional y descripción |
 
-No se habilita ejecución libre de una acción recibida del cliente: el servidor trabaja con el borrador persistido, su revisión y su versión. No hay fallback al ejecutor antiguo; las solicitudes antiguas por `actionId` reciben 410. Crear recordatorios, eliminar animales y deshacer movimientos desde el chat no forman parte de estas diez operaciones.
+No se habilita ejecución libre de una acción recibida del cliente: el servidor trabaja con el borrador persistido, su revisión y su versión. No hay fallback al ejecutor antiguo; las solicitudes antiguas por `actionId` reciben 410. Eliminar animales y deshacer movimientos desde el chat no forman parte del catálogo.
 
 La confirmación de gestación recibe `context.timeZone`; el cálculo compartido de parto esperado se apoya en `lib/domain/farm-calendar.ts`. Al cambiar zona o reglas de fechas, revisar `time-zone.ts`, `knowledge-dates.ts`, el servicio de gestación, las pruebas y esta documentación.
 
@@ -149,6 +151,45 @@ En escritorio, Asistente IA tiene un acceso independiente debajo de Crear nuevo 
 - Revisión: `OperationFields` con selector múltiple, fecha y motivo; `ProposalCard` identifica la muerte, lista animales y advierte del cambio a Muerto y conservación de historial. Para varios animales conserva la advertencia masiva.
 - Permisos: `animals:read` y `animals:update`; referencias limitadas a la granja actual. Solo animales activos y fecha no futura. Revalidación dentro de transacción; el grupo completo se rechaza ante un miembro inválido, sin éxitos parciales en esa acción.
 - Efectos: `status=muerto`, `statusAt`, `statusNotes`, `deathInfo` y movimiento `eventType=muerte` con motivo/notas. Historial y comprobante persistidos, reintentos idempotentes. No se eliminan fichas ni se cierran empadres/gestaciones implícitamente. El asistente aún no habilita deshacer este movimiento.
+
+## Salud por grupo de animales — habilitado, versión 3
+
+`register_health` acepta exactamente una forma de indicar animales:
+
+- `animalRefs`: 1 a 50 referencias explícitas, como antes.
+- `animalGroup: { type?, gender? }`: todos los animales **activos** de la granja que
+  cumplan los filtros; sin filtros son todos los activos.
+
+El modelo describe el grupo y no enumera animales. El servidor resuelve los IDs
+contra los datos actuales al preparar, al editar y de nuevo al confirmar; la huella
+de estado impide confirmar si la granja cambió desde la revisión. Enviar ambas
+formas, ninguna, o un grupo sin animales impide preparar la propuesta. Tope:
+5000 animales por evento (`MAX_GROUP_ANIMALS`).
+
+Almacenamiento sin cambio: el flujo manual y el asistente usan
+`createRecordMovementService.health` → un documento `animalRecords/{id}` con
+`animals: [ids]` y su comprobante `recordMovements/{id}`. No se lee ni escribe
+cada animal, por eso el grupo no tiene el tope de 50.
+
+Revisión: la tarjeta resume «N animales activos (filtros)», muestra el aviso de
+movimiento masivo y la lista completa de animales incluidos, desplegable, en
+«Cambios al confirmar». `OperationFields` edita especie y sexo del grupo; no
+convierte un grupo en selección manual.
+
+Límites: el grupo solo filtra por especie y sexo. Etapa, área o edad requieren
+referencias explícitas. Muerte, destete, venta y gestación escriben en cada
+animal dentro de una transacción y conservan el tope de 50 referencias.
+
+## Crear recordatorio — habilitado, versión 3
+
+- Permisos: `reminders:create`; animales opcionales resueltos por número visible dentro de la granja actual.
+- Fecha `dueDate` hoy o futura (a diferencia de los movimientos). Se guarda a mediodía de la zona de la granja para conservar el día.
+- Servicio compartido: `lib/domain/reminder-service.ts` (`buildReminderDocument`), usado también por `useReminders`. Documento `reminders/{proposalId}` con `animalNumbers`, `completionByAnimal` y `animalNumber` legacy. No escribe animales ni `recordMovements`. Comprobante enlaza a `/recordatorio/{id}`; reintentos idempotentes.
+
+## Crear área — habilitado, versión 3
+
+- Permisos: `areas:create`. Nombre único en la granja (sin distinguir mayúsculas).
+- Servicio compartido: `lib/domain/farm-area-service.ts` (`buildFarmArea`), usado también por `useFarmCRUD`. Agrega `area_{proposalId}` a `farms/{farmId}.areas` conservando las existentes. No escribe animales ni `recordMovements`. El cliente añade el área al estado de Redux tras confirmar.
 
 ## Admisión y consumo de IA
 

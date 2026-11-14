@@ -2,13 +2,17 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { PiCheck, PiHourglass } from 'react-icons/pi'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { Modal } from '@/components/Modal'
-import type { RootState } from '@/features/store'
+import { addAreaToFarm } from '@/features/farm/farmSlice'
+import { serializeObj } from '@/features/libs/serializeObj'
+import type { AppDispatch, RootState } from '@/features/store'
 import { type OperationAction, operationActionSchema } from '@/lib/ai/operations'
 import { ProposalRequestError, requestProposal } from '@/lib/ai/proposal-client'
 import type { AiProposalView } from '@/lib/ai/proposal-types'
 import { animalDeathReasonLabels } from '@/lib/animal-discharge'
+import { buildFarmArea, farm_area_type_labels } from '@/lib/domain/farm-area-service'
+import { reminder_priority_labels, reminder_type_labels } from '@/lib/domain/reminder-service'
 import {
   animals_genders_labels,
   animals_stages_labels,
@@ -38,6 +42,12 @@ const fieldLabels: Record<string, string> = {
   fatherRef: 'Padre',
   animalRef: 'Animal',
   animalRefs: 'Animales',
+  animalGroup: 'Grupo de animales',
+  dueDate: 'Fecha del recordatorio',
+  priority: 'Prioridad',
+  reminderType: 'Tipo',
+  areaType: 'Tipo de área',
+  areaM2: 'Superficie (m²)',
   maleRef: 'Macho',
   femaleRefs: 'Hembras',
   breedingDate: 'Inicio del empadre',
@@ -86,7 +96,16 @@ const enumLabels: Record<string, string> = {
   other: 'Otro',
   ...animalDeathReasonLabels,
 }
+// Catálogos con claves repetidas entre sí (medical, feeding, other): cada campo usa el suyo.
+const fieldEnumLabels: Record<string, Record<string, string>> = {
+  priority: reminder_priority_labels,
+  reminderType: reminder_type_labels,
+  areaType: farm_area_type_labels,
+}
 const actionDescriptions: Record<OperationAction['type'], string> = {
+  create_reminder:
+    'Crearás un recordatorio para la fecha indicada. No registra ningún movimiento ni cambia los animales.',
+  create_area: 'Agregarás un área nueva a la granja, activa y sin animales asignados.',
   register_death:
     'Registrarás la muerte de los animales seleccionados. Pasarán a Muerto y conservarán su ficha e historial. Revisa cuidadosamente cada animal, la fecha y el motivo antes de confirmar.',
   create_animal: 'Darás de alta un animal nuevo y se guardará su registro de ingreso a la granja.',
@@ -105,6 +124,8 @@ const actionDescriptions: Record<OperationAction['type'], string> = {
     'Registrarás una venta completada y los animales seleccionados quedarán como vendidos.',
 }
 
+const LONG_EFFECT = 240
+
 const safeInternalHref = (value?: string) =>
   value?.startsWith('/') && !value.startsWith('//') ? value : undefined
 
@@ -119,6 +140,7 @@ export function ActionSummary({ proposal }: { proposal: AiProposalView }) {
               animal.id === value && (!animal.farmId || animal.farmId === proposal.farmId),
           )?.animalNumber || value
         )
+      if (fieldEnumLabels[key]) return fieldEnumLabels[key][value] || value
       if (/Date$|^date$/.test(key) && /^\d{4}-\d{2}-\d{2}$/.test(value))
         return value.split('-').reverse().join('/')
       return [
@@ -177,6 +199,21 @@ export function ActionSummary({ proposal }: { proposal: AiProposalView }) {
                 </dd>
               </div>
             )
+          if (key === 'animalGroup' && typeof value === 'object') {
+            const filters = Object.entries(value as Record<string, unknown>)
+              .filter(([_, filter]) => typeof filter === 'string' && filter)
+              .map(([name, filter]) => display(name, filter))
+            return (
+              <div key={key} className="sm:col-span-2">
+                <dt className="text-xs font-medium text-slate-500">{fieldLabels[key]}</dt>
+                <dd className="mt-0.5 text-sm font-medium text-slate-900">
+                  {filters.length
+                    ? `Animales activos: ${filters.join(', ')}`
+                    : 'Todos los animales activos'}
+                </dd>
+              </div>
+            )
+          }
           return (
             <div
               key={key}
@@ -223,6 +260,11 @@ export default function ProposalCard({
   const callback = useRef(onChange)
   callback.current = onChange
   const formId = useId()
+  const dispatch = useDispatch<AppDispatch>()
+  const farmAreaIds =
+    useSelector((state: RootState) =>
+      state.farm.farms.find((farm) => farm.id === farmId),
+    )?.areas?.map((area) => area.id) ?? []
   const belongsHere = proposal.farmId === farmId && proposal.conversationId === conversationId
   const publish = useCallback(
     (next: AiProposalView) => {
@@ -287,6 +329,36 @@ export default function ProposalCard({
         ...(parsed?.success ? { action: parsed.data } : {}),
       })
       publish(next)
+      // Las áreas viven en el estado de la granja, que no se suscribe a Firestore.
+      if (
+        operation === 'confirm' &&
+        next.status === 'succeeded' &&
+        next.action.type === 'create_area'
+      ) {
+        const p = next.action.payload
+        const id = `area_${next.id}`
+        if (!farmAreaIds.includes(id))
+          dispatch(
+            serializeObj(
+              addAreaToFarm({
+                farmId,
+                area: buildFarmArea(
+                  {
+                    name: p.name,
+                    type: p.areaType,
+                    description: p.description || '',
+                    areaM2: p.areaM2 ?? null,
+                    isActive: true,
+                    notes: '',
+                  },
+                  farmId,
+                  new Date(),
+                  id,
+                ),
+              }),
+            ),
+          )
+      }
       if (operation === 'revise') {
         setEditing(false)
         setNeedsRevision(false)
@@ -338,9 +410,10 @@ export default function ProposalCard({
   const expired = Date.parse(proposal.expiresAt) <= Date.now()
   const isMassAction = Object.entries(proposal.action.payload).some(
     ([key, value]) =>
-      ['animalRefs', 'femaleRefs', 'offspring'].includes(key) &&
-      Array.isArray(value) &&
-      value.length > 1,
+      (key === 'animalGroup' && !!value) ||
+      (['animalRefs', 'femaleRefs', 'offspring'].includes(key) &&
+        Array.isArray(value) &&
+        value.length > 1),
   )
 
   return (
@@ -513,9 +586,24 @@ export default function ProposalCard({
             <section className="rounded-xl bg-green-50 p-3">
               <h4 className="text-sm font-semibold text-green-950">Cambios al confirmar</h4>
               <ul className="mt-2 space-y-2 text-sm leading-6 text-green-900">
-                {proposal.effects.map((effect, index) => (
-                  <li key={index}>• {effect}</li>
-                ))}
+                {proposal.effects.map((effect, index) => {
+                  // Listas largas (grupos de cientos de animales) se despliegan a demanda.
+                  const [heading, ...rest] = effect.split(': ')
+                  return effect.length > LONG_EFFECT && rest.length ? (
+                    <li key={index}>
+                      <details>
+                        <summary className="cursor-pointer font-semibold hover:underline">
+                          {heading} ({rest.join(': ').split(', ').length})
+                        </summary>
+                        <p className="mt-1 max-h-48 overflow-y-auto break-words">
+                          {rest.join(': ')}
+                        </p>
+                      </details>
+                    </li>
+                  ) : (
+                    <li key={index}>• {effect}</li>
+                  )
+                })}
               </ul>
             </section>
           )}

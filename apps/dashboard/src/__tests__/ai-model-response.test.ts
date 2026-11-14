@@ -170,3 +170,22 @@ it('admite muerte de varios animales y exige motivo, fecha y un máximo de 50', 
       }),
     ).toThrow()
 })
+
+it('admite salud por grupo de animales sin listar referencias', () => {
+  const action = {
+    type: 'register_health',
+    summary: 'Vacunación general',
+    payload: {
+      animalRefs: null,
+      animalGroup: { type: null, gender: 'hembra' },
+      date: '2026-11-01',
+      category: 'vaccine',
+      title: 'Triple',
+    },
+  }
+  expect(
+    parseOperationalModelResponse({ kind: 'proposed_action', message: 'Revisar', action }),
+  ).toMatchObject({
+    action: { payload: { animalGroup: { gender: 'hembra' }, title: 'Triple' } },
+  })
+})

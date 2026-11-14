@@ -1,4 +1,7 @@
 import { z } from 'zod'
+import { farm_area_types } from '@/lib/domain/farm-area-service'
+import { reminder_priorities, reminder_types } from '@/lib/domain/reminder-service'
+import { animals_genders, animals_types } from '@/types/animals'
 import {
   createAnimalPayloadSchema,
   createBreedingPayloadSchema,
@@ -8,6 +11,17 @@ import {
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Usa una fecha YYYY-MM-DD')
 const refs = z.array(z.string().trim().min(1)).min(1).max(50)
 const notes = z.string().trim().max(3000).optional()
+/**
+ * Grupo de animales activos que el servidor resuelve contra la granja. Evita que
+ * el modelo enumere cientos de referencias; sin filtros significa todos los activos.
+ */
+export const animalGroupSchema = z.object({
+  type: z.enum(animals_types).optional(),
+  gender: z.enum(animals_genders).optional(),
+})
+export type AnimalGroup = z.infer<typeof animalGroupSchema>
+/** Tope de un evento central: una sola escritura con la lista de IDs afectados. */
+export const MAX_GROUP_ANIMALS = 5000
 const operation = <T extends string, S extends z.ZodTypeAny>(type: T, payload: S) =>
   z.object({ type: z.literal(type), payload, summary: z.string().trim().min(1).max(500) })
 export const operationActionSchema = z.discriminatedUnion('type', [
@@ -58,7 +72,9 @@ export const operationActionSchema = z.discriminatedUnion('type', [
   operation(
     'register_health',
     z.object({
-      animalRefs: refs,
+      // Exactamente uno: referencias explícitas (grupos chicos) o animalGroup.
+      animalRefs: refs.optional(),
+      animalGroup: animalGroupSchema.optional(),
       date,
       category: z.enum([
         'illness',
@@ -92,16 +108,37 @@ export const operationActionSchema = z.discriminatedUnion('type', [
       notes,
     }),
   ),
+  operation(
+    'create_reminder',
+    z.object({
+      title: z.string().trim().min(1).max(200),
+      // Fecha en que debe atenderse: hoy o futura, a diferencia de los movimientos.
+      dueDate: date,
+      description: z.string().trim().max(3000).optional(),
+      priority: z.enum(reminder_priorities).optional(),
+      reminderType: z.enum(reminder_types).optional(),
+      animalRefs: refs.optional(),
+    }),
+  ),
+  operation(
+    'create_area',
+    z.object({
+      name: z.string().trim().min(1).max(80),
+      areaType: z.enum(farm_area_types),
+      areaM2: z.number().positive().optional(),
+      description: z.string().trim().max(3000).optional(),
+    }),
+  ),
 ])
 export type OperationAction = z.infer<typeof operationActionSchema>
-export const OPERATION_VERSION = 2
+export const OPERATION_VERSION = 3
 export const operationCatalog = [
   {
     type: 'register_death',
     title: 'Registrar muerte',
     module: 'animals',
     permission: 'update',
-    version: 2,
+    version: 3,
     assistantReview: 'OperationFields',
     manualFlow: 'ModalAnimalDischarge',
   },
@@ -110,7 +147,7 @@ export const operationCatalog = [
     title: 'Confirmar gestación',
     module: 'breeding',
     permission: 'update',
-    version: 2,
+    version: 3,
     assistantReview: 'OperationFields',
     manualFlow: 'ModalConfirmPregnancy',
   },
@@ -119,7 +156,7 @@ export const operationCatalog = [
     title: 'Terminar empadre',
     module: 'breeding',
     permission: 'update',
-    version: 2,
+    version: 3,
     assistantReview: 'OperationFields',
     manualFlow: 'BreedingDetail',
   },
@@ -128,7 +165,7 @@ export const operationCatalog = [
     title: 'Alta de animal',
     module: 'animals',
     permission: 'create',
-    version: 2,
+    version: 3,
     assistantReview: 'OperationFields',
     manualFlow: 'SimpleAnimalForm',
   },
@@ -137,7 +174,7 @@ export const operationCatalog = [
     title: 'Crear empadre',
     module: 'breeding',
     permission: 'create',
-    version: 2,
+    version: 3,
     assistantReview: 'OperationFields',
     manualFlow: 'BreedingForm',
   },
@@ -146,7 +183,7 @@ export const operationCatalog = [
     title: 'Registrar parto',
     module: 'animals',
     permission: 'update',
-    version: 2,
+    version: 3,
     assistantReview: 'OperationFields',
     manualFlow: 'ModalBirthForm',
   },
@@ -155,7 +192,7 @@ export const operationCatalog = [
     title: 'Registrar destete',
     module: 'animals',
     permission: 'update',
-    version: 2,
+    version: 3,
     assistantReview: 'OperationFields',
     manualFlow: 'ModalNewRecord',
   },
@@ -164,7 +201,7 @@ export const operationCatalog = [
     title: 'Registrar peso',
     module: 'animals',
     permission: 'update',
-    version: 2,
+    version: 3,
     assistantReview: 'OperationFields',
     manualFlow: 'ModalNewRecord',
   },
@@ -173,7 +210,7 @@ export const operationCatalog = [
     title: 'Registrar leche',
     module: 'animals',
     permission: 'update',
-    version: 2,
+    version: 3,
     assistantReview: 'OperationFields',
     manualFlow: 'ModalNewRecord',
   },
@@ -182,7 +219,7 @@ export const operationCatalog = [
     title: 'Registrar salud',
     module: 'animals',
     permission: 'update',
-    version: 2,
+    version: 3,
     assistantReview: 'OperationFields',
     manualFlow: 'ModalNewRecord',
   },
@@ -191,8 +228,26 @@ export const operationCatalog = [
     title: 'Registrar venta',
     module: 'animals',
     permission: 'update',
-    version: 2,
+    version: 3,
     assistantReview: 'OperationFields',
     manualFlow: 'ModalSaleForm',
+  },
+  {
+    type: 'create_reminder',
+    title: 'Crear recordatorio',
+    module: 'reminders',
+    permission: 'create',
+    version: 3,
+    assistantReview: 'OperationFields',
+    manualFlow: 'ModalReminderForm',
+  },
+  {
+    type: 'create_area',
+    title: 'Crear área',
+    module: 'areas',
+    permission: 'create',
+    version: 3,
+    assistantReview: 'OperationFields',
+    manualFlow: 'ModalCreateArea',
   },
 ] as const

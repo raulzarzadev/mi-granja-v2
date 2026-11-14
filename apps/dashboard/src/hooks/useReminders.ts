@@ -15,6 +15,7 @@ import { useSelector } from 'react-redux'
 import { RootState } from '@/features/store'
 import { trackReminderCompleted, trackReminderCreated } from '@/lib/analytics/track'
 import { toDate, toLocalDateStart } from '@/lib/dates'
+import { buildReminderDocument } from '@/lib/domain/reminder-service'
 import { db } from '@/lib/firebase'
 import { Reminder } from '@/types'
 
@@ -137,32 +138,21 @@ export const useReminders = () => {
 
     setIsSubmitting(true)
     try {
-      const now = Timestamp.now()
-      const animalNumbers = data.animalNumbers || (data.animalNumber ? [data.animalNumber] : [])
-
-      // Inicializar completionByAnimal con todos en false
-      const completionByAnimal: Record<string, boolean> = {}
-      for (const num of animalNumbers) {
-        completionByAnimal[num] = false
-      }
-
-      const docData: Record<string, unknown> = {
-        farmerId: user.id,
-        farmId: currentFarm.id,
-        animalNumber: animalNumbers[0] || null, // compatibilidad legacy
-        animalNumbers,
-        title: data.title,
-        description: data.description || '',
-        dueDate: Timestamp.fromDate(new Date(data.dueDate)),
-        completed: data.completed || false,
-        completionByAnimal,
-        priority: data.priority || 'medium',
-        type: data.type || 'other',
-        createdAt: now,
-        updatedAt: now,
-      }
-      if (data.assigneeIds && data.assigneeIds.length > 0) {
-        docData.assigneeIds = data.assigneeIds
+      const built = buildReminderDocument(
+        {
+          ...data,
+          dueDate: new Date(data.dueDate),
+          animalNumbers: data.animalNumbers || (data.animalNumber ? [data.animalNumber] : []),
+        },
+        { userId: user.id, farmId: currentFarm.id },
+        new Date(),
+      )
+      const animalNumbers = built.animalNumbers
+      const docData = {
+        ...built,
+        dueDate: Timestamp.fromDate(built.dueDate),
+        createdAt: Timestamp.fromDate(built.createdAt),
+        updatedAt: Timestamp.fromDate(built.updatedAt),
       }
 
       await addDoc(collection(db, 'reminders'), docData)

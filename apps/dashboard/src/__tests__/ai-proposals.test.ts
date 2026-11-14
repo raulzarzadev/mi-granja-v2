@@ -764,3 +764,193 @@ it('rechaza una fecha futura o un motivo de muerte inválido', async () => {
     }),
   ).rejects.toThrow()
 })
+
+describe('register_health por grupo de animales', () => {
+  const health = { date: '2026-11-01', title: 'Triple', category: 'vaccine' }
+  const farm = () =>
+    database({
+      'animals/m1': adult('M1', 'macho'),
+      'animals/f1': adult('F1', 'hembra'),
+      'animals/f2': adult('F2', 'hembra'),
+      'animals/sold': { ...adult('V1', 'hembra'), status: 'vendido' },
+      'animals/sheep': { ...adult('O1', 'hembra'), type: 'oveja' },
+      'animals/other': { ...adult('X1', 'hembra'), farmId: 'other-farm' },
+    })
+  const create = (payload: Record<string, unknown>) =>
+    createAiProposal({
+      ...scope,
+      conversationId: 'chat',
+      timeZone: 'UTC',
+      action: { type: 'register_health', summary: 'Vacunación', payload },
+    })
+
+  it('resuelve todos los activos en servidor y guarda un solo evento sin escribir animales', async () => {
+    const store = farm()
+    const before = structuredClone(store.get('animals/f1'))
+    const proposal = await create({ ...health, animalGroup: {} })
+    expect(proposal.summary).toContain('4 animales activos')
+    expect(proposal.effects.join(' ')).toContain('M1, F1, F2, O1')
+    const confirmed = await confirmAiProposal({ ...scope, proposalId: proposal.id, revision: 1 })
+    expect(confirmed.status).toBe('succeeded')
+    expect(store.get(`animalRecords/${proposal.id}`).animals.sort()).toEqual([
+      'f1',
+      'f2',
+      'm1',
+      'sheep',
+    ])
+    expect(store.get(`recordMovements/${proposal.id}`).record.isBulkApplication).toBe(true)
+    expect(store.get('animals/f1')).toEqual(before)
+  })
+
+  it('filtra el grupo por especie y sexo', async () => {
+    const store = farm()
+    const proposal = await create({ ...health, animalGroup: { type: 'vaca', gender: 'hembra' } })
+    await confirmAiProposal({ ...scope, proposalId: proposal.id, revision: 1 })
+    expect(store.get(`animalRecords/${proposal.id}`).animals.sort()).toEqual(['f1', 'f2'])
+  })
+
+  it('rechaza grupo vacío, grupo junto con referencias y ausencia de ambos', async () => {
+    farm()
+    await expect(create({ ...health, animalGroup: { type: 'cerdo' } })).rejects.toThrow(
+      'No hay animales activos',
+    )
+    await expect(create({ ...health, animalGroup: {}, animalRefs: ['F1'] })).rejects.toThrow(
+      'no ambos',
+    )
+    await expect(create({ ...health })).rejects.toThrow('Indica')
+  })
+})
+
+describe('create_reminder', () => {
+  const reminders = [
+    { module: 'reminders', actions: ['create', 'read'] },
+    { module: 'animals', actions: ['read'] },
+  ] as FarmPermission[]
+  const create = (payload: Record<string, unknown>, permissions = reminders) =>
+    createAiProposal({
+      ...scope,
+      permissions,
+      conversationId: 'chat',
+      timeZone: 'America/Mazatlan',
+      action: { type: 'create_reminder', summary: 'Recordatorio', payload },
+    })
+
+  it('crea un recordatorio futuro sin animales, una sola vez y sin movimiento de animales', async () => {
+    const store = database({ 'animals/f1': adult('F1', 'hembra') })
+    const proposal = await create(
+      { title: ' Volver a vacunar ', dueDate: '2026-11-15', reminderType: 'medical' },
+      reminders,
+    )
+    expect(proposal.summary).toContain('Volver a vacunar')
+    expect(proposal.effects[0]).toContain('recordatorio')
+    const params = { ...scope, permissions: reminders, proposalId: proposal.id, revision: 1 }
+    const confirmed = await confirmAiProposal(params)
+    expect(confirmed.status).toBe('succeeded')
+    expect(confirmed.receipt?.href).toBe(`/recordatorio/${proposal.id}`)
+    const saved = store.get(`reminders/${proposal.id}`)
+    expect(saved).toMatchObject({
+      farmId: 'farm',
+      farmerId: 'user',
+      title: 'Volver a vacunar',
+      type: 'medical',
+      priority: 'medium',
+      completed: false,
+      animalNumbers: [],
+      animalNumber: null,
+    })
+    // Mediodía de la granja: el mismo día en cualquier navegador cercano a esa zona.
+    expect(saved.dueDate.toISOString()).toBe('2026-11-15T19:00:00.000Z')
+    expect(store.has(`recordMovements/${proposal.id}`)).toBe(false)
+    expect((await confirmAiProposal(params)).status).toBe('succeeded')
+  })
+
+  it('vincula animales por su número visible', async () => {
+    const store = database({
+      'animals/f1': adult('F1', 'hembra'),
+      'animals/m1': adult('M1', 'macho'),
+    })
+    const proposal = await create({
+      title: 'Revisar',
+      dueDate: '2026-11-02',
+      priority: 'high',
+      animalRefs: ['F1', 'm1'],
+    })
+    await confirmAiProposal({
+      ...scope,
+      permissions: reminders,
+      proposalId: proposal.id,
+      revision: 1,
+    })
+    expect(store.get(`reminders/${proposal.id}`)).toMatchObject({
+      animalNumbers: ['F1', 'M1'],
+      animalNumber: 'F1',
+      completionByAnimal: { F1: false, M1: false },
+      priority: 'high',
+    })
+    expect(store.get('animals/f1').records).toHaveLength(0)
+  })
+
+  it('rechaza fecha pasada, animal inexistente y falta de permiso', async () => {
+    database({ 'animals/f1': adult('F1', 'hembra') })
+    await expect(create({ title: 'X', dueDate: '2026-10-31' })).rejects.toThrow('anterior a hoy')
+    await expect(create({ title: 'X', dueDate: '2026-11-05', animalRefs: ['ZZ'] })).rejects.toThrow(
+      'No encontré',
+    )
+    await expect(
+      create({ title: 'X', dueDate: '2026-11-05' }, [
+        { module: 'animals', actions: ['create', 'read', 'update'] },
+      ] as FarmPermission[]),
+    ).rejects.toThrow('recordatorios')
+  })
+})
+
+describe('create_area', () => {
+  const areas = [{ module: 'areas', actions: ['create'] }] as FarmPermission[]
+  const create = (payload: Record<string, unknown>, permissions = areas) =>
+    createAiProposal({
+      ...scope,
+      permissions,
+      conversationId: 'chat',
+      timeZone: 'UTC',
+      action: { type: 'create_area', summary: 'Área', payload },
+    })
+  const farm = () =>
+    database({
+      'farms/farm': { name: 'Granja', areas: [{ id: 'area_1', name: 'Potrero Norte' }] },
+    })
+
+  it('agrega el área a la granja conservando las existentes', async () => {
+    const store = farm()
+    const proposal = await create({ name: ' Corral 2 ', areaType: 'barn', areaM2: 120 })
+    expect(proposal.summary).toContain('Corral 2')
+    const confirmed = await confirmAiProposal({
+      ...scope,
+      permissions: areas,
+      proposalId: proposal.id,
+      revision: 1,
+    })
+    expect(confirmed.status).toBe('succeeded')
+    const saved = store.get('farms/farm').areas
+    expect(saved).toHaveLength(2)
+    expect(saved[0]).toMatchObject({ id: 'area_1' })
+    expect(saved[1]).toMatchObject({
+      id: `area_${proposal.id}`,
+      farmId: 'farm',
+      name: 'Corral 2',
+      type: 'barn',
+      areaM2: 120,
+      isActive: true,
+    })
+    expect(store.has(`recordMovements/${proposal.id}`)).toBe(false)
+  })
+
+  it('rechaza nombre duplicado y falta de permiso', async () => {
+    farm()
+    await expect(create({ name: 'potrero norte', areaType: 'pasture' })).rejects.toThrow(
+      'Ya existe',
+    )
+    await expect(create({ name: 'Nuevo', areaType: 'pasture' }, scope.permissions)).rejects.toThrow(
+      'áreas',
+    )
+  })
+})

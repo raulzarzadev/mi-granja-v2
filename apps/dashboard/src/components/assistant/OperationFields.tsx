@@ -8,6 +8,8 @@ import InputIconSelect from '@/components/inputs/InputIconSelect'
 import type { RootState } from '@/features/store'
 import type { OperationAction } from '@/lib/ai/operations'
 import { animalDeathReasonLabels } from '@/lib/animal-discharge'
+import { farm_area_type_labels } from '@/lib/domain/farm-area-service'
+import { reminder_priority_labels, reminder_type_labels } from '@/lib/domain/reminder-service'
 import {
   animals_genders_labels,
   animals_stages_labels,
@@ -38,9 +40,12 @@ const supportedEditors: Record<OperationAction['type'], true> = {
   register_milk: true,
   register_health: true,
   create_sale: true,
+  create_reminder: true,
+  create_area: true,
 }
 const inputClass =
   'min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-green-700 disabled:opacity-50'
+const ALL = 'all'
 const asString = (value: unknown) => (typeof value === 'string' ? value : '')
 const asRefs = (value: unknown) =>
   Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
@@ -107,13 +112,14 @@ export default function OperationFields({ draft, onChange, disabled, farmId }: P
       />
     </div>
   )
-  const date = (name: string, label: string) => (
+  const date = (name: string, label: string, future = false) => (
     <DatePickerButtons
       key={name}
       label={label}
       value={asString(payload[name])}
       onChange={(value) => set(name, value)}
       disabled={disabled}
+      {...(future ? { maxYear: new Date().getFullYear() + 5 } : {})}
       showToday
       inline
     />
@@ -188,6 +194,41 @@ export default function OperationFields({ draft, onChange, disabled, farmId }: P
           </div>
         )}
       </div>
+    )
+  }
+  const animalGroup = () => {
+    const group = (payload.animalGroup ?? {}) as Record<string, string | undefined>
+    const filter = (name: 'type' | 'gender', label: string, labels: Record<string, string>) => (
+      <div className="space-y-1.5">
+        <span id={`${id}-group-${name}`} className="block text-sm font-semibold text-slate-700">
+          {label}
+        </span>
+        <InputIconSelect
+          aria-labelledby={`${id}-group-${name}`}
+          value={group[name] ?? ALL}
+          onChange={(value) => {
+            const { [name]: _removed, ...others } = group
+            set('animalGroup', value === ALL ? others : { ...others, [name]: value })
+          }}
+          disabled={disabled}
+          options={[
+            { value: ALL, label: 'Todos' },
+            ...Object.entries(labels).map(([value, label]) => ({ value, label })),
+          ]}
+          className="min-h-12 rounded-xl"
+        />
+      </div>
+    )
+    return (
+      <fieldset className="space-y-3 rounded-xl bg-slate-50 p-3">
+        <legend className="text-sm font-semibold text-slate-700">Grupo de animales activos</legend>
+        {filter('type', 'Especie', animals_types_labels)}
+        {filter('gender', 'Sexo', animals_genders_labels)}
+        <p className="text-xs leading-5 text-slate-600">
+          Se incluyen todos los animales activos que cumplan estos filtros. Al revisar verás la
+          lista exacta antes de confirmar.
+        </p>
+      </fieldset>
     )
   }
   const breeding = () => (
@@ -316,9 +357,29 @@ export default function OperationFields({ draft, onChange, disabled, farmId }: P
           {common}
         </>
       )}
+      {draft.type === 'create_reminder' && (
+        <>
+          {text('title', 'Título')}
+          {date('dueDate', 'Fecha del recordatorio', true)}
+          {select('priority', 'Prioridad', reminder_priority_labels)}
+          {select('reminderType', 'Tipo', reminder_type_labels)}
+          {refs('animalRefs', 'Animales (opcional)', true)}
+          {text('description', 'Descripción (opcional)', true)}
+        </>
+      )}
+      {draft.type === 'create_area' && (
+        <>
+          {text('name', 'Nombre del área')}
+          {select('areaType', 'Tipo de área', farm_area_type_labels)}
+          {number('areaM2', 'Superficie (m²)', true)}
+          {text('description', 'Descripción (opcional)', true)}
+        </>
+      )}
       {draft.type === 'register_health' && (
         <>
-          {refs('animalRefs', 'Animales', true)}
+          {payload.animalGroup && typeof payload.animalGroup === 'object'
+            ? animalGroup()
+            : refs('animalRefs', 'Animales', true)}
           {select('category', 'Tipo de atención', {
             vaccine: 'Vacuna',
             treatment: 'Tratamiento',

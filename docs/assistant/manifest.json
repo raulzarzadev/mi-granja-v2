@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "flowVersion": 2,
+  "flowVersion": 3,
   "knowledgeVersion": 1,
   "operations": [
     "confirm_pregnancy",
@@ -13,7 +13,9 @@
     "register_milk",
     "register_health",
     "create_sale",
-    "register_death"
+    "register_death",
+    "create_reminder",
+    "create_area"
   ],
   "sources": [
     "apps/dashboard/src/lib/ai/operations.ts",
@@ -41,6 +43,8 @@
     "apps/dashboard/src/components/assistant/BatchProposalCard.tsx",
     "apps/dashboard/src/lib/ai/credits.ts",
     "apps/dashboard/src/lib/ai/billing-policy.ts",
-    "apps/dashboard/src/app/api/admin/ai-billing-policy/route.ts"
+    "apps/dashboard/src/app/api/admin/ai-billing-policy/route.ts",
+    "apps/dashboard/src/lib/domain/reminder-service.ts",
+    "apps/dashboard/src/lib/domain/farm-area-service.ts"
   ]
 }
