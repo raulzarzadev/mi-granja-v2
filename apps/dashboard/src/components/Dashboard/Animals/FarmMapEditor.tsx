@@ -70,15 +70,19 @@ function ColorSwatches({ value, onChange }: { value: string; onChange: (color: s
         )
       })}
       <label
-        className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-green-600"
+        className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl hover:bg-gray-50 focus-within:ring-2 focus-within:ring-green-600"
         title="Elegir otro color"
       >
-        <PiPlus aria-hidden="true" size={18} />
         <span
           aria-hidden="true"
-          className="absolute bottom-1 right-1 h-3 w-3 rounded-full border border-gray-300"
-          style={{ backgroundColor: value }}
-        />
+          className="flex h-7 w-7 items-center justify-center rounded-full ring-1 ring-black/10"
+          style={{
+            background:
+              'radial-gradient(circle at 50% 50%, #ffffffaa, transparent 65%), radial-gradient(circle at 20% 20%, #ef4444, transparent 65%), radial-gradient(circle at 80% 20%, #facc15, transparent 65%), radial-gradient(circle at 80% 80%, #22c55e, transparent 65%), radial-gradient(circle at 20% 80%, #3b82f6, transparent 65%), #a855f7',
+          }}
+        >
+          <PiPlus size={18} className="text-white drop-shadow" />
+        </span>
         <input
           type="color"
           aria-label="Elegir otro color"
@@ -103,6 +107,8 @@ interface FarmMapEditorProps {
     waitForPersistence?: boolean,
     expectedFromAreaId?: string | null,
   ) => Promise<void>
+  /** Vista inicial. Por defecto tabla. */
+  defaultView?: 'map' | 'table'
 }
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
@@ -224,9 +230,10 @@ export default function FarmMapEditor({
   savingIds,
   onSelectAnimal,
   onMoveAnimal,
+  defaultView = 'table',
 }: FarmMapEditorProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null)
-  const [viewMode, setViewMode] = useState<'map' | 'table'>('map')
+  const [viewMode, setViewMode] = useState<'map' | 'table'>(defaultView)
   const mapPosition = useRef<{ left: number; top: number } | null>(null)
   const changeView = (next: 'map' | 'table') => {
     if (viewMode === 'map' && viewportRef.current)
@@ -966,7 +973,7 @@ export default function FarmMapEditor({
       ) : (
         <div className="space-y-3">
           <header className="flex flex-wrap items-center justify-between gap-3 px-1">
-            <div className="min-w-0 flex-1">
+            <div className="min-w-[min(100%,18rem)] flex-1">
               <h2 className="text-base font-semibold text-gray-900">
                 Áreas de {currentFarm?.name || 'tu granja'}
               </h2>
@@ -987,7 +994,7 @@ export default function FarmMapEditor({
             <div
               role="group"
               aria-label="Controles de vista de áreas"
-              className="flex min-w-0 max-w-full items-center gap-2 overflow-x-auto py-1"
+              className="persistent-scrollbar-native-hidden flex w-full min-w-0 max-w-full items-center gap-2 overflow-x-auto py-1 sm:w-auto"
             >
               <div
                 role="group"
@@ -996,8 +1003,8 @@ export default function FarmMapEditor({
               >
                 {(
                   [
-                    { value: 'map', label: 'Mapa', icon: PiMapTrifold },
                     { value: 'table', label: 'Tabla', icon: PiTable },
+                    { value: 'map', label: 'Mapa', icon: PiMapTrifold },
                   ] as const
                 ).map(({ value, label, icon: ViewIcon }) => (
                   <button
@@ -1054,7 +1061,7 @@ export default function FarmMapEditor({
                   type="button"
                   size="sm"
                   color="success"
-                  className="h-10 shrink-0 rounded-lg px-3"
+                  className="ml-auto h-10 shrink-0 rounded-lg px-3 sm:ml-0"
                   disabled={isSavingArea || isCreating}
                   onClick={async () => {
                     if (dirtyAreaIds.has(selectedAreaId) && !(await handleSaveSelected())) return
@@ -1075,7 +1082,7 @@ export default function FarmMapEditor({
             hidden={viewMode !== 'map'}
             className="relative overflow-hidden rounded-lg border border-gray-200 bg-white"
           >
-            <div className="absolute left-1/2 top-3 z-20 w-max max-w-[calc(100%_-_1.5rem)] -translate-x-1/2 rounded-2xl border border-gray-200 bg-white p-1.5 shadow-md shadow-gray-900/5">
+            <div className="absolute left-1/2 top-2 z-20 w-max max-w-[calc(100%_-_1rem)] -translate-x-1/2 rounded-2xl border border-gray-200 bg-white p-1 shadow-md shadow-gray-900/5 sm:top-3 sm:p-1.5">
               <FarmMapToolbar
                 mode={isCreating ? 'draw' : selectedArea ? 'edit' : 'browse'}
                 hand={handTool}
@@ -1117,7 +1124,7 @@ export default function FarmMapEditor({
               tabIndex={0}
               role="region"
               aria-label="Lienzo de áreas. Arrastra para desplazarte o usa las flechas del teclado."
-              className="max-h-[70dvh] touch-none overflow-auto overscroll-contain scroll-auto bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-green-600"
+              className="persistent-scrollbar-native-hidden max-h-[70dvh] touch-none overflow-auto overscroll-contain scroll-auto bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-green-600"
             >
               <div className="relative" style={{ width: `${zoom * 2}%` }}>
                 <svg
@@ -1273,9 +1280,7 @@ export default function FarmMapEditor({
                     const bounds = getBounds(layout.points)
                     const group = animalsByArea.get(area.id) ?? []
                     const detailsExpanded = expandedAreaDetails.has(area.id)
-                    const labelScale = detailsExpanded
-                      ? 1
-                      : Math.max(0.65, Math.min(0.85, zoom / 100))
+                    const labelScale = Math.max(0.65, Math.min(0.85, zoom / 100))
                     return (
                       <div
                         key={area.id}
@@ -1287,7 +1292,7 @@ export default function FarmMapEditor({
                         style={{
                           left: `calc(${bounds.minX * 100}% + 12px)`,
                           top: `calc(${bounds.minY * 100}% + 12px)`,
-                          width: detailsExpanded ? '224px' : '180px',
+                          width: '180px',
                           maxWidth: 'calc(100% - 24px)',
                           transform: `scale(${labelScale})`,
                           transformOrigin: 'top left',
@@ -1346,7 +1351,7 @@ export default function FarmMapEditor({
                                   {area.description}
                                 </p>
                               ) : null}
-                              <div className="mt-2 grid max-h-56 grid-cols-1 justify-items-start gap-1.5 overflow-auto overscroll-contain py-1 pr-1">
+                              <div className="mt-2 grid max-h-44 grid-cols-1 justify-items-start gap-1.5 overflow-auto overscroll-contain py-1 pr-1">
                                 {group.map((animal) => renderAnimalAvatar(animal))}
                               </div>
                             </div>
@@ -1629,7 +1634,7 @@ export default function FarmMapEditor({
               className="block w-full rounded-md border border-gray-300 px-3 py-2 text-base text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] items-start gap-3">
             <AreaSizeInput
               id="mapped-area-size"
               value={areaForm.areaM2}
@@ -1731,7 +1736,7 @@ export default function FarmMapEditor({
               className="block w-full rounded-md border border-gray-300 px-3 py-2 text-base text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] items-start gap-3">
             <AreaSizeInput
               id="edit-area-size"
               value={areaEditForm.areaM2}

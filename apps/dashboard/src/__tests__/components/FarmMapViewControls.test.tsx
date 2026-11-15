@@ -52,6 +52,7 @@ const animal = {
 function setup(onMoveAnimal: jest.Mock = jest.fn()) {
   render(
     <FarmMapEditor
+      defaultView="map"
       areas={areas}
       animalsByArea={
         new Map([
@@ -78,6 +79,25 @@ function switchView(name: 'Mapa' | 'Tabla') {
     within(screen.getByRole('group', { name: 'Vista de áreas' })).getByRole('button', { name }),
   )
 }
+
+it('opens in table view by default with Tabla as the first option', () => {
+  render(
+    <FarmMapEditor
+      areas={areas}
+      animalsByArea={new Map([['area-1', [animal]]])}
+      selectedAnimalId=""
+      savingIds={new Set()}
+      onSelectAnimal={jest.fn()}
+      onMoveAnimal={jest.fn()}
+    />,
+  )
+  const buttons = within(screen.getByRole('group', { name: 'Vista de áreas' })).getAllByRole(
+    'button',
+  )
+  expect(buttons.map((b) => b.textContent)).toEqual(['Tabla', 'Mapa'])
+  expect(buttons[0]).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByRole('table')).toBeInTheDocument()
+})
 
 it('places switch, map zoom and the single create action in the same header row', () => {
   setup()

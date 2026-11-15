@@ -60,6 +60,7 @@ const animal = {
 function setup(onMoveAnimal = jest.fn().mockResolvedValue(undefined)) {
   render(
     <FarmMapEditor
+      defaultView="map"
       areas={areas}
       animalsByArea={
         new Map([
@@ -201,13 +202,14 @@ it('shows square metres only when the card is expanded', () => {
   expect(screen.queryByText('125,5 m²')).not.toBeInTheDocument()
 })
 
-it('keeps labels small until explicitly opened', () => {
+it('keeps labels small also when details are opened', () => {
   setup()
   const label = screen.getByRole('button', { name: 'Mostrar detalles de Área 1' })
   const card = label.parentElement!.parentElement!
   expect(card.style.transform).toBe('scale(0.85)')
   fireEvent.click(label)
-  expect(card.style.transform).toBe('scale(1)')
+  expect(card.style.transform).toBe('scale(0.85)')
+  expect(card.style.width).toBe('180px')
   fireEvent.click(screen.getByRole('button', { name: 'Ocultar detalles de Área 1' }))
   expect(card.style.transform).toBe('scale(0.85)')
 })
@@ -243,6 +245,7 @@ it('keeps bulk confirmation mounted if optimistic updates empty its group before
   }
   const { rerender } = render(
     <FarmMapEditor
+      defaultView="map"
       {...props}
       animalsByArea={
         new Map([
@@ -261,6 +264,7 @@ it('keeps bulk confirmation mounted if optimistic updates empty its group before
   expect(move).toHaveBeenCalledWith('animal-1', '__unassigned__', true, 'area-1')
   rerender(
     <FarmMapEditor
+      defaultView="map"
       {...props}
       animalsByArea={
         new Map([
@@ -289,6 +293,7 @@ it('shows every animal and keeps the expanded area above collapsed labels', () =
   }))
   render(
     <FarmMapEditor
+      defaultView="map"
       areas={areas}
       animalsByArea={
         new Map([

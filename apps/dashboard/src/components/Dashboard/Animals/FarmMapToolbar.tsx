@@ -55,13 +55,13 @@ export default function FarmMapToolbar(props: Props) {
       document.removeEventListener('keydown', keyDown)
     }
   }, [menuOpen])
-  const secondary = 'min-h-11 rounded-xl px-3 font-medium'
+  const secondary = 'min-h-11 shrink-0 rounded-xl px-2.5 font-medium sm:px-3'
   return (
     <div
       role="group"
       aria-label="Herramientas de áreas"
       aria-busy={props.busy}
-      className="flex flex-wrap items-center justify-center gap-1"
+      className="flex flex-nowrap items-center justify-center gap-0.5 sm:gap-1"
     >
       <button
         type="button"
@@ -70,12 +70,12 @@ export default function FarmMapToolbar(props: Props) {
         title="Mover lienzo · Espacio + arrastrar"
         disabled={props.busy}
         onClick={props.onHand}
-        className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-xl px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 disabled:cursor-not-allowed disabled:opacity-50 ${props.hand ? 'bg-green-50 text-green-800 ring-1 ring-inset ring-green-200' : 'text-gray-600 hover:bg-gray-100'}`}
+        className={`flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-xl px-2.5 text-sm sm:px-3 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 disabled:cursor-not-allowed disabled:opacity-50 ${props.hand ? 'bg-green-50 text-green-800 ring-1 ring-inset ring-green-200' : 'text-gray-600 hover:bg-gray-100'}`}
       >
         <PiHandPalm aria-hidden="true" size={20} />
-        <span>Mover</span>
+        <span className="sr-only sm:not-sr-only">Mover</span>
       </button>
-      <span aria-hidden="true" className="mx-1 h-6 w-px bg-gray-200" />
+      <span aria-hidden="true" className="mx-0.5 h-6 w-px shrink-0 bg-gray-200 sm:mx-1" />
       {props.mode === 'browse' ? (
         <Button
           type="button"
@@ -86,7 +86,8 @@ export default function FarmMapToolbar(props: Props) {
           onClick={props.onPending}
           title="Animales pendientes de asignar a un área"
         >
-          Animales sin asignar{' '}
+          <span className="sm:hidden">Sin asignar</span>
+          <span className="hidden sm:inline">Animales sin asignar</span>
           <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-xs tabular-nums text-gray-600">
             {props.pendingCount}
           </span>
@@ -94,7 +95,10 @@ export default function FarmMapToolbar(props: Props) {
       ) : null}
       {props.mode === 'draw' ? (
         <>
-          <span className="px-2 text-sm tabular-nums text-gray-500">{props.pointCount} puntos</span>
+          <span className="shrink-0 px-1.5 text-sm tabular-nums text-gray-500 sm:px-2">
+            {props.pointCount}
+            <span className="hidden sm:inline"> puntos</span>
+          </span>
           <Button
             type="button"
             size="sm"
@@ -105,7 +109,7 @@ export default function FarmMapToolbar(props: Props) {
             onClick={props.onUndoPoint}
           >
             <PiArrowCounterClockwise aria-hidden="true" size={18} />
-            <span>Deshacer</span>
+            <span className="sr-only sm:not-sr-only">Deshacer</span>
           </Button>
           <Button
             type="button"
@@ -142,7 +146,7 @@ export default function FarmMapToolbar(props: Props) {
             onClick={props.onEdit}
           >
             <PiPencilSimple aria-hidden="true" size={18} />
-            Datos
+            <span className="sr-only sm:not-sr-only">Datos</span>
           </Button>
           <Button
             type="button"
@@ -155,7 +159,7 @@ export default function FarmMapToolbar(props: Props) {
             <PiCheck aria-hidden="true" size={18} />
             {props.busy ? 'Guardando…' : 'Listo'}
           </Button>
-          <div ref={menu} className="relative">
+          <div ref={menu} className="relative shrink-0">
             <button
               type="button"
               aria-label="Más opciones del área"
