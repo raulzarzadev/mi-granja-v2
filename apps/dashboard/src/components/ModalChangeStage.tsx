@@ -84,7 +84,14 @@ const ModalChangeStage: React.FC<Props> = ({
     [single, allAnimals],
   )
 
-  const applicableTargets = useMemo(() => getApplicableTargets(animals), [animals])
+  const applicableTargets = useMemo(() => {
+    const targets = getApplicableTargets(animals)
+    const lastTargets: TargetKey[] = ['descarte', 'perdido', 'muerto']
+    return [
+      ...targets.filter((target) => !lastTargets.includes(target)),
+      ...lastTargets.filter((target) => targets.includes(target)),
+    ]
+  }, [animals])
 
   // Resetear estado al abrir/cerrar
   useEffect(() => {
