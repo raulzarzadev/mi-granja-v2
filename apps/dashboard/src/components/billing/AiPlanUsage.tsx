@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import type { RootState } from '@/features/store'
-import { auth } from '@/lib/firebase'
+import { authFetch } from '@/lib/auth-fetch'
 
 /** Respuesta pública de `/api/billing/ai-usage`. Solo valores visibles del plan. */
 interface Usage {
@@ -78,13 +78,8 @@ function useAiUsage(refreshKey?: string) {
     const controller = new AbortController()
     async function load() {
       try {
-        const token = await auth.currentUser?.getIdToken()
-        if (!token) throw new Error('Sesión no disponible')
-        const response = await fetch('/api/billing/ai-usage', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            ...(impersonateUid ? { 'x-impersonate-uid': impersonateUid } : {}),
-          },
+        const response = await authFetch('/api/billing/ai-usage', {
+          headers: impersonateUid ? { 'x-impersonate-uid': impersonateUid } : {},
           cache: 'no-store',
           signal: controller.signal,
         })

@@ -83,7 +83,9 @@ export async function verifyBillingAuth(
       uid: decoded.uid,
       email: decoded.email ?? '',
     }
-  } catch {
+  } catch (error) {
+    // Solo el código en logs del servidor; el cliente recibe un mensaje genérico.
+    console.warn('[auth] verifyIdToken falló:', (error as { code?: string })?.code ?? 'unknown')
     return NextResponse.json({ error: 'Token inválido o expirado' }, { status: 401 })
   }
 }

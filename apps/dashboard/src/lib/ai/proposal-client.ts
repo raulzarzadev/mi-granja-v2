@@ -1,4 +1,4 @@
-import { auth } from '@/lib/firebase'
+import { authFetch } from '@/lib/auth-fetch'
 import type { OperationAction } from './operations'
 import type { AiProposalView } from './proposal-types'
 import { parseProposalView } from './proposal-view'
@@ -31,19 +31,21 @@ export async function requestProposal(
   },
   signal?: AbortSignal,
 ): Promise<AiProposalView> {
-  const token = await auth.currentUser?.getIdToken()
-  if (!token) throw new Error('Inicia sesión para revisar esta acción.')
   const { action, ...request } = input
-  const response = await fetch('/api/ai/confirm-action', {
-    method: 'POST',
-    signal,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({
-      ...request,
-      ...(input.operation === 'revise' && action ? { action } : {}),
-      timeZone: browserTimeZone(),
-    }),
-  })
+  const response = await authFetch(
+    '/api/ai/confirm-action',
+    {
+      method: 'POST',
+      signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...request,
+        ...(input.operation === 'revise' && action ? { action } : {}),
+        timeZone: browserTimeZone(),
+      }),
+    },
+    'Inicia sesión para revisar esta acción.',
+  )
   const data = await response.json().catch(() => ({}))
   const proposal = parseProposalView(data.proposal)
   if (!response.ok)
@@ -62,13 +64,15 @@ export async function recoverConversationProposals(
   farmId: string,
   conversationId: string,
 ): Promise<AiProposalView[]> {
-  const token = await auth.currentUser?.getIdToken()
-  if (!token) throw new Error('Inicia sesión para recuperar las propuestas.')
-  const response = await fetch('/api/ai/confirm-action', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ farmId, conversationId, operation: 'list' }),
-  })
+  const response = await authFetch(
+    '/api/ai/confirm-action',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ farmId, conversationId, operation: 'list' }),
+    },
+    'Inicia sesión para recuperar las propuestas.',
+  )
   const data = await response.json()
   if (!response.ok || !Array.isArray(data.proposals))
     throw new Error('No se pudieron recuperar las propuestas. Intenta nuevamente.')

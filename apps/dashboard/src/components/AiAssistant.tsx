@@ -22,7 +22,7 @@ import { browserTimeZone, recoverConversationProposals } from '@/lib/ai/proposal
 import { uniqueProposalGroup } from '@/lib/ai/proposal-group'
 import type { AiProposalView } from '@/lib/ai/proposal-types'
 import { parseProposalView } from '@/lib/ai/proposal-view'
-import { auth } from '@/lib/firebase'
+import { authFetch } from '@/lib/auth-fetch'
 
 interface AiUsageView {
   limit?: number
@@ -36,16 +36,15 @@ interface AiUsageView {
 }
 
 async function aiFetch(body: unknown) {
-  const token = await auth.currentUser?.getIdToken()
-  if (!token) throw new Error('Usuario no autenticado')
-  const res = await fetch('/api/ai/chat', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+  const res = await authFetch(
+    '/api/ai/chat',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  })
+    'Usuario no autenticado',
+  )
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
     const message =
