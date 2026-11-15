@@ -1,13 +1,14 @@
 'use client'
 
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { PiCaretDown, PiCaretUp, PiCaretUpDown } from 'react-icons/pi'
 import AnimalBadges from '@/components/AnimalBadges'
 import ButtonClose from '@/components/buttons/ButtonClose'
 import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { animalMatchesSearch } from '@/lib/animal-search'
-import { animalAge } from '@/lib/animal-utils'
-import { Animal } from '@/types/animals'
+import { animalAge, computeAnimalStage } from '@/lib/animal-utils'
+import { Animal, type AnimalStageKey, animals_stages } from '@/types/animals'
 import type { FarmArea } from '@/types/farm'
 
 export interface InputSelectAnimalsProps {
@@ -57,6 +58,18 @@ export interface InputSelectAnimalsProps {
 
 type DropdownView = 'animals' | 'areas'
 
+/** Fila recién agregada que se anima (desliza a la derecha) antes de desaparecer. */
+type LeavingOption = { key: string; animal: Animal; index: number }
+
+/** Deslizamiento de la fila agregada y subida de las filas de abajo (ms). */
+const LEAVE_MS = 260
+const SHIFT_MS = 180
+
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
 type DropdownPosition = {
   opensAbove: boolean
   top: number
@@ -65,13 +78,32 @@ type DropdownPosition = {
   maxHeight: number
 }
 
-type AnimalSortOption = 'selection' | 'number' | 'age-asc'
+type AnimalSortOption = 'selection' | 'number' | 'age' | 'gender' | 'stage' | 'breed'
 type AnimalSortDirection = 'asc' | 'desc'
 
 const animalSortOptions: Array<{ value: AnimalSortOption; label: string }> = [
   { value: 'selection', label: 'Agregación' },
-  { value: 'number', label: 'Arete' },
-  { value: 'age-asc', label: 'Edad' },
+  { value: 'number', label: 'Número' },
+  { value: 'age', label: 'Edad' },
+  { value: 'gender', label: 'Género' },
+  { value: 'stage', label: 'Etapa' },
+  { value: 'breed', label: 'Raza' },
+]
+
+/** Grilla compartida por encabezado y filas: número, especie, género, etapa, edad, nombre, raza. */
+/** En móvil las columnas se angostan, el nombre se oculta y la raza se trunca. */
+const OPTION_GRID =
+  'grid grid-cols-[3.25rem_1.25rem_2.75rem_2.75rem_3.25rem_minmax(0,1fr)_minmax(0,5rem)] sm:grid-cols-[3.75rem_1.5rem_3.75rem_3.25rem_3.75rem_minmax(0,1fr)_minmax(0,8rem)] items-center gap-x-1'
+
+/** Encabezados por columna (label en escritorio, short en móvil); null = sin orden. */
+const columnSorts: Array<{ value: AnimalSortOption; label: string; short: string } | null> = [
+  { value: 'number', label: 'Número', short: 'Núm' },
+  null,
+  { value: 'gender', label: 'Género', short: 'Sexo' },
+  { value: 'stage', label: 'Etapa', short: 'Etapa' },
+  { value: 'age', label: 'Edad', short: 'Edad' },
+  null,
+  { value: 'breed', label: 'Raza', short: 'Raza' },
 ]
 
 const compareAnimalNumbers = (a: Animal, b: Animal, direction: AnimalSortDirection) => {
@@ -100,14 +132,65 @@ const compareAnimalAge = (a: Animal, b: Animal, direction: AnimalSortDirection) 
   return compareAnimalNumbers(a, b, direction)
 }
 
+const stageSortOrder: AnimalStageKey[] = [
+  ...animals_stages,
+  'empadre',
+  'embarazos',
+  'crias_lactantes',
+]
+const getStageIndex = (animal: Animal) =>
+  stageSortOrder.indexOf(animal.computedStage ?? computeAnimalStage(animal))
+
+/** Compara por texto/índice; vacíos al final; empate por número ascendente. */
+const compareBy = (
+  a: Animal,
+  b: Animal,
+  valueA: string | number | undefined,
+  valueB: string | number | undefined,
+  direction: AnimalSortDirection,
+) => {
+  const emptyA = valueA === undefined || valueA === '' || valueA === -1
+  const emptyB = valueB === undefined || valueB === '' || valueB === -1
+  if (emptyA && !emptyB) return 1
+  if (!emptyA && emptyB) return -1
+  if (!emptyA && !emptyB && valueA !== valueB) {
+    const comparison =
+      typeof valueA === 'number' && typeof valueB === 'number'
+        ? valueA - valueB
+        : String(valueA).localeCompare(String(valueB), 'es', { numeric: true })
+    return direction === 'asc' ? comparison : -comparison
+  }
+  return compareAnimalNumbers(a, b, 'asc')
+}
+
 const compareAnimals = (
   a: Animal,
   b: Animal,
   sortOption: AnimalSortOption,
   direction: AnimalSortDirection,
 ) => {
-  if (sortOption === 'age-asc') return compareAnimalAge(a, b, direction)
+  if (sortOption === 'age') return compareAnimalAge(a, b, direction)
+  if (sortOption === 'gender') return compareBy(a, b, a.gender, b.gender, direction)
+  if (sortOption === 'stage') return compareBy(a, b, getStageIndex(a), getStageIndex(b), direction)
+  if (sortOption === 'breed') return compareBy(a, b, a.breed, b.breed, direction)
   return compareAnimalNumbers(a, b, direction)
+}
+
+type DropdownRow =
+  | { leaving?: undefined; animal: Animal; index: number }
+  | { leaving: LeavingOption; animal: Animal; index: number }
+
+/** Intercala las filas que se están animando en su posición original. */
+const withLeavingRows = (items: Animal[], leaving: LeavingOption[]): DropdownRow[] => {
+  const rows: DropdownRow[] = items.map((animal, index) => ({ animal, index }))
+  for (const item of [...leaving].sort((a, b) => a.index - b.index)) {
+    rows.splice(Math.min(item.index, rows.length), 0, {
+      leaving: item,
+      animal: item.animal,
+      index: -1,
+    })
+  }
+  return rows
 }
 
 const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
@@ -135,6 +218,11 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false)
   const [highlightIndex, setHighlightIndex] = useState(-1)
   const [dropdownView, setDropdownView] = useState<DropdownView>('animals')
+  const [leaving, setLeaving] = useState<LeavingOption[]>([])
+  const leaveTimers = useRef<ReturnType<typeof setTimeout>[]>([])
+  useEffect(() => () => leaveTimers.current.forEach(clearTimeout), [])
+  // Filas que deben subir (FLIP) cuando se retira una fila fantasma
+  const pendingShifts = useRef<Array<{ els: Element[]; height: number }>>([])
   const [chipsExpanded, setChipsExpanded] = useState(false)
   const [sortOption, setSortOption] = useState<AnimalSortOption>('number')
   const [sortDirection, setSortDirection] = useState<AnimalSortDirection>('asc')
@@ -223,13 +311,18 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as Node
-      if (sortMenuRef.current && !sortMenuRef.current.contains(target)) {
+      // composedPath conserva la ruta del clic aunque la opción ya se haya quitado del DOM
+      // al seleccionarla (evita cerrar el selector en selección múltiple).
+      const path = typeof e.composedPath === 'function' ? e.composedPath() : []
+      const isInside = (el: HTMLElement | null) =>
+        Boolean(el && (path.includes(el) || el.contains(target)))
+      if (sortMenuRef.current && !isInside(sortMenuRef.current)) {
         setIsSortMenuOpen(false)
       }
       if (
         containerRef.current &&
-        !containerRef.current.contains(target) &&
-        !dropdownRef.current?.contains(target)
+        !isInside(containerRef.current) &&
+        !isInside(dropdownRef.current)
       ) {
         setIsOpen(false)
         setIsSortMenuOpen(false)
@@ -299,7 +392,77 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     }
   }, [highlightIndex])
 
+  const startLeave = (id: string) => {
+    if (mode !== 'multi' || prefersReducedMotion()) return
+    const index = dropdownItems.findIndex((animal) => animal.id === id)
+    if (index < 0) return
+    const key = `${id}-${Date.now()}`
+    setLeaving((prev) => [...prev, { key, animal: dropdownItems[index], index }])
+  }
+
+  const removeLeaving = (key: string) =>
+    setLeaving((prev) => prev.filter((item) => item.key !== key))
+
+  /**
+   * Anima solo transform/opacity (compositor, sin recalcular layout): la fila sale a la
+   * derecha; al terminar se retira y las filas de abajo suben con FLIP.
+   */
+  const runLeave = (el: HTMLDivElement | null, key: string) => {
+    // dataset evita animar dos veces (re-ejecución del ref / StrictMode)
+    if (!el || el.dataset.animated) return
+    el.dataset.animated = 'true'
+    if (typeof el.animate !== 'function') {
+      leaveTimers.current.push(setTimeout(() => removeLeaving(key), LEAVE_MS))
+      return
+    }
+    const animation = el.animate(
+      [
+        { transform: 'translateX(0)', opacity: 1 },
+        { transform: 'translateX(100%)', opacity: 0 },
+      ],
+      { duration: LEAVE_MS, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' },
+    )
+    animation.finished
+      .then(() => {
+        if (!el.isConnected) return
+        const els: Element[] = []
+        let next = el.nextElementSibling
+        while (next) {
+          els.push(next)
+          next = next.nextElementSibling
+        }
+        pendingShifts.current.push({ els, height: el.offsetHeight })
+        removeLeaving(key)
+      })
+      .catch(() => removeLeaving(key))
+  }
+
+  // Tras retirar la fila: las de abajo arrancan donde estaban y suben a su lugar (FLIP)
+  useLayoutEffect(() => {
+    const shifts = pendingShifts.current
+    if (!shifts.length) return
+    pendingShifts.current = []
+    for (const { els, height } of shifts) {
+      for (const row of els) {
+        if (!row.isConnected || typeof (row as HTMLElement).animate !== 'function') continue
+        ;(row as HTMLElement).animate(
+          [{ transform: `translateY(${height}px)` }, { transform: 'translateY(0)' }],
+          { duration: SHIFT_MS, easing: 'cubic-bezier(0, 0, 0.2, 1)' },
+        )
+      }
+    }
+  }, [leaving])
+
+  // Al cerrar el desplegable se descartan las animaciones pendientes
+  useEffect(() => {
+    if (!isOpen) {
+      setLeaving([])
+      pendingShifts.current = []
+    }
+  }, [isOpen])
+
   const handleSelect = (id: string) => {
+    startLeave(id)
     if (mode === 'single' && selectedIds.length > 0) {
       onRemove(selectedIds[0])
     }
@@ -368,15 +531,18 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
 
   const defaultRenderOption = (animal: Animal) => (
     <>
-      <AnimalBadges animal={animal} />
-      <div className="min-w-0 flex-1 truncate">
-        {animal.name && <span className="text-sm text-gray-500">{animal.name}</span>}
+      <AnimalBadges animal={animal} variant="cells" />
+      {/* Celda siempre presente para no romper la grilla; el nombre solo en sm+ */}
+      <div className="min-w-0 truncate" title={secondaryLabel?.(animal)}>
+        {animal.name && (
+          <span className="hidden text-sm text-gray-500 sm:inline">{animal.name}</span>
+        )}
         {secondaryLabel?.(animal) && (
           <span className="text-xs text-gray-400 ml-1.5">({secondaryLabel(animal)})</span>
         )}
       </div>
-      <div className="text-xs text-gray-400 flex-shrink-0 whitespace-nowrap">
-        {animal.breed && <span>{animal.breed}</span>}
+      <div className="min-w-0 truncate text-right text-xs text-gray-400" title={animal.breed}>
+        {animal.breed}
       </div>
     </>
   )
@@ -420,7 +586,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   const hiddenCount =
     visibleChipCount !== null && !chipsExpanded ? selectedAnimals.length - visibleChipCount : 0
   const selectedSortLabel =
-    animalSortOptions.find((option) => option.value === sortOption)?.label ?? 'Arete'
+    animalSortOptions.find((option) => option.value === sortOption)?.label ?? 'Número'
 
   const sortControl = selectedAnimals.length > 1 && (
     <div ref={sortMenuRef} className="relative flex shrink-0 items-center gap-1">
@@ -619,91 +785,145 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                     maxHeight: dropdownPosition.maxHeight,
                     transform: dropdownPosition.opensAbove ? 'translateY(-100%)' : undefined,
                   }}
-                  className="z-[100] overflow-y-auto rounded-lg border border-gray-100 bg-white shadow-lg"
+                  className="z-[100] overflow-y-auto overflow-x-hidden rounded-lg border border-gray-100 bg-white shadow-lg"
                 >
                   {/* Ayuda y cerrar selector */}
-                  <div className="sticky top-0 z-10 flex min-w-0 items-center justify-between gap-2 border-b border-gray-100 bg-white/95 px-3 py-1.5 backdrop-blur-sm">
-                    {isAreasView ? (
-                      <span className="min-w-0 truncate text-[11px] text-gray-500">
-                        Toca un área para agregar sus animales
-                      </span>
-                    ) : dropdownItems.length > 0 ? (
-                      <span className="min-w-0 truncate text-[11px] text-gray-500">
-                        {query.trim() ? (
-                          <>
-                            <kbd className="inline-flex h-5 items-center rounded border border-gray-300 bg-white px-1.5 font-mono text-[10px] leading-none">
-                              Enter
-                            </kbd>{' '}
-                            agrega primero ·{' '}
-                            <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-gray-300 bg-white px-1.5 font-mono text-[10px] leading-none">
-                              ↓
-                            </kbd>{' '}
-                            selecciona otra
-                          </>
-                        ) : (
-                          <>
-                            <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-gray-300 bg-white px-1.5 font-mono text-[10px] leading-none">
-                              ↓
-                            </kbd>{' '}
-                            seleccionar
-                            {selectedIds.length > 0 && (
-                              <>
-                                {' · '}
-                                <kbd className="inline-flex h-5 items-center rounded border border-gray-300 bg-white px-1.5 font-mono text-[10px] leading-none">
-                                  Enter
-                                </kbd>{' '}
-                                agregar
-                              </>
-                            )}
-                          </>
-                        )}
-                      </span>
-                    ) : (
-                      <span />
-                    )}
-                    {canSelectByArea && (
+                  <div className="sticky top-0 z-10 border-b border-gray-100 bg-white/95 backdrop-blur-sm">
+                    <div className="flex min-w-0 items-center justify-between gap-2 px-3 py-1.5">
+                      {isAreasView ? (
+                        <span className="min-w-0 truncate text-[11px] text-gray-500">
+                          Toca un área para agregar sus animales
+                        </span>
+                      ) : dropdownItems.length > 0 ? (
+                        <span className="hidden min-w-0 truncate text-[11px] text-gray-500 sm:inline">
+                          {query.trim() ? (
+                            <>
+                              <kbd className="inline-flex h-5 items-center rounded border border-gray-300 bg-white px-1.5 font-mono text-[10px] leading-none">
+                                Enter
+                              </kbd>{' '}
+                              agrega primero ·{' '}
+                              <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-gray-300 bg-white px-1.5 font-mono text-[10px] leading-none">
+                                ↓
+                              </kbd>{' '}
+                              selecciona otra
+                            </>
+                          ) : (
+                            <>
+                              <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-gray-300 bg-white px-1.5 font-mono text-[10px] leading-none">
+                                ↓
+                              </kbd>{' '}
+                              seleccionar
+                              {selectedIds.length > 0 && (
+                                <>
+                                  {' · '}
+                                  <kbd className="inline-flex h-5 items-center rounded border border-gray-300 bg-white px-1.5 font-mono text-[10px] leading-none">
+                                    Enter
+                                  </kbd>{' '}
+                                  agregar
+                                </>
+                              )}
+                            </>
+                          )}
+                        </span>
+                      ) : (
+                        <span />
+                      )}
+                      {canSelectByArea && (
+                        <div
+                          role="radiogroup"
+                          aria-label="Seleccionar por"
+                          data-testid="areas-switch"
+                          className="ml-auto inline-flex shrink-0 rounded-md bg-gray-100 p-0.5 text-[11px] font-medium"
+                        >
+                          {(
+                            [
+                              { value: 'animals', label: 'Animales' },
+                              { value: 'areas', label: 'Áreas' },
+                            ] as const
+                          ).map((option) => {
+                            const active = dropdownView === option.value
+                            return (
+                              <button
+                                key={option.value}
+                                type="button"
+                                role="radio"
+                                aria-checked={active}
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => switchView(option.value)}
+                                className={`cursor-pointer rounded px-2 py-0.5 transition-colors ${
+                                  active
+                                    ? 'bg-white text-green-700 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                              >
+                                {option.label}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                      <ButtonClose
+                        showTitle="Cerrar selector"
+                        showTitleClassName="hidden sm:inline"
+                        title="Cerrar"
+                        className="shrink-0 text-gray-400 hover:text-gray-600"
+                        onClick={() => {
+                          setIsOpen(false)
+                          setHighlightIndex(-1)
+                        }}
+                      />
+                    </div>
+                    {!isAreasView && (
                       <div
-                        role="radiogroup"
-                        aria-label="Seleccionar por"
-                        data-testid="areas-switch"
-                        className="ml-auto inline-flex shrink-0 rounded-md bg-gray-100 p-0.5 text-[11px] font-medium"
+                        role="group"
+                        aria-label="Ordenar lista"
+                        className={`${OPTION_GRID} border-t border-gray-50 px-3 py-1 text-[11px] text-gray-500`}
                       >
-                        {(
-                          [
-                            { value: 'animals', label: 'Animales' },
-                            { value: 'areas', label: 'Áreas' },
-                          ] as const
-                        ).map((option) => {
-                          const active = dropdownView === option.value
+                        {columnSorts.map((column, columnIndex) => {
+                          if (!column) return <span key={`empty-${columnIndex}`} />
+                          const { value, label, short } = column
+                          const active = sortOption === value
+                          const SortIcon = !active
+                            ? PiCaretUpDown
+                            : sortDirection === 'asc'
+                              ? PiCaretUp
+                              : PiCaretDown
                           return (
                             <button
-                              key={option.value}
+                              key={value}
                               type="button"
-                              role="radio"
-                              aria-checked={active}
+                              aria-label={`Ordenar por ${label}${active ? (sortDirection === 'asc' ? ', ascendente' : ', descendente') : ''}`}
+                              aria-pressed={active}
                               onMouseDown={(e) => e.preventDefault()}
-                              onClick={() => switchView(option.value)}
-                              className={`cursor-pointer rounded px-2 py-0.5 transition-colors ${
-                                active
-                                  ? 'bg-white text-green-700 shadow-sm'
-                                  : 'text-gray-500 hover:text-gray-700'
-                              }`}
+                              onClick={() => {
+                                if (active) {
+                                  setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'))
+                                } else {
+                                  setSortOption(value)
+                                  setSortDirection('asc')
+                                }
+                                setHighlightIndex(-1)
+                              }}
+                              className={`-mx-1 inline-flex cursor-pointer items-center gap-0.5 whitespace-nowrap rounded px-1 py-0.5 transition-colors hover:bg-gray-100 ${
+                                value === 'breed'
+                                  ? 'justify-self-end'
+                                  : value === 'gender' || value === 'stage'
+                                    ? 'justify-self-center'
+                                    : 'justify-self-start'
+                              } ${active ? 'font-semibold text-green-700' : 'hover:text-gray-700'}`}
                             >
-                              {option.label}
+                              <span className="sm:hidden">{short}</span>
+                              <span className="hidden sm:inline">{label}</span>
+                              <SortIcon
+                                aria-hidden="true"
+                                size={11}
+                                className={`shrink-0 ${active ? '' : 'text-gray-300'}`}
+                              />
                             </button>
                           )
                         })}
                       </div>
                     )}
-                    <ButtonClose
-                      showTitle="Cerrar selector"
-                      title="Cerrar"
-                      className="shrink-0 text-gray-400 hover:text-gray-600"
-                      onClick={() => {
-                        setIsOpen(false)
-                        setHighlightIndex(-1)
-                      }}
-                    />
                   </div>
 
                   {isAreasView ? (
@@ -759,8 +979,25 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                           : 'No se encontraron áreas'}
                       </div>
                     )
-                  ) : dropdownItems.length > 0 ? (
-                    dropdownItems.map((animal, index) => {
+                  ) : dropdownItems.length > 0 || leaving.length > 0 ? (
+                    withLeavingRows(dropdownItems, leaving).map((row) => {
+                      const rowClass = `w-full px-3 py-2 ${renderOption ? 'flex items-center gap-3' : OPTION_GRID} text-left border-b border-gray-100 last:border-b-0`
+                      if (row.leaving) {
+                        return (
+                          <div
+                            key={row.leaving.key}
+                            ref={(el) => runLeave(el, row.leaving.key)}
+                            aria-hidden="true"
+                            data-leaving="true"
+                            className={`${rowClass} pointer-events-none bg-green-100 will-change-transform`}
+                          >
+                            {renderOption
+                              ? renderOption(row.animal, true)
+                              : defaultRenderOption(row.animal)}
+                          </div>
+                        )
+                      }
+                      const { animal, index } = row
                       const isHighlighted = highlightIndex === index
                       const isFirstMatch = query.trim() && index === 0 && highlightIndex === -1
 
@@ -780,7 +1017,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                             keyboardNavRef.current = false
                             setHighlightIndex(index)
                           }}
-                          className={`w-full px-3 py-2 flex items-center gap-3 transition-colors text-left border-b border-gray-100 last:border-b-0 cursor-pointer ${
+                          className={`${rowClass} transition-colors cursor-pointer ${
                             isHighlighted || isFirstMatch ? 'bg-green-100' : 'hover:bg-gray-50'
                           }`}
                         >

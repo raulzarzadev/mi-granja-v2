@@ -6,6 +6,8 @@ type ButtonCloseProps = {
   title?: string
   disabled?: boolean
   showTitle?: string | boolean
+  /** Clases del texto visible (p. ej. 'hidden sm:inline' para ocultarlo en móvil) */
+  showTitleClassName?: string
 } & React.HTMLProps<HTMLButtonElement>
 
 /**
@@ -18,6 +20,7 @@ export function ButtonClose({
   title = 'Cerrar',
   disabled = false,
   showTitle = false,
+  showTitleClassName = '',
 }: ButtonCloseProps) {
   return (
     <button
@@ -27,7 +30,9 @@ export function ButtonClose({
       disabled={disabled}
       className={`ml-2 text-red-400 hover:text-red-600 focus:outline-none font-bold text-lg leading-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${className} flex items-center`}
     >
-      {showTitle && <span className="text-sm mr-1">{showTitle || title} </span>}
+      {showTitle && (
+        <span className={`text-sm mr-1 ${showTitleClassName}`}>{showTitle || title} </span>
+      )}
       <Icon icon="close" />
     </button>
   )

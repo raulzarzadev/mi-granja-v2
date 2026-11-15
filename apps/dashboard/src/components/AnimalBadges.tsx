@@ -45,7 +45,8 @@ const getAgeLabel = (animal: Animal, format: AgeLabelFormat = 'full') => {
 interface AnimalBadgesProps {
   animal: Animal
   ageFormat?: AgeLabelFormat
-  variant?: 'row' | 'tag'
+  /** 'cells': celdas sueltas (número, especie, género, etapa, edad) para una grilla del padre */
+  variant?: 'row' | 'tag' | 'cells'
   compact?: boolean
   showSpecies?: boolean
   showStateLabel?: boolean
@@ -102,6 +103,35 @@ const AnimalBadges: React.FC<AnimalBadgesProps> = ({
         ) : null}
         <span className="shrink-0 tabular-nums text-gray-500">{age ?? '--'}</span>
       </span>
+    )
+  }
+
+  if (variant === 'cells') {
+    const inactive = Boolean(animal.status && animal.status !== 'activo')
+    return (
+      <>
+        <span className="truncate text-xs font-bold text-gray-900">{animal.animalNumber}</span>
+        <span className="text-center text-sm" title={animal.type}>
+          <EmojiIcon emoji={animal_icon[animal.type]} />
+        </span>
+        <span
+          className={`flex justify-center ${animal_gender_config[animal.gender].color}`}
+          title={animal_gender_config[animal.gender].label}
+        >
+          <Icon icon={animal_gender_config[animal.gender].iconName as IconName} size={4} />
+        </span>
+        <span
+          className="text-center text-sm"
+          title={inactive ? animal_status_labels[animal.status!] : animal_stage_config[stage].label}
+        >
+          <EmojiIcon
+            emoji={inactive ? animal_status_icons[animal.status!] : animal_stage_config[stage].icon}
+          />
+        </span>
+        <span className="text-xs tabular-nums text-gray-500" title="Edad">
+          {age ?? '--'}
+        </span>
+      </>
     )
   }
 

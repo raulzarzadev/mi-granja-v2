@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
+import React from 'react'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
 
 const animals = [
@@ -40,6 +41,8 @@ const animals = [
   },
 ] as any
 
+const getAnimalOptions = () =>
+  Array.from(document.querySelectorAll('[role="listbox"] [role="option"]')) as HTMLElement[]
 const getDropdownNumbers = () =>
   Array.from(document.querySelectorAll('[role="listbox"] [role="option"]')).map(
     (option) => option.textContent,
@@ -94,7 +97,7 @@ describe('InputSelectAnimals', () => {
 
   it('ordena por agregación, arete o edad', () => {
     renderSelector()
-    const sort = screen.getByRole('button', { name: 'Ordenar por: Arete' })
+    const sort = screen.getByRole('button', { name: 'Ordenar por: Número' })
 
     expect(getDropdownNumbers()).toEqual(['2-A', '10-A'])
     expect(getSelectedIds()).toEqual(['2', '1'])
@@ -187,7 +190,7 @@ describe('InputSelectAnimals', () => {
     fireEvent.change(input, { target: { value: '2' } })
     fireEvent.keyDown(input, { key: 'ArrowDown' })
 
-    const options = screen.getAllByRole('option')
+    const options = getAnimalOptions()
     expect(options[1]).toHaveAttribute('aria-selected', 'true')
   })
 
@@ -376,9 +379,9 @@ describe('Espacio', () => {
   it('selecciona el animal resaltado con flechas', () => {
     const { input, onAdd } = renderSelector()
     fireEvent.keyDown(input, { key: 'ArrowDown' })
-    const highlighted = screen
-      .getAllByRole('option')
-      .find((o) => o.getAttribute('aria-selected') === 'true') as HTMLElement
+    const highlighted = getAnimalOptions().find(
+      (o) => o.getAttribute('aria-selected') === 'true',
+    ) as HTMLElement
     fireEvent.keyDown(input, { key: ' ' })
     expect(onAdd).toHaveBeenCalledTimes(1)
     expect(highlighted).toHaveTextContent(
@@ -389,11 +392,122 @@ describe('Espacio', () => {
   it('no selecciona al escribir ni con resaltado del mouse', () => {
     const { input, onAdd } = renderSelector()
     fireEvent.keyDown(input, { key: ' ' })
-    fireEvent.mouseEnter(screen.getAllByRole('option')[0])
+    fireEvent.mouseEnter(getAnimalOptions()[0])
     fireEvent.keyDown(input, { key: ' ' })
     fireEvent.keyDown(input, { key: 'ArrowDown' })
     fireEvent.change(input, { target: { value: 'lote' } })
     fireEvent.keyDown(input, { key: ' ' })
     expect(onAdd).not.toHaveBeenCalled()
+  })
+})
+
+describe('Orden en el desplegable', () => {
+  const herd = [
+    {
+      id: 'h1',
+      animalNumber: '1',
+      type: 'oveja',
+      gender: 'macho',
+      stage: 'reproductor',
+      breed: 'Pelibuey',
+    },
+    {
+      id: 'h2',
+      animalNumber: '2',
+      type: 'oveja',
+      gender: 'hembra',
+      stage: 'engorda',
+      breed: 'Dorper',
+    },
+    { id: 'h3', animalNumber: '3', type: 'oveja', gender: 'hembra', stage: 'reproductor' },
+  ] as any
+
+  const open = () => {
+    render(
+      <InputSelectAnimals
+        animals={herd}
+        selectedIds={[]}
+        onAdd={jest.fn()}
+        onRemove={jest.fn()}
+        renderOption={(animal) => animal.animalNumber}
+      />,
+    )
+    fireEvent.focus(screen.getByPlaceholderText('Buscar por numero, nombre, tipo o raza...'))
+  }
+
+  it('ordena por raza con vacíos al final e invierte al repetir clic', () => {
+    open()
+    expect(getDropdownNumbers()).toEqual(['1', '2', '3'])
+    fireEvent.click(screen.getByRole('button', { name: 'Ordenar por Raza' }))
+    expect(getDropdownNumbers()).toEqual(['2', '1', '3'])
+    const active = screen.getByRole('button', { name: 'Ordenar por Raza, ascendente' })
+    expect(active).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(active)
+    expect(getDropdownNumbers()).toEqual(['1', '2', '3'])
+  })
+
+  it('ordena por género', () => {
+    open()
+    fireEvent.click(screen.getByRole('button', { name: 'Ordenar por Género' }))
+    expect(getDropdownNumbers()).toEqual(['2', '3', '1'])
+  })
+})
+
+describe('selección múltiple con clic', () => {
+  it('mantiene abierto el selector al elegir varios animales', () => {
+    const Wrapper = () => {
+      const [ids, setIds] = React.useState<string[]>([])
+      return (
+        <InputSelectAnimals
+          animals={animals as any}
+          selectedIds={ids}
+          onAdd={(id) => setIds((prev) => [...prev, id])}
+          onRemove={jest.fn()}
+          renderOption={(animal) => animal.animalNumber}
+        />
+      )
+    }
+    render(<Wrapper />)
+    fireEvent.focus(screen.getByPlaceholderText('Buscar por numero, nombre, tipo o raza...'))
+
+    fireEvent.mouseDown(getAnimalOptions()[0])
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+    fireEvent.mouseDown(getAnimalOptions()[0])
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+    expect(getAnimalOptions()).toHaveLength(animals.length - 2)
+  })
+})
+
+describe('animación al agregar', () => {
+  it('deja la fila agregada como fantasma que desaparece tras la animación', () => {
+    jest.useFakeTimers()
+    const Wrapper = () => {
+      const [ids, setIds] = React.useState<string[]>([])
+      return (
+        <InputSelectAnimals
+          animals={animals as any}
+          selectedIds={ids}
+          onAdd={(id) => setIds((prev) => [...prev, id])}
+          onRemove={jest.fn()}
+          renderOption={(animal) => animal.animalNumber}
+        />
+      )
+    }
+    render(<Wrapper />)
+    fireEvent.focus(screen.getByPlaceholderText('Buscar por numero, nombre, tipo o raza...'))
+    const first = getAnimalOptions()[0]
+    const number = first.textContent
+    fireEvent.mouseDown(first)
+
+    const ghost = document.querySelector('[data-leaving="true"]')
+    expect(ghost).toHaveTextContent(number as string)
+    expect(ghost).toHaveAttribute('aria-hidden', 'true')
+    expect(getDropdownNumbers()).not.toContain(number)
+
+    act(() => {
+      jest.advanceTimersByTime(500)
+    })
+    expect(document.querySelector('[data-leaving="true"]')).toBeNull()
+    jest.useRealTimers()
   })
 })
