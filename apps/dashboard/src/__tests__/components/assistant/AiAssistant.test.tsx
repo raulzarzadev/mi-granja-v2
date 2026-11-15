@@ -8,7 +8,7 @@ import type { BreedingRecord } from '@/types/breedings'
 jest.mock('@/components/billing/AiPlanUsage', () => ({ AiPlanUsage: () => null }))
 
 const mockState = {
-  farm: { currentFarm: { id: 'farm-1', name: 'San Petter' } },
+  farm: { currentFarm: { id: 'farm-1', name: 'San Petter' }, farms: [] },
   auth: { user: { id: 'user-1' } },
   animals: { animals: [] as Animal[] },
   breeding: { breedingRecords: [] as BreedingRecord[] },
@@ -99,6 +99,7 @@ jest.mock('@/components/ModalEditBreeding', () => ({
 }))
 jest.mock('react-redux', () => ({
   useSelector: (select: (state: unknown) => unknown) => select(mockState),
+  useDispatch: () => jest.fn(),
 }))
 jest.mock('@/components/ModalAnimalDetails', () => ({
   __esModule: true,

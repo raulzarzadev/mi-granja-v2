@@ -4,7 +4,9 @@ import { ProposalRequestError, requestProposal } from '@/lib/ai/proposal-client'
 import type { AiProposalView } from '@/lib/ai/proposal-types'
 
 jest.mock('react-redux', () => ({
-  useSelector: (select: (state: unknown) => unknown) => select({ animals: { animals: [] } }),
+  useSelector: (select: (state: unknown) => unknown) =>
+    select({ animals: { animals: [] }, farm: { farms: [] } }),
+  useDispatch: () => jest.fn(),
 }))
 jest.mock('@/lib/ai/proposal-client', () => ({
   requestProposal: jest.fn(),
