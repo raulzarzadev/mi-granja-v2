@@ -7,11 +7,12 @@ import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { DatePickerButtons } from '@/components/buttons/date-picker-buttons'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
+import ModalChangeStage from '@/components/ModalChangeStage'
+import ModalSaleForm from '@/components/ModalSaleForm'
 import PageShell from '@/components/PageShell'
 import RegisterBirthFromStage from '@/components/RegisterBirthFromStage'
-import ModalSaleForm from '@/components/ModalSaleForm'
-import ModalChangeStage from '@/components/ModalChangeStage'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { useCurrentFarmAreas } from '@/hooks/useCurrentFarmAreas'
 import { useReminders } from '@/hooks/useReminders'
 import { buildRecordFromForm, getTodayLocalDateString } from '@/lib/records'
 import {
@@ -94,6 +95,8 @@ export default function NuevoRegistroClient() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const farmAreas = useCurrentFarmAreas()
 
   const handleAddAnimal = (animalId: string) => {
     if (
@@ -318,7 +321,11 @@ export default function NuevoRegistroClient() {
                     />
                   </span>
                   <span>
-                    {t === 'stage' ? 'Cambio de etapa' : t === 'sale' ? 'Venta' : record_type_labels[t]}
+                    {t === 'stage'
+                      ? 'Cambio de etapa'
+                      : t === 'sale'
+                        ? 'Venta'
+                        : record_type_labels[t]}
                   </span>
                 </button>
               ))}
@@ -361,6 +368,7 @@ export default function NuevoRegistroClient() {
             onAdd={handleAddAnimal}
             onRemove={handleRemoveAnimal}
             fixedIds={preSelectedAnimalIds}
+            areas={farmAreas}
             label="Buscar animal"
           />
 
@@ -562,7 +570,14 @@ export default function NuevoRegistroClient() {
         </div>
       )}
 
-      {birthMotherId && <RegisterBirthFromStage motherId={birthMotherId} animals={animals} onClose={() => setBirthMotherId(null)} onCompleted={() => router.back()} />}
+      {birthMotherId && (
+        <RegisterBirthFromStage
+          motherId={birthMotherId}
+          animals={animals}
+          onClose={() => setBirthMotherId(null)}
+          onCompleted={() => router.back()}
+        />
+      )}
       <ModalChangeStage
         initialDate={formData.date}
         embedded

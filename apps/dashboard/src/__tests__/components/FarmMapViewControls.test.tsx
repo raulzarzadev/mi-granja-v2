@@ -3,8 +3,13 @@ import FarmMapEditor from '@/components/Dashboard/Animals/FarmMapEditor'
 
 const mockFarm = { id: 'farm-1', name: 'San Jose 2' }
 jest.mock('@/hooks/useFarmCRUD', () => ({ useFarmCRUD: () => ({ currentFarm: mockFarm }) }))
+const mockCreateArea = jest.fn(async (_farmId: string, data: any) => ({ id: 'area-new', ...data }))
 jest.mock('@/hooks/useFarmAreasCRUD', () => ({
-  useFarmAreasCRUD: () => ({ createArea: jest.fn(), updateArea: jest.fn(), deleteArea: jest.fn() }),
+  useFarmAreasCRUD: () => ({
+    createArea: mockCreateArea,
+    updateArea: jest.fn(),
+    deleteArea: jest.fn(),
+  }),
 }))
 jest.mock('@/components/AnimalTag', () => ({
   __esModule: true,
@@ -40,9 +45,11 @@ const animal = {
   id: 'animal-1',
   animalNumber: '233',
   type: 'oveja',
+  gender: 'hembra',
+  stage: 'reproductor',
   currentAreaId: 'area-1',
 } as any
-function setup() {
+function setup(onMoveAnimal: jest.Mock = jest.fn()) {
   render(
     <FarmMapEditor
       areas={areas}
@@ -55,7 +62,7 @@ function setup() {
       selectedAnimalId=""
       savingIds={new Set()}
       onSelectAnimal={jest.fn()}
-      onMoveAnimal={jest.fn()}
+      onMoveAnimal={onMoveAnimal}
     />,
   )
 }
@@ -124,4 +131,70 @@ it('keeps create available in table even if a contour was selected in map', asyn
   expect(screen.queryByRole('button', { name: /Crear área/ })).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Tabla' }))
   expect(screen.getByRole('button', { name: /Crear área/ })).toBeInTheDocument()
+})
+
+it('restores create in table after starting to draw an area in map', () => {
+  setup()
+  fireEvent.click(screen.getByRole('button', { name: 'Crear área' }))
+  expect(screen.queryByRole('button', { name: 'Crear área' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Creando…' })).toBeDisabled()
+  switchView('Tabla')
+  expect(screen.getByRole('button', { name: 'Crear área' })).toBeInTheDocument()
+})
+
+it('in table view opens a data modal and creates a default square on the map', async () => {
+  setup()
+  switchView('Tabla')
+  fireEvent.click(screen.getByRole('button', { name: 'Crear área' }))
+  const dialog = await screen.findByRole('dialog', { name: 'Nueva área' })
+  fireEvent.change(within(dialog).getByLabelText('Nombre del área *'), {
+    target: { value: 'Corral nuevo' },
+  })
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Guardar área' }))
+  await waitFor(() => expect(mockCreateArea).toHaveBeenCalled())
+  const [, data] = mockCreateArea.mock.calls[0]
+  expect(data.name).toBe('Corral nuevo')
+  expect(data.layout.kind).toBe('rect')
+  expect(data.layout.points).toHaveLength(4)
+  expect(screen.getByRole('table')).toBeInTheDocument()
+})
+
+it('cancelling the table create modal does not start drawing', async () => {
+  setup()
+  switchView('Tabla')
+  fireEvent.click(screen.getByRole('button', { name: 'Crear área' }))
+  const dialog = await screen.findByRole('dialog', { name: 'Nueva área' })
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
+  await waitFor(() =>
+    expect(screen.queryByRole('dialog', { name: 'Nueva área' })).not.toBeInTheDocument(),
+  )
+  expect(screen.getByRole('button', { name: 'Crear área' })).toBeEnabled()
+})
+
+it('area editor assigns animals with the shared animal selector', async () => {
+  const move = jest.fn().mockResolvedValue(undefined)
+  setup(move)
+  switchView('Tabla')
+  fireEvent.click(screen.getByRole('button', { name: 'Editar datos de Área 2' }))
+  const editor = await screen.findByRole('dialog', { name: 'Editar Área 2' })
+  const input = within(editor).getByRole('combobox', { name: /Animales en el área/ })
+  fireEvent.focus(input)
+  fireEvent.change(input, { target: { value: '233' } })
+  const option = (await screen.findAllByRole('option')).find((el) =>
+    el.textContent?.includes('233'),
+  ) as HTMLElement
+  fireEvent.mouseDown(option)
+  await waitFor(() => expect(move).toHaveBeenCalledWith('animal-1', 'area-2', false))
+})
+
+it('area editor shows area animals as selector chips and removes to pending', async () => {
+  const move = jest.fn().mockResolvedValue(undefined)
+  setup(move)
+  switchView('Tabla')
+  fireEvent.click(screen.getByRole('button', { name: 'Editar datos de Área 1' }))
+  const editor = await screen.findByRole('dialog', { name: 'Editar Área 1' })
+  const chip = editor.querySelector('[data-animal-id="animal-1"]') as HTMLElement
+  expect(chip).toBeInTheDocument()
+  fireEvent.click(within(chip).getByTitle('Quitar'))
+  await waitFor(() => expect(move).toHaveBeenCalledWith('animal-1', '__unassigned__', false))
 })

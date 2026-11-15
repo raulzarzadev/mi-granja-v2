@@ -8,6 +8,7 @@ import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { animalMatchesSearch } from '@/lib/animal-search'
 import { animalAge } from '@/lib/animal-utils'
 import { Animal } from '@/types/animals'
+import type { FarmArea } from '@/types/farm'
 
 export interface InputSelectAnimalsProps {
   /** Lista completa de animales disponibles */
@@ -42,7 +43,19 @@ export interface InputSelectAnimalsProps {
   compactDropdown?: boolean
   /** Deshabilitado */
   disabled?: boolean
+  /**
+   * Áreas de la granja. Si se pasa (y mode='multi'), el dropdown muestra
+   * un switch "Animales | Áreas" para agregar todos los animales de un área.
+   */
+  areas?: FarmArea[]
+  /** Agrega varios animales en una sola actualización (selección por área). Si no se
+   * pasa, se llama `onAdd` por cada id. */
+  onAddMany?: (ids: string[]) => void
+  /** Dónde mostrar los chips de seleccionados respecto al buscador */
+  selectedPosition?: 'above' | 'below'
 }
+
+type DropdownView = 'animals' | 'areas'
 
 type DropdownPosition = {
   opensAbove: boolean
@@ -113,11 +126,15 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
   secondaryLabel,
   disabled = false,
   compactDropdown = false,
+  areas,
+  onAddMany,
+  selectedPosition = 'above',
 }) => {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false)
   const [highlightIndex, setHighlightIndex] = useState(-1)
+  const [dropdownView, setDropdownView] = useState<DropdownView>('animals')
   const [chipsExpanded, setChipsExpanded] = useState(false)
   const [sortOption, setSortOption] = useState<AnimalSortOption>('number')
   const [sortDirection, setSortDirection] = useState<AnimalSortDirection>('asc')
@@ -159,6 +176,48 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     }
     return pool.filter((animal) => animalMatchesSearch(animal, query)).slice(0, 30)
   }, [animals, selectedIds, query, filterFn, sortOption, sortDirection])
+
+  const activeAreas = useMemo(
+    () =>
+      (areas ?? [])
+        .filter((area) => area.isActive)
+        .sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true })),
+    [areas],
+  )
+  const canSelectByArea = mode === 'multi' && areas !== undefined
+  const isAreasView = canSelectByArea && dropdownView === 'areas'
+
+  // Áreas con los animales elegibles (respeta filterFn) aún no seleccionados
+  const areaItems = useMemo(() => {
+    if (!canSelectByArea) return []
+    const pool = filterFn ? animals.filter(filterFn) : animals
+    const selectedSet = new Set(selectedIds)
+    const q = query.trim().toLowerCase()
+    return activeAreas
+      .filter((area) => !q || area.name.toLowerCase().includes(q))
+      .map((area) => {
+        const inArea = pool.filter((animal) => animal.currentAreaId === area.id)
+        const pendingIds = inArea.filter((a) => !selectedSet.has(a.id)).map((a) => a.id)
+        return { area, total: inArea.length, pendingIds }
+      })
+  }, [canSelectByArea, activeAreas, animals, filterFn, selectedIds, query])
+
+  const handleSelectArea = (pendingIds: string[]) => {
+    if (pendingIds.length === 0) return
+    if (onAddMany) onAddMany(pendingIds)
+    else for (const id of pendingIds) onAdd(id)
+    setQuery('')
+    setHighlightIndex(-1)
+    inputRef.current?.focus()
+  }
+
+  const switchView = (view: DropdownView) => {
+    setDropdownView(view)
+    setHighlightIndex(-1)
+    inputRef.current?.focus()
+  }
+
+  const navigableCount = isAreasView ? areaItems.length : dropdownItems.length
 
   // Close on outside click
   useEffect(() => {
@@ -254,26 +313,54 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     }
   }
 
+  // Espacio solo selecciona si el resaltado viene de las flechas (no del mouse ni al escribir)
+  const keyboardNavRef = useRef(false)
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === ' ' && isOpen && keyboardNavRef.current && highlightIndex >= 0) {
+      e.preventDefault()
+      if (isAreasView) {
+        const target = areaItems[highlightIndex]
+        if (target) handleSelectArea(target.pendingIds)
+      } else if (highlightIndex < dropdownItems.length) {
+        handleSelect(dropdownItems[highlightIndex].id)
+      }
+      return
+    }
     if (e.key === 'ArrowDown') {
       e.preventDefault()
+      keyboardNavRef.current = true
       setIsOpen(true)
       setHighlightIndex((prev) => {
-        if (dropdownItems.length <= 1) return 0
-        if (prev < 0) return 1
-        return prev < dropdownItems.length - 1 ? prev + 1 : prev
+        if (navigableCount <= 1) return 0
+        if (prev < 0) return isAreasView ? 0 : 1
+        return prev < navigableCount - 1 ? prev + 1 : prev
       })
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
+      keyboardNavRef.current = true
       setHighlightIndex((prev) => (prev > 0 ? prev - 1 : -1))
     } else if (e.key === 'Enter') {
       e.preventDefault()
+      if (isAreasView) {
+        const target =
+          highlightIndex >= 0
+            ? areaItems[highlightIndex]
+            : areaItems.find((item) => item.pendingIds.length > 0)
+        if (target) handleSelectArea(target.pendingIds)
+        return
+      }
       if (highlightIndex >= 0 && highlightIndex < dropdownItems.length) {
         handleSelect(dropdownItems[highlightIndex].id)
       } else if (dropdownItems.length > 0) {
         handleSelect(dropdownItems[0].id)
       }
     } else if (e.key === 'Escape') {
+      // Cerrar solo el selector; no propagar a modales que también cierran con Escape
+      if (isOpen) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
       setIsOpen(false)
       setHighlightIndex(-1)
     }
@@ -400,28 +487,8 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     </div>
   )
 
-  return (
-    <div ref={containerRef}>
-      {/* Label con contador */}
-      {(label || sortControl) && (
-        <div className="mb-1 flex min-h-8 items-center justify-between gap-2">
-          {label ? (
-            <label
-              htmlFor={inputId}
-              className="min-w-0 flex-1 truncate text-sm font-medium text-gray-700"
-            >
-              {label}
-              {selectedAnimals.length > 0 && (
-                <span className="text-gray-400 font-normal ml-1">({selectedAnimals.length})</span>
-              )}
-            </label>
-          ) : (
-            <span className="sr-only">Animales seleccionados</span>
-          )}
-          {sortControl}
-        </div>
-      )}
-
+  const selectedChips = (
+    <>
       {/* Chips de seleccionados — max 2 filas con "ver" */}
       {selectedAnimals.length > 0 && (
         <div
@@ -473,7 +540,32 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
           ocultar
         </button>
       )}
+    </>
+  )
 
+  return (
+    <div ref={containerRef}>
+      {/* Label con contador */}
+      {(label || sortControl) && (
+        <div className="mb-1 flex min-h-8 items-center justify-between gap-2">
+          {label ? (
+            <label
+              htmlFor={inputId}
+              className="min-w-0 flex-1 truncate text-sm font-medium text-gray-700"
+            >
+              {label}
+              {selectedAnimals.length > 0 && (
+                <span className="text-gray-400 font-normal ml-1">({selectedAnimals.length})</span>
+              )}
+            </label>
+          ) : (
+            <span className="sr-only">Animales seleccionados</span>
+          )}
+          {sortControl}
+        </div>
+      )}
+
+      {selectedPosition === 'above' && selectedChips}
       {/* Input de busqueda */}
       {(mode === 'multi' || selectedIds.length === 0) && (
         <>
@@ -490,12 +582,13 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value)
+                  keyboardNavRef.current = false
                   setIsOpen(true)
                   setHighlightIndex(-1)
                 }}
                 onFocus={() => setIsOpen(true)}
                 onKeyDown={handleKeyDown}
-                placeholder={placeholder}
+                placeholder={isOpen && isAreasView ? 'Buscar área...' : placeholder}
                 disabled={disabled}
                 className={`min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
                   isOpen
@@ -530,7 +623,11 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                 >
                   {/* Ayuda y cerrar selector */}
                   <div className="sticky top-0 z-10 flex min-w-0 items-center justify-between gap-2 border-b border-gray-100 bg-white/95 px-3 py-1.5 backdrop-blur-sm">
-                    {dropdownItems.length > 0 ? (
+                    {isAreasView ? (
+                      <span className="min-w-0 truncate text-[11px] text-gray-500">
+                        Toca un área para agregar sus animales
+                      </span>
+                    ) : dropdownItems.length > 0 ? (
                       <span className="min-w-0 truncate text-[11px] text-gray-500">
                         {query.trim() ? (
                           <>
@@ -564,6 +661,40 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                     ) : (
                       <span />
                     )}
+                    {canSelectByArea && (
+                      <div
+                        role="radiogroup"
+                        aria-label="Seleccionar por"
+                        data-testid="areas-switch"
+                        className="ml-auto inline-flex shrink-0 rounded-md bg-gray-100 p-0.5 text-[11px] font-medium"
+                      >
+                        {(
+                          [
+                            { value: 'animals', label: 'Animales' },
+                            { value: 'areas', label: 'Áreas' },
+                          ] as const
+                        ).map((option) => {
+                          const active = dropdownView === option.value
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              role="radio"
+                              aria-checked={active}
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => switchView(option.value)}
+                              className={`cursor-pointer rounded px-2 py-0.5 transition-colors ${
+                                active
+                                  ? 'bg-white text-green-700 shadow-sm'
+                                  : 'text-gray-500 hover:text-gray-700'
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
                     <ButtonClose
                       showTitle="Cerrar selector"
                       title="Cerrar"
@@ -575,7 +706,60 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                     />
                   </div>
 
-                  {dropdownItems.length > 0 ? (
+                  {isAreasView ? (
+                    areaItems.length > 0 ? (
+                      areaItems.map(({ area, total, pendingIds }, index) => {
+                        const isHighlighted = highlightIndex === index
+                        const isEmpty = pendingIds.length === 0
+                        return (
+                          <div
+                            key={area.id}
+                            ref={(el) => {
+                              itemRefs.current[index] = el
+                            }}
+                            role="option"
+                            aria-selected={isHighlighted}
+                            aria-disabled={isEmpty}
+                            onMouseDown={(e) => {
+                              e.preventDefault()
+                              handleSelectArea(pendingIds)
+                            }}
+                            onMouseEnter={() => {
+                              keyboardNavRef.current = false
+                              setHighlightIndex(index)
+                            }}
+                            className={`flex w-full items-center gap-3 border-b border-gray-100 px-3 py-2 text-left transition-colors last:border-b-0 ${
+                              isEmpty
+                                ? 'cursor-not-allowed opacity-50'
+                                : `cursor-pointer ${isHighlighted ? 'bg-green-100' : 'hover:bg-gray-50'}`
+                            }`}
+                          >
+                            <span
+                              aria-hidden="true"
+                              className="h-3 w-3 shrink-0 rounded-sm border border-black/10"
+                              style={{ backgroundColor: area.layout?.color ?? '#d1d5db' }}
+                            />
+                            <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-800">
+                              {area.name}
+                            </span>
+                            <span className="shrink-0 whitespace-nowrap text-xs text-gray-500">
+                              {total === 0
+                                ? 'Sin animales'
+                                : isEmpty
+                                  ? 'Ya agregados'
+                                  : `+${pendingIds.length} ${pendingIds.length === 1 ? 'animal' : 'animales'}`}
+                            </span>
+                          </div>
+                        )
+                      })
+                    ) : (
+                      <div className="p-4 text-center text-sm text-gray-500">
+                        {activeAreas.length === 0
+                          ? 'No hay áreas activas. Créalas en Animales › Áreas.'
+                          : 'No se encontraron áreas'}
+                      </div>
+                    )
+                  ) : dropdownItems.length > 0 ? (
                     dropdownItems.map((animal, index) => {
                       const isHighlighted = highlightIndex === index
                       const isFirstMatch = query.trim() && index === 0 && highlightIndex === -1
@@ -592,9 +776,12 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                             e.preventDefault()
                             handleSelect(animal.id)
                           }}
-                          onMouseEnter={() => setHighlightIndex(index)}
+                          onMouseEnter={() => {
+                            keyboardNavRef.current = false
+                            setHighlightIndex(index)
+                          }}
                           className={`w-full px-3 py-2 flex items-center gap-3 transition-colors text-left border-b border-gray-100 last:border-b-0 cursor-pointer ${
-                            isHighlighted || isFirstMatch ? 'bg-green-50' : 'hover:bg-gray-50'
+                            isHighlighted || isFirstMatch ? 'bg-green-100' : 'hover:bg-gray-50'
                           }`}
                         >
                           {renderOption ? renderOption(animal, false) : defaultRenderOption(animal)}
@@ -613,6 +800,9 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
         </>
       )}
 
+      {selectedPosition === 'below' && selectedAnimals.length > 0 && (
+        <div className="mt-2">{selectedChips}</div>
+      )}
       {/* En modo single con seleccion, mostrar boton para cambiar */}
       {mode === 'single' && selectedIds.length > 0 && (
         <button

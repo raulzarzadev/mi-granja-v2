@@ -539,6 +539,11 @@ const BreedingForm: React.FC<BreedingFormProps> = ({
                 form.setValue('femaleIds', [...femaleIds, id], { shouldDirty: true })
                 form.clearErrors('femaleIds')
               }}
+              onAddMany={(ids) => {
+                form.setValue('femaleIds', [...femaleIds, ...ids], { shouldDirty: true })
+                form.clearErrors('femaleIds')
+              }}
+              areas={currentFarm?.areas}
               onRemove={(id) => handleRemoveFemale(id)}
               label="Hembras"
               inputAccessory={

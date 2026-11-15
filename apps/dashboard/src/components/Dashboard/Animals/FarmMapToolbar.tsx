@@ -84,8 +84,9 @@ export default function FarmMapToolbar(props: Props) {
           variant="ghost"
           className={secondary}
           onClick={props.onPending}
+          title="Animales pendientes de asignar a un área"
         >
-          Pendientes{' '}
+          Animales sin asignar{' '}
           <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-xs tabular-nums text-gray-600">
             {props.pendingCount}
           </span>

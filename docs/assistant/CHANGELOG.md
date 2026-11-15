@@ -7,6 +7,12 @@ last_updated: 2026-11-14
 
 # Historial de decisiones
 
+## 2026-11-14 — Selección de animales por área en formularios
+
+`InputSelectAnimals` permite agregar todos los animales de un área activa desde
+un switch «Animales | Áreas». Cambio solo de UI manual: no altera servicios,
+movimientos, catálogo de operaciones ni conocimiento del asistente.
+
 ## 2026-11-14 — Recordatorios y áreas desde el asistente
 
 Se habilitan `create_reminder` y `create_area` en el catálogo (versión 3). Ambos

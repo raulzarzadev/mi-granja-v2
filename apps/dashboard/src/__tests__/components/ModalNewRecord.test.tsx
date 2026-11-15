@@ -30,6 +30,7 @@ const mockHealth = jest.fn()
 const mockUndo = jest.fn()
 jest.mock('@/hooks/useAnimalCRUD', () => ({ useAnimalCRUD: () => ({ animals: mockAnimals }) }))
 jest.mock('@/hooks/useBreedingCRUD', () => ({ useBreedingCRUD: () => ({ breedingRecords: [] }) }))
+jest.mock('@/hooks/useCurrentFarmAreas', () => ({ useCurrentFarmAreas: () => [] }))
 jest.mock('@/hooks/useRecordMovements', () => ({
   useRecordMovements: () => ({
     context: { userId: 'u', farmId: 'f' },

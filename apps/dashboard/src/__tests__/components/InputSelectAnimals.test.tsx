@@ -74,19 +74,17 @@ describe('InputSelectAnimals', () => {
       />,
     )
     const input = screen.getByPlaceholderText('Buscar por numero, nombre, tipo o raza...')
-    jest
-      .spyOn(input, 'getBoundingClientRect')
-      .mockReturnValue({
-        top: window.innerHeight - 80,
-        bottom: window.innerHeight - 40,
-        left: 20,
-        right: 300,
-        width: 280,
-        height: 40,
-        x: 20,
-        y: window.innerHeight - 80,
-        toJSON: () => ({}),
-      })
+    jest.spyOn(input, 'getBoundingClientRect').mockReturnValue({
+      top: window.innerHeight - 80,
+      bottom: window.innerHeight - 40,
+      left: 20,
+      right: 300,
+      width: 280,
+      height: 40,
+      x: 20,
+      y: window.innerHeight - 80,
+      toJSON: () => ({}),
+    })
     fireEvent.focus(input)
     expect(screen.getByRole('listbox')).toHaveStyle({
       top: `${window.innerHeight - 84}px`,
@@ -228,5 +226,174 @@ describe('InputSelectAnimals', () => {
     expect(getDropdownNumbers()).toEqual(
       Array.from({ length: 30 }, (_, index) => String(index + 70)),
     )
+  })
+
+  describe('selección por áreas', () => {
+    const areas = [
+      { id: 'a1', farmId: 'f', name: 'Corral 1', type: 'barn', isActive: true },
+      { id: 'a2', farmId: 'f', name: 'Potrero', type: 'pasture', isActive: true },
+      { id: 'a3', farmId: 'f', name: 'Inactiva', type: 'other', isActive: false },
+    ] as any
+    const areaAnimals = [
+      { ...animals[0], id: 'x1', animalNumber: '1', currentAreaId: 'a1' },
+      { ...animals[0], id: 'x2', animalNumber: '2', currentAreaId: 'a1' },
+      { ...animals[0], id: 'x3', animalNumber: '3', currentAreaId: 'a2' },
+    ] as any
+
+    const openAreas = () => {
+      fireEvent.focus(screen.getByPlaceholderText('Buscar por numero, nombre, tipo o raza...'))
+      fireEvent.click(screen.getByRole('radio', { name: 'Áreas' }))
+    }
+
+    it('no muestra el switch si no se pasan áreas', () => {
+      render(
+        <InputSelectAnimals
+          animals={areaAnimals}
+          selectedIds={[]}
+          onAdd={jest.fn()}
+          onRemove={jest.fn()}
+        />,
+      )
+      fireEvent.focus(screen.getByPlaceholderText('Buscar por numero, nombre, tipo o raza...'))
+      expect(screen.queryByTestId('areas-switch')).not.toBeInTheDocument()
+    })
+
+    it('muestra aviso cuando la granja no tiene áreas activas', () => {
+      render(
+        <InputSelectAnimals
+          animals={areaAnimals}
+          selectedIds={[]}
+          onAdd={jest.fn()}
+          onRemove={jest.fn()}
+          areas={[areas[2]]}
+        />,
+      )
+      openAreas()
+      expect(screen.getByText(/No hay áreas activas/)).toBeInTheDocument()
+    })
+
+    it('agrega todos los animales pendientes del área con onAddMany', () => {
+      const onAddMany = jest.fn()
+      render(
+        <InputSelectAnimals
+          animals={areaAnimals}
+          selectedIds={['x2']}
+          onAdd={jest.fn()}
+          onAddMany={onAddMany}
+          onRemove={jest.fn()}
+          areas={areas}
+        />,
+      )
+      openAreas()
+
+      expect(screen.queryByText('Inactiva')).not.toBeInTheDocument()
+      const corral = screen.getByText('Corral 1').closest('[role="option"]') as HTMLElement
+      expect(corral).toHaveTextContent('+1 animal')
+      fireEvent.mouseDown(corral)
+      expect(onAddMany).toHaveBeenCalledWith(['x1'])
+    })
+
+    it('respeta filterFn y usa onAdd por id si no hay onAddMany', () => {
+      const onAdd = jest.fn()
+      render(
+        <InputSelectAnimals
+          animals={areaAnimals}
+          selectedIds={[]}
+          onAdd={onAdd}
+          onRemove={jest.fn()}
+          areas={areas}
+          filterFn={(a) => a.id !== 'x1'}
+        />,
+      )
+      openAreas()
+      fireEvent.mouseDown(screen.getByText('Corral 1').closest('[role="option"]') as HTMLElement)
+      expect(onAdd.mock.calls).toEqual([['x2']])
+    })
+
+    it('Enter agrega la primera área con animales pendientes', () => {
+      const onAddMany = jest.fn()
+      render(
+        <InputSelectAnimals
+          animals={areaAnimals}
+          selectedIds={['x1', 'x2']}
+          onAdd={jest.fn()}
+          onAddMany={onAddMany}
+          onRemove={jest.fn()}
+          areas={areas}
+        />,
+      )
+      openAreas()
+      expect(screen.getByText('Ya agregados')).toBeInTheDocument()
+      fireEvent.keyDown(screen.getByPlaceholderText('Buscar área...'), { key: 'Enter' })
+      expect(onAddMany).toHaveBeenCalledWith(['x3'])
+    })
+  })
+})
+
+describe('Escape dentro de un modal', () => {
+  it('primero cierra el selector y luego el modal', () => {
+    const { Modal } = jest.requireActual('@/components/Modal')
+    const onClose = jest.fn()
+    render(
+      <Modal isOpen onClose={onClose} title="Editar">
+        <InputSelectAnimals
+          animals={animals as any}
+          selectedIds={[]}
+          onAdd={jest.fn()}
+          onRemove={jest.fn()}
+        />
+      </Modal>,
+    )
+    const input = screen.getByPlaceholderText('Buscar por numero, nombre, tipo o raza...')
+    fireEvent.focus(input)
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    expect(onClose).not.toHaveBeenCalled()
+
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('Espacio', () => {
+  const renderSelector = (onAdd = jest.fn()) => {
+    render(
+      <InputSelectAnimals
+        animals={animals as any}
+        selectedIds={[]}
+        onAdd={onAdd}
+        onRemove={jest.fn()}
+        renderOption={(animal) => animal.animalNumber}
+      />,
+    )
+    const input = screen.getByPlaceholderText('Buscar por numero, nombre, tipo o raza...')
+    fireEvent.focus(input)
+    return { input, onAdd }
+  }
+
+  it('selecciona el animal resaltado con flechas', () => {
+    const { input, onAdd } = renderSelector()
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    const highlighted = screen
+      .getAllByRole('option')
+      .find((o) => o.getAttribute('aria-selected') === 'true') as HTMLElement
+    fireEvent.keyDown(input, { key: ' ' })
+    expect(onAdd).toHaveBeenCalledTimes(1)
+    expect(highlighted).toHaveTextContent(
+      (animals as any[]).find((a) => a.id === onAdd.mock.calls[0][0]).animalNumber,
+    )
+  })
+
+  it('no selecciona al escribir ni con resaltado del mouse', () => {
+    const { input, onAdd } = renderSelector()
+    fireEvent.keyDown(input, { key: ' ' })
+    fireEvent.mouseEnter(screen.getAllByRole('option')[0])
+    fireEvent.keyDown(input, { key: ' ' })
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    fireEvent.change(input, { target: { value: 'lote' } })
+    fireEvent.keyDown(input, { key: ' ' })
+    expect(onAdd).not.toHaveBeenCalled()
   })
 })

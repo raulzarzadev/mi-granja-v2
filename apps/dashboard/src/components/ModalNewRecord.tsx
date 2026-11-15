@@ -14,6 +14,7 @@ import type { SaleCompletionSummary } from '@/components/ModalSaleForm'
 import ModalSaleForm from '@/components/ModalSaleForm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useBreedingCRUD } from '@/hooks/useBreedingCRUD'
+import { useCurrentFarmAreas } from '@/hooks/useCurrentFarmAreas'
 import { useRecordMovements } from '@/hooks/useRecordMovements'
 import {
   trackNewRecordCompleted,
@@ -272,6 +273,7 @@ interface ModalNewRecordProps {
 export default function ModalNewRecord({ initialAnimalIds = [], trigger }: ModalNewRecordProps) {
   const { animals } = useAnimalCRUD()
   const { breedingRecords } = useBreedingCRUD()
+  const farmAreas = useCurrentFarmAreas()
   const movements = useRecordMovements(animals)
   const busyRef = useRef(false)
   const [completedRecord, setCompletedRecord] = useState<AnimalRecord | null>(null)
@@ -1193,6 +1195,7 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
                         setSelectedAnimalIds((current) => current.filter((id) => id !== animalId))
                       }
                       mode="multi"
+                      areas={farmAreas}
                       label={`2. Hembras ${selectedMontaMale.type}`}
                       secondaryLabel={(animal) =>
                         breedingWarnings(animal, selectedMontaMale, animals).join(' · ')
@@ -1243,6 +1246,7 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
                       ? 'single'
                       : 'multi'
                   }
+                  areas={farmAreas}
                   label="Animales a los que aplica"
                   placeholder="Buscar por número, nombre, tipo o raza..."
                   searchAction={

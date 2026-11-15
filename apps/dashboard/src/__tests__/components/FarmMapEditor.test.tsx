@@ -53,6 +53,8 @@ const animal = {
   id: 'animal-1',
   animalNumber: '233',
   type: 'oveja',
+  gender: 'hembra',
+  stage: 'reproductor',
   currentAreaId: 'area-1',
 } as any
 function setup(onMoveAnimal = jest.fn().mockResolvedValue(undefined)) {
@@ -149,16 +151,9 @@ it('keeps the edited area identity when an animal moves from the data dialog', a
   fireEvent.change(within(editor).getByLabelText('Nombre del área *'), {
     target: { value: 'Área A' },
   })
-  fireEvent.click(within(editor).getByRole('button', { name: 'Mover animal 233' }))
-  fireEvent.click(
-    within(screen.getByRole('dialog', { name: 'Mover 233' })).getByRole('button', {
-      name: 'Área 2',
-    }),
-  )
-  await waitFor(() => expect(move).toHaveBeenCalledWith('animal-1', 'area-2', false))
-  await waitFor(() =>
-    expect(screen.queryByRole('dialog', { name: 'Mover 233' })).not.toBeInTheDocument(),
-  )
+  const chip = editor.querySelector('[data-animal-id="animal-1"]') as HTMLElement
+  fireEvent.click(within(chip).getByTitle('Quitar'))
+  await waitFor(() => expect(move).toHaveBeenCalledWith('animal-1', '__unassigned__', false))
   expect(screen.getByRole('dialog', { name: 'Editar Área 1' })).toBeInTheDocument()
   fireEvent.click(within(editor).getByRole('button', { name: 'Guardar datos' }))
   await waitFor(() =>

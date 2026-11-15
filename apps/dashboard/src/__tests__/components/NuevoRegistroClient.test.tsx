@@ -10,6 +10,7 @@ jest.mock('@/components/AppFeedbackProvider', () => ({
 }))
 const animals = [{ id: 'animal', status: 'activo', animalNumber: '1' }]
 jest.mock('@/hooks/useAnimalCRUD', () => ({ useAnimalCRUD: () => ({ animals }) }))
+jest.mock('@/hooks/useCurrentFarmAreas', () => ({ useCurrentFarmAreas: () => [] }))
 jest.mock('@/hooks/useReminders', () => ({ useReminders: () => ({ createReminder: jest.fn() }) }))
 jest.mock('@/components/PageShell', () => ({
   __esModule: true,

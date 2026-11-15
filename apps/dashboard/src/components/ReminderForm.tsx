@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import InputRadioChip, { type InputRadioChipOption } from '@/components/inputs/InputRadioChip'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
 import InputSelectAssignees from '@/components/inputs/InputSelectAssignees'
+import { useCurrentFarmAreas } from '@/hooks/useCurrentFarmAreas'
 import { Animal } from '@/types/animals'
 import DateTimeInput from './inputs/DateTimeInput'
 
@@ -78,6 +79,8 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
     type: initialData?.type || ('other' as const),
     completed: initialData?.completed || false,
   })
+
+  const farmAreas = useCurrentFarmAreas()
 
   const handleAddAnimal = (animalId: string) => {
     if (animalId && !selectedAnimalIds.includes(animalId)) {
@@ -158,6 +161,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
         selectedIds={selectedAnimalIds}
         onAdd={handleAddAnimal}
         onRemove={handleRemoveAnimal}
+        areas={farmAreas}
         label={isEditing ? 'Animal (opcional)' : 'Animales (opcional)'}
         placeholder="Buscar animal..."
       />

@@ -10,6 +10,7 @@ import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import AreaSizeInput from '@/components/inputs/AreaSizeInput'
 import AutoGrowTextarea from '@/components/inputs/AutoGrowTextarea'
 import InputIconSelect from '@/components/inputs/InputIconSelect'
+import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
 import { Modal } from '@/components/Modal'
 import { useFarmAreasCRUD } from '@/hooks/useFarmAreasCRUD'
 import { useFarmCRUD } from '@/hooks/useFarmCRUD'
@@ -206,6 +207,16 @@ const createFallbackLayout = (index: number, total: number, color: string): Area
   )
 }
 
+/** Cuadrado por defecto para áreas creadas desde la tabla; se escalona para no encimarse. */
+const createDefaultSquareLayout = (index: number, color: string): AreaLayout => {
+  const width = 0.16
+  const height = (width * VIEWBOX_WIDTH) / VIEWBOX_HEIGHT
+  const offset = (index % 8) * 0.04
+  const x = 0.06 + offset
+  const y = 0.08 + offset
+  return rectLayoutFromPoints({ x, y }, { x: x + width, y: y + height }, color)
+}
+
 export default function FarmMapEditor({
   areas,
   animalsByArea,
@@ -345,6 +356,8 @@ export default function FarmMapEditor({
   } | null>(null)
   const [vertexDrag, setVertexDrag] = useState<{ areaId: string; pointIndex: number } | null>(null)
   const [pendingLayout, setPendingLayout] = useState<AreaLayout | null>(null)
+  // true cuando el área se crea desde la tabla (cuadrado por defecto, sin dibujo)
+  const [isQuickCreate, setIsQuickCreate] = useState(false)
   const [isAreaEditorOpen, setIsAreaEditorOpen] = useState(false)
   const [areaEditId, setAreaEditId] = useState('')
   const [isUnassignedOpen, setIsUnassignedOpen] = useState(false)
@@ -366,7 +379,6 @@ export default function FarmMapEditor({
     description: '',
     color: AREA_COLORS[0],
   })
-  const [assignAnimalSearch, setAssignAnimalSearch] = useState('')
 
   useEffect(() => {
     if (!dirtyAreaIds.size && !polygonPoints.length && !pendingLayout) return
@@ -447,8 +459,26 @@ export default function FarmMapEditor({
     setTool('select')
   }
 
+  const openQuickCreate = () => {
+    cancelCurrentAction()
+    setError(null)
+    setIsQuickCreate(true)
+    openCreateModal(
+      createDefaultSquareLayout(
+        activeAreas.length,
+        AREA_COLORS[activeAreas.length % AREA_COLORS.length],
+      ),
+    )
+  }
+
   const returnToDrawing = () => {
     if (isSavingArea) return
+    if (isQuickCreate) {
+      setPendingLayout(null)
+      setIsQuickCreate(false)
+      setError(null)
+      return
+    }
     if (pendingLayout) setPolygonPoints(pendingLayout.points)
     setPendingLayout(null)
     setTool('polygon')
@@ -652,10 +682,15 @@ export default function FarmMapEditor({
         layout: { ...pendingLayout, color: areaForm.color },
       })
       setPendingLayout(null)
+      setIsQuickCreate(false)
       setSelectedAreaId(createdArea.id)
     } catch (err) {
       console.error('Error creating mapped area:', err)
-      setError('No se pudo crear el área dibujada. Intenta de nuevo.')
+      setError(
+        isQuickCreate
+          ? 'No se pudo crear el área. Intenta de nuevo.'
+          : 'No se pudo crear el área dibujada. Intenta de nuevo.',
+      )
     } finally {
       setIsSavingArea(false)
     }
@@ -780,6 +815,14 @@ export default function FarmMapEditor({
   const canSaveDirtyArea = selectedAreaId ? dirtyAreaIds.has(selectedAreaId) : false
   const isCreating = tool === 'polygon'
 
+  // El dibujo solo existe en el mapa: al pasar a tabla se descarta para que
+  // "Crear área" vuelva a estar disponible.
+  useEffect(() => {
+    if (viewMode !== 'table' || tool !== 'polygon') return
+    setPolygonPoints([])
+    setTool('select')
+  }, [viewMode, tool])
+
   const openAreaEditor = (area: FarmArea) => {
     setAreaEditId(area.id)
     setAreaEditForm({
@@ -791,7 +834,6 @@ export default function FarmMapEditor({
         displayedAreas.find((item) => item.area.id === area.id)?.layout.color || AREA_COLORS[0],
     })
     setError(null)
-    setAssignAnimalSearch('')
     setIsAreaEditorOpen(true)
   }
 
@@ -843,16 +885,28 @@ export default function FarmMapEditor({
   }
 
   const selectedAreaAnimals = selectedAreaId ? (animalsByArea.get(selectedAreaId) ?? []) : []
-  const assignableAnimals = useMemo(() => {
-    if (!selectedAreaId || !assignAnimalSearch.trim()) return []
+  const allAreaAnimals = useMemo(() => Array.from(animalsByArea.values()).flat(), [animalsByArea])
 
-    return Array.from(animalsByArea.entries())
-      .filter(([areaId]) => areaId !== selectedAreaId)
-      .flatMap(([, group]) => group)
-      .filter((animal) => animalMatchesSearch(animal, assignAnimalSearch))
-      .sort((a, b) => a.animalNumber.localeCompare(b.animalNumber, 'es', { numeric: true }))
-      .slice(0, 8)
-  }, [animalsByArea, assignAnimalSearch, selectedAreaId])
+  const assignToSelectedArea = async (animalIds: string[]) => {
+    if (!selectedArea) return
+    try {
+      for (const animalId of animalIds) {
+        if (savingIds.has(animalId)) continue
+        await onMoveAnimal(animalId, selectedArea.id, false)
+      }
+    } catch {
+      setError('No se pudo asignar el animal. Intenta de nuevo.')
+    }
+  }
+
+  const removeFromSelectedArea = async (animalId: string) => {
+    if (savingIds.has(animalId)) return
+    try {
+      await onMoveAnimal(animalId, UNASSIGNED_AREA_ID, false)
+    } catch {
+      setError('No se pudo sacar el animal. Intenta de nuevo.')
+    }
+  }
 
   const unassignedAnimals = useMemo(
     () => animalsByArea.get(UNASSIGNED_AREA_ID) ?? [],
@@ -995,21 +1049,24 @@ export default function FarmMapEditor({
                   </button>
                 </div>
               ) : null}
-              {!isCreating && !isAreaEditorOpen && (!selectedArea || viewMode === 'table') ? (
+              {isCreating || (!isAreaEditorOpen && (!selectedArea || viewMode === 'table')) ? (
                 <Button
                   type="button"
                   size="sm"
                   color="success"
                   className="h-10 shrink-0 rounded-lg px-3"
-                  disabled={isSavingArea}
+                  disabled={isSavingArea || isCreating}
                   onClick={async () => {
                     if (dirtyAreaIds.has(selectedAreaId) && !(await handleSaveSelected())) return
-                    changeView('map')
+                    if (viewMode === 'table') {
+                      openQuickCreate()
+                      return
+                    }
                     beginCreatePolygon()
                   }}
                 >
                   <PiPlus aria-hidden="true" size={16} />
-                  Crear área
+                  {isCreating ? 'Creando…' : 'Crear área'}
                 </Button>
               ) : null}
             </div>
@@ -1511,7 +1568,7 @@ export default function FarmMapEditor({
       <Modal
         isOpen={Boolean(pendingLayout)}
         onClose={returnToDrawing}
-        title="Guardar área dibujada"
+        title={isQuickCreate ? 'Nueva área' : 'Guardar área dibujada'}
         size="md"
       >
         <form onSubmit={handleCreateArea} className="space-y-4">
@@ -1690,126 +1747,42 @@ export default function FarmMapEditor({
             </div>
           </div>
 
-          <section>
-            <label htmlFor="assign-area-animal" className="sr-only">
-              Asignar animal a esta área
-            </label>
-            <input
-              id="assign-area-animal"
-              type="search"
-              value={assignAnimalSearch}
-              onChange={(event) => setAssignAnimalSearch(event.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-base text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Buscar animales para asignar..."
+          <section className="border-t border-gray-200 pt-4">
+            <InputSelectAnimals
+              animals={allAreaAnimals}
+              selectedIds={selectedAreaAnimals.map((animal) => animal.id)}
+              areas={activeAreas.filter((area) => area.id !== selectedArea?.id)}
+              onAdd={(animalId) => void assignToSelectedArea([animalId])}
+              onAddMany={(ids) => void assignToSelectedArea(ids)}
+              onRemove={(animalId) => void removeFromSelectedArea(animalId)}
+              disabled={!selectedArea}
+              label="Animales en el área"
+              selectedPosition="below"
+              placeholder="Buscar por número, nombre, tipo o raza..."
             />
-            {assignAnimalSearch.trim() ? (
-              <div className="mt-2 max-h-48 space-y-2 overflow-y-auto rounded-md border border-gray-200 bg-gray-50 p-2">
-                {assignableAnimals.length === 0 ? (
-                  <p className="px-2 py-4 text-center text-sm text-gray-500">
-                    No encontré animales para asignar.
+            {/* Montado aunque el grupo quede vacío: la confirmación sigue abierta mientras se guarda */}
+            <div className={selectedAreaAnimals.length > 0 ? 'mt-2 flex justify-end' : 'hidden'}>
+              <ButtonConfirm
+                key={selectedArea?.id}
+                openLabel="Sacar a todos"
+                confirmLabel="Sí, sacar a todos"
+                confirmText={`¿Sacar a los ${selectedAreaAnimals.length} animales de «${selectedArea?.name}»? Quedarán en pendientes de asignar. Sus fichas y registros se conservan.`}
+                openProps={{
+                  type: 'button',
+                  size: 'sm',
+                  color: 'neutral',
+                  variant: 'ghost',
+                  className: 'min-h-11 rounded-xl',
+                }}
+                confirmProps={{ type: 'button', color: 'error' }}
+                onConfirm={emptySelectedArea}
+              >
+                {emptyAreaError ? (
+                  <p role="alert" className="text-sm text-red-700">
+                    {emptyAreaError}
                   </p>
-                ) : (
-                  assignableAnimals.map((animal) => (
-                    <div
-                      key={animal.id}
-                      className="flex min-h-11 items-center justify-between gap-2 rounded-md border border-gray-200 bg-white px-2 py-1"
-                    >
-                      {renderAnimalChip(animal, true)}
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="min-h-11 rounded-xl"
-                        color="success"
-                        variant="outline"
-                        disabled={savingIds.has(animal.id) || !selectedArea}
-                        onClick={async () => {
-                          if (!selectedArea) return
-                          try {
-                            await onMoveAnimal(animal.id, selectedArea.id, false)
-                            setAssignAnimalSearch('')
-                          } catch {
-                            setError('No se pudo asignar el animal. Intenta de nuevo.')
-                          }
-                        }}
-                      >
-                        {savingIds.has(animal.id) ? 'Moviendo…' : 'Asignar'}
-                      </Button>
-                    </div>
-                  ))
-                )}
-              </div>
-            ) : null}
-          </section>
-
-          <section
-            className={
-              selectedAreaAnimals.length > 0 ? 'border-t border-gray-200 pt-4' : 'contents'
-            }
-          >
-            <div
-              className={
-                selectedAreaAnimals.length > 0
-                  ? 'mb-2 flex items-center justify-between gap-2'
-                  : 'hidden'
-              }
-            >
-              <h3 className="text-sm font-semibold text-gray-900">Animales en el corral</h3>
-              <div className="flex items-center gap-2">
-                <ButtonConfirm
-                  key={selectedArea?.id}
-                  openLabel="Sacar a todos"
-                  confirmLabel="Sí, sacar a todos"
-                  confirmText={`¿Sacar a los ${selectedAreaAnimals.length} animales de «${selectedArea?.name}»? Quedarán en pendientes de asignar. Sus fichas y registros se conservan.`}
-                  openProps={{
-                    type: 'button',
-                    size: 'sm',
-                    color: 'neutral',
-                    variant: 'ghost',
-                    className: 'min-h-11 rounded-xl',
-                  }}
-                  confirmProps={{ type: 'button', color: 'error' }}
-                  onConfirm={emptySelectedArea}
-                >
-                  {emptyAreaError ? (
-                    <p role="alert" className="text-sm text-red-700">
-                      {emptyAreaError}
-                    </p>
-                  ) : null}
-                </ButtonConfirm>
-                <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700">
-                  {selectedAreaAnimals.length}
-                </span>
-              </div>
-            </div>
-            <div
-              hidden={selectedAreaAnimals.length === 0}
-              className="max-h-56 space-y-2 overflow-y-auto rounded-md border border-gray-200 bg-gray-50 p-2"
-            >
-              {selectedAreaAnimals.map((animal) => (
-                <div
-                  key={animal.id}
-                  className="flex min-h-11 items-center justify-between gap-2 rounded-md border border-gray-200 bg-white px-2 py-1"
-                >
-                  {renderAnimalChip(animal, true)}
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="min-h-11 rounded-xl"
-                    color="neutral"
-                    variant="outline"
-                    disabled={savingIds.has(animal.id)}
-                    onClick={async () => {
-                      try {
-                        await onMoveAnimal(animal.id, UNASSIGNED_AREA_ID, false)
-                      } catch {
-                        setError('No se pudo sacar el animal. Intenta de nuevo.')
-                      }
-                    }}
-                  >
-                    {savingIds.has(animal.id) ? 'Moviendo…' : 'Quitar'}
-                  </Button>
-                </div>
-              ))}
+                ) : null}
+              </ButtonConfirm>
             </div>
           </section>
 

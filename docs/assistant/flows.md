@@ -238,7 +238,7 @@ propone Área N, siguiente al mayor número existente (incluidas áreas inactiva
 
 El lienzo ampliado se centra al abrir y comienza al 100 %. Zoom −/porcentaje/+
 aparece arriba a la derecha junto al encabezado, fuera del lienzo. Mapa/Tabla,
-zoom y Crear área comparten una fila compacta; en tabla se oculta el zoom. Permite 50–200 %, conserva el centro de la vista y no cambia datos persistidos.
+zoom y Crear área comparten una fila compacta; en tabla se oculta el zoom. Crear área en mapa inicia el dibujo y queda deshabilitado como «Creando…»; en tabla abre el modal «Nueva área» y guarda un cuadrado por defecto en el mapa (escalonado), editable después. Cambiar a tabla cancela un dibujo en curso. Permite 50–200 %, conserva el centro de la vista y no cambia datos persistidos.
 Las fichas HTML están fuera del SVG. Cerradas usan una escala compacta de
 65–85 % según el zoom; solo pulsarlas las abre a tamaño completo. Cerradas muestran icono, nombre y una burbuja solo numérica; al
 abrir aparece la superficie en texto pequeño (p. ej. 120 m² o — m²), descripción
@@ -333,3 +333,8 @@ Cambio de etapa muestra la tarjeta compacta del selector con `AnimalBadges` del 
 
 
 Cambio de etapa individual para un animal en empadre ofrece Configurar monta o Sacar del empadre, en lugar de destinos genéricos. Reutiliza ModalBreedingDetails/ModalEditBreeding y la confirmación de retirada compartida, con permisos de actualización y eliminación si retira el empadre completo. La asociación debe ser única y activa; si falta o es ambigua, pide revisarla desde Empadres.
+
+
+Selector múltiple de animales (`InputSelectAnimals`) con `areas`: el encabezado del desplegable ofrece un switch «Animales | Áreas». En Áreas, el texto busca por nombre; tocar un área (o Enter) agrega sus animales `currentAreaId` que aún no estén seleccionados, respetando el filtro del selector (p. ej. hembras disponibles en empadre). Se usa en Nuevo Registro, Nuevo registro rápido (multi), Recordatorios y hembras de empadre. Solo cambia la selección del formulario; no mueve animales ni habilita acciones del asistente.
+
+En Editar área, la asignación de animales usa el mismo `InputSelectAnimals` (búsqueda, teclado y switch «Animales | Áreas» para traer un área completa). Los animales del área se muestran como chips del mismo selector, debajo del buscador (`selectedPosition="below"`); la × los saca a pendientes de asignar y «Sacar a todos» se conserva. Mueve con `onMoveAnimal` optimista. El botón de pendientes del mapa se rotula «Animales sin asignar».

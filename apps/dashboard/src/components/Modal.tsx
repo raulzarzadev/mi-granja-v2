@@ -89,7 +89,7 @@ export const Modal: React.FC<ModalProps> = ({
     if (!closeOnEscape || !isOpen) return
 
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && openModalStack.at(-1) === modalId) {
+      if (event.key === 'Escape' && !event.defaultPrevented && openModalStack.at(-1) === modalId) {
         onClose()
       }
     }

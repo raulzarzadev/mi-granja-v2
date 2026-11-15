@@ -10,6 +10,15 @@ import {
   animals_types_labels,
 } from '@/types/animals'
 
+/** Meses a texto legible para la guía: 96 → "8 años", 18 → "1 año 6 meses". */
+const formatAgeMonths = (months: number) => {
+  const years = Math.floor(months / 12)
+  const rest = months % 12
+  const y = years > 0 ? `${years} ${years === 1 ? 'año' : 'años'}` : ''
+  const m = rest > 0 ? `${rest} ${rest === 1 ? 'mes' : 'meses'}` : ''
+  return [y, m].filter(Boolean).join(' ')
+}
+
 const developmentStages = [
   {
     icon: '🐣',
@@ -107,6 +116,9 @@ const StageGuidePage: React.FC = () => {
                     </span>
                     <span className="block text-xs leading-5 text-slate-500">
                       Reproducción desde {config.minBreedingAge} meses
+                      {config.maxBreedingAge
+                        ? ` hasta ${formatAgeMonths(config.maxBreedingAge)}`
+                        : ''}
                       {config.weaningDays > 0
                         ? ` · Destete de referencia: ${config.weaningDays} días`
                         : ''}
@@ -163,6 +175,28 @@ const StageGuidePage: React.FC = () => {
                                 .
                               </dd>
                             </div>
+                            {config.maxBreedingAge ? (
+                              <div>
+                                <dt className="inline font-semibold text-slate-800">
+                                  Edad máxima productiva:{' '}
+                                </dt>
+                                <dd className="inline">
+                                  hasta {formatAgeMonths(config.maxBreedingAge)}; después conviene
+                                  evaluar su descarte.
+                                </dd>
+                              </div>
+                            ) : null}
+                            {config.maxLifeAge ? (
+                              <div>
+                                <dt className="inline font-semibold text-slate-800">
+                                  Edad máxima:{' '}
+                                </dt>
+                                <dd className="inline">
+                                  alrededor de {formatAgeMonths(config.maxLifeAge)} de vida, como
+                                  referencia.
+                                </dd>
+                              </div>
+                            ) : null}
                             <div>
                               <dt className="inline font-semibold text-slate-800">
                                 {type === 'gallina' ? 'Incubación: ' : 'Gestación: '}

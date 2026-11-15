@@ -12,6 +12,8 @@ export interface AnimalBreedingConfig {
   expectedWeanedOffspringPerYear: number
   minBreedingAge: number // En meses
   maxBreedingAge?: number // En meses
+  /** Esperanza de vida de referencia, en meses. Solo informativa (guías). */
+  maxLifeAge?: number
   breedingCycleDays: number // Ciclo estral
   weaningDays: number // Días de destete recomendados
   /** Peso objetivo de venta/sacrificio en kg (si aplica) */
@@ -30,6 +32,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     expectedWeanedOffspringPerYear: 1.5,
     minBreedingAge: 8, // 8 meses
     maxBreedingAge: 96, // 8 años
+    maxLifeAge: 144, // 12 años
     breedingCycleDays: 17,
     weaningDays: 70,
     targetWeightKg: 50,
@@ -44,6 +47,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     expectedWeanedOffspringPerYear: 1.8,
     minBreedingAge: 7,
     maxBreedingAge: 84, // 7 años
+    maxLifeAge: 180, // 15 años
     breedingCycleDays: 21,
     weaningDays: 60,
     targetWeightKg: 40,
@@ -58,6 +62,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     expectedWeanedOffspringPerYear: 0.9,
     minBreedingAge: 15, // 15 meses
     maxBreedingAge: 180, // 15 años
+    maxLifeAge: 240, // 20 años
     breedingCycleDays: 21,
     weaningDays: 120,
     targetWeightKg: 600,
@@ -83,6 +88,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     expectedWeanedOffspringPerYear: 16,
     minBreedingAge: 6,
     maxBreedingAge: 60, // 5 años
+    maxLifeAge: 180, // 15 años
     breedingCycleDays: 21,
     weaningDays: 28,
     targetWeightKg: 120,
@@ -97,6 +103,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     expectedWeanedOffspringPerYear: 120,
     minBreedingAge: 5, // 5 meses
     maxBreedingAge: 36, // 3 años de producción óptima
+    maxLifeAge: 96, // 8 años
     breedingCycleDays: 1, // postura casi diaria
     weaningDays: 0,
     targetWeightKg: 2.5,
@@ -111,6 +118,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     expectedWeanedOffspringPerYear: 5,
     minBreedingAge: 12, // 12 meses
     maxBreedingAge: 84, // 7 años
+    maxLifeAge: 156, // 13 años
     breedingCycleDays: 180, // ~6 meses entre ciclos
     weaningDays: 56,
     description: 'Perros: gestación ~63 días, dos ciclos estrales por año',
@@ -124,6 +132,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     expectedWeanedOffspringPerYear: 6,
     minBreedingAge: 6, // 6 meses
     maxBreedingAge: 84, // 7 años
+    maxLifeAge: 180, // 15 años
     breedingCycleDays: 14, // ~2 semanas durante temporada
     weaningDays: 56,
     description:
@@ -138,6 +147,7 @@ export const ANIMAL_BREEDING_CONFIGS: Record<AnimalType, AnimalBreedingConfig> =
     expectedWeanedOffspringPerYear: 0.8,
     minBreedingAge: 36, // 3 años
     maxBreedingAge: 180, // 15 años
+    maxLifeAge: 360, // 30 años
     breedingCycleDays: 21,
     weaningDays: 180,
     description: 'Equinos: gestación ~340 días, reproducción principalmente en primavera-verano',
