@@ -316,3 +316,20 @@ peticiones antiguas de la nueva UI. No se añade un ejecutor alternativo al chat
 Las fichas abiertas se sitúan por encima de las etiquetas cerradas; la última
 abierta tiene prioridad. La lista usa filas sin compresión y scroll contenido,
 muestra todos los animales y no sustituye los que pasan de doce por un «+N».
+
+
+### Orden de Nuevo Registro
+
+`/registro/nuevo` comienza en **Tipo y Fecha**, continúa con **Animales** y termina en **Detalles**. El primer paso conserva tipo, categoría y fecha; el segundo exige al menos un animal activo antes de avanzar. Volver conserva los datos y la preselección de animales de la URL. Venta y cambio de etapa abren sus formularios en el tercer paso y vuelven al selector de animales. El orden no modifica los servicios ni la confirmación del asistente.
+
+
+En Cambio de etapa, una hembra gestante muestra fecha aproximada de parto, padre y monta (código y fecha). Usa la fecha esperada guardada o la calcula desde la monta con el helper de especie. Conserva las acciones solo donde ya hay handlers conectados; no habilita movimientos nuevos.
+
+
+Desde el resumen de gestación en Nuevo Registro, «Registrar parto» abre `ModalBirthForm` con la madre preseleccionada. Usa `useRecordMovements.birth` y el empadre confirmado si existe; sin empadre, usa los datos de gestación de la madre. Cancelar vuelve al resumen; cerrar tras el éxito regresa a la pantalla anterior.
+
+
+Cambio de etapa muestra la tarjeta compacta del selector con `AnimalBadges` del animal seleccionado en el encabezado individual, en lugar de una línea de etapa y número. No cambia selección ni movimientos.
+
+
+Cambio de etapa individual para un animal en empadre ofrece Configurar monta o Sacar del empadre, en lugar de destinos genéricos. Reutiliza ModalBreedingDetails/ModalEditBreeding y la confirmación de retirada compartida, con permisos de actualización y eliminación si retira el empadre completo. La asociación debe ser única y activa; si falta o es ambigua, pide revisarla desde Empadres.

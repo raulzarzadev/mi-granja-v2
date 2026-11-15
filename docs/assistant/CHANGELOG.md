@@ -311,3 +311,28 @@ scroll propio y todos los animales accesibles, incluido el decimotercero.
 - Nuevas preguntas/respuestas de chat persistidas por usuario, granja y conversación, con estados pendiente/completado/fallido y sin duplicar el historial enviado por el cliente.
 - «Uso de IA» en Admin → Usuarios y «Ver historial» en consumo comparten un modal paginado con fecha, granja y modelo. Lectura exclusiva de administradores y sin recuperación retroactiva.
 - Se excluye `aiChatHistory` de las reglas generales de clientes; desplegar reglas antes de activar el registro. No cambia la ejecución de propuestas ni el historial local del usuario.
+
+
+## 2026-11-14 — Tipo y fecha antes de animales
+
+- Nuevo Registro vuelve al orden Tipo y Fecha → Animales → Detalles. Se conservan los datos al retroceder, la preselección y la validación de animales activos. Venta y etapa mantienen sus formularios en Detalles.
+
+
+## 2026-11-14 — Resumen de gestación en Cambio de etapa
+
+Se reemplaza el mensaje sin acciones disponibles por fecha aproximada de parto, padre y monta asociada, con estados explícitos para datos faltantes o ambiguos. No se habilitan acciones nuevas.
+
+
+## 2026-11-14 — Registrar parto desde Nuevo Registro
+
+Se conecta el botón Registrar parto del resumen de gestación al formulario compartido, con madre preseleccionada y empadre asociado si está disponible. Conserva el resumen al cancelar y los errores en el formulario.
+
+
+## 2026-11-14 — Tarjeta del animal en Cambio de etapa
+
+El encabezado individual reutiliza la tarjeta compacta del selector (`AnimalBadges`, con edad redondeada) para mostrar la identidad y etapa del animal antes de elegir un destino o registrar parto.
+
+
+## 2026-11-14 — Acciones de empadre en Cambio de etapa
+
+Se sustituyen destinos genéricos por Configurar monta y Sacar del empadre para animales individuales en empadre, con confirmación y permisos del flujo compartido.

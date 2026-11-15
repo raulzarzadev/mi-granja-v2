@@ -8,6 +8,7 @@ import { DatePickerButtons } from '@/components/buttons/date-picker-buttons'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
 import PageShell from '@/components/PageShell'
+import RegisterBirthFromStage from '@/components/RegisterBirthFromStage'
 import ModalSaleForm from '@/components/ModalSaleForm'
 import ModalChangeStage from '@/components/ModalChangeStage'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -25,8 +26,8 @@ import {
 import { RecordFormState } from '@/types/records'
 
 const STEPS = [
-  { label: 'Animales', icon: '🐾' },
   { label: 'Tipo y Fecha', icon: '📋' },
+  { label: 'Animales', icon: '🐾' },
   { label: 'Detalles', icon: '📝' },
 ] as const
 
@@ -74,6 +75,7 @@ export default function NuevoRegistroClient() {
 
   const preSelectedAnimalIds = searchParams.get('animalIds')?.split(',').filter(Boolean) || []
 
+  const [birthMotherId, setBirthMotherId] = useState<string | null>(null)
   const [step, setStep] = useState(0)
   const [isSaleRecord, setIsSaleRecord] = useState(false)
   const [isStageRecord, setIsStageRecord] = useState(true)
@@ -129,9 +131,9 @@ export default function NuevoRegistroClient() {
   const selectedAnimals = availableAnimals.filter((a) => selectedAnimalIds.includes(a.id))
 
   const canAdvance = (s: number) => {
-    if (s === 0)
+    if (s === 0) return !!formData.date && !!formData.type
+    if (s === 1)
       return selectedAnimals.length > 0 && selectedAnimals.length === selectedAnimalIds.length
-    if (s === 1) return !!formData.date && !!formData.type
     return true
   }
 
@@ -269,8 +271,8 @@ export default function NuevoRegistroClient() {
         ))}
       </div>
 
-      {/* ─── Step 2: Tipo y Fecha ─── */}
-      {step === 1 && (
+      {/* ─── Step 1: Tipo y Fecha ─── */}
+      {step === 0 && (
         <div className="space-y-5">
           <DatePickerButtons
             value={formData.date}
@@ -316,7 +318,7 @@ export default function NuevoRegistroClient() {
                     />
                   </span>
                   <span>
-                    {t === 'stage' ? 'Etapa' : t === 'sale' ? 'Venta' : record_type_labels[t]}
+                    {t === 'stage' ? 'Cambio de etapa' : t === 'sale' ? 'Venta' : record_type_labels[t]}
                   </span>
                 </button>
               ))}
@@ -350,8 +352,8 @@ export default function NuevoRegistroClient() {
         </div>
       )}
 
-      {/* ─── Step 1: Selector de Animales ─── */}
-      {step === 0 && (
+      {/* ─── Step 2: Selector de Animales ─── */}
+      {step === 1 && (
         <div className="space-y-4">
           <InputSelectAnimals
             animals={availableAnimals}
@@ -560,6 +562,7 @@ export default function NuevoRegistroClient() {
         </div>
       )}
 
+      {birthMotherId && <RegisterBirthFromStage motherId={birthMotherId} animals={animals} onClose={() => setBirthMotherId(null)} onCompleted={() => router.back()} />}
       <ModalChangeStage
         initialDate={formData.date}
         embedded
@@ -569,6 +572,7 @@ export default function NuevoRegistroClient() {
         animals={selectedAnimals}
         allAnimals={animals}
         onApplied={() => router.back()}
+        onRegisterBirth={(animal) => setBirthMotherId(animal.id)}
       />
 
       {step === 2 && isSaleRecord && (

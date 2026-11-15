@@ -136,3 +136,17 @@ ese overlay. Sacar a todos espera persistencia real y conserva su confirmación.
 ### Consultas administrativas de IA
 
 `aiChatHistory/{userId}/queries` conserva nuevas preguntas y respuestas para soporte administrativo. No es fuente de conocimiento del modelo, autoridad de propuestas ni fuente de movimientos. Se accede solo mediante `/api/admin/ai-history`, tras validar administrador; reglas de Firestore excluyen acceso directo de clientes. Ver [historial administrativo](README.md#historial-administrativo).
+
+
+### Navegación de registros
+
+En `/registro/nuevo`, el orden manual es Tipo y Fecha → Animales → Detalles. La preselección desde una ficha se conserva; no omite el primer paso. No cambia los contratos de movimientos ni la preparación y confirmación de propuestas del chat.
+
+
+El resumen de una gestante en Cambio de etapa lee su monta confirmada sin parto/aborto; muestra parto aproximado, padre y monta. Si faltan datos o hay varias montas compatibles, lo indica sin inventar asociaciones.
+
+
+Registrar parto desde Cambio de etapa reutiliza el formulario y movimiento de parto existentes. Abrir o cancelar no persiste nada. La confirmación exitosa requiere el movimiento guardado.
+
+
+En Cambio de etapa, un animal en empadre debe configurar su monta o salir mediante los flujos compartidos. Sacar al macho o a la última hembra advierte que elimina el empadre completo. No se realiza ningún movimiento al abrir estas acciones.

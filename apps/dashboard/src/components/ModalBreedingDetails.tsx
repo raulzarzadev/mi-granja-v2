@@ -26,11 +26,15 @@ export default function ModalBreedingDetails({
   animals,
   onClose,
   onOpenAnimal,
+  initialEditing = false,
+  initialRemovingAnimal = null,
 }: {
   record: BreedingRecord
   animals: Animal[]
   onClose: () => void
   onOpenAnimal: (id: string) => void
+  initialEditing?: boolean
+  initialRemovingAnimal?: Animal | null
 }) {
   const { breedingRecords, updateBreedingRecord, deleteBreedingRecord } = useBreedingCRUD()
   const movements = useRecordMovements(animals)
@@ -41,10 +45,10 @@ export default function ModalBreedingDetails({
     updateBreedingRecord,
     deleteBreedingRecord,
   })
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(initialEditing)
   const [pregnancyFemale, setPregnancyFemale] = useState<string | null>(null)
   const [birthFemale, setBirthFemale] = useState<string | null>(null)
-  const [removingAnimal, setRemovingAnimal] = useState<Animal | null>(null)
+  const [removingAnimal, setRemovingAnimal] = useState<Animal | null>(initialRemovingAnimal)
   const [saving, setSaving] = useState(false)
   const removalLock = useRef(false)
   const [error, setError] = useState('')

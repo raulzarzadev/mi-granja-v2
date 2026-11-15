@@ -3,12 +3,16 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import AnimalTag from '@/components/AnimalTag'
+import BreedingStageActions from '@/components/BreedingStageActions'
+import AnimalBadges from '@/components/AnimalBadges'
 import Button from '@/components/buttons/Button'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import AnimalSelector from '@/components/inputs/AnimalSelector'
 import { DatePickerButtons } from '@/components/buttons/date-picker-buttons'
 import { Modal } from '@/components/Modal'
 import type { RootState } from '@/features/store'
+import { calculateExpectedBirthDate } from '@/lib/animalBreedingConfig'
+import { toDate } from '@/lib/dates'
 import { trackAnimalStageChanged } from '@/lib/analytics/track'
 import {
   applyChangeStage,
@@ -59,6 +63,7 @@ const ModalChangeStage: React.FC<Props> = ({
 }) => {
   const user = useSelector((s: RootState) => s.auth.user)
   const currentFarm = useSelector((s: RootState) => s.farm.currentFarm)
+  const breedingRecords = useSelector((s: RootState) => s.breeding?.breedingRecords ?? [])
 
   const [target, setTarget] = useState<TargetKey | null>(null)
   const [date, setDate] = useState<Date>(new Date())
@@ -188,15 +193,39 @@ const ModalChangeStage: React.FC<Props> = ({
     })
   }
 
-  // Etapa actual en modo individual
-  const currentStageLabel = single
-    ? animal_stage_config[single.computedStage ?? single.stage]?.label
-    : null
-  const currentStageIcon = single
-    ? animal_stage_config[single.computedStage ?? single.stage]?.icon
-    : null
-
+  const isBreedingSingle = !!single && single.computedStage === 'empadre'
   const isPregnantSingle = !!single && single.computedStage === 'embarazos'
+  const pregnancyRecords = single
+    ? breedingRecords.filter((record) =>
+        record.femaleBreedingInfo?.some(
+          (info) =>
+            info.femaleId === single.id &&
+            info.pregnancyConfirmedDate &&
+            !info.actualBirthDate &&
+            info.outcome !== 'aborted' &&
+            info.outcome !== 'open',
+        ),
+      )
+    : []
+  const pregnancyRecord = pregnancyRecords.length === 1 ? pregnancyRecords[0] : null
+  const pregnancyInfo = pregnancyRecord?.femaleBreedingInfo.find(
+    (info) => info.femaleId === single?.id,
+  )
+  const father = allAnimals.find(
+    (animal) => animal.id === (pregnancyRecord?.maleId ?? single?.pregnantBy),
+  )
+  const expectedBirth = pregnancyInfo?.expectedBirthDate
+    ? toDate(pregnancyInfo.expectedBirthDate)
+    : pregnancyRecord?.breedingDate && single
+      ? calculateExpectedBirthDate(pregnancyRecord.breedingDate, single.type)
+      : null
+  const formatPregnancyDate = (value: Date | null | undefined) => {
+    if (!value) return 'Sin fecha registrada'
+    const date = toDate(value)
+    return Number.isNaN(date.getTime())
+      ? 'Sin fecha registrada'
+      : date.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+  }
   const isCriaSelection =
     !isPregnantSingle && animals.length > 0 && animals.every((a) => a.computedStage === 'cria')
 
@@ -208,15 +237,10 @@ const ModalChangeStage: React.FC<Props> = ({
   const content = (
     <div className="space-y-4">
       {/* Header info */}
-      {isIndividual ? (
-        <div className="text-sm text-gray-700">
-          <span className="text-gray-500">Etapa actual:</span>{' '}
-          <span className="font-medium">
-            {currentStageIcon} {currentStageLabel}
-          </span>{' '}
-          <span className="text-gray-500">— Animal:</span>{' '}
-          <span className="font-mono">#{single?.animalNumber}</span>
-        </div>
+      {single ? (
+        <span className="inline-flex max-w-full flex-wrap items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2 py-1 text-xs text-green-800">
+          <AnimalBadges animal={single} ageFormat="rounded" />
+        </span>
       ) : (
         <div className="text-sm text-gray-700">
           <span className="font-semibold">{animals.length}</span> animales seleccionados
@@ -226,9 +250,33 @@ const ModalChangeStage: React.FC<Props> = ({
       {/* Hembra gestante: solo desconfirmar gestación o registrar parto */}
       {isPregnantSingle && single ? (
         <div className="space-y-3">
-          <p className="text-sm text-gray-700">
-            Esta hembra está gestante. Las acciones disponibles son:
-          </p>
+          <dl className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm">
+            <div>
+              <dt className="text-gray-500">Fecha aproximada de parto</dt>
+              <dd className="font-medium text-gray-900">{formatPregnancyDate(expectedBirth)}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-500">Padre</dt>
+              <dd className="font-medium text-gray-900">
+                {father ? <AnimalTag animal={father} showModalOnClick /> : 'Sin padre registrado'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-gray-500">Monta</dt>
+              <dd className="break-words font-medium text-gray-900">
+                {pregnancyRecord ? (
+                  <>
+                    {pregnancyRecord.breedingId || 'Monta registrada'} ·{' '}
+                    {formatPregnancyDate(pregnancyRecord.breedingDate)}
+                  </>
+                ) : pregnancyRecords.length > 1 ? (
+                  'Hay varias montas asociadas; revisa el empadre.'
+                ) : (
+                  'Sin monta asociada'
+                )}
+              </dd>
+            </div>
+          </dl>
           <div className="flex flex-col gap-2">
             {onRegisterBirth && (
               <Button
@@ -236,7 +284,7 @@ const ModalChangeStage: React.FC<Props> = ({
                 icon="baby"
                 onClick={() => {
                   onRegisterBirth(single)
-                  onClose()
+                  if (!embedded) onClose()
                 }}
               >
                 Registrar parto
@@ -255,11 +303,10 @@ const ModalChangeStage: React.FC<Props> = ({
                 Desconfirmar gestación
               </Button>
             )}
-            {!onRegisterBirth && !onUnconfirmPregnancy && (
-              <p className="text-xs text-gray-500">Acciones no disponibles desde esta vista.</p>
-            )}
           </div>
         </div>
+      ) : isBreedingSingle && single ? (
+        <BreedingStageActions animal={single} animals={allAnimals} records={breedingRecords} />
       ) : isCriaSelection ? (
         <div className="space-y-3">
           <div>
@@ -325,7 +372,7 @@ const ModalChangeStage: React.FC<Props> = ({
         </div>
       ) : (
         <div>
-          <p className="text-xs text-gray-500 mb-1">Mover a</p>
+          <p className="mb-3 text-center text-lg font-semibold text-gray-800">Mover a</p>
           <div
             className={embedded ? 'grid grid-cols-2 gap-2 sm:grid-cols-3' : 'flex flex-wrap gap-2'}
           >
@@ -355,12 +402,12 @@ const ModalChangeStage: React.FC<Props> = ({
       )}
 
       {/* Preview de etapa final (resuelve el computedStage tras aplicar) */}
-      {!isPregnantSingle && target && animals.length > 0 && (
+      {!isPregnantSingle && !isBreedingSingle && target && animals.length > 0 && (
         <StagePreview animals={animals} target={target} />
       )}
 
       {/* Next step: campos contextuales */}
-      {!isPregnantSingle && target && (
+      {!isPregnantSingle && !isBreedingSingle && target && (
         <div className="pt-4 space-y-3">
           <p className="text-xs font-medium text-gray-500 uppercase">Configuración</p>
 
@@ -416,35 +463,40 @@ const ModalChangeStage: React.FC<Props> = ({
       )}
 
       {/* Bloque cría individual: madre + hermanos */}
-      {!isPregnantSingle && target && single && family?.isCria && family.mother && (
-        <div className="pt-4 space-y-2">
-          <p className="text-xs font-medium text-gray-500 uppercase">Familia</p>
-          <div className="text-sm">
-            <span className="text-gray-500">Madre:</span>{' '}
-            <AnimalTag animal={family.mother} showModalOnClick />
-          </div>
-          {family.siblings.length > 0 && (
-            <div>
-              <p className="text-xs text-gray-500 mb-1">
-                Hermanos sin destetar — marca para destetar también:
-              </p>
-              <div className="space-y-1">
-                {family.siblings.map((s) => (
-                  <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={siblingWeanIds.has(s.id)}
-                      onChange={() => toggleSibling(s.id)}
-                      disabled={applying}
-                    />
-                    <AnimalTag animal={s} showAge />
-                  </label>
-                ))}
-              </div>
+      {!isPregnantSingle &&
+        !isBreedingSingle &&
+        target &&
+        single &&
+        family?.isCria &&
+        family.mother && (
+          <div className="pt-4 space-y-2">
+            <p className="text-xs font-medium text-gray-500 uppercase">Familia</p>
+            <div className="text-sm">
+              <span className="text-gray-500">Madre:</span>{' '}
+              <AnimalTag animal={family.mother} showModalOnClick />
             </div>
-          )}
-        </div>
-      )}
+            {family.siblings.length > 0 && (
+              <div>
+                <p className="text-xs text-gray-500 mb-1">
+                  Hermanos sin destetar — marca para destetar también:
+                </p>
+                <div className="space-y-1">
+                  {family.siblings.map((s) => (
+                    <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={siblingWeanIds.has(s.id)}
+                        onChange={() => toggleSibling(s.id)}
+                        disabled={applying}
+                      />
+                      <AnimalTag animal={s} showAge />
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
       {/* Bloque madre lactante: crías a destetar */}
       {!isPregnantSingle &&
@@ -515,7 +567,7 @@ const ModalChangeStage: React.FC<Props> = ({
             Atrás
           </button>
           <div className="flex-1" />
-          {!isPregnantSingle && (
+          {!isPregnantSingle && !isBreedingSingle && (
             <button
               type="button"
               onClick={handleApply}
@@ -541,7 +593,7 @@ const ModalChangeStage: React.FC<Props> = ({
           <Button variant="outline" color="neutral" onClick={onClose} disabled={applying}>
             {embedded ? 'Atrás' : 'Cancelar'}
           </Button>
-          {!isPregnantSingle && (
+          {!isPregnantSingle && !isBreedingSingle && (
             <Button
               color={embedded ? 'success' : 'primary'}
               onClick={handleApply}
