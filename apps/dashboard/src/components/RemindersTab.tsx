@@ -2,220 +2,132 @@
 
 import { useRouter } from 'next/navigation'
 import React, { useMemo, useState } from 'react'
-import { useSelector } from 'react-redux'
+import FarmTaskRow from '@/components/FarmTaskRow'
 import FirstReminderEmptyState from '@/components/FirstReminderEmptyState'
 import HealthRemindersCard from '@/components/HealthRemindersCard'
-import { IconLabel } from '@/components/Icon/emoji-icons'
-import ReminderCard from '@/components/ReminderCard'
-import Tabs from '@/components/Tabs'
-import type { RootState } from '@/features/store'
+import { EmojiIcon } from '@/components/Icon/emoji-icons'
+import RegisterBirthFromStage from '@/components/RegisterBirthFromStage'
+import ReminderRow from '@/components/ReminderRow'
+import { ModalWeanAnimal } from '@/components/WeanedAnimal'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
+import { type FarmPendingTask, useFarmPendingTasks } from '@/hooks/useFarmPendingTasks'
 import { useReminders } from '@/hooks/useReminders'
 import { normalizeAnimalSearch, valuesMatchSearch } from '@/lib/animal-search'
+import { getWeaningDueDate } from '@/lib/animal-utils'
 import { Reminder } from '@/types'
-import { AnimalType } from '@/types/animals'
 
-interface RemindersTabProps {
-  speciesFilter?: AnimalType | ''
+const startOfDay = (offsetDays = 0) => {
+  const date = new Date()
+  date.setHours(0, 0, 0, 0)
+  date.setDate(date.getDate() + offsetDays)
+  return date
 }
 
-const RemindersTab: React.FC<RemindersTabProps> = ({ speciesFilter = '' }) => {
-  const router = useRouter()
-  const { animals } = useAnimalCRUD()
-  const {
-    reminders,
-    isLoading,
-    markAsCompleted,
-    markAnimalCompleted,
-    deleteReminder,
-    getOverdueReminders,
-    getTodayReminders,
-    getUpcomingReminders,
-  } = useReminders()
+const byDueDate = (a: Reminder, b: Reminder) =>
+  new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
 
+/**
+ * Lista única de pendientes: partos y destetes sin registrar (vencidos y de la
+ * próxima semana) junto a los recordatorios, agrupados en vencidos, hoy y
+ * próximos; completados colapsados al final.
+ */
+const RemindersTab: React.FC = () => {
+  const router = useRouter()
+  const { reminders, isLoading } = useReminders()
+
+  const farmTasks = useFarmPendingTasks()
+  const { animals } = useAnimalCRUD()
+  const [registering, setRegistering] = useState<FarmPendingTask | null>(null)
   const [showCompleted, setShowCompleted] = useState(false)
   const [search, setSearch] = useState('')
-  const [onlyMine, setOnlyMine] = useState(false)
-  const currentUserId = useSelector((s: RootState) => s.auth.user?.id)
 
-  // Build a set of animal numbers that match the species filter
-  const speciesAnimalNumbers = useMemo(() => {
-    if (!speciesFilter) return null
-    return new Set(animals.filter((a) => a.type === speciesFilter).map((a) => a.animalNumber))
-  }, [animals, speciesFilter])
+  const filtered = useMemo(() => {
+    if (!normalizeAnimalSearch(search)) return reminders
+    return reminders.filter((r) =>
+      valuesMatchSearch(
+        [r.title || '', r.description || '', r.animalNumber || '', ...(r.animalNumbers || [])],
+        search,
+      ),
+    )
+  }, [reminders, search])
 
-  // Filter reminders by species filter and search text
-  const filteredReminders = useMemo(() => {
-    let result = reminders
-
-    // Apply species filter
-    if (speciesAnimalNumbers) {
-      result = result.filter((r) => {
-        const nums = r.animalNumbers?.length
-          ? r.animalNumbers
-          : r.animalNumber
-            ? [r.animalNumber]
-            : []
-        if (nums.length === 0) return false
-        return nums.some((n) => speciesAnimalNumbers.has(n))
-      })
+  const groups = useMemo(() => {
+    const today = startOfDay().getTime()
+    const pending = filtered.filter((r) => !r.completed).sort(byDueDate)
+    return {
+      pending,
+      overdueCount: pending.filter((r) => new Date(r.dueDate).getTime() < today).length,
+      completed: filtered.filter((r) => r.completed).sort((a, b) => byDueDate(b, a)),
     }
+  }, [filtered])
 
-    // Apply "asignado a mí" filter
-    if (onlyMine && currentUserId) {
-      result = result.filter((r) => {
-        if (r.assigneeIds && r.assigneeIds.length > 0) return r.assigneeIds.includes(currentUserId)
-        return r.farmerId === currentUserId
-      })
+  const taskGroups = useMemo(() => {
+    const tasks = normalizeAnimalSearch(search)
+      ? farmTasks.filter((t) =>
+          valuesMatchSearch([t.animal.animalNumber || '', t.animal.name || '', t.kind], search),
+        )
+      : farmTasks
+    return {
+      partos: tasks.filter((t) => t.kind === 'parto'),
+      destetes: tasks.filter((t) => t.kind === 'destete'),
     }
+  }, [farmTasks, search])
 
-    // Apply search filter
-    if (!normalizeAnimalSearch(search)) return result
-    return result.filter((r) => {
-      const parts = [
-        r.title || '',
-        r.description || '',
-        r.animalNumber || '',
-        ...(r.animalNumbers || []),
-      ]
-      return valuesMatchSearch(parts, search)
-    })
-  }, [reminders, animals, search, speciesAnimalNumbers, onlyMine, currentUserId])
-
-  const pendingReminders = filteredReminders.filter((r) => !r.completed)
-  const completedReminders = filteredReminders.filter((r) => r.completed)
-  const filteredIds = useMemo(
-    () => new Set(filteredReminders.map((r) => r.id)),
-    [filteredReminders],
+  const renderList = (list: Reminder[]) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+      {list.map((reminder) => (
+        <ReminderRow key={reminder.id} reminder={reminder} />
+      ))}
+    </div>
   )
-  const todayReminders = useMemo(() => {
-    return getTodayReminders().filter((r) => filteredIds.has(r.id))
-  }, [getTodayReminders, filteredIds])
-  const overdueReminders = useMemo(() => {
-    return getOverdueReminders().filter((r) => filteredIds.has(r.id))
-  }, [getOverdueReminders, filteredIds])
-  const todayAndOverdue = [...overdueReminders, ...todayReminders]
 
-  const upcomingReminders = useMemo(() => {
-    return getUpcomingReminders().filter((r) => filteredIds.has(r.id))
-  }, [getUpcomingReminders, filteredIds])
+  const overdueTasks = (tasks: FarmPendingTask[]) => tasks.filter((t) => t.daysUntil < 0).length
 
-  const editReminder = (r: Reminder) => router.push(`/recordatorio/${r.id}/editar`)
+  /** Grupo colapsable; cerrado por defecto, el encabezado muestra conteo y vencidos. */
+  const group = (
+    emoji: string,
+    title: string,
+    count: number,
+    overdue: number,
+    content: React.ReactNode,
+  ) => (
+    <details className="group rounded-lg border border-gray-200 bg-white">
+      <summary className="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none list-none hover:bg-gray-50 rounded-lg [&::-webkit-details-marker]:hidden">
+        <span className="text-gray-400 transition-transform group-open:rotate-90">▸</span>
+        <EmojiIcon emoji={emoji} />
+        <span className="text-sm font-semibold text-gray-800">{title}</span>
+        <span className="text-xs text-gray-400">({count})</span>
+        {overdue > 0 && (
+          <span className="ml-auto text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">
+            {overdue} vencido{overdue !== 1 ? 's' : ''}
+          </span>
+        )}
+      </summary>
+      <div className="px-3 pb-3">
+        {count === 0 ? <p className="text-sm text-gray-400">Nada pendiente.</p> : content}
+      </div>
+    </details>
+  )
 
-  const renderReminderGrid = (list: Reminder[], showComplete = true) => {
-    if (isLoading) {
-      return (
-        <div className="flex justify-center items-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
-          <span className="ml-3 text-gray-600">Cargando recordatorios...</span>
-        </div>
-      )
-    }
+  const taskList = (tasks: FarmPendingTask[]) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+      {tasks.map((task) => (
+        <FarmTaskRow key={task.id} task={task} onRegister={setRegistering} />
+      ))}
+    </div>
+  )
 
-    if (list.length === 0) {
-      return <p className="text-gray-500 text-sm py-4">No hay recordatorios en esta seccion.</p>
-    }
-
+  if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {list.map((reminder) => (
-          <ReminderCard
-            key={reminder.id}
-            reminder={reminder}
-            animals={animals}
-            onComplete={showComplete ? (r) => markAsCompleted(r.id) : undefined}
-            onCompleteAnimal={
-              showComplete
-                ? (r, animalNum, completed) => markAnimalCompleted(r.id, animalNum, completed)
-                : undefined
-            }
-            onEdit={editReminder}
-            onDelete={(r) => deleteReminder(r.id)}
-          />
-        ))}
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+        <span className="ml-3 text-gray-600">Cargando recordatorios...</span>
       </div>
     )
   }
 
-  const tabs = [
-    {
-      label: '⏰ Hoy',
-      badgeCount: todayAndOverdue.length,
-      content: (
-        <div className="space-y-6">
-          {overdueReminders.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-red-700 mb-3 flex items-center gap-2">
-                Vencidos
-                <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
-                  {overdueReminders.length}
-                </span>
-              </h3>
-              {renderReminderGrid(overdueReminders)}
-            </div>
-          )}
-          <div>
-            {overdueReminders.length > 0 && todayReminders.length > 0 && (
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Para hoy</h3>
-            )}
-            {todayAndOverdue.length === 0 ? (
-              <p className="text-gray-500 text-sm py-4">No hay recordatorios para hoy.</p>
-            ) : todayReminders.length > 0 ? (
-              renderReminderGrid(todayReminders)
-            ) : null}
-          </div>
-          <HealthRemindersCard />
-        </div>
-      ),
-    },
-    {
-      label: '🔔 Proximos',
-      badgeCount: upcomingReminders.length,
-      content: <div className="space-y-4">{renderReminderGrid(upcomingReminders)}</div>,
-    },
-    {
-      label: '📋 Todos',
-      badgeCount: pendingReminders.length,
-      content: (
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-gray-700">
-            Pendientes ({pendingReminders.length})
-          </h3>
-          {renderReminderGrid(pendingReminders)}
-
-          {completedReminders.length > 0 && (
-            <div className="pt-4 border-t">
-              <button
-                onClick={() => setShowCompleted((v) => !v)}
-                className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-              >
-                <svg
-                  className={`w-4 h-4 transition-transform ${showCompleted ? 'rotate-180' : ''}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-                {showCompleted ? 'Ocultar' : 'Ver'} completados ({completedReminders.length})
-              </button>
-              {showCompleted && (
-                <div className="mt-4">{renderReminderGrid(completedReminders, false)}</div>
-              )}
-            </div>
-          )}
-        </div>
-      ),
-    },
-  ]
-
   // Granja sin recordatorios: solo el estado vacío (más los seguimientos de sanidad, si hay)
-  if (!isLoading && reminders.length === 0) {
+  if (reminders.length === 0 && farmTasks.length === 0) {
     return (
       <div className="space-y-4">
         <FirstReminderEmptyState />
@@ -225,70 +137,87 @@ const RemindersTab: React.FC<RemindersTabProps> = ({ speciesFilter = '' }) => {
   }
 
   return (
-    <div className="space-y-3">
-      {/* Search + add header */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-4 py-3 flex items-center gap-2">
-          <input
-            type="text"
-            placeholder="Buscar por titulo, animal, descripcion..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch('')}
-              className="p-2 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 transition-colors"
-              title="Limpiar búsqueda"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                className="w-5 h-5 text-red-500"
-              >
-                <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-              </svg>
-            </button>
-          )}
-          <button
-            onClick={() => router.push('/recordatorio/nuevo')}
-            className="p-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
-            title="Nuevo Recordatorio"
+    <div className="space-y-5">
+      <div className="flex items-center gap-2">
+        <input
+          type="search"
+          placeholder="Buscar por título, animal, descripción..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
+        <button
+          type="button"
+          onClick={() => router.push('/recordatorio/nuevo')}
+          className="p-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors cursor-pointer"
+          title="Nuevo recordatorio"
+          aria-label="Nuevo recordatorio"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="w-5 h-5"
+            aria-hidden="true"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-5 h-5"
-            >
-              <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
-            </svg>
-          </button>
-        </div>
-        <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between gap-2">
+            <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+          </svg>
+        </button>
+      </div>
+
+      {group(
+        '🤰',
+        'Partos',
+        taskGroups.partos.length,
+        overdueTasks(taskGroups.partos),
+        taskList(taskGroups.partos),
+      )}
+      {group(
+        '🍼',
+        'Destetes',
+        taskGroups.destetes.length,
+        overdueTasks(taskGroups.destetes),
+        taskList(taskGroups.destetes),
+      )}
+      {group(
+        '⏰',
+        'Recordatorios',
+        groups.pending.length,
+        groups.overdueCount,
+        renderList(groups.pending),
+      )}
+
+      <HealthRemindersCard />
+
+      {groups.completed.length > 0 && (
+        <section className="pt-4 border-t border-gray-200">
           <button
             type="button"
-            onClick={() => setOnlyMine((v) => !v)}
-            aria-pressed={onlyMine}
-            className={`text-xs px-3 py-1 rounded-full border cursor-pointer transition-colors ${
-              onlyMine
-                ? 'bg-green-600 border-green-600 text-white'
-                : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
-            }`}
+            onClick={() => setShowCompleted((v) => !v)}
+            aria-expanded={showCompleted}
+            className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 cursor-pointer"
           >
-            <IconLabel label={onlyMine ? '✓ Asignados a mí' : 'Asignados a mí'} />
+            <span className={`transition-transform ${showCompleted ? 'rotate-90' : ''}`}>▸</span>
+            Completados ({groups.completed.length})
           </button>
-          {search && (
-            <span className="text-xs text-gray-500">
-              <span className="font-semibold text-gray-700">{filteredReminders.length}</span> de{' '}
-              {reminders.length} recordatorios
-            </span>
-          )}
-        </div>
-      </div>
-      <Tabs tabs={tabs} tabsId="reminders-tabs" />
+          {showCompleted && <div className="mt-3">{renderList(groups.completed)}</div>}
+        </section>
+      )}
+      {registering?.kind === 'parto' && (
+        <RegisterBirthFromStage
+          motherId={registering.animal.id}
+          animals={animals}
+          onClose={() => setRegistering(null)}
+          onCompleted={() => setRegistering(null)}
+        />
+      )}
+      {registering?.kind === 'destete' && (
+        <ModalWeanAnimal
+          animal={registering.animal}
+          targetWeanDate={getWeaningDueDate(registering.animal) ?? registering.dueDate}
+          onClose={() => setRegistering(null)}
+        />
+      )}
     </div>
   )
 }

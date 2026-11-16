@@ -126,7 +126,7 @@ interface ModalWeanAnimalProps {
   onWean?: (animalId: string, weanDate: Date) => void
 }
 
-const ModalWeanAnimal = ({ animal, targetWeanDate, onClose }: ModalWeanAnimalProps) => {
+export const ModalWeanAnimal = ({ animal, targetWeanDate, onClose }: ModalWeanAnimalProps) => {
   const { animals } = useAnimalCRUD()
   const { wean } = useRecordMovements(animals)
   const movementIdRef = useRef<string | null>(null)

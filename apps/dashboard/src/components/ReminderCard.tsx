@@ -1,13 +1,15 @@
 'use client'
 
 import React, { useState } from 'react'
+import AnimalTag from '@/components/AnimalTag'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { Reminder } from '@/types'
+import type { Animal } from '@/types/animals'
 
 interface ReminderCardProps {
   reminder: Reminder
-  animals?: Array<{ id: string; animalNumber: string; type: string }>
+  animals?: Animal[]
   onEdit?: (reminder: Reminder) => void
   onComplete?: (reminder: Reminder) => void
   onCompleteAnimal?: (reminder: Reminder, animalNumber: string, completed: boolean) => void
@@ -105,7 +107,7 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
   // Info de animales
   const animalInfos = allNumbers.map((num) => {
     const found = animals.find((a) => a.animalNumber === num)
-    return { number: num, type: found?.type || '', completed: !!completionMap[num] }
+    return { number: num, animal: found, type: found?.type || '', completed: !!completionMap[num] }
   })
 
   return (
@@ -152,10 +154,11 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
       {allNumbers.length > 0 && (
         <div className="mb-2">
           {!hasMultipleAnimals ? (
-            <p className="text-sm text-gray-500">
-              {animalInfos[0].number}
-              {animalInfos[0].type && ` - ${animalInfos[0].type}`}
-            </p>
+            animalInfos[0].animal ? (
+              <AnimalTag animal={animalInfos[0].animal} showModalOnClick />
+            ) : (
+              <p className="text-sm text-gray-500">{animalInfos[0].number}</p>
+            )
           ) : (
             <div>
               <button
@@ -200,12 +203,17 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
                           <IconLabel label={info.completed ? '✓' : '○'} />
                         </span>
                       )}
-                      <span
-                        className={`font-medium ${info.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}
-                      >
-                        {info.number}
-                      </span>
-                      {info.type && <span className="text-gray-400 text-xs">{info.type}</span>}
+                      {info.animal ? (
+                        <span className={info.completed ? 'opacity-50' : undefined}>
+                          <AnimalTag animal={info.animal} showModalOnClick />
+                        </span>
+                      ) : (
+                        <span
+                          className={`font-medium ${info.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}
+                        >
+                          {info.number}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>

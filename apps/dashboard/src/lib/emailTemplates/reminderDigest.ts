@@ -88,7 +88,7 @@ export function buildReminderDigestEmail(data: DigestData): {
       ${renderSection('🗓 Próximos 3 días', data.upcoming, '#2563eb')}
 
       <div style="margin-top:32px;text-align:center">
-        <a href="${data.appUrl}/?dashboard-main=recordatorios"
+        <a href="${data.appUrl}/recordatorios"
            style="display:inline-block;background:#16a34a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">
           Ver en Mi Granja
         </a>

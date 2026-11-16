@@ -7,6 +7,13 @@ last_updated: 2026-11-15
 
 # Historial de decisiones
 
+## 2026-11-15 — Vista `/recordatorios`
+
+La pestaña `?dashboard-main=recordatorios` ya no existía. Los enlaces a
+recordatorios (acción recomendada del contexto operativo, correo resumen, push
+y campana «Notificaciones y recordatorios» → «Ver todos») apuntan ahora a
+`/recordatorios`, que muestra la lista completa. Sin cambios en operaciones.
+
 ## 2026-11-15 — Recordatorio desde Nuevo Registro
 
 `/registro/nuevo` ofrece «Recordatorio» junto a los tipos de registro. No crea

@@ -605,7 +605,7 @@ export async function buildAiContext(
       animales: Array.from(
         new Set(overdueReminders.flatMap((reminder) => reminder.animales)),
       ).slice(0, 20),
-      enlace: '/?dashboard-main=recordatorios',
+      enlace: '/recordatorios',
     })
   }
 

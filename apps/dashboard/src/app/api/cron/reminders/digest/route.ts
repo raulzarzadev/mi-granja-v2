@@ -280,7 +280,7 @@ export async function runReminderDigest({
           const { success, failure } = await sendPush(userId, prefs.fcmTokens, {
             title,
             body,
-            url: '/?dashboard-main=recordatorios',
+            url: '/recordatorios',
           })
           pushesSent += success
           pushesFailed += failure

@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
       const { success } = await sendPushToUser(userId, prefs.fcmTokens, {
         title,
         body,
-        url: '/?dashboard-main=recordatorios',
+        url: '/recordatorios',
       })
       pushesSent += success
       for (const r of list) updatedIds.add(r.id)

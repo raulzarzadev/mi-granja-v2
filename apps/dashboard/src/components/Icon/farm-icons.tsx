@@ -250,6 +250,40 @@ export const RedCross = farmIcon(
   'RedCross',
 )
 
+const CALENDAR_BELL_BELL = 'M144 200 V164 a40 40 0 0 1 80 0 V200 l16 16 H128 Z'
+
+/** Calendario con campana (notificaciones y recordatorios) */
+export const CalendarBell = farmIcon(
+  <>
+    <defs>
+      {/* Recorta el calendario alrededor de la campana para que no se encimen los trazos */}
+      <mask id="calendar-bell-cut" maskUnits="userSpaceOnUse">
+        <rect width="256" height="256" fill="white" />
+        <path d={CALENDAR_BELL_BELL} fill="black" stroke="black" strokeWidth="48" />
+        <path d="M184 116 V124" stroke="black" strokeWidth="48" />
+      </mask>
+    </defs>
+    <g
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="16"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <g mask="url(#calendar-bell-cut)">
+        <rect x="24" y="48" width="160" height="160" rx="12" />
+        <path d="M24 96 H184" />
+        <path d="M64 32 V64" />
+        <path d="M144 32 V64" />
+      </g>
+      <path d={CALENDAR_BELL_BELL} />
+      <path d="M184 116 V124" />
+      <path d="M172 232 a12 12 0 0 0 24 0" />
+    </g>
+  </>,
+  'CalendarBell',
+)
+
 /** Ternero recién nacido (parto) */
 export const Calf = farmIcon(
   <>

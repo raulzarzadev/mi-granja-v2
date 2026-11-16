@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
+import { CalendarBell } from '@/components/Icon/farm-icons'
+import { REMINDER_TYPE_ICONS } from '@/components/ReminderRow'
 import { useReminders } from '@/hooks/useReminders'
 
 const formatDueDate = (d: Date | string): string => {
@@ -17,14 +19,6 @@ const formatDueDate = (d: Date | string): string => {
   if (diff === 0) return 'Hoy'
   if (diff === 1) return 'Mañana'
   return date.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })
-}
-
-const TYPE_ICON: Record<string, string> = {
-  medical: '🏥',
-  breeding: '🐣',
-  feeding: '🌾',
-  weight: '⚖️',
-  other: '📝',
 }
 
 /**
@@ -98,22 +92,10 @@ const NotificationsBell: React.FC = () => {
         onClick={() => setOpen((p) => !p)}
         aria-haspopup="true"
         aria-expanded={open}
-        aria-label={`Notificaciones${count > 0 ? `: ${count} pendientes` : ''}`}
+        aria-label={`Notificaciones y recordatorios${count > 0 ? `: ${count} pendientes` : ''}`}
         className="relative flex items-center justify-center h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition-colors cursor-pointer"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          className="w-5 h-5"
-          aria-hidden="true"
-        >
-          <path
-            fillRule="evenodd"
-            d="M12 2.25A6.75 6.75 0 0 0 5.25 9v3.27c0 .51-.2 1-.56 1.36l-1.06 1.06A1.5 1.5 0 0 0 4.69 17.25h14.62a1.5 1.5 0 0 0 1.06-2.56l-1.06-1.06a1.93 1.93 0 0 1-.56-1.36V9A6.75 6.75 0 0 0 12 2.25ZM9.75 19.5a2.25 2.25 0 0 0 4.5 0h-4.5Z"
-            clipRule="evenodd"
-          />
-        </svg>
+        <CalendarBell className="w-5 h-5" />
         {count > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center shadow">
             {count > 99 ? '99+' : count}
@@ -128,7 +110,7 @@ const NotificationsBell: React.FC = () => {
           role="menu"
         >
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">Notificaciones</h3>
+            <h3 className="text-sm font-semibold text-gray-900">Notificaciones y recordatorios</h3>
             {count > 0 && (
               <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">
                 {count}
@@ -156,7 +138,7 @@ const NotificationsBell: React.FC = () => {
                     >
                       <div className="flex items-start gap-2">
                         <span className="text-lg leading-none mt-0.5">
-                          <IconLabel label={TYPE_ICON[r.type] || '📝'} />
+                          <IconLabel label={REMINDER_TYPE_ICONS[r.type] || '📝'} />
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">{r.title}</p>
@@ -185,11 +167,11 @@ const NotificationsBell: React.FC = () => {
 
           <div className="border-t border-gray-100">
             <Link
-              href="/?dashboard-main=recordatorios"
+              href="/recordatorios"
               onClick={() => setOpen(false)}
               className="block w-full text-center px-4 py-2 text-sm text-green-700 hover:bg-green-50 font-medium"
             >
-              Ver todos los recordatorios
+              Ver todos
             </Link>
           </div>
         </div>
