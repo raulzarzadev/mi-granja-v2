@@ -434,6 +434,41 @@ describe('Espacio', () => {
   })
 })
 
+describe('Navegación con teclado tras seleccionar', () => {
+  const Wrapper = ({ onAdd }: { onAdd: (id: string) => void }) => {
+    const [ids, setIds] = React.useState<string[]>([])
+    return (
+      <InputSelectAnimals
+        animals={animals}
+        selectedIds={ids}
+        onAdd={(id) => {
+          onAdd(id)
+          setIds((prev) => [...prev, id])
+        }}
+        onRemove={jest.fn()}
+        renderOption={(animal) => animal.animalNumber}
+      />
+    )
+  }
+
+  it.each([' ', 'Enter'])('con "%s", la flecha abajo resalta la fila siguiente', (key) => {
+    const onAdd = jest.fn()
+    render(<Wrapper onAdd={onAdd} />)
+    const input = screen.getByPlaceholderText('Buscar por numero, nombre, tipo o raza...')
+    fireEvent.focus(input)
+    // Orden por número: 2-A, 3-A, 10-A, 20-A
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    fireEvent.keyDown(input, { key })
+    expect(onAdd).toHaveBeenLastCalledWith('3') // 10-A
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    const highlighted = getAnimalOptions().find((o) => o.getAttribute('aria-selected') === 'true')
+    expect(highlighted).toHaveTextContent('20-A')
+    fireEvent.keyDown(input, { key: ' ' })
+    expect(onAdd).toHaveBeenLastCalledWith('1') // 20-A
+  })
+})
+
 describe('Orden en el desplegable', () => {
   const herd = [
     {

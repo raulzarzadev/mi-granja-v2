@@ -509,6 +509,13 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
 
   // Espacio solo selecciona si el resaltado viene de las flechas (no del mouse ni al escribir)
   const keyboardNavRef = useRef(false)
+  // Posición de la última fila elegida con teclado: la siguiente flecha parte de ahí
+  const keyboardAnchorRef = useRef<number | null>(null)
+
+  const selectFromKeyboard = (index: number) => {
+    handleSelect(dropdownItems[index].id)
+    keyboardAnchorRef.current = index
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === ' ' && isOpen && keyboardNavRef.current && highlightIndex >= 0) {
@@ -517,14 +524,21 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
         const target = areaItems[highlightIndex]
         if (target) handleSelectArea(target.pendingIds)
       } else if (highlightIndex < dropdownItems.length) {
-        handleSelect(dropdownItems[highlightIndex].id)
+        selectFromKeyboard(highlightIndex)
       }
       return
     }
+    const anchor = highlightIndex < 0 ? keyboardAnchorRef.current : null
+    if (e.key !== ' ') keyboardAnchorRef.current = null
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       keyboardNavRef.current = true
       setIsOpen(true)
+      if (anchor !== null && !isAreasView && navigableCount > 0) {
+        // La fila elegida salió de la lista: la de abajo ocupa ahora su índice
+        setHighlightIndex(Math.min(anchor, navigableCount - 1))
+        return
+      }
       setHighlightIndex((prev) => {
         if (navigableCount <= 1) return 0
         if (prev < 0) return isAreasView ? 0 : 1
@@ -535,6 +549,10 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       keyboardNavRef.current = true
+      if (anchor !== null && !isAreasView && anchor > 0) {
+        setHighlightIndex(Math.min(anchor - 1, navigableCount - 1))
+        return
+      }
       setHighlightIndex((prev) => (prev > 0 ? prev - 1 : -1))
     } else if (e.key === 'Enter') {
       e.preventDefault()
@@ -547,9 +565,9 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
         return
       }
       if (highlightIndex >= 0 && highlightIndex < dropdownItems.length) {
-        handleSelect(dropdownItems[highlightIndex].id)
+        selectFromKeyboard(highlightIndex)
       } else if (dropdownItems.length > 0) {
-        handleSelect(dropdownItems[0].id)
+        selectFromKeyboard(0)
       }
     } else if (e.key === 'Escape') {
       // Cerrar solo el selector; no propagar a modales que también cierran con Escape
