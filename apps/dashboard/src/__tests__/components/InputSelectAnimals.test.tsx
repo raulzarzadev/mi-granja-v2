@@ -208,11 +208,11 @@ describe('InputSelectAnimals', () => {
     expect(screen.queryByLabelText('Ordenar animales')).not.toBeInTheDocument()
   })
 
-  it('aplica el orden antes de limitar los resultados visibles', () => {
-    const manyAnimals = Array.from({ length: 31 }, (_, index) => ({
+  it('ordena todo el catálogo y carga más filas al desplazarse', () => {
+    const manyAnimals = Array.from({ length: 120 }, (_, index) => ({
       ...animals[0],
       id: `animal-${index}`,
-      animalNumber: String(100 - index),
+      animalNumber: String(1000 - index),
     }))
 
     render(
@@ -226,9 +226,19 @@ describe('InputSelectAnimals', () => {
     )
     fireEvent.focus(screen.getByPlaceholderText('Buscar por numero, nombre, tipo o raza...'))
 
-    expect(getDropdownNumbers()).toEqual(
-      Array.from({ length: 30 }, (_, index) => String(index + 70)),
-    )
+    // El orden se aplica sobre todos antes de pintar la primera tanda.
+    expect(getDropdownNumbers()).toEqual(Array.from({ length: 50 }, (_, i) => String(881 + i)))
+    const listbox = screen.getByRole('listbox')
+    Object.defineProperties(listbox, {
+      scrollHeight: { configurable: true, value: 2000 },
+      clientHeight: { configurable: true, value: 400 },
+      scrollTop: { configurable: true, value: 1500 },
+    })
+    fireEvent.scroll(listbox)
+    expect(getDropdownNumbers()).toHaveLength(100)
+    fireEvent.mouseDown(screen.getByRole('button', { name: /Mostrando 100 de 120/ }))
+    expect(getDropdownNumbers()).toHaveLength(120)
+    expect(screen.queryByRole('button', { name: /Mostrando/ })).not.toBeInTheDocument()
   })
 
   describe('selección por áreas', () => {
@@ -294,6 +304,29 @@ describe('InputSelectAnimals', () => {
       expect(corral).toHaveTextContent('+1 animal')
       fireEvent.mouseDown(corral)
       expect(onAddMany).toHaveBeenCalledWith(['x1'])
+    })
+
+    it('ofrece Sin asignar con animales sin área activa', () => {
+      const onAddMany = jest.fn()
+      render(
+        <InputSelectAnimals
+          animals={[
+            ...areaAnimals,
+            { ...animals[0], id: 'x4', animalNumber: '4' },
+            { ...animals[0], id: 'x5', animalNumber: '5', currentAreaId: 'a3' },
+          ]}
+          selectedIds={[]}
+          onAdd={jest.fn()}
+          onAddMany={onAddMany}
+          onRemove={jest.fn()}
+          areas={areas}
+        />,
+      )
+      openAreas()
+      const unassigned = screen.getByText('Sin asignar').closest('[role="option"]') as HTMLElement
+      expect(unassigned).toHaveTextContent('+2 animales')
+      fireEvent.mouseDown(unassigned)
+      expect(onAddMany).toHaveBeenCalledWith(['x4', 'x5'])
     })
 
     it('respeta filterFn y usa onAdd por id si no hay onAddMany', () => {

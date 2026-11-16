@@ -92,6 +92,11 @@ const animalSortOptions: Array<{ value: AnimalSortOption; label: string }> = [
 
 /** Grilla compartida por encabezado y filas: número, especie, género, etapa, edad, nombre, raza. */
 /** En móvil las columnas se angostan, el nombre se oculta y la raza se trunca. */
+/** Filas que se pintan por tanda en la lista de animales. */
+const RENDER_PAGE = 50
+/** Entrada sintética de la vista Áreas para los animales sin área activa. */
+const UNASSIGNED_AREA_ITEM_ID = '__unassigned__'
+
 const OPTION_GRID =
   'grid grid-cols-[3.25rem_1.25rem_2.75rem_2.75rem_3.25rem_minmax(0,1fr)_minmax(0,5rem)] sm:grid-cols-[3.75rem_1.5rem_3.75rem_3.25rem_3.75rem_minmax(0,1fr)_minmax(0,8rem)] items-center gap-x-1'
 
@@ -259,11 +264,22 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     } else {
       pool.sort((a, b) => compareAnimals(a, b, sortOption, sortDirection))
     }
-    if (!query.trim()) {
-      return pool.slice(0, 30)
-    }
-    return pool.filter((animal) => animalMatchesSearch(animal, query)).slice(0, 30)
+    if (!query.trim()) return pool
+    return pool.filter((animal) => animalMatchesSearch(animal, query))
   }, [animals, selectedIds, query, filterFn, sortOption, sortDirection])
+
+  // Render incremental: se pintan RENDER_PAGE filas y se agregan más al desplazarse.
+  const [visibleLimit, setVisibleLimit] = useState(RENDER_PAGE)
+  useEffect(() => {
+    setVisibleLimit(RENDER_PAGE)
+  }, [query, sortOption, sortDirection, isOpen])
+  const visibleItems = useMemo(
+    () => dropdownItems.slice(0, visibleLimit),
+    [dropdownItems, visibleLimit],
+  )
+  const hasMoreItems = visibleLimit < dropdownItems.length
+  const showMoreItems = () =>
+    setVisibleLimit((limit) => Math.min(limit + RENDER_PAGE, dropdownItems.length))
 
   const activeAreas = useMemo(
     () =>
@@ -281,13 +297,34 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
     const pool = filterFn ? animals.filter(filterFn) : animals
     const selectedSet = new Set(selectedIds)
     const q = query.trim().toLowerCase()
-    return activeAreas
-      .filter((area) => !q || area.name.toLowerCase().includes(q))
-      .map((area) => {
-        const inArea = pool.filter((animal) => animal.currentAreaId === area.id)
-        const pendingIds = inArea.filter((a) => !selectedSet.has(a.id)).map((a) => a.id)
-        return { area, total: inArea.length, pendingIds }
-      })
+    const toItem = (id: string, name: string, color: string | null, inArea: Animal[]) => ({
+      id,
+      name,
+      color,
+      total: inArea.length,
+      pendingIds: inArea.filter((a) => !selectedSet.has(a.id)).map((a) => a.id),
+    })
+    const items = activeAreas.map((area) =>
+      toItem(
+        area.id,
+        area.name,
+        area.layout?.color ?? '#d1d5db',
+        pool.filter((animal) => animal.currentAreaId === area.id),
+      ),
+    )
+    // Animales sin área activa (sin asignar o en un área desactivada).
+    if (activeAreas.length > 0) {
+      const activeIds = new Set(activeAreas.map((area) => area.id))
+      items.push(
+        toItem(
+          UNASSIGNED_AREA_ITEM_ID,
+          'Sin asignar',
+          null,
+          pool.filter((animal) => !animal.currentAreaId || !activeIds.has(animal.currentAreaId)),
+        ),
+      )
+    }
+    return items.filter((item) => !q || item.name.toLowerCase().includes(q))
   }, [canSelectByArea, activeAreas, animals, filterFn, selectedIds, query])
 
   const handleSelectArea = (pendingIds: string[]) => {
@@ -497,7 +534,9 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
       setHighlightIndex((prev) => {
         if (navigableCount <= 1) return 0
         if (prev < 0) return isAreasView ? 0 : 1
-        return prev < navigableCount - 1 ? prev + 1 : prev
+        const next = prev < navigableCount - 1 ? prev + 1 : prev
+        if (!isAreasView && next >= visibleLimit - 5) showMoreItems()
+        return next
       })
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
@@ -785,6 +824,15 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                     maxHeight: dropdownPosition.maxHeight,
                     transform: dropdownPosition.opensAbove ? 'translateY(-100%)' : undefined,
                   }}
+                  onScroll={(event) => {
+                    const el = event.currentTarget
+                    if (
+                      !isAreasView &&
+                      hasMoreItems &&
+                      el.scrollTop + el.clientHeight >= el.scrollHeight - 160
+                    )
+                      showMoreItems()
+                  }}
                   className="z-[100] overflow-y-auto overflow-x-hidden rounded-lg border border-gray-100 bg-white shadow-lg"
                 >
                   {/* Ayuda y cerrar selector */}
@@ -928,12 +976,12 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
 
                   {isAreasView ? (
                     areaItems.length > 0 ? (
-                      areaItems.map(({ area, total, pendingIds }, index) => {
+                      areaItems.map(({ id: areaId, name, color, total, pendingIds }, index) => {
                         const isHighlighted = highlightIndex === index
                         const isEmpty = pendingIds.length === 0
                         return (
                           <div
-                            key={area.id}
+                            key={areaId}
                             ref={(el) => {
                               itemRefs.current[index] = el
                             }}
@@ -956,11 +1004,13 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                           >
                             <span
                               aria-hidden="true"
-                              className="h-3 w-3 shrink-0 rounded-sm border border-black/10"
-                              style={{ backgroundColor: area.layout?.color ?? '#d1d5db' }}
+                              className={`h-3 w-3 shrink-0 rounded-sm border ${color ? 'border-black/10' : 'border-dashed border-gray-400 bg-white'}`}
+                              style={color ? { backgroundColor: color } : undefined}
                             />
-                            <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-800">
-                              {area.name}
+                            <span
+                              className={`min-w-0 flex-1 truncate text-sm font-medium ${color ? 'text-gray-800' : 'italic text-gray-600'}`}
+                            >
+                              {name}
                             </span>
                             <span className="shrink-0 whitespace-nowrap text-xs text-gray-500">
                               {total === 0
@@ -980,7 +1030,7 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                       </div>
                     )
                   ) : dropdownItems.length > 0 || leaving.length > 0 ? (
-                    withLeavingRows(dropdownItems, leaving).map((row) => {
+                    withLeavingRows(visibleItems, leaving).map((row) => {
                       const rowClass = `w-full px-3 py-2 ${renderOption ? 'flex items-center gap-3' : OPTION_GRID} text-left border-b border-gray-100 last:border-b-0`
                       if (row.leaving) {
                         return (
@@ -1030,6 +1080,18 @@ const InputSelectAnimals: React.FC<InputSelectAnimalsProps> = ({
                       {query.trim() ? 'No se encontraron animales' : 'No hay animales disponibles'}
                     </div>
                   )}
+                  {!isAreasView && hasMoreItems ? (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        showMoreItems()
+                      }}
+                      className="w-full cursor-pointer px-3 py-2 text-center text-xs text-gray-500 hover:bg-gray-50"
+                    >
+                      Mostrando {visibleItems.length} de {dropdownItems.length} · ver más
+                    </button>
+                  ) : null}
                 </div>,
                 document.body,
               )}
