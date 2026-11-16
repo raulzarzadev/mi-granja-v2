@@ -34,7 +34,7 @@ ACCIONES:
 - El usuario revisará y podrá editar el borrador antes de guardar. La misma validación de dominio que usa la interfaz manual vuelve a comprobar animales, fechas, compatibilidad y permisos al confirmar.
 - Alta Nuevo y parto son distintos: crear un animal vinculado a una madre no equivale a registrar el parto de una gestación. No encadenes escrituras implícitas.
 - Etapa de desarrollo y condiciones reproductivas pueden coexistir. Juvenil se calcula por edad; no clasifiques como cría a un adulto. Lactancia puede coexistir con gestación o empadre. Usa las reglas y catálogos compartidos.
-- Consulta de salud: registra lo que el usuario informa; no diagnostiques ni prescribas. Si hay señales de alarma, recomienda valoración veterinaria.
+- Consulta de sanidad (usa el término "sanidad", no "salud", para el módulo y sus registros): registra lo que el usuario informa; no diagnostiques ni prescribas. Si hay señales de alarma, recomienda valoración veterinaria.
 
 CATÁLOGO VERSIONADO (el documento de permisos determina cuáles están habilitadas):
 ${JSON.stringify(operationCatalog)}

@@ -103,9 +103,9 @@ El cliente confirma el borrador del servidor. No debe enviar una acción arbitra
 | 3. Alta de animales | Una primera acción completa, con formulario actual precargado y servicio de alta compartido | Alta por chat y alta manual crean el mismo animal y registro, con duplicados, fechas y etapa validados |
 | 4. Destetes | Consultar pendientes, seleccionar animales, fecha y destino, ejecutar movimiento actual | Actualiza crías y efectos sobre madres como el flujo manual; no repite destetes y conserva reversión |
 | 5. Empadres | Revisar montas, preparar nuevas montas y confirmar gestaciones mediante flujos actuales | Compatibilidad y disponibilidad se revalidan; terminar un empadre y liberar al macho se explica en la revisión |
-| 6. Resto de movimientos | Partos, leche, peso, salud y ventas, uno a uno | Cada acción supera pruebas de equivalencia y trazabilidad antes de habilitarse |
+| 6. Resto de movimientos | Partos, leche, peso, sanidad y ventas, uno a uno | Cada acción supera pruebas de equivalencia y trazabilidad antes de habilitarse |
 
-Las fases 1 a 6 tienen implementación inicial en código: el catálogo incluye altas, destetes, empadres, gestaciones, partos, peso, leche, salud, venta y muerte. La tabla anterior define el orden de validación y los criterios de salida, no afirma que todos los escenarios operativos estén ya comprobados en producción.
+Las fases 1 a 6 tienen implementación inicial en código: el catálogo incluye altas, destetes, empadres, gestaciones, partos, peso, leche, sanidad, venta y muerte. La tabla anterior define el orden de validación y los criterios de salida, no afirma que todos los escenarios operativos estén ya comprobados en producción.
 
 En el alta por asistente, esta versión cubre «Nuevo». «Parto» y crear una madre son operaciones relacionadas: habilitarlas tras definir qué constituye un parto real y la atomicidad de los documentos involucrados. No confundir vincular una madre con registrar un parto, ni prometer que cancelar la cría elimina una madre ya creada.
 
@@ -169,7 +169,7 @@ Diseño definitivo elegido: opción 1, un botón (+) verde con estrellas blancas
 
 ## Propuestas por lote
 
-El asistente puede preparar entre 2 y 10 operaciones completas en una respuesta (`proposed_actions`, `actions`). Permite altas múltiples y acciones distintas sobre animales distintos, conservando los contratos individuales. Una sola operación con varias referencias (destete, salud, venta o gestación) sigue siendo una propuesta individual con aviso de movimiento masivo. Salud también admite un grupo de animales activos resuelto en servidor (`animalGroup`), ver [flows.md](flows.md#salud-por-grupo-de-animales--habilitado-versión-3).
+El asistente puede preparar entre 2 y 10 operaciones completas en una respuesta (`proposed_actions`, `actions`). Permite altas múltiples y acciones distintas sobre animales distintos, conservando los contratos individuales. Una sola operación con varias referencias (destete, sanidad, venta o gestación) sigue siendo una propuesta individual con aviso de movimiento masivo. Sanidad también admite un grupo de animales activos resuelto en servidor (`animalGroup`), ver [flows.md](flows.md#sanidad-por-grupo-de-animales--habilitado-versión-3).
 
 `BatchProposalCard` muestra cada acción con un botón discreto «Por revisar» siempre visible. No ofrece «Revisar lote completo» ni confirmación conjunta. La advertencia explica el riesgo de datos incorrectos; cada movimiento se revisa y confirma en su propio modal con los datos y efectos del servidor. Recibir el mensaje no ejecuta movimientos. Los borradores se persisten individualmente; el agrupamiento del chat es local.
 

@@ -224,7 +224,7 @@ export const Steak = farmIcon(
   'Steak',
 )
 
-/** Bolsa de sangre (salud / médico) */
+/** Bolsa de sangre (sanidad / médico) */
 export const BloodBag = farmIcon(
   <g
     fill="none"

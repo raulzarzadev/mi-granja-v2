@@ -98,7 +98,7 @@ export const COLLABORATOR_ROLES = [
   {
     value: 'veterinarian',
     label: 'Veterinario',
-    description: 'Acceso a registros médicos y de salud',
+    description: 'Acceso a registros médicos y de sanidad',
     icon: '👨‍⚕️',
     defaultPermissions: [
       { module: 'animals', actions: ['read', 'update'] },

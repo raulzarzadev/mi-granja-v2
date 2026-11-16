@@ -55,7 +55,7 @@ it('starts with type/date, requires animals next and preserves earlier input whe
 
 it('lets the user pick several categories and saves them all', async () => {
   render(<NuevoRegistroClient />)
-  fireEvent.click(screen.getByRole('button', { name: 'Salud' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Sanidad' }))
   const vaccine = screen.getByRole('button', { name: 'Vacuna' })
   const deworming = screen.getByRole('button', { name: 'Desparasitación' })
   fireEvent.click(vaccine)
@@ -78,7 +78,7 @@ it('lets the user pick several categories and saves them all', async () => {
 
 it('keeps at least one category selected', () => {
   render(<NuevoRegistroClient />)
-  fireEvent.click(screen.getByRole('button', { name: 'Salud' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Sanidad' }))
   const pressed = screen
     .getAllByRole('button', { pressed: true })
     .filter((button) => button.closest('fieldset'))
@@ -91,7 +91,7 @@ it('keeps at least one category selected', () => {
 it('adds medications with batch and drops empty rows on save', async () => {
   mockAddRecord.mockClear()
   render(<NuevoRegistroClient />)
-  fireEvent.click(screen.getByRole('button', { name: 'Salud' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Sanidad' }))
   fireEvent.click(screen.getByRole('button', { name: 'Agregar medicamento' }))
   fireEvent.click(screen.getByRole('button', { name: 'Agregar medicamento' }))
   fireEvent.change(screen.getByLabelText('Nombre del medicamento 1'), {
@@ -112,7 +112,7 @@ it('adds medications with batch and drops empty rows on save', async () => {
 
 it('removes a medication row', () => {
   render(<NuevoRegistroClient />)
-  fireEvent.click(screen.getByRole('button', { name: 'Salud' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Sanidad' }))
   fireEvent.click(screen.getByRole('button', { name: 'Agregar medicamento' }))
   fireEvent.click(screen.getByRole('button', { name: 'Quitar medicamento 1' }))
   expect(screen.queryByLabelText('Nombre del medicamento 1')).not.toBeInTheDocument()

@@ -5,7 +5,7 @@ import Tabs, { useSidebarSubItems } from '@/components/Tabs'
 const FilterSection = () => {
   const [type, setType] = useState(0)
   useSidebarSubItems({
-    labels: ['Todos', 'Salud'],
+    labels: ['Todos', 'Sanidad'],
     badges: [3, 1],
     activeIndex: type,
     onSelect: setType,
@@ -79,10 +79,10 @@ describe('Tabs sidebarOnDesktop', () => {
         tabs={[{ label: 'Registros', content: <FilterSection /> }]}
       />,
     )
-    const salud = screen.getByRole('button', { name: /Salud/ })
-    act(() => fireEvent.click(salud))
+    const sanidad = screen.getByRole('button', { name: /Sanidad/ })
+    act(() => fireEvent.click(sanidad))
     expect(screen.getByText('Filtro activo: 1')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Salud/ })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: /Sanidad/ })).toHaveAttribute('aria-current', 'page')
   })
 })
 

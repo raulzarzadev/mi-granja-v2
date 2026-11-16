@@ -120,7 +120,7 @@ const actionDescriptions: Record<OperationAction['type'], string> = {
   register_weaning: 'Registrarás el destete de los animales seleccionados y su destino productivo.',
   register_weight: 'Guardarás un nuevo pesaje y se actualizará el peso del animal.',
   register_milk: 'Guardarás el ordeño con la cantidad, fecha y turno indicados.',
-  register_health: 'Guardarás la atención de salud para los animales seleccionados.',
+  register_health: 'Guardarás el registro de sanidad para los animales seleccionados.',
   create_sale:
     'Registrarás una venta completada y los animales seleccionados quedarán como vendidos.',
 }

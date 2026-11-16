@@ -30,7 +30,7 @@
 
   <!-- Subtitle -->
   <text x="80" y="390" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="400" fill="#374151">Software ganadero en español — animales,</text>
-  <text x="80" y="430" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="400" fill="#374151">reproducción, salud y colaboradores.</text>
+  <text x="80" y="430" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="400" fill="#374151">reproducción, sanidad y colaboradores.</text>
 
   <!-- Animal emoji strip -->
   <text x="80" y="540" font-family="Apple Color Emoji, Segoe UI Emoji, sans-serif" font-size="56">🐄 🐑 🐐 🐷 🐔 🐴</text>

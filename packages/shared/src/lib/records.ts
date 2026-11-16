@@ -49,7 +49,7 @@ export function buildRecordFromForm(form: RecordFormState): RecordPayload {
     title: fields.title.trim(),
     date: parseLocalDate(fields.date),
   }
-  // Siempre se escribe el arreglo en nota/salud para que una edición reemplace el anterior.
+  // Siempre se escribe el arreglo en nota/sanidad para que una edición reemplace el anterior.
   if (fields.type === 'note' || fields.type === 'health') base.categories = categories
 
   if (fields.description?.trim()) base.description = fields.description.trim()
@@ -65,7 +65,7 @@ export function buildRecordFromForm(form: RecordFormState): RecordPayload {
 
     if (fields.nextDueDate) base.nextDueDate = parseLocalDate(fields.nextDueDate)
     if (fields.batch?.trim()) base.batch = fields.batch.trim()
-    // Siempre se escribe en salud para que una edición reemplace la lista anterior.
+    // Siempre se escribe en sanidad para que una edición reemplace la lista anterior.
     base.medications = cleanMedications(fields.medications)
     if (fields.veterinarian?.trim()) base.veterinarian = fields.veterinarian.trim()
     if (fields.cost) {

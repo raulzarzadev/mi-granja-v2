@@ -115,8 +115,8 @@ import {
   BloodBag,
   Calf,
   Chicken,
-  Goat,
   FieldFlag,
+  Goat,
   Man,
   Pig,
   Pregnant,
@@ -188,7 +188,7 @@ export const EMOJI_ICON_GROUPS: Array<{ title: string; items: Array<[string, Ico
     ],
   },
   {
-    title: 'Salud',
+    title: 'Sanidad',
     items: [
       ['🏥', BloodBag],
       ['⚕️', PiFirstAid],

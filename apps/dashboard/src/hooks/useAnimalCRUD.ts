@@ -489,7 +489,7 @@ export const useAnimalCRUD = () => {
 
   // (Eliminadas en favor del sistema unificado de registros)
 
-  // === FUNCIONES DE EVENTOS DE SALUD (LEGACY) ===
+  // === FUNCIONES DE EVENTOS DE SANIDAD (LEGACY) ===
   // Eliminadas en favor del sistema unificado de registros
 
   // === SISTEMA UNIFICADO DE REGISTROS ===
@@ -685,7 +685,7 @@ export const useAnimalCRUD = () => {
     return newRecord.id
   }
 
-  // Obtener próximos vencimientos de registros de salud
+  // Obtener próximos vencimientos de registros de sanidad
   const getUpcomingHealthRecords = (daysAhead: number = 30) => {
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() + daysAhead)

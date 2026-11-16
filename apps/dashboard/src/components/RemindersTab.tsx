@@ -214,7 +214,7 @@ const RemindersTab: React.FC<RemindersTabProps> = ({ speciesFilter = '' }) => {
     },
   ]
 
-  // Granja sin recordatorios: solo el estado vacío (más los seguimientos de salud, si hay)
+  // Granja sin recordatorios: solo el estado vacío (más los seguimientos de sanidad, si hay)
   if (!isLoading && reminders.length === 0) {
     return (
       <div className="space-y-4">

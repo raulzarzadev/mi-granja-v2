@@ -11,7 +11,7 @@ export function selectRelevance<T extends { numero?: string }>(message: string, 
   const wantsBreeding = /empadre|monta|parto|embaraz|preñ|gestaci|destet|reproduc/.test(msg)
   const wantsMilk = /leche|ordeñ|lacta|lechera|producci[oó]n/.test(msg)
   const wantsMovements =
-    /movim|registro|historial|actividad|reciente|[uú]ltim|peso|salud|vacun|tratamiento|nota/.test(
+    /movim|registro|historial|actividad|reciente|[uú]ltim|peso|salud|sanidad|sanitari|vacun|tratamiento|nota/.test(
       msg,
     ) || wantsMilk
   const wantsGuidance =

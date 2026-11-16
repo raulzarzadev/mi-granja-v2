@@ -7,13 +7,13 @@ export const CONTACT_EMAIL = 'hola@migranja.app'
 
 export const DEFAULT_TITLE = 'Mi Granja | Software de gestión ganadera con IA'
 export const DEFAULT_DESCRIPTION =
-  'Software ganadero en español para registrar animales, reproducción, partos, salud, leche, recordatorios y colaboradores, con asistente IA.'
+  'Software ganadero en español para registrar animales, reproducción, partos, sanidad, leche, recordatorios y colaboradores, con asistente IA.'
 
 export const PRODUCT_FEATURES = [
   'Inventario e historial individual de animales',
   'Etapas productivas: cría, juvenil, engorda, reproducción y madre o lechera',
   'Empadres, gestaciones, partos, crías y genealogía',
-  'Registros de peso, salud, notas, leche y ventas',
+  'Registros de peso, sanidad, notas, leche y ventas',
   'Recordatorios y notificaciones',
   'Áreas, lotes, colaboradores, roles y permisos',
   'Asistente IA basado en los datos actuales de la granja',

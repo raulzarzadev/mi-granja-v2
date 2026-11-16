@@ -39,7 +39,7 @@ const FirstAnimalEmptyState: React.FC = () => (
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
           Registra sus datos básicos y Mi Granja te ayudará a seguir su crecimiento, reproducción,
-          salud y movimientos desde un solo lugar.
+          sanidad y movimientos desde un solo lugar.
         </p>
 
         <div className="mt-7 flex justify-center">

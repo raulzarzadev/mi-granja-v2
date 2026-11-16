@@ -171,7 +171,7 @@ it('admite muerte de varios animales y exige motivo, fecha y un máximo de 50', 
     ).toThrow()
 })
 
-it('admite salud por grupo de animales sin listar referencias', () => {
+it('admite sanidad por grupo de animales sin listar referencias', () => {
   const action = {
     type: 'register_health',
     summary: 'Vacunación general',

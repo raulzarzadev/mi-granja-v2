@@ -97,7 +97,7 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
           />
         </div>
 
-        {/* Categorías — solo para nota/salud */}
+        {/* Categorías — solo para nota/sanidad */}
         {isNoteOrHealth && (
           <div className="sm:col-span-2">
             <RecordCategoryPicker
@@ -159,7 +159,7 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
           </div>
         )}
 
-        {/* Titulo — para nota/salud/parto */}
+        {/* Titulo — para nota/sanidad/parto */}
         {!isWeight && (
           <div className={isNoteOrHealth ? '' : 'sm:col-span-2'}>
             <label className="block text-sm font-medium">Titulo *</label>
@@ -282,7 +282,7 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
             className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
           >
             <span>
-              Detalles de salud
+              Detalles de sanidad
               {hasHealthValues && (
                 <span className="ml-2 inline-flex w-2 h-2 rounded-full bg-blue-500" />
               )}

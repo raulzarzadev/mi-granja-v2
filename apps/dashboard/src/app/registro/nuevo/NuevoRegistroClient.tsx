@@ -462,7 +462,7 @@ export default function NuevoRegistroClient() {
             </div>
           )}
 
-          {/* Titulo (nota y salud) */}
+          {/* Titulo (nota y sanidad) */}
           {!isStageRecord && !isSaleRecord && formData.type !== 'weight' && (
             <div>
               <label className="block text-sm font-medium mb-1">Titulo *</label>
@@ -671,7 +671,7 @@ const HealthDetailsSection: React.FC<{
 
   return (
     <div className="border border-gray-200 rounded-lg p-3 space-y-3">
-      <p className="text-sm font-medium text-gray-700">Detalles de salud</p>
+      <p className="text-sm font-medium text-gray-700">Detalles de sanidad</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {isClinical && (
           <>

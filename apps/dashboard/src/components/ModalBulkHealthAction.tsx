@@ -126,7 +126,7 @@ const ModalBulkHealthAction: React.FC<ModalBulkHealthActionProps> = ({
       onSuccess?.()
       handleClose()
     } catch (error) {
-      console.error('Error al aplicar evento masivo de salud:', error)
+      console.error('Error al aplicar evento masivo de sanidad:', error)
       notify('Error al aplicar el evento. Inténtalo de nuevo.')
     } finally {
       setIsSubmitting(false)

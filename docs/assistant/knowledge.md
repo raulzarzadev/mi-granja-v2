@@ -118,7 +118,7 @@ Cuotas: `settings/aiBilling` es la política privada de administrador; `subscrip
 
 Fotos de animales: `Animal.imageUrl` es portada y `imageUrls` la galería. La UI
 comprime antes de subir a Storage; el respaldo conserva enlaces. Estos campos
-no demuestran eventos de salud ni parentescos y el asistente no analiza ni carga
+no demuestran eventos de sanidad ni parentescos y el asistente no analiza ni carga
 fotos mediante sus acciones actuales.
 
 Las áreas pueden incluir `areaM2`, superficie manual en metros cuadrados.

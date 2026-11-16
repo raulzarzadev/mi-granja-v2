@@ -1,4 +1,4 @@
-/** Medicamento o producto aplicado en un registro de salud. */
+/** Medicamento o producto aplicado en un registro de sanidad. */
 export interface RecordMedication {
   name: string
   batch?: string
@@ -25,7 +25,7 @@ export interface AnimalRecord {
   resolvedDate?: Date
   treatment?: string
 
-  // Campos específicos para eventos de salud (vacunas/medicamentos)
+  // Campos específicos para eventos de sanidad (vacunas/medicamentos)
   nextDueDate?: Date // Para vacunas que requieren refuerzo
   batch?: string // Lote de la vacuna/medicamento
   /** Medicamentos aplicados, cada uno con su lote. */
@@ -45,7 +45,7 @@ export interface AnimalRecord {
   /** Peso almacenado en gramos. El título es sólo una etiqueta de presentación. */
   weightGrams?: number
 
-  // Para aplicación masiva (eventos de salud)
+  // Para aplicación masiva (eventos de sanidad)
   appliedToAnimals?: string[] // IDs de animales
   isBulkApplication?: boolean
 
@@ -405,7 +405,7 @@ export type RecordCategory = (typeof record_categories)[number]
 
 export const record_type_labels: Record<RecordType, string> = {
   note: 'Nota',
-  health: 'Salud',
+  health: 'Sanidad',
   weight: 'Peso',
   birth: 'Parto',
   milk: 'Leche',

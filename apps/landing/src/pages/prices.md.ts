@@ -29,7 +29,7 @@ Los animales vendidos o muertos no cuentan como activos. Los importes están exp
 ## Incluido en los planes
 
 - Gestión de animales, etapas y áreas.
-- Reproducción, salud, leche, registros y recordatorios.
+- Reproducción, sanidad, leche, registros y recordatorios.
 - Colaboradores con roles y permisos.
 - Asistente IA y respaldos.
 

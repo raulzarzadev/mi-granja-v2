@@ -7,7 +7,7 @@ import { BloodBag, Calf } from '@/components/Icon/farm-icons'
 const HOW_IT_WORKS = [
   {
     icon: BloodBag,
-    title: 'Salud con seguimiento',
+    title: 'Sanidad con seguimiento',
     text: 'Guarda vacunas y tratamientos para consultar cuándo se aplicaron.',
   },
   {
@@ -53,7 +53,7 @@ const FirstRecordEmptyState: React.FC = () => (
         Agrega tu primer registro
       </h2>
       <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
-        Guarda el historial de cada animal: salud (vacunas y tratamientos), peso, partos, leche,
+        Guarda el historial de cada animal: sanidad (vacunas y tratamientos), peso, partos, leche,
         gastos y notas. Todo en un solo lugar para consultarlo cuando lo necesites.
       </p>
 

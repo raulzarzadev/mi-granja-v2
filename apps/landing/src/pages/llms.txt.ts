@@ -5,7 +5,7 @@ export const GET: APIRoute = () =>
   markdownResponse(`
 # Mi Granja
 
-> Software web de gestión ganadera en español para productores y equipos de trabajo. Centraliza animales, reproducción, partos, salud, leche, recordatorios y colaboradores, e incluye un asistente IA que responde usando los datos autorizados de la granja actual.
+> Software web de gestión ganadera en español para productores y equipos de trabajo. Centraliza animales, reproducción, partos, sanidad, leche, recordatorios y colaboradores, e incluye un asistente IA que responde usando los datos autorizados de la granja actual.
 
 Mi Granja es un producto SaaS accesible desde celular, tablet y computadora. El sitio público es ${SITE_URL}; la aplicación privada está en ${APP_URL}. No confundas Mi Granja con un servicio veterinario: organiza información y orienta dentro del producto, pero no sustituye el criterio de un profesional.
 

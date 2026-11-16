@@ -7,6 +7,15 @@ last_updated: 2026-11-15
 
 # Historial de decisiones
 
+## 2026-11-15 — Término «Sanidad» en lugar de «Salud»
+
+Cambio de vocabulario sin impacto funcional. El módulo, sus registros, la
+operación `register_health` («Registrar sanidad»), textos de UI, landing y
+documentación usan «sanidad». El prompt del sistema indica usar ese término;
+la detección de contexto acepta «salud», «sanidad» y «sanitario». «Salud» se
+conserva solo cuando describe la condición física de un animal (p. ej.
+«problemas de salud»). Las entradas históricas de este archivo no se editan.
+
 ## 2026-11-15 — Medicamentos con lote en registros de salud
 
 `AnimalRecord.medications?` (`{ name, batch? }[]`) guarda los productos

@@ -30,7 +30,7 @@ Antes de habilitar cada acción, comprobar que las validaciones actuales estén 
 | Registrar parto | Madre con gestación activa y empadre relacionado si aplica, fecha/hora, crías, sexo, ID, peso y estado | Reutilizar `ModalBirthForm` / `ModalNewRecord`, `useRecordMovements.birth`; crear crías, actualizar madre y empadre, conservar movimiento/reversión |
 | Peso | Animal, fecha, peso y unidad | `ModalNewRecord`, `useRecordMovements.weight`; normalizar a unidad interna sin inventar valores |
 | Leche | Madre con lactancia elegible, fecha, litros, turno y notas | `ModalNewRecord`, `useRecordMovements.milk`; respetar propósito de lactancia y conservar historial |
-| Salud | Animales, fecha, categorías (una o varias) y descripción; tratamiento/costo si los aporta el usuario | `useRecordMovements.health`; registrar lo reportado sin convertirlo en diagnóstico o prescripción |
+| Sanidad | Animales, fecha, categorías (una o varias) y descripción; tratamiento/costo si los aporta el usuario | `useRecordMovements.health`; registrar lo reportado sin convertirlo en diagnóstico o prescripción |
 | Venta | Animales activos, fecha del movimiento y campos del flujo actual de venta | `ModalSaleForm`, `useRecordMovements.sale`; venta y registros asociados, estado completada según diseño vigente; revisar integridad entre venta y movimiento |
 | Finalizar empadre | Empadre y resultados verificados; explicar hembras afectadas y disponibilidad del macho | Reutilizar el flujo vigente después de revisar diferencias con `finish_breeding` antiguo |
 | Revertir movimiento | Registro exacto, dependencias y estado posterior | `undoMovement`; jamás restaurar el estado a partir del texto de la conversación |
@@ -98,7 +98,7 @@ Contrato de flujo: `OPERATION_VERSION = 3`. El inventario verificable vive en [m
 | `register_weight` | Registrar peso | Animal, fecha, kg y notas |
 | `register_milk` | Registrar leche | Animal, fecha, litros, turno y notas |
 | `register_death` | Registrar muerte de 1–50 animales activos | Animales, fecha efectiva, motivo obligatorio y notas opcionales |
-| `register_health` | Registrar atención de salud | Animales (`animalRefs`, hasta 50) **o** grupo de activos (`animalGroup` por especie/sexo), fecha, categoría principal (`category`) y opcionalmente todas en `categories[]`, descripción y campos opcionales |
+| `register_health` | Registrar atención de sanidad | Animales (`animalRefs`, hasta 50) **o** grupo de activos (`animalGroup` por especie/sexo), fecha, categoría principal (`category`) y opcionalmente todas en `categories[]`, descripción y campos opcionales |
 | `create_sale` | Crear venta completada | Animales, fecha, precio por kg, pesos y comprador |
 | `create_reminder` | Crear recordatorio | Título, fecha (hoy o futura), prioridad, tipo, animales opcionales y descripción |
 | `create_area` | Crear área de la granja | Nombre único, tipo de área, superficie (m²) opcional y descripción |
@@ -152,7 +152,7 @@ En escritorio, Asistente IA tiene un acceso independiente debajo de Crear nuevo 
 - Permisos: `animals:read` y `animals:update`; referencias limitadas a la granja actual. Solo animales activos y fecha no futura. Revalidación dentro de transacción; el grupo completo se rechaza ante un miembro inválido, sin éxitos parciales en esa acción.
 - Efectos: `status=muerto`, `statusAt`, `statusNotes`, `deathInfo` y movimiento `eventType=muerte` con motivo/notas. Historial y comprobante persistidos, reintentos idempotentes. No se eliminan fichas ni se cierran empadres/gestaciones implícitamente. El asistente aún no habilita deshacer este movimiento.
 
-## Salud por grupo de animales — habilitado, versión 4
+## Sanidad por grupo de animales — habilitado, versión 4
 
 Desde la versión 4 una misma atención puede llevar varias categorías (`categories[]`, la primera también en `category`), igual que en el flujo manual.
 
@@ -322,7 +322,7 @@ muestra todos los animales y no sustituye los que pasan de doce por un «+N».
 
 ### Orden de Nuevo Registro
 
-`/registro/nuevo` comienza en **Tipo y Fecha**, continúa con **Animales** y termina en **Detalles**. El primer paso conserva tipo, categorías y fecha (nota y salud admiten varias categorías: se guardan en `categories[]` y la primera queda como `category` principal; el primer toque reemplaza la preselección automática); en salud se pueden agregar medicamentos con nombre y lote, guardados en `medications[]`); el segundo exige al menos un animal activo antes de avanzar. Volver conserva los datos y la preselección de animales de la URL. Venta y cambio de etapa abren sus formularios en el tercer paso y vuelven al selector de animales. El orden no modifica los servicios ni la confirmación del asistente.
+`/registro/nuevo` comienza en **Tipo y Fecha**, continúa con **Animales** y termina en **Detalles**. El primer paso conserva tipo, categorías y fecha (nota y sanidad admiten varias categorías: se guardan en `categories[]` y la primera queda como `category` principal; el primer toque reemplaza la preselección automática); en sanidad se pueden agregar medicamentos con nombre y lote, guardados en `medications[]`); el segundo exige al menos un animal activo antes de avanzar. Volver conserva los datos y la preselección de animales de la URL. Venta y cambio de etapa abren sus formularios en el tercer paso y vuelven al selector de animales. El orden no modifica los servicios ni la confirmación del asistente.
 
 
 En Cambio de etapa, una hembra gestante muestra fecha aproximada de parto, padre y monta (código y fecha). Usa la fecha esperada guardada o la calcula desde la monta con el helper de especie. Conserva las acciones solo donde ya hay handlers conectados; no habilita movimientos nuevos.

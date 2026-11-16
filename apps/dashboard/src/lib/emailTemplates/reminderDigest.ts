@@ -7,7 +7,7 @@ const PRIORITY_LABEL: Record<Reminder['priority'], string> = {
 }
 
 const TYPE_LABEL: Record<Reminder['type'], string> = {
-  medical: 'Salud',
+  medical: 'Sanidad',
   breeding: 'Reproducción',
   feeding: 'Alimentación',
   weight: 'Peso',

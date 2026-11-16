@@ -220,7 +220,7 @@ export const operationCatalog = [
   },
   {
     type: 'register_health',
-    title: 'Registrar salud',
+    title: 'Registrar sanidad',
     module: 'animals',
     permission: 'update',
     version: 4,

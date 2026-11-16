@@ -40,7 +40,7 @@ const HealthRemindersCard: React.FC = () => {
         <span className="text-2xl">
           <EmojiIcon emoji="💉" />
         </span>
-        <h3 className="text-lg font-semibold text-gray-900">Recordatorios de Salud</h3>
+        <h3 className="text-lg font-semibold text-gray-900">Recordatorios de Sanidad</h3>
         <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
           {upcoming.length}
         </span>
