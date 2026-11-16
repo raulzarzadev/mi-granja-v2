@@ -1,8 +1,10 @@
-import { AnimalRecord, ExpenseCategory, RecordType } from './animals'
+import { AnimalRecord, ExpenseCategory, RecordMedication, RecordType } from './animals'
 
 export type RecordFormState = {
   type: RecordType
   category: AnimalRecord['category']
+  /** Categorías seleccionadas; si falta se usa `category`. */
+  categories?: AnimalRecord['category'][]
   title: string
   description: string
   date: string // yyyy-MM-dd
@@ -12,6 +14,8 @@ export type RecordFormState = {
   treatment: string
   nextDueDate: string // yyyy-MM-dd | ''
   batch: string
+  /** Filas del formulario; las vacías se descartan al guardar. */
+  medications?: RecordMedication[]
   veterinarian: string
   cost: string
   createReminder: boolean

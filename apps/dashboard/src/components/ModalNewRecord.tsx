@@ -5,8 +5,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import BreedingForm from '@/components/BreedingForm'
 import Button from '@/components/buttons/Button'
 import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
-import InputIconSelect from '@/components/inputs/InputIconSelect'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
+import RecordCategoryPicker from '@/components/inputs/RecordCategoryPicker'
 import { Modal } from '@/components/Modal'
 import ModalAnimalListReader from '@/components/ModalAnimalListReader'
 import ModalBirthForm from '@/components/ModalBirthForm'
@@ -36,8 +36,6 @@ import {
   type AnimalRecord,
   type MilkingSession,
   type RecordSeverity,
-  record_category_icons,
-  record_category_labels,
   record_severities,
   record_severity_labels,
 } from '@/types/animals'
@@ -138,6 +136,8 @@ type NewRecordDraft = {
   milkAmount: string
   milkSession: MilkingSession
   sanitaryCategory: SanitaryCategory
+  /** Todas las categorías elegidas; los borradores antiguos solo traen sanitaryCategory. */
+  sanitaryCategories?: SanitaryCategory[]
   sanitaryTitle: string
   sanitaryDescription: string
   sanitaryNextDueDate: string
@@ -206,6 +206,10 @@ const normalizeNewRecordDraft = (
     sanitaryCategory: isSanitaryCategory(draft.sanitaryCategory)
       ? draft.sanitaryCategory
       : 'vaccine',
+    ...(Array.isArray(draft.sanitaryCategories) &&
+    draft.sanitaryCategories.filter(isSanitaryCategory).length
+      ? { sanitaryCategories: draft.sanitaryCategories.filter(isSanitaryCategory) }
+      : {}),
     sanitaryTitle: typeof draft.sanitaryTitle === 'string' ? draft.sanitaryTitle : '',
     sanitaryDescription:
       typeof draft.sanitaryDescription === 'string' ? draft.sanitaryDescription : '',
@@ -298,7 +302,8 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
   const [weightValue, setWeightValue] = useState('')
   const [milkAmount, setMilkAmount] = useState('')
   const [milkSession, setMilkSession] = useState<MilkingSession>('morning')
-  const [sanitaryCategory, setSanitaryCategory] = useState<SanitaryCategory>('vaccine')
+  const [sanitaryCategoryList, setSanitaryCategoryList] = useState<SanitaryCategory[]>(['vaccine'])
+  const sanitaryCategory = sanitaryCategoryList[0]
   const [sanitaryTitle, setSanitaryTitle] = useState('')
   const [sanitaryDescription, setSanitaryDescription] = useState('')
   const [sanitaryNextDueDate, setSanitaryNextDueDate] = useState('')
@@ -605,7 +610,7 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
     setWeightValue('')
     setMilkAmount('')
     setMilkSession('morning')
-    setSanitaryCategory('vaccine')
+    setSanitaryCategoryList(['vaccine'])
     setSanitaryTitle('')
     setSanitaryDescription('')
     setSanitaryNextDueDate('')
@@ -642,6 +647,7 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
       milkAmount,
       milkSession,
       sanitaryCategory,
+      sanitaryCategories: sanitaryCategoryList,
       sanitaryTitle,
       sanitaryDescription,
       sanitaryNextDueDate,
@@ -693,7 +699,7 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
     weightValue,
     milkAmount,
     milkSession,
-    sanitaryCategory,
+    sanitaryCategoryList,
     sanitaryTitle,
     sanitaryDescription,
     sanitaryNextDueDate,
@@ -741,7 +747,11 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
     setWeightValue(draft.weightValue ?? '')
     setMilkAmount(draft.milkAmount ?? '')
     setMilkSession(draft.milkSession ?? 'morning')
-    setSanitaryCategory(draft.sanitaryCategory ?? 'vaccine')
+    setSanitaryCategoryList(
+      draft.sanitaryCategories?.length
+        ? draft.sanitaryCategories
+        : [draft.sanitaryCategory ?? 'vaccine'],
+    )
     setSanitaryTitle(draft.sanitaryTitle ?? '')
     setSanitaryDescription(draft.sanitaryDescription ?? '')
     setSanitaryNextDueDate(draft.sanitaryNextDueDate ?? '')
@@ -913,6 +923,7 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
     perform((id) =>
       movements.health(id, selectedAnimalIds, {
         category: sanitaryCategory,
+        categories: sanitaryCategoryList,
         title: sanitaryTitle,
         date: fromInputDate(actionDate),
         description: sanitaryDescription,
@@ -1657,24 +1668,18 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
 
                   {selectedOption === 'sanidad' && (
                     <div className="space-y-3">
-                      <div>
-                        <label
-                          htmlFor="new-record-health-category"
-                          className="mb-1 block text-sm font-medium text-gray-700"
-                        >
-                          Tipo de atención sanitaria
-                        </label>
-                        <InputIconSelect
-                          id="new-record-health-category"
-                          value={sanitaryCategory}
-                          onChange={(category) => setSanitaryCategory(category)}
-                          options={sanitaryCategories.map((category) => ({
-                            value: category,
-                            label: record_category_labels[category],
-                            icon: record_category_icons[category],
-                          }))}
-                        />
-                      </div>
+                      <RecordCategoryPicker
+                        label="Tipo de atención sanitaria"
+                        // Solo la preselección inicial se reemplaza; un borrador restaurado se respeta.
+                        replaceDefaultOnFirstPick={
+                          sanitaryCategoryList.length === 1 && sanitaryCategoryList[0] === 'vaccine'
+                        }
+                        options={sanitaryCategories}
+                        value={sanitaryCategoryList}
+                        onChange={(categories) =>
+                          setSanitaryCategoryList(categories as SanitaryCategory[])
+                        }
+                      />
 
                       <div>
                         <label
@@ -1785,8 +1790,10 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
                         </div>
                       </div>
 
-                      {(['illness', 'injury', 'treatment', 'surgery'] as const).includes(
-                        sanitaryCategory as 'illness' | 'injury' | 'treatment' | 'surgery',
+                      {sanitaryCategoryList.some((category) =>
+                        (['illness', 'injury', 'treatment', 'surgery'] as const).includes(
+                          category as 'illness' | 'injury' | 'treatment' | 'surgery',
+                        ),
                       ) && (
                         <div className="grid gap-3 sm:grid-cols-2">
                           <div>

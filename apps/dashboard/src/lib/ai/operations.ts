@@ -8,6 +8,17 @@ import {
   registerBirthPayloadSchema,
 } from './types'
 
+const healthCategory = z.enum([
+  'illness',
+  'injury',
+  'vaccine',
+  'treatment',
+  'deworming',
+  'supplement',
+  'surgery',
+  'observation',
+  'other',
+])
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Usa una fecha YYYY-MM-DD')
 const refs = z.array(z.string().trim().min(1)).min(1).max(50)
 const notes = z.string().trim().max(3000).optional()
@@ -76,17 +87,10 @@ export const operationActionSchema = z.discriminatedUnion('type', [
       animalRefs: refs.optional(),
       animalGroup: animalGroupSchema.optional(),
       date,
-      category: z.enum([
-        'illness',
-        'injury',
-        'vaccine',
-        'treatment',
-        'deworming',
-        'supplement',
-        'surgery',
-        'observation',
-        'other',
-      ]),
+      // Categoría principal; debe ser la primera de `categories` cuando se envían varias.
+      category: healthCategory,
+      // Todas las categorías de una misma atención (p. ej. vacuna + desparasitación).
+      categories: z.array(healthCategory).min(1).max(9).optional(),
       title: z.string().trim().min(1),
       description: z.string().optional(),
       treatment: z.string().optional(),
@@ -131,7 +135,7 @@ export const operationActionSchema = z.discriminatedUnion('type', [
   ),
 ])
 export type OperationAction = z.infer<typeof operationActionSchema>
-export const OPERATION_VERSION = 3
+export const OPERATION_VERSION = 4
 export const operationCatalog = [
   {
     type: 'register_death',
@@ -219,7 +223,7 @@ export const operationCatalog = [
     title: 'Registrar salud',
     module: 'animals',
     permission: 'update',
-    version: 3,
+    version: 4,
     assistantReview: 'OperationFields',
     manualFlow: 'ModalNewRecord',
   },

@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux'
 import { DatePickerButtons } from '@/components/buttons/date-picker-buttons'
 import AnimalSelector from '@/components/inputs/AnimalSelector'
 import InputIconSelect from '@/components/inputs/InputIconSelect'
+import RecordCategoryPicker from '@/components/inputs/RecordCategoryPicker'
 import type { RootState } from '@/features/store'
 import type { OperationAction } from '@/lib/ai/operations'
 import { animalDeathReasonLabels } from '@/lib/animal-discharge'
@@ -14,7 +15,27 @@ import {
   animals_genders_labels,
   animals_stages_labels,
   animals_types_labels,
+  type RecordCategory,
 } from '@/types/animals'
+
+const healthCategoryOptions: RecordCategory[] = [
+  'vaccine',
+  'deworming',
+  'treatment',
+  'illness',
+  'injury',
+  'surgery',
+  'supplement',
+  'observation',
+  'other',
+]
+const healthCategoriesOf = (payload: Record<string, unknown>): RecordCategory[] => {
+  const isOption = (value: unknown): value is RecordCategory =>
+    healthCategoryOptions.includes(value as RecordCategory)
+  const list = Array.isArray(payload.categories) ? payload.categories.filter(isOption) : []
+  if (list.length) return list
+  return isOption(payload.category) ? [payload.category] : ['vaccine']
+}
 
 export type OperationDraft = {
   type: OperationAction['type']
@@ -380,17 +401,19 @@ export default function OperationFields({ draft, onChange, disabled, farmId }: P
           {payload.animalGroup && typeof payload.animalGroup === 'object'
             ? animalGroup()
             : refs('animalRefs', 'Animales', true)}
-          {select('category', 'Tipo de atención', {
-            vaccine: 'Vacuna',
-            treatment: 'Tratamiento',
-            surgery: 'Cirugía',
-            injury: 'Lesión',
-            illness: 'Enfermedad',
-            deworming: 'Desparasitación',
-            supplement: 'Suplemento',
-            observation: 'Observación',
-            other: 'Otro',
-          })}
+          <RecordCategoryPicker
+            key="categories"
+            label="Tipo de atención"
+            disabled={disabled}
+            options={healthCategoryOptions}
+            value={healthCategoriesOf(payload)}
+            onChange={(categories) =>
+              onChange({
+                ...draft,
+                payload: { ...payload, category: categories[0], categories },
+              })
+            }
+          />
           {text('title', 'Nombre de la atención')}
           {text('description', 'Descripción (opcional)', true)}
           {text('treatment', 'Tratamiento registrado (opcional)', true)}

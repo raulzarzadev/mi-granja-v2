@@ -442,6 +442,19 @@ it('sanidad: aplica un registro masivo, guarda seguimiento y permite deshacerlo'
   expect(mockDocuments.get('animals/b').records).toEqual([])
 })
 
+it('sanidad: guarda varias categorías en un solo registro', async () => {
+  const movement = api([animal('a')])
+  const record = await movement.health('multi', ['a'], {
+    category: 'vaccine',
+    categories: ['vaccine', 'deworming', 'vaccine'],
+    title: 'Visita',
+    date,
+  })
+  expect(record.category).toBe('vaccine')
+  expect(record.categories).toEqual(['vaccine', 'deworming'])
+  expect(record.details?.Tipo).toBe('Vacuna, Desparasitación')
+})
+
 it('completar una venta guarda el historial y revertirla lo marca como deshecho', async () => {
   animal('a')
   mockDocuments.set('sales/sale', {

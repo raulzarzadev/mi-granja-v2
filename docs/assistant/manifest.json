@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "flowVersion": 3,
+  "flowVersion": 4,
   "knowledgeVersion": 1,
   "operations": [
     "confirm_pregnancy",

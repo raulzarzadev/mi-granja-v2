@@ -1,4 +1,10 @@
-import { buildRecordFromForm, getTodayLocalDateString } from '../lib/records'
+import {
+  buildRecordFromForm,
+  cleanMedications,
+  getRecordCategories,
+  getTodayLocalDateString,
+  isClinicalRecord,
+} from '../lib/records'
 import { RecordFormState } from '../types/records'
 
 describe('records', () => {
@@ -28,6 +34,71 @@ describe('records', () => {
       expect(result.date.getFullYear()).toBe(2025)
       expect(result.date.getMonth()).toBe(5) // June
       expect(result.date.getDate()).toBe(15)
+    })
+
+    it('stores every selected category and uses the first as primary', () => {
+      const result = buildRecordFromForm({
+        ...baseForm,
+        type: 'health',
+        category: 'vaccine',
+        categories: ['vaccine', 'deworming'],
+      })
+      expect(result.category).toBe('vaccine')
+      expect(result.categories).toEqual(['vaccine', 'deworming'])
+    })
+
+    it('keeps clinical fields when any selected category is clinical', () => {
+      const result = buildRecordFromForm({
+        ...baseForm,
+        type: 'health',
+        category: 'vaccine',
+        categories: ['vaccine', 'illness'],
+        severity: 'low',
+        treatment: 'Reposo',
+      })
+      expect(result.severity).toBe('low')
+      expect(result.treatment).toBe('Reposo')
+    })
+
+    it('writes a single-category array so edits replace previous selections', () => {
+      expect(buildRecordFromForm(baseForm).categories).toEqual(['general'])
+    })
+
+    it('reads categories from legacy and multi-category records', () => {
+      expect(getRecordCategories({ category: 'vaccine' })).toEqual(['vaccine'])
+      expect(
+        getRecordCategories({ category: 'vaccine', categories: ['vaccine', 'injury'] }),
+      ).toEqual(['vaccine', 'injury'])
+      expect(
+        isClinicalRecord({
+          type: 'health',
+          category: 'vaccine',
+          categories: ['vaccine', 'injury'],
+        }),
+      ).toBe(true)
+      expect(isClinicalRecord({ type: 'note', category: 'illness' })).toBe(false)
+    })
+
+    it('stores medications with batch and drops empty rows', () => {
+      const result = buildRecordFromForm({
+        ...baseForm,
+        type: 'health',
+        category: 'vaccine',
+        medications: [
+          { name: ' Ivermectina ', batch: ' L-1 ' },
+          { name: '', batch: 'L-2' },
+          { name: 'Triple', batch: '' },
+        ],
+      })
+      expect(result.medications).toEqual([
+        { name: 'Ivermectina', batch: 'L-1' },
+        { name: 'Triple' },
+      ])
+    })
+
+    it('does not add medications to notes', () => {
+      expect(buildRecordFromForm(baseForm).medications).toBeUndefined()
+      expect(cleanMedications()).toEqual([])
     })
 
     it('should include description if not empty', () => {

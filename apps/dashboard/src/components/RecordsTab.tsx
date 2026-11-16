@@ -6,19 +6,19 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import FirstRecordEmptyState from '@/components/FirstRecordEmptyState'
 import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
-import { QuickFilterMenu } from '@/components/inputs/FilterChip'
 import { DatePickerModal } from '@/components/inputs/DatePickerModal'
+import { QuickFilterMenu } from '@/components/inputs/FilterChip'
 import ModalRecordDetail from '@/components/ModalRecordDetail'
+import RecordCategoryBadges from '@/components/RecordCategoryBadges'
 import { useSidebarSubItems } from '@/components/Tabs'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { valuesMatchSearch } from '@/lib/animal-search'
+import { getRecordCategories, isClinicalRecord } from '@/lib/records'
 import {
   AnimalRecord,
   getRecordTypeIcon,
   getRecordTypeLabel,
   record_categories,
-  record_category_colors,
-  record_category_icons,
   record_category_labels,
   record_type_icons,
   record_type_labels,
@@ -192,7 +192,7 @@ const RecordsTab: React.FC = () => {
     return allRecords.filter((record) => {
       if (filters.animalId && record.animalId !== filters.animalId) return false
       if (filters.type && record.type !== filters.type) return false
-      if (filters.category && record.category !== filters.category) return false
+      if (filters.category && !getRecordCategories(record).includes(filters.category)) return false
 
       if (filters.application) {
         const looksBulk =
@@ -222,7 +222,7 @@ const RecordsTab: React.FC = () => {
           record.batch || '',
           record.treatment || '',
           record.animalNumber || '',
-          record_category_labels[record.category],
+          ...getRecordCategories(record).map((c) => record_category_labels[c]),
           record_type_labels[record.type],
           getRecordTypeLabel(record),
         ]
@@ -391,7 +391,8 @@ const RecordsTab: React.FC = () => {
       record_categories.filter((category) =>
         allRecords.some(
           (record) =>
-            record.category === category && (!filters.type || record.type === filters.type),
+            getRecordCategories(record).includes(category) &&
+            (!filters.type || record.type === filters.type),
         ),
       ),
     [allRecords, filters.type],
@@ -664,9 +665,7 @@ const RecordsTab: React.FC = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {visibleRows.map((record) => {
                     const isBulk = record.__isGrouped
-                    const clinicalCats = ['illness', 'injury', 'treatment', 'surgery']
-                    const showStatus =
-                      record.type === 'health' && clinicalCats.includes(record.category)
+                    const showStatus = isClinicalRecord(record)
 
                     return (
                       <tr
@@ -738,14 +737,7 @@ const RecordsTab: React.FC = () => {
                               <EmojiIcon emoji="⚡" /> Acción
                             </span>
                           ) : (
-                            <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${
-                                record_category_colors[record.category]
-                              }`}
-                            >
-                              <EmojiIcon emoji={record_category_icons[record.category]} />{' '}
-                              {record_category_labels[record.category]}
-                            </span>
+                            <RecordCategoryBadges record={record} />
                           )}
                         </td>
 

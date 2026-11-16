@@ -2,7 +2,7 @@
 title: Estrategia del asistente operativo
 description: Fuente canónica del plan, alcance, fases y mantenimiento del asistente de Mi Granja.
 audience: llm+human
-last_updated: 2026-11-01
+last_updated: 2026-11-15
 ---
 
 # Asistente operativo de Mi Granja
@@ -39,7 +39,7 @@ Esta carpeta es la entrada única para el diseño del asistente. Los tipos, vali
 | Conocimiento | `buildAiKnowledge` publica documentos por tema, instante, fuentes, permisos, cobertura y cursores; vuelve a leer Firestore en cada consulta | Lee las fuentes completas antes de paginar la respuesta; `read_document` permite hasta cuatro pasos de recuperación controlada; no hay búsqueda vectorial ni archivos arbitrarios |
 | Historial real | Integra `animals.records`, `animalRecords` y comprobantes `recordMovements`, deduplica por ID e interpreta reversiones | Una fuente que falle hace fallar la consulta; no se presenta como resultado vacío |
 | Fechas | Días de negocio calculados con zona efectiva: configuración de granja, zona válida del navegador o fallback UTC | Revisar con usuarios la zona de cada granja y probar cambios de día; UTC es un fallback explícito |
-| Catálogo | Once operaciones versionadas en `lib/ai/operations.ts`; catálogo visible filtrado por permisos | Cada nueva acción exige esquema, servicio, documentación y pruebas; no puede agregarse solo al prompt |
+| Catálogo | Operaciones versionadas en `lib/ai/operations.ts` (flujo versión 4: `register_health` admite varias categorías); catálogo visible filtrado por permisos; `system-prompt.ts` indica cuándo enviar `categories` | Cada nueva acción exige esquema, servicio, documentación y pruebas; no puede agregarse solo al prompt |
 | Propuestas | `aiActionProposals` en servidor, usuario/granja/conversación, revisión, caducidad de 15 minutos y huella de estado | Las conversaciones locales no son la autoridad del estado de la propuesta |
 | Revisión | Tarjetas `ProposalCard` y editor tipado `OperationFields` en el modal compartido; resumen y efectos obtenidos del servidor | Esta entrega no monta todos los formularios originales dentro del chat. Reutiliza los servicios de dominio que también consume la UI; la equivalencia debe comprobarse por acción |
 | Ejecución | Revalida permisos, revisión, versión, datos actuales y comprobante dentro de la transacción; aplica servicios compartidos | Confirmar en emulador los casos de concurrencia, conectividad, reversión y permisos de las once operaciones |

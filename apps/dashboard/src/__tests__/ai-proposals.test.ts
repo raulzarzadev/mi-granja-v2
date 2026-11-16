@@ -283,6 +283,7 @@ it.each([
       date: '2026-11-01',
       title: 'Vacuna registrada',
       category: 'vaccine',
+      categories: ['vaccine', 'deworming'],
       cost: 250,
     },
   ],
@@ -340,6 +341,7 @@ it.each([
       animals: ['female'],
       type: 'health',
       category: 'vaccine',
+      categories: ['vaccine', 'deworming'],
       cost: 250,
     })
     expect(store.get('animals/female').records).toHaveLength(0)

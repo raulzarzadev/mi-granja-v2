@@ -217,3 +217,29 @@ it('ofrece Sanidad y registra una vacuna con seguimiento', async () => {
     }),
   )
 })
+
+it('registra sanidad con varias categorías en una sola atención', async () => {
+  mockHealth.mockResolvedValue({
+    id: 'health-multi',
+    type: 'health',
+    title: 'Visita general',
+    appliedToAnimals: ['h'],
+  })
+  render(<ModalNewRecord />)
+  fireEvent.click(screen.getByRole('button', { name: /Nuevo Registro/ }))
+  fireEvent.click(screen.getByRole('button', { name: /Sanidad/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Elegir H1' }))
+  // El primer toque reemplaza la preselección (Vacuna); el segundo suma.
+  fireEvent.click(screen.getByRole('button', { name: 'Desparasitación' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Vacuna' }))
+  fireEvent.change(screen.getByLabelText('Producto o atención'), {
+    target: { value: 'Visita general' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Registrar sanidad' }))
+  await screen.findByText('Visita general')
+  expect(mockHealth).toHaveBeenLastCalledWith(
+    expect.any(String),
+    ['h'],
+    expect.objectContaining({ category: 'deworming', categories: ['deworming', 'vaccine'] }),
+  )
+})

@@ -56,6 +56,7 @@ const fieldLabels: Record<string, string> = {
   liters: 'Litros',
   session: 'Turno',
   category: 'Tipo de atención',
+  categories: 'Tipos de atención',
   title: 'Atención',
   description: 'Descripción',
   treatment: 'Tratamiento',
@@ -150,6 +151,7 @@ export function ActionSummary({ proposal }: { proposal: AiProposalView }) {
         'destination',
         'session',
         'category',
+        'categories',
         'status',
         'reason',
       ].includes(key)
@@ -161,10 +163,15 @@ export function ActionSummary({ proposal }: { proposal: AiProposalView }) {
     if (typeof value === 'boolean') return value ? 'Sí' : 'No'
     return ''
   }
+  const payloadRecord = proposal.action.payload as Record<string, unknown>
+  const hasCategoryList =
+    Array.isArray(payloadRecord.categories) && payloadRecord.categories.length > 0
   return (
     <dl className="grid gap-3 sm:grid-cols-2">
       {Object.entries(proposal.action.payload)
         .filter(([_, value]) => value !== undefined && value !== null && value !== '')
+        // Con varias categorías, `category` repite la primera: se muestra solo la lista.
+        .filter(([key]) => !(key === 'category' && hasCategoryList))
         .map(([key, value]) => {
           if (key === 'offspring' && Array.isArray(value))
             return (

@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react'
 import InputIconSelect from '@/components/inputs/InputIconSelect'
+import { getRecordCategories } from '@/lib/records'
 import {
   AnimalRecord,
   expense_categories,
@@ -9,14 +10,14 @@ import {
   expense_category_labels,
   RecordType,
   record_categories,
-  record_category_icons,
-  record_category_labels,
   record_type_icons,
   record_type_labels,
 } from '@/types/animals'
 import { RecordFormState } from '@/types/records'
 import DateTimeInput from './inputs/DateTimeInput'
 import { MoneyInput } from './inputs/MoneyInput'
+import RecordCategoryPicker from './inputs/RecordCategoryPicker'
+import RecordMedicationsInput from './inputs/RecordMedicationsInput'
 
 export type { RecordFormState }
 
@@ -49,7 +50,7 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
   const availableCategories: ReadonlyArray<AnimalRecord['category']> =
     value.type === 'note' ? noteCategories : healthCategories
 
-  const isClinicalCategory = clinicalCategories.includes(value.category)
+  const isClinicalCategory = getRecordCategories(value).some((c) => clinicalCategories.includes(c))
   const isWeight = value.type === 'weight'
   const isExpense = value.type === 'expense'
   const _isBirth = value.type === 'birth'
@@ -79,12 +80,12 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
             value={value.type}
             onChange={(t) => {
               if (t === 'weight' || t === 'birth' || t === 'expense') {
-                onChange({ ...value, type: t, category: 'general' })
+                onChange({ ...value, type: t, category: 'general', categories: undefined })
               } else {
                 const firstCat = (
                   t === 'note' ? noteCategories[0] : healthCategories[0]
                 ) as AnimalRecord['category']
-                onChange({ ...value, type: t, category: firstCat })
+                onChange({ ...value, type: t, category: firstCat, categories: [firstCat] })
               }
             }}
             className="min-h-9 px-2 py-1.5 text-sm"
@@ -96,20 +97,22 @@ export const RecordForm: React.FC<Props> = ({ value, onChange, mode = 'single' }
           />
         </div>
 
-        {/* Categoria — solo para nota/salud */}
+        {/* Categorías — solo para nota/salud */}
         {isNoteOrHealth && (
-          <div>
-            <label className="block text-sm font-medium">Categoria</label>
-            <InputIconSelect
-              aria-label="Categoría"
-              value={value.category}
-              onChange={(category) => onChange({ ...value, category })}
-              className="min-h-9 px-2 py-1.5 text-sm"
-              options={availableCategories.map((c) => ({
-                value: c,
-                label: record_category_labels[c],
-                icon: record_category_icons[c],
-              }))}
+          <div className="sm:col-span-2">
+            <RecordCategoryPicker
+              options={availableCategories}
+              value={getRecordCategories(value)}
+              onChange={(categories) => onChange({ ...value, category: categories[0], categories })}
+            />
+          </div>
+        )}
+
+        {value.type === 'health' && (
+          <div className="sm:col-span-2">
+            <RecordMedicationsInput
+              value={value.medications ?? []}
+              onChange={(medications) => onChange({ ...value, medications })}
             />
           </div>
         )}

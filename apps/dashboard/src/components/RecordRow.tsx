@@ -3,24 +3,17 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import React from 'react'
-import { EmojiIcon } from '@/components/Icon/emoji-icons'
-import {
-  AnimalRecord,
-  record_category_colors,
-  record_category_icons,
-  record_category_labels,
-} from '@/types/animals'
+import RecordCategoryBadges from '@/components/RecordCategoryBadges'
+import { isClinicalRecord } from '@/lib/records'
+import { AnimalRecord } from '@/types/animals'
 
 export interface RecordRowProps {
   rec: AnimalRecord
   onClick?: () => void
 }
 
-const clinicalCats = ['illness', 'injury', 'treatment', 'surgery'] as const
-
 const RecordRow: React.FC<RecordRowProps> = ({ rec, onClick }) => {
-  const isClinicalHealth =
-    rec.type === 'health' && (clinicalCats as readonly string[]).includes(rec.category)
+  const isClinicalHealth = isClinicalRecord(rec)
 
   return (
     <div
@@ -30,14 +23,7 @@ const RecordRow: React.FC<RecordRowProps> = ({ rec, onClick }) => {
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span
-              className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                record_category_colors[rec.category]
-              }`}
-            >
-              <EmojiIcon emoji={record_category_icons[rec.category]} />{' '}
-              {record_category_labels[rec.category]}
-            </span>
+            <RecordCategoryBadges record={rec} />
             <span className="font-medium truncate">{rec.title}</span>
           </div>
           <div className="text-sm text-gray-500 flex items-center gap-3 flex-wrap">

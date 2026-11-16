@@ -27,7 +27,10 @@ import { farmDateKey } from './farm-calendar'
 import { preparePregnancyConfirmation } from './pregnancy-confirmation'
 
 export type HealthMovementInput = {
+  /** Categoría principal. Si se envía `categories`, se usa su primer elemento. */
   category: Exclude<RecordCategory, 'general'>
+  /** Todas las categorías de la atención (p. ej. vacuna + desparasitación). */
+  categories?: Exclude<RecordCategory, 'general'>[]
   title: string
   date: Date
   description?: string
@@ -506,7 +509,10 @@ export function createRecordMovementService(
       validateDate(input.date)
       const title = input.title.trim()
       if (!title) throw new Error('Ingresa el nombre de la vacuna, medicamento o atención.')
-      if (!input.category) throw new Error('Selecciona el tipo de atención sanitaria.')
+      const categories = [
+        ...new Set(input.categories?.length ? input.categories : [input.category]),
+      ].filter(Boolean)
+      if (!categories.length) throw new Error('Selecciona el tipo de atención sanitaria.')
       if (input.nextDueDate && !Number.isFinite(input.nextDueDate.getTime()))
         throw new Error('La próxima fecha de atención no es válida.')
       if (input.resolvedDate) validateDate(input.resolvedDate)
@@ -521,7 +527,8 @@ export function createRecordMovementService(
 
       return commitCentralRecord(context, id, selectedIds, {
         type: 'health',
-        category: input.category,
+        category: categories[0],
+        categories,
         title,
         date: input.date,
         description,
@@ -535,7 +542,7 @@ export function createRecordMovementService(
         ...(veterinarian ? { veterinarian } : {}),
         ...(input.cost != null ? { cost: input.cost } : {}),
         details: {
-          Tipo: record_category_labels[input.category],
+          Tipo: categories.map((category) => record_category_labels[category]).join(', '),
           ...(treatment ? { Tratamiento: treatment } : {}),
           ...(input.nextDueDate
             ? { 'Próxima fecha': input.nextDueDate.toLocaleDateString('es-MX') }

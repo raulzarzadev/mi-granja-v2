@@ -7,6 +7,8 @@ import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { DatePickerButtons } from '@/components/buttons/date-picker-buttons'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import InputSelectAnimals from '@/components/inputs/InputSelectAnimals'
+import RecordCategoryPicker from '@/components/inputs/RecordCategoryPicker'
+import RecordMedicationsInput from '@/components/inputs/RecordMedicationsInput'
 import ModalChangeStage from '@/components/ModalChangeStage'
 import ModalSaleForm from '@/components/ModalSaleForm'
 import PageShell from '@/components/PageShell'
@@ -14,7 +16,7 @@ import RegisterBirthFromStage from '@/components/RegisterBirthFromStage'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useCurrentFarmAreas } from '@/hooks/useCurrentFarmAreas'
 import { useReminders } from '@/hooks/useReminders'
-import { buildRecordFromForm, getTodayLocalDateString } from '@/lib/records'
+import { buildRecordFromForm, getRecordCategories, getTodayLocalDateString } from '@/lib/records'
 import {
   AnimalRecord,
   RecordCategory,
@@ -301,7 +303,12 @@ export default function NuevoRegistroClient() {
                         : t === 'health'
                           ? healthCategories[0]
                           : formData.category
-                    setFormData({ ...formData, type: t, category: newCategory })
+                    setFormData({
+                      ...formData,
+                      type: t,
+                      category: newCategory,
+                      categories: [newCategory],
+                    })
                   }}
                   className={`flex-1 flex flex-col items-center gap-1 px-3 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
                     (
@@ -333,27 +340,22 @@ export default function NuevoRegistroClient() {
           </div>
 
           {!isStageRecord && !isSaleRecord && formData.type !== 'weight' && (
-            <div>
-              <label className="block text-sm font-medium mb-2">Categoria</label>
-              <div className="flex flex-wrap gap-2">
-                {availableCategories.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, category: c })}
-                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
-                      formData.category === c
-                        ? 'border-green-500 bg-green-50 text-green-800'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                    }`}
-                  >
-                    <span>
-                      <EmojiIcon emoji={record_category_icons[c]} />
-                    </span>
-                    {record_category_labels[c]}
-                  </button>
-                ))}
-              </div>
+            <div className="space-y-4">
+              <RecordCategoryPicker
+                key={formData.type}
+                replaceDefaultOnFirstPick
+                options={availableCategories}
+                value={getRecordCategories(formData)}
+                onChange={(categories) =>
+                  setFormData({ ...formData, category: categories[0], categories })
+                }
+              />
+              {formData.type === 'health' && (
+                <RecordMedicationsInput
+                  value={formData.medications ?? []}
+                  onChange={(medications) => setFormData({ ...formData, medications })}
+                />
+              )}
             </div>
           )}
         </div>
@@ -545,8 +547,13 @@ export default function NuevoRegistroClient() {
               {!isStageRecord && !isSaleRecord && formData.type !== 'weight' && (
                 <span>
                   {' '}
-                  — <EmojiIcon emoji={record_category_icons[formData.category]} />{' '}
-                  {record_category_labels[formData.category]}
+                  —{' '}
+                  {getRecordCategories(formData).map((c, index) => (
+                    <span key={c}>
+                      {index > 0 ? ', ' : ''}
+                      <EmojiIcon emoji={record_category_icons[c]} /> {record_category_labels[c]}
+                    </span>
+                  ))}
                 </span>
               )}
             </p>
@@ -660,7 +667,7 @@ const HealthDetailsSection: React.FC<{
   onChange: (next: RecordFormState) => void
   isBulk: boolean
 }> = ({ value, onChange, isBulk }) => {
-  const isClinical = clinicalCategories.includes(value.category)
+  const isClinical = getRecordCategories(value).some((c) => clinicalCategories.includes(c))
 
   return (
     <div className="border border-gray-200 rounded-lg p-3 space-y-3">

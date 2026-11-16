@@ -108,7 +108,7 @@ export const BACKUP_TYPE_DESCRIPTIONS: Record<string, unknown> = {
     references:
       'motherId, fatherId, pregnantBy y records[].appliedToAnimals contienen IDs internos de animales.',
     records:
-      "Historial único en records[]. Un pesaje usa type='weight' y weightGrams. Un ordeño usa type='milk', amountMl y session.",
+      "Historial único en records[]. Un pesaje usa type='weight' y weightGrams. Un ordeño usa type='milk', amountMl y session. Las notas y registros de salud pueden tener categories[] (varias categorías); category es la principal y los respaldos antiguos solo traen category. Salud puede incluir medications[] con name y batch opcional.",
     movements:
       'Los movimientos incluyen eventType, details, undoData.documents (estado anterior y posterior), movementFarmId y undoneAt/undoneBy. recordMovements contiene recibos de idempotencia; el historial y la reversión también quedan en records[].',
     photos:

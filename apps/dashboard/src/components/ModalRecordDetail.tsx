@@ -6,19 +6,17 @@ import React, { useState } from 'react'
 import { useAppFeedback } from '@/components/AppFeedbackProvider'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { Modal } from '@/components/Modal'
+import RecordCategoryBadges from '@/components/RecordCategoryBadges'
 import RecordForm, { RecordFormState } from '@/components/RecordForm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { useRecordMovements } from '@/hooks/useRecordMovements'
 import { useReminders } from '@/hooks/useReminders'
-import { buildRecordFromForm } from '@/lib/records'
+import { buildRecordFromForm, getRecordCategories, isClinicalRecord } from '@/lib/records'
 import {
   Animal,
   AnimalRecord,
   getRecordTypeIcon,
   getRecordTypeLabel,
-  record_category_colors,
-  record_category_icons,
-  record_category_labels,
   record_severity_labels,
 } from '@/types/animals'
 
@@ -38,7 +36,6 @@ interface ModalRecordDetailProps {
   animals: Animal[]
 }
 
-const clinicalCategories = ['illness', 'injury', 'treatment', 'surgery']
 const milkingSessionLabels = {
   morning: 'Mañana',
   afternoon: 'Tarde',
@@ -58,7 +55,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
   const movements = useRecordMovements(animals)
   if (!record) return null
 
-  const isClinical = record.type === 'health' && clinicalCategories.includes(record.category)
+  const isClinical = isClinicalRecord(record)
   const isSystemEvent = record.type === 'event'
   const isUndoableMovement =
     !record.undoneAt &&
@@ -90,6 +87,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
     setForm({
       type: record.type,
       category: record.category,
+      categories: getRecordCategories(record),
       title: record.title,
       description: record.description || '',
       date: format(new Date(record.date), 'yyyy-MM-dd'),
@@ -99,6 +97,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
       treatment: record.treatment || '',
       nextDueDate: record.nextDueDate ? format(new Date(record.nextDueDate), 'yyyy-MM-dd') : '',
       batch: record.batch || '',
+      medications: record.medications ?? [],
       veterinarian: record.veterinarian || '',
       cost: record.cost?.toString() || '',
       createReminder: false,
@@ -291,12 +290,7 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
                 <EmojiIcon emoji="⚡" /> Acción
               </span>
             ) : (
-              <span
-                className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${record_category_colors[record.category]}`}
-              >
-                <EmojiIcon emoji={record_category_icons[record.category]} />{' '}
-                {record_category_labels[record.category]}
-              </span>
+              <RecordCategoryBadges record={record} className="px-2 py-1" />
             )}
             <span className="inline-flex items-center gap-1 text-sm text-gray-500">
               <EmojiIcon emoji={getRecordTypeIcon(record)} /> {getRecordTypeLabel(record)}
@@ -427,6 +421,22 @@ const ModalRecordDetail: React.FC<ModalRecordDetailProps> = ({ isOpen, onClose, 
                 <span className="font-medium text-gray-600">Lote:</span> {record.batch}
               </div>
             )}
+
+            {record.medications?.length ? (
+              <div className="sm:col-span-2">
+                <span className="font-medium text-gray-600">Medicamentos:</span>
+                <ul className="mt-1 space-y-0.5">
+                  {record.medications.map((medication, index) => (
+                    <li key={`${medication.name}-${index}`}>
+                      {medication.name}
+                      {medication.batch ? (
+                        <span className="text-gray-500"> · Lote {medication.batch}</span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
             {record.cost != null && record.cost !== 0 && (
               <div>

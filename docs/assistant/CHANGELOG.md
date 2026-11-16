@@ -2,10 +2,34 @@
 title: Decisiones del asistente operativo
 description: Registro de cambios de estrategia y su estado de implementación.
 audience: llm+human
-last_updated: 2026-11-14
+last_updated: 2026-11-15
 ---
 
 # Historial de decisiones
+
+## 2026-11-15 — Medicamentos con lote en registros de salud
+
+`AnimalRecord.medications?` (`{ name, batch? }[]`) guarda los productos
+aplicados. Se capturan con filas «+ Agregar medicamento» en `/registro/nuevo` y
+en la edición; las filas sin nombre se descartan. El campo `batch` existente se
+conserva. **No habilitado** en el modal rápido ni en `register_health`.
+
+## 2026-11-15 — Varias categorías por registro (UI manual)
+
+`/registro/nuevo` y la edición de registros permiten elegir varias categorías en
+notas y salud (p. ej. vacuna + desparasitación en la misma visita).
+`AnimalRecord.categories?` guarda todas y `category` sigue siendo la principal
+(la primera), así que lectores antiguos y registros previos siguen funcionando.
+Listados, filtros y detalle usan `getRecordCategories`; los campos clínicos se
+muestran si alguna categoría es clínica.
+
+Extendido en el mismo cambio al modal rápido (Sanidad) y al asistente:
+`HealthMovementInput.categories?` en `record-movement-service` (dedupe; la
+primera queda como `category`; `details.Tipo` lista todas). `register_health`
+acepta `categories[]` opcional y el flujo sube a versión 4: las propuestas
+pendientes de la versión 3 dejan de ejecutarse y deben prepararse de nuevo. El
+prompt indica enviar `categories` cuando una atención combina varios tipos. La revisión (`OperationFields`) usa el mismo `RecordCategoryPicker`
+que el flujo manual y `ProposalCard` muestra la lista.
 
 ## 2026-11-14 — Selección de animales por área en formularios
 

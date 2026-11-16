@@ -1,9 +1,18 @@
+/** Medicamento o producto aplicado en un registro de salud. */
+export interface RecordMedication {
+  name: string
+  batch?: string
+}
+
 // Sistema unificado de registros de animales
 export interface AnimalRecord {
   id: string
   // Categorización del registro
   type: RecordType
+  /** Categoría principal (la primera seleccionada). Se mantiene por compatibilidad. */
   category: RecordCategory
+  /** Todas las categorías del registro (incluye `category`). Ausente en registros antiguos. */
+  categories?: RecordCategory[]
 
   // Información básica (todos los tipos)
   title: string
@@ -19,6 +28,8 @@ export interface AnimalRecord {
   // Campos específicos para eventos de salud (vacunas/medicamentos)
   nextDueDate?: Date // Para vacunas que requieren refuerzo
   batch?: string // Lote de la vacuna/medicamento
+  /** Medicamentos aplicados, cada uno con su lote. */
+  medications?: RecordMedication[]
 
   // Campos comunes
   veterinarian?: string
