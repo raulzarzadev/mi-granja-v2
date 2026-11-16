@@ -34,12 +34,21 @@ interface ReminderFormProps {
 }
 
 const TYPE_OPTIONS: InputRadioChipOption<Reminder['type']>[] = [
-  { value: 'medical', label: '🏥 Médico' },
+  { value: 'medical', label: '🏥 Sanidad' },
   { value: 'breeding', label: '🐣 Reproducción' },
   { value: 'feeding', label: '🌾 Alimentación' },
   { value: 'weight', label: '⚖️ Peso' },
   { value: 'other', label: '📝 Otro' },
 ]
+
+/** Título sugerido por tipo; el usuario puede reescribirlo. */
+const DEFAULT_TITLES: Record<Reminder['type'], string> = {
+  medical: 'Sanidad',
+  breeding: 'Reproducción',
+  feeding: 'Alimentación',
+  weight: 'Pesaje',
+  other: 'Recordatorio',
+}
 
 const PRIORITY_OPTIONS: InputRadioChipOption<Reminder['priority']>[] = [
   { value: 'low', label: '🟢 Baja', activeBg: 'bg-green-600' },
@@ -73,9 +82,10 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
   const [selectedAnimalIds, setSelectedAnimalIds] = useState<string[]>(() =>
     initialAnimalIds?.length ? initialAnimalIds : resolveInitialAnimalIds(),
   )
+  const [includeAnimals, setIncludeAnimals] = useState(() => selectedAnimalIds.length > 0)
   const [assigneeIds, setAssigneeIds] = useState<string[]>(initialData?.assigneeIds || [])
   const [formData, setFormData] = useState({
-    title: initialData?.title || '',
+    title: initialData?.title || DEFAULT_TITLES[initialData?.type || 'other'],
     description: initialData?.description || '',
     dueDate: initialData?.dueDate
       ? new Date(initialData.dueDate).toISOString().split('T')[0]
@@ -112,7 +122,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
         completed: formData.completed,
       }
 
-      const animalNumbers = selectedAnimalIds
+      const animalNumbers = (includeAnimals ? selectedAnimalIds : [])
         .map((id) => animals.find((a) => a.id === id)?.animalNumber)
         .filter(Boolean) as string[]
 
@@ -127,6 +137,14 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
     } catch (error) {
       console.error('Error guardando recordatorio:', error)
     }
+  }
+
+  /** Cambia el tipo y reemplaza el título solo si sigue siendo el sugerido. */
+  const handleTypeChange = (type: Reminder['type']) => {
+    setFormData((prev) => {
+      const isSuggested = !prev.title.trim() || prev.title === DEFAULT_TITLES[prev.type]
+      return { ...prev, type, title: isSuggested ? DEFAULT_TITLES[type] : prev.title }
+    })
   }
 
   const handleChange = (
@@ -144,7 +162,21 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Titulo */}
+      <InputRadioChip
+        name="type"
+        label="Tipo"
+        value={formData.type}
+        onChange={handleTypeChange}
+        options={TYPE_OPTIONS}
+      />
+      <InputRadioChip
+        name="priority"
+        label="Prioridad"
+        value={formData.priority}
+        onChange={(v) => setFormData((prev) => ({ ...prev, priority: v }))}
+        options={PRIORITY_OPTIONS}
+      />
+      {/* Titulo: se sugiere según el tipo, editable */}
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
           Titulo *
@@ -158,54 +190,6 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
           required
           placeholder="Ej: Vacunacion, Revision medica..."
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-        />
-      </div>
-      {/* Selector de animales */}
-      <InputSelectAnimals
-        animals={animals}
-        selectedIds={selectedAnimalIds}
-        onAdd={handleAddAnimal}
-        onRemove={handleRemoveAnimal}
-        areas={farmAreas}
-        label={isEditing ? 'Animal (opcional)' : 'Animales (opcional)'}
-        placeholder="Buscar animal..."
-      />
-      {/* Asignar a colaboradores */}
-      <InputSelectAssignees
-        value={assigneeIds}
-        onChange={setAssigneeIds}
-        label="Asignar a (opcional)"
-        helpText="Si dejas en blanco, sólo se notifica al dueño de la granja."
-      />
-      <div className="grid grid-cols-1 gap-3">
-        <InputRadioChip
-          name="type"
-          label="Tipo"
-          value={formData.type}
-          onChange={(v) => setFormData((prev) => ({ ...prev, type: v }))}
-          options={TYPE_OPTIONS}
-        />
-        <InputRadioChip
-          name="priority"
-          label="Prioridad"
-          value={formData.priority}
-          onChange={(v) => setFormData((prev) => ({ ...prev, priority: v }))}
-          options={PRIORITY_OPTIONS}
-        />
-      </div>
-      {/* Fecha */}
-      <div>
-        <DateTimeInput
-          value={formData.dueDate ? new Date(formData.dueDate) : null}
-          onChange={(date) => {
-            setFormData((prev) => ({
-              ...prev,
-              dueDate: date ? date.toISOString().split('T')[0] : '',
-            }))
-          }}
-          label="Fecha limite"
-          type="date"
-          required
         />
       </div>
       {/* Descripcion */}
@@ -223,6 +207,51 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
         />
       </div>
+      {/* Referir animales (opcional) */}
+      <div className="space-y-3">
+        <label className="inline-flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={includeAnimals}
+            onChange={(e) => setIncludeAnimals(e.target.checked)}
+            className="h-4 w-4 cursor-pointer text-green-600 focus:ring-green-500 border-gray-300 rounded"
+          />
+          Referir animales
+        </label>
+        {includeAnimals && (
+          <InputSelectAnimals
+            animals={animals}
+            selectedIds={selectedAnimalIds}
+            onAdd={handleAddAnimal}
+            onRemove={handleRemoveAnimal}
+            areas={farmAreas}
+            label={isEditing ? 'Animal' : 'Animales'}
+            placeholder="Buscar animal..."
+          />
+        )}
+      </div>
+      {/* Fecha */}
+      <div>
+        <DateTimeInput
+          value={formData.dueDate ? new Date(formData.dueDate) : null}
+          onChange={(date) => {
+            setFormData((prev) => ({
+              ...prev,
+              dueDate: date ? date.toISOString().split('T')[0] : '',
+            }))
+          }}
+          label="Fecha limite"
+          type="date"
+          required
+        />
+      </div>
+      {/* Asignar a colaboradores */}
+      <InputSelectAssignees
+        value={assigneeIds}
+        onChange={setAssigneeIds}
+        label="Asignar a (opcional)"
+        helpText="Si dejas en blanco, sólo se notifica al dueño de la granja."
+      />
       {/* Completado (solo si es edicion) */}
       {isEditing && (
         <div className="flex items-center">
@@ -259,7 +288,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
               : 'Creando...'
             : isEditing
               ? 'Actualizar'
-              : selectedAnimalIds.length > 1
+              : includeAnimals && selectedAnimalIds.length > 1
                 ? `Crear Recordatorio (${selectedAnimalIds.length} animales)`
                 : 'Crear Recordatorio'}
         </button>
