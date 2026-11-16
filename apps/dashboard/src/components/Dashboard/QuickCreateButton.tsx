@@ -125,6 +125,20 @@ export default function QuickCreateButton({
           .quick-create-action, .quick-create-label { animation: none; }
         }
       `}</style>
+      {placement === 'sidebar' && (
+        <button
+          type="button"
+          aria-expanded={assistantOpen}
+          onClick={() => {
+            setExpanded(false)
+            setAssistantOpen((open) => !open)
+          }}
+          className="mb-2 flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-800 transition-colors hover:bg-green-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2"
+        >
+          <EmojiIcon emoji="✨" className="h-5 w-5" />
+          <span>Asistente IA</span>
+        </button>
+      )}
       <div
         ref={containerRef}
         className={
@@ -237,19 +251,6 @@ export default function QuickCreateButton({
           )}
         </button>
       </div>
-      {placement === 'sidebar' && (
-        <button
-          type="button"
-          onClick={() => {
-            setExpanded(false)
-            setAssistantOpen(true)
-          }}
-          className="mt-2 flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-800 transition-colors hover:bg-green-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2"
-        >
-          <EmojiIcon emoji="✨" className="h-5 w-5" />
-          <span>Asistente IA</span>
-        </button>
-      )}
       <AiAssistant
         open={assistantOpen}
         showTrigger={false}

@@ -181,7 +181,7 @@ Recuperación de revisiones: el chat ofrece «Recuperar propuestas», una lectur
 
 La recuperación de propuestas se muestra solo ante un error de carga de revisión, no como acción habitual. El modal del asistente prioriza el área de conversación: altura disponible, cabecera compacta con uso diario, sin título de conversación repetido ni fila permanente de recuperación.
 
-En escritorio, Asistente IA tiene un acceso independiente debajo de Crear nuevo en el lateral; se retira del menú desplegable de creación de escritorio. En móvil conserva el acceso desde el (+).
+En escritorio, Asistente IA tiene un acceso independiente arriba de Crear nuevo en el lateral (primero el asistente); se retira del menú desplegable de creación de escritorio. En móvil conserva el acceso desde el (+).
 
 ## Registrar muerte (flujo versión 2)
 

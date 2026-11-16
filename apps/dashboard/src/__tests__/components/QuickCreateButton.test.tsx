@@ -73,6 +73,21 @@ describe('QuickCreateButton', () => {
     expect(screen.queryByRole('group')).not.toBeInTheDocument()
   })
 
+  it('en el lateral muestra el asistente antes de Crear nuevo y lo alterna al tocarlo', () => {
+    render(<QuickCreateButton placement="sidebar" />)
+    const assistant = screen.getByRole('button', { name: 'Asistente IA' })
+    const create = screen.getByRole('button', { name: 'Crear nuevo' })
+    expect(
+      assistant.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    fireEvent.click(assistant)
+    expect(screen.getByText('Chat del asistente')).toBeInTheDocument()
+    expect(assistant).toHaveAttribute('aria-expanded', 'true')
+    fireEvent.click(assistant)
+    expect(screen.queryByText('Chat del asistente')).not.toBeInTheDocument()
+    expect(assistant).toHaveAttribute('aria-expanded', 'false')
+  })
+
   it('se cierra con Escape y al tocar fuera', () => {
     render(<QuickCreateButton />)
     const trigger = screen.getByRole('button', { name: 'Crear nuevo' })

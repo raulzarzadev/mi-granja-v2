@@ -2,10 +2,16 @@
 title: Decisiones del asistente operativo
 description: Registro de cambios de estrategia y su estado de implementación.
 audience: llm+human
-last_updated: 2026-11-15
+last_updated: 2026-11-16
 ---
 
 # Historial de decisiones
+
+## 2026-11-16 — Asistente IA primero en el lateral
+
+En escritorio, el acceso Asistente IA pasa arriba de Crear nuevo. Tocarlo con
+el panel abierto lo cierra (`aria-expanded` refleja el estado). Sin cambios
+funcionales en operaciones ni en móvil.
 
 ## 2026-11-15 — Vista `/recordatorios`
 
