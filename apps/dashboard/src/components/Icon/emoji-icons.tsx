@@ -120,6 +120,7 @@ import {
   Man,
   Pig,
   Pregnant,
+  RedCross,
   Sheep,
   Steak,
   Woman,
@@ -190,7 +191,7 @@ export const EMOJI_ICON_GROUPS: Array<{ title: string; items: Array<[string, Ico
   {
     title: 'Sanidad',
     items: [
-      ['🏥', BloodBag],
+      ['🏥', RedCross],
       ['⚕️', PiFirstAid],
       ['🩺', PiStethoscope],
       ['💊', PiPill],

@@ -2,11 +2,11 @@
 
 import Link from 'next/link'
 import { PiClipboardText, PiPlus, PiScales } from 'react-icons/pi'
-import { BloodBag, Calf } from '@/components/Icon/farm-icons'
+import { Calf, RedCross } from '@/components/Icon/farm-icons'
 
 const HOW_IT_WORKS = [
   {
-    icon: BloodBag,
+    icon: RedCross,
     title: 'Sanidad con seguimiento',
     text: 'Guarda vacunas y tratamientos para consultar cuándo se aplicaron.',
   },

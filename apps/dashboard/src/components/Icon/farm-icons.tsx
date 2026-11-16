@@ -241,6 +241,15 @@ export const BloodBag = farmIcon(
   'BloodBag',
 )
 
+/** Cruz roja (sanidad / médico) */
+export const RedCross = farmIcon(
+  <path
+    d="M100 40 h56 a8 8 0 0 1 8 8 v44 h44 a8 8 0 0 1 8 8 v56 a8 8 0 0 1 -8 8 h-44 v44 a8 8 0 0 1 -8 8 h-56 a8 8 0 0 1 -8 -8 v-44 h-44 a8 8 0 0 1 -8 -8 v-56 a8 8 0 0 1 8 -8 h44 v-44 a8 8 0 0 1 8 -8 z"
+    fill="#dc2626"
+  />,
+  'RedCross',
+)
+
 /** Ternero recién nacido (parto) */
 export const Calf = farmIcon(
   <>
