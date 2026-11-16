@@ -146,6 +146,13 @@ export default function NuevoRegistroClient() {
     if (step < STEPS.length - 1 && canAdvance(step)) setStep(step + 1)
   }
 
+  /** Recordatorio usa su propio formulario; conserva los animales ya elegidos. */
+  const handleOpenReminder = () => {
+    const ids = Array.from(new Set([...preSelectedAnimalIds, ...selectedAnimalIds]))
+    const query = ids.length > 0 ? `?animalIds=${encodeURIComponent(ids.join(','))}` : ''
+    router.replace(`/recordatorio/nuevo${query}`)
+  }
+
   const handleBack = () => {
     if (step > 0) setStep(step - 1)
   }
@@ -336,6 +343,16 @@ export default function NuevoRegistroClient() {
                   </span>
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={handleOpenReminder}
+                className="flex-1 flex flex-col items-center gap-1 px-3 py-3 rounded-lg border-2 text-sm font-medium transition-all cursor-pointer border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+              >
+                <span className="text-xl">
+                  <EmojiIcon emoji="⏰" />
+                </span>
+                <span>Recordatorio</span>
+              </button>
             </div>
           </div>
 

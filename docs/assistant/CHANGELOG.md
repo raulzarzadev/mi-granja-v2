@@ -7,6 +7,13 @@ last_updated: 2026-11-15
 
 # Historial de decisiones
 
+## 2026-11-15 — Recordatorio desde Nuevo Registro
+
+`/registro/nuevo` ofrece «Recordatorio» junto a los tipos de registro. No crea
+un registro: abre `/recordatorio/nuevo` con `animalIds` y `ReminderForm`
+preselecciona esos animales (`initialAnimalIds`). Sin cambios en servicios ni
+en operaciones del asistente.
+
 ## 2026-11-15 — Término «Sanidad» en lugar de «Salud»
 
 Cambio de vocabulario sin impacto funcional. El módulo, sus registros, la

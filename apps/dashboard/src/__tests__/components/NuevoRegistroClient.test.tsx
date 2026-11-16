@@ -1,8 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import NuevoRegistroClient from '@/app/registro/nuevo/NuevoRegistroClient'
 
+const mockReplace = jest.fn()
+
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ back: jest.fn() }),
+  useRouter: () => ({ back: jest.fn(), replace: mockReplace }),
   useSearchParams: () => new URLSearchParams(),
 }))
 jest.mock('@/components/AppFeedbackProvider', () => ({
@@ -116,4 +118,10 @@ it('removes a medication row', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Agregar medicamento' }))
   fireEvent.click(screen.getByRole('button', { name: 'Quitar medicamento 1' }))
   expect(screen.queryByLabelText('Nombre del medicamento 1')).not.toBeInTheDocument()
+})
+
+it('opens the reminder form from the record type step', () => {
+  render(<NuevoRegistroClient />)
+  fireEvent.click(screen.getByRole('button', { name: 'Recordatorio' }))
+  expect(mockReplace).toHaveBeenCalledWith('/recordatorio/nuevo')
 })

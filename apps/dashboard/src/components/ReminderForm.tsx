@@ -29,6 +29,8 @@ interface ReminderFormProps {
   onSuccess?: () => void
   isLoading?: boolean
   initialData?: Partial<Reminder>
+  /** Animales preseleccionados al crear (p. ej. desde Nuevo Registro). */
+  initialAnimalIds?: string[]
 }
 
 const TYPE_OPTIONS: InputRadioChipOption<Reminder['type']>[] = [
@@ -55,6 +57,7 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
   onSuccess,
   isLoading = false,
   initialData,
+  initialAnimalIds,
 }) => {
   const isEditing = !!initialData
 
@@ -67,7 +70,9 @@ const ReminderForm: React.FC<ReminderFormProps> = ({
       .filter(Boolean) as string[]
   }
 
-  const [selectedAnimalIds, setSelectedAnimalIds] = useState<string[]>(resolveInitialAnimalIds)
+  const [selectedAnimalIds, setSelectedAnimalIds] = useState<string[]>(() =>
+    initialAnimalIds?.length ? initialAnimalIds : resolveInitialAnimalIds(),
+  )
   const [assigneeIds, setAssigneeIds] = useState<string[]>(initialData?.assigneeIds || [])
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
