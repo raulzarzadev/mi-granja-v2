@@ -52,7 +52,10 @@ describe('ModalCreateFarm', () => {
       expect(screen.getByRole('button', { name })).toHaveAttribute('aria-pressed', 'true')
     }
     fireEvent.click(screen.getByRole('button', { name: /Cultivos/ }))
-    expect(screen.getByRole('button', { name: /Cultivos/ })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: /Cultivos/ })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
   })
 
   it('crea una granja con su perfil productivo', async () => {

@@ -1,4 +1,3 @@
-import { render } from '@testing-library/react'
 import {
   animal_icon,
   animal_stage_config,
@@ -8,6 +7,7 @@ import {
   record_event_type_icons,
   record_type_icons,
 } from '@mi-granja/shared'
+import { render } from '@testing-library/react'
 import {
   EmojiIcon,
   getEmojiIcon,
