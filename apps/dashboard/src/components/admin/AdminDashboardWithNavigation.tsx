@@ -572,7 +572,7 @@ export default function AdminDashboard() {
       {
         key: 'breedings',
         label: 'Reproducciones',
-        icon: '💕',
+        icon: '🛏️',
         value: breedings.length,
         bg: 'bg-pink-50',
         text: 'text-pink-700',
@@ -636,7 +636,7 @@ export default function AdminDashboard() {
       {
         key: 'profiles',
         label: 'Perfiles de granja',
-        icon: '🌾',
+        icon: '🚜',
         value: `${farmProfileStats.profiledFarms}/${farmProfileStats.totalFarms}`,
         bg: 'bg-orange-50',
         text: 'text-orange-800',

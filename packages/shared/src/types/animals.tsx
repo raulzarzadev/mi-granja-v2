@@ -373,7 +373,7 @@ export const record_event_type_labels: Record<AnimalRecordEventType, string> = {
 
 export const record_event_type_icons: Record<AnimalRecordEventType, string> = {
   alta: '🐄',
-  monta: '🐐',
+  monta: '🛏️',
   destete: '🍼',
   parto: '🐣',
   muerte: '💀',

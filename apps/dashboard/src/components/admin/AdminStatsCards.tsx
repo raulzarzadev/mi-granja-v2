@@ -94,7 +94,7 @@ export default function AdminStatsCards() {
       key: 'breedings',
       title: 'Reproducciones',
       value: stats.totalBreedings,
-      icon: '💕',
+      icon: '🛏️',
       bg: 'bg-pink-50',
       text: 'text-pink-700',
       iconBg: 'bg-pink-500',

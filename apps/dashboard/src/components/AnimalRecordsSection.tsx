@@ -154,7 +154,7 @@ const AnimalRecordsSection: React.FC<Props> = ({ animal }) => {
       case 'medical':
         return '🏥'
       case 'breeding':
-        return '🐣'
+        return '🛏️'
       case 'feeding':
         return '🌾'
       case 'weight':

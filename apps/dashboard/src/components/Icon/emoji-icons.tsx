@@ -10,7 +10,7 @@ import {
   PiArrowsLeftRight,
   PiBaby,
   PiBandaids,
-  PiBed,
+  PiBarn,
   PiBell,
   PiBookOpen,
   PiBriefcase,
@@ -96,7 +96,6 @@ import {
   PiSyringe,
   PiTestTube,
   PiToolbox,
-  PiTractor,
   PiTrafficCone,
   PiTrash,
   PiTrendUp,
@@ -112,7 +111,9 @@ import {
 } from 'react-icons/pi'
 import {
   BabyBottle,
+  Bed,
   BloodBag,
+  CalendarBell,
   Calf,
   Chicken,
   FieldFlag,
@@ -178,7 +179,7 @@ export const EMOJI_ICON_GROUPS: Array<{ title: string; items: Array<[string, Ico
       ['❤️', PiHeart],
       ['💕', PiHandHeart],
       ['🚫', PiProhibit],
-      ['🛏️', PiBed],
+      ['🛏️', Bed],
       ['🤰', Pregnant],
       ['🍼', BabyBottle],
       ['🐣', Calf],
@@ -208,7 +209,7 @@ export const EMOJI_ICON_GROUPS: Array<{ title: string; items: Array<[string, Ico
   {
     title: 'Granja y cultivos',
     items: [
-      ['🚜', PiTractor],
+      ['🚜', PiBarn],
       ['🌾', PiGrains],
       ['🌿', PiLeaf],
       ['🪴', PiPottedPlant],
@@ -279,6 +280,7 @@ export const EMOJI_ICON_GROUPS: Array<{ title: string; items: Array<[string, Ico
       ['🗓️', PiCalendarDots],
       ['🗓', PiCalendarDots],
       ['🔔', PiBell],
+      ['🛎️', CalendarBell],
       ['📣', PiMegaphone],
       ['📡', PiBroadcast],
       ['💬', PiChatCircle],

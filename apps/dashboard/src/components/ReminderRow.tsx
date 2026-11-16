@@ -11,7 +11,7 @@ import type { Reminder } from '@/types'
 
 export const REMINDER_TYPE_ICONS: Record<Reminder['type'], string> = {
   medical: '🏥',
-  breeding: '🐣',
+  breeding: '🛏️',
   feeding: '🌾',
   weight: '⚖️',
   other: '📝',

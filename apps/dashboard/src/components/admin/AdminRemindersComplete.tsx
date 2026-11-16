@@ -52,9 +52,9 @@ export default function AdminRemindersComplete() {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'medical':
-        return '🩺'
+        return '🏥'
       case 'breeding':
-        return '💕'
+        return '🛏️'
       case 'feeding':
         return '🌾'
       case 'weight':

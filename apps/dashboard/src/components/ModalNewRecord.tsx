@@ -46,7 +46,7 @@ const recordOptions = [
     id: 'monta',
     label: 'Empadre',
     description: 'Inicia un empadre entre un macho y una o más hembras.',
-    icon: '🐐',
+    icon: '🛏️',
     activeClass: 'border-amber-400 bg-amber-50 text-amber-900',
   },
   {

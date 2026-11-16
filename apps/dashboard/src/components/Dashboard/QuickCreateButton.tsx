@@ -185,7 +185,7 @@ export default function QuickCreateButton({
               onClick={() => setExpanded(false)}
               className={`${actionClass} bottom-24 right-[10.375rem]`}
             >
-              <EmojiIcon emoji="🐐" className="h-6 w-6" />
+              <EmojiIcon emoji="🛏️" className="h-6 w-6" />
               <span className={labelClass}>Nuevo empadre</span>
             </Link>
             {placement === 'floating' && (

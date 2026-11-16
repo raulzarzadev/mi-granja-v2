@@ -241,6 +241,24 @@ export const BloodBag = farmIcon(
   'BloodBag',
 )
 
+/** Cama con alguien acostado bajo la cobija (empadre) */
+export const Bed = farmIcon(
+  <g
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="16"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M32 56 V200" />
+    <path d="M224 136 V200" />
+    <path d="M32 144 H224 M32 172 H224" />
+    <circle cx="72" cy="112" r="16" />
+    <path d="M112 144 V112 a24 24 0 0 1 24 -24 H168 a56 56 0 0 1 56 56" />
+  </g>,
+  'Bed',
+)
+
 /** Cruz roja (sanidad / médico) */
 export const RedCross = farmIcon(
   <path

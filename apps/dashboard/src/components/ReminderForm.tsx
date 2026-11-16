@@ -35,7 +35,7 @@ interface ReminderFormProps {
 
 const TYPE_OPTIONS: InputRadioChipOption<Reminder['type']>[] = [
   { value: 'medical', label: '🏥 Sanidad' },
-  { value: 'breeding', label: '🐣 Reproducción' },
+  { value: 'breeding', label: '🛏️ Reproducción' },
   { value: 'feeding', label: '🌾 Alimentación' },
   { value: 'weight', label: '⚖️ Peso' },
   { value: 'other', label: '📝 Otro' },

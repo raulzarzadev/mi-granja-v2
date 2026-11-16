@@ -51,7 +51,7 @@ const destinations = [
 
 const conditions = [
   {
-    icon: '🐂',
+    icon: '🛏️',
     name: 'Empadre',
     detail: 'Está participando en una monta activa.',
   },

@@ -83,7 +83,7 @@ export default function AdminDashboard() {
             <div className="bg-pink-50 rounded-lg p-6 border">
               <div className="flex items-center">
                 <div className="bg-pink-500 rounded-lg p-3 text-white text-xl">
-                  <EmojiIcon emoji="💕" />
+                  <EmojiIcon emoji="🛏️" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Reproducciones</p>

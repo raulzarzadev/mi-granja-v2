@@ -70,7 +70,7 @@ const ReminderCard: React.FC<ReminderCardProps> = ({
       case 'medical':
         return '🏥'
       case 'breeding':
-        return '🐣'
+        return '🛏️'
       case 'feeding':
         return '🌾'
       case 'weight':

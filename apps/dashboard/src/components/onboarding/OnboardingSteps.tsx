@@ -17,7 +17,7 @@ const STEPS: Step[] = [
     action: 'Animales → Nuevo animal',
   },
   {
-    emoji: '💕',
+    emoji: '🛏️',
     title: 'Agrégalos a un empadre (monta)',
     description:
       'Crea un empadre con un macho y agrega las hembras que vayan con él. Puedes tener varias hembras en un mismo empadre.',
