@@ -14,7 +14,9 @@ const PageShell: React.FC<{
   title: string
   children: React.ReactNode
   backHref?: string
-}> = ({ title, children, backHref }) => {
+  /** Sin tarjeta blanca alrededor del contenido */
+  bare?: boolean
+}> = ({ title, children, backHref, bare = false }) => {
   const router = useRouter()
   const { user } = useSelector((state: RootState) => state.auth)
 
@@ -57,7 +59,7 @@ const PageShell: React.FC<{
           </button>
           <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
         </div>
-        <div className="bg-white rounded-lg shadow p-4 sm:p-6">{children}</div>
+        {bare ? children : <div className="bg-white rounded-lg shadow p-4 sm:p-6">{children}</div>}
       </div>
     </div>
   )

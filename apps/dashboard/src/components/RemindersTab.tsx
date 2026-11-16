@@ -70,7 +70,7 @@ const RemindersTab: React.FC = () => {
   }, [farmTasks, search])
 
   const renderList = (list: Reminder[]) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+    <div className="flex flex-col gap-2">
       {list.map((reminder) => (
         <ReminderRow key={reminder.id} reminder={reminder} />
       ))}
@@ -106,7 +106,7 @@ const RemindersTab: React.FC = () => {
   )
 
   const taskList = (tasks: FarmPendingTask[]) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+    <div className="flex flex-col gap-2">
       {tasks.map((task) => (
         <FarmTaskRow key={task.id} task={task} onRegister={setRegistering} />
       ))}

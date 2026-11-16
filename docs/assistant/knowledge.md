@@ -36,7 +36,7 @@ No hace falta una base vectorial para saber cuántas crías hay o qué monta est
 | `reproduccion/partos.json` | Gestaciones confirmadas pendientes, fechas esperadas y origen | Registros de reproducción y gestación vigente; nunca asumir un parto ocurrido |
 | `produccion/leche.json` | Lactancias y ordeños del período pedido | Registros de leche y propósito real de cada madre |
 | `historial/movimientos.json` | Eventos reales ordenados y enlaces a registros | Unificar las fuentes actuales, incluyendo movimientos centrales; deduplicar por identificador, no por título |
-| `pendientes/recordatorios.json` | Recordatorios pendientes autorizados | Colección `reminders`; la lista completa vive en la página `/recordatorios` (no es pestaña del dashboard) |
+| `pendientes/recordatorios.json` | Recordatorios pendientes autorizados | Colección `reminders`; la lista completa vive en la página `/recordatorios` y en la pestaña Recordatorios del dashboard (`?dashboard-main=recordatorios`) |
 | `operaciones/catalogo.json` | Qué puede consultarse/prepararse/ejecutarse y versión de cada flujo | Registro tipado de operaciones y permisos efectivos de la solicitud |
 | `referencias/especies.json` | Destete, gestación, edades y condiciones de referencia | `ANIMAL_BREEDING_CONFIGS` y descripciones compartidas, sin duplicar cifras en prompts |
 

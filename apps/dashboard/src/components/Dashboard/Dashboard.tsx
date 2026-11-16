@@ -14,6 +14,7 @@ import FarmSwitcherBar from '../FarmSwitcherBar'
 import ModalOnboarding from '../onboarding/ModalOnboarding'
 import ModalWelcomeFarm from '../onboarding/ModalWelcomeFarm'
 import RecordsTab from '../RecordsTab'
+import RemindersTab from '../RemindersTab'
 import { AnimalSelectionProvider } from './AnimalSelectionContext'
 import AnimalsSection from './Animals/AnimalsSection'
 import { initialAnimalFilters, useAnimalFilters } from './Animals/animals-filters'
@@ -37,13 +38,21 @@ const Dashboard: React.FC = () => {
     return null
   }
 
+  // Escritorio: Recordatorios primero, bajo Asistente IA y Crear nuevo.
+  // Móvil: al centro de la barra inferior (entre Empadres y Registros).
   const tabs = [
+    {
+      label: '🛎️ Recordatorios',
+      compactOnMobile: true,
+      mobileOrder: 25,
+      content: <RemindersTab />,
+    },
     {
       label: '🐄 Animales',
       content: <AnimalsSection filters={filters} setFilters={setFilters} />,
     },
     {
-      label: '🐐 Empadres',
+      label: '🛏️ Empadres',
       content: (
         <AnimalsSection
           section="breedings"
@@ -96,6 +105,7 @@ const Dashboard: React.FC = () => {
             <Tabs
               tabs={tabs}
               tabsId="dashboard-main"
+              initialActiveTab={1}
               sidebarOnDesktop
               bottomOnMobile
               sidebarHeader={currentFarm ? <QuickCreateButton placement="sidebar" /> : undefined}

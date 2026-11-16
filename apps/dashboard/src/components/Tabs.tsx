@@ -18,6 +18,10 @@ type Tab = {
   content: ReactNode
   badgeCount?: number
   hideOnMobile?: boolean
+  /** Posición en la barra inferior móvil (CSS `order`); por defecto índice × 10 */
+  mobileOrder?: number
+  /** Letra más chica en la barra inferior móvil, para etiquetas largas */
+  compactOnMobile?: boolean
   description?: string
 }
 
@@ -388,7 +392,22 @@ const Tabs: React.FC<TabsProps> = ({
       className={`w-full min-w-0 max-w-full overflow-x-clip ${sb('@[768px]/dashboard:flex @[768px]/dashboard:items-start @[768px]/dashboard:gap-4 @[1024px]/dashboard:gap-6 @[768px]/dashboard:overflow-x-visible')}`}
     >
       <style>{`
+        /* Pantallas muy angostas: barra inferior solo con iconos (texto queda para lectores) */
+        @container dashboard (max-width: 359px) {
+          [data-bottom-navigation] .bottom-tab-label > span {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip-path: inset(50%);
+            white-space: nowrap;
+          }
+        }
         @container dashboard (max-width: 767px) {
+          [data-bottom-navigation] [role="tab"][data-compact-on-mobile] {
+            font-size: 9px;
+            letter-spacing: -0.02em;
+          }
           [data-bottom-navigation] {
             padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
           }
@@ -418,6 +437,7 @@ const Tabs: React.FC<TabsProps> = ({
             display: none;
           }
           [data-bottom-navigation] > .tabs-scrollbar-shell > [role="tablist"] > [role="tab"] {
+            order: var(--mobile-order, 0);
             width: 100%;
             max-width: 100%;
             min-width: 0;
@@ -433,7 +453,7 @@ const Tabs: React.FC<TabsProps> = ({
             transition-property: background-color, color;
           }
           [data-bottom-navigation] > .tabs-scrollbar-shell > [role="tablist"] > [aria-selected="true"] {
-            background: rgb(240 253 244);
+            background: rgb(187 247 208);
             color: rgb(21 128 61);
             font-weight: 700;
           }
@@ -498,6 +518,14 @@ const Tabs: React.FC<TabsProps> = ({
                 <button
                   role="tab"
                   data-hide-on-mobile={(bottomOnMobile && tab.hideOnMobile) || undefined}
+                  data-compact-on-mobile={(bottomOnMobile && tab.compactOnMobile) || undefined}
+                  style={
+                    bottomOnMobile
+                      ? ({
+                          '--mobile-order': tab.mobileOrder ?? index * 10,
+                        } as React.CSSProperties)
+                      : undefined
+                  }
                   aria-selected={isActive}
                   aria-controls={`tab-panel-${slugs[index]}`}
                   id={`tab-${slugs[index]}`}

@@ -183,6 +183,8 @@ La recuperación de propuestas se muestra solo ante un error de carga de revisi�
 
 En escritorio, Asistente IA tiene un acceso independiente arriba de Crear nuevo en el lateral (primero el asistente); se retira del menú desplegable de creación de escritorio. En móvil conserva el acceso desde el (+).
 
+Navegación principal del dashboard (lateral en escritorio, barra inferior en móvil): Animales, Empadres, Recordatorios, Registros, Granja y Perfil (solo escritorio). Recordatorios (`?dashboard-main=recordatorios`) muestra la misma vista que `/recordatorios`; el asistente puede enlazar a cualquiera de las dos.
+
 ## Registrar muerte (flujo versión 2)
 
 `register_death` registra la muerte de 1 a 50 animales activos de la granja actual con fecha efectiva, motivo obligatorio (`birth_defect`, `disease`, `injury`, `attack`) y notas opcionales. Usa el mismo `createRecordMovementService.death` del flujo manual; requiere lectura y actualización de animales. El asistente pregunta por fecha/motivo si faltan y no infiere diagnósticos.

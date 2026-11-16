@@ -7,7 +7,8 @@ import { FarmTaskModal } from '@/components/FarmTaskRow'
 import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { CalendarBell } from '@/components/Icon/farm-icons'
 import { REMINDER_TYPE_ICONS, ReminderDetailModal } from '@/components/ReminderRow'
-import { type FarmPendingTask, useFarmPendingTasks } from '@/hooks/useFarmPendingTasks'
+import type { FarmPendingTask } from '@/hooks/useFarmPendingTasks'
+import { useNotificationsCount } from '@/hooks/useNotificationsCount'
 import { useReminders } from '@/hooks/useReminders'
 import type { Reminder } from '@/types'
 
@@ -40,13 +41,13 @@ const formatDueDate = (d: Date | string): string => {
  * los primeros 8; cada uno abre su detalle en un modal.
  */
 const NotificationsBell: React.FC = () => {
-  const { reminders, getOverdueReminders, getTodayReminders, getBadgeCount } = useReminders()
+  const { reminders, getOverdueReminders, getTodayReminders } = useReminders()
+  const { count, overdueTasks } = useNotificationsCount()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement | null>(null)
   const [panelStyle, setPanelStyle] = useState<React.CSSProperties | null>(null)
   const [selected, setSelected] = useState<BellItem | null>(null)
   const [registering, setRegistering] = useState<FarmPendingTask | null>(null)
-  const overdueTasks = useFarmPendingTasks().filter((task) => task.daysUntil < 0)
 
   useLayoutEffect(() => {
     if (!open) return
@@ -97,7 +98,6 @@ const NotificationsBell: React.FC = () => {
     return () => document.removeEventListener('mousedown', handle)
   }, [])
 
-  const count = getBadgeCount() + overdueTasks.length
   const items: BellItem[] = [
     ...overdueTasks.map((task) => ({
       kind: 'task' as const,

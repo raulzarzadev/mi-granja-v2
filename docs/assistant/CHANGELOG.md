@@ -7,6 +7,13 @@ last_updated: 2026-11-16
 
 # Historial de decisiones
 
+## 2026-11-16 — Pestaña Recordatorios en el dashboard
+
+El menú lateral (escritorio) y la barra inferior (móvil) suman la pestaña
+«Recordatorios» (icono calendario con campana), al centro, con la misma vista
+que `/recordatorios` y sin contador (el contador vive en la campana).
+`?dashboard-main=recordatorios` vuelve a ser válido. Sin cambios en operaciones del asistente.
+
 ## 2026-11-16 — Campana con partos/destetes vencidos y Recordatorio en ModalNewRecord
 
 La campana «Notificaciones y recordatorios» suma al contador los partos y
