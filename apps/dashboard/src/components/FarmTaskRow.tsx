@@ -39,8 +39,7 @@ export default function FarmTaskRow({
   onRegister?: (task: FarmPendingTask) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
-  const { label, emoji, dateLabel, action } = KIND_CONFIG[task.kind]
-  const overdue = task.daysUntil < 0
+  const { label, emoji } = KIND_CONFIG[task.kind]
   return (
     <>
       <PendingRow
@@ -50,48 +49,72 @@ export default function FarmTaskRow({
         daysUntil={task.daysUntil}
         onClick={() => setIsOpen(true)}
       />
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={`${label} pendiente`}>
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">
-              <EmojiIcon emoji={emoji} />
-            </span>
-            <div>
-              <p className="text-sm text-gray-500">{dateLabel}</p>
-              <p className="font-medium text-gray-900">
-                {task.dueDate.toLocaleDateString('es-MX', {
-                  day: '2-digit',
-                  month: 'long',
-                  year: 'numeric',
-                })}
-              </p>
-            </div>
-            <span
-              className={`ml-auto text-xs px-2 py-1 rounded-full font-medium ${
-                overdue ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
-              }`}
-            >
-              {dueLabel(task.daysUntil)}
-            </span>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Animal</p>
-            <AnimalTag animal={task.animal} showModalOnClick />
-          </div>
-          {onRegister && (
-            <Button
-              color="success"
-              className="w-full"
-              onClick={() => {
-                setIsOpen(false)
-                onRegister(task)
-              }}
-            >
-              {action}
-            </Button>
-          )}
-        </div>
-      </Modal>
+      <FarmTaskModal
+        task={task}
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        onRegister={onRegister}
+      />
     </>
+  )
+}
+
+/** Detalle de un parto o destete pendiente con el botón para registrarlo. */
+export function FarmTaskModal({
+  task,
+  isOpen,
+  onClose,
+  onRegister,
+}: {
+  task: FarmPendingTask
+  isOpen: boolean
+  onClose: () => void
+  onRegister?: (task: FarmPendingTask) => void
+}) {
+  const { label, emoji, dateLabel, action } = KIND_CONFIG[task.kind]
+  const overdue = task.daysUntil < 0
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={`${label} pendiente`}>
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">
+            <EmojiIcon emoji={emoji} />
+          </span>
+          <div>
+            <p className="text-sm text-gray-500">{dateLabel}</p>
+            <p className="font-medium text-gray-900">
+              {task.dueDate.toLocaleDateString('es-MX', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </p>
+          </div>
+          <span
+            className={`ml-auto text-xs px-2 py-1 rounded-full font-medium ${
+              overdue ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+            }`}
+          >
+            {dueLabel(task.daysUntil)}
+          </span>
+        </div>
+        <div>
+          <p className="text-sm text-gray-500 mb-1">Animal</p>
+          <AnimalTag animal={task.animal} showModalOnClick />
+        </div>
+        {onRegister && (
+          <Button
+            color="success"
+            className="w-full"
+            onClick={() => {
+              onClose()
+              onRegister(task)
+            }}
+          >
+            {action}
+          </Button>
+        )}
+      </div>
+    </Modal>
   )
 }

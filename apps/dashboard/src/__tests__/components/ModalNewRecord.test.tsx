@@ -75,6 +75,11 @@ jest.mock('@/components/inputs/InputSelectAnimals', () => ({
 jest.mock('@/components/BreedingForm', () => ({ __esModule: true, default: () => null }))
 jest.mock('@/components/ModalSaleForm', () => ({ __esModule: true, default: () => null }))
 jest.mock('@/components/ModalBirthForm', () => ({ __esModule: true, default: () => null }))
+jest.mock('@/components/ModalReminderForm', () => ({
+  __esModule: true,
+  default: ({ isOpen, initialAnimalIds }: any) =>
+    isOpen ? <div>Formulario recordatorio: {initialAnimalIds.join(',')}</div> : null,
+}))
 const storageKey = 'mi-granja:new-record-draft:v1:u:f'
 beforeEach(() => {
   localStorage.clear()
@@ -242,4 +247,12 @@ it('registra sanidad con varias categorías en una sola atención', async () => 
     ['h'],
     expect.objectContaining({ category: 'deworming', categories: ['deworming', 'vaccine'] }),
   )
+})
+
+it('Recordatorio abre su formulario con los animales preseleccionados', () => {
+  render(<ModalNewRecord initialAnimalIds={['h']} />)
+  fireEvent.click(screen.getByRole('button', { name: /Nuevo Registro/ }))
+  fireEvent.click(screen.getByRole('button', { name: /Recordatorio/ }))
+  expect(screen.getByText('Formulario recordatorio: h')).toBeInTheDocument()
+  expect(screen.queryByRole('group', { name: 'Tipos de registro' })).not.toBeInTheDocument()
 })

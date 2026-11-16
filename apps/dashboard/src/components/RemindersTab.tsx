@@ -2,18 +2,15 @@
 
 import { useRouter } from 'next/navigation'
 import React, { useMemo, useState } from 'react'
+import FarmTaskRegister from '@/components/FarmTaskRegister'
 import FarmTaskRow from '@/components/FarmTaskRow'
 import FirstReminderEmptyState from '@/components/FirstReminderEmptyState'
 import HealthRemindersCard from '@/components/HealthRemindersCard'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
-import RegisterBirthFromStage from '@/components/RegisterBirthFromStage'
 import ReminderRow from '@/components/ReminderRow'
-import { ModalWeanAnimal } from '@/components/WeanedAnimal'
-import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
 import { type FarmPendingTask, useFarmPendingTasks } from '@/hooks/useFarmPendingTasks'
 import { useReminders } from '@/hooks/useReminders'
 import { normalizeAnimalSearch, valuesMatchSearch } from '@/lib/animal-search'
-import { getWeaningDueDate } from '@/lib/animal-utils'
 import { Reminder } from '@/types'
 
 const startOfDay = (offsetDays = 0) => {
@@ -36,7 +33,6 @@ const RemindersTab: React.FC = () => {
   const { reminders, isLoading } = useReminders()
 
   const farmTasks = useFarmPendingTasks()
-  const { animals } = useAnimalCRUD()
   const [registering, setRegistering] = useState<FarmPendingTask | null>(null)
   const [showCompleted, setShowCompleted] = useState(false)
   const [search, setSearch] = useState('')
@@ -203,21 +199,7 @@ const RemindersTab: React.FC = () => {
           {showCompleted && <div className="mt-3">{renderList(groups.completed)}</div>}
         </section>
       )}
-      {registering?.kind === 'parto' && (
-        <RegisterBirthFromStage
-          motherId={registering.animal.id}
-          animals={animals}
-          onClose={() => setRegistering(null)}
-          onCompleted={() => setRegistering(null)}
-        />
-      )}
-      {registering?.kind === 'destete' && (
-        <ModalWeanAnimal
-          animal={registering.animal}
-          targetWeanDate={getWeaningDueDate(registering.animal) ?? registering.dueDate}
-          onClose={() => setRegistering(null)}
-        />
-      )}
+      {registering && <FarmTaskRegister task={registering} onClose={() => setRegistering(null)} />}
     </div>
   )
 }

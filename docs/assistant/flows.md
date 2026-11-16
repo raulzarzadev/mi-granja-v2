@@ -142,7 +142,7 @@ La recuperación de propuestas se muestra solo ante un error de carga de revisi�
 
 Decisión vigente de UI para lotes: se retira la revisión y confirmación conjunta descrita en el primer diseño. Cada movimiento muestra directamente `ProposalCard` compacto con «Por revisar»; cada uno requiere su propia confirmación en el flujo individual existente. No hay botón de revisión global ni desplegable que oculte el acceso individual.
 
-En escritorio, Asistente IA tiene un acceso independiente debajo de Crear nuevo en el lateral; se retira del menú desplegable de creación de escritorio. En móvil conserva el acceso desde el (+).
+En escritorio, Asistente IA tiene un acceso independiente arriba de Crear nuevo en el lateral (primero el asistente); se retira del menú desplegable de creación de escritorio. En móvil conserva el acceso desde el (+).
 
 ## Registrar muerte — habilitado, versión 2
 
@@ -322,7 +322,7 @@ muestra todos los animales y no sustituye los que pasan de doce por un «+N».
 
 ### Orden de Nuevo Registro
 
-`/registro/nuevo` comienza en **Tipo y Fecha**, continúa con **Animales** y termina en **Detalles**. El primer paso conserva tipo, categorías y fecha (nota y sanidad admiten varias categorías: se guardan en `categories[]` y la primera queda como `category` principal; el primer toque reemplaza la preselección automática); en sanidad se pueden agregar medicamentos con nombre y lote, guardados en `medications[]`); el segundo exige al menos un animal activo antes de avanzar. Volver conserva los datos y la preselección de animales de la URL. Venta y cambio de etapa abren sus formularios en el tercer paso y vuelven al selector de animales. **Recordatorio** no es un tipo de registro: abre `/recordatorio/nuevo` (reemplaza la página) con los animales ya elegidos en `animalIds`. El orden no modifica los servicios ni la confirmación del asistente.
+`/registro/nuevo` comienza en **Tipo y Fecha**, continúa con **Animales** y termina en **Detalles**. El primer paso conserva tipo, categorías y fecha (nota y sanidad admiten varias categorías: se guardan en `categories[]` y la primera queda como `category` principal; el primer toque reemplaza la preselección automática); en sanidad se pueden agregar medicamentos con nombre y lote, guardados en `medications[]`); el segundo exige al menos un animal activo antes de avanzar. Volver conserva los datos y la preselección de animales de la URL. Venta y cambio de etapa abren sus formularios en el tercer paso y vuelven al selector de animales. **Recordatorio** no es un tipo de registro: abre `/recordatorio/nuevo` (reemplaza la página) con los animales ya elegidos en `animalIds`. El orden no modifica los servicios ni la confirmación del asistente. El modal de nuevo registro (`ModalNewRecord`, p. ej. desde el detalle del animal) también ofrece **Recordatorio**: cierra el modal y abre `ModalReminderForm` con esos animales preseleccionados.
 
 
 En Cambio de etapa, una hembra gestante muestra fecha aproximada de parto, padre y monta (código y fecha). Usa la fecha esperada guardada o la calcula desde la monta con el helper de especie. Conserva las acciones solo donde ya hay handlers conectados; no habilita movimientos nuevos.

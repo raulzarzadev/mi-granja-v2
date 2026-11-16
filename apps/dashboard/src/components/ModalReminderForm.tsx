@@ -11,12 +11,15 @@ interface ModalReminderFormProps {
   isOpen: boolean
   onClose: () => void
   editingReminder?: Reminder | null
+  /** Animales preseleccionados al crear (se ignora al editar) */
+  initialAnimalIds?: string[]
 }
 
 const ModalReminderForm: React.FC<ModalReminderFormProps> = ({
   isOpen,
   onClose,
   editingReminder,
+  initialAnimalIds,
 }) => {
   const { animals } = useAnimalCRUD()
   const { createReminder, updateReminder } = useReminders()
@@ -56,6 +59,7 @@ const ModalReminderForm: React.FC<ModalReminderFormProps> = ({
           onSuccess={onClose}
           isLoading={submitting}
           initialData={editingReminder ?? undefined}
+          initialAnimalIds={editingReminder ? undefined : initialAnimalIds}
         />
       </div>
     </Modal>

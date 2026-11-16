@@ -7,6 +7,16 @@ last_updated: 2026-11-16
 
 # Historial de decisiones
 
+## 2026-11-16 — Campana con partos/destetes vencidos y Recordatorio en ModalNewRecord
+
+La campana «Notificaciones y recordatorios» suma al contador los partos y
+destetes vencidos (no los próximos) y los lista junto a los recordatorios de
+hoy y vencidos. Cada aviso abre su detalle en un modal (recordatorio: completar,
+editar, eliminar; parto/destete: registrar con el formulario existente) en vez
+de navegar a `/recordatorio/[id]`. `ModalNewRecord` ofrece «Recordatorio», que
+abre `ModalReminderForm` con los animales preseleccionados. Sin cambios en
+servicios ni en operaciones del asistente.
+
 ## 2026-11-16 — Asistente IA primero en el lateral
 
 En escritorio, el acceso Asistente IA pasa arriba de Crear nuevo. Tocarlo con

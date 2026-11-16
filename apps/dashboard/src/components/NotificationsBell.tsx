@@ -2,10 +2,23 @@
 
 import Link from 'next/link'
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import FarmTaskRegister from '@/components/FarmTaskRegister'
+import { FarmTaskModal } from '@/components/FarmTaskRow'
 import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { CalendarBell } from '@/components/Icon/farm-icons'
-import { REMINDER_TYPE_ICONS } from '@/components/ReminderRow'
+import { REMINDER_TYPE_ICONS, ReminderDetailModal } from '@/components/ReminderRow'
+import { type FarmPendingTask, useFarmPendingTasks } from '@/hooks/useFarmPendingTasks'
 import { useReminders } from '@/hooks/useReminders'
+import type { Reminder } from '@/types'
+
+const FARM_TASK_LABELS: Record<FarmPendingTask['kind'], { emoji: string; label: string }> = {
+  parto: { emoji: '🤰', label: 'Parto' },
+  destete: { emoji: '🍼', label: 'Destete' },
+}
+
+type BellItem =
+  | { kind: 'reminder'; id: string; date: Date; reminder: Reminder }
+  | { kind: 'task'; id: string; date: Date; task: FarmPendingTask }
 
 const formatDueDate = (d: Date | string): string => {
   const date = typeof d === 'string' ? new Date(d) : d
@@ -23,13 +36,17 @@ const formatDueDate = (d: Date | string): string => {
 
 /**
  * Campana de notificaciones del Navbar.
- * Badge = today + overdue. Dropdown muestra primeros 8.
+ * Badge = recordatorios de hoy y vencidos + partos y destetes vencidos. Dropdown muestra
+ * los primeros 8; cada uno abre su detalle en un modal.
  */
 const NotificationsBell: React.FC = () => {
-  const { getOverdueReminders, getTodayReminders, getBadgeCount } = useReminders()
+  const { reminders, getOverdueReminders, getTodayReminders, getBadgeCount } = useReminders()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement | null>(null)
   const [panelStyle, setPanelStyle] = useState<React.CSSProperties | null>(null)
+  const [selected, setSelected] = useState<BellItem | null>(null)
+  const [registering, setRegistering] = useState<FarmPendingTask | null>(null)
+  const overdueTasks = useFarmPendingTasks().filter((task) => task.daysUntil < 0)
 
   useLayoutEffect(() => {
     if (!open) return
@@ -80,10 +97,28 @@ const NotificationsBell: React.FC = () => {
     return () => document.removeEventListener('mousedown', handle)
   }, [])
 
-  const count = getBadgeCount()
-  const items = [...getOverdueReminders(), ...getTodayReminders()]
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+  const count = getBadgeCount() + overdueTasks.length
+  const items: BellItem[] = [
+    ...overdueTasks.map((task) => ({
+      kind: 'task' as const,
+      id: task.id,
+      date: task.dueDate,
+      task,
+    })),
+    ...[...getOverdueReminders(), ...getTodayReminders()].map((reminder) => ({
+      kind: 'reminder' as const,
+      id: reminder.id,
+      date: new Date(reminder.dueDate),
+      reminder,
+    })),
+  ]
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
     .slice(0, 8)
+
+  const openItem = (item: BellItem) => {
+    setOpen(false)
+    setSelected(item)
+  }
 
   return (
     <div className="relative" ref={ref}>
@@ -127,30 +162,40 @@ const NotificationsBell: React.FC = () => {
             </div>
           ) : (
             <ul className="max-h-80 overflow-y-auto divide-y divide-gray-100">
-              {items.map((r) => {
-                const overdue = new Date(r.dueDate).getTime() < new Date().setHours(0, 0, 0, 0)
+              {items.map((item) => {
+                const overdue = item.date.getTime() < new Date().setHours(0, 0, 0, 0)
+                const { emoji, title } =
+                  item.kind === 'task'
+                    ? {
+                        emoji: FARM_TASK_LABELS[item.task.kind].emoji,
+                        title: `${FARM_TASK_LABELS[item.task.kind].label} · ${item.task.animal.animalNumber}`,
+                      }
+                    : {
+                        emoji: REMINDER_TYPE_ICONS[item.reminder.type] || '📝',
+                        title: item.reminder.title,
+                      }
                 return (
-                  <li key={r.id}>
-                    <Link
-                      href={`/recordatorio/${r.id}`}
-                      onClick={() => setOpen(false)}
-                      className="block px-4 py-3 hover:bg-gray-50 transition-colors"
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      onClick={() => openItem(item)}
+                      className="block w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                       <div className="flex items-start gap-2">
                         <span className="text-lg leading-none mt-0.5">
-                          <IconLabel label={REMINDER_TYPE_ICONS[r.type] || '📝'} />
+                          <IconLabel label={emoji} />
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{r.title}</p>
+                          <p className="text-sm font-medium text-gray-900 truncate">{title}</p>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span
                               className={`text-xs ${
                                 overdue ? 'text-red-600 font-semibold' : 'text-gray-500'
                               }`}
                             >
-                              {formatDueDate(r.dueDate)}
+                              {formatDueDate(item.date)}
                             </span>
-                            {r.priority === 'high' && (
+                            {item.kind === 'reminder' && item.reminder.priority === 'high' && (
                               <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">
                                 Alta
                               </span>
@@ -158,7 +203,7 @@ const NotificationsBell: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                    </Link>
+                    </button>
                   </li>
                 )
               })}
@@ -176,6 +221,24 @@ const NotificationsBell: React.FC = () => {
           </div>
         </div>
       )}
+
+      {selected?.kind === 'reminder' && (
+        <ReminderDetailModal
+          // Versión vigente: al completar o editar se actualiza dentro del modal
+          reminder={reminders.find((r) => r.id === selected.id) ?? selected.reminder}
+          isOpen
+          onClose={() => setSelected(null)}
+        />
+      )}
+      {selected?.kind === 'task' && (
+        <FarmTaskModal
+          task={selected.task}
+          isOpen
+          onClose={() => setSelected(null)}
+          onRegister={setRegistering}
+        />
+      )}
+      {registering && <FarmTaskRegister task={registering} onClose={() => setRegistering(null)} />}
     </div>
   )
 }

@@ -22,10 +22,7 @@ const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(),
 
 /** Fila compacta de un recordatorio; abre su detalle en un modal (completar, editar, eliminar). */
 export default function ReminderRow({ reminder }: { reminder: Reminder }) {
-  const { animals } = useAnimalCRUD()
-  const { markAsCompleted, markAnimalCompleted, deleteReminder } = useReminders()
   const [isOpen, setIsOpen] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
   const dueDate = new Date(reminder.dueDate)
   const validDate = !Number.isNaN(dueDate.getTime())
   const daysUntil = validDate
@@ -61,7 +58,30 @@ export default function ReminderRow({ reminder }: { reminder: Reminder }) {
           ) : undefined
         }
       />
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Recordatorio">
+      <ReminderDetailModal reminder={reminder} isOpen={isOpen} onClose={() => setIsOpen(false)} />
+    </>
+  )
+}
+
+/**
+ * Detalle de un recordatorio en modal (completar, editar, eliminar). Al editar cambia al
+ * formulario y `onClose` se llama cuando este se cierra.
+ */
+export function ReminderDetailModal({
+  reminder,
+  isOpen,
+  onClose,
+}: {
+  reminder: Reminder
+  isOpen: boolean
+  onClose: () => void
+}) {
+  const { animals } = useAnimalCRUD()
+  const { markAsCompleted, markAnimalCompleted, deleteReminder } = useReminders()
+  const [isEditing, setIsEditing] = useState(false)
+  return (
+    <>
+      <Modal isOpen={isOpen && !isEditing} onClose={onClose} title="Recordatorio">
         <ReminderCard
           reminder={reminder}
           animals={animals}
@@ -71,19 +91,19 @@ export default function ReminderRow({ reminder }: { reminder: Reminder }) {
               ? undefined
               : (r, animalNumber, completed) => markAnimalCompleted(r.id, animalNumber, completed)
           }
-          onEdit={() => {
-            setIsOpen(false)
-            setIsEditing(true)
-          }}
+          onEdit={() => setIsEditing(true)}
           onDelete={async (r) => {
             await deleteReminder(r.id)
-            setIsOpen(false)
+            onClose()
           }}
         />
       </Modal>
       <ModalReminderForm
-        isOpen={isEditing}
-        onClose={() => setIsEditing(false)}
+        isOpen={isOpen && isEditing}
+        onClose={() => {
+          setIsEditing(false)
+          onClose()
+        }}
         editingReminder={reminder}
       />
     </>

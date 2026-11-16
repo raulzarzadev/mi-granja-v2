@@ -10,6 +10,7 @@ import RecordCategoryPicker from '@/components/inputs/RecordCategoryPicker'
 import { Modal } from '@/components/Modal'
 import ModalAnimalListReader from '@/components/ModalAnimalListReader'
 import ModalBirthForm from '@/components/ModalBirthForm'
+import ModalReminderForm from '@/components/ModalReminderForm'
 import type { SaleCompletionSummary } from '@/components/ModalSaleForm'
 import ModalSaleForm from '@/components/ModalSaleForm'
 import { useAnimalCRUD } from '@/hooks/useAnimalCRUD'
@@ -294,6 +295,7 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
   const [onlyAvailableMontaFemales, setOnlyAvailableMontaFemales] = useState(true)
   const [isSaleOpen, setIsSaleOpen] = useState(false)
   const [isBirthOpen, setIsBirthOpen] = useState(false)
+  const [reminderAnimalIds, setReminderAnimalIds] = useState<string[] | null>(null)
   const [actionDate, setActionDate] = useState(() => toInputDate(new Date()))
   const [weaningDestination, setWeaningDestination] = useState<WeaningDestination>('reproductor')
   const [deathReason, setDeathReason] = useState<AnimalDeathReason | ''>('')
@@ -813,6 +815,13 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
     resetActionState()
   }
 
+  /** Recordatorio usa su propio formulario; conserva los animales ya elegidos. */
+  const openReminder = () => {
+    const ids = [...new Set([...initialAnimalIds, ...selectedAnimalIds])]
+    closeModal()
+    setReminderAnimalIds(ids)
+  }
+
   const finishMovement = (record: AnimalRecord) => {
     setCompletedRecord(record)
     clearDraft()
@@ -1149,6 +1158,21 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
                     </span>
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={openReminder}
+                  className="flex min-h-24 items-start gap-3 rounded-xl border-2 border-gray-200 bg-white p-3 text-left text-gray-800 transition-colors hover:border-gray-300 hover:bg-gray-50 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+                >
+                  <span className="mt-0.5 text-2xl leading-none" aria-hidden="true">
+                    <EmojiIcon emoji="⏰" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-semibold">Recordatorio</span>
+                    <span className="mt-1 block text-xs leading-4 text-gray-600">
+                      Programa una tarea pendiente para estos animales.
+                    </span>
+                  </span>
+                </button>
               </div>
             </>
           ) : (
@@ -1990,6 +2014,12 @@ export default function ModalNewRecord({ initialAnimalIds = [], trigger }: Modal
         initialStatus="completed"
         onCommit={handleSaleCompleted}
         draftStorageKey={`${storageKey}:sale:${activeDraftId}`}
+      />
+
+      <ModalReminderForm
+        isOpen={reminderAnimalIds !== null}
+        onClose={() => setReminderAnimalIds(null)}
+        initialAnimalIds={reminderAnimalIds ?? []}
       />
 
       <ModalBirthForm
