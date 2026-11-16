@@ -11,6 +11,19 @@ export const isAvailableToSale = (a: Animal): boolean =>
   !!a.availableToSaleAt && (a.status ?? 'activo') === 'activo'
 
 /**
+ * Edad del animal en días (para ordenar). Si no hay fecha de nacimiento usa la
+ * edad aproximada en meses. Devuelve null si no hay datos de edad.
+ */
+export function animalAgeInDays(animal: Animal, endDate: Date = new Date()): number | null {
+  if (animal.birthDate) {
+    const ms = endDate.getTime() - toDate(animal.birthDate as any).getTime()
+    return Number.isFinite(ms) ? Math.floor(ms / (1000 * 60 * 60 * 24)) : null
+  }
+  if (typeof animal.age === 'number') return Math.round(animal.age * 30.44)
+  return null
+}
+
+/**
  * Calcula la edad de un animal en meses
  * @param animal - El animal del que se quiere calcular la edad
  * @param options - Opciones de formato

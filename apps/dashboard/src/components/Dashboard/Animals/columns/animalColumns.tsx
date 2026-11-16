@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@/components/DataTable'
 import { EmojiIcon } from '@/components/Icon/emoji-icons'
 import { Icon } from '@/components/Icon/icon'
-import { animalAge, formatWeight } from '@/lib/animal-utils'
+import { animalAge, animalAgeInDays, formatWeight } from '@/lib/animal-utils'
 import {
   type Animal,
   animal_gender_config,
@@ -65,7 +65,7 @@ export const buildAnimalColumns = (): ColumnDef<Animal>[] => [
     label: 'Edad',
     width: '7%',
     sortable: true,
-    sortFn: (a, b) => animalAge(a, { format: 'months' }) - animalAge(b, { format: 'months' }),
+    sortFn: (a, b) => (animalAgeInDays(a) ?? -1) - (animalAgeInDays(b) ?? -1),
     render: (row) => {
       const age = animalAge(row, { format: 'short' })
       return <span className="text-gray-600">{age === 'No registrado' ? '—' : age}</span>

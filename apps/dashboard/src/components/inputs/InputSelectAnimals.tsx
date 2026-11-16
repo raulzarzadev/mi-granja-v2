@@ -7,7 +7,7 @@ import AnimalBadges from '@/components/AnimalBadges'
 import ButtonClose from '@/components/buttons/ButtonClose'
 import { EmojiIcon, IconLabel } from '@/components/Icon/emoji-icons'
 import { animalMatchesSearch } from '@/lib/animal-search'
-import { animalAge, computeAnimalStage } from '@/lib/animal-utils'
+import { animalAgeInDays, computeAnimalStage } from '@/lib/animal-utils'
 import { Animal, type AnimalStageKey, animals_stages } from '@/types/animals'
 import type { FarmArea } from '@/types/farm'
 
@@ -118,15 +118,9 @@ const compareAnimalNumbers = (a: Animal, b: Animal, direction: AnimalSortDirecti
   return direction === 'asc' ? comparison : -comparison
 }
 
-const getAnimalAgeMonths = (animal: Animal) => {
-  if (!animal.birthDate && typeof animal.age !== 'number') return null
-  const age = animalAge(animal, { format: 'months' })
-  return Number.isFinite(age) ? age : null
-}
-
 const compareAnimalAge = (a: Animal, b: Animal, direction: AnimalSortDirection) => {
-  const ageA = getAnimalAgeMonths(a)
-  const ageB = getAnimalAgeMonths(b)
+  const ageA = animalAgeInDays(a)
+  const ageB = animalAgeInDays(b)
 
   // Animals without age stay at the end in either direction.
   if (ageA === null && ageB !== null) return 1
